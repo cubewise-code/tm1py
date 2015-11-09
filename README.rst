@@ -1,4 +1,5 @@
-# TM1py
+TM1py : 
+=======================
 
 TMpy is a object oriented interface to the new IBM Cognos TM1 REST API.
 
