@@ -357,35 +357,6 @@ class TM1Queries:
             self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
             self.get_process_as_dict(name_process)
 
-    def get_process_as_dict(self, name_process):
-        ''' Get a process from TM1 Server in a dictionary
-        dictionary contains properties and navigation properties
-
-        :Parameters:
-            `name_process`: String
-
-        :Returns:
-            dictionary, the process
-        '''
-
-        try:
-            request="/api/v1/Processes('" + name_process +"')?$select=*,UIData,VariablesUIData," \
-                                                          "DataSource/dataSourceNameForServer," \
-                                                          "DataSource/dataSourceNameForClient," \
-                                                          "DataSource/asciiDecimalSeparator," \
-                                                          "DataSource/asciiDelimiterChar," \
-                                                          "DataSource/asciiDelimiterType," \
-                                                          "DataSource/asciiHeaderRecords," \
-                                                          "DataSource/asciiQuoteCharacter," \
-                                                          "DataSource/asciiThousandSeparator," \
-                                                          "DataSource/view"
-            response = self._client.GET(request,"")
-            dict_process = json.loads(response)
-            return dict_process
-        except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
-            self.get_process_as_dict(name_process)
-
     def update_process(self, process):
         ''' update an existing Process on TM1 Server
 
