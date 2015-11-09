@@ -15,4 +15,5 @@ The module aims to make communication with the TM1 Server more easy.
     "Expression":null}
     ...
 
-This module is still an early stage. Contribution is very welcome.
+At current stage module offers CRUD (Create, Read, Update, Delete) features for Subsets, Views, Processes and Annotations.
+TM1py is still at an early stage. Contribution is very welcome.
