@@ -1,8 +1,8 @@
 TM1py
 =======================
 
-TM1py is an object oriented interface to the new IBM Cognos TM1 REST API, written in Python, for humans.
-The module aims to make communication with the TM1 Server more easy.
+TM1py is an object oriented interface to the new IBM Cognos TM1 REST API, written in Python.
+The module aims to make interaction with the TM1 Server more straightforward.
 
 .. code-block:: python
 
@@ -14,6 +14,7 @@ The module aims to make communication with the TM1 Server more easy.
     /Subsets/$entity","Name":"Hi_Im_a_subset","UniqueName":"[plan_business_unit].[Hi_Im_a_subset]",\
     "Expression":null}
     ...
+    >>> q.logout()
 
 At current stage module offers CRUD (Create, Read, Update, Delete) features for Subsets, Views, Processes and Annotations.
 TM1py is still at an early stage. Contribution is very welcome.
