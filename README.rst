@@ -1,14 +1,13 @@
-TM1py : 
+TM1py
 =======================
 
 TMpy is a object oriented interface to the new IBM Cognos TM1 REST API.
 
 .. code-block:: python
 
-    >>> r = requests.get('https://api.github.com', auth=('user', 'pass'))
-    >>> r.status_code
-    204
-    >>> r.headers['content-type']
-    'application/json'
-    >>> r.text
+    >>> q = TM1Queries(ip='', port=8008, user='admin', password='apple', ssl=True)
+    >>> s = Subset(dimension_name='plan_business_unit', subset_name='Hi_Im_a_subset',
+                   elements=['10110', '10300', '10210', '10000'])
+    >>> q.create_subset(s)
+    {"@odata.context":"../../$metadata#Dimensions('plan_business_unit')/Hierarchies('plan_business_unit')/Subsets/$entity"          ,"Name":"Hi_Im_a_subset","UniqueName":"[plan_business_unit].[Hi_Im_a_subset]","Expression":null}
     ...
