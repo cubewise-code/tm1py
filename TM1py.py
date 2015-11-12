@@ -1074,31 +1074,31 @@ class NativeView(View):
     def set_format_string(self, new_format):
         self._format_string = new_format
 
-    def add_column(self, dimension, subset):
-        view_axis_selection = ViewAxisSelection(dimension, subset)
+    def add_column(self, dimension_name, subset_name):
+        view_axis_selection = ViewAxisSelection(dimension_name, subset_name)
         self._columns.append(view_axis_selection)
 
-    def remove_column(self, dimension, subset):
+    def remove_column(self, dimension_name, subset_name):
         for column in self._columns:
             if column.dimension == dimension and column.subset == subset:
                 self._columns.remove(column)
 
-    def add_row(self, dimension, subset):
-        view_axis_selection = ViewAxisSelection(dimension, subset)
+    def add_row(self, dimension_name, subset_name):
+        view_axis_selection = ViewAxisSelection(dimension_name, subset_name)
         self._rows.append(view_axis_selection)
 
-    def remove_row(self, dimension, subset):
+    def remove_row(self, dimension_name, subset_name):
         for row in self._rows:
-            if row.dimension == dimension and row.subset == subset:
+            if row.dimension_name == dimension_name and row.subset_name == subset_name:
                 self._rows.remove(row)
 
-    def add_title(self, dimension, subset, selection):
-        view_title_selection = ViewTitleSelection(dimension, subset, selection)
+    def add_title(self, dimension_name, subset_name, selection):
+        view_title_selection = ViewTitleSelection(dimension_name, subset_name, selection)
         self._titles.append(view_title_selection)
 
-    def remove_title(self, dimension, subset):
+    def remove_title(self, dimension_name, subset_name):
         for title in self._titles:
-            if title.dimension == dimension and title.subset == subset:
+            if title.dimension == dimension_name and title.subset_name == subset_name:
                 self._titles.remove(title)
 
     def _construct_body(self):
@@ -1113,28 +1113,28 @@ class NativeView(View):
                     '],\"Titles\":[' + titles_json + '],' + bottom_json
 
 class ViewAxisSelection:
-    def __init__(self, dimension, subset, hierarchies=None):
-        self.dimension = dimension
-        self.hierarchies = hierarchies
-        self.subset = subset
+    def __init__(self, dimension_name, subset_name, hierarchy_name=None):
+        self.dimension_name = dimension_name
+        self.hierarchy_name = hierarchy_name
+        self.subset_name = subset_name
 
     def __str__(self):
-        s = "\"Subset@odata.bind\": \"Dimensions('" + self.dimension + "')/Hierarchies('" \
-            + self.dimension + "')/Subsets('" + self.subset + "')\""
+        s = "\"Subset@odata.bind\": \"Dimensions('" + self.dimension_name + "')/Hierarchies('" \
+            + self.dimension_name + "')/Subsets('" + self.subset_name + "')\""
         return "{" + s + "}"
 
 class ViewTitleSelection:
-    def __init__(self, dimension, subset, selection, hierarchies=None):
-        self.dimension = dimension
-        self.hierarchies = hierarchies
+    def __init__(self, dimension_name, subset_name, selection, hierarchy_name=None):
+        self.dimension_name = dimension_name
+        self.hierarchy_name = hierarchy_name
         self.selection = selection
-        self.subset = subset
+        self.subset_name = subset_name
 
     def __str__(self):
-        s1 = "\"Subset@odata.bind\": \"Dimensions('" + self.dimension + "')/Hierarchies('" \
-             + self.dimension + "')/Subsets('" + self.subset + "')\""
-        s2 = "\"Selected@odata.bind\": \"Dimensions('" + self.dimension + "')/Hierarchies('" \
-             + self.dimension + "')/Elements('" + self.selection + "')\""
+        s1 = "\"Subset@odata.bind\": \"Dimensions('" + self.dimension_name + "')/Hierarchies('" \
+             + self.dimension_name + "')/Subsets('" + self.subset_name + "')\""
+        s2 = "\"Selected@odata.bind\": \"Dimensions('" + self.dimension_name + "')/Hierarchies('" \
+             + self.dimension_name + "')/Elements('" + self.selection + "')\""
         return "{" + s1 + "," + s2 + "}"
 
 
@@ -1142,7 +1142,8 @@ class Dimension:
     ''' Abstraction of TM1 Dimension.
 
         :Notes:
-            A Dimension is simply a container for hierarchies.
+            Not complete. Not tested.
+            A Dimension is a container for hierarchies.
     '''
     def __init__(self, name):
         '''
@@ -1176,6 +1177,8 @@ class Dimension:
 class Hierarchy:
     '''
 
+        :Notes:
+            Not complete. Not tested.
     '''
 
     def __init__(self, name_hierarchy, name_dimension, elements=[], element_attributes=[], edges=[]):
