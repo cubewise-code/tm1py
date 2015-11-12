@@ -25,15 +25,17 @@ q.create_view(view=view)
 # delete native view from server
 q.delete_view(view.get_cube(), view.get_name())
 
-# create mdx view
+# random text
 random_string = str(uuid.uuid4())
+
+# create mdx view
 mdx = "SELECT {([plan_version].[FY 2003 Budget], [plan_department].[105], [plan_chart_of_accounts].[61030], " \
       "[plan_exchange_rates].[local], [plan_source].[goal] , [plan_time].[Jan-2004]) } on COLUMNS," \
       "{[plan_business_unit].[10110]} on ROWS FROM [plan_BudgetPlan]"
 mdx_view = MDXView('plan_Budgetplan', random_string, mdx)
 
 # create mdx view on TM1 Server
-q.create_view(mdx_view)
+q.create_view(view=mdx_view)
 
 # delete mdx view from server
 q.delete_view(mdx_view.get_cube(), mdx_view.get_name())
