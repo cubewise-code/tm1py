@@ -4,8 +4,10 @@ import uuid
 # establish connection to TM1 Server
 q = TM1Queries(ip='', port=8008, user='admin', password='apple', ssl=True)
 
-# create native view
+# random text
 random_string = str(uuid.uuid4())
+
+# create native view
 view = NativeView(name_cube='plan_Budgetplan', name_view=random_string)
 
 # assign subsets to rows, columns, titles
@@ -17,10 +19,10 @@ view.add_row(dimension_name='plan_source', subset_name='budget')
 view.add_title(dimension_name='plan_exchange_rates', subset_name='actual', selection='actual')
 view.add_column(dimension_name='plan_time', subset_name='2003 Total Year')
 
-# post native view against TM1 Server
-q.create_view(view)
+# create native view against TM1 Server
+q.create_view(view=view)
 
-# delete view from server
+# delete native view from server
 q.delete_view(view.get_cube(), view.get_name())
 
 # create mdx view
@@ -30,10 +32,10 @@ mdx = "SELECT {([plan_version].[FY 2003 Budget], [plan_department].[105], [plan_
       "{[plan_business_unit].[10110]} on ROWS FROM [plan_BudgetPlan]"
 mdx_view = MDXView('plan_Budgetplan', random_string, mdx)
 
-# create view on TM1 Server
+# create mdx view on TM1 Server
 q.create_view(mdx_view)
 
-# delete view from server
+# delete mdx view from server
 q.delete_view(mdx_view.get_cube(), mdx_view.get_name())
 
 # logout
