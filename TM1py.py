@@ -1,3 +1,5 @@
+__author__ = 'OLAPLINE, Marius'
+
 import requests
 import json
 import collections
@@ -158,6 +160,7 @@ class httpClientTM1:
             raise pyTM1Exception(response.json())
 
 
+
 # offers predefined Queries for interaction with TM1 Server
 class TM1Queries:
     ''' Class offers predefined CRUD (Create, Read, Update, Delete) functions to interact with a TM1 Server
@@ -274,9 +277,6 @@ class TM1Queries:
                 body_as_dict["Value"] = str(value)
                 updates += ',' + json.dumps(body_as_dict)
             updates = '[' + updates[1:] + ']'
-
-            print(updates)
-
             self._client.POST(request=request, data=updates)
         except (ConnectionError, ConnectionAbortedError):
             self._client = httpClientTM1(self._ip, self._port, self._user, self._namespace, self._ssl)
@@ -466,7 +466,7 @@ class TM1Queries:
         ''' create a new view on TM1 Server
 
         :Parameters:
-            `view`: instance of subclass of TM1.View (NativeView or MDXView)
+            `view`: instance of subclass of TM1py.View (NativeView or MDXView)
 
         :Returns:
             `string` : the response
@@ -480,11 +480,8 @@ class TM1Queries:
             self.create_view(view)
 
     def get_native_view(self, cube_name, view_name):
-        view_as_json = self._client.GET("/api/v1/Cubes('{}')/Views('{}')".format(cube_name, view_name))
-        titles_as_json = self._client.GET("/api/v1/Cubes('{}')/Views('{}')/Titles?$expand=*".format(cube_name, view_name))
-        columns_as_json = self._client.GET("/api/v1/Cubes('{}')/Views('{}')/Columns?$expand=*".format(cube_name, view_name))
-        rows_as_json = self._client.GET("/api/v1/Cubes('{}')/Views('{}')/Rows?$expand=*".format(cube_name, view_name))
-        native_view = NativeView.from_json(view_as_json, titles_as_json, columns_as_json, rows_as_json)
+        view_as_json = self._client.GET("/api/v1/Cubes('" + cube_name + "')/Views('" + view_name + "')?$expand=tm1.NativeView/Rows/Subset($expand=Hierarchy($select=Name;$expand=Dimension($select=Name)),Elements($select=Name);$select=Expression,UniqueName,Name),  tm1.NativeView/Columns/Subset($expand=Hierarchy($select=Name;$expand=Dimension($select=Name)),Elements($select=Name);$select=Expression,UniqueName,Name), tm1.NativeView/Titles/Subset($expand=Hierarchy($select=Name;$expand=Dimension($select=Name)),Elements($select=Name);$select=Expression,UniqueName,Name), tm1.NativeView/Titles/Selected($select=Name)")
+        native_view = NativeView.from_json(view_as_json)
         return native_view
 
     def get_mdx_view(self, cube_name, view_name):
@@ -872,7 +869,7 @@ class TM1Queries:
             self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
             self.create_subset(subset)
 
-    def get_subset(self, name_dimension, name_subset):
+    def get_subset(self, dimension_name, subset_name):
         ''' get a subset from the TM1 Server
             :Parameters:
                 `name_dimension` : string, name of the dimension
@@ -882,13 +879,13 @@ class TM1Queries:
                 `subset` : instance of the Subset class
         '''
         try:
-            request = '/api/v1/Dimensions(\'' + name_dimension +  '\')/Hierarchies(\'' + name_dimension\
-                      + '\')/Subsets(\'' + name_subset + '\')?$expand=*'
+            request = '/api/v1/Dimensions(\'' + dimension_name + '\')/Hierarchies(\'' + dimension_name + \
+                      '\')/Subsets(\'' + subset_name + '\')?$expand=Hierarchy($select=Dimension),Elements($select=Name)'
             response = self._client.GET(request=request)
             return Subset.from_json(response)
         except (ConnectionError, ConnectionAbortedError):
             self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
-            self.get_subset(name_dimension, name_subset)
+            self.get_subset(dimension_name, subset_name)
 
     def update_subset(self, subset):
         ''' update a subset on the TM1 Server
@@ -953,11 +950,11 @@ class Subset():
 
             subset type
                 class handles subset type implicitly. According to this logic:
-                    self._elements is not [] -> static
+                    self._elements is not None -> static
                     self._expression is not None -> dyamic
-                    self._expression is not None and self._elements is not [] -> dynamic
+                    self._expression is not None and self._elements is not None -> dynamic
     '''
-    def __init__(self, dimension_name, subset_name, expression = None, elements = []):
+    def __init__(self, dimension_name, subset_name, expression = None, elements = None):
         ''' Constructor
             :Parameters:
                 `dimension_name` : string
@@ -983,11 +980,15 @@ class Subset():
         '''
 
         subset_as_dict = json.loads(subset_as_json)
+        return cls.from_dict(subset_as_dict=subset_as_dict)
+
+    @classmethod
+    def from_dict(cls, subset_as_dict):
         return cls(dimension_name = subset_as_dict["UniqueName"][1:subset_as_dict["UniqueName"].find('].[')],
                    subset_name = subset_as_dict['Name'],
                    expression = subset_as_dict['Expression'],
                    elements = [element['Name'] for element in subset_as_dict['Elements']]
-                   if not subset_as_dict['Expression'] else [])
+                   if not subset_as_dict['Expression'] else None)
 
     @property
     def body(self):
@@ -997,6 +998,12 @@ class Subset():
             return self._construct_body_dynamic()
         else:
             return self._construct_body_static()
+
+    def get_name(self):
+        return self._subset_name
+
+    def get_dimension_name(self):
+        return self._dimension_name
 
     def set_subset_name(self, subset_name):
         ''' set the subset name
@@ -1034,16 +1041,65 @@ class Subset():
 
     def _construct_body_dynamic(self):
         body_as_dict = collections.OrderedDict()
-        body_as_dict['@odata.type'] = 'ibm.tm1.api.v1.Subset'
         body_as_dict['Name'] = self._subset_name
+        body_as_dict['Hierarchy@odata.bind'] = "Dimensions('" + self._dimension_name + "')/Hierarchies('" + self._dimension_name + "')"
         body_as_dict['Expression'] = self._expression
         return json.dumps(body_as_dict, ensure_ascii=False, sort_keys=False)
 
     def _construct_body_static(self):
         body_as_dict = collections.OrderedDict()
-        body_as_dict['@odata.type'] = 'ibm.tm1.api.v1.Subset'
         body_as_dict['Name'] = self._subset_name
+        body_as_dict['Hierarchy@odata.bind'] = "Dimensions('" + self._dimension_name + "')/Hierarchies('" + self._dimension_name + "')"
+        elements_in_list = []
+        for element in self._elements:
+            elements_in_list.append('Dimensions(\'' + self._dimension_name + '\')/Hierarchies(\'' +
+                                    self._dimension_name + '\')/Elements(\'' + element + '\')')
+            body_as_dict['Elements@odata.bind'] = elements_in_list
+        return json.dumps(body_as_dict, ensure_ascii=False, sort_keys=False)
 
+class AnnonymousSubset(Subset):
+    '''
+    insert comment here
+    '''
+    def __init__(self, dimension_name, expression=None, elements=None):
+        Subset.__init__(self, dimension_name=dimension_name, subset_name='', expression=expression, elements=elements)
+
+    @classmethod
+    def from_json(cls, subset_as_json):
+        ''' Alternative constructor
+                :Parameters:
+                    `subset_as_json` : string, JSON
+                        representation of Subset as specified in CSDL
+
+                :Returns:
+                    `Subset` : an instance of this class
+        '''
+        return cls.from_dict(subset_as_dict)
+
+    @classmethod
+    def from_dict(cls, subset_as_dict):
+        ''' Alternative constructor
+                :Parameters:
+                    `subset_as_dict` : dictionary
+                        representation of Subset as specified in CSDL
+
+                :Returns:
+                    `Subset` : an instance of this class
+        '''
+        return cls(dimension_name = subset_as_dict["Hierarchy"]['Dimension']['Name'],
+                   expression = subset_as_dict['Expression'],
+                   elements = [element['Name'] for element in subset_as_dict['Elements']]
+                   if not subset_as_dict['Expression'] else None)
+
+    def _construct_body_dynamic(self):
+        body_as_dict = collections.OrderedDict()
+        body_as_dict["Hierarchy@odata.bind"] = "Dimensions('" + self._dimension_name +"')/Hierarchies('" + self._dimension_name + "')"
+        body_as_dict['Expression'] = self._expression
+        return json.dumps(body_as_dict, ensure_ascii=False, sort_keys=False)
+
+    def _construct_body_static(self):
+        body_as_dict = collections.OrderedDict()
+        body_as_dict["Hierarchy@odata.bind"] = "Dimensions('" + self._dimension_name +"')/Hierarchies('" + self._dimension_name + "')"
         elements_in_list = []
         for element in self._elements:
             elements_in_list.append('Dimensions(\'' + self._dimension_name + '\')/Hierarchies(\'' +
@@ -1109,7 +1165,7 @@ class NativeView(View):
 
         :usecase:
             user defines view with this class and creates it on TM1 Server.
-            user calls get_view_data_structured from TM1Queries function to retrieve data from View
+            user calls get_view_data_structured method from TM1Queries to retrieve data from View
 
         :Notes:
             Done and tested.
@@ -1126,40 +1182,33 @@ class NativeView(View):
 
 
     @classmethod
-    def from_json(cls, view_as_json, titles_as_json, columns_as_json, rows_as_json):
+    def from_json(cls, view_as_json):
         ''' Alternative constructor
                 :Parameters:
                     `view_as_json` : string, JSON
-                        response of this request /api/v1/Cubes('x')/Views('y')?$expand=*
-                    `titles_as_json` : string, JSON
-                        response of this request /api/v1/Cubes('x')/Views('y')/Titles?$expand=*
-                    `columns_as_json` : string, JSON
-                        response of this request /api/v1/Cubes('x')/Views('y')/Columns?$expand=*
-                    `rows_as_json` : string, JSON
-                        response of this request /api/v1/Cubes('x')/Views('y')/Rows?$expand=*
 
                 :Returns:
                     `View` : an instance of this class
         '''
         view_as_dict = json.loads(view_as_json)
-        titles_as_dict = json.loads(titles_as_json)
-        rows_as_dict = json.loads(rows_as_json)
-        columns_as_dict = json.loads(columns_as_json)
-
         titles, columns, rows = [], [], []
-        for selection in titles_as_dict['value']:
-            subset_as_dict = selection['Subset']
-            name_dimension = subset_as_dict['UniqueName'][1:subset_as_dict['UniqueName'].find('].[')]
-            name_subset = subset_as_dict['Name']
-            selected = selection['Selected']['Name']
-            titles.append(ViewTitleSelection(name_dimension, name_subset, selected))
 
-        for i, axe in enumerate([columns_as_dict, rows_as_dict]):
-            for selection in axe['value']:
-                subset_as_dict = selection['Subset']
-                name_dimension = subset_as_dict['UniqueName'][1:subset_as_dict['UniqueName'].find('].[')]
-                name_subset = subset_as_dict['Name']
-                axis_selection = ViewAxisSelection(name_dimension, name_subset)
+        for selection in view_as_dict['Titles']:
+            if selection['Subset']['Name'] == '':
+                subset = AnnonymousSubset.from_dict(selection['Subset'])
+            else:
+                subset = Subset.from_dict(selection['Subset'])
+            selected = selection['Selected']['Name']
+            titles.append(ViewTitleSelection(dimension_name=subset.get_dimension_name(),
+                                             subset=subset, selected=selected))
+        for i, axe in enumerate([view_as_dict['Columns'], view_as_dict['Rows']]):
+            for selection in axe:
+                if selection['Subset']['Name'] == '':
+                    subset = AnnonymousSubset.from_dict(selection['Subset'])
+                else:
+                    subset = Subset.from_dict(selection['Subset'])
+                axis_selection = ViewAxisSelection(dimension_name=subset.get_dimension_name(),
+                                                   subset=subset)
                 columns.append(axis_selection) if i == 0 else rows.append(axis_selection)
 
         return cls(name_cube = view_as_dict["@odata.context"][20:view_as_dict["@odata.context"].find("')/")],
@@ -1188,38 +1237,40 @@ class NativeView(View):
     def set_format_string(self, new_format):
         self._format_string = new_format
 
-    def add_column(self, dimension_name, subset_name):
-        view_axis_selection = ViewAxisSelection(dimension_name, subset_name)
+    def add_column(self, dimension_name, subset=None):
+        view_axis_selection = ViewAxisSelection(dimension_name, subset=subset)
         self._columns.append(view_axis_selection)
 
-    def remove_column(self, dimension_name, subset_name):
+    def remove_column(self, dimension_name):
         for column in self._columns:
-            if column.dimension == dimension and column.subset == subset:
+            if column._dimension_name == dimension_name:
                 self._columns.remove(column)
 
-    def add_row(self, dimension_name, subset_name):
-        view_axis_selection = ViewAxisSelection(dimension_name, subset_name)
+
+
+    def add_row(self, dimension_name, subset=None):
+        view_axis_selection = ViewAxisSelection(dimension_name=dimension_name, subset=subset)
         self._rows.append(view_axis_selection)
 
-    def remove_row(self, dimension_name, subset_name):
+    def remove_row(self, dimension_name):
         for row in self._rows:
-            if row._dimension_name == dimension_name and row._subset_name == subset_name:
+            if row._dimension_name == dimension_name:
                 self._rows.remove(row)
 
-    def add_title(self, dimension_name, subset_name, selection):
-        view_title_selection = ViewTitleSelection(dimension_name, subset_name, selection)
+    def add_title(self, dimension_name, selection, subset=None):
+        view_title_selection = ViewTitleSelection(dimension_name, subset, selection)
         self._titles.append(view_title_selection)
 
-    def remove_title(self, dimension_name, subset_name):
+    def remove_title(self, dimension_name):
         for title in self._titles:
-            if title._dimension == dimension_name and title._subset_name == subset_name:
+            if title._dimension_name == dimension_name:
                 self._titles.remove(title)
 
     def _construct_body(self):
         top_json = "{\"@odata.type\": \"ibm.tm1.api.v1.NativeView\",\"Name\": \"" + self._name +"\","
-        columns_json = ','.join([str(column) for column in self._columns])
-        rows_json = ','.join([str(row) for row in self._rows])
-        titles_json = ','.join([str(title) for title in self._titles])
+        columns_json = ','.join([column.body for column in self._columns])
+        rows_json = ','.join([row.body for row in self._rows])
+        titles_json = ','.join([title.body for title in self._titles])
         bottom_json = "\"SuppressEmptyColumns\": " + str(self._suppress_empty_columns).lower() + \
                       ",\"SuppressEmptyRows\":" + str(self._suppress_empty_rows).lower() + \
                       ",\"FormatString\": \"" + self._format_string + "\"}"
@@ -1227,29 +1278,45 @@ class NativeView(View):
                     '],\"Titles\":[' + titles_json + '],' + bottom_json
 
 class ViewAxisSelection:
-    def __init__(self, dimension_name, subset_name, hierarchy_name=None):
+    def __init__(self, dimension_name, subset):
+        '''
+            :Parameters:
+                `dimension_name` : String
+                `subset` : Subset or AnnonymousSubset
+        '''
+        self._subset = subset
         self._dimension_name = dimension_name
-        self._hierarchy_name = hierarchy_name
-        self._subset_name = subset_name
 
-    def __str__(self):
-        s = "\"Subset@odata.bind\": \"Dimensions('" + self._dimension_name + "')/Hierarchies('" \
-            + self._dimension_name + "')/Subsets('" + self._subset_name + "')\""
-        return "{" + s + "}"
+    @property
+    def body(self):
+        return self._construct_body()
+
+    def _construct_body(self):
+        if type(self._subset) is Subset:
+            return "{\"Subset@odata.bind\": \"Dimensions('" + self._dimension_name + "')/Hierarchies('" \
+                + self._dimension_name + "')/Subsets('" + self._subset.get_name() + "')\"}"
+        elif type(self._subset) is AnnonymousSubset:
+            s = self._subset.body
+            return '{\"Subset\":' + s + '}'
 
 class ViewTitleSelection:
-    def __init__(self, dimension_name, subset_name, selection, hierarchy_name=None):
+    def __init__(self, dimension_name, subset, selected):
         self._dimension_name = dimension_name
-        self._hierarchy_name = hierarchy_name
-        self._selection = selection
-        self._subset_name = subset_name
+        self._subset = subset
+        self._selected = selected
 
-    def __str__(self):
-        s1 = "\"Subset@odata.bind\": \"Dimensions('" + self._dimension_name + "')/Hierarchies('" \
-             + self._dimension_name + "')/Subsets('" + self._subset_name + "')\""
-        s2 = "\"Selected@odata.bind\": \"Dimensions('" + self._dimension_name + "')/Hierarchies('" \
-             + self._dimension_name + "')/Elements('" + self._selection + "')\""
-        return "{" + s1 + "," + s2 + "}"
+    @property
+    def body(self):
+        return self._construct_body()
+
+    def _construct_body(self):
+        if type(self._subset) is Subset:
+            s_subset = "\"Subset@odata.bind\": \"Dimensions('" + self._dimension_name + "')/Hierarchies('" \
+                 + self._dimension_name + "')/Subsets('" + self._subset.get_name() + "')\""
+            return "{" + s_subset + ", \"Selected@odata.bind\": \"" +" Dimensions('" + self._dimension_name + "')/Hierarchies('" + self._dimension_name + "')/Elements('" + self._selected + "')\"}"
+        elif type(self._subset) is AnnonymousSubset:
+            s_subset = self._subset.body
+            return "{ \"subset\" : " + s_subset + ", \"Selected@odata.bind\": \"" +" Dimensions('" + self._dimension_name + "')/Hierarchies('" + self._dimension_name + "')/Elements('" + self._selected + "')\"}"
 
 class Dimension:
     ''' Abstraction of TM1 Dimension.
