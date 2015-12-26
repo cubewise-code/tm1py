@@ -12,7 +12,8 @@ a = Annotation(comment_value=random_string, object_name='plan_BudgetPlan',
                                     'planning', 'revenue (future)', 'Jan-2005'])
 
 # post annotation on TM1 Server
-print(q.create_annotation(a))
+q.create_annotation(a)
+
 
 # find the created annotation and delete it
 for annotation in q.get_all_annotations_from_cube('plan_BudgetPlan'):
