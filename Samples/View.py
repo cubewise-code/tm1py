@@ -8,22 +8,29 @@ q = TM1Queries(ip='', port=8008, user='admin', password='apple', ssl=True)
 random_string = str(uuid.uuid4())
 
 # create native view
-view = NativeView(name_cube='plan_Budgetplan', name_view=random_string)
+native_view = NativeView(name_cube='plan_Budgetplan', name_view=random_string)
 
 # assign subsets to rows, columns, titles
-view.add_row(dimension_name='plan_version', subset_name='FY 2004 Budget')
-view.add_row(dimension_name='plan_business_unit', subset_name='n level business unit')
-view.add_row(dimension_name='plan_department', subset_name='n level departments')
-view.add_row(dimension_name='plan_chart_of_accounts', subset_name='Consolidations')
-view.add_row(dimension_name='plan_source', subset_name='budget')
-view.add_title(dimension_name='plan_exchange_rates', subset_name='actual', selection='actual')
-view.add_column(dimension_name='plan_time', subset_name='2003 Total Year')
+subset = q.get_subset(dimension_name='plan_version', subset_name='FY 2004 Budget')
+native_view.add_row(dimension_name='plan_version', subset=subset)
+subset = q.get_subset(dimension_name='plan_business_unit', subset_name='n level business unit')
+native_view.add_row(dimension_name='plan_business_unit', subset=subset)
+subset = q.get_subset(dimension_name='plan_department', subset_name='n level departments')
+native_view.add_row(dimension_name='plan_department', subset=subset)
+subset = q.get_subset(dimension_name='plan_chart_of_accounts', subset_name='Consolidations')
+native_view.add_row(dimension_name='plan_chart_of_accounts', subset=subset)
+subset = q.get_subset(dimension_name='plan_source', subset_name='budget')
+native_view.add_row(dimension_name='plan_source', subset=subset)
+subset = q.get_subset(dimension_name='plan_exchange_rates', subset_name='actual')
+native_view.add_title(dimension_name='plan_exchange_rates', subset=subset, selection='actual')
+subset = q.get_subset(dimension_name='plan_time', subset_name='2003 Total Year')
+native_view.add_column(dimension_name='plan_time', subset=subset)
 
 # create native view against TM1 Server
-q.create_view(view=view)
+q.create_view(view=native_view)
 
 # delete native view from server
-q.delete_view(view.get_cube(), view.get_name())
+q.delete_view(native_view.get_cube(), native_view.get_name())
 
 # random text
 random_string = str(uuid.uuid4())
