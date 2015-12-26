@@ -17,7 +17,7 @@ p_ascii.add_variable('v_2', 'Numeric')
 p_ascii.add_variable('v_3', 'Numeric')
 p_ascii.add_variable('v_4', 'Numeric')
 # parameters
-p_ascii.add_parameter('p_Year', 'year?', '2016')
+p_ascii.add_parameter('p_Year', 'which year?', '2016')
 # create process on Server
 q.create_process(p_ascii)
 
