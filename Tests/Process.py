@@ -38,7 +38,7 @@ class TestAnnotationMethods(unittest.TestCase):
 
     # odbc process
     p_odbc = Process(name='unittest_odbc_' + random_string, datasource_type='ODBC', datasource_password='password',
-                     datasource_user_name='Barbarius')
+                     datasource_user_name='user')
 
     # create Process
     def test1_create_process(self):
@@ -56,9 +56,9 @@ class TestAnnotationMethods(unittest.TestCase):
         p3 = self.q.get_process(self.p_view.name)
         self.assertEqual(p3.body, self.p_view.body)
         p4 = self.q.get_process(self.p_odbc.name)
-        x = p4.datasource_password = None
-        y = self.p_odbc.datasource_password = None
-        self.assertEqual(x, y)
+        p4.datasource_password = None
+        self.p_odbc.datasource_password = None
+        self.assertEqual(p4.body, self.p_odbc.body)
 
     # update process
     def test3_update_process(self):
@@ -80,7 +80,7 @@ class TestAnnotationMethods(unittest.TestCase):
         self.q.delete_process(self.p_view.name)
         self.q.delete_process(self.p_odbc.name)
 
-    def test_5_logout(self):
+    def test5_logout(self):
         self.q.logout()
 
 
