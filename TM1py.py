@@ -1,4 +1,4 @@
-__author__ = 'OLAPLINE, Marius'
+__author__ = 'Marius'
 
 import requests
 import json
