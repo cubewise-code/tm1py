@@ -7,7 +7,7 @@ The module aims to make interaction with the TM1 Server more straightforward.
 
 Features
 =======================
-TM1py offers cool features to interact with TM1 from python. Such as,
+TM1py offers handy features to interact with TM1 from python. Such as,
 
 - Retrieve data from a view (in a concise JSON structure)
 
@@ -38,6 +38,17 @@ TM1py offers cool features to interact with TM1 from python. Such as,
     >>> tm1.execute_process(name_process='import_actuals', parameters=parameters)
     >>> tm1.logout()
 
+- Deploy TM1 Objects
+
+.. code-block:: python
+
+    >>> from TM1py import TM1Queries as TM1
+    >>> tm1_source = TM1(ip='localhost', port=8001, user='admin', password='apple', ssl=False)
+    >>> tm1_target = TM1(ip='localhost', port=8081, user='admin', password='apple', ssl=False)
+    >>> p = tm1_source.get_process('new')
+    >>> tm1_target.create_process(p)
+    >>> tm1_source.logout()
+    >>> tm1_target.logout()
 
 Contribution
 =======================
