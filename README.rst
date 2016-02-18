@@ -26,7 +26,7 @@ TM1py offers cool features to interact with TM1 from python. Such as,
                 '[plan_time].[Q2-2004]')]
     >>> print(value)
     51966012.14
-    >>> q.logout()
+    >>> tm1.logout()
 
 
 
