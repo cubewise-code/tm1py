@@ -5,7 +5,7 @@ import unittest
 
 
 class TestAnnotationMethods(unittest.TestCase):
-    q = TM1Queries(ip='', port=8008, user='admin', password='apple', ssl=True)
+    q = TM1Queries(ip='', port=8001, user='admin', password='apple', ssl=False)
 
     def test1_get_all_annotations_from_cube(self):
         annotations = self.q.get_all_annotations_from_cube('plan_BudgetPlan')
