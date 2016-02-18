@@ -12,7 +12,6 @@ TM1py offers cool features to interact with TM1 from python. Such as,
 Retrieve data from a view (in a concise JSON structure)
 
 .. code-block:: python
-
     >>> from TM1py import TM1Queries as TM1
     >>> tm1 = TM1(ip='localhost', port=8001, user='admin', password='apple', ssl=False)
     >>> content = tm1.get_view_content_structured(cube_name='Plan_BudgetPlan', 
@@ -23,7 +22,7 @@ Retrieve data from a view (in a concise JSON structure)
                        '[plan_chart_of_accounts].[Operating Expense]', 
                        '[plan_exchange_rates].[local]', 
                        '[plan_source].[budget]', 
-                       '[plan_time].[2004]'))
+                       '[plan_time].[2004]')])
     1354579.54312041
     >>> q.logout()
 
