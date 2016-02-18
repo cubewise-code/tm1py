@@ -7,7 +7,7 @@ The module aims to make interaction with the TM1 Server more straightforward.
 
 Features
 =======================
-TM1py offers handy features to interact with TM1 from python. Such as,
+TM1py offers handy features to interact with TM1 from Python. Such as,
 
 - Retrieve content from view (in concise JSON structure)
 
@@ -53,6 +53,10 @@ TM1py offers handy features to interact with TM1 from python. Such as,
 Requirements
 =======================
 https://github.com/kennethreitz/requests
+
+Installation
+=======================
+download TM1py.py file and copy it into your project folder
 
 Contribution
 =======================
