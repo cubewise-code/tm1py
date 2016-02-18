@@ -4,19 +4,27 @@ TM1py
 TM1py is an object oriented interface to the new IBM Cognos TM1 REST API, written in Python.
 The module aims to make interaction with the TM1 Server more straightforward.
 
-.. code-block:: python
-
-    >>> q = TM1Queries(ip='', port=8008, user='admin', password='apple', ssl=True)
-    >>> s = Subset(dimension_name='plan_business_unit', subset_name='Hi_Im_a_subset',
-                   elements=['10110', '10300', '10210', '10000'])
-    >>> q.create_subset(s)
-    {"@odata.context":"../../$metadata#Dimensions('plan_business_unit')/Hierarchies('plan_business_unit')/Subsets/$entity","Name":"Hi_Im_a_subset","UniqueName":"[plan_business_unit].[Hi_Im_a_subset]","Expression":null}
-    >>> q.logout()
-
 
 Features
 =======================
-At current stage module offers CRUD (Create, Read, Update, Delete) features for Subsets, Views, Processes and Annotations.
+TM1py offers cool features to interact with TM1 from python. Such as,
+
+Retrieve data from a view (in a concise JSON structure)
+.. code-block:: python
+
+    >>> from TM1py import TM1Queries as TM1
+    >>> tm1 = TM1(ip='localhost', port=8001, user='admin', password='apple', ssl=False)
+    >>> content = tm1.get_view_content_structured(cube_name='Plan_BudgetPlan', 
+                                                  view_name='High Level Profit And Loss')
+    >>> print(content[('[plan_version].[FY 2004 Budget]', 
+                       '[plan_business_unit].[10000]', 
+                       '[plan_department].[1000]', 
+                       '[plan_chart_of_accounts].[Operating Expense]', 
+                       '[plan_exchange_rates].[local]', 
+                       '[plan_source].[budget]', 
+                       '[plan_time].[2004]'))
+    1354579.54312041
+    >>> q.logout()
 
 
 Contribution
