@@ -17,15 +17,17 @@ TM1py offers cool features to interact with TM1 from python. Such as,
     >>> tm1 = TM1(ip='localhost', port=8001, user='admin', password='apple', ssl=False)
     >>> content = tm1.get_view_content_structured(cube_name='Plan_BudgetPlan', 
                                                   view_name='High Level Profit And Loss')
-    >>> print(content[('[plan_version].[FY 2004 Budget]', 
-                       '[plan_business_unit].[10000]', 
-                       '[plan_department].[1000]', 
-                       '[plan_chart_of_accounts].[Operating Expense]', 
-                       '[plan_exchange_rates].[local]', 
-                       '[plan_source].[budget]', 
-                       '[plan_time].[2004]')])
-    1354579.54312041
+    >>> value = content[('[plan_version].[FY 2004 Budget]',
+                '[plan_business_unit].[10000]',
+                '[plan_department].[1000]',
+                '[plan_chart_of_accounts].[Revenue]',
+                '[plan_exchange_rates].[local]',
+                '[plan_source].[budget]',
+                '[plan_time].[Q2-2004]')]
+    >>> print(value)
+    51966012.14
     >>> q.logout()
+
 
 
 Contribution
