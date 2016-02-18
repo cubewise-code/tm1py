@@ -50,6 +50,11 @@ TM1py offers handy features to interact with TM1 from python. Such as,
     >>> tm1_source.logout()
     >>> tm1_target.logout()
 
+Requirements
+=======================
+Module requires requests to be installed 
+TM1 needs to have an HTTPPortNumber specified in its config
+
 Contribution
 =======================
 TM1py is still at an early stage. Contribution is very welcome.
