@@ -28,6 +28,15 @@ TM1py offers cool features to interact with TM1 from python. Such as,
     51966012.14
     >>> tm1.logout()
 
+- Trigger execution of processes from Python
+
+.. code-block:: python
+
+    >>> from TM1py import TM1Queries as TM1
+    >>> tm1 = TM1(ip='localhost', port=8001, user='admin', password='apple', ssl=False)
+    >>> parameters = '{"Parameters": [ { "Name": "cost_center", "Value": "NL01_716391" }] }'
+    >>> tm1.execute_process(name_process='import_actuals', parameters=parameters)
+    >>> tm1.logout()
 
 
 Contribution
