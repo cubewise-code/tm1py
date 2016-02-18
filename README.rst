@@ -9,7 +9,7 @@ Features
 =======================
 TM1py offers cool features to interact with TM1 from python. Such as,
 
-Retrieve data from a view (in a concise JSON structure)
+- Retrieve data from a view (in a concise JSON structure)
 
 .. code-block:: python
 
