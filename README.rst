@@ -9,7 +9,7 @@ Features
 =======================
 TM1py offers handy features to interact with TM1 from python. Such as,
 
-- Retrieve content views (in concise JSON structure)
+- Retrieve content from view (in concise JSON structure)
 
 .. code-block:: python
 
@@ -52,8 +52,7 @@ TM1py offers handy features to interact with TM1 from python. Such as,
 
 Requirements
 =======================
-Module requires requests to be installed 
-TM1 needs to have an HTTPPortNumber specified in its config
+https://github.com/kennethreitz/requests
 
 Contribution
 =======================
