@@ -34,7 +34,7 @@ class TestAnnotationMethods(unittest.TestCase):
 
     # 3. update subset
     def test_3update_subset(self):
-        s = self.q.get_subset(dimension_name='plan_business_unit',
+        s = self.tm1.get_subset(dimension_name='plan_business_unit',
                               subset_name=self.subset_name_static)
         s.add_elements(['10110'])
         self.tm1.update_subset(s)
