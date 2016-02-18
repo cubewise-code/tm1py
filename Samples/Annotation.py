@@ -1,24 +1,25 @@
-from TM1py import TM1Queries, Annotation
+from TM1py import TM1Queries as TM1, Annotation
 import uuid
 
 # connection to TM1 Server
-q = TM1Queries(ip='', port=8008, user='admin', password='apple', ssl=True)
+tm1 = TM1(ip='localhost', port=8001, user='admin', password='apple', ssl=False)
 
 # just a random text
 random_string = str(uuid.uuid4())
 
-a = Annotation(comment_value=random_string, object_name='plan_BudgetPlan',
+# create instance of TM1py.Annotation
+a = Annotation(comment_value=random_string,
+               object_name='plan_BudgetPlan',
                dimensional_context=['FY 2004 Forecast', '10110', '110', '61065',
                                     'planning', 'revenue (future)', 'Jan-2005'])
 
-# post annotation on TM1 Server
-q.create_annotation(a)
-
+# create annotation on TM1 Server
+tm1.create_annotation(a)
 
 # find the created annotation and delete it
-for annotation in q.get_all_annotations_from_cube('plan_BudgetPlan'):
+for annotation in tm1.get_all_annotations_from_cube('plan_BudgetPlan'):
     if annotation.get_comment_value() == random_string:
-        q.delete_annotation(annotation._id)
+        tm1.delete_annotation(id=annotation.get_id())
 
 # logout
-q.logout()
+tm1.logout()
