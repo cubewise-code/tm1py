@@ -2,7 +2,7 @@ from TM1py import TM1Queries as TM1, MDXView
 import uuid
 
 # establish connection to TM1 Server
-tm1 = TM1(ip='', port=8001, user='admin', password='apple', ssl=False)
+tm1 = TM1(ip='localhost', port=8001, user='admin', password='apple', ssl=False)
 
 # random text
 random_string = str(uuid.uuid4())
