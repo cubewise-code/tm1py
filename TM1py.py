@@ -339,7 +339,7 @@ class TM1Queries:
     def execute_given_process(self, name_process, parameters=""):
         self.execute_process(name_process=name_process, parameters=parameters)
 
-    def execute_process(self, name_process, parameters=""):
+    def execute_process(self, name_process, parameters={}):
         ''' Ask TM1 Server to execute a process
 
         :Parameters:
@@ -352,7 +352,8 @@ class TM1Queries:
         Note : parameters missing !!
         '''
         try:
-            return self._client.POST("/api/v1/Processes('" + name_process +"')/tm1.Execute", data=parameters)
+            data = json.dumps(parameters)
+            return self._client.POST("/api/v1/Processes('" + name_process +"')/tm1.Execute", data=data)
         except (ConnectionError, ConnectionAbortedError):
             self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
             self.execute_process(name_process, parameters="")
