@@ -164,24 +164,29 @@ class httpClientTM1:
                 the response that is returned from a method call
 
         :Exceptions:
-            pyTM1Exception, raises pyTM1Exception when Code is in between 400 and 600
+            pyTM1Exception, raises pyTM1Exception when Code is not 200, 204 etc.
         '''
         if not response.ok:
             raise pyTM1Exception(response.json())
 
 
 class TM1Queries:
-    ''' Class offers predefined CRUD (Create, Read, Update, Delete) functions to interact with a TM1 Server
+    ''' Class offers Queries to interact with a TM1 Server
 
-    Create method - `create` prefix
-    Read methods - `get` prefix
-    Update methods - `update prefix`
-    Delete methods - `delete prefix`
+    - CRUD Features for TM1 objects (Process, Annotation, View, Subset)
+        Create method - `create` prefix
+        Read methods - `get` prefix
+        Update methods - `update prefix`
+        Delete methods - `delete prefix`
+
+    - Additional Features
+        Retrieve and write data into TM1
+        Execute Process or TI Code
 
     '''
 
     def __init__(self, ip, port, user, password, namespace=None, ssl=True):
-        '''Create an instance of TM1Qeueries
+        ''' Constructor. Create an instance of TM1Qeueries
 
         :Parameters:
             `address`: String
@@ -204,7 +209,6 @@ class TM1Queries:
         self._password = password
         self._namespace = namespace
         self._ssl = ssl
-
         self._client = httpClientTM1(ip=ip, port=port, user=user, password=password, namespace=namespace, ssl=ssl)
 
     @staticmethod
@@ -277,7 +281,7 @@ class TM1Queries:
             self._client = httpClientTM1(self._ip, self._port, self._user, self._namespace, self._ssl)
             self.write_value(cube_name, dimension_order, element_tuple, value)
 
-    def write_values(self, cube_name, dimension_order, cellset_as_dict):
+    def write_values(self, cube_name, cellset_as_dict):
         ''' Write values in cube
 
         :Parameters:
@@ -289,6 +293,7 @@ class TM1Queries:
                 {(elem_a, elem_b, elem_c): valaue1, (elem_d, elem_e, elem_f) : value2}
         '''
         try:
+            dimension_order = self.get_dimension_order(cube_name)
             request = "/api/v1/Cubes('{}')/tm1.Update".format(cube_name)
             updates = ''
             for element_tuple, value in cellset_as_dict.items():
@@ -303,7 +308,7 @@ class TM1Queries:
             self._client.POST(request=request, data=updates)
         except (ConnectionError, ConnectionAbortedError):
             self._client = httpClientTM1(self._ip, self._port, self._user, self._namespace, self._ssl)
-            self.write_values(self, cube_name, dimension_order, cellset_as_dict)
+            self.write_values(self, cube_name, cellset_as_dict)
 
     def get_all_cube_names(self):
         '''Ask TM1 Server for list with all cube names
@@ -336,7 +341,7 @@ class TM1Queries:
             self.get_all_dimension_names()
 
     # temp!
-    def execute_given_process(self, name_process, parameters=""):
+    def execute_given_process(self, name_process, parameters={}):
         self.execute_process(name_process=name_process, parameters=parameters)
 
     def execute_process(self, name_process, parameters={}):
@@ -344,19 +349,17 @@ class TM1Queries:
 
         :Parameters:
             `name_process`: String, name of the process to be executed
-            `parameters`: String, for instance {"Parameters": [ { "Name": "P0", "Value": "yes1" }] }
+            `parameters`: String, for instance {"Parameters": [ { "Name": "pLegalEntity", "Value": "UK01" }] }
 
         :Returns:
             String, the response
-
-        Note : parameters missing !!
         '''
         try:
             data = json.dumps(parameters)
             return self._client.POST("/api/v1/Processes('" + name_process +"')/tm1.Execute", data=data)
         except (ConnectionError, ConnectionAbortedError):
             self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
-            self.execute_process(name_process, parameters="")
+            return self.execute_process(name_process, parameters)
 
     def execute_TI_code(self, lines_prolog, lines_epilog):
         ''' Execute lines of code on the TM1 Server
@@ -382,16 +385,20 @@ class TM1Queries:
         :param process_name: name of the process
         :return: String - the message, for instance: "Ausführung normal beendet, verstrichene Zeit 0.03  Sekunden"
         '''
-        request = "/api/v1/MessageLog()?$orderby='TimeStamp'&$filter=Logger eq 'TM1.Process' and contains( Message, '" + process_name + "')"
-        response = self._client.GET(request=request)
-        message_log_entry = json.loads(response)['value'][0]
-        return message_log_entry['Message']
+        try:
+            request = "/api/v1/MessageLog()?$orderby='TimeStamp'&$filter=Logger eq 'TM1.Process' and contains( Message, '" + process_name + "')"
+            response = self._client.GET(request=request)
+            message_log_entry = json.loads(response)['value'][0]
+            return message_log_entry['Message']
+        except (ConnectionError, ConnectionAbortedError):
+            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            return self.get_last_message_from_messagelog(process_name)
 
     def get_last_message_from_processerrorlog(self, process_name):
         ''' get the latest ProcessErrorLog from a process entity
 
         :param process_name: name of the process
-        :return: String - the message, for instance: "Ausführung normal beendet, verstrichene Zeit 0.03  Sekunden"
+        :return: String - the errorlog, for instance: "Fehler: Prolog Prozedurzeile (9): Zeichenfolge "US772131" kann nicht in eine reelle Zahl umgewandelt werden."
         '''
         logs_as_list = self.get_processerrorlogs(process_name)
         if len(logs_as_list) == 0:
@@ -399,12 +406,12 @@ class TM1Queries:
         else:
             timestamp = logs_as_list[-1]['Timestamp']
             request = "/api/v1/Processes('{}')/ErrorLogs('{}')/Content".format(process_name, timestamp)
-            # response is plain text - due to entity type edm.Stream
+            # response is plain text - due to entity type Edm.Stream
             response = self._client.GET(request=request)
             return response
 
     def get_processerrorlogs(self, process_name):
-        ''' get the error logs for a process
+        ''' get all ProcessErrorLog entry for a process
 
         :param process_name: name of the process
         :return: list - Collection of ProcessErrorLogs
@@ -788,7 +795,7 @@ class TM1Queries:
         response = self._client.POST(request, '')
         return json.loads(response)
 
-    def get_view_content_structured(self, cube_name, view_name, top=None):
+    def get_view_content(self, cube_name, view_name, top=None):
         ''' Get view content as dictionary with sweet and concise structure
 
         :param cube_name: String
@@ -1340,33 +1347,71 @@ class NativeView(View):
         self._format_string = new_format
 
     def add_column(self, dimension_name, subset=None):
+        ''' Add Dimension or Subset to the column-axis
+
+        :param dimension_name: name of the dimension
+        :param subset: instance of TM1py.Subset. Can be None instead.
+        :return:
+        '''
         view_axis_selection = ViewAxisSelection(dimension_name=dimension_name, subset=subset)
         self._columns.append(view_axis_selection)
 
     def remove_column(self, dimension_name):
+        ''' remove dimension from the column axis
+
+        :param dimension_name:
+        :return:
+        '''
         for column in self._columns:
             if column._dimension_name == dimension_name:
                 self._columns.remove(column)
 
     def add_row(self, dimension_name, subset=None):
+        ''' Add Dimension or Subset to the row-axis
+
+        :param dimension_name:
+        :param subset: instance of TM1py.Subset. Can be None instead.
+        :return:
+        '''
         view_axis_selection = ViewAxisSelection(dimension_name=dimension_name, subset=subset)
         self._rows.append(view_axis_selection)
 
     def remove_row(self, dimension_name):
+        ''' remove dimension from the row axis
+
+        :param dimension_name:
+        :return:
+        '''
         for row in self._rows:
             if row._dimension_name == dimension_name:
                 self._rows.remove(row)
 
     def add_title(self, dimension_name, selection, subset=None):
+        ''' Add subset and element to the titles-axis
+
+        :param dimension_name: name of the dimension.
+        :param selection: name of an element.
+        :param subset:  instance of TM1py.Subset. Can be None instead.
+        :return:
+        '''
         view_title_selection = ViewTitleSelection(dimension_name, subset, selection)
         self._titles.append(view_title_selection)
 
     def remove_title(self, dimension_name):
+        ''' remove dimension from the titles-axis
+
+        :param dimension_name: name of the dimension.
+        :return:
+        '''
         for title in self._titles:
             if title._dimension_name == dimension_name:
                 self._titles.remove(title)
 
     def _construct_body(self):
+        ''' construct the ODATA conform JSON represenation for the NativeView entity.
+
+        :return: string, the valid JSON
+        '''
         top_json = "{\"@odata.type\": \"ibm.tm1.api.v1.NativeView\",\"Name\": \"" + self._name +"\","
         columns_json = ','.join([column.body for column in self._columns])
         rows_json = ','.join([row.body for row in self._rows])
@@ -1395,6 +1440,10 @@ class ViewAxisSelection:
         return self._construct_body()
 
     def _construct_body(self):
+        ''' construct the ODATA conform JSON represenation for the ViewAxisSelection entity.
+
+        :return: string, the valid JSON
+        '''
         if type(self._subset) is Subset:
             return "{\"Subset@odata.bind\": \"Dimensions('" + self._dimension_name + "')/Hierarchies('" \
                 + self._dimension_name + "')/Subsets('" + self._subset.get_name() + "')\"}"
@@ -1416,6 +1465,10 @@ class ViewTitleSelection:
         return self._construct_body()
 
     def _construct_body(self):
+        ''' construct the ODATA conform JSON represenation for the ViewTitleSelection entity.
+
+        :return: string, the valid JSON
+        '''
         if type(self._subset) is Subset:
             s_subset = "\"Subset@odata.bind\": \"Dimensions('" + self._dimension_name + "')/Hierarchies('" \
                  + self._dimension_name + "')/Subsets('" + self._subset.get_name() + "')\""
@@ -1536,6 +1589,11 @@ class Annotation:
 
     @classmethod
     def from_json(cls, annotation_as_json):
+        ''' Alternative constructor
+
+        :param annotation_as_json: String, JSON
+        :return: instance of TM1py.Process
+        '''
         annotation_as_dict = json.loads(annotation_as_json)
         id = annotation_as_dict['ID']
         text = annotation_as_dict['Text']
@@ -1576,13 +1634,16 @@ class Annotation:
                 `target_element` : String
                     name of the target_element
         '''
-
         for i, dimension_iter in enumerate(dimension_order):
             if dimension_iter.lower() == dimension.lower():
                 if self._dimensional_context[i] == source_element:
                     self._dimensional_context[i] = target_element
 
     def _construct_body(self):
+        ''' construct the ODATA conform JSON represenation for the Annotation entity.
+
+        :return: string, the valid JSON
+        '''
         dimensional_context = [{'Name': element} for element in self._dimensional_context]
         body = {}
         body['ID'] = self._id
@@ -1604,7 +1665,9 @@ class Annotation:
 class Process:
     ''' abstraction of a TM1 Process.
 
-        :Notes: Class complete, functional and tested !!
+        :Notes:
+        - class complete, functional and tested !!
+        - issues with password for processes with for ODBC Datasource
     '''
 
     def __init__(self, name, has_security_access=False, ui_data="CubeAction=1511€DataAction=1503€CubeLogChanges=0€",
@@ -1614,7 +1677,11 @@ class Process:
                  datasource_ascii_header_records=1, datasource_ascii_quote_character='', datasource_ascii_thousand_separator=',',
                  datasource_data_source_name_for_client='', datasource_data_source_name_for_server='', datasource_password='',
                  datasource_user_name='', datasource_query='', datasource_uses_unicode=True, datasource_view=''):
-        ''' default Constructor
+        ''' Default construcor
+
+        :param name: name of the process - mandatory
+        :param others: all other parameters optional
+        :return:
         '''
         self.counter_variables = 0
         self.counter_parameters = 0
@@ -1671,7 +1738,7 @@ class Process:
         ''' Alternative constructor
                 :Parameters:
                     `process_as_dict` : Dictionary
-                        a process a as dictionary
+                        process as a dictionary
 
                 :Returns:
                     `Process` : an instance of this class
@@ -1704,6 +1771,10 @@ class Process:
 
     @staticmethod
     def auto_generated_string():
+        ''' the auto_generated_string code is required to be in all code-tabs.
+
+        :return: string
+        '''
         return "\r\n#****Begin: Generated Statements***\r\n#****End: Generated Statements****\r\n\r\n\r\n"
 
     @property
@@ -1711,6 +1782,12 @@ class Process:
         return self.construct_body()
 
     def add_variable(self, name_variable, type):
+        ''' add variable to the process
+
+        :param name_variable: -
+        :param type: String or Numeric
+        :return:
+        '''
         # variable consists of actual variable and UI-Information ('ignore','other', etc.)
         # 1. handle Variable info
         variable = {'Name': name_variable,
@@ -1721,7 +1798,7 @@ class Process:
         self.variables.append(variable)
         # 2. handle UI info
         var_type = 33 if type == 'Numeric' else 32
-        # ' ' is not Space! Character cant be shown by IDE!
+        # '' !
         variable_ui_data = 'VarType=' +  str(var_type) + '' + 'ColType=' + str(827)+ ''
         '''
         mapping VariableUIData:
