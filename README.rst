@@ -92,7 +92,7 @@ http://docs.python-requests.org/en/master/
 
 Installation
 =======================
-download TM1py.py file and copy it into your project folder.
+Download TM1py.py file and copy it into your project folder.
 
 Contribution
 =======================
