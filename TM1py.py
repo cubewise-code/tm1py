@@ -1,7 +1,6 @@
 
 '''
 TM1py - A python module for TM1
-test
 '''
 
 import requests
