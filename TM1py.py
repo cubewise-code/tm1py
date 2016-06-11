@@ -13,81 +13,108 @@ import collections
 import http.client
 from base64 import b64encode
 
+
 class TM1pyException(Exception):
     ''' The default exception for TM1py
 
     '''
-    def __init__(self, response):
-        self.response = response
+    def __init__(self, response, status_code, reason):
+        self._response = response
+        self._status_code = status_code
+        self._reason = reason
 
     def __str__(self):
-        return str(self.response)
+        return "Text: {} Status Code: {} Reason: {}".format(self._response, self._status_code, self._reason)
+
 
 class TM1pyLogin:
+    ''' Handle Login for different TM1 login types. Instance of this class to be passed to TM1pyHTTPClient, TM1pyQueries
+
+
+    '''
     def __init__(self, user, password, auth_type, token=None):
+        ''' Function is called from static methods
+
+        :param user: String - name user
+        :param password: string - pwd
+        :param auth_type: string - basic, CAM or WIA
+        :param token:
+        '''
         self._user = user
         self._password = password
         self._auth_type = auth_type
         self._token = token
 
+    @property
+    def auth_type(self):
+        return self._auth_type
+
+    @property
+    def token(self):
+        return self._token
+
     @classmethod
     def native(cls, user, password):
+        ''' Alternate constructor for native login
+
+        :param user:
+        :param password:
+        :return: instance of TM1pyLogin
+        '''
         token = 'Basic ' + b64encode(str.encode("{}:{}".format(user, password))).decode("ascii")
         login = cls(user, password, 'native', token)
         return login
 
     @classmethod
     def CAM(cls, user, password, CAM_namespace):
+        ''' Alternate constructor for CAM login
+
+        :param user:
+        :param password:
+        :param CAM_namespace:
+        :return: instance of TM1pyLogin
+        '''
         token = 'CAMNamespace ' + b64encode(str.encode("{}:{}:{}".format(user, password, CAM_namespace))).decode("ascii")
         login = cls(user, password, 'CAM', token)
         return login
 
     @classmethod
     def WIA_login(cls):
+        ''' To be implemented :)
+
+        :return: instance of TM1pyLogin
+        '''
         pass
 
-class httpClientTM1:
+class TM1pyHTTPClient:
     ''' low level communication with TM1 server via http
 
     '''
-    def __init__(self, ip, port, user, password, namespace=None, ssl=True):
-        '''Create an instance of httpClientTM1
+    def __init__(self, ip, port, login, ssl=True):
+        ''' Create an instance of TM1pyHTTPClient
 
-        :Parameters:
-            `address`: String
-                the IP address of the TM1 Server
-            `port`: Int
-                httpPortNumber as specified in the tm1s.cfg
-            `user`: String
-                the TM1 user
-            `password` : String
-                the password for the given TM1 user
-            ´ssl´ : boolean
-                as specified in the tm1s.cfg
+        :param ip: String - address of the TM1 Server
+        :param port: Int - HTTPPortNumber as specified in the tm1s.cfg
+        :param login: instance of TM1pyLogin
+        :param ssl: boolean -  as specified in the tm1s.cfg
         '''
         self._ip = 'localhost' if ip == '' else ip
         self._port = port
-        self._user = user
-        self._password = password
         self._ssl = ssl
         self._headers= {'Connection': 'keep-alive', 'Cache-Control': 'no-cache', 'User-Agent': 'TM1py',
                        'Content-Type': 'application/json; odata.metadata=minimal; odata.streaming=true; charset=utf-8'}
-        # Authorization (Basic, CAMNamespace) through Headers
-        if namespace is None or namespace == '':
-            userAndPass = b64encode(str.encode("{}:{}".format(user, password))).decode("ascii")
-            self._headers['Authorization'] = 'Basic %s' %userAndPass
-        else:
-            userAndPass = b64encode(str.encode("{}:{}:{}".format(user, password, namespace))).decode("ascii")
-            self._headers['Authorization'] = 'CAMNamespace %s' %userAndPass
-        self._cookies = None
+        # Authorization [Basic, CAM, WIA] through Headers
+        if login.auth_type in ['native', 'CAM']:
+            self._headers['Authorization'] = login.token
+        elif login.auth_type == 'WIA':
+            # To be written
+            pass
         self._s = requests.session()
-
-        # logging
-        # http.client.HTTPConnection.debuglevel = 1
-
+        self._get_cookies()
         # disable HTTP verification warnings from requests library
         requests.packages.urllib3.disable_warnings()
-        self._get_cookies()
+        # logging
+        # http.client.HTTPConnection.debuglevel = 1
 
     def GET(self, request, data=''):
         '''Perform a GET request against the TM1 Server.
@@ -119,7 +146,7 @@ class httpClientTM1:
             String, the response in text
         '''
         url, data = self._url_and_body(request=request, data=data)
-        r = self._s.post(url=url,headers=self._headers, data=data, verify=False)
+        r = self._s.post(url=url, headers=self._headers, data=data, verify=False)
         self._varify_response(response=r)
         return r.text
 
@@ -136,7 +163,7 @@ class httpClientTM1:
             String, the response in text
         '''
         url, data = self._url_and_body(request=request, data=data)
-        r = self._s.patch(url=url,headers=self._headers, data=data, verify=False)
+        r = self._s.patch(url=url, headers=self._headers, data=data, verify=False)
         self._varify_response(response=r)
         return r.text
 
@@ -153,7 +180,7 @@ class httpClientTM1:
             String, the response in text
         '''
         url, data = self._url_and_body(request=request, data=data)
-        r = self._s.delete(url=url,headers=self._headers, data=data, verify=False)
+        r = self._s.delete(url=url, headers=self._headers, data=data, verify=False)
         self._varify_response(response=r)
         return r.text
 
@@ -165,19 +192,18 @@ class httpClientTM1:
             url = 'https://' + self._ip + ':' + str(self._port) + '/api/v1/Configuration/ProductVersion'
         else:
             url = 'http://' + self._ip + ':' + str(self._port) + '/api/v1/Configuration/ProductVersion'
-        self._s.get(url=url,headers=self._headers, data='', verify=False)
+        self._s.get(url=url, headers=self._headers, data='', verify=False)
 
     def _url_and_body(self, request, data):
         ''' create proper url and payload
 
-            :Notes:
-                - perhaps more characters should be replaced in url.
         '''
         if self._ssl:
-             url = 'https://' + self._ip + ':' + str(self._port) + request
+            url = 'https://' + self._ip + ':' + str(self._port) + request
         else:
-             url = 'http://' + self._ip + ':' + str(self._port) + request
-        url = url.replace(' ', '%20').replace('#','%23')
+            url = 'http://' + self._ip + ':' + str(self._port) + request
+        url = url.replace(' ', '%20').replace('#', '%23')
+        #url = requests.utils.quote(url)
         data = data.encode('utf-8')
         return url, data
 
@@ -192,10 +218,10 @@ class httpClientTM1:
             TM1pyException, raises TM1pyException when Code is not 200, 204 etc.
         '''
         if not response.ok:
-            raise TM1pyException(response.json())
+            raise TM1pyException(response.text, status_code=response.status_code, reason=response.reason)
 
 
-class TM1Queries:
+class TM1pyQueries:
     ''' Class offers Queries to interact with a TM1 Server
 
     - CRUD Features for TM1 objects (Process, Annotation, View, Subset)
@@ -207,37 +233,25 @@ class TM1Queries:
     - Additional Features
         Retrieve and write data into TM1
         Execute Process or TI Code
-
+        ...
     '''
 
-    def __init__(self, ip, port, user, password, namespace=None, ssl=True):
-        ''' Constructor. Create an instance of TM1Qeueries
+    def __init__(self, ip, port, login, ssl=True):
+        ''' Constructor, Create an instance of TM1Qeueries
 
-        :Parameters:
-            `address`: String
-                the IP address of the TM1 Server
-            `port`: Int
-                httpPortNumber as specified in the tm1s.cfg
-            ´user´: String
-                the TM1 user
-            ´password´ : String
-                the password for the given TM1 user
-            ´namespace´ : String
-                CAMNamespace. Default is None
-            ´ssl´ : boolean
-                as specified in the tm1s.cfg
-
+        :param ip: String, the IP address of the TM1 Server
+        :param port: Int, httpPortNumber as specified in the tm1s.cfg
+        :param login: Instance of TM1pyLogin
+        :param ssl: Boolean
         '''
         self._ip = ip
         self._port = port
-        self._user = user
-        self._password = password
-        self._namespace = namespace
+        self._login = login
         self._ssl = ssl
-        self._client = httpClientTM1(ip=ip, port=port, user=user, password=password, namespace=namespace, ssl=ssl)
+        self._client = TM1pyHTTPClient(ip=ip, port=port, login=login, ssl=ssl)
 
     @staticmethod
-    def get_all_servers_from_adminhost(adminhost = 'localhost'):
+    def get_all_servers_from_adminhost(adminhost='localhost'):
         '''Ask Adminhost for TM1 Servers.
 
         :Parameters:
@@ -262,7 +276,7 @@ class TM1Queries:
         ''' End TM1 Session and HTTP session
 
         '''
-        self._client.GET('/api/logout','')
+        self._client.GET('/api/logout', '')
 
     def get_server_name(self):
         ''' Ask TM1 Server for its name
@@ -275,7 +289,7 @@ class TM1Queries:
             response = self._client.GET(request, '')
             return json.loads(response)['value']
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_server_name()
 
     def write_value(self, cube_name, dimension_order, element_tuple, value):
@@ -303,7 +317,7 @@ class TM1Queries:
             data = json.dumps(body_as_dict)
             self._client.POST(request=request, data=data)
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._namespace, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.write_value(cube_name, dimension_order, element_tuple, value)
 
     def write_values(self, cube_name, cellset_as_dict):
@@ -332,8 +346,8 @@ class TM1Queries:
             updates = '[' + updates[1:] + ']'
             self._client.POST(request=request, data=updates)
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._namespace, self._ssl)
-            self.write_values(self, cube_name, cellset_as_dict)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
+            self.write_values(cube_name, cellset_as_dict)
 
     def get_all_cube_names(self):
         '''Ask TM1 Server for list with all cube names
@@ -347,7 +361,7 @@ class TM1Queries:
             list_cubes = list(entry['Name'] for entry in cubes)
             return list_cubes
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_all_cube_names()
 
     def get_all_dimension_names(self):
@@ -362,12 +376,8 @@ class TM1Queries:
             list_dimensions = list(entry['Name'] for entry in dimensions)
             return list_dimensions
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_all_dimension_names()
-
-    # temp!
-    def execute_given_process(self, name_process, parameters={}):
-        self.execute_process(name_process=name_process, parameters=parameters)
 
     def execute_process(self, name_process, parameters={}):
         ''' Ask TM1 Server to execute a process
@@ -381,9 +391,9 @@ class TM1Queries:
         '''
         try:
             data = json.dumps(parameters)
-            return self._client.POST("/api/v1/Processes('" + name_process +"')/tm1.Execute", data=data)
+            return self._client.POST("/api/v1/Processes('" + name_process + "')/tm1.Execute", data=data)
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             return self.execute_process(name_process, parameters)
 
     def execute_TI_code(self, lines_prolog, lines_epilog):
@@ -411,12 +421,13 @@ class TM1Queries:
         :return: String - the message, for instance: "Ausführung normal beendet, verstrichene Zeit 0.03  Sekunden"
         '''
         try:
-            request = "/api/v1/MessageLog()?$orderby='TimeStamp'&$filter=Logger eq 'TM1.Process' and contains( Message, '" + process_name + "')"
+            request = "/api/v1/MessageLog()?$orderby='TimeStamp'&$filter=Logger eq 'TM1.Process' " \
+                      "and contains( Message, '" + process_name + "')"
             response = self._client.GET(request=request)
             message_log_entry = json.loads(response)['value'][0]
             return message_log_entry['Message']
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             return self.get_last_message_from_messagelog(process_name)
 
     def get_last_message_from_processerrorlog(self, process_name):
@@ -462,7 +473,7 @@ class TM1Queries:
             response = self._client.DELETE(request, "")
             return response
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.delete_process(name_process)
 
     def is_connected(self):
@@ -489,7 +500,7 @@ class TM1Queries:
             processes = list(process['Name'] for process in dict_processes)
             return processes
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_all_process_names()
 
     def get_all_process_names_filtered(self):
@@ -507,7 +518,7 @@ class TM1Queries:
             processes = list(process['Name'] for process in dict_processes)
             return processes
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_all_process_names()
 
 
@@ -536,11 +547,11 @@ class TM1Queries:
                                                           "DataSource/userName,"\
                                                           "DataSource/password,"\
                                                           "DataSource/usesUnicode"
-            response = self._client.GET(request,"")
+            response = self._client.GET(request, "")
             return Process.from_json(process_as_json=response)
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
-            self.get_process_as_dict(name_process)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
+            self.get_process(name_process)
 
     def update_process(self, process):
         ''' update an existing Process on TM1 Server
@@ -553,15 +564,11 @@ class TM1Queries:
         '''
         try:
             request = "/api/v1/Processes('" + process.name + "')"
-            response = self._client.PATCH(request,process.body)
+            response = self._client.PATCH(request, process.body)
             return response
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.update_process(process)
-
-    # temporary function !
-    def save_process(self, process):
-        return self.update_process(process)
 
     def create_process(self, process):
         ''' post a new process against TM1 Server
@@ -577,7 +584,7 @@ class TM1Queries:
             response = self._client.POST(request, process.body)
             return response
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.create_process(process)
 
     def create_view(self, view, private=False):
@@ -598,7 +605,7 @@ class TM1Queries:
             response = self._client.POST(request, view.body)
             return response
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.create_view(view)
 
     def view_exists(self, cube_name, view_name, private=False):
@@ -606,6 +613,7 @@ class TM1Queries:
 
         :param cube_name:  string, name of the cube
         :param view_name: string, name of the view
+        :param private: boolean
 
         :return True or False
         '''
@@ -616,8 +624,8 @@ class TM1Queries:
                 self._client.GET("/api/v1/Cubes('" + cube_name + "')/Views('" + view_name + "')")
             return True
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
-        except:
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
+        except TM1pyException:
             return False
 
     def get_native_view(self, cube_name, view_name, private=False):
@@ -646,7 +654,7 @@ class TM1Queries:
             native_view = NativeView.from_json(view_as_json)
             return native_view
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_native_view(self, cube_name, view_name)
 
     def get_mdx_view(self, cube_name, view_name, private=False):
@@ -654,6 +662,7 @@ class TM1Queries:
 
         :param cube_name: String, name of the cube
         :param view_name: String, name of the MDX view
+        :param private: boolean
 
         :return: instance of TM1py.MDXView
         '''
@@ -666,7 +675,7 @@ class TM1Queries:
             mdx_view = MDXView.from_json(view_as_json=view_as_json)
             return mdx_view
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_mdx_view(self, cube_name, view_name)
 
     def update_view(self, view, private=False):
@@ -685,7 +694,7 @@ class TM1Queries:
     def _update_mdx_view(self, mdx_view, private):
         ''' update an mdx view on TM1 Server
 
-        :param view: instance of TM1py.MDXView
+        :param mdx_view: instance of TM1py.MDXView
         :param private: boolean
 
         :return: string, the response
@@ -698,8 +707,8 @@ class TM1Queries:
             response = self._client.PATCH(request, mdx_view.body)
             return response
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
-            self._update_mdx_view(mdx_view)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
+            self._update_mdx_view(mdx_view, private=private)
 
     def _update_native_view(self, native_view, private=False):
         ''' update a native view on TM1 Server
@@ -717,14 +726,15 @@ class TM1Queries:
             response = self._client.PATCH(request, native_view.body)
             return response
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self._update_native_view(native_view, private)
 
     def delete_view(self, cube_name, view_name, private=False):
         ''' delete an existing view on the TM1 Server
 
-        :param name_cube: String, name of the cube
-        :param name_view: String, name of the view
+        :param cube_name: String, name of the cube
+        :param view_name: String, name of the view
+        :param private: Boolean
 
         :return: String, the response
         '''
@@ -736,18 +746,17 @@ class TM1Queries:
             response = self._client.DELETE(request)
             return response
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.delete_view(cube_name, view_name)
 
-
-    def get_elements_with_attribute(self, dimension_name, hierarchy_name,attribute_name,attribute_value):
+    def get_elements_with_attribute(self, dimension_name, hierarchy_name, attribute_name, attribute_value):
         attribute_name = attribute_name.replace(" ", "")
         if type(attribute_value) is str:
             request = "/api/v1/Dimensions('{}')/Hierarchies('{}')?$expand=Elements($filter = Attributes/{} eq '{}';$select=Name)".\
-                format(dimension_name, hierarchy_name,attribute_name,attribute_value)
+                format(dimension_name, hierarchy_name,attribute_name, attribute_value)
         else:
             request = "/api/v1/Dimensions('{}')/Hierarchies('{}')?$expand=Elements($filter = Attributes/{} eq {};$select=Name)"\
-                .format(dimension_name, hierarchy_name,attribute_name,attribute_value)
+                .format(dimension_name, hierarchy_name,attribute_name, attribute_value)
         response = self._client.GET(request)
         response_as_dict = json.loads(response)
         return [elem['Name'] for elem in response_as_dict['Elements']]
@@ -772,7 +781,7 @@ class TM1Queries:
         try:
             pass
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.create_dimension(dimension)
 
     # Not complete
@@ -811,12 +820,12 @@ class TM1Queries:
         '''
         try:
             request = "/api/v1/Cubes('{}')/Annotations?$expand=DimensionalContext($select=Name)".format(name_cube)
-            response = self._client.GET(request,'')
+            response = self._client.GET(request, '')
             annotations_as_dict = json.loads(response)['value']
             annotations = [Annotation.from_json(json.dumps(element)) for element in annotations_as_dict]
             return annotations
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_all_annotations_from_cube(name_cube)
 
     def get_cube_names_and_dimensions(self):
@@ -838,7 +847,7 @@ class TM1Queries:
                 cubes_as_dict[name_cube] = dimensions
             return cubes_as_dict
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_cube_names_and_dimensions()
 
     def _get_view_content_native(self,cube_name, view_name, top=None):
@@ -934,10 +943,10 @@ class TM1Queries:
             dimension_order = [element['Name'] for element in response_as_dict]
             return dimension_order
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_dimension_order(name_cube)
 
-    def sort_addresstuple(self, cube_name, dimension_order, unsorted_addresstuple):
+    def sort_addresstuple(self, dimension_order, unsorted_addresstuple):
         ''' Sort the given mixed up addresstuple
 
         :param cube_name: String
@@ -980,7 +989,7 @@ class TM1Queries:
             response = self._client.POST(request, json.dumps(payload, ensure_ascii=False, sort_keys=False))
             return response
         except(ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.create_Annotation(annotation)
 
     def get_annotation(self, id):
@@ -996,8 +1005,8 @@ class TM1Queries:
             annotation_as_json = self._client.GET(request=request)
             return Annotation.from_json(annotation_as_json)
         except(ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
-            self.get_annotation(annotation)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
+            self.get_annotation(id)
 
 
     def update_annotation(self, annotation):
@@ -1013,7 +1022,7 @@ class TM1Queries:
             request = "/api/v1/Annotations('{}')".format(annotation._id)
             return self._client.PATCH(request=request, data=annotation.body)
         except(ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.update_annotation(annotation)
 
     def delete_annotation(self, id):
@@ -1028,7 +1037,7 @@ class TM1Queries:
             request = "/api/v1/Annotations('{}')".format(id)
             return self._client.DELETE(request=request)
         except(ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.delete_annotation(id)
 
 
@@ -1046,7 +1055,7 @@ class TM1Queries:
             response = self._client.POST(request, subset.body)
             return response
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.create_subset(subset)
 
     def get_subset(self, dimension_name, subset_name):
@@ -1064,7 +1073,7 @@ class TM1Queries:
             response = self._client.GET(request=request)
             return Subset.from_json(response)
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_subset(dimension_name, subset_name)
 
     def update_subset(self, subset):
@@ -1082,7 +1091,7 @@ class TM1Queries:
             response = self._client.PATCH(request=request, data=subset.body)
             return response
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.update_subset(subset)
 
     def delete_subset(self, dimension_name, subset_name):
@@ -1100,10 +1109,10 @@ class TM1Queries:
             response = self._client.DELETE(request=request,data='')
             return response
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.delete_subset(dimension_name, subset_name)
 
-class Server():
+class Server:
     ''' Abstraction of the TM1 Server
 
         :Notes:
@@ -1120,7 +1129,7 @@ class Server():
         self.using_ssl = server_as_dict['UsingSSL']
         self.accepting_clients = server_as_dict['AcceptingClients']
 
-class Subset():
+class Subset:
     ''' Abstraction of the TM1 Subset
 
         :Notes:
@@ -1132,14 +1141,13 @@ class Subset():
                     self._expression is not None -> dyamic
                     self._expression is not None and self._elements is not None -> dynamic
     '''
-    def __init__(self, dimension_name, subset_name, expression = None, elements = None):
-        ''' Constructor
-            :Parameters:
-                `dimension_name` : string
-                `subset_name` : string
-                `expression` : string
-                `elements` : List of element names
+    def __init__(self, dimension_name, subset_name, expression=None, elements=None):
+        '''
 
+        :param dimension_name: String
+        :param subset_name: String
+        :param expression: String
+        :param elements: List, element names
         '''
         self._dimension_name = dimension_name
         self._subset_name = subset_name
@@ -1162,10 +1170,10 @@ class Subset():
 
     @classmethod
     def from_dict(cls, subset_as_dict):
-        return cls(dimension_name = subset_as_dict["UniqueName"][1:subset_as_dict["UniqueName"].find('].[')],
-                   subset_name = subset_as_dict['Name'],
-                   expression = subset_as_dict['Expression'],
-                   elements = [element['Name'] for element in subset_as_dict['Elements']]
+        return cls(dimension_name=subset_as_dict["UniqueName"][1:subset_as_dict["UniqueName"].find('].[')],
+                   subset_name=subset_as_dict['Name'],
+                   expression=subset_as_dict['Expression'],
+                   elements=[element['Name'] for element in subset_as_dict['Elements']]
                    if not subset_as_dict['Expression'] else None)
 
     @property
@@ -1220,14 +1228,16 @@ class Subset():
     def _construct_body_dynamic(self):
         body_as_dict = collections.OrderedDict()
         body_as_dict['Name'] = self._subset_name
-        body_as_dict['Hierarchy@odata.bind'] = "Dimensions('" + self._dimension_name + "')/Hierarchies('" + self._dimension_name + "')"
+        body_as_dict['Hierarchy@odata.bind'] = "Dimensions('" + self._dimension_name + \
+                                               "')/Hierarchies('" + self._dimension_name + "')"
         body_as_dict['Expression'] = self._expression
         return json.dumps(body_as_dict, ensure_ascii=False, sort_keys=False)
 
     def _construct_body_static(self):
         body_as_dict = collections.OrderedDict()
         body_as_dict['Name'] = self._subset_name
-        body_as_dict['Hierarchy@odata.bind'] = "Dimensions('" + self._dimension_name + "')/Hierarchies('" + self._dimension_name + "')"
+        body_as_dict['Hierarchy@odata.bind'] = "Dimensions('" + self._dimension_name + \
+                                               "')/Hierarchies('" + self._dimension_name + "')"
         elements_in_list = []
         for element in self._elements:
             elements_in_list.append('Dimensions(\'' + self._dimension_name + '\')/Hierarchies(\'' +
@@ -1252,7 +1262,8 @@ class AnnonymousSubset(Subset):
                 :Returns:
                     `Subset` : an instance of this class
         '''
-        return cls.from_dict(subset_as_dict)
+        subset_as_dict = json.loads(subset_as_json)
+        return cls.from_dict(subset_as_dict=subset_as_dict)
 
     @classmethod
     def from_dict(cls, subset_as_dict):
@@ -1271,13 +1282,15 @@ class AnnonymousSubset(Subset):
 
     def _construct_body_dynamic(self):
         body_as_dict = collections.OrderedDict()
-        body_as_dict["Hierarchy@odata.bind"] = "Dimensions('" + self._dimension_name +"')/Hierarchies('" + self._dimension_name + "')"
+        body_as_dict["Hierarchy@odata.bind"] = "Dimensions('" + self._dimension_name + \
+                                               "')/Hierarchies('" + self._dimension_name + "')"
         body_as_dict['Expression'] = self._expression
         return json.dumps(body_as_dict, ensure_ascii=False, sort_keys=False)
 
     def _construct_body_static(self):
         body_as_dict = collections.OrderedDict()
-        body_as_dict["Hierarchy@odata.bind"] = "Dimensions('" + self._dimension_name +"')/Hierarchies('" + self._dimension_name + "')"
+        body_as_dict["Hierarchy@odata.bind"] = "Dimensions('" + self._dimension_name + \
+                                               "')/Hierarchies('" + self._dimension_name + "')"
         elements_in_list = []
         for element in self._elements:
             elements_in_list.append('Dimensions(\'' + self._dimension_name + '\')/Hierarchies(\'' +
@@ -1306,7 +1319,7 @@ class MDXView(View):
 
         :usecase:
             user defines view with this class and creates it on TM1 Server.
-            user calls get_view_data_structured from TM1Queries function to retrieve data from View
+            user calls get_view_data_structured from TM1pyQueries function to retrieve data from View
 
         :Notes:
             Complete, functional and tested
@@ -1343,7 +1356,7 @@ class NativeView(View):
 
         :usecase:
             user defines view with this class and creates it on TM1 Server.
-            user calls get_view_content method from TM1Queries to retrieve data from View
+            user calls get_view_content method from TM1pyQueries to retrieve data from View
 
         :Notes:
             Complete, functional and tested
@@ -1351,8 +1364,8 @@ class NativeView(View):
     def __init__(self, name_cube, name_view, suppress_empty_columns=False, suppress_empty_rows=False,
                  format_string="0.#########\fG|0|", titles = [], columns = [], rows = []):
         View.__init__(self, name_cube, name_view)
-        self._suppress_empty_columns = False
-        self._suppress_empty_rows = False
+        self._suppress_empty_columns = suppress_empty_columns
+        self._suppress_empty_rows = suppress_empty_rows
         self._format_string = format_string
         self._titles = titles
         self._columns = columns
@@ -1536,7 +1549,7 @@ class NativeView(View):
                     '],\"Titles\":[' + titles_json + '],' + bottom_json
 
 class ViewAxisSelection:
-    ''' Describing what is selected in a dimension on an axis. Can be a registered Subset or an Annonymous subset
+    ''' Describing what is selected in a dimension on an axis. Can be a registered Subset or an annonymous ubset
 
     '''
     def __init__(self, dimension_name, subset):
@@ -1768,7 +1781,7 @@ class Annotation:
         :return: string, the valid JSON
         '''
         dimensional_context = [{'Name': element} for element in self._dimensional_context]
-        body = {}
+        body = collections.OrderedDict()
         body['ID'] = self._id
         body['Text'] = self._text
         body['Creator'] = self._creator
@@ -1877,20 +1890,20 @@ class Process:
                    metadata_procedure=process_as_dict['MetadataProcedure'],
                    data_procedure=process_as_dict['DataProcedure'],
                    epilog_procedure=process_as_dict['EpilogProcedure'],
-                   datasource_type=f(process_as_dict['DataSource'],'Type'),
-                   datasource_ascii_decimal_separator=f(process_as_dict['DataSource'],'asciiDecimalSeparator'),
-                   datasource_ascii_delimiter_char=f(process_as_dict['DataSource'],'asciiDelimiterChar'),
-                   datasource_ascii_delimiter_type=f(process_as_dict['DataSource'],'asciiDelimiterType'),
-                   datasource_ascii_header_records=f(process_as_dict['DataSource'],'asciiHeaderRecords'),
-                   datasource_ascii_quote_character=f(process_as_dict['DataSource'],'asciiQuoteCharacter'),
-                   datasource_ascii_thousand_separator=f(process_as_dict['DataSource'],'asciiThousandSeparator'),
-                   datasource_data_source_name_for_client=f(process_as_dict['DataSource'],'dataSourceNameForClient'),
-                   datasource_data_source_name_for_server=f(process_as_dict['DataSource'],'dataSourceNameForServer'),
-                   datasource_password=f(process_as_dict['DataSource'],'password'),
-                   datasource_user_name=f(process_as_dict['DataSource'],'userName'),
-                   datasource_query=f(process_as_dict['DataSource'],'query'),
-                   datasource_uses_unicode=f(process_as_dict['DataSource'],'usesUnicode'),
-                   datasource_view=f(process_as_dict['DataSource'],'view'))
+                   datasource_type=f(process_as_dict['DataSource'], 'Type'),
+                   datasource_ascii_decimal_separator=f(process_as_dict['DataSource'], 'asciiDecimalSeparator'),
+                   datasource_ascii_delimiter_char=f(process_as_dict['DataSource'], 'asciiDelimiterChar'),
+                   datasource_ascii_delimiter_type=f(process_as_dict['DataSource'], 'asciiDelimiterType'),
+                   datasource_ascii_header_records=f(process_as_dict['DataSource'], 'asciiHeaderRecords'),
+                   datasource_ascii_quote_character=f(process_as_dict['DataSource'], 'asciiQuoteCharacter'),
+                   datasource_ascii_thousand_separator=f(process_as_dict['DataSource'], 'asciiThousandSeparator'),
+                   datasource_data_source_name_for_client=f(process_as_dict['DataSource'], 'dataSourceNameForClient'),
+                   datasource_data_source_name_for_server=f(process_as_dict['DataSource'], 'dataSourceNameForServer'),
+                   datasource_password=f(process_as_dict['DataSource'], 'password'),
+                   datasource_user_name=f(process_as_dict['DataSource'], 'userName'),
+                   datasource_query=f(process_as_dict['DataSource'], 'query'),
+                   datasource_uses_unicode=f(process_as_dict['DataSource'], 'usesUnicode'),
+                   datasource_view=f(process_as_dict['DataSource'], 'view'))
 
     @staticmethod
     def auto_generated_string():
@@ -1973,9 +1986,6 @@ class Process:
 
     def set_datasource_ascii_header_records(self, datasource_ascii_header_records):
         self.datasource_ascii_header_records = datasource_ascii_header_records
-
-    def set_datasource_ascii_quote_character(self, datasource_ascii_quote_character):
-        self.datasource_ascii_quote_character = datasource_ascii_quote_character
 
     def set_datasource_ascii_quote_character(self, datasource_ascii_quote_character):
         self.datasource_ascii_quote_character = datasource_ascii_quote_character

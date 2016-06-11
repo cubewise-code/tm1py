@@ -1,4 +1,4 @@
-from TM1py import TM1Queries as TM1, MDXView
+from TM1py import TM1pyQueries as TM1, MDXView
 import uuid
 
 # establish connection to TM1 Server

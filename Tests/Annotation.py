@@ -1,11 +1,12 @@
-from TM1py import TM1Queries, Annotation
+from TM1py import TM1pyQueries as TM1, TM1pyLogin, Annotation
 import uuid
 import json
 import unittest
 
 
 class TestAnnotationMethods(unittest.TestCase):
-    q = TM1Queries(ip='', port=8001, user='admin', password='apple', ssl=False)
+    login = TM1pyLogin.native('admin', 'apple')
+    tm1 = TM1(ip='', port=8001, login=login, ssl=False)
 
     def test1_get_all_annotations_from_cube(self):
         annotations = self.q.get_all_annotations_from_cube('plan_BudgetPlan')

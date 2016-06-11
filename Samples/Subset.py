@@ -1,5 +1,5 @@
 import uuid
-from TM1py import Subset, TM1Queries as TM1
+from TM1py import Subset, TM1pyQueries as TM1
 
 random_string1 = str(uuid.uuid4())
 random_string2 = str(uuid.uuid4())
