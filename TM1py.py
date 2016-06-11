@@ -203,7 +203,6 @@ class TM1pyHTTPClient:
         else:
             url = 'http://' + self._ip + ':' + str(self._port) + request
         url = url.replace(' ', '%20').replace('#', '%23')
-        #url = requests.utils.quote(url)
         data = data.encode('utf-8')
         return url, data
 
@@ -642,13 +641,13 @@ class TM1pyQueries:
             request = "/api/v1/Cubes('" + cube_name + "')/" + views + "('" + view_name + "')?$expand=" \
                       "tm1.NativeView/Rows/Subset($expand=Hierarchy($select=Name;" \
                       "$expand=Dimension($select=Name)),Elements($select=Name);" \
-                      "$select=Expression,UniqueName,Name),  " \
+                      "$select=Expression,UniqueName,Name, Alias),  " \
                       "tm1.NativeView/Columns/Subset($expand=Hierarchy($select=Name;" \
                       "$expand=Dimension($select=Name)),Elements($select=Name);" \
-                      "$select=Expression,UniqueName,Name), " \
+                      "$select=Expression,UniqueName,Name,Alias), " \
                       "tm1.NativeView/Titles/Subset($expand=Hierarchy($select=Name;" \
                       "$expand=Dimension($select=Name)),Elements($select=Name);" \
-                      "$select=Expression,UniqueName,Name), " \
+                      "$select=Expression,UniqueName,Name,Alias), " \
                       "tm1.NativeView/Titles/Selected($select=Name)"
             view_as_json = self._client.GET(request)
             native_view = NativeView.from_json(view_as_json)
@@ -1068,8 +1067,9 @@ class TM1pyQueries:
                 subset: instance of the Subset class
         '''
         try:
-            request = '/api/v1/Dimensions(\'' + dimension_name + '\')/Hierarchies(\'' + dimension_name + \
-                      '\')/Subsets(\'' + subset_name + '\')?$expand=Hierarchy($select=Dimension),Elements($select=Name)'
+            request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/Subsets(\'{}\')?$expand=' \
+                      'Hierarchy($select=Dimension),' \
+                      'Elements($select=Name)&$select=*,Alias'.format(dimension_name, dimension_name, subset_name)
             response = self._client.GET(request=request)
             return Subset.from_json(response)
         except (ConnectionError, ConnectionAbortedError):
@@ -1141,7 +1141,7 @@ class Subset:
                     self._expression is not None -> dyamic
                     self._expression is not None and self._elements is not None -> dynamic
     '''
-    def __init__(self, dimension_name, subset_name, expression=None, elements=None):
+    def __init__(self, dimension_name, subset_name, alias, expression=None, elements=None):
         '''
 
         :param dimension_name: String
@@ -1151,6 +1151,7 @@ class Subset:
         '''
         self._dimension_name = dimension_name
         self._subset_name = subset_name
+        self._alias = alias
         self._expression = expression
         self._elements = elements
 
@@ -1172,6 +1173,7 @@ class Subset:
     def from_dict(cls, subset_as_dict):
         return cls(dimension_name=subset_as_dict["UniqueName"][1:subset_as_dict["UniqueName"].find('].[')],
                    subset_name=subset_as_dict['Name'],
+                   alias=subset_as_dict['Alias'],
                    expression=subset_as_dict['Expression'],
                    elements=[element['Name'] for element in subset_as_dict['Elements']]
                    if not subset_as_dict['Expression'] else None)
@@ -1228,6 +1230,7 @@ class Subset:
     def _construct_body_dynamic(self):
         body_as_dict = collections.OrderedDict()
         body_as_dict['Name'] = self._subset_name
+        body_as_dict['Alias'] = self._alias
         body_as_dict['Hierarchy@odata.bind'] = "Dimensions('" + self._dimension_name + \
                                                "')/Hierarchies('" + self._dimension_name + "')"
         body_as_dict['Expression'] = self._expression
@@ -1236,6 +1239,7 @@ class Subset:
     def _construct_body_static(self):
         body_as_dict = collections.OrderedDict()
         body_as_dict['Name'] = self._subset_name
+        body_as_dict['Alias'] = self._alias
         body_as_dict['Hierarchy@odata.bind'] = "Dimensions('" + self._dimension_name + \
                                                "')/Hierarchies('" + self._dimension_name + "')"
         elements_in_list = []
@@ -1250,7 +1254,7 @@ class AnnonymousSubset(Subset):
 
     '''
     def __init__(self, dimension_name, expression=None, elements=None):
-        Subset.__init__(self, dimension_name=dimension_name, subset_name='', expression=expression, elements=elements)
+        Subset.__init__(self, dimension_name=dimension_name, subset_name='', alias='', expression=expression, elements=elements)
 
     @classmethod
     def from_json(cls, subset_as_json):

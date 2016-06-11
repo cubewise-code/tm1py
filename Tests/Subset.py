@@ -15,22 +15,24 @@ class TestAnnotationMethods(unittest.TestCase):
     def test_1create_subset(self):
         s = Subset(dimension_name='plan_business_unit',
                    subset_name=self.subset_name_static,
+                   alias='BusinessUnit',
                    elements=['10110', '10300', '10210', '10000'])
         self.tm1.create_subset(s)
 
         s = Subset(dimension_name='plan_business_unit',
                    subset_name=self.subset_name_dynamic,
+                   alias='BusinessUnit',
                    expression='{ HIERARCHIZE( {TM1SUBSETALL( [plan_business_unit] )} ) }')
         self.tm1.create_subset(s)
 
     # 2. get subset
     def test_2get_subset(self):
         s = self.tm1.get_subset(dimension_name='plan_business_unit',
-                              subset_name=self.subset_name_static)
+                                subset_name=self.subset_name_static)
         self.assertIsInstance(s, Subset)
 
         s = self.tm1.get_subset(dimension_name='plan_business_unit',
-                              subset_name=self.subset_name_dynamic)
+                                subset_name=self.subset_name_dynamic)
         self.assertIsInstance(s, Subset)
 
     # 3. update subset

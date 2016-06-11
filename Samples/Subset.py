@@ -8,12 +8,12 @@ login = TM1pyLogin.native('admin', 'apple')
 tm1 = TM1(ip='', port=8001, login=login, ssl=False)
 
 # create dynamic subset
-s = Subset(dimension_name='plan_business_unit', subset_name='TM1py_' + random_string1,
+s = Subset(dimension_name='plan_business_unit', subset_name='TM1py_' + random_string1, alias='',
            expression='{ HIERARCHIZE( {TM1SUBSETALL( [plan_business_unit] )} ) }')
 tm1.create_subset(s)
 
 # create static subset
-s = Subset(dimension_name='plan_business_unit', subset_name='TM1py_' + random_string2,
+s = Subset(dimension_name='plan_business_unit', subset_name='TM1py_' + random_string2, alias='',
            elements=['10000', '10000', '10000', '10000', '10000', '10000', '10000', '10000', '10000'])
 tm1.create_subset(s)
 
