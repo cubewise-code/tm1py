@@ -1,25 +1,51 @@
-__author__ = 'MariusWirtz2@gmail.com'
 
 '''
 TM1py - A python module for TM1
-
+test
 '''
 
 import requests
 import logging
 import json
 import time
+import copy
 import uuid
 import collections
 import http.client
 from base64 import b64encode
 
-class pyTM1Exception(Exception):
+class TM1pyException(Exception):
+    ''' The default exception for TM1py
+
+    '''
     def __init__(self, response):
         self.response = response
 
     def __str__(self):
         return str(self.response)
+
+class TM1pyLogin:
+    def __init__(self, user, password, auth_type, token=None):
+        self._user = user
+        self._password = password
+        self._auth_type = auth_type
+        self._token = token
+
+    @classmethod
+    def native(cls, user, password):
+        token = 'Basic ' + b64encode(str.encode("{}:{}".format(user, password))).decode("ascii")
+        login = cls(user, password, 'native', token)
+        return login
+
+    @classmethod
+    def CAM(cls, user, password, CAM_namespace):
+        token = 'CAMNamespace ' + b64encode(str.encode("{}:{}:{}".format(user, password, CAM_namespace))).decode("ascii")
+        login = cls(user, password, 'CAM', token)
+        return login
+
+    @classmethod
+    def WIA_login(cls):
+        pass
 
 class httpClientTM1:
     ''' low level communication with TM1 server via http
@@ -58,7 +84,7 @@ class httpClientTM1:
         self._s = requests.session()
 
         # logging
-        #http.client.HTTPConnection.debuglevel = 1
+        # http.client.HTTPConnection.debuglevel = 1
 
         # disable HTTP verification warnings from requests library
         requests.packages.urllib3.disable_warnings()
@@ -77,7 +103,7 @@ class httpClientTM1:
             String, the response in text
         '''
         url, data = self._url_and_body(request=request, data=data)
-        r = self._s.get(url=url,headers=self._headers, data=data, verify=False)
+        r = self._s.get(url=url, headers=self._headers, data=data, verify=False)
         self._varify_response(response=r)
         return r.text
 
@@ -164,10 +190,10 @@ class httpClientTM1:
                 the response that is returned from a method call
 
         :Exceptions:
-            pyTM1Exception, raises pyTM1Exception when Code is not 200, 204 etc.
+            TM1pyException, raises TM1pyException when Code is not 200, 204 etc.
         '''
         if not response.ok:
-            raise pyTM1Exception(response.json())
+            raise TM1pyException(response.json())
 
 
 class TM1Queries:
@@ -374,7 +400,7 @@ class TM1Queries:
         self.create_process(p)
         try:
             self.execute_process(process_name)
-        except pyTM1Exception as e:
+        except TM1pyException as e:
             raise e
         finally:
             self.delete_process(process_name)
@@ -555,142 +581,186 @@ class TM1Queries:
             self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
             self.create_process(process)
 
-    def create_view(self, view):
+    def create_view(self, view, private=False):
         ''' create a new view on TM1 Server
 
         :Parameters:
             `view`: instance of subclass of TM1py.View (TM1py.NativeView or TM1py.MDXView)
+            `private`: boolean
 
         :Returns:
             `string` : the response
         '''
         try:
-            request = "/api/v1/Cubes('" + view._cube + "')/Views"
+            if private:
+                request = "/api/v1/Cubes('" + view._cube + "')/PrivateViews"
+            else:
+                request = "/api/v1/Cubes('" + view._cube + "')/Views"
             response = self._client.POST(request, view.body)
             return response
         except (ConnectionError, ConnectionAbortedError):
             self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
             self.create_view(view)
 
-    def view_exists(self, cube_name, view_name):
+    def view_exists(self, cube_name, view_name, private=False):
         ''' checks if view exists
 
-        :Parameters:
-            `cube_name`: name of the cube
-            `view_name`: name of the view
+        :param cube_name:  string, name of the cube
+        :param view_name: string, name of the view
 
-        :Returns:
-            True or False
+        :return True or False
         '''
         try:
-            response = self._client.GET("/api/v1/Cubes('" + cube_name + "')/Views('" + view_name + "')")
+            if private:
+                self._client.GET("/api/v1/Cubes('" + cube_name + "')/PrivateViews('" + view_name + "')")
+            else:
+                self._client.GET("/api/v1/Cubes('" + cube_name + "')/Views('" + view_name + "')")
             return True
         except (ConnectionError, ConnectionAbortedError):
             self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
         except:
             return False
 
-    def get_native_view(self, cube_name, view_name):
+    def get_native_view(self, cube_name, view_name, private=False):
         ''' get a NativeView from TM1 Server
 
-        :param cube_name:  name of the cube
-        :param view_name:  name of the native view
+        :param cube_name:  string, name of the cube
+        :param view_name:  string, name of the native view
+        :param private:    boolean
+
         :return: instance of TM1py.NativeView
         '''
         try:
-            view_as_json = self._client.GET("/api/v1/Cubes('" + cube_name + "')/Views('" + view_name +
-                                            "')?$expand=tm1.NativeView/Rows/Subset($expand=Hierarchy($select=Name;"
-                                            "$expand=Dimension($select=Name)),Elements($select=Name);"
-                                            "$select=Expression,UniqueName,Name),  "
-                                            "tm1.NativeView/Columns/Subset($expand=Hierarchy($select=Name;"
-                                            "$expand=Dimension($select=Name)),Elements($select=Name);"
-                                            "$select=Expression,UniqueName,Name), "
-                                            "tm1.NativeView/Titles/Subset($expand=Hierarchy($select=Name;"
-                                            "$expand=Dimension($select=Name)),Elements($select=Name);"
-                                            "$select=Expression,UniqueName,Name), "
-                                            "tm1.NativeView/Titles/Selected($select=Name)")
+            views = "PrivateViews" if private else "Views"
+            request = "/api/v1/Cubes('" + cube_name + "')/" + views + "('" + view_name + "')?$expand=" \
+                      "tm1.NativeView/Rows/Subset($expand=Hierarchy($select=Name;" \
+                      "$expand=Dimension($select=Name)),Elements($select=Name);" \
+                      "$select=Expression,UniqueName,Name),  " \
+                      "tm1.NativeView/Columns/Subset($expand=Hierarchy($select=Name;" \
+                      "$expand=Dimension($select=Name)),Elements($select=Name);" \
+                      "$select=Expression,UniqueName,Name), " \
+                      "tm1.NativeView/Titles/Subset($expand=Hierarchy($select=Name;" \
+                      "$expand=Dimension($select=Name)),Elements($select=Name);" \
+                      "$select=Expression,UniqueName,Name), " \
+                      "tm1.NativeView/Titles/Selected($select=Name)"
+            view_as_json = self._client.GET(request)
             native_view = NativeView.from_json(view_as_json)
             return native_view
         except (ConnectionError, ConnectionAbortedError):
             self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
             self.get_native_view(self, cube_name, view_name)
 
-    def get_mdx_view(self, cube_name, view_name):
+    def get_mdx_view(self, cube_name, view_name, private=False):
         ''' get an MDXView from TM1 Server
 
         :param cube_name: String, name of the cube
         :param view_name: String, name of the MDX view
+
         :return: instance of TM1py.MDXView
         '''
         try:
-            view_as_json = self._client.GET("/api/v1/Cubes('{}')/Views('{}')?$expand=*".format(cube_name, view_name))
+            if private:
+                request = "/api/v1/Cubes('{}')/PrivateViews('{}')?$expand=*".format(cube_name, view_name)
+            else:
+                request = "/api/v1/Cubes('{}')/Views('{}')?$expand=*".format(cube_name, view_name)
+            view_as_json = self._client.GET(request)
             mdx_view = MDXView.from_json(view_as_json=view_as_json)
             return mdx_view
         except (ConnectionError, ConnectionAbortedError):
             self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
             self.get_mdx_view(self, cube_name, view_name)
 
-    def update_view(self, view):
+    def update_view(self, view, private=False):
         ''' update an existing view
 
         :param view: instance of TM1py.NativeView or TM1py.MDXView
         :return: None
         '''
         if type(view) == MDXView:
-            self._update_mdx_view(view)
+            self._update_mdx_view(view, private)
         elif type(view) == NativeView:
-            self._update_native_view(view)
+            self._update_native_view(view, private)
         else:
-            raise pyTM1Exception('given view is not of type MDXView or NativeView')
+            raise TM1pyException('given view is not of type MDXView or NativeView')
 
-    def _update_mdx_view(self, mdx_view):
-        ''' update a mdx view on TM1 Server
+    def _update_mdx_view(self, mdx_view, private):
+        ''' update an mdx view on TM1 Server
 
-        :Parameters:
-            `mdx_view`: instance of TM1py.MDXView
+        :param view: instance of TM1py.MDXView
+        :param private: boolean
 
-        :Returns:
-            `string` : the response
+        :return: string, the response
         '''
         try:
-            request = "/api/v1/Cubes('{}')/Views('{}')".format(mdx_view.get_cube(), mdx_view.get_name())
+            if private:
+                request = "/api/v1/Cubes('{}')/PrivateViews('{}')".format(mdx_view.get_cube(), mdx_view.get_name())
+            else:
+                request = "/api/v1/Cubes('{}')/Views('{}')".format(mdx_view.get_cube(), mdx_view.get_name())
             response = self._client.PATCH(request, mdx_view.body)
             return response
         except (ConnectionError, ConnectionAbortedError):
             self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
             self._update_mdx_view(mdx_view)
 
-    def _update_native_view(self, native_view):
+    def _update_native_view(self, native_view, private=False):
         ''' update a native view on TM1 Server
 
-        :Parameters:
-            `view`: instance of TM1py.NativeView
+        :param view: instance of TM1py.NativeView
+        :param private: boolean
 
-        :Returns:
-            `string` : the response
+        :return: string, the response
         '''
         try:
-            request = "/api/v1/Cubes('{}')/Views('{}')".format(native_view.get_cube(), native_view.get_name())
+            if private:
+                request = "/api/v1/Cubes('{}')/PrivateViews('{}')".format(native_view.get_cube(), native_view.get_name())
+            else:
+                request = "/api/v1/Cubes('{}')/Views('{}')".format(native_view.get_cube(), native_view.get_name())
             response = self._client.PATCH(request, native_view.body)
             return response
         except (ConnectionError, ConnectionAbortedError):
             self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
-            self._update_native_view(native_view)
+            self._update_native_view(native_view, private)
 
-    def delete_view(self, cube_name, view_name):
+    def delete_view(self, cube_name, view_name, private=False):
         ''' delete an existing view on the TM1 Server
 
         :param name_cube: String, name of the cube
         :param name_view: String, name of the view
+
         :return: String, the response
         '''
         try:
-            request = "/api/v1/Cubes('{}')/Views('{}')".format(cube_name, view_name)
+            if private:
+                request = "/api/v1/Cubes('{}')/PrivateViews('{}')".format(cube_name, view_name)
+            else:
+                request = "/api/v1/Cubes('{}')/Views('{}')".format(cube_name, view_name)
             response = self._client.DELETE(request)
             return response
         except (ConnectionError, ConnectionAbortedError):
             self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
             self.delete_view(cube_name, view_name)
+
+
+    def get_elements_with_attribute(self, dimension_name, hierarchy_name,attribute_name,attribute_value):
+        attribute_name = attribute_name.replace(" ", "")
+        if type(attribute_value) is str:
+            request = "/api/v1/Dimensions('{}')/Hierarchies('{}')?$expand=Elements($filter = Attributes/{} eq '{}';$select=Name)".\
+                format(dimension_name, hierarchy_name,attribute_name,attribute_value)
+        else:
+            request = "/api/v1/Dimensions('{}')/Hierarchies('{}')?$expand=Elements($filter = Attributes/{} eq {};$select=Name)"\
+                .format(dimension_name, hierarchy_name,attribute_name,attribute_value)
+        response = self._client.GET(request)
+        response_as_dict = json.loads(response)
+        return [elem['Name'] for elem in response_as_dict['Elements']]
+
+    def get_dimension_as_dict(self, dimension_name, hierarchy_name):
+        dimension_as_json = self._client.GET("/api/v1/Dimensions('" + dimension_name + "')/Hierarchies('" +
+                                             hierarchy_name + "')?$expand=Elements($select=Name,Type;$expand="
+                                             "Components($select=Name,Type;$expand=Components($select=Name,Type;"
+                                             "$expand=Components)))")
+        dimension_as_dict = json.loads(dimension_as_json)
+        return dimension_as_dict
+
 
     # Not complete
     def create_dimension(self, dimension):
@@ -1274,7 +1344,7 @@ class NativeView(View):
 
         :usecase:
             user defines view with this class and creates it on TM1 Server.
-            user calls get_view_data_structured method from TM1Queries to retrieve data from View
+            user calls get_view_content method from TM1Queries to retrieve data from View
 
         :Notes:
             Complete, functional and tested
@@ -1332,6 +1402,50 @@ class NativeView(View):
     @property
     def body(self):
         return self._construct_body()
+
+    @property
+    def as_MDX(self):
+        # create the MDX Query
+        mdx = "SELECT "
+
+        # Iterate through axes - append ON COLUMNS, ON ROWS statement
+        # 4 Options
+        # 1. No elements on rows - no elements on columns -> exception
+        # 2. No elements on rows - elements on columns
+        # 3. Elements on rows - no elements on columns -> exception
+        # 4. Elements on rows - elements on columns
+        for i, axe in enumerate((self._rows, self._columns)):
+            for j, axis_selection in enumerate(axe):
+                subset = axis_selection._subset
+                if subset._expression is not None:
+                    mdx += subset._expression
+                else:
+                    elements_as_unique_names = ['[' + axis_selection._dimension_name + '].[' + elem + ']' for elem in
+                                                subset._elements]
+                    mdx_subset = '{' + ','.join(elements_as_unique_names) + '}'
+                    if j == 0:
+                        mdx += mdx_subset
+                    else:
+                        mdx += '*' + mdx_subset
+            if i == 0:
+                if len(self._rows) > 0:
+                    mdx += 'on {}, '.format('ROWS')
+            else:
+                mdx += 'on {} '.format('COLUMNS')
+
+        # append the FROM statement
+        mdx += 'FROM [' + self._cube + '] '
+
+        # itarate through titles - append the WHERE statement
+        if len(self._titles) > 0:
+            unique_names = []
+            for title_selection in self._titles:
+                dimension_name = title_selection._dimension_name
+                selection = title_selection._selected
+                unique_names.append('[' + dimension_name + '].[' + selection + ']')
+            mdx += 'WHERE (' + ','.join(unique_names) + ') '
+
+        return mdx
 
     def set_suppress_empty_cells(self, value):
         self.set_suppress_empty_columns(value)
@@ -1538,7 +1652,7 @@ class Hierarchy:
     def add_element(self, name_element, type_element):
         if name_element in [elem['Name'] for elem in self._elements]:
             # elementname already used
-            raise pyTM1Exception("Elementname has to be unqiue")
+            raise TM1pyException("Elementname has to be unqiue")
         self._elements.append({'Name': name_element, 'Type': type_element})
 
     def add_edge(self, name_parent_element, name_component_element):
@@ -1553,10 +1667,20 @@ class Hierarchy:
 
 # uncomplete
 class Element:
-    def __init__(self, element_name, element_type, element_attributes):
+    def __init__(self, element_name, element_type, element_attributes= None):
         self._element_name = element_name
         self._element_type = element_type
         self._element_attributes = element_attributes
+
+
+    def body(self):
+        return self._construct_body()
+
+    def _construct_body(self):
+        body_as_dict = collections.OrderedDict()
+        body_as_dict['Name'] = self._element_name
+        body_as_dict['Type'] = self._element_type
+        return body_as_dict
 
 # uncomplete
 class Edge:
