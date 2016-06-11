@@ -7,8 +7,10 @@ class TestViewMethods(unittest.TestCase):
     tm1 = TM1(ip='localhost', port=8001, user='admin', password='apple', ssl=False)
     random_string = str(uuid.uuid4())
 
-    native_view_name = 'TM1py_unittest_native_view_' + random_string
-    mdx_view_name = 'TM1py_unittest_mdx_view_' + random_string
+    native_view_name = 'dadasdsa'
+    mdx_view_name = 'dasdasqefqe'
+    #native_view_name = 'TM1py_unittest_native_view_' + random_string
+    #mdx_view_name = 'TM1py_unittest_mdx_view_' + random_string
 
     def test1_create_view(self):
         # create instance of native View
