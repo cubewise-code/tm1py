@@ -886,7 +886,7 @@ class TM1pyQueries:
 
         view_as_dict = {}
 
-        response_as_dict = self._get_view_content_native( cube_name, view_name, top)
+        response_as_dict = self._get_view_content_native(cube_name, view_name, top)
         dimension_order = self.get_dimension_order(cube_name)
 
         axe0_as_dict = response_as_dict['Axes'][0]
@@ -915,7 +915,7 @@ class TM1pyQueries:
                 Tuples_as_dict = axe0_as_dict['Tuples'][ordinal_axe0]['Members']
                 elements_on_axe0 = [data['UniqueName'] for data in Tuples_as_dict]
                 coordinates = elements_on_axe0 + elements_on_axe2 + elements_on_axe1
-                coordinates_sorted = self.sort_addresstuple(cube_name, dimension_order, coordinates)
+                coordinates_sorted = self.sort_addresstuple(dimension_order, coordinates)
                 # get cell value
                 value = response_as_dict['Cells'][ordinal_cells]['Value']
                 view_as_dict[coordinates_sorted] = value
@@ -1327,6 +1327,14 @@ class MDXView(View):
     def __init__(self, cube_name, view_name, MDX):
         View.__init__(self, cube_name, view_name)
         self._MDX = MDX
+
+    @property
+    def cube(self):
+        return self.get_cube()
+
+    @property
+    def name(self):
+        return self.get_name()
 
     @property
     def body(self):
