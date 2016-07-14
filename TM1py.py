@@ -30,7 +30,6 @@ class TM1pyException(Exception):
 class TM1pyLogin:
     ''' Handle Login for different TM1 login types. Instance of this class to be passed to TM1pyHTTPClient, TM1pyQueries
 
-
     '''
     def __init__(self, user, password, auth_type, token=None):
         ''' Function is called from static methods
@@ -87,13 +86,13 @@ class TM1pyLogin:
         pass
 
 class TM1pyHTTPClient:
-    ''' low level communication with TM1 server via http
+    ''' low level communication with TM1 instance via HTTIP
 
     '''
     def __init__(self, ip, port, login, ssl=True):
         ''' Create an instance of TM1pyHTTPClient
 
-        :param ip: String - address of the TM1 Server
+        :param ip: String - address of the TM1 instance
         :param port: Int - HTTPPortNumber as specified in the tm1s.cfg
         :param login: instance of TM1pyLogin
         :param ssl: boolean -  as specified in the tm1s.cfg
@@ -117,50 +116,37 @@ class TM1pyHTTPClient:
         # http.client.HTTPConnection.debuglevel = 1
 
     def GET(self, request, data=''):
-        '''Perform a GET request against the TM1 Server.
+        ''' Perform a GET request against TM1 instance
 
-        :Parameters:
-            `request`: String
-                the url, for instance : /api/v1/Cubes?$top=1
-            `data`: String
-               the payload, always an empty String
-
-        :Returns:
-            String, the response in text
+        :param request: String, for instance : /api/v1/Cubes?$top=1
+        :param data: String, empty
+        :return: String, the response as text
         '''
+
         url, data = self._url_and_body(request=request, data=data)
         r = self._s.get(url=url, headers=self._headers, data=data, verify=False)
         self._varify_response(response=r)
         return r.text
 
     def POST(self, request, data):
-        '''Perform a POST request against the TM1 Server.
+        ''' POST request against the TM1 instance
 
-        :Parameters:
-            `request`: String
-                the url, for instance : /api/v1/Cubes
-            `data`: String
-               the payload (json)
-
-        :Returns:
-            String, the response in text
+        :param request: String, /api/v1/Cubes
+        :param data: String, the payload (json)
+        :return:  String, the response as text
         '''
+
         url, data = self._url_and_body(request=request, data=data)
         r = self._s.post(url=url, headers=self._headers, data=data, verify=False)
         self._varify_response(response=r)
         return r.text
 
     def PATCH(self, request, data):
-        '''Perform a PATCH request against the TM1 Server.
+        ''' PATCH request against the TM1 instance
 
-        :Parameters:
-            `request`: String
-                the url, for instance : /api/v1/Dimensions('plan_business_unit')
-            `data`: String
-               the payload (json)
-
-        :Returns:
-            String, the response in text
+        :param request: String, for instance : /api/v1/Dimensions('plan_business_unit')
+        :param data: String, the payload (json)
+        :return: String, the response as text
         '''
         url, data = self._url_and_body(request=request, data=data)
         r = self._s.patch(url=url, headers=self._headers, data=data, verify=False)
@@ -168,17 +154,14 @@ class TM1pyHTTPClient:
         return r.text
 
     def DELETE(self, request, data=''):
-        '''Perform a DELETE request against the TM1 Server.
+        ''' Delete request against TM1 instance
 
-        :Parameters:
-            `request`: String
-                the url, for instance : /api/v1/Dimensions('plan_business_unit')
-            `data`: String
-                an empty String
+        :param request:  String, for instance : /api/v1/Dimensions('plan_business_unit')
+        :param data: String, empty
+        :return: String, the response in text
 
-        :Returns:
-            String, the response in text
         '''
+
         url, data = self._url_and_body(request=request, data=data)
         r = self._s.delete(url=url, headers=self._headers, data=data, verify=False)
         self._varify_response(response=r)
@@ -236,7 +219,7 @@ class TM1pyQueries:
     '''
 
     def __init__(self, ip, port, login, ssl=True):
-        ''' Constructor, Create an instance of TM1Qeueries
+        ''' Constructor, Create an instance of TM1pyQueries
 
         :param ip: String, the IP address of the TM1 Server
         :param port: Int, httpPortNumber as specified in the tm1s.cfg
@@ -1824,7 +1807,8 @@ class Process:
                  datasource_ascii_delimiter_char=';', datasource_ascii_delimiter_type='Character',
                  datasource_ascii_header_records=1, datasource_ascii_quote_character='', datasource_ascii_thousand_separator=',',
                  datasource_data_source_name_for_client='', datasource_data_source_name_for_server='', datasource_password='',
-                 datasource_user_name='', datasource_query='', datasource_uses_unicode=True, datasource_view=''):
+                 datasource_user_name='', datasource_query='', datasource_uses_unicode=True, datasource_view='',
+                 datasource_subset=''):
         ''' Default construcor
 
         :param name: name of the process - mandatory
@@ -1867,6 +1851,7 @@ class Process:
         self.datasource_query = datasource_query
         self.datasource_uses_unicode = datasource_uses_unicode
         self.datasource_view = datasource_view
+        self.datasource_subset = datasource_subset
 
     @classmethod
     def from_json(cls, process_as_json):
@@ -1915,7 +1900,8 @@ class Process:
                    datasource_user_name=f(process_as_dict['DataSource'], 'userName'),
                    datasource_query=f(process_as_dict['DataSource'], 'query'),
                    datasource_uses_unicode=f(process_as_dict['DataSource'], 'usesUnicode'),
-                   datasource_view=f(process_as_dict['DataSource'], 'view'))
+                   datasource_view=f(process_as_dict['DataSource'], 'view'),
+                   datasource_subset=f(process_as_dict['DataSource'], 'subset'))
 
     @staticmethod
     def auto_generated_string():
@@ -2026,6 +2012,9 @@ class Process:
     def set_datasource_view(self, datasource_view):
         self.datasource_view = datasource_view
 
+    def set_datasource_subset(self, datasource_subset):
+        self.datasource_subset = datasource_subset
+
     #construct self.body (json) from the class-attributes
     def construct_body(self):
         # general parameters
@@ -2074,6 +2063,14 @@ class Process:
                 "dataSourceNameForClient": self.datasource_data_source_name_for_server,
                 "dataSourceNameForServer": self.datasource_data_source_name_for_server,
                 "view": self.datasource_view
+            }
+
+        elif self.datasource_type == 'TM1DimensionSubset':
+            body_as_dict['DataSource'] = {
+                "Type": self.datasource_type,
+                "dataSourceNameForClient": self.datasource_data_source_name_for_server,
+                "dataSourceNameForServer": self.datasource_data_source_name_for_server,
+                "subset": self.datasource_subset
             }
         return json.dumps(body_as_dict, ensure_ascii=False, sort_keys=False)
 
