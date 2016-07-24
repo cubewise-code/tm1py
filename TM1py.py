@@ -832,7 +832,7 @@ class TM1pyQueries:
             self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_cube_names_and_dimensions()
 
-    def _get_view_content_native(self,cube_name, view_name, top=None):
+    def _get_view_content_native(self,cube_name, view_name, cell_properties=['Value'], top=None):
         ''' Get view content as dictionary in its native (cellset-) structure.
 
         :param cube_name: String
@@ -846,29 +846,30 @@ class TM1pyQueries:
         if top is not None:
             request = '/api/v1/Cubes(\'' + cube_name + '\')/Views(\'' + view_name + \
                       '\')/tm1.Execute?$expand=Axes($expand=Tuples($expand=Members($select=UniqueName);$top='\
-                      + str(top)+')),Cells($select=Value,Ordinal;$top=' + str(top) + ')'
+                      + str(top)+')),Cells($select=' + ','.join(cell_properties) + ';$top=' + str(top) + ')'
         else:
             request = '/api/v1/Cubes(\'' + cube_name + '\')/Views(\'' + view_name + \
                       '\')/tm1.Execute?$expand=Axes($expand=Tuples($expand=Members($select=UniqueName))),' \
-                      'Cells($select=Value,Ordinal)'
+                      'Cells($select='  + ','.join(cell_properties) + ')'
 
         response = self._client.POST(request, '')
         return json.loads(response)
 
-    def get_view_content(self, cube_name, view_name, top=None):
+    def get_view_content(self, cube_name, view_name, cell_properties=['Value'], top=None):
         ''' Get view content as dictionary with sweet and concise structure
 
         :param cube_name: String
         :param view_name: String
+        :param cell_properties: List, cell properties: Values, Status, HasPicklist, etc.
         :param top: Int, number of cells
 
         :return:
-            Dictionary : {([dim1].[elem1], [dim2][elem6]): 3127.312, ....  }
+            Dictionary : {([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }
         '''
 
         view_as_dict = {}
 
-        response_as_dict = self._get_view_content_native(cube_name, view_name, top)
+        response_as_dict = self._get_view_content_native(cube_name, view_name, cell_properties, top)
         dimension_order = self.get_dimension_order(cube_name)
 
         axe0_as_dict = response_as_dict['Axes'][0]
@@ -898,10 +899,11 @@ class TM1pyQueries:
                 elements_on_axe0 = [data['UniqueName'] for data in Tuples_as_dict]
                 coordinates = elements_on_axe0 + elements_on_axe2 + elements_on_axe1
                 coordinates_sorted = self.sort_addresstuple(dimension_order, coordinates)
-                # get cell value
-                value = response_as_dict['Cells'][ordinal_cells]['Value']
-                view_as_dict[coordinates_sorted] = value
-
+                # get cell properties
+                view_as_dict[coordinates_sorted] = {}
+                for cell_property in cell_properties:
+                    value = response_as_dict['Cells'][ordinal_cells][cell_property]
+                    view_as_dict[coordinates_sorted][cell_property] = value
                 ordinal_axe0 += 1
                 ordinal_cells += 1
                 if top is not None and ordinal_cells >= top:
