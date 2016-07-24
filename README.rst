@@ -12,7 +12,7 @@ TM1py offers handy features to interact with TM1 from Python, such as
 
 .. code-block:: python
 
-    >>> from TM1py import TM1Queries as TM1
+    >>> from TM1py import TM1pyQueries as TM1
     >>> tm1 = TM1(ip='localhost', port=8001, user='admin', password='apple', ssl=False)
     >>> data = tm1.get_view_content(cube_name='Plan_BudgetPlan', 
                                     view_name='High Level Profit And Loss')
@@ -31,7 +31,7 @@ TM1py offers handy features to interact with TM1 from Python, such as
 
 .. code-block:: python
 
-    >>> from TM1py import TM1Queries as TM1
+    >>> from TM1py import TM1pyQueries as TM1
     >>> tm1 = TM1(ip='localhost', port=8001, user='admin', password='apple', ssl=False)
     >>> cube_name = 'Plan_BudgetPlan'
     >>> coordinates_and_values = {
@@ -46,7 +46,7 @@ TM1py offers handy features to interact with TM1 from Python, such as
 
 .. code-block:: python
 
-    >>> from TM1py import TM1Queries as TM1
+    >>> from TM1py import TM1pyQueries as TM1
     >>> tm1 = TM1(ip='localhost', port=8001, user='admin', password='apple', ssl=False)
     >>> parameters = {
             "Parameters": [{ 
@@ -61,7 +61,7 @@ TM1py offers handy features to interact with TM1 from Python, such as
 
 .. code-block:: python
 
-    >>> from TM1py import TM1Queries as TM1
+    >>> from TM1py import TM1pyQueries as TM1
     >>> tm1_source = TM1(ip='localhost', port=8001, user='admin', password='apple', ssl=False)
     >>> tm1_target = TM1(ip='localhost', port=56912, user='admin', password='apple', ssl=False)
     >>> p = tm1_source.get_process('new')
@@ -73,7 +73,7 @@ TM1py offers handy features to interact with TM1 from Python, such as
 
 .. code-block:: python
 
-    >>> from TM1py import TM1Queries as TM1
+    >>> from TM1py import TM1pyQueries as TM1
     >>> tm1 = TM1(ip='localhost', port=8081, user='admin', password='apple', ssl=False)
     >>> lines_prolog = [
     >>>     "AddCLient ( 'Chewbacca' );"

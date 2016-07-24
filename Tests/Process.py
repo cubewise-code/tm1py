@@ -1,10 +1,11 @@
-from TM1py import TM1Queries as TM1, Process
+from TM1py import TM1pyQueries as TM1, TM1pyLogin, Process
 import uuid
 import unittest
 
 
 class TestAnnotationMethods(unittest.TestCase):
-    tm1 = TM1(ip='localhost', port=8001, user='admin', password='apple', ssl=False)
+    login = TM1pyLogin.native('admin', 'apple')
+    tm1 = TM1(ip='', port=8001, login=login, ssl=False)
 
     random_string = str(uuid.uuid4())
 

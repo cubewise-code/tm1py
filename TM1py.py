@@ -1,134 +1,169 @@
-__author__ = 'MariusWirtz2@gmail.com'
 
 '''
 TM1py - A python module for TM1
-
 '''
 
 import requests
 import logging
 import json
 import time
+import copy
 import uuid
 import collections
 import http.client
 from base64 import b64encode
 
-class pyTM1Exception(Exception):
-    def __init__(self, response):
-        self.response = response
 
-    def __str__(self):
-        return str(self.response)
-
-class httpClientTM1:
-    ''' low level communication with TM1 server via http
+class TM1pyException(Exception):
+    ''' The default exception for TM1py
 
     '''
-    def __init__(self, ip, port, user, password, namespace=None, ssl=True):
-        '''Create an instance of httpClientTM1
+    def __init__(self, response, status_code, reason):
+        self._response = response
+        self._status_code = status_code
+        self._reason = reason
 
-        :Parameters:
-            `address`: String
-                the IP address of the TM1 Server
-            `port`: Int
-                httpPortNumber as specified in the tm1s.cfg
-            `user`: String
-                the TM1 user
-            `password` : String
-                the password for the given TM1 user
-            ´ssl´ : boolean
-                as specified in the tm1s.cfg
+    def __str__(self):
+        return "Text: {} Status Code: {} Reason: {}".format(self._response, self._status_code, self._reason)
+
+
+class TM1pyLogin:
+    ''' Handle Login for different TM1 login types. Instance of this class to be passed to TM1pyHTTPClient, TM1pyQueries
+
+    '''
+    def __init__(self, user, password, auth_type, token=None):
+        ''' Function is called from static methods
+
+        :param user: String - name user
+        :param password: string - pwd
+        :param auth_type: string - basic, CAM or WIA
+        :param token:
+        '''
+        self._user = user
+        self._password = password
+        self._auth_type = auth_type
+        self._token = token
+
+    @property
+    def auth_type(self):
+        return self._auth_type
+
+    @property
+    def token(self):
+        return self._token
+
+    @classmethod
+    def native(cls, user, password):
+        ''' Alternate constructor for native login
+
+        :param user:
+        :param password:
+        :return: instance of TM1pyLogin
+        '''
+        token = 'Basic ' + b64encode(str.encode("{}:{}".format(user, password))).decode("ascii")
+        login = cls(user, password, 'native', token)
+        return login
+
+    @classmethod
+    def CAM(cls, user, password, CAM_namespace):
+        ''' Alternate constructor for CAM login
+
+        :param user:
+        :param password:
+        :param CAM_namespace:
+        :return: instance of TM1pyLogin
+        '''
+        token = 'CAMNamespace ' + b64encode(str.encode("{}:{}:{}".format(user, password, CAM_namespace))).decode("ascii")
+        login = cls(user, password, 'CAM', token)
+        return login
+
+    @classmethod
+    def WIA_login(cls):
+        ''' To be implemented :)
+
+        :return: instance of TM1pyLogin
+        '''
+        pass
+
+class TM1pyHTTPClient:
+    ''' low level communication with TM1 instance via HTTIP
+
+    '''
+    def __init__(self, ip, port, login, ssl=True):
+        ''' Create an instance of TM1pyHTTPClient
+
+        :param ip: String - address of the TM1 instance
+        :param port: Int - HTTPPortNumber as specified in the tm1s.cfg
+        :param login: instance of TM1pyLogin
+        :param ssl: boolean -  as specified in the tm1s.cfg
         '''
         self._ip = 'localhost' if ip == '' else ip
         self._port = port
-        self._user = user
-        self._password = password
         self._ssl = ssl
         self._headers= {'Connection': 'keep-alive', 'Cache-Control': 'no-cache', 'User-Agent': 'TM1py',
                        'Content-Type': 'application/json; odata.metadata=minimal; odata.streaming=true; charset=utf-8'}
-        # Authorization (Basic, CAMNamespace) through Headers
-        if namespace is None or namespace == '':
-            userAndPass = b64encode(str.encode("{}:{}".format(user, password))).decode("ascii")
-            self._headers['Authorization'] = 'Basic %s' %userAndPass
-        else:
-            userAndPass = b64encode(str.encode("{}:{}:{}".format(user, password, namespace))).decode("ascii")
-            self._headers['Authorization'] = 'CAMNamespace %s' %userAndPass
-        self._cookies = None
+        # Authorization [Basic, CAM, WIA] through Headers
+        if login.auth_type in ['native', 'CAM']:
+            self._headers['Authorization'] = login.token
+        elif login.auth_type == 'WIA':
+            # To be written
+            pass
         self._s = requests.session()
-
-        # logging
-        #http.client.HTTPConnection.debuglevel = 1
-
+        self._get_cookies()
         # disable HTTP verification warnings from requests library
         requests.packages.urllib3.disable_warnings()
-        self._get_cookies()
+        # logging
+        # http.client.HTTPConnection.debuglevel = 1
 
     def GET(self, request, data=''):
-        '''Perform a GET request against the TM1 Server.
+        ''' Perform a GET request against TM1 instance
 
-        :Parameters:
-            `request`: String
-                the url, for instance : /api/v1/Cubes?$top=1
-            `data`: String
-               the payload, always an empty String
-
-        :Returns:
-            String, the response in text
+        :param request: String, for instance : /api/v1/Cubes?$top=1
+        :param data: String, empty
+        :return: String, the response as text
         '''
+
         url, data = self._url_and_body(request=request, data=data)
-        r = self._s.get(url=url,headers=self._headers, data=data, verify=False)
+        r = self._s.get(url=url, headers=self._headers, data=data, verify=False)
         self._varify_response(response=r)
         return r.text
 
     def POST(self, request, data):
-        '''Perform a POST request against the TM1 Server.
+        ''' POST request against the TM1 instance
 
-        :Parameters:
-            `request`: String
-                the url, for instance : /api/v1/Cubes
-            `data`: String
-               the payload (json)
-
-        :Returns:
-            String, the response in text
+        :param request: String, /api/v1/Cubes
+        :param data: String, the payload (json)
+        :return:  String, the response as text
         '''
+
         url, data = self._url_and_body(request=request, data=data)
-        r = self._s.post(url=url,headers=self._headers, data=data, verify=False)
+        r = self._s.post(url=url, headers=self._headers, data=data, verify=False)
         self._varify_response(response=r)
         return r.text
 
     def PATCH(self, request, data):
-        '''Perform a PATCH request against the TM1 Server.
+        ''' PATCH request against the TM1 instance
 
-        :Parameters:
-            `request`: String
-                the url, for instance : /api/v1/Dimensions('plan_business_unit')
-            `data`: String
-               the payload (json)
-
-        :Returns:
-            String, the response in text
+        :param request: String, for instance : /api/v1/Dimensions('plan_business_unit')
+        :param data: String, the payload (json)
+        :return: String, the response as text
         '''
         url, data = self._url_and_body(request=request, data=data)
-        r = self._s.patch(url=url,headers=self._headers, data=data, verify=False)
+        r = self._s.patch(url=url, headers=self._headers, data=data, verify=False)
         self._varify_response(response=r)
         return r.text
 
     def DELETE(self, request, data=''):
-        '''Perform a DELETE request against the TM1 Server.
+        ''' Delete request against TM1 instance
 
-        :Parameters:
-            `request`: String
-                the url, for instance : /api/v1/Dimensions('plan_business_unit')
-            `data`: String
-                an empty String
+        :param request:  String, for instance : /api/v1/Dimensions('plan_business_unit')
+        :param data: String, empty
+        :return: String, the response in text
 
-        :Returns:
-            String, the response in text
         '''
+
         url, data = self._url_and_body(request=request, data=data)
-        r = self._s.delete(url=url,headers=self._headers, data=data, verify=False)
+        r = self._s.delete(url=url, headers=self._headers, data=data, verify=False)
         self._varify_response(response=r)
         return r.text
 
@@ -140,19 +175,17 @@ class httpClientTM1:
             url = 'https://' + self._ip + ':' + str(self._port) + '/api/v1/Configuration/ProductVersion'
         else:
             url = 'http://' + self._ip + ':' + str(self._port) + '/api/v1/Configuration/ProductVersion'
-        self._s.get(url=url,headers=self._headers, data='', verify=False)
+        self._s.get(url=url, headers=self._headers, data='', verify=False)
 
     def _url_and_body(self, request, data):
         ''' create proper url and payload
 
-            :Notes:
-                - perhaps more characters should be replaced in url.
         '''
         if self._ssl:
-             url = 'https://' + self._ip + ':' + str(self._port) + request
+            url = 'https://' + self._ip + ':' + str(self._port) + request
         else:
-             url = 'http://' + self._ip + ':' + str(self._port) + request
-        url = url.replace(' ', '%20').replace('#','%23')
+            url = 'http://' + self._ip + ':' + str(self._port) + request
+        url = url.replace(' ', '%20').replace('#', '%23')
         data = data.encode('utf-8')
         return url, data
 
@@ -164,13 +197,13 @@ class httpClientTM1:
                 the response that is returned from a method call
 
         :Exceptions:
-            pyTM1Exception, raises pyTM1Exception when Code is not 200, 204 etc.
+            TM1pyException, raises TM1pyException when Code is not 200, 204 etc.
         '''
         if not response.ok:
-            raise pyTM1Exception(response.json())
+            raise TM1pyException(response.text, status_code=response.status_code, reason=response.reason)
 
 
-class TM1Queries:
+class TM1pyQueries:
     ''' Class offers Queries to interact with a TM1 Server
 
     - CRUD Features for TM1 objects (Process, Annotation, View, Subset)
@@ -182,37 +215,25 @@ class TM1Queries:
     - Additional Features
         Retrieve and write data into TM1
         Execute Process or TI Code
-
+        ...
     '''
 
-    def __init__(self, ip, port, user, password, namespace=None, ssl=True):
-        ''' Constructor. Create an instance of TM1Qeueries
+    def __init__(self, ip, port, login, ssl=True):
+        ''' Constructor, Create an instance of TM1pyQueries
 
-        :Parameters:
-            `address`: String
-                the IP address of the TM1 Server
-            `port`: Int
-                httpPortNumber as specified in the tm1s.cfg
-            ´user´: String
-                the TM1 user
-            ´password´ : String
-                the password for the given TM1 user
-            ´namespace´ : String
-                CAMNamespace. Default is None
-            ´ssl´ : boolean
-                as specified in the tm1s.cfg
-
+        :param ip: String, the IP address of the TM1 Server
+        :param port: Int, httpPortNumber as specified in the tm1s.cfg
+        :param login: Instance of TM1pyLogin
+        :param ssl: Boolean
         '''
         self._ip = ip
         self._port = port
-        self._user = user
-        self._password = password
-        self._namespace = namespace
+        self._login = login
         self._ssl = ssl
-        self._client = httpClientTM1(ip=ip, port=port, user=user, password=password, namespace=namespace, ssl=ssl)
+        self._client = TM1pyHTTPClient(ip=ip, port=port, login=login, ssl=ssl)
 
     @staticmethod
-    def get_all_servers_from_adminhost(adminhost = 'localhost'):
+    def get_all_servers_from_adminhost(adminhost='localhost'):
         '''Ask Adminhost for TM1 Servers.
 
         :Parameters:
@@ -237,7 +258,7 @@ class TM1Queries:
         ''' End TM1 Session and HTTP session
 
         '''
-        self._client.GET('/api/logout','')
+        self._client.GET('/api/logout', '')
 
     def get_server_name(self):
         ''' Ask TM1 Server for its name
@@ -250,7 +271,7 @@ class TM1Queries:
             response = self._client.GET(request, '')
             return json.loads(response)['value']
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_server_name()
 
     def write_value(self, cube_name, dimension_order, element_tuple, value):
@@ -278,7 +299,7 @@ class TM1Queries:
             data = json.dumps(body_as_dict)
             self._client.POST(request=request, data=data)
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._namespace, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.write_value(cube_name, dimension_order, element_tuple, value)
 
     def write_values(self, cube_name, cellset_as_dict):
@@ -307,8 +328,8 @@ class TM1Queries:
             updates = '[' + updates[1:] + ']'
             self._client.POST(request=request, data=updates)
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._namespace, self._ssl)
-            self.write_values(self, cube_name, cellset_as_dict)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
+            self.write_values(cube_name, cellset_as_dict)
 
     def get_all_cube_names(self):
         '''Ask TM1 Server for list with all cube names
@@ -322,7 +343,7 @@ class TM1Queries:
             list_cubes = list(entry['Name'] for entry in cubes)
             return list_cubes
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_all_cube_names()
 
     def get_all_dimension_names(self):
@@ -337,12 +358,8 @@ class TM1Queries:
             list_dimensions = list(entry['Name'] for entry in dimensions)
             return list_dimensions
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_all_dimension_names()
-
-    # temp!
-    def execute_given_process(self, name_process, parameters={}):
-        self.execute_process(name_process=name_process, parameters=parameters)
 
     def execute_process(self, name_process, parameters={}):
         ''' Ask TM1 Server to execute a process
@@ -356,9 +373,9 @@ class TM1Queries:
         '''
         try:
             data = json.dumps(parameters)
-            return self._client.POST("/api/v1/Processes('" + name_process +"')/tm1.Execute", data=data)
+            return self._client.POST("/api/v1/Processes('" + name_process + "')/tm1.Execute", data=data)
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             return self.execute_process(name_process, parameters)
 
     def execute_TI_code(self, lines_prolog, lines_epilog):
@@ -374,7 +391,7 @@ class TM1Queries:
         self.create_process(p)
         try:
             self.execute_process(process_name)
-        except pyTM1Exception as e:
+        except TM1pyException as e:
             raise e
         finally:
             self.delete_process(process_name)
@@ -386,12 +403,13 @@ class TM1Queries:
         :return: String - the message, for instance: "Ausführung normal beendet, verstrichene Zeit 0.03  Sekunden"
         '''
         try:
-            request = "/api/v1/MessageLog()?$orderby='TimeStamp'&$filter=Logger eq 'TM1.Process' and contains( Message, '" + process_name + "')"
+            request = "/api/v1/MessageLog()?$orderby='TimeStamp'&$filter=Logger eq 'TM1.Process' " \
+                      "and contains( Message, '" + process_name + "')"
             response = self._client.GET(request=request)
             message_log_entry = json.loads(response)['value'][0]
             return message_log_entry['Message']
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             return self.get_last_message_from_messagelog(process_name)
 
     def get_last_message_from_processerrorlog(self, process_name):
@@ -437,7 +455,7 @@ class TM1Queries:
             response = self._client.DELETE(request, "")
             return response
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.delete_process(name_process)
 
     def is_connected(self):
@@ -464,7 +482,7 @@ class TM1Queries:
             processes = list(process['Name'] for process in dict_processes)
             return processes
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_all_process_names()
 
     def get_all_process_names_filtered(self):
@@ -482,7 +500,7 @@ class TM1Queries:
             processes = list(process['Name'] for process in dict_processes)
             return processes
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_all_process_names()
 
 
@@ -511,11 +529,11 @@ class TM1Queries:
                                                           "DataSource/userName,"\
                                                           "DataSource/password,"\
                                                           "DataSource/usesUnicode"
-            response = self._client.GET(request,"")
+            response = self._client.GET(request, "")
             return Process.from_json(process_as_json=response)
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
-            self.get_process_as_dict(name_process)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
+            self.get_process(name_process)
 
     def update_process(self, process):
         ''' update an existing Process on TM1 Server
@@ -528,15 +546,11 @@ class TM1Queries:
         '''
         try:
             request = "/api/v1/Processes('" + process.name + "')"
-            response = self._client.PATCH(request,process.body)
+            response = self._client.PATCH(request, process.body)
             return response
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.update_process(process)
-
-    # temporary function !
-    def save_process(self, process):
-        return self.update_process(process)
 
     def create_process(self, process):
         ''' post a new process against TM1 Server
@@ -552,145 +566,191 @@ class TM1Queries:
             response = self._client.POST(request, process.body)
             return response
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.create_process(process)
 
-    def create_view(self, view):
+    def create_view(self, view, private=False):
         ''' create a new view on TM1 Server
 
         :Parameters:
             `view`: instance of subclass of TM1py.View (TM1py.NativeView or TM1py.MDXView)
+            `private`: boolean
 
         :Returns:
             `string` : the response
         '''
         try:
-            request = "/api/v1/Cubes('" + view._cube + "')/Views"
+            if private:
+                request = "/api/v1/Cubes('" + view._cube + "')/PrivateViews"
+            else:
+                request = "/api/v1/Cubes('" + view._cube + "')/Views"
             response = self._client.POST(request, view.body)
             return response
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.create_view(view)
 
-    def view_exists(self, cube_name, view_name):
+    def view_exists(self, cube_name, view_name, private=False):
         ''' checks if view exists
 
-        :Parameters:
-            `cube_name`: name of the cube
-            `view_name`: name of the view
+        :param cube_name:  string, name of the cube
+        :param view_name: string, name of the view
+        :param private: boolean
 
-        :Returns:
-            True or False
+        :return True or False
         '''
         try:
-            response = self._client.GET("/api/v1/Cubes('" + cube_name + "')/Views('" + view_name + "')")
+            if private:
+                self._client.GET("/api/v1/Cubes('" + cube_name + "')/PrivateViews('" + view_name + "')")
+            else:
+                self._client.GET("/api/v1/Cubes('" + cube_name + "')/Views('" + view_name + "')")
             return True
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
-        except:
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
+        except TM1pyException:
             return False
 
-    def get_native_view(self, cube_name, view_name):
+    def get_native_view(self, cube_name, view_name, private=False):
         ''' get a NativeView from TM1 Server
 
-        :param cube_name:  name of the cube
-        :param view_name:  name of the native view
+        :param cube_name:  string, name of the cube
+        :param view_name:  string, name of the native view
+        :param private:    boolean
+
         :return: instance of TM1py.NativeView
         '''
         try:
-            view_as_json = self._client.GET("/api/v1/Cubes('" + cube_name + "')/Views('" + view_name +
-                                            "')?$expand=tm1.NativeView/Rows/Subset($expand=Hierarchy($select=Name;"
-                                            "$expand=Dimension($select=Name)),Elements($select=Name);"
-                                            "$select=Expression,UniqueName,Name),  "
-                                            "tm1.NativeView/Columns/Subset($expand=Hierarchy($select=Name;"
-                                            "$expand=Dimension($select=Name)),Elements($select=Name);"
-                                            "$select=Expression,UniqueName,Name), "
-                                            "tm1.NativeView/Titles/Subset($expand=Hierarchy($select=Name;"
-                                            "$expand=Dimension($select=Name)),Elements($select=Name);"
-                                            "$select=Expression,UniqueName,Name), "
-                                            "tm1.NativeView/Titles/Selected($select=Name)")
+            views = "PrivateViews" if private else "Views"
+            request = "/api/v1/Cubes('" + cube_name + "')/" + views + "('" + view_name + "')?$expand=" \
+                      "tm1.NativeView/Rows/Subset($expand=Hierarchy($select=Name;" \
+                      "$expand=Dimension($select=Name)),Elements($select=Name);" \
+                      "$select=Expression,UniqueName,Name, Alias),  " \
+                      "tm1.NativeView/Columns/Subset($expand=Hierarchy($select=Name;" \
+                      "$expand=Dimension($select=Name)),Elements($select=Name);" \
+                      "$select=Expression,UniqueName,Name,Alias), " \
+                      "tm1.NativeView/Titles/Subset($expand=Hierarchy($select=Name;" \
+                      "$expand=Dimension($select=Name)),Elements($select=Name);" \
+                      "$select=Expression,UniqueName,Name,Alias), " \
+                      "tm1.NativeView/Titles/Selected($select=Name)"
+            view_as_json = self._client.GET(request)
             native_view = NativeView.from_json(view_as_json)
             return native_view
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_native_view(self, cube_name, view_name)
 
-    def get_mdx_view(self, cube_name, view_name):
+    def get_mdx_view(self, cube_name, view_name, private=False):
         ''' get an MDXView from TM1 Server
 
         :param cube_name: String, name of the cube
         :param view_name: String, name of the MDX view
+        :param private: boolean
+
         :return: instance of TM1py.MDXView
         '''
         try:
-            view_as_json = self._client.GET("/api/v1/Cubes('{}')/Views('{}')?$expand=*".format(cube_name, view_name))
+            if private:
+                request = "/api/v1/Cubes('{}')/PrivateViews('{}')?$expand=*".format(cube_name, view_name)
+            else:
+                request = "/api/v1/Cubes('{}')/Views('{}')?$expand=*".format(cube_name, view_name)
+            view_as_json = self._client.GET(request)
             mdx_view = MDXView.from_json(view_as_json=view_as_json)
             return mdx_view
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_mdx_view(self, cube_name, view_name)
 
-    def update_view(self, view):
+    def update_view(self, view, private=False):
         ''' update an existing view
 
         :param view: instance of TM1py.NativeView or TM1py.MDXView
         :return: None
         '''
         if type(view) == MDXView:
-            self._update_mdx_view(view)
+            self._update_mdx_view(view, private)
         elif type(view) == NativeView:
-            self._update_native_view(view)
+            self._update_native_view(view, private)
         else:
-            raise pyTM1Exception('given view is not of type MDXView or NativeView')
+            raise TM1pyException('given view is not of type MDXView or NativeView')
 
-    def _update_mdx_view(self, mdx_view):
-        ''' update a mdx view on TM1 Server
+    def _update_mdx_view(self, mdx_view, private):
+        ''' update an mdx view on TM1 Server
 
-        :Parameters:
-            `mdx_view`: instance of TM1py.MDXView
+        :param mdx_view: instance of TM1py.MDXView
+        :param private: boolean
 
-        :Returns:
-            `string` : the response
+        :return: string, the response
         '''
         try:
-            request = "/api/v1/Cubes('{}')/Views('{}')".format(mdx_view.get_cube(), mdx_view.get_name())
+            if private:
+                request = "/api/v1/Cubes('{}')/PrivateViews('{}')".format(mdx_view.get_cube(), mdx_view.get_name())
+            else:
+                request = "/api/v1/Cubes('{}')/Views('{}')".format(mdx_view.get_cube(), mdx_view.get_name())
             response = self._client.PATCH(request, mdx_view.body)
             return response
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
-            self._update_mdx_view(mdx_view)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
+            self._update_mdx_view(mdx_view, private=private)
 
-    def _update_native_view(self, native_view):
+    def _update_native_view(self, native_view, private=False):
         ''' update a native view on TM1 Server
 
-        :Parameters:
-            `view`: instance of TM1py.NativeView
+        :param view: instance of TM1py.NativeView
+        :param private: boolean
 
-        :Returns:
-            `string` : the response
+        :return: string, the response
         '''
         try:
-            request = "/api/v1/Cubes('{}')/Views('{}')".format(native_view.get_cube(), native_view.get_name())
+            if private:
+                request = "/api/v1/Cubes('{}')/PrivateViews('{}')".format(native_view.get_cube(), native_view.get_name())
+            else:
+                request = "/api/v1/Cubes('{}')/Views('{}')".format(native_view.get_cube(), native_view.get_name())
             response = self._client.PATCH(request, native_view.body)
             return response
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
-            self._update_native_view(native_view)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
+            self._update_native_view(native_view, private)
 
-    def delete_view(self, cube_name, view_name):
+    def delete_view(self, cube_name, view_name, private=False):
         ''' delete an existing view on the TM1 Server
 
-        :param name_cube: String, name of the cube
-        :param name_view: String, name of the view
+        :param cube_name: String, name of the cube
+        :param view_name: String, name of the view
+        :param private: Boolean
+
         :return: String, the response
         '''
         try:
-            request = "/api/v1/Cubes('{}')/Views('{}')".format(cube_name, view_name)
+            if private:
+                request = "/api/v1/Cubes('{}')/PrivateViews('{}')".format(cube_name, view_name)
+            else:
+                request = "/api/v1/Cubes('{}')/Views('{}')".format(cube_name, view_name)
             response = self._client.DELETE(request)
             return response
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.delete_view(cube_name, view_name)
+
+    def get_elements_with_attribute(self, dimension_name, hierarchy_name, attribute_name, attribute_value):
+        attribute_name = attribute_name.replace(" ", "")
+        if type(attribute_value) is str:
+            request = "/api/v1/Dimensions('{}')/Hierarchies('{}')?$expand=Elements($filter = Attributes/{} eq '{}';$select=Name)".\
+                format(dimension_name, hierarchy_name,attribute_name, attribute_value)
+        else:
+            request = "/api/v1/Dimensions('{}')/Hierarchies('{}')?$expand=Elements($filter = Attributes/{} eq {};$select=Name)"\
+                .format(dimension_name, hierarchy_name,attribute_name, attribute_value)
+        response = self._client.GET(request)
+        response_as_dict = json.loads(response)
+        return [elem['Name'] for elem in response_as_dict['Elements']]
+
+    def get_dimension_as_dict(self, dimension_name, hierarchy_name):
+        dimension_as_json = self._client.GET("/api/v1/Dimensions('" + dimension_name + "')/Hierarchies('" +
+                                             hierarchy_name + "')?$expand=Elements($select=Name,Type;$expand="
+                                             "Components($select=Name,Type;$expand=Components($select=Name,Type;"
+                                             "$expand=Components)))")
+        dimension_as_dict = json.loads(dimension_as_json)
+        return dimension_as_dict
+
 
     # Not complete
     def create_dimension(self, dimension):
@@ -703,7 +763,7 @@ class TM1Queries:
         try:
             pass
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.create_dimension(dimension)
 
     # Not complete
@@ -742,12 +802,12 @@ class TM1Queries:
         '''
         try:
             request = "/api/v1/Cubes('{}')/Annotations?$expand=DimensionalContext($select=Name)".format(name_cube)
-            response = self._client.GET(request,'')
+            response = self._client.GET(request, '')
             annotations_as_dict = json.loads(response)['value']
             annotations = [Annotation.from_json(json.dumps(element)) for element in annotations_as_dict]
             return annotations
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_all_annotations_from_cube(name_cube)
 
     def get_cube_names_and_dimensions(self):
@@ -769,10 +829,10 @@ class TM1Queries:
                 cubes_as_dict[name_cube] = dimensions
             return cubes_as_dict
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_cube_names_and_dimensions()
 
-    def _get_view_content_native(self,cube_name, view_name, top=None):
+    def _get_view_content_native(self,cube_name, view_name, cell_properties=['Value'], top=None):
         ''' Get view content as dictionary in its native (cellset-) structure.
 
         :param cube_name: String
@@ -786,29 +846,30 @@ class TM1Queries:
         if top is not None:
             request = '/api/v1/Cubes(\'' + cube_name + '\')/Views(\'' + view_name + \
                       '\')/tm1.Execute?$expand=Axes($expand=Tuples($expand=Members($select=UniqueName);$top='\
-                      + str(top)+')),Cells($select=Value,Ordinal;$top=' + str(top) + ')'
+                      + str(top)+')),Cells($select=' + ','.join(cell_properties) + ';$top=' + str(top) + ')'
         else:
             request = '/api/v1/Cubes(\'' + cube_name + '\')/Views(\'' + view_name + \
                       '\')/tm1.Execute?$expand=Axes($expand=Tuples($expand=Members($select=UniqueName))),' \
-                      'Cells($select=Value,Ordinal)'
+                      'Cells($select='  + ','.join(cell_properties) + ')'
 
         response = self._client.POST(request, '')
         return json.loads(response)
 
-    def get_view_content(self, cube_name, view_name, top=None):
+    def get_view_content(self, cube_name, view_name, cell_properties=['Value'], top=None):
         ''' Get view content as dictionary with sweet and concise structure
 
         :param cube_name: String
         :param view_name: String
+        :param cell_properties: List, cell properties: Values, Status, HasPicklist, etc.
         :param top: Int, number of cells
 
         :return:
-            Dictionary : {([dim1].[elem1], [dim2][elem6]): 3127.312, ....  }
+            Dictionary : {([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }
         '''
 
         view_as_dict = {}
 
-        response_as_dict = self._get_view_content_native( cube_name, view_name, top)
+        response_as_dict = self._get_view_content_native(cube_name, view_name, cell_properties, top)
         dimension_order = self.get_dimension_order(cube_name)
 
         axe0_as_dict = response_as_dict['Axes'][0]
@@ -837,11 +898,12 @@ class TM1Queries:
                 Tuples_as_dict = axe0_as_dict['Tuples'][ordinal_axe0]['Members']
                 elements_on_axe0 = [data['UniqueName'] for data in Tuples_as_dict]
                 coordinates = elements_on_axe0 + elements_on_axe2 + elements_on_axe1
-                coordinates_sorted = self.sort_addresstuple(cube_name, dimension_order, coordinates)
-                # get cell value
-                value = response_as_dict['Cells'][ordinal_cells]['Value']
-                view_as_dict[coordinates_sorted] = value
-
+                coordinates_sorted = self.sort_addresstuple(dimension_order, coordinates)
+                # get cell properties
+                view_as_dict[coordinates_sorted] = {}
+                for cell_property in cell_properties:
+                    value = response_as_dict['Cells'][ordinal_cells][cell_property]
+                    view_as_dict[coordinates_sorted][cell_property] = value
                 ordinal_axe0 += 1
                 ordinal_cells += 1
                 if top is not None and ordinal_cells >= top:
@@ -865,10 +927,10 @@ class TM1Queries:
             dimension_order = [element['Name'] for element in response_as_dict]
             return dimension_order
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_dimension_order(name_cube)
 
-    def sort_addresstuple(self, cube_name, dimension_order, unsorted_addresstuple):
+    def sort_addresstuple(self, dimension_order, unsorted_addresstuple):
         ''' Sort the given mixed up addresstuple
 
         :param cube_name: String
@@ -911,7 +973,7 @@ class TM1Queries:
             response = self._client.POST(request, json.dumps(payload, ensure_ascii=False, sort_keys=False))
             return response
         except(ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.create_Annotation(annotation)
 
     def get_annotation(self, id):
@@ -927,8 +989,8 @@ class TM1Queries:
             annotation_as_json = self._client.GET(request=request)
             return Annotation.from_json(annotation_as_json)
         except(ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
-            self.get_annotation(annotation)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
+            self.get_annotation(id)
 
 
     def update_annotation(self, annotation):
@@ -944,7 +1006,7 @@ class TM1Queries:
             request = "/api/v1/Annotations('{}')".format(annotation._id)
             return self._client.PATCH(request=request, data=annotation.body)
         except(ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.update_annotation(annotation)
 
     def delete_annotation(self, id):
@@ -959,7 +1021,7 @@ class TM1Queries:
             request = "/api/v1/Annotations('{}')".format(id)
             return self._client.DELETE(request=request)
         except(ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.delete_annotation(id)
 
 
@@ -977,7 +1039,7 @@ class TM1Queries:
             response = self._client.POST(request, subset.body)
             return response
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.create_subset(subset)
 
     def get_subset(self, dimension_name, subset_name):
@@ -990,12 +1052,13 @@ class TM1Queries:
                 subset: instance of the Subset class
         '''
         try:
-            request = '/api/v1/Dimensions(\'' + dimension_name + '\')/Hierarchies(\'' + dimension_name + \
-                      '\')/Subsets(\'' + subset_name + '\')?$expand=Hierarchy($select=Dimension),Elements($select=Name)'
+            request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/Subsets(\'{}\')?$expand=' \
+                      'Hierarchy($select=Dimension),' \
+                      'Elements($select=Name)&$select=*,Alias'.format(dimension_name, dimension_name, subset_name)
             response = self._client.GET(request=request)
             return Subset.from_json(response)
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_subset(dimension_name, subset_name)
 
     def update_subset(self, subset):
@@ -1013,7 +1076,7 @@ class TM1Queries:
             response = self._client.PATCH(request=request, data=subset.body)
             return response
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.update_subset(subset)
 
     def delete_subset(self, dimension_name, subset_name):
@@ -1031,10 +1094,10 @@ class TM1Queries:
             response = self._client.DELETE(request=request,data='')
             return response
         except (ConnectionError, ConnectionAbortedError):
-            self._client = httpClientTM1(self._ip, self._port, self._user, self._password, self._ssl)
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.delete_subset(dimension_name, subset_name)
 
-class Server():
+class Server:
     ''' Abstraction of the TM1 Server
 
         :Notes:
@@ -1051,7 +1114,7 @@ class Server():
         self.using_ssl = server_as_dict['UsingSSL']
         self.accepting_clients = server_as_dict['AcceptingClients']
 
-class Subset():
+class Subset:
     ''' Abstraction of the TM1 Subset
 
         :Notes:
@@ -1063,17 +1126,17 @@ class Subset():
                     self._expression is not None -> dyamic
                     self._expression is not None and self._elements is not None -> dynamic
     '''
-    def __init__(self, dimension_name, subset_name, expression = None, elements = None):
-        ''' Constructor
-            :Parameters:
-                `dimension_name` : string
-                `subset_name` : string
-                `expression` : string
-                `elements` : List of element names
+    def __init__(self, dimension_name, subset_name, alias, expression=None, elements=None):
+        '''
 
+        :param dimension_name: String
+        :param subset_name: String
+        :param expression: String
+        :param elements: List, element names
         '''
         self._dimension_name = dimension_name
         self._subset_name = subset_name
+        self._alias = alias
         self._expression = expression
         self._elements = elements
 
@@ -1093,10 +1156,11 @@ class Subset():
 
     @classmethod
     def from_dict(cls, subset_as_dict):
-        return cls(dimension_name = subset_as_dict["UniqueName"][1:subset_as_dict["UniqueName"].find('].[')],
-                   subset_name = subset_as_dict['Name'],
-                   expression = subset_as_dict['Expression'],
-                   elements = [element['Name'] for element in subset_as_dict['Elements']]
+        return cls(dimension_name=subset_as_dict["UniqueName"][1:subset_as_dict["UniqueName"].find('].[')],
+                   subset_name=subset_as_dict['Name'],
+                   alias=subset_as_dict['Alias'],
+                   expression=subset_as_dict['Expression'],
+                   elements=[element['Name'] for element in subset_as_dict['Elements']]
                    if not subset_as_dict['Expression'] else None)
 
     @property
@@ -1151,14 +1215,18 @@ class Subset():
     def _construct_body_dynamic(self):
         body_as_dict = collections.OrderedDict()
         body_as_dict['Name'] = self._subset_name
-        body_as_dict['Hierarchy@odata.bind'] = "Dimensions('" + self._dimension_name + "')/Hierarchies('" + self._dimension_name + "')"
+        body_as_dict['Alias'] = self._alias
+        body_as_dict['Hierarchy@odata.bind'] = "Dimensions('" + self._dimension_name + \
+                                               "')/Hierarchies('" + self._dimension_name + "')"
         body_as_dict['Expression'] = self._expression
         return json.dumps(body_as_dict, ensure_ascii=False, sort_keys=False)
 
     def _construct_body_static(self):
         body_as_dict = collections.OrderedDict()
         body_as_dict['Name'] = self._subset_name
-        body_as_dict['Hierarchy@odata.bind'] = "Dimensions('" + self._dimension_name + "')/Hierarchies('" + self._dimension_name + "')"
+        body_as_dict['Alias'] = self._alias
+        body_as_dict['Hierarchy@odata.bind'] = "Dimensions('" + self._dimension_name + \
+                                               "')/Hierarchies('" + self._dimension_name + "')"
         elements_in_list = []
         for element in self._elements:
             elements_in_list.append('Dimensions(\'' + self._dimension_name + '\')/Hierarchies(\'' +
@@ -1171,7 +1239,7 @@ class AnnonymousSubset(Subset):
 
     '''
     def __init__(self, dimension_name, expression=None, elements=None):
-        Subset.__init__(self, dimension_name=dimension_name, subset_name='', expression=expression, elements=elements)
+        Subset.__init__(self, dimension_name=dimension_name, subset_name='', alias='', expression=expression, elements=elements)
 
     @classmethod
     def from_json(cls, subset_as_json):
@@ -1183,7 +1251,8 @@ class AnnonymousSubset(Subset):
                 :Returns:
                     `Subset` : an instance of this class
         '''
-        return cls.from_dict(subset_as_dict)
+        subset_as_dict = json.loads(subset_as_json)
+        return cls.from_dict(subset_as_dict=subset_as_dict)
 
     @classmethod
     def from_dict(cls, subset_as_dict):
@@ -1202,13 +1271,15 @@ class AnnonymousSubset(Subset):
 
     def _construct_body_dynamic(self):
         body_as_dict = collections.OrderedDict()
-        body_as_dict["Hierarchy@odata.bind"] = "Dimensions('" + self._dimension_name +"')/Hierarchies('" + self._dimension_name + "')"
+        body_as_dict["Hierarchy@odata.bind"] = "Dimensions('" + self._dimension_name + \
+                                               "')/Hierarchies('" + self._dimension_name + "')"
         body_as_dict['Expression'] = self._expression
         return json.dumps(body_as_dict, ensure_ascii=False, sort_keys=False)
 
     def _construct_body_static(self):
         body_as_dict = collections.OrderedDict()
-        body_as_dict["Hierarchy@odata.bind"] = "Dimensions('" + self._dimension_name +"')/Hierarchies('" + self._dimension_name + "')"
+        body_as_dict["Hierarchy@odata.bind"] = "Dimensions('" + self._dimension_name + \
+                                               "')/Hierarchies('" + self._dimension_name + "')"
         elements_in_list = []
         for element in self._elements:
             elements_in_list.append('Dimensions(\'' + self._dimension_name + '\')/Hierarchies(\'' +
@@ -1237,7 +1308,7 @@ class MDXView(View):
 
         :usecase:
             user defines view with this class and creates it on TM1 Server.
-            user calls get_view_data_structured from TM1Queries function to retrieve data from View
+            user calls get_view_data_structured from TM1pyQueries function to retrieve data from View
 
         :Notes:
             Complete, functional and tested
@@ -1245,6 +1316,14 @@ class MDXView(View):
     def __init__(self, cube_name, view_name, MDX):
         View.__init__(self, cube_name, view_name)
         self._MDX = MDX
+
+    @property
+    def cube(self):
+        return self.get_cube()
+
+    @property
+    def name(self):
+        return self.get_name()
 
     @property
     def body(self):
@@ -1274,7 +1353,7 @@ class NativeView(View):
 
         :usecase:
             user defines view with this class and creates it on TM1 Server.
-            user calls get_view_data_structured method from TM1Queries to retrieve data from View
+            user calls get_view_content method from TM1pyQueries to retrieve data from View
 
         :Notes:
             Complete, functional and tested
@@ -1282,8 +1361,8 @@ class NativeView(View):
     def __init__(self, name_cube, name_view, suppress_empty_columns=False, suppress_empty_rows=False,
                  format_string="0.#########\fG|0|", titles = [], columns = [], rows = []):
         View.__init__(self, name_cube, name_view)
-        self._suppress_empty_columns = False
-        self._suppress_empty_rows = False
+        self._suppress_empty_columns = suppress_empty_columns
+        self._suppress_empty_rows = suppress_empty_rows
         self._format_string = format_string
         self._titles = titles
         self._columns = columns
@@ -1332,6 +1411,50 @@ class NativeView(View):
     @property
     def body(self):
         return self._construct_body()
+
+    @property
+    def as_MDX(self):
+        # create the MDX Query
+        mdx = "SELECT "
+
+        # Iterate through axes - append ON COLUMNS, ON ROWS statement
+        # 4 Options
+        # 1. No elements on rows - no elements on columns -> exception
+        # 2. No elements on rows - elements on columns
+        # 3. Elements on rows - no elements on columns -> exception
+        # 4. Elements on rows - elements on columns
+        for i, axe in enumerate((self._rows, self._columns)):
+            for j, axis_selection in enumerate(axe):
+                subset = axis_selection._subset
+                if subset._expression is not None:
+                    mdx += subset._expression
+                else:
+                    elements_as_unique_names = ['[' + axis_selection._dimension_name + '].[' + elem + ']' for elem in
+                                                subset._elements]
+                    mdx_subset = '{' + ','.join(elements_as_unique_names) + '}'
+                    if j == 0:
+                        mdx += mdx_subset
+                    else:
+                        mdx += '*' + mdx_subset
+            if i == 0:
+                if len(self._rows) > 0:
+                    mdx += 'on {}, '.format('ROWS')
+            else:
+                mdx += 'on {} '.format('COLUMNS')
+
+        # append the FROM statement
+        mdx += 'FROM [' + self._cube + '] '
+
+        # itarate through titles - append the WHERE statement
+        if len(self._titles) > 0:
+            unique_names = []
+            for title_selection in self._titles:
+                dimension_name = title_selection._dimension_name
+                selection = title_selection._selected
+                unique_names.append('[' + dimension_name + '].[' + selection + ']')
+            mdx += 'WHERE (' + ','.join(unique_names) + ') '
+
+        return mdx
 
     def set_suppress_empty_cells(self, value):
         self.set_suppress_empty_columns(value)
@@ -1423,7 +1546,7 @@ class NativeView(View):
                     '],\"Titles\":[' + titles_json + '],' + bottom_json
 
 class ViewAxisSelection:
-    ''' Describing what is selected in a dimension on an axis. Can be a registered Subset or an Annonymous subset
+    ''' Describing what is selected in a dimension on an axis. Can be a registered Subset or an annonymous ubset
 
     '''
     def __init__(self, dimension_name, subset):
@@ -1538,7 +1661,7 @@ class Hierarchy:
     def add_element(self, name_element, type_element):
         if name_element in [elem['Name'] for elem in self._elements]:
             # elementname already used
-            raise pyTM1Exception("Elementname has to be unqiue")
+            raise TM1pyException("Elementname has to be unqiue")
         self._elements.append({'Name': name_element, 'Type': type_element})
 
     def add_edge(self, name_parent_element, name_component_element):
@@ -1553,10 +1676,20 @@ class Hierarchy:
 
 # uncomplete
 class Element:
-    def __init__(self, element_name, element_type, element_attributes):
+    def __init__(self, element_name, element_type, element_attributes= None):
         self._element_name = element_name
         self._element_type = element_type
         self._element_attributes = element_attributes
+
+
+    def body(self):
+        return self._construct_body()
+
+    def _construct_body(self):
+        body_as_dict = collections.OrderedDict()
+        body_as_dict['Name'] = self._element_name
+        body_as_dict['Type'] = self._element_type
+        return body_as_dict
 
 # uncomplete
 class Edge:
@@ -1645,7 +1778,7 @@ class Annotation:
         :return: string, the valid JSON
         '''
         dimensional_context = [{'Name': element} for element in self._dimensional_context]
-        body = {}
+        body = collections.OrderedDict()
         body['ID'] = self._id
         body['Text'] = self._text
         body['Creator'] = self._creator
@@ -1676,7 +1809,8 @@ class Process:
                  datasource_ascii_delimiter_char=';', datasource_ascii_delimiter_type='Character',
                  datasource_ascii_header_records=1, datasource_ascii_quote_character='', datasource_ascii_thousand_separator=',',
                  datasource_data_source_name_for_client='', datasource_data_source_name_for_server='', datasource_password='',
-                 datasource_user_name='', datasource_query='', datasource_uses_unicode=True, datasource_view=''):
+                 datasource_user_name='', datasource_query='', datasource_uses_unicode=True, datasource_view='',
+                 datasource_subset=''):
         ''' Default construcor
 
         :param name: name of the process - mandatory
@@ -1719,6 +1853,7 @@ class Process:
         self.datasource_query = datasource_query
         self.datasource_uses_unicode = datasource_uses_unicode
         self.datasource_view = datasource_view
+        self.datasource_subset = datasource_subset
 
     @classmethod
     def from_json(cls, process_as_json):
@@ -1754,20 +1889,21 @@ class Process:
                    metadata_procedure=process_as_dict['MetadataProcedure'],
                    data_procedure=process_as_dict['DataProcedure'],
                    epilog_procedure=process_as_dict['EpilogProcedure'],
-                   datasource_type=f(process_as_dict['DataSource'],'Type'),
-                   datasource_ascii_decimal_separator=f(process_as_dict['DataSource'],'asciiDecimalSeparator'),
-                   datasource_ascii_delimiter_char=f(process_as_dict['DataSource'],'asciiDelimiterChar'),
-                   datasource_ascii_delimiter_type=f(process_as_dict['DataSource'],'asciiDelimiterType'),
-                   datasource_ascii_header_records=f(process_as_dict['DataSource'],'asciiHeaderRecords'),
-                   datasource_ascii_quote_character=f(process_as_dict['DataSource'],'asciiQuoteCharacter'),
-                   datasource_ascii_thousand_separator=f(process_as_dict['DataSource'],'asciiThousandSeparator'),
-                   datasource_data_source_name_for_client=f(process_as_dict['DataSource'],'dataSourceNameForClient'),
-                   datasource_data_source_name_for_server=f(process_as_dict['DataSource'],'dataSourceNameForServer'),
-                   datasource_password=f(process_as_dict['DataSource'],'password'),
-                   datasource_user_name=f(process_as_dict['DataSource'],'userName'),
-                   datasource_query=f(process_as_dict['DataSource'],'query'),
-                   datasource_uses_unicode=f(process_as_dict['DataSource'],'usesUnicode'),
-                   datasource_view=f(process_as_dict['DataSource'],'view'))
+                   datasource_type=f(process_as_dict['DataSource'], 'Type'),
+                   datasource_ascii_decimal_separator=f(process_as_dict['DataSource'], 'asciiDecimalSeparator'),
+                   datasource_ascii_delimiter_char=f(process_as_dict['DataSource'], 'asciiDelimiterChar'),
+                   datasource_ascii_delimiter_type=f(process_as_dict['DataSource'], 'asciiDelimiterType'),
+                   datasource_ascii_header_records=f(process_as_dict['DataSource'], 'asciiHeaderRecords'),
+                   datasource_ascii_quote_character=f(process_as_dict['DataSource'], 'asciiQuoteCharacter'),
+                   datasource_ascii_thousand_separator=f(process_as_dict['DataSource'], 'asciiThousandSeparator'),
+                   datasource_data_source_name_for_client=f(process_as_dict['DataSource'], 'dataSourceNameForClient'),
+                   datasource_data_source_name_for_server=f(process_as_dict['DataSource'], 'dataSourceNameForServer'),
+                   datasource_password=f(process_as_dict['DataSource'], 'password'),
+                   datasource_user_name=f(process_as_dict['DataSource'], 'userName'),
+                   datasource_query=f(process_as_dict['DataSource'], 'query'),
+                   datasource_uses_unicode=f(process_as_dict['DataSource'], 'usesUnicode'),
+                   datasource_view=f(process_as_dict['DataSource'], 'view'),
+                   datasource_subset=f(process_as_dict['DataSource'], 'subset'))
 
     @staticmethod
     def auto_generated_string():
@@ -1854,9 +1990,6 @@ class Process:
     def set_datasource_ascii_quote_character(self, datasource_ascii_quote_character):
         self.datasource_ascii_quote_character = datasource_ascii_quote_character
 
-    def set_datasource_ascii_quote_character(self, datasource_ascii_quote_character):
-        self.datasource_ascii_quote_character = datasource_ascii_quote_character
-
     def set_datasource_ascii_thousand_separator(self, datasource_ascii_thousand_separator):
         self.datasource_ascii_thousand_separator = datasource_ascii_thousand_separator
 
@@ -1880,6 +2013,9 @@ class Process:
 
     def set_datasource_view(self, datasource_view):
         self.datasource_view = datasource_view
+
+    def set_datasource_subset(self, datasource_subset):
+        self.datasource_subset = datasource_subset
 
     #construct self.body (json) from the class-attributes
     def construct_body(self):
@@ -1929,6 +2065,14 @@ class Process:
                 "dataSourceNameForClient": self.datasource_data_source_name_for_server,
                 "dataSourceNameForServer": self.datasource_data_source_name_for_server,
                 "view": self.datasource_view
+            }
+
+        elif self.datasource_type == 'TM1DimensionSubset':
+            body_as_dict['DataSource'] = {
+                "Type": self.datasource_type,
+                "dataSourceNameForClient": self.datasource_data_source_name_for_server,
+                "dataSourceNameForServer": self.datasource_data_source_name_for_server,
+                "subset": self.datasource_subset
             }
         return json.dumps(body_as_dict, ensure_ascii=False, sort_keys=False)
 
