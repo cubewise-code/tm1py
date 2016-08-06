@@ -19,6 +19,8 @@ tm1.create_view(view=mdx_view)
 
 # get view content
 content = tm1.get_view_content(cube_name=mdx_view.cube, view_name=mdx_view.name)
+
+
 print(content)
 
 # logout

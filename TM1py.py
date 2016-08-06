@@ -86,7 +86,7 @@ class TM1pyLogin:
         pass
 
 class TM1pyHTTPClient:
-    ''' low level communication with TM1 instance via HTTIP
+    ''' low level communication with TM1 instance via HTTP
 
     '''
     def __init__(self, ip, port, login, ssl=True):
@@ -879,7 +879,7 @@ class TM1pyQueries:
 
         ordinal_axe2 = 0
         # get coordinates on axe 2: Title
-        # if there are no elements on axe 2 assign emopty list to elements_on_axe2
+        # if there are no elements on axe 2 assign empty list to elements_on_axe2
         if len(response_as_dict['Axes']) > 2:
             axe2_as_dict = response_as_dict['Axes'][2]
             Tuples_as_dict = axe2_as_dict['Tuples'][ordinal_axe2]['Members']
