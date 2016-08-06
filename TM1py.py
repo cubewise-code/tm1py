@@ -1097,6 +1097,20 @@ class TM1pyQueries:
             self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.delete_subset(dimension_name, subset_name)
 
+    def get_threads(self):
+        ''' return a dict of threads from the TM1 Server
+
+            :return:
+                dict: the response
+        '''
+        try:
+            request = '/api/v1/Threads'
+            response = self._client.GET(request)
+            response_as_dict = json.loads(response)['value']
+            return response_as_dict
+        except (ConnectionError, ConnectionAbortedError):
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)        
+
 class Server:
     ''' Abstraction of the TM1 Server
 
