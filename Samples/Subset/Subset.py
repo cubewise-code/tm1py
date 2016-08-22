@@ -14,7 +14,7 @@ tm1.create_subset(s)
 
 # create static subset
 s = Subset(dimension_name='plan_business_unit', subset_name='TM1py_' + random_string2, alias='',
-           elements=['10000', '10000', '10000', '10000', '10000', '10000', '10000', '10000', '10000'])
+           elements=['10000', '10100', '10110', '10120', '10200', '10210', '10220', '10300', '10400'])
 tm1.create_subset(s)
 
 # delete subset
