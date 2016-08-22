@@ -29,8 +29,10 @@ df = pd.DataFrame(values, index=multiindex)
 # print DataFrame
 print(df)
 
-# print mean
-mean = df.mean()
+# print mean and median
+print(df.mean())
+print(df.median())
+
 
 # explicit logout, since HTTPSessionTimeoutMinutes doesnt work
 tm1.logout()

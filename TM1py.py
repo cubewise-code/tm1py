@@ -274,6 +274,20 @@ class TM1pyQueries:
             self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_server_name()
 
+    def get_product_version(self):
+        ''' Ask TM1 Server for its version
+
+        :Returns:
+            String, the version
+        '''
+        try:
+            request = '/api/v1/Configuration/ProductVersion'
+            response = self._client.GET(request, '')
+            return json.loads(response)['value']
+        except (ConnectionError, ConnectionAbortedError):
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
+            self.get_product_version()
+
     def write_value(self, cube_name, dimension_order, element_tuple, value):
         ''' Write value into cube at specified coordinates
 
