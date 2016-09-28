@@ -7,6 +7,7 @@ import requests
 import logging
 import json
 import time
+from datetime import datetime, date, time, timedelta
 import copy
 import uuid
 import collections
@@ -258,7 +259,7 @@ class TM1pyQueries:
         ''' End TM1 Session and HTTP session
 
         '''
-        self._client.GET('/api/logout', '')
+        self._client.POST('/api/v1/ActiveSession/tm1.Close', '')
 
     def get_server_name(self):
         ''' Ask TM1 Server for its name
@@ -499,6 +500,7 @@ class TM1pyQueries:
             self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_all_process_names()
 
+    # TODO Redesign required!
     def get_all_process_names_filtered(self):
         ''' Get List with all process names from TM1 Server.
             Does not return:
@@ -746,6 +748,14 @@ class TM1pyQueries:
             self.delete_view(cube_name, view_name)
 
     def get_elements_with_attribute(self, dimension_name, hierarchy_name, attribute_name, attribute_value):
+        ''' get all elements from a dimension / hierarchy with given attribute value
+
+        :param dimension_name:
+        :param hierarchy_name:
+        :param attribute_name:
+        :param attribute_value:
+        :return:
+        '''
         attribute_name = attribute_name.replace(" ", "")
         if type(attribute_value) is str:
             request = "/api/v1/Dimensions('{}')/Hierarchies('{}')?$expand=Elements($filter = Attributes/{} eq '{}';$select=Name)".\
@@ -780,7 +790,7 @@ class TM1pyQueries:
             self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.create_dimension(dimension)
 
-    # Not complete
+    # TODO Not complete
     def delete_dimension(self, dimension_name):
         '''
 
@@ -789,19 +799,19 @@ class TM1pyQueries:
         '''
         pass
 
-    # Not complete
+    # TODO Not complete
     def create_hierarchy(self, dimension_name, hierarchy):
         pass
 
-    # Not complete
+    # TODO Not complete
     def get_hierarchy(self, dimension_name, hierarchy_name):
         pass
 
-    # Not complete
+    # TODO  Not complete
     def update_hierarchy(self, dimension_name, hierarchy_name):
         pass
 
-    # Not complete
+    # TODO Not complete
     def delete_hierarchy(self, dimension_name, hierarchy_name):
         pass
 
@@ -944,7 +954,8 @@ class TM1pyQueries:
             self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_dimension_order(name_cube)
 
-    def sort_addresstuple(self, dimension_order, unsorted_addresstuple):
+    @staticmethod
+    def sort_addresstuple(dimension_order, unsorted_addresstuple):
         ''' Sort the given mixed up addresstuple
 
         :param cube_name: String
@@ -1111,6 +1122,7 @@ class TM1pyQueries:
             self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.delete_subset(dimension_name, subset_name)
 
+    # TODO class for Threads? TBD!
     def get_threads(self):
         ''' return a dict of threads from the TM1 Server
 
@@ -1123,7 +1135,122 @@ class TM1pyQueries:
             response_as_dict = json.loads(response)['value']
             return response_as_dict
         except (ConnectionError, ConnectionAbortedError):
-            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)        
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
+
+
+    def get_chore(self, chore_name):
+        try:
+            request = "/api/v1/Chores('{}')?$expand=Tasks($expand=*,Process($select=Name),Chore($select=Name))".format(chore_name)
+            response = self._client.GET(request)
+            response_as_dict = json.loads(response)
+            return Chore.from_dict(response_as_dict)
+        except (ConnectionError, ConnectionAbortedError):
+            # TODO
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
+
+    def get_all_chores(self):
+        try:
+            request = "/api/v1/Chores?$expand=Tasks($expand=*,Process($select=Name),Chore($select=Name))"
+            response = self._client.GET(request)
+            response_as_dict = json.loads(response)
+            return [Chore.from_dict(chore_as_dict) for chore_as_dict in response_as_dict['value']]
+        except (ConnectionError, ConnectionAbortedError):
+            # TODO
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
+
+    def create_chore(self, chore):
+        try:
+            request = "/api/v1/Chores"
+            response = self._client.POST(request, chore.body)
+            if chore._active is True:
+                self.activate_chore(chore._name)
+            return response
+        except (ConnectionError, ConnectionAbortedError):
+            # TODO
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
+
+    def delete_chore(self, chore_name):
+        try:
+            request = "/api/v1/Chores('{}')".format(chore_name)
+            response = self._client.DELETE(request)
+            return response
+        except (ConnectionError, ConnectionAbortedError):
+            # TODO
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
+
+    def update_chore(self, chore):
+        '''
+        does not update: DST Sensitivity
+        :param chore:
+        :return:
+        '''
+        try:
+            # deactivate
+            self.deactivate_chore(chore._name)
+
+            # update StartTime, ExecutionMode, Frequency
+            request = "/api/v1/Chores('{}')".format(chore._name)
+            response = self._client.PATCH(request, chore.body)
+
+            # update Tasks
+            for i, task_new in enumerate(chore._tasks):
+                task_old =  self.get_chore_task(chore._name, i)
+                if task_old is None:
+                    self.create_chore_task(chore._name, task_new)
+                elif task_new != task_old:
+                    self.update_chore_task(chore._name, task_new)
+        except (ConnectionError, ConnectionAbortedError):
+            # TODO
+            pass
+        finally:
+            # activate
+            if chore._active:
+                self.activate_chore(chore._name)
+
+    def activate_chore(self, chore_name):
+        try:
+            request = "/api/v1/Chores('{}')/tm1.Activate".format(chore_name)
+            self._client.POST(request, '')
+        except (ConnectionError, ConnectionAbortedError):
+            # TODO
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
+
+    def deactivate_chore(self, chore_name):
+        try:
+            request = "/api/v1/Chores('{}')/tm1.Deactivate".format(chore_name)
+            self._client.POST(request, '')
+        except (ConnectionError, ConnectionAbortedError):
+            # TODO
+            pass
+
+    def get_chore_task(self, chore_name, step):
+        try:
+            request = "/api/v1/Chores('{}')/Tasks({})?$expand=*,Process($select=Name),Chore($select=Name)".format(chore_name, step)
+            response = self._client.GET(request)
+            response_as_dict = json.loads(response)
+            return ChoreTask.from_dict(response_as_dict)
+        except (ConnectionError, ConnectionAbortedError):
+            # TODO
+            pass
+
+    def create_chore_task(self, chore_name, chore_task):
+        try:
+            request = "/api/v1/Chores('{}')/Tasks".format(chore_name)
+            chore_task_body_as_string = json.dumps(chore_task.body, ensure_ascii=False, sort_keys=False)
+            response = self._client.POST(request, chore_task_body_as_string)
+        except (ConnectionError, ConnectionAbortedError):
+            # TODO
+            pass
+
+    def update_chore_task(self, chore_name, chore_task):
+        try:
+            request = "/api/v1/Chores('{}')/Tasks({})".format(chore_name, chore_task._step)
+
+            chore_task_body_as_string = json.dumps(chore_task.body, ensure_ascii=False, sort_keys=False)
+            response = self._client.PATCH(request, chore_task_body_as_string)
+        except (ConnectionError, ConnectionAbortedError):
+            # TODO
+            pass
 
 class Server:
     ''' Abstraction of the TM1 Server
@@ -1443,6 +1570,7 @@ class NativeView(View):
     @property
     def as_MDX(self):
         # create the MDX Query
+        # TODO Zero supression through NON EMPTY
         mdx = "SELECT "
 
         # Iterate through axes - append ON COLUMNS, ON ROWS statement
@@ -2103,5 +2231,178 @@ class Process:
                 "subset": self.datasource_subset
             }
         return json.dumps(body_as_dict, ensure_ascii=False, sort_keys=False)
+
+class ChoreTask:
+    def __init__(self, step, process_name, parameters):
+        self._step = step
+        self._process_name = process_name
+        self._parameters = parameters
+
+    @classmethod
+    def from_dict(cls, chore_task_as_dict):
+        return cls(step = int(chore_task_as_dict['Step']),
+                   process_name = chore_task_as_dict['Process']['Name'],
+                   parameters = [{'Name':p['Name'],'Value':p['Value']} for p in chore_task_as_dict['Parameters']])
+
+    @property
+    def body(self):
+        body_as_dict = collections.OrderedDict()
+        body_as_dict['Process@odata.bind'] = 'Processes(\'{}\')'.format(self._process_name)
+        body_as_dict['Parameters'] = self._parameters
+        return body_as_dict
+
+    def __eq__(self, other):
+        return self._process_name == other._process_name and self._parameters == other._parameters
+
+class ChoreStartTime:
+    '''
+    GMT Time!
+    '''
+    def __init__(self, year, month, day, hour, minute, second):
+        self._datetime = datetime.combine( date(year, month, day),time( hour, minute, second))
+
+
+    @classmethod
+    def from_string(cls, start_time_string):
+        # f to handle strange timestamp 2016-09-25T20:25Z instead of common 2016-09-25T20:25:01Z
+        f = lambda x: int(x) if x else 0
+        return cls(year=f(start_time_string[0:4]),
+                   month=f(start_time_string[5:7]),
+                   day=f(start_time_string[8:10]),
+                   hour=f(start_time_string[11:13]),
+                   minute=f(start_time_string[14:16]),
+                   second=f(start_time_string[17:19]))
+
+    @property
+    def start_time_string(self):
+        return self._datetime.strftime( "%Y-%m-%dT%H:%M:%SZ")
+
+    def set_time(self, year=None, month=None, day=None, hour=None, minute=None, second=None):
+        if year:
+            self._datetime = self._datetime.replace(year=year)
+        if month:
+            self._datetime = self._datetime.replace(month=month)
+        if day:
+            self._datetime = self._datetime.replace(day=day)
+        if hour:
+            self._datetime = self._datetime.replace(hour=hour)
+        if minute:
+            self._datetime = self._datetime.replace(minute=minute)
+        if second:
+            self._datetime = self._datetime.replace(second=second)
+
+    def add(self,days=0, hours=0, minutes=0, seconds=0):
+        self._datetime = self._datetime + timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
+
+class ChoreFrequency:
+    def __init__(self, days, hours, minutes, seconds):
+        self._days = days
+        self._hours = hours
+        self._minutes = minutes
+        self._seconds = seconds
+
+    def set_days(self, days):
+        self._days = str(days)
+        while len(self._days)<3:
+            self._days = "0" + self._days
+
+    def set_hours(self, hours):
+        self._hours = str(hours)
+        while len(self._hours)<2:
+            self._hours = "0" + self._hours
+
+    def set_minutes(self, minutes):
+        self._minutes = str(minutes)
+        while len(self._minutes)<2:
+            self._minutes = "0" + self._minutes
+
+    def set_seconds(self, seconds):
+        self._seconds = str(seconds)
+        while len(self._seconds)<2:
+            self._seconds = "0" + self._seconds
+
+    @classmethod
+    def from_string(cls, frequency_string):
+        pos_dt = frequency_string.find('DT',1)
+        pos_h = frequency_string.find('H',pos_dt)
+        pos_m = frequency_string.find('M',pos_h)
+        pos_s = len(frequency_string)-1
+        return cls(frequency_string[1:pos_dt],
+                   frequency_string[pos_dt+2:pos_h],
+                   frequency_string[pos_h+1:pos_m],
+                   frequency_string[pos_m+1:pos_s])
+
+    @property
+    def frequency_string(self):
+        return "P{}DT{}H{}M{}S".format(self._days, self._hours, self._minutes, self._seconds)
+
+class Chore:
+    def __init__(self, name, start_time, dst_sensitivity, active, execution_mode, frequency, tasks):
+        self._name = name
+        self._start_time = start_time
+        self._dst_sensitivity = dst_sensitivity
+        self._active = active
+        self._execution_mode = execution_mode
+        self._frequency = frequency
+        self._tasks = tasks
+
+    @classmethod
+    def from_json(cls, chore_as_json):
+        ''' Alternative constructor
+
+        :param chore_as_json: string, JSON. Response of /api/v1/Chores('x')/Tasks?$expand=*
+        :return: Chore, an instance of this class
+        '''
+
+        chore_as_dict = json.loads(chore_as_json)
+        return cls.from_dict(chore_as_dict)
+
+    @classmethod
+    def from_dict(cls, chore_as_dict):
+        ''' Alternative constructor
+
+        :param chore_as_dict: Chore as dict
+        :return: Chore, an instance of this class
+        '''
+        return cls(name=chore_as_dict['Name'],
+                   start_time= ChoreStartTime.from_string(chore_as_dict['StartTime']),
+                   dst_sensitivity = chore_as_dict['DSTSensitive'],
+                   active = chore_as_dict['Active'],
+                   execution_mode = chore_as_dict['ExecutionMode'],
+                   frequency = ChoreFrequency.from_string(chore_as_dict['Frequency']),
+                   tasks = [ChoreTask.from_dict(task) for task in chore_as_dict['Tasks']])
+
+    def add_task(self, task):
+        self._tasks.append(task)
+
+    def activate(self):
+        self._active = True
+
+    def deactivate(self):
+        self._active = False
+
+    def reschedule(self, days=0, hours=0, minutes=0, seconds=0):
+        self._start_time.add(days=days, hours=hours, minutes=minutes, seconds=seconds)
+
+    @property
+    def body(self):
+        return self.construct_body()
+
+    def construct_body(self):
+        '''
+        construct self.body (json) from the class attributes
+        :return: String, TM1 JSON representation of a chore
+        '''
+
+        body_as_dict = collections.OrderedDict()
+        body_as_dict['Name'] = self._name
+        body_as_dict['StartTime'] = self._start_time.start_time_string
+        body_as_dict['DSTSensitive'] = self._dst_sensitivity
+        body_as_dict['Active'] = self._active
+        body_as_dict['ExecutionMode'] = self._execution_mode
+        body_as_dict['Frequency'] = self._frequency.frequency_string
+        body_as_dict['Tasks'] = [task.body for task in self._tasks]
+        return json.dumps(body_as_dict, ensure_ascii=False, sort_keys=False)
+
 
 

@@ -3,7 +3,7 @@ import uuid
 import unittest
 
 
-class TestAnnotationMethods(unittest.TestCase):
+class TestSubsetnMethods(unittest.TestCase):
     login = TM1pyLogin.native('admin', 'apple')
     tm1 = TM1(ip='', port=8001, login=login, ssl=False)
 
