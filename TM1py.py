@@ -7,6 +7,7 @@ import requests
 import logging
 import json
 import time
+from datetime import datetime, date, time, timedelta
 import copy
 import uuid
 import collections
@@ -258,7 +259,7 @@ class TM1pyQueries:
         ''' End TM1 Session and HTTP session
 
         '''
-        self._client.GET('/api/logout', '')
+        self._client.POST('/api/v1/ActiveSession/tm1.Close', '')
 
     def get_server_name(self):
         ''' Ask TM1 Server for its name
@@ -1147,10 +1148,22 @@ class TM1pyQueries:
             # TODO
             self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
 
+    def get_all_chores(self):
+        try:
+            request = "/api/v1/Chores?$expand=Tasks($expand=*,Process($select=Name),Chore($select=Name))"
+            response = self._client.GET(request)
+            response_as_dict = json.loads(response)
+            return [Chore.from_dict(chore_as_dict) for chore_as_dict in response_as_dict['value']]
+        except (ConnectionError, ConnectionAbortedError):
+            # TODO
+            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
+
     def create_chore(self, chore):
         try:
             request = "/api/v1/Chores"
             response = self._client.POST(request, chore.body)
+            if chore._active is True:
+                self.activate_chore(chore._name)
             return response
         except (ConnectionError, ConnectionAbortedError):
             # TODO
@@ -1172,6 +1185,9 @@ class TM1pyQueries:
         :return:
         '''
         try:
+            # deactivate
+            self.deactivate_chore(chore._name)
+
             # update StartTime, ExecutionMode, Frequency
             request = "/api/v1/Chores('{}')".format(chore._name)
             response = self._client.PATCH(request, chore.body)
@@ -1183,15 +1199,13 @@ class TM1pyQueries:
                     self.create_chore_task(chore._name, task_new)
                 elif task_new != task_old:
                     self.update_chore_task(chore._name, task_new)
-
-            # active/ deactive
-            if chore._active:
-                self.activate_chore(chore._name)
-            else:
-                self.deactivate_chore(chore._name)
         except (ConnectionError, ConnectionAbortedError):
             # TODO
             pass
+        finally:
+            # activate
+            if chore._active:
+                self.activate_chore(chore._name)
 
     def activate_chore(self, chore_name):
         try:
@@ -1556,6 +1570,7 @@ class NativeView(View):
     @property
     def as_MDX(self):
         # create the MDX Query
+        # TODO Zero supression through NON EMPTY
         mdx = "SELECT "
 
         # Iterate through axes - append ON COLUMNS, ON ROWS statement
@@ -2218,16 +2233,14 @@ class Process:
         return json.dumps(body_as_dict, ensure_ascii=False, sort_keys=False)
 
 class ChoreTask:
-    def __init__(self, chore_name, step, process_name, parameters):
-        self._chore_name = chore_name
+    def __init__(self, step, process_name, parameters):
         self._step = step
         self._process_name = process_name
         self._parameters = parameters
 
     @classmethod
     def from_dict(cls, chore_task_as_dict):
-        return cls(chore_name = chore_task_as_dict['Chore']['Name'],
-                   step = int(chore_task_as_dict['Step']),
+        return cls(step = int(chore_task_as_dict['Step']),
                    process_name = chore_task_as_dict['Process']['Name'],
                    parameters = [{'Name':p['Name'],'Value':p['Value']} for p in chore_task_as_dict['Parameters']])
 
@@ -2239,56 +2252,47 @@ class ChoreTask:
         return body_as_dict
 
     def __eq__(self, other):
-        return self.__dict__ == other.__dict__
+        return self._process_name == other._process_name and self._parameters == other._parameters
 
 class ChoreStartTime:
     '''
     GMT Time!
     '''
     def __init__(self, year, month, day, hour, minute, second):
-        self._year = year
-        self._month = month
-        self._day = day
-        self._hour = hour
-        self._minute = minute
-        self._second = second
+        self._datetime = datetime.combine( date(year, month, day),time( hour, minute, second))
 
-    @property
-    def start_date(self):
-        return "{}-{}-{}".format(self._year, self._month, self._day)
-
-    @property
-    def start_time(self):
-        return "{}:{}:{}".format(self._hour, self._minute, self._second)
 
     @classmethod
     def from_string(cls, start_time_string):
-        return cls(year=start_time_string[0:4],
-                   month=start_time_string[5:7],
-                   day=start_time_string[8:10],
-                   hour=start_time_string[11:13],
-                   minute=start_time_string[14:16],
-                   second=start_time_string[17:19])
+        # f to handle strange timestamp 2016-09-25T20:25Z instead of common 2016-09-25T20:25:01Z
+        f = lambda x: int(x) if x else 0
+        return cls(year=f(start_time_string[0:4]),
+                   month=f(start_time_string[5:7]),
+                   day=f(start_time_string[8:10]),
+                   hour=f(start_time_string[11:13]),
+                   minute=f(start_time_string[14:16]),
+                   second=f(start_time_string[17:19]))
 
     @property
     def start_time_string(self):
-        return "{}T{}Z".format(self.start_date, self.start_time)
+        return self._datetime.strftime( "%Y-%m-%dT%H:%M:%SZ")
 
     def set_time(self, year=None, month=None, day=None, hour=None, minute=None, second=None):
         if year:
-            self._year = year
+            self._datetime = self._datetime.replace(year=year)
         if month:
-            self._month = month
+            self._datetime = self._datetime.replace(month=month)
         if day:
-            self._day = day
+            self._datetime = self._datetime.replace(day=day)
         if hour:
-            self._hour = hour
+            self._datetime = self._datetime.replace(hour=hour)
         if minute:
-            self._minute = minute
+            self._datetime = self._datetime.replace(minute=minute)
         if second:
-            self._second = second
+            self._datetime = self._datetime.replace(second=second)
 
-
+    def add(self,days=0, hours=0, minutes=0, seconds=0):
+        self._datetime = self._datetime + timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
 
 class ChoreFrequency:
     def __init__(self, days, hours, minutes, seconds):
@@ -2319,10 +2323,14 @@ class ChoreFrequency:
 
     @classmethod
     def from_string(cls, frequency_string):
-        return cls(frequency_string[1:4],
-                   frequency_string[6:8],
-                   frequency_string[9:11],
-                   frequency_string[12:14])
+        pos_dt = frequency_string.find('DT',1)
+        pos_h = frequency_string.find('H',pos_dt)
+        pos_m = frequency_string.find('M',pos_h)
+        pos_s = len(frequency_string)-1
+        return cls(frequency_string[1:pos_dt],
+                   frequency_string[pos_dt+2:pos_h],
+                   frequency_string[pos_h+1:pos_m],
+                   frequency_string[pos_m+1:pos_s])
 
     @property
     def frequency_string(self):
@@ -2342,7 +2350,7 @@ class Chore:
     def from_json(cls, chore_as_json):
         ''' Alternative constructor
 
-        :param chore_as_json: string, JSON. Response of /api/v1/Processes('x')/Tasks?$expand=*
+        :param chore_as_json: string, JSON. Response of /api/v1/Chores('x')/Tasks?$expand=*
         :return: Chore, an instance of this class
         '''
 
@@ -2353,23 +2361,28 @@ class Chore:
     def from_dict(cls, chore_as_dict):
         ''' Alternative constructor
 
-        :param chore_as_dict: string, JSON. Response of /api/v1/Processes('x')/Tasks?$expand=*
+        :param chore_as_dict: Chore as dict
         :return: Chore, an instance of this class
         '''
-        x = [ChoreTask.from_dict(task) for task in chore_as_dict['Tasks']]
-
-
         return cls(name=chore_as_dict['Name'],
                    start_time= ChoreStartTime.from_string(chore_as_dict['StartTime']),
                    dst_sensitivity = chore_as_dict['DSTSensitive'],
                    active = chore_as_dict['Active'],
                    execution_mode = chore_as_dict['ExecutionMode'],
                    frequency = ChoreFrequency.from_string(chore_as_dict['Frequency']),
-                   tasks = x)
+                   tasks = [ChoreTask.from_dict(task) for task in chore_as_dict['Tasks']])
 
     def add_task(self, task):
         self._tasks.append(task)
 
+    def activate(self):
+        self._active = True
+
+    def deactivate(self):
+        self._active = False
+
+    def reschedule(self, days=0, hours=0, minutes=0, seconds=0):
+        self._start_time.add(days=days, hours=hours, minutes=minutes, seconds=seconds)
 
     @property
     def body(self):
@@ -2377,8 +2390,8 @@ class Chore:
 
     def construct_body(self):
         '''
-        construct self.body (json) from the class-attributes
-        :return: String, json that is accepted by TM1
+        construct self.body (json) from the class attributes
+        :return: String, TM1 JSON representation of a chore
         '''
 
         body_as_dict = collections.OrderedDict()

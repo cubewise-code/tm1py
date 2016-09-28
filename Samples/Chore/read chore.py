@@ -6,21 +6,12 @@ login = TM1pyLogin.native('admin', 'apple')
 tm1 = TM1(ip='', port=8001, login=login, ssl=False)
 
 #read Process:
-c = tm1.get_chore('demo')
+c = tm1.get_chore('real chore')
 
-c._name = 'demo12'
-c._start_time.set_time(minute=39)
+# print out processes and parameters
+for task in c._tasks:
+    print("Process: {} Parameters: {}".format(task._process_name, task._parameters))
 
-
-tm1.create_chore(c)
-
-c._start_time.set_time(minute=49)
-c._active = True
-
-tm1.update_chore(c)
-
-#tm1.delete_chore(c._name)
-
-
+# logout
 tm1.logout()
 
