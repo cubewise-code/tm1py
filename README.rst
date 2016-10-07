@@ -41,22 +41,6 @@ TM1py offers handy features to interact with TM1 from Python, such as
             ('FY 2004 Budget', 'Germany', 'IT', 'Web Site', 'local', 'input', 'Dec-2005'): 5790
         }
     >>> tm1.write_values(cube_name, coordinates_and_values)
-    >>> tm1.logout()
-    
-- Trigger execution of TI processes from Python
-
-.. code-block:: python
-
-    >>> from TM1py import TM1pyQueries as TM1
-    >>> login = TM1pyLogin.native('admin', 'apple')
-    >>> tm1 = TM1(ip='', port=8001, login=login, ssl=False)
-    >>> parameters = {
-            "Parameters": [{ 
-                "Name": "legal_entity", 
-                "Value": "UK01" 
-            }] 
-        }
-    >>> tm1.execute_process(name_process='import_actuals', parameters=parameters)
 
 - Migrate TM1 objects
 
@@ -85,6 +69,19 @@ TM1py offers handy features to interact with TM1 from Python, such as
     >>>     "SecurityRefresh;"
     >>> ]
     >>> tm1.execute_TI_code(lines_prolog=lines_prolog, lines_epilog=lines_epilog)
+
+- CRUD features for CellAnnotations
+- CRUD featues for Processes
+- CRUD feautes for Chores
+- CRUD features for NativeViews
+- CRUD features for MDXViews
+- CRUD features for Subsets
+- Generate MDX from NativeViews
+- Execute Processes
+- Execute Chores
+- Query Threads
+- Query MessageLog and TransactionLog
+
 
 Requirements
 =======================
