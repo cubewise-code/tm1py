@@ -1,5 +1,4 @@
 from TM1py import TM1pyQueries as TM1, TM1pyLogin, MDXView
-import uuid
 
 # establish connection to TM1 Server
 login = TM1pyLogin.native('admin', 'apple')
