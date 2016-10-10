@@ -9,7 +9,7 @@ with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
         print(user.name)
     for group in tm1.get_all_groups():
         print(group)
-    for group in tm1.get_groups_from_user('admin')
+    for group in tm1.get_groups_from_user('admin'):
         print(group)
 
 
