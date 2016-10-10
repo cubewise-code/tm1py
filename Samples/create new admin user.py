@@ -7,4 +7,5 @@ with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
     u.name = 'Han Solo'
     u.friendly_name = 'Han'
     u.password = 'MilleniumFalcon'
+    u.add_group('Rebels')
     tm1.create_user(u)

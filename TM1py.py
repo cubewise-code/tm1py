@@ -1136,12 +1136,22 @@ class TM1pyQueries:
         return User.from_json(response)
 
     def update_user(self, user):
+        for current_group in self.get_groups_from_user(user.name):
+            if current_group not in user.groups:
+                self.remove_user_from_group(current_group, user.name)
         request = '/api/v1/Users(\'{}\')'.format(user.name)
         return self._client.PATCH(request, user.body)
 
     def delete_user(self, user_name):
         request = '/api/v1/Users(\'{}\')'.format(user_name)
         return self._client.DELETE(request)
+
+    def get_all_users(self):
+        request = '/api/v1/Users?$expand=Groups'
+        response = self._client.GET(request)
+        response_as_dict = json.loads(response)
+        users = [User.from_dict(user) for user in response_as_dict['value']]
+        return users
 
     def get_active_users(self):
         request = '/api/v1/Users?$filter=IsActive eq true&$expand=Groups'
@@ -1163,6 +1173,16 @@ class TM1pyQueries:
         users = [User.from_dict(user) for user in response_as_dict['Users']]
         return users
 
+    def get_groups_from_user(self, user_name):
+        request = '/api/v1/Users(\'{}\')/Groups'.format(user_name)
+        response = self._client.GET(request)
+        groups = json.loads(response)['value']
+        return [group['Name'] for group in groups]
+
+    def remove_user_from_group(self, group_name, user_name):
+        request = '/api/v1/Users(\'{}\')/Groups(\'{}\')'.format(user_name, group_name)
+        return self._client.DELETE(request)
+
     def get_all_groups(self):
         request = '/api/v1/Groups?$select=Name'
         response = self._client.GET(request)
@@ -1181,6 +1201,9 @@ class TM1pyQueries:
         cube = Cube.from_json(response)
         return cube
 
+    def update_cube(self, cube):
+        request = '/api/v1/Cubes(\'{}\')'.format(cube.name)
+        return self._client.PATCH(request, cube.body)
 
     def delete_cube(self, cube_name):
         request = '/api/v1/Cubes(\'{}\')'.format(cube_name)
@@ -2344,11 +2367,10 @@ class Chore:
 
 
 class User:
-    def __init__(self, name, friendly_name, user_type, groups, password=None):
+    def __init__(self, name, groups, friendly_name=None, password=None):
         self._name = name
+        self._groups = [group.upper() for group in groups]
         self._friendly_name = friendly_name
-        self._user_type = user_type
-        self._groups = groups
         self._password = password
 
     @property
@@ -2360,13 +2382,13 @@ class User:
         return self._friendly_name
 
     @property
-    def user_type(self):
-        return self._user_type
-
-    @property
     def password(self):
         if self._password:
             return b64encode(str.encode(self._password))
+
+    @property
+    def is_admin(self):
+        return 'ADMIN' in self.groups
 
     @property
     def groups(self):
@@ -2380,21 +2402,17 @@ class User:
     def friendly_name(self, value):
         self._friendly_name = value
 
-    @user_type.setter
-    def user_type(self, value):
-        if value not in ['Admin', 'DataAdmin', 'SecurityAdmin']:
-            raise TM1pyException('value not valid')
-        self._user_type = value
-
     @password.setter
     def password(self, value):
         self._password = value
 
     def add_group(self, group_name):
+        group_name = group_name.upper()
         if group_name not in self._groups:
             self._groups.append(group_name)
 
     def remove_group(self, group_name):
+        group_name = group_name.upper()
         if group_name in self._groups:
             self._groups.remove(group_name)
 
@@ -2417,7 +2435,6 @@ class User:
         '''
         return cls(name=user_as_dict['Name'],
                    friendly_name=user_as_dict['FriendlyName'],
-                   user_type=user_as_dict['Type'],
                    groups=[group['Name'] for group in user_as_dict['Groups']])
 
     @property
@@ -2432,13 +2449,13 @@ class User:
         body_as_dict = collections.OrderedDict()
         body_as_dict['Name'] = self.name
         body_as_dict['FriendlyName'] = self.friendly_name
-        body_as_dict['Password'] = self._password
-        body_as_dict['Type'] = self.user_type
+        if self.password:
+            body_as_dict['Password'] = self._password
         body_as_dict['Groups@odata.bind'] = ['Groups(\'{}\')'.format(group) for group in self.groups]
         return json.dumps(body_as_dict, ensure_ascii=False, sort_keys=True)
 
 class Cube:
-    def __init__(self, name, dimensions, rules):
+    def __init__(self, name, dimensions, rules=None):
         self._name = name
         self._dimensions = dimensions
         self._rules = rules
@@ -2453,6 +2470,11 @@ class Cube:
     @property
     def rules(self):
         return self._rules
+
+
+    @rules.setter
+    def rules(self, value):
+        self._rules = value
 
     @classmethod
     def from_json(cls, cube_as_json):
@@ -2473,8 +2495,7 @@ class Cube:
         '''
         return cls(name=cube_as_dict['Name'],
                    dimensions=[dimension['Name'] for dimension in cube_as_dict['Dimensions']],
-                   rules=Rules(cube_as_dict['Rules']))
-
+                   rules=Rules(cube_as_dict['Rules']) if cube_as_dict['Rules'] else None)
 
     @property
     def body(self):
@@ -2488,7 +2509,8 @@ class Cube:
         body_as_dict = collections.OrderedDict()
         body_as_dict['Name'] = self.name
         body_as_dict['Dimensions@odata.bind'] = ['Dimensions(\'{}\')'.format(dimension) for dimension in self.dimensions]
-        body_as_dict['Rules'] = str(self.rules)
+        if self.rules:
+            body_as_dict['Rules'] = str(self.rules)
         return json.dumps(body_as_dict, ensure_ascii=False, sort_keys=True)
 
 class Rules:
@@ -2515,7 +2537,6 @@ class Rules:
             if stmt.lower() == 'skipcheck':
                 return True
         return False
-
 
     def __len__(self):
         return len(self.rules_analytics)

@@ -4,12 +4,13 @@ login = TM1pyLogin.native('admin', 'apple')
 
 with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
     for user in tm1.get_users_from_group('ADMIN'):
-        pass
+        print(user.name)
     for user in tm1.get_active_users():
-        pass
+        print(user.name)
     for group in tm1.get_all_groups():
-        pass
-
+        print(group)
+    for group in tm1.get_groups_from_user('admin')
+        print(group)
 
 
 
