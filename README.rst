@@ -76,6 +76,8 @@ TM1py offers handy features to interact with TM1 from Python, such as
 - CRUD features for NativeViews
 - CRUD features for MDXViews
 - CRUD features for Subsets
+- CRUD featurs for Cubes
+- CRUD features for Users
 - Generate MDX from NativeViews
 - Execute Processes
 - Execute Chores
