@@ -734,6 +734,11 @@ class TM1pyQueries:
         dimension_as_dict = json.loads(dimension_as_json)
         return dimension_as_dict
 
+    # not complete
+    def get_dimension(self, dimension_name):
+        dimension_as_json = self._client.GET("/api/v1/Dimensions('" + dimension_name + "')")
+        dimension_as_dict = json.loads(dimension_as_json)
+        return dimension_as_dict
 
     # Not complete
     def create_dimension(self, dimension):
@@ -743,11 +748,12 @@ class TM1pyQueries:
         :param hierarchy: instance of TM1py.Hierarchy
         :return: None
         '''
-        try:
-            pass
-        except (ConnectionError, ConnectionAbortedError):
-            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
-            self.create_dimension(dimension)
+
+        request = "/api/v1/Dimensions"
+        print(dimension.body)
+        response = self._client.POST(request, dimension.body)
+        return response
+
 
     # TODO Not complete
     def delete_dimension(self, dimension_name):
@@ -1119,6 +1125,7 @@ class TM1pyQueries:
         request = "/api/v1/Chores('{}')/Tasks".format(chore_name)
         chore_task_body_as_string = json.dumps(chore_task.body, ensure_ascii=False, sort_keys=False)
         response = self._client.POST(request, chore_task_body_as_string)
+        return response
 
     def update_chore_task(self, chore_name, chore_task):
         request = "/api/v1/Chores('{}')/Tasks({})".format(chore_name, chore_task._step)
@@ -1732,6 +1739,7 @@ class Dimension:
         '''
         self._name = name
         self._hierarchies = []
+        self._attributes = {'Caption': name}
 
     @property
     def body(self):
@@ -1749,10 +1757,13 @@ class Dimension:
 
     def _construct_body(self):
         self.body_as_dict = collections.OrderedDict()
-        self.body_as_dict["@odata.type"] = "ibm.tm1.api.v1.Dimension"
+        #self.body_as_dict["@odata.type"] = "ibm.tm1.api.v1.Dimension"
         self.body_as_dict["Name"] = self._name
+        self.body_as_dict["UniqueName"] = self.unique_name
+        self.body_as_dict["Attributes"] = self._attributes
         return json.dumps(self.body_as_dict, ensure_ascii=False, sort_keys=False)
-
+       
+        
 # uncomplete
 class Hierarchy:
     '''
@@ -2047,8 +2058,8 @@ class Process:
         self.variables.append(variable)
         # 2. handle UI info
         var_type = 33 if type == 'Numeric' else 32
-        # '' !
-        variable_ui_data = 'VarType=' +  str(var_type) + '' + 'ColType=' + str(827)+ ''
+        # '\r' !
+        variable_ui_data = 'VarType=' +  str(var_type) + '\r' + 'ColType=' + str(827)+ '\r'
         '''
         mapping VariableUIData:
             VarType 33 -> Numeric
