@@ -378,16 +378,14 @@ class TM1pyQueries:
             self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_all_dimension_names()
 
-    def execute_process(self, name_process, parameters={}):
-        ''' Ask TM1 Server to execute a process
+    def execute_process(self, name_process, parameters=''):
+        """ Ask TM1 Server to execute a process
 
-        :Parameters:
-            `name_process`: String, name of the process to be executed
-            `parameters`: String, for instance {"Parameters": [ { "Name": "pLegalEntity", "Value": "UK01" }] }
+        :param name_process:
+        :param parameters: String, for instance {"Parameters": [ { "Name": "pLegalEntity", "Value": "UK01" }] }
+        :return:
+        """
 
-        :Returns:
-            String, the response
-        '''
         data = json.dumps(parameters)
         return self._client.POST("/api/v1/Processes('" + name_process + "')/tm1.Execute", data=data)
 
@@ -447,7 +445,7 @@ class TM1pyQueries:
             return response
 
     def get_processerrorlogs(self, process_name):
-        ''' get all ProcessErrorLog entry for a process
+        ''' get all ProcessErrorLog entries for a process
 
         :param process_name: name of the process
         :return: list - Collection of ProcessErrorLogs
@@ -516,14 +514,11 @@ class TM1pyQueries:
 
 
     def get_process(self, name_process):
-        ''' Get a process from TM1 Server
+        """ Get a process from TM1 Server
 
-        :Parameters:
-            `name_process`: String
-
-        :Returns:
-             Instance of the TM1py.Process class
-        '''
+        :param name_process:
+        :return: Instance of the TM1py.Process
+        """
         request="/api/v1/Processes('" + name_process +"')?$select=*,UIData,VariablesUIData," \
                                                       "DataSource/dataSourceNameForServer," \
                                                       "DataSource/dataSourceNameForClient," \
@@ -745,7 +740,7 @@ class TM1pyQueries:
         '''
         :notes: UNCOMPLETE!
 
-        :param hierarchy: instance of TM1py.Hierarchy
+        :param dimension
         :return: None
         '''
 
@@ -795,7 +790,7 @@ class TM1pyQueries:
         annotations = [Annotation.from_json(json.dumps(element)) for element in annotations_as_dict]
         return annotations
 
-
+    # Obsolete since the Cube class exists
     def get_cube_names_and_dimensions(self):
         ''' Get all cubes with its dimensions in a dictionary from TM1 Server
 
@@ -1172,7 +1167,6 @@ class TM1pyQueries:
         response = self._client.GET(request)
         return json.loads(response)['value']
 
-
     def get_users_from_group(self, group_name):
         request = '/api/v1/Groups(\'{}\')?$expand=Users($expand=Groups)'.format(group_name)
         response = self._client.GET(request)
@@ -1184,10 +1178,10 @@ class TM1pyQueries:
         request = '/api/v1/Users(\'{}\')/Groups'.format(user_name)
         response = self._client.GET(request)
         groups = json.loads(response)['value']
-        return [group['Name'] for group in groups]
+        return [group['Name'].upper() for group in groups]
 
     def remove_user_from_group(self, group_name, user_name):
-        request = '/api/v1/Users(\'{}\')/Groups(\'{}\')'.format(user_name, group_name)
+        request = '/api/v1/Users(\'{}\')/Groups?$id=Groups(\'{}\')'.format(user_name, group_name)
         return self._client.DELETE(request)
 
     def get_all_groups(self):
@@ -1207,6 +1201,27 @@ class TM1pyQueries:
         response = self._client.GET(request)
         cube = Cube.from_json(response)
         return cube
+
+    def get_all_cubes(self):
+        request = '/api/v1/Cubes?$expand=Dimensions($select=Name)'
+        response = self._client.GET(request)
+        response_as_dict = json.loads(response)
+        cubes = [Cube.from_dict(cube_as_dict=cube) for cube in response_as_dict['value']]
+        return cubes
+
+    def get_model_cubes(self):
+        request = '/api/v1/ModelCubes()?$expand=Dimensions($select=Name)'
+        response = self._client.GET(request)
+        response_as_dict = json.loads(response)
+        cubes = [Cube.from_dict(cube_as_dict=cube) for cube in response_as_dict['value']]
+        return cubes
+
+    def get_control_cubes(self):
+        request = '/api/v1/ControlCubes()?$expand=Dimensions($select=Name)'
+        response = self._client.GET(request)
+        response_as_dict = json.loads(response)
+        cubes = [Cube.from_dict(cube_as_dict=cube) for cube in response_as_dict['value']]
+        return cubes
 
     def update_cube(self, cube):
         request = '/api/v1/Cubes(\'{}\')'.format(cube.name)
@@ -1258,6 +1273,22 @@ class Subset:
         self._alias = alias
         self._expression = expression
         self._elements = elements
+
+    @property
+    def dimension_name(self):
+        return self._dimension_name
+
+    @property
+    def name(self):
+        return self._subset_name
+
+    @property
+    def alias(self):
+        return self._alias
+
+    @property
+    def elements(self):
+        return self._elements
 
     @classmethod
     def from_json(cls, subset_as_json):
@@ -1416,6 +1447,14 @@ class View:
         self._cube = cube
         self._name = name
 
+    @property
+    def cube(self):
+        return self._cube
+
+    @property
+    def name(self):
+        return self._name
+
     def get_cube(self):
         return self._cube
 
@@ -1438,15 +1477,23 @@ class MDXView(View):
 
     @property
     def cube(self):
-        return self.get_cube()
+        return self._cube
 
     @property
     def name(self):
-        return self.get_name()
+        return self._name
+
+    @property
+    def MDX(self):
+        return self._MDX
 
     @property
     def body(self):
         return self.construct_body()
+
+    @MDX.setter
+    def MDX(self):
+        self._MDX = MDX
 
     @classmethod
     def from_json(cls, view_as_json):
@@ -1477,8 +1524,15 @@ class NativeView(View):
         :Notes:
             Complete, functional and tested
     '''
-    def __init__(self, name_cube, name_view, suppress_empty_columns=False, suppress_empty_rows=False,
-                 format_string="0.#########\fG|0|", titles = [], columns = [], rows = []):
+    def __init__(self,
+                 name_cube,
+                 name_view,
+                 suppress_empty_columns=False,
+                 suppress_empty_rows=False,
+                 format_string="0.#########\fG|0|",
+                 titles = [],
+                 columns = [],
+                 rows = []):
         View.__init__(self, name_cube, name_view)
         self._suppress_empty_columns = suppress_empty_columns
         self._suppress_empty_rows = suppress_empty_rows
@@ -1487,46 +1541,6 @@ class NativeView(View):
         self._columns = columns
         self._rows = rows
 
-
-    @classmethod
-    def from_json(cls, view_as_json):
-        ''' Alternative constructor
-                :Parameters:
-                    `view_as_json` : string, JSON
-
-                :Returns:
-                    `View` : an instance of this class
-        '''
-        view_as_dict = json.loads(view_as_json)
-        titles, columns, rows = [], [], []
-
-        for selection in view_as_dict['Titles']:
-            if selection['Subset']['Name'] == '':
-                subset = AnnonymousSubset.from_dict(selection['Subset'])
-            else:
-                subset = Subset.from_dict(selection['Subset'])
-            selected = selection['Selected']['Name']
-            titles.append(ViewTitleSelection(dimension_name=subset.get_dimension_name(),
-                                             subset=subset, selected=selected))
-        for i, axe in enumerate([view_as_dict['Columns'], view_as_dict['Rows']]):
-            for selection in axe:
-                if selection['Subset']['Name'] == '':
-                    subset = AnnonymousSubset.from_dict(selection['Subset'])
-                else:
-                    subset = Subset.from_dict(selection['Subset'])
-                axis_selection = ViewAxisSelection(dimension_name=subset.get_dimension_name(),
-                                                   subset=subset)
-                columns.append(axis_selection) if i == 0 else rows.append(axis_selection)
-
-        return cls(name_cube = view_as_dict["@odata.context"][20:view_as_dict["@odata.context"].find("')/")],
-                   name_view = view_as_dict['Name'],
-                   suppress_empty_columns = view_as_dict['SuppressEmptyColumns'],
-                   suppress_empty_rows = view_as_dict['SuppressEmptyRows'],
-                   format_string = view_as_dict['FormatString'],
-                   titles = titles,
-                   columns = columns,
-                   rows = rows)
-
     @property
     def body(self):
         return self._construct_body()
@@ -1534,8 +1548,9 @@ class NativeView(View):
     @property
     def as_MDX(self):
         # create the MDX Query
-        # TODO Zero supression through NON EMPTY
         mdx = "SELECT "
+        if self.suppress_empty_cells:
+            mdx += " NON EMPTY"
 
         # Iterate through axes - append ON COLUMNS, ON ROWS statement
         # 4 Options
@@ -1576,18 +1591,38 @@ class NativeView(View):
 
         return mdx
 
-    def set_suppress_empty_cells(self, value):
-        self.set_suppress_empty_columns(value)
-        self.set_suppress_empty_rows(value)
+    @property
+    def suppress_empty_cells(self):
+        return self._suppress_empty_columns and self._suppress_empty_rows
 
-    def set_suppress_empty_columns(self, value):
-        self._suppress_empty_columns = value
+    @property
+    def suppress_empty_columns(self):
+        return self._suppress_empty_columns
 
-    def set_suppress_empty_rows(self, value):
+    @property
+    def suppress_empty_rows(self):
+        return self._suppress_empty_rows
+
+    @property
+    def format_string(self):
+        return self._format_string
+
+    @suppress_empty_cells.setter
+    def suppress_empty_cells(self, value):
+        self.suppress_empty_columns = value
+        self.suppress_empty_rows = value
+
+    @suppress_empty_rows.setter
+    def suppress_empty_rows(self, value):
         self._suppress_empty_rows = value
 
-    def set_format_string(self, new_format):
-        self._format_string = new_format
+    @suppress_empty_columns.setter
+    def suppress_empty_columns(self, value):
+        self._suppress_empty_columns = value
+
+    @format_string.setter
+    def format_string(self, value):
+        self._format_string = value
 
     def add_column(self, dimension_name, subset=None):
         ''' Add Dimension or Subset to the column-axis
@@ -1650,6 +1685,45 @@ class NativeView(View):
             if title._dimension_name == dimension_name:
                 self._titles.remove(title)
 
+    @classmethod
+    def from_json(cls, view_as_json):
+        ''' Alternative constructor
+                :Parameters:
+                    `view_as_json` : string, JSON
+
+                :Returns:
+                    `View` : an instance of this class
+        '''
+        view_as_dict = json.loads(view_as_json)
+        titles, columns, rows = [], [], []
+
+        for selection in view_as_dict['Titles']:
+            if selection['Subset']['Name'] == '':
+                subset = AnnonymousSubset.from_dict(selection['Subset'])
+            else:
+                subset = Subset.from_dict(selection['Subset'])
+            selected = selection['Selected']['Name']
+            titles.append(ViewTitleSelection(dimension_name=subset.get_dimension_name(),
+                                             subset=subset, selected=selected))
+        for i, axe in enumerate([view_as_dict['Columns'], view_as_dict['Rows']]):
+            for selection in axe:
+                if selection['Subset']['Name'] == '':
+                    subset = AnnonymousSubset.from_dict(selection['Subset'])
+                else:
+                    subset = Subset.from_dict(selection['Subset'])
+                axis_selection = ViewAxisSelection(dimension_name=subset.get_dimension_name(),
+                                                   subset=subset)
+                columns.append(axis_selection) if i == 0 else rows.append(axis_selection)
+
+        return cls(name_cube = view_as_dict["@odata.context"][20:view_as_dict["@odata.context"].find("')/")],
+                   name_view = view_as_dict['Name'],
+                   suppress_empty_columns = view_as_dict['SuppressEmptyColumns'],
+                   suppress_empty_rows = view_as_dict['SuppressEmptyRows'],
+                   format_string = view_as_dict['FormatString'],
+                   titles = titles,
+                   columns = columns,
+                   rows = rows)
+
     def _construct_body(self):
         ''' construct the ODATA conform JSON represenation for the NativeView entity.
 
@@ -1666,7 +1740,7 @@ class NativeView(View):
                     '],\"Titles\":[' + titles_json + '],' + bottom_json
 
 class ViewAxisSelection:
-    ''' Describing what is selected in a dimension on an axis. Can be a registered Subset or an annonymous ubset
+    ''' Describing what is selected in a dimension on an axis. Can be a registered Subset or an annonymous subset
 
     '''
     def __init__(self, dimension_name, subset):
@@ -2230,7 +2304,7 @@ class ChoreStartTime:
     GMT Time!
     '''
     def __init__(self, year, month, day, hour, minute, second):
-        self._datetime = datetime.combine( date(year, month, day),time( hour, minute, second))
+        self._datetime = datetime.combine(date(year, month, day), time(hour, minute, second))
 
 
     @classmethod
@@ -2268,32 +2342,47 @@ class ChoreStartTime:
     def add(self,days=0, hours=0, minutes=0, seconds=0):
         self._datetime = self._datetime + timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
 
+    def substract(self,days=0, hours=0, minutes=0, seconds=0):
+        self._datetime = self._datetime - timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
+
 class ChoreFrequency:
     def __init__(self, days, hours, minutes, seconds):
-        self._days = days
-        self._hours = hours
-        self._minutes = minutes
-        self._seconds = seconds
+        self._days = str(days).zfill(2)
+        self._hours = str(hours).zfill(2)
+        self._minutes = str(minutes).zfill(2)
+        self._seconds = str(seconds).zfill(2)
 
-    def set_days(self, days):
-        self._days = str(days)
-        while len(self._days)<2:
-            self._days = "0" + self._days
+    @property
+    def days(self):
+        return self._days
 
-    def set_hours(self, hours):
-        self._hours = str(hours)
-        while len(self._hours)<2:
-            self._hours = "0" + self._hours
+    @property
+    def hours(self):
+        return self._hours
 
-    def set_minutes(self, minutes):
-        self._minutes = str(minutes)
-        while len(self._minutes)<2:
-            self._minutes = "0" + self._minutes
+    @property
+    def minutes(self):
+        return self._minutes
 
-    def set_seconds(self, seconds):
-        self._seconds = str(seconds)
-        while len(self._seconds)<2:
-            self._seconds = "0" + self._seconds
+    @property
+    def seconds(self):
+        return self._seconds
+
+    @days.setter
+    def days(self, value):
+        self._days = str(value).zfill(2)
+
+    @hours.setter
+    def hours(self, value):
+        self._hours = str(value).zfill(2)
+
+    @minutes.setter
+    def minutes(self, value):
+        self._minutes = str(value).zfill(2)
+
+    @seconds.setter
+    def seconds(self, value):
+        self._seconds = str(value).zfill(2)
 
     @classmethod
     def from_string(cls, frequency_string):
@@ -2308,6 +2397,9 @@ class ChoreFrequency:
 
     @property
     def frequency_string(self):
+        return "P{}DT{}H{}M{}S".format(self._days, self._hours, self._minutes, self._seconds)
+
+    def __str__(self):
         return "P{}DT{}H{}M{}S".format(self._days, self._hours, self._minutes, self._seconds)
 
 class Chore:
@@ -2403,7 +2495,7 @@ class User:
 
     @property
     def groups(self):
-        return self._groups
+        return [group.upper() for group in self._groups]
 
     @name.setter
     def name(self, value):
@@ -2446,7 +2538,7 @@ class User:
         '''
         return cls(name=user_as_dict['Name'],
                    friendly_name=user_as_dict['FriendlyName'],
-                   groups=[group['Name'] for group in user_as_dict['Groups']])
+                   groups=[group['Name'].upper() for group in user_as_dict['Groups']])
 
     @property
     def body(self):
@@ -2482,6 +2574,11 @@ class Cube:
     def rules(self):
         return self._rules
 
+    @property
+    def has_rules(self):
+        if self._rules:
+            return True
+        return False
 
     @rules.setter
     def rules(self, value):
@@ -2528,10 +2625,10 @@ class Rules:
     def __init__(self, rules):
         self._text = rules
         self._rules_analytics = []
-        for statement in self._text.split(';'):
+        # remove comment-lines
+        text_without_comments = '\n'.join([rule for rule in rules.split('\n') if len(rule) > 0 and rule[0] !='#'])
+        for statement in text_without_comments.split(';'):
             if len(statement.strip()) > 0:
-                while statement.strip()[0] == '#':
-                    statement = statement.split('\n')
                 self._rules_analytics.append(statement.replace('\n',''))
 
     @property

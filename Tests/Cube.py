@@ -20,6 +20,12 @@ class TestCubeMethods(unittest.TestCase):
         c = self.tm1.get_cube(self.cube_name)
         self.assertIsInstance(c, Cube)
 
+        cubes = self.tm1.get_all_cubes()
+        control_cubes = self.tm1.get_control_cubes()
+        model_cubes = self.tm1.get_model_cubes()
+        self.assertEqual(len(cubes), len(control_cubes+model_cubes))
+
+
     def test3_update_cube(self):
         c = self.tm1.get_cube(self.cube_name)
         c.rules = Rules("SKIPCHECK;\nFEEDERS;")

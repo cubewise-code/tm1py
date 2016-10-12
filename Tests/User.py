@@ -14,7 +14,7 @@ class TestUserMethods(unittest.TestCase):
         u = User(name=self.user_name, groups=[], password='TM1py')
         self.tm1.create_user(u)
         all_users_after = self.tm1.get_all_users()
-        self.assertEqual(all_users_before + 1, all_users_after)
+        self.assertEqual(len(all_users_before) + 1, len(all_users_after))
 
     def test2_get_user(self):
         u = self.tm1.get_user(self.user_name)
@@ -28,7 +28,7 @@ class TestUserMethods(unittest.TestCase):
         self.tm1.update_user(u)
         # test
         groups = self.tm1.get_groups_from_user(u.name)
-        self.assertIn('10110',groups)
+        self.assertIn('10110', groups)
         # update user. Remove Group
         u.remove_group('10110')
         self.tm1.update_user(u)
