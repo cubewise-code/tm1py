@@ -1573,9 +1573,9 @@ class NativeView(View):
                         mdx += '*' + mdx_subset
             if i == 0:
                 if len(self._rows) > 0:
-                    mdx += 'on {}, '.format('ROWS')
+                    mdx += ' on {}, '.format('ROWS')
             else:
-                mdx += 'on {} '.format('COLUMNS')
+                mdx += ' on {} '.format('COLUMNS')
 
         # append the FROM statement
         mdx += 'FROM [' + self._cube + '] '
