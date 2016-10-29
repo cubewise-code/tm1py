@@ -11,8 +11,12 @@ from datetime import datetime, date, time, timedelta
 import copy
 import uuid
 import collections
-import http.client
 from base64 import b64encode
+import sys
+if sys.version[0] == '2':
+    import httplib as http_client
+else:
+    import http.client as http_client
 
 
 class TM1pyException(Exception):
@@ -114,7 +118,7 @@ class TM1pyHTTPClient:
         # disable HTTP verification warnings from requests library
         requests.packages.urllib3.disable_warnings()
         # logging
-        # http.client.HTTPConnection.debuglevel = 1
+        # http_client.HTTPConnection.debuglevel = 1
 
     def GET(self, request, data=''):
         ''' Perform a GET request against TM1 instance
@@ -250,7 +254,7 @@ class TM1pyQueries:
         :Returns:
             List of Servers (instancedsof the TM1py.Server class)
         '''
-        conn = http.client.HTTPConnection(adminhost, 5895)
+        conn = http_client.HTTPConnection(adminhost, 5895)
         request = '/api/v1/Servers'
         conn.request('GET', request, body='')
         response = conn.getresponse().read().decode('utf-8')
@@ -282,15 +286,13 @@ class TM1pyQueries:
         ''' End TM1 Session and HTTP session
 
         '''
-        response = self._client.GET('/api/v1/Configuration/ProductVersion')
-        tm1_version = json.loads(response)['value'][0:8]
-        tm1_version_num = int(tm1_version.replace(".",""))
-        # < TM1 10.2.2 FP 6
-        if tm1_version_num < 102206:
-            self._client.POST('/api/logout', '')
-        # >= TM1 10.2.2 FP 6
-        else:
+        try:
+            # ProductVersion
             self._client.POST('/api/v1/ActiveSession/tm1.Close', '')
+
+        except TM1pyException:
+            # ProductVersion < TM1 10.2.2 FP 6
+            self._client.POST('/api/logout', '')
 
     def get_server_name(self):
         ''' Ask TM1 Server for its name
@@ -424,8 +426,10 @@ class TM1pyQueries:
         request = "/api/v1/MessageLog()?$orderby='TimeStamp'&$filter=Logger eq 'TM1.Process' " \
                   "and contains( Message, '" + process_name + "')"
         response = self._client.GET(request=request)
-        message_log_entry = json.loads(response)['value'][0]
-        return message_log_entry['Message']
+        response_as_list = json.loads(response)['value']
+        if len(response_as_list) > 0:
+            message_log_entry = [0]
+            return message_log_entry['Message']
 
 
     def get_last_message_from_processerrorlog(self, process_name):
@@ -536,6 +540,29 @@ class TM1pyQueries:
         response = self._client.GET(request, "")
         return Process.from_json(process_as_json=response)
 
+    def get_all_processes(self):
+        """ Get a processes from TM1 Server
+
+        :param name_process:
+        :return: List, instances of the TM1py.Process
+        """
+        request="/api/v1/Processes?$select=*,UIData,VariablesUIData," \
+                                                      "DataSource/dataSourceNameForServer," \
+                                                      "DataSource/dataSourceNameForClient," \
+                                                      "DataSource/asciiDecimalSeparator," \
+                                                      "DataSource/asciiDelimiterChar," \
+                                                      "DataSource/asciiDelimiterType," \
+                                                      "DataSource/asciiHeaderRecords," \
+                                                      "DataSource/asciiQuoteCharacter," \
+                                                      "DataSource/asciiThousandSeparator," \
+                                                      "DataSource/view,"\
+                                                      "DataSource/query,"\
+                                                      "DataSource/userName,"\
+                                                      "DataSource/password,"\
+                                                      "DataSource/usesUnicode"
+        response = self._client.GET(request, "")
+        response_as_dict= json.loads(response)
+        return [Process.from_dict(p) for p in response_as_dict['value']]
 
     def update_process(self, process):
         ''' update an existing Process on TM1 Server
@@ -563,7 +590,7 @@ class TM1pyQueries:
         response = self._client.POST(request, process.body)
         return response
 
-    def create_view(self, view, private=False):
+    def create_view(self, view, private=True):
         ''' create a new view on TM1 Server
 
         :Parameters:
@@ -573,32 +600,32 @@ class TM1pyQueries:
         :Returns:
             `string` : the response
         '''
-        if private:
-            request = "/api/v1/Cubes('" + view._cube + "')/PrivateViews"
-        else:
-            request = "/api/v1/Cubes('" + view._cube + "')/Views"
-        response = self._client.POST(request, view.body)
-        return response
+        views = "PrivateViews" if private else "Views"
+        request = "/api/v1/Cubes('{}')/{}".format(view.cube, views)
+        return self._client.POST(request, view.body)
 
-    def view_exists(self, cube_name, view_name, private=False):
+    def view_exists(self, cube_name, view_name):
         ''' checks if view exists
 
         :param cube_name:  string, name of the cube
         :param view_name: string, name of the view
-        :param private: boolean
 
         :return True or False
         '''
+        private, public = False, False
         try:
-            if private:
-                self._client.GET("/api/v1/Cubes('" + cube_name + "')/PrivateViews('" + view_name + "')")
-            else:
-                self._client.GET("/api/v1/Cubes('" + cube_name + "')/Views('" + view_name + "')")
-            return True
+            self._client.GET("/api/v1/Cubes('{}')/PrivateViews('{}')".format(cube_name, view_name))
+            private = True
         except TM1pyException:
-            return False
+            pass
+        try:
+            self._client.GET("/api/v1/Cubes('{}')/Views('{}')".format(cube_name, view_name))
+            public = True
+        except TM1pyException:
+            pass
+        return private, public
 
-    def get_native_view(self, cube_name, view_name, private=False):
+    def get_native_view(self, cube_name, view_name, private=True):
         ''' get a NativeView from TM1 Server
 
         :param cube_name:  string, name of the cube
@@ -620,10 +647,10 @@ class TM1pyQueries:
                   "$select=Expression,UniqueName,Name,Alias), " \
                   "tm1.NativeView/Titles/Selected($select=Name)"
         view_as_json = self._client.GET(request)
-        native_view = NativeView.from_json(view_as_json)
+        native_view = NativeView.from_json(view_as_json, cube_name)
         return native_view
 
-    def get_mdx_view(self, cube_name, view_name, private=False):
+    def get_mdx_view(self, cube_name, view_name, private=True):
         ''' get an MDXView from TM1 Server
 
         :param cube_name: String, name of the cube
@@ -640,18 +667,45 @@ class TM1pyQueries:
         mdx_view = MDXView.from_json(view_as_json=view_as_json)
         return mdx_view
 
-    def update_view(self, view, private=False):
+    def get_all_views(self, cube_name):
+        private_views, public_views = [], []
+        for view_type in ('PrivateViews', 'Views'):
+            request = "/api/v1/Cubes('" + cube_name + "')/" + view_type + "?$expand=" \
+                      "tm1.NativeView/Rows/Subset($expand=Hierarchy($select=Name;" \
+                      "$expand=Dimension($select=Name)),Elements($select=Name);" \
+                      "$select=Expression,UniqueName,Name, Alias),  " \
+                      "tm1.NativeView/Columns/Subset($expand=Hierarchy($select=Name;" \
+                      "$expand=Dimension($select=Name)),Elements($select=Name);" \
+                      "$select=Expression,UniqueName,Name,Alias), " \
+                      "tm1.NativeView/Titles/Subset($expand=Hierarchy($select=Name;" \
+                      "$expand=Dimension($select=Name)),Elements($select=Name);" \
+                      "$select=Expression,UniqueName,Name,Alias), " \
+                      "tm1.NativeView/Titles/Selected($select=Name)"
+            response = self._client.GET(request)
+            response_as_list = json.loads(response)['value']
+            for view_as_dict in response_as_list:
+                if view_as_dict['@odata.type'] == '#ibm.tm1.api.v1.MDXView':
+                    view = MDXView.from_dict(view_as_dict, cube_name)
+                else:
+                    view = NativeView.from_dict(view_as_dict, cube_name)
+                if view_type == "PrivateViews":
+                    private_views.append(view)
+                else:
+                    public_views.append(view)
+        return private_views, public_views
+
+    def update_view(self, view, private=True):
         ''' update an existing view
 
         :param view: instance of TM1py.NativeView or TM1py.MDXView
         :return: response
         '''
-        if type(view) == MDXView:
+        if isinstance(view, MDXView):
             return self._update_mdx_view(view, private)
-        elif type(view) == NativeView:
+        if isinstance(view, NativeView):
             return self._update_native_view(view, private)
         else:
-            raise TM1pyException('given object is not of type MDXView or NativeView')
+            raise Exception('given object is not of type MDXView or NativeView')
 
     def _update_mdx_view(self, mdx_view, private):
         ''' update an mdx view on TM1 Server
@@ -662,13 +716,13 @@ class TM1pyQueries:
         :return: string, the response
         '''
         if private:
-            request = "/api/v1/Cubes('{}')/PrivateViews('{}')".format(mdx_view.get_cube(), mdx_view.get_name())
+            request = "/api/v1/Cubes('{}')/PrivateViews('{}')".format(mdx_view.cube, mdx_view.name)
         else:
-            request = "/api/v1/Cubes('{}')/Views('{}')".format(mdx_view.get_cube(), mdx_view.get_name())
+            request = "/api/v1/Cubes('{}')/Views('{}')".format(mdx_view.cube, mdx_view.name)
         response = self._client.PATCH(request, mdx_view.body)
         return response
 
-    def _update_native_view(self, native_view, private=False):
+    def _update_native_view(self, native_view, private=True):
         ''' update a native view on TM1 Server
 
         :param view: instance of TM1py.NativeView
@@ -677,14 +731,14 @@ class TM1pyQueries:
         :return: string, the response
         '''
         if private:
-            request = "/api/v1/Cubes('{}')/PrivateViews('{}')".format(native_view.get_cube(), native_view.get_name())
+            request = "/api/v1/Cubes('{}')/PrivateViews('{}')".format(native_view.cube, native_view.name)
         else:
-            request = "/api/v1/Cubes('{}')/Views('{}')".format(native_view.get_cube(), native_view.get_name())
+            request = "/api/v1/Cubes('{}')/Views('{}')".format(native_view.cube, native_view.name)
         response = self._client.PATCH(request, native_view.body)
         return response
 
 
-    def delete_view(self, cube_name, view_name, private=False):
+    def delete_view(self, cube_name, view_name, private=True):
         ''' delete an existing view on the TM1 Server
 
         :param cube_name: String, name of the cube
@@ -711,7 +765,7 @@ class TM1pyQueries:
         :return:
         '''
         attribute_name = attribute_name.replace(" ", "")
-        if type(attribute_value) is str:
+        if isinstance(attribute_value, str):
             request = "/api/v1/Dimensions('{}')/Hierarchies('{}')?$expand=Elements($filter = Attributes/{} eq '{}';$select=Name)".\
                 format(dimension_name, hierarchy_name,attribute_name, attribute_value)
         else:
@@ -721,59 +775,88 @@ class TM1pyQueries:
         response_as_dict = json.loads(response)
         return [elem['Name'] for elem in response_as_dict['Elements']]
 
-    def get_dimension_as_dict(self, dimension_name, hierarchy_name):
-        dimension_as_json = self._client.GET("/api/v1/Dimensions('" + dimension_name + "')/Hierarchies('" +
-                                             hierarchy_name + "')?$expand=Elements($select=Name,Type;$expand="
-                                             "Components($select=Name,Type;$expand=Components($select=Name,Type;"
-                                             "$expand=Components)))")
-        dimension_as_dict = json.loads(dimension_as_json)
-        return dimension_as_dict
+    def dimension_exists(self, dimension_name):
+        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')'.format(dimension_name, dimension_name)
+        try:
+            self._client.GET(request, '')
+            return True
+        except TM1pyException:
+            return False
 
-    # not complete
-    def get_dimension(self, dimension_name):
-        dimension_as_json = self._client.GET("/api/v1/Dimensions('" + dimension_name + "')")
-        dimension_as_dict = json.loads(dimension_as_json)
-        return dimension_as_dict
-
-    # Not complete
     def create_dimension(self, dimension):
         '''
-        :notes: UNCOMPLETE!
+        :notes:
 
-        :param dimension
-        :return: None
+        :param dimension, instance of TM1py.Dimension
+        :return: response
         '''
 
-        request = "/api/v1/Dimensions"
-        print(dimension.body)
-        response = self._client.POST(request, dimension.body)
+        # if not all calls successfull -> redo everything that has been done in this function
+        try:
+            # create Dimension, Hierarchies, Elements, Edges etc.
+            request = "/api/v1/Dimensions"
+            response = self._client.POST(request, dimension.body)
+            # create ElementAttributes. Cant be done in the same request as Creating the Hierarchies.
+            for hierarchy in dimension.hierarchies:
+                for element_attribute in hierarchy.element_attributes:
+                    self.create_element_attribute(dimension.name, hierarchy.name, element_attribute)
+        except TM1pyException as e:
+            if self.dimension_exists(dimension.name):
+                self.delete_dimension(dimension.name)
+            raise e
         return response
 
+    def get_dimension(self, dimension_name):
+        request = '/api/v1/Dimensions(\'{}\')?$expand=Hierarchies($expand=*)'.format(dimension_name)
+        dimension_as_json = self._client.GET(request)
+        return Dimension.from_json(dimension_as_json)
 
-    # TODO Not complete
+    def update_dimension(self, dimension):
+        # update Hierarchy
+        for hierarchy in dimension:
+            self.update_hierarchy(hierarchy)
+
+
     def delete_dimension(self, dimension_name):
         '''
 
         :param dimension_name:
         :return:
         '''
+        request = '/api/v1/Dimensions(\'{}\')'.format(dimension_name)
+        return self._client.DELETE(request)
+
+    def create_hierarchy(self, hierarchy):
         pass
 
-    # TODO Not complete
-    def create_hierarchy(self, dimension_name, hierarchy):
-        pass
+    def create_element_attribute(self, dimension_name, hierarchy_name, element_attribute):
+        """ Like AttrInsert
 
-    # TODO Not complete
+        :param dimension_name:
+        :param hierarchy_name:
+        :param element_attribute: instance of TM1py.ElementAttribute
+        :return:
+        """
+        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/ElementAttributes'.format(dimension_name, hierarchy_name)
+        return self._client.POST(request, element_attribute.body)
+
     def get_hierarchy(self, dimension_name, hierarchy_name):
-        pass
+        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')'.format(hierarchy.dimension_name, hierarchy.name)
+        response = self._client.GET(request, '')
+        return response
 
-    # TODO  Not complete
-    def update_hierarchy(self, dimension_name, hierarchy_name):
-        pass
+    def update_hierarchy(self, hierarchy):
+        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')'.format(hierarchy.dimension_name, hierarchy.name)
+        response = self._client.PATCH(request, hierarchy.body)
+        request = request + '/ElementAttributes'
+        for element_attribute in hierarchy.element_attributes:
+            data = json.dumps(element_attribute, ensure_ascii=False)
+            self._client.POST(request, data)
 
-    # TODO Not complete
     def delete_hierarchy(self, dimension_name, hierarchy_name):
-        pass
+        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')'.format(hierarchy.dimension_name, hierarchy.name)
+        return self._client.DELETE(request, '')
+
 
     def get_all_annotations_from_cube(self, name_cube):
         ''' Get all annotations from given cube as a List.
@@ -809,7 +892,7 @@ class TM1pyQueries:
             cubes_as_dict[name_cube] = dimensions
         return cubes_as_dict
 
-    def _get_view_content_native(self,cube_name, view_name, cell_properties=['Value'], top=None):
+    def _get_view_content_native(self,cube_name, view_name, cell_properties=['Value'], private=True, top=None):
         ''' Get view content as dictionary in its native (cellset-) structure.
 
         :param cube_name: String
@@ -820,19 +903,19 @@ class TM1pyQueries:
             `Dictionary` : {Cells : {}, 'ID' : '', 'Axes' : [{'Ordinal' : 1, Members: [], ...},
             {'Ordinal' : 2, Members: [], ...}, {'Ordinal' : 3, Members: [], ...} ] }
         '''
-        if top is not None:
-            request = '/api/v1/Cubes(\'' + cube_name + '\')/Views(\'' + view_name + \
-                      '\')/tm1.Execute?$expand=Axes($expand=Tuples($expand=Members($select=UniqueName);$top='\
-                      + str(top)+')),Cells($select=' + ','.join(cell_properties) + ';$top=' + str(top) + ')'
+        views = 'PrivateViews' if  private else 'Views'
+        if top:
+            request = '/api/v1/Cubes(\'{}\')/{}(\'{}\')/tm1.Execute?$expand=Axes($expand=Tuples($expand=Members' \
+                      '($select=UniqueName);$top={})),Cells($select={};' \
+                      '$top={})'.format(cube_name, views, view_name, str(top), ','.join(cell_properties), str(top))
         else:
-            request = '/api/v1/Cubes(\'' + cube_name + '\')/Views(\'' + view_name + \
-                      '\')/tm1.Execute?$expand=Axes($expand=Tuples($expand=Members($select=UniqueName))),' \
-                      'Cells($select='  + ','.join(cell_properties) + ')'
-
+            request = '/api/v1/Cubes(\'{}\')/{}(\'{}\')/tm1.Execute?$expand=Axes($expand=Tuples($expand=Members' \
+                      '($select=UniqueName))),' \
+                      'Cells($select={})'.format(cube_name, views, view_name, ','.join(cell_properties))
         response = self._client.POST(request, '')
         return json.loads(response)
 
-    def get_view_content(self, cube_name, view_name, cell_properties=['Value'], top=None):
+    def get_view_content(self, cube_name, view_name, cell_properties=['Value'], private=True, top=None):
         ''' Get view content as dictionary with sweet and concise structure
 
         :param cube_name: String
@@ -846,7 +929,7 @@ class TM1pyQueries:
 
         view_as_dict = {}
 
-        response_as_dict = self._get_view_content_native(cube_name, view_name, cell_properties, top)
+        response_as_dict = self._get_view_content_native(cube_name, view_name, cell_properties, private, top)
         dimension_order = self.get_dimension_order(cube_name)
 
         axe0_as_dict = response_as_dict['Axes'][0]
@@ -1178,7 +1261,7 @@ class TM1pyQueries:
         request = '/api/v1/Users(\'{}\')/Groups'.format(user_name)
         response = self._client.GET(request)
         groups = json.loads(response)['value']
-        return [group['Name'].upper() for group in groups]
+        return [group['Name'] for group in groups]
 
     def remove_user_from_group(self, group_name, user_name):
         request = '/api/v1/Users(\'{}\')/Groups?$id=Groups(\'{}\')'.format(user_name, group_name)
@@ -1278,17 +1361,41 @@ class Subset:
     def dimension_name(self):
         return self._dimension_name
 
+    @dimension_name.setter
+    def dimension_name(self, value):
+        self._dimension_name = value
+
     @property
     def name(self):
         return self._subset_name
+
+    @name.setter
+    def name(self):
+        self._name = name
 
     @property
     def alias(self):
         return self._alias
 
+    @alias.setter
+    def alias(self, value):
+        self._alias = value
+
+    @property
+    def expression(self):
+        return self._expression
+
+    @expression.setter
+    def expression(self, value):
+        self._expression = expression
+
     @property
     def elements(self):
         return self._elements
+
+    @elements.setter
+    def elements(self, value):
+        self._elements = value
 
     @classmethod
     def from_json(cls, subset_as_json):
@@ -1322,38 +1429,7 @@ class Subset:
         else:
             return self._construct_body_static()
 
-    def get_name(self):
-        return self._subset_name
 
-    def get_dimension_name(self):
-        return self._dimension_name
-
-    def set_subset_name(self, subset_name):
-        ''' set the subset name
-                :Parameters:
-                    `dimension_name` : string
-                        the name of the subset
-        '''
-        self._subset_name = subset_name
-
-    def set_dimension_name(self, dimension_name):
-        ''' set the dimension in which the subset shall be created
-                :Parameters:
-                    `dimension_name` : string
-                        name of the dimension
-        '''
-        self._dimension_name = dimension_name
-
-    def set_expression(self, expression):
-        ''' set Expression for subset
-                :Parameters:
-                    `expression` : string
-                        a valid TM1 - MDX expression
-
-                :Notes:
-                    when called on a static subset, makes subset turn into dynamic.
-        '''
-        self._expression = expression
 
     def add_elements(self, elements):
         ''' add Elements to static subsets
@@ -1455,11 +1531,13 @@ class View:
     def name(self):
         return self._name
 
-    def get_cube(self):
-        return self._cube
+    @cube.setter
+    def cube(self, value):
+        self._cube = value
 
-    def get_name(self):
-        return self._name
+    @name.setter
+    def name(self, value):
+        self._name = value
 
 class MDXView(View):
     ''' Abstraction on TM1 MDX view
@@ -1469,43 +1547,35 @@ class MDXView(View):
             user calls get_view_data_structured from TM1pyQueries function to retrieve data from View
 
         :Notes:
-            Complete, functional and tested
+            Complete, functional and tested.
+            IMPORTANT. MDXViews cant be seen through Archtict, Perspectives. They do exist though!
     '''
     def __init__(self, cube_name, view_name, MDX):
         View.__init__(self, cube_name, view_name)
         self._MDX = MDX
 
     @property
-    def cube(self):
-        return self._cube
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
     def MDX(self):
         return self._MDX
+
+    @MDX.setter
+    def MDX(self, value):
+        self._MDX = value
 
     @property
     def body(self):
         return self.construct_body()
 
-    @MDX.setter
-    def MDX(self):
-        self._MDX = MDX
-
     @classmethod
-    def from_json(cls, view_as_json):
+    def from_json(cls, view_as_json, cube_name=None):
         view_as_dict = json.loads(view_as_json)
         return cls.from_dict(view_as_dict)
 
     @classmethod
-    def from_dict(cls, view_as_dict):
-        return cls(cube_name=view_as_dict['Cube']['Name'], view_name=view_as_dict['Name'],MDX=view_as_dict['MDX'])
-
-    def set_MDX(self, MDX):
-        self._MDX = MDX
+    def from_dict(cls, view_as_dict, cube_name=None):
+        return cls(cube_name=view_as_dict['Cube']['Name'] if not cube_name else cube_name,
+                   view_name=view_as_dict['Name'],
+                   MDX=view_as_dict['MDX'])
 
     def construct_body(self):
         mdx_view_as_dict = collections.OrderedDict()
@@ -1525,21 +1595,21 @@ class NativeView(View):
             Complete, functional and tested
     '''
     def __init__(self,
-                 name_cube,
-                 name_view,
+                 cube_name,
+                 view_name,
                  suppress_empty_columns=False,
                  suppress_empty_rows=False,
                  format_string="0.#########\fG|0|",
-                 titles = [],
-                 columns = [],
-                 rows = []):
-        View.__init__(self, name_cube, name_view)
+                 titles = None,
+                 columns = None,
+                 rows = None):
+        View.__init__(self, cube_name, view_name)
         self._suppress_empty_columns = suppress_empty_columns
         self._suppress_empty_rows = suppress_empty_rows
         self._format_string = format_string
-        self._titles = titles
-        self._columns = columns
-        self._rows = rows
+        self._titles = titles if titles else []
+        self._columns = columns if columns else []
+        self._rows = rows if rows else []
 
     @property
     def body(self):
@@ -1548,9 +1618,9 @@ class NativeView(View):
     @property
     def as_MDX(self):
         # create the MDX Query
-        mdx = "SELECT "
+        mdx = 'SELECT '
         if self.suppress_empty_cells:
-            mdx += " NON EMPTY"
+            mdx += ' NON EMPTY'
 
         # Iterate through axes - append ON COLUMNS, ON ROWS statement
         # 4 Options
@@ -1573,12 +1643,12 @@ class NativeView(View):
                         mdx += '*' + mdx_subset
             if i == 0:
                 if len(self._rows) > 0:
-                    mdx += 'on {}, '.format('ROWS')
+                    mdx += ' on {}, '.format('ROWS')
             else:
-                mdx += 'on {} '.format('COLUMNS')
+                mdx += ' on {} '.format('COLUMNS')
 
         # append the FROM statement
-        mdx += 'FROM [' + self._cube + '] '
+        mdx += ' FROM [' + self._cube + '] '
 
         # itarate through titles - append the WHERE statement
         if len(self._titles) > 0:
@@ -1686,7 +1756,7 @@ class NativeView(View):
                 self._titles.remove(title)
 
     @classmethod
-    def from_json(cls, view_as_json):
+    def from_json(cls, view_as_json, cube_name=None):
         ''' Alternative constructor
                 :Parameters:
                     `view_as_json` : string, JSON
@@ -1695,6 +1765,10 @@ class NativeView(View):
                     `View` : an instance of this class
         '''
         view_as_dict = json.loads(view_as_json)
+        return NativeView.from_dict(view_as_dict, cube_name)
+
+    @classmethod
+    def from_dict(cls, view_as_dict, cube_name=None):
         titles, columns, rows = [], [], []
 
         for selection in view_as_dict['Titles']:
@@ -1703,7 +1777,7 @@ class NativeView(View):
             else:
                 subset = Subset.from_dict(selection['Subset'])
             selected = selection['Selected']['Name']
-            titles.append(ViewTitleSelection(dimension_name=subset.get_dimension_name(),
+            titles.append(ViewTitleSelection(dimension_name=subset.dimension_name,
                                              subset=subset, selected=selected))
         for i, axe in enumerate([view_as_dict['Columns'], view_as_dict['Rows']]):
             for selection in axe:
@@ -1711,12 +1785,12 @@ class NativeView(View):
                     subset = AnnonymousSubset.from_dict(selection['Subset'])
                 else:
                     subset = Subset.from_dict(selection['Subset'])
-                axis_selection = ViewAxisSelection(dimension_name=subset.get_dimension_name(),
+                axis_selection = ViewAxisSelection(dimension_name=subset.dimension_name,
                                                    subset=subset)
                 columns.append(axis_selection) if i == 0 else rows.append(axis_selection)
 
-        return cls(name_cube = view_as_dict["@odata.context"][20:view_as_dict["@odata.context"].find("')/")],
-                   name_view = view_as_dict['Name'],
+        return cls(cube_name = view_as_dict["@odata.context"][20:view_as_dict["@odata.context"].find("')/")] if not cube_name else cube_name,
+                   view_name = view_as_dict['Name'],
                    suppress_empty_columns = view_as_dict['SuppressEmptyColumns'],
                    suppress_empty_rows = view_as_dict['SuppressEmptyRows'],
                    format_string = view_as_dict['FormatString'],
@@ -1751,6 +1825,7 @@ class ViewAxisSelection:
         '''
         self._subset = subset
         self._dimension_name = dimension_name
+        self._hierarchy_name = dimension_name
 
     @property
     def body(self):
@@ -1761,12 +1836,14 @@ class ViewAxisSelection:
 
         :return: string, the valid JSON
         '''
-        if type(self._subset) is Subset:
-            return "{\"Subset@odata.bind\": \"Dimensions('" + self._dimension_name + "')/Hierarchies('" \
-                + self._dimension_name + "')/Subsets('" + self._subset.get_name() + "')\"}"
-        elif type(self._subset) is AnnonymousSubset:
-            s = self._subset.body
-            return '{\"Subset\":' + s + '}'
+        body_as_dict = collections.OrderedDict()
+        if isinstance(self._subset,AnnonymousSubset):
+            body_as_dict['Subset'] = json.loads(self._subset.body)
+        elif isinstance(self._subset, Subset):
+            path = 'Dimensions(\'{}\')/Hierarchies(\'{}\')/Subsets(\'{}\')'.format(
+                self._dimension_name, self._hierarchy_name, self._subset.name)
+            body_as_dict['Subset@odata.bind'] = path
+        return json.dumps(body_as_dict, ensure_ascii=False, sort_keys=False)
 
 class ViewTitleSelection:
     ''' Describing what is selected in a dimension on the title. Can be a registered Subset or an Annonymous subset
@@ -1774,6 +1851,7 @@ class ViewTitleSelection:
     '''
     def __init__(self, dimension_name, subset, selected):
         self._dimension_name = dimension_name
+        self._hierarchy_name = dimension_name
         self._subset = subset
         self._selected = selected
 
@@ -1786,18 +1864,18 @@ class ViewTitleSelection:
 
         :return: string, the valid JSON
         '''
-        if type(self._subset) is Subset:
-            s_subset = "\"Subset@odata.bind\": \"Dimensions('" + self._dimension_name + "')/Hierarchies('" \
-                 + self._dimension_name + "')/Subsets('" + self._subset.get_name() + "')\""
-            return "{" + s_subset + ", \"Selected@odata.bind\": \"" +" Dimensions('" + self._dimension_name + \
-                   "')/Hierarchies('" + self._dimension_name + "')/Elements('" + self._selected + "')\"}"
-        elif type(self._subset) is AnnonymousSubset:
-            s_subset = self._subset.body
-            return "{ \"Subset\" : " + s_subset + ", \"Selected@odata.bind\": \"" +" Dimensions('" + \
-                   self._dimension_name + "')/Hierarchies('" + self._dimension_name + "')/Elements('" + \
-                   self._selected + "')\"}"
+        body_as_dict = collections.OrderedDict()
+        if isinstance(self._subset, AnnonymousSubset):
+            body_as_dict['Subset'] = json.loads(self._subset.body)
+        elif isinstance(self._subset, Subset):
+            path = 'Dimensions(\'{}\')/Hierarchies(\'{}\')/Subsets(\'{}\')'.format(
+                self._dimension_name, self._hierarchy_name, self._subset.name)
+            body_as_dict['Subset@odata.bind'] = path
+        selected = 'Dimensions(\'{}\')/Hierarchies(\'{}\')/Elements(\'{}\')'.format(
+            self._dimension_name, self._hierarchy_name, self._selected)
+        body_as_dict['Selected@odata.bind'] = selected
+        return json.dumps(body_as_dict, ensure_ascii=False, sort_keys=False)
 
-# uncomplete
 class Dimension:
     ''' Abstraction of TM1 Dimension.
 
@@ -1805,15 +1883,32 @@ class Dimension:
             Not complete. Not tested.
             A Dimension is a container for hierarchies.
     '''
-    def __init__(self, name):
+    def __init__(self, name, hierarchies=None):
         '''
         :Parameters:
             - `name` : string
                 the name of the dimension
         '''
+        if hierarchies is None:
+            hierarchies=[]
         self._name = name
-        self._hierarchies = []
+        self._unique_name = '[{}]'.format(name)
+        self._hierarchies = hierarchies
         self._attributes = {'Caption': name}
+
+    @staticmethod
+    def from_json(dimension_as_json):
+        dimension_as_dict = json.loads(dimension_as_json)
+        return Dimension.from_dict(dimension_as_dict)
+
+    @staticmethod
+    def from_dict(dimension_as_dict):
+        return Dimension(name=dimension_as_dict['Name'],
+                         hierarchies=[Hierarchy.from_dict(hierarchy) for hierarchy in dimension_as_dict['Hierarchies']])
+
+    @property
+    def name(self):
+        return self._name
 
     @property
     def body(self):
@@ -1821,82 +1916,296 @@ class Dimension:
 
     @property
     def unique_name(self):
-            return '[' + self._name + ']'
+        return '[' + self._name + ']'
 
-    def set_name(self, name):
-        self._name = name
+    @property
+    def hierarchies(self):
+        return self._hierarchies
+
+    @property
+    def default_hierarchy(self):
+        return self._hierarchies[0]
+
+    @name.setter
+    def name(self, value):
+        self._name = value
+
+    @property
+    def body(self):
+        return json.dumps(self._construct_body(), ensure_ascii=False, sort_keys=False)
+
+    @property
+    def body_as_dict(self):
+        return self._construct_body()
+
+    def __iter__(self):
+        return iter(self._hierarchies)
+
+    def __len__(self):
+        return len(self.hierarchies)
 
     def add_hierarchy(self, hierarchy):
         self._hierarchies.append(hierarchy)
 
     def _construct_body(self):
-        self.body_as_dict = collections.OrderedDict()
+        body_as_dict = collections.OrderedDict()
         #self.body_as_dict["@odata.type"] = "ibm.tm1.api.v1.Dimension"
-        self.body_as_dict["Name"] = self._name
-        self.body_as_dict["UniqueName"] = self.unique_name
-        self.body_as_dict["Attributes"] = self._attributes
-        return json.dumps(self.body_as_dict, ensure_ascii=False, sort_keys=False)
+        body_as_dict["Name"] = self._name
+        body_as_dict["UniqueName"] = self.unique_name
+        body_as_dict["Attributes"] = self._attributes
+        body_as_dict["Hierarchies"] = [hierarchy.body_as_dict for hierarchy in self.hierarchies]
+        return body_as_dict
        
-        
-# uncomplete
+
 class Hierarchy:
     '''
-
         :Notes:
-            Not complete. Not tested.
+
     '''
 
-    def __init__(self, name_hierarchy, name_dimension, elements=[], element_attributes=[], edges=[]):
-        self._name = name_hierarchy
-        self._elements = elements
-        self._element_attributes = element_attributes
-        self._edges = edges
+    def __init__(self, name, dimension_name, elements=None, element_attributes=None,
+                 edges=None, subsets=None, default_member=None):
+        self._name = name
+        self._dimension_name = dimension_name
+        self._elements = {elem.name: elem for elem in elements} if elements else {}
+        self._element_attributes = element_attributes if element_attributes else []
+        self._edges = edges if edges else []
+        self._subsets = subsets if subsets else []
+        self._default_member = default_member
+
+    @staticmethod
+    def from_dict(hierarchy_as_dict):
+        return Hierarchy(name=hierarchy_as_dict['Name'],
+                         dimension_name=hierarchy_as_dict['Dimension']['Name'],
+                         elements=[Element.from_dict(elem) for elem in hierarchy_as_dict['Elements']],
+                         element_attributes=[ElementAttribute(ea['Name'], ea['Type'])
+                                             for ea in hierarchy_as_dict['ElementAttributes']],
+                         edges=[Edge.from_dict(edge) for edge in hierarchy_as_dict['Edges']],
+                         subsets=[subset['Name'] for subset in hierarchy_as_dict['Subsets']],
+                         default_member=hierarchy_as_dict['DefaultMember']['Name'])
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        self._name = value
+
+    @property
+    def dimension_name(self):
+        return self._dimension_name
+
+    @property
+    def elements(self):
+        return self._elements
+
+    @property
+    def element_attributes(self):
+        return self._element_attributes
+
+    @property
+    def edges(self):
+        return self._edges
+
+    @property
+    def subsets(self):
+        return self._subsets
+
+    @property
+    def subsets(self):
+        return self._subsets
+
+    @property
+    def default_member(self):
+        return self._default_member
+
+    @property
+    def body(self):
+        return json.dumps(self._construct_body())
+
+    @property
+    def body_as_dict(self):
+        return self._construct_body()
+
+    def add_element(self, element_name, element_type):
+        if element_name.lower() in [elem.name.lower() for elem in self]:
+            # elementname already used
+            raise TM1pyException("Elementname has to be unqiue")
+        e = Element( name=element_name, element_type=element_type)
+        self._elements[element_name] = e
+
+    def update_element(self, element_name, element_type=None):
+        self._elements[element_name].element_type = element_type
+
+    def add_edge(self, edge):
+        if edge not in self._edges:
+            self._edges.append(edge)
+
+    def remove_edge(self, edge):
+        self._edges = [e for e in self.edges if not e == edge]
+
+    def _construct_body(self, element_attributes=False):
+        """
+
+        :param element_attributes: Only include element_attributes in body if explicitly asked for
+        :return:
+        """
+        body_as_dict = collections.OrderedDict()
+        body_as_dict['Name']=self._name
+        body_as_dict['Elements']=[]
+        body_as_dict['Edges'] = []
+
+        for element in self._elements.values():
+            body_as_dict['Elements'].append(element.body)
+        for edge in self._edges:
+            body_as_dict['Edges'].append(edge.body_as_dict)
+        if element_attributes:
+            body_as_dict['ElementAttributes'] = []
+            for element_attribute in self._element_attributes:
+                body_as_dict['ElementAttributes'].append(element_attribute)
+        return body_as_dict
+
+    def __iter__(self):
+        return iter(self._elements.values())
+
+    def __len__(self):
+        return len(self._elements.values())
+
+class Element:
+    valid_types = ['NUMERIC', 'STRING', 'CONSOLIDATED']
+    def __init__(self, name, element_type, attributes= None, unique_name=None, index=None):
+        self._name = name
+        self._unique_name = unique_name
+        self._index = index
+        self._element_type = None
+        self.element_type = element_type
+        self._attributes = attributes
+
+    @staticmethod
+    def from_dict(element_as_dict):
+        return Element(name=element_as_dict['Name'],
+                       unique_name=element_as_dict['UniqueName'],
+                       index=element_as_dict['Index'],
+                       element_type=element_as_dict['Type'],
+                       attributes=element_as_dict['Attributes'])
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        self._name = value
+
+    @property
+    def unique_name(self):
+        return self._unique_name
+
+    @property
+    def index(self):
+        return self._index
+
+    @property
+    def element_attributes(self):
+        return self._attributes
+
+    @property
+    def element_type(self):
+        return self._element_type
+
+    @element_type.setter
+    def element_type(self, value):
+        if value.upper() in self.valid_types:
+            self._element_type = value
+        else:
+            raise Exception('{} not a valid Element Type'.format(value))
 
     @property
     def body(self):
         return self._construct_body()
 
-    def add_element(self, name_element, type_element):
-        if name_element in [elem['Name'] for elem in self._elements]:
-            # elementname already used
-            raise TM1pyException("Elementname has to be unqiue")
-        self._elements.append({'Name': name_element, 'Type': type_element})
-
-    def add_edge(self, name_parent_element, name_component_element):
-        self._edges.add({'ParentName': name_parent_element, 'ComponentName': name_component_element})
-
     def _construct_body(self):
         body_as_dict = collections.OrderedDict()
-        body_as_dict['Name']=self._name
-        body_as_dict['Elements']=[]
-        for i, element in enumerate(self._elements):
-            body_as_dict['Elements'].append(element.body)
-
-# uncomplete
-class Element:
-    def __init__(self, element_name, element_type, element_attributes= None):
-        self._element_name = element_name
-        self._element_type = element_type
-        self._element_attributes = element_attributes
-
-
-    def body(self):
-        return self._construct_body()
-
-    def _construct_body(self):
-        body_as_dict = collections.OrderedDict()
-        body_as_dict['Name'] = self._element_name
+        body_as_dict['Name'] = self._name
         body_as_dict['Type'] = self._element_type
         return body_as_dict
 
-# uncomplete
 class Edge:
     def __init__(self, parent_name, component_name, weight):
         self._parent_name = parent_name
         self._component_name = component_name
         self._weight = weight
 
+    @staticmethod
+    def from_dict(edge_as_dict):
+        return Edge(parent_name=edge_as_dict['ParentName'],
+                    component_name=edge_as_dict['ComponentName'],
+                    weight=edge_as_dict['Weight'])
 
+    @property
+    def parent_name(self):
+        return self._parent_name
+
+    @property
+    def component_name(self):
+        return self._component_name
+
+    def __eq__(self, other):
+        return self.parent_name == other.parent_name and self.component_name == other.component_name
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    @property
+    def body(self):
+        return json.dumps(self._construct_body(),ensure_ascii=False)
+
+    @property
+    def body_as_dict(self):
+        return self._construct_body()
+
+    def _construct_body(self):
+        body_as_dict = collections.OrderedDict()
+        body_as_dict['ParentName'] = self._parent_name
+        body_as_dict['ComponentName'] = self._component_name
+        return body_as_dict
+
+class ElementAttribute:
+    valid_types = ['NUMERIC', 'STRING', 'ALIAS']
+
+    def __init__(self, name, attribute_type):
+        self._name = None
+        self.name = name
+        self._attribute_type = None
+        self.attribute_type = attribute_type
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        self._name = value
+
+    @property
+    def attribute_type(self):
+        return self._attribute_type
+
+    @attribute_type.setter
+    def attribute_type(self, value):
+        if value.upper() in self.valid_types:
+            self._attribute_type = value
+        else:
+            raise Exception('{} not a valid Attribute Type.'.format(value))
+
+    @property
+    def body_as_dict(self):
+        return {"Name": self._name, "Type": self._attribute_type}
+
+    @property
+    def body(self):
+        return json.dumps(self.body_as_dict, ensure_ascii=False)
 
 class Annotation:
     ''' abtraction of TM1 Annotation
@@ -1944,14 +2253,17 @@ class Annotation:
     def body(self):
         return self._construct_body()
 
-    def get_comment_value(self):
+    @property
+    def comment_value(self):
         return self._comment_value
 
-    def get_id(self):
-        return self._id
+    @comment_value.setter
+    def comment_value(self, value):
+        self._comment_value = value
 
-    def set_comment_value(self, comment_value):
-        self._comment_value = comment_value
+    @property
+    def id(self):
+        return self._id
 
     def move(self, dimension_order, dimension, source_element, target_element):
         ''' move annotation on given dimension from source_element to target_element
@@ -1984,9 +2296,7 @@ class Annotation:
         body['LastUpdatedBy'] = self._last_updated_by
         body['LastUpdated'] = self._last_updated
         body['DimensionalContext'] = dimensional_context
-        commentLocations = ''
-        for element in self._dimensional_context:
-            commentLocations = commentLocations + ',' + element
+        commentLocations = ','.join(self._dimensional_context)
         body['commentLocation'] = commentLocations[1:]
         body['commentType'] = self._comment_type
         body['commentValue'] = self._comment_value
@@ -2002,7 +2312,7 @@ class Process:
     '''
 
     def __init__(self, name, has_security_access=False, ui_data="CubeAction=1511€DataAction=1503€CubeLogChanges=0€",
-                 parameters=[], variables=[], variables_ui_data=[], prolog_procedure='', metadata_procedure='',
+                 parameters=None, variables=None, variables_ui_data=None, prolog_procedure='', metadata_procedure='',
                  data_procedure='', epilog_procedure= '', datasource_type='None', datasource_ascii_decimal_separator='.',
                  datasource_ascii_delimiter_char=';', datasource_ascii_delimiter_type='Character',
                  datasource_ascii_header_records=1, datasource_ascii_quote_character='', datasource_ascii_thousand_separator=',',
@@ -2472,7 +2782,7 @@ class Chore:
 class User:
     def __init__(self, name, groups, friendly_name=None, password=None):
         self._name = name
-        self._groups = [group.upper() for group in groups]
+        self._groups = [group for group in groups]
         self._friendly_name = friendly_name
         self._password = password
 
@@ -2495,7 +2805,7 @@ class User:
 
     @property
     def groups(self):
-        return [group.upper() for group in self._groups]
+        return [group for group in self._groups]
 
     @name.setter
     def name(self, value):
@@ -2510,14 +2820,13 @@ class User:
         self._password = value
 
     def add_group(self, group_name):
-        group_name = group_name.upper()
-        if group_name not in self._groups:
+        if group_name.upper() not in [group.upper() for group in self._groups]:
             self._groups.append(group_name)
 
     def remove_group(self, group_name):
-        group_name = group_name.upper()
-        if group_name in self._groups:
-            self._groups.remove(group_name)
+        index = [group.upper() for group in self._groups].index(group_name.upper())
+        if index > 0:
+            self._groups.pop(index)
 
     @classmethod
     def from_json(cls, user_as_json):
@@ -2571,18 +2880,37 @@ class Cube:
         return self._dimensions
 
     @property
-    def rules(self):
-        return self._rules
-
-    @property
     def has_rules(self):
         if self._rules:
             return True
         return False
 
+    @property
+    def rules(self):
+        return self._rules
+
     @rules.setter
     def rules(self, value):
         self._rules = value
+
+
+    @property
+    def skipcheck(self):
+        if self.has_rules:
+            return self.rules.skipcheck
+        return False
+
+    @property
+    def undefvals(self):
+        if self.has_rules:
+            return self.rules.undefvals
+        return False
+
+    @property
+    def feedstrings(self):
+        if self.has_rules:
+            return self.rules.feedstrings
+        return False
 
     @classmethod
     def from_json(cls, cube_as_json):
@@ -2622,14 +2950,17 @@ class Cube:
         return json.dumps(body_as_dict, ensure_ascii=False, sort_keys=True)
 
 class Rules:
+    keywords = ['SKIPCHECK', 'FEEDSTRINGS', 'UNDEFVALS', 'FEEDERS']
+
     def __init__(self, rules):
         self._text = rules
         self._rules_analytics = []
         # remove comment-lines
-        text_without_comments = '\n'.join([rule for rule in rules.split('\n') if len(rule) > 0 and rule[0] !='#'])
+        text_without_comments = '\n'.join([rule for rule in rules.split('\n') if len(rule) > 0 and rule.strip()[0] !='#'])
         for statement in text_without_comments.split(';'):
             if len(statement.strip()) > 0:
                 self._rules_analytics.append(statement.replace('\n',''))
+        self._rules_analytics_upper = [rule.upper() for rule in self._rules_analytics]
 
     @property
     def text(self):
@@ -2640,10 +2971,45 @@ class Rules:
         return self._rules_analytics
 
     @property
-    def has_skipcheck(self):
-        for stmt in self.rules_analytics[0:2]:
-            if stmt.lower() == 'skipcheck':
+    def rule_statements(self):
+        if self.has_feeders:
+            return self.rules_analytics[:self._rules_analytics_upper.index('FEEDERS')]
+        return self.rules_analytics
+
+    @property
+    def feeder_statements(self):
+        if self.has_feeders:
+            return self.rules_analytics[self._rules_analytics_upper.index('FEEDERS')+1:]
+        return []
+
+    @property
+    def skipcheck(self):
+        for rule in self._rules_analytics_upper[0:5]:
+            if rule == 'SKIPCHECK':
                 return True
+        return False
+
+    @property
+    def undefvals(self):
+        for rule in self._rules_analytics_upper[0:5]:
+            if rule == 'UNDEFVALS':
+                return True
+        return False
+
+    @property
+    def feedstrings(self):
+        for rule in self._rules_analytics_upper[0:5]:
+            if rule == 'FEEDSTRINGS':
+                return True
+        return False
+
+    @property
+    def has_feeders(self):
+        if 'FEEDERS' in self._rules_analytics_upper:
+            # has feeders declaration
+            feeders = self.rules_analytics[self._rules_analytics_upper.index('FEEDERS'):]
+            # has more than 0 feeder statements
+            return len(feeders) > 0
         return False
 
     def __len__(self):

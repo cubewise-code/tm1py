@@ -32,7 +32,7 @@ class TestCubeMethods(unittest.TestCase):
         self.tm1.update_cube(c)
         # test if rule was actually updated
         c = self.tm1.get_cube(self.cube_name)
-        self.assertTrue(c.rules.has_skipcheck)
+        self.assertTrue(c.skipcheck)
 
     def test4_delete_cube(self):
         all_cubes_before = self.tm1.get_all_cube_names()
