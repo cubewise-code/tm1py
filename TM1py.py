@@ -371,14 +371,10 @@ class TM1pyQueries:
         :Returns:
             List of Strings
         '''
-        try:
-            response = self._client.GET('/api/v1/Dimensions?$select=Name', '')
-            dimensions = json.loads(response)['value']
-            list_dimensions = list(entry['Name'] for entry in dimensions)
-            return list_dimensions
-        except (ConnectionError, ConnectionAbortedError):
-            self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
-            self.get_all_dimension_names()
+        response = self._client.GET('/api/v1/Dimensions?$select=Name', '')
+        dimensions = json.loads(response)['value']
+        list_dimensions = list(entry['Name'] for entry in dimensions)
+        return list_dimensions
 
     def execute_process(self, name_process, parameters=''):
         """ Ask TM1 Server to execute a process
@@ -428,7 +424,7 @@ class TM1pyQueries:
         response = self._client.GET(request=request)
         response_as_list = json.loads(response)['value']
         if len(response_as_list) > 0:
-            message_log_entry = [0]
+            message_log_entry = response_as_list[0]
             return message_log_entry['Message']
 
 
@@ -547,19 +543,19 @@ class TM1pyQueries:
         :return: List, instances of the TM1py.Process
         """
         request="/api/v1/Processes?$select=*,UIData,VariablesUIData," \
-                                                      "DataSource/dataSourceNameForServer," \
-                                                      "DataSource/dataSourceNameForClient," \
-                                                      "DataSource/asciiDecimalSeparator," \
-                                                      "DataSource/asciiDelimiterChar," \
-                                                      "DataSource/asciiDelimiterType," \
-                                                      "DataSource/asciiHeaderRecords," \
-                                                      "DataSource/asciiQuoteCharacter," \
-                                                      "DataSource/asciiThousandSeparator," \
-                                                      "DataSource/view,"\
-                                                      "DataSource/query,"\
-                                                      "DataSource/userName,"\
-                                                      "DataSource/password,"\
-                                                      "DataSource/usesUnicode"
+                                                   "DataSource/dataSourceNameForServer," \
+                                                   "DataSource/dataSourceNameForClient," \
+                                                   "DataSource/asciiDecimalSeparator," \
+                                                   "DataSource/asciiDelimiterChar," \
+                                                   "DataSource/asciiDelimiterType," \
+                                                   "DataSource/asciiHeaderRecords," \
+                                                   "DataSource/asciiQuoteCharacter," \
+                                                   "DataSource/asciiThousandSeparator," \
+                                                   "DataSource/view,"\
+                                                   "DataSource/query,"\
+                                                   "DataSource/userName,"\
+                                                   "DataSource/password,"\
+                                                   "DataSource/usesUnicode"
         response = self._client.GET(request, "")
         response_as_dict= json.loads(response)
         return [Process.from_dict(p) for p in response_as_dict['value']]
@@ -798,9 +794,9 @@ class TM1pyQueries:
             response = self._client.POST(request, dimension.body)
             # create ElementAttributes. Cant be done in the same request as Creating the Hierarchies.
             for hierarchy in dimension.hierarchies:
-                for element_attribute in hierarchy.element_attributes:
-                    self.create_element_attribute(dimension.name, hierarchy.name, element_attribute)
+                self.update_hierarchy_attributes(hierarchy)
         except TM1pyException as e:
+            # redo everything if problem in step 1 or 2
             if self.dimension_exists(dimension.name):
                 self.delete_dimension(dimension.name)
             raise e
@@ -829,6 +825,35 @@ class TM1pyQueries:
     def create_hierarchy(self, hierarchy):
         pass
 
+    def get_element_attributes(self, dimension_name, hierarchy_name):
+        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/ElementAttributes'.format(dimension_name,
+                                                                                            hierarchy_name)
+        response = self._client.GET(request,'')
+        element_attributes = [ElementAttribute.from_dict(ea) for ea in json.loads(response)['value']]
+        return element_attributes
+
+    def get_hierarchy(self, dimension_name, hierarchy_name):
+        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')'.format(hierarchy.dimension_name, hierarchy.name)
+        response = self._client.GET(request, '')
+        return response
+
+    def update_hierarchy(self, hierarchy):
+        # update Hierarchy
+        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')'.format(hierarchy.dimension_name, hierarchy.name)
+        response = self._client.PATCH(request, hierarchy.body)
+        return self.update_hierarchy_attributes(hierarchy=hierarchy)
+
+    def update_hierarchy_attributes(self, hierarchy):
+        # get existing attributes first.
+        element_attribute_names = [ea.name for ea in self.get_element_attributes(dimension_name=hierarchy.dimension_name,
+                                                                                 hierarchy_name=hierarchy.name)]
+        # only write ElementAttributes that dont already exist !
+        for element_attribute in filter(lambda ea: ea.name not in element_attribute_names,
+                                        hierarchy.element_attributes):
+            self.create_element_attribute(dimension_name=hierarchy.dimension_name,
+                                          hierarchy_name=hierarchy.name,
+                                          element_attribute=element_attribute)
+
     def create_element_attribute(self, dimension_name, hierarchy_name, element_attribute):
         """ Like AttrInsert
 
@@ -837,21 +862,9 @@ class TM1pyQueries:
         :param element_attribute: instance of TM1py.ElementAttribute
         :return:
         """
-        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/ElementAttributes'.format(dimension_name, hierarchy_name)
+        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/ElementAttributes'.format(dimension_name,
+                                                                                            hierarchy_name)
         return self._client.POST(request, element_attribute.body)
-
-    def get_hierarchy(self, dimension_name, hierarchy_name):
-        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')'.format(hierarchy.dimension_name, hierarchy.name)
-        response = self._client.GET(request, '')
-        return response
-
-    def update_hierarchy(self, hierarchy):
-        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')'.format(hierarchy.dimension_name, hierarchy.name)
-        response = self._client.PATCH(request, hierarchy.body)
-        request = request + '/ElementAttributes'
-        for element_attribute in hierarchy.element_attributes:
-            data = json.dumps(element_attribute, ensure_ascii=False)
-            self._client.POST(request, data)
 
     def delete_hierarchy(self, dimension_name, hierarchy_name):
         request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')'.format(hierarchy.dimension_name, hierarchy.name)
@@ -1947,6 +1960,9 @@ class Dimension:
     def add_hierarchy(self, hierarchy):
         self._hierarchies.append(hierarchy)
 
+    def remove_hierarchy(self, name):
+        self._hierarchies = list(filter(lambda h: h.name != name, self._hierarchies))
+
     def _construct_body(self):
         body_as_dict = collections.OrderedDict()
         #self.body_as_dict["@odata.type"] = "ibm.tm1.api.v1.Dimension"
@@ -2031,7 +2047,7 @@ class Hierarchy:
     def add_element(self, element_name, element_type):
         if element_name.lower() in [elem.name.lower() for elem in self]:
             # elementname already used
-            raise TM1pyException("Elementname has to be unqiue")
+            raise Exception("Elementname has to be unqiue")
         e = Element( name=element_name, element_type=element_type)
         self._elements[element_name] = e
 
@@ -2206,6 +2222,16 @@ class ElementAttribute:
     @property
     def body(self):
         return json.dumps(self.body_as_dict, ensure_ascii=False)
+
+    @classmethod
+    def from_json(cls, element_attribute_as_json):
+        return cls.from_dict(json.loads(element_attribute_as_json))
+
+    @classmethod
+    def from_dict(cls, element_attribute_as_dict):
+        return cls(name=element_attribute_as_dict['Name'],
+                   attribute_type=element_attribute_as_dict['Type'])
+
 
 class Annotation:
     ''' abtraction of TM1 Annotation
