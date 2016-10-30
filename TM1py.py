@@ -287,7 +287,7 @@ class TM1pyQueries:
 
         '''
         try:
-            # ProductVersion
+            # ProductVersion >= TM1 10.2.2 FP 6
             self._client.POST('/api/v1/ActiveSession/tm1.Close', '')
 
         except TM1pyException:
@@ -905,7 +905,7 @@ class TM1pyQueries:
             cubes_as_dict[name_cube] = dimensions
         return cubes_as_dict
 
-    def _get_view_content_native(self,cube_name, view_name, cell_properties=['Value'], private=True, top=None):
+    def _get_view_content_native(self,cube_name, view_name, cell_properties=None, private=True, top=None):
         ''' Get view content as dictionary in its native (cellset-) structure.
 
         :param cube_name: String
@@ -916,6 +916,8 @@ class TM1pyQueries:
             `Dictionary` : {Cells : {}, 'ID' : '', 'Axes' : [{'Ordinal' : 1, Members: [], ...},
             {'Ordinal' : 2, Members: [], ...}, {'Ordinal' : 3, Members: [], ...} ] }
         '''
+        if not cell_properties:
+            cell_properties = ['Value','Ordinal']
         views = 'PrivateViews' if  private else 'Views'
         if top:
             request = '/api/v1/Cubes(\'{}\')/{}(\'{}\')/tm1.Execute?$expand=Axes($expand=Tuples($expand=Members' \
@@ -928,7 +930,7 @@ class TM1pyQueries:
         response = self._client.POST(request, '')
         return json.loads(response)
 
-    def get_view_content(self, cube_name, view_name, cell_properties=['Value'], private=True, top=None):
+    def get_view_content(self, cube_name, view_name, cell_properties=None, private=True, top=None):
         ''' Get view content as dictionary with sweet and concise structure
 
         :param cube_name: String
@@ -939,6 +941,8 @@ class TM1pyQueries:
         :return:
             Dictionary : {([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }
         '''
+        if not cell_properties:
+            cell_properties = ['Value','Ordinal']
 
         view_as_dict = {}
 

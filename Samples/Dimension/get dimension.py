@@ -1,18 +1,17 @@
 from TM1py import TM1pyQueries as TM1, TM1pyLogin
-
+import random
 login = TM1pyLogin.native('admin', 'apple')
 
 with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
-    # get dimension with all its hierarchies its dependencies
-    dimension = tm1.get_dimension('plan_department')
+    # get random dimension from the model
+    dimension_names = tm1.get_all_dimension_names()
+    random_number = random.randint(1, len(dimension_names))
+    dimension = tm1.get_dimension(dimension_name=dimension_names[random_number])
 
     # iterate through hierarchies
     for hierarchy in dimension:
         # iterate through Elements in hierarchy
         for element in hierarchy:
-            attribute_values_text = ''
-            for attribute in element.element_attributes:
-                attribute_values_text += attribute
             print('Element Name: {} Index: {} Type: {}'.format(element.name, str(element.index), element.element_type))
         # iterate through Subsets
         for subset in hierarchy.subsets:
