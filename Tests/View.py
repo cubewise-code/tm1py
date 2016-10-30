@@ -16,10 +16,13 @@ class TestViewMethods(unittest.TestCase):
     native_view_name = 'TM1py_unittest_native_view_' + random_string
     mdx_view_name = 'TM1py_unittest_mdx_view_' + random_string
 
+    def test0_get_all_views(self):
+        pass
+
     def test1_create_view(self):
         # create instance of native View
-        native_view = NativeView(name_cube='Plan_BudgetPlan',
-                                 name_view=self.native_view_name)
+        native_view = NativeView(cube_name='Plan_BudgetPlan',
+                                 view_name=self.native_view_name)
 
         # set up native view - put subsets on Rows, Columns and Titles
         subset = self.tm1.get_subset(dimension_name='plan_version', subset_name='FY 2004 Budget')
@@ -34,22 +37,21 @@ class TestViewMethods(unittest.TestCase):
         subset = self.tm1.get_subset(dimension_name='plan_chart_of_accounts', subset_name='Consolidations')
         native_view.add_row(dimension_name='plan_chart_of_accounts', subset=subset)
 
-        subset = self.tm1.get_subset(dimension_name='plan_source', subset_name='budget')
-        native_view.add_row(dimension_name='plan_source', subset=subset)
+        subset = self.tm1.get_subset(dimension_name='plan_exchange_rates', subset_name='local')
+        native_view.add_title(dimension_name='plan_exchange_rates', subset=subset, selection='local')
 
-        subset = self.tm1.get_subset(dimension_name='plan_exchange_rates', subset_name='actual')
-        native_view.add_title(dimension_name='plan_exchange_rates', subset=subset, selection='actual')
-
-        subset = self.tm1.get_subset(dimension_name='plan_time', subset_name='2003 Total Year')
+        subset = self.tm1.get_subset(dimension_name='plan_time', subset_name='2004 Total Year')
         native_view.add_column(dimension_name='plan_time', subset=subset)
+
+        subset = self.tm1.get_subset(dimension_name='plan_source', subset_name='budget')
+        native_view.add_column(dimension_name='plan_source', subset=subset)
 
         # create native view on Server
         self.tm1.create_view(view=native_view, private=self.random_boolean)
 
         # create instance of MDXView
-        mdx = "SELECT {([plan_version].[FY 2003 Budget], [plan_department].[105], [plan_chart_of_accounts].[61030], " \
-              "[plan_exchange_rates].[local], [plan_source].[goal] , [plan_time].[Jan-2004]) } on COLUMNS," \
-              "{[plan_business_unit].[10110]} on ROWS FROM [plan_BudgetPlan]"
+        nv_view = self.tm1.get_native_view(cube_name='Plan_BudgetPlan', view_name=self.native_view_name, private=self.random_boolean)
+        mdx = nv_view.as_MDX
         mdx_view = MDXView(cube_name='Plan_BudgetPlan',
                            view_name=self.mdx_view_name,
                            MDX=mdx)
@@ -71,53 +73,83 @@ class TestViewMethods(unittest.TestCase):
         # check if instance
         self.assertIsInstance(mdx_view, MDXView)
 
-    def test3_update_view(self):
+    def test3_compare_data(self):
+        data_nv = self.tm1.get_view_content('Plan_BudgetPlan', self.native_view_name, private=self.random_boolean)
+        data_mdx = self.tm1.get_view_content('Plan_BudgetPlan', self.mdx_view_name, private=self.random_boolean)
+
+        # Sum up all the values from the views
+        sum_nv = sum([value['Value'] for value in data_nv.values() if value['Value']])
+        sum_mdx = sum([value['Value'] for value in data_mdx.values() if value['Value']])
+        self.assertEqual(sum_nv, sum_mdx)
+
+    # fails sometimes because PrivateMDXViews cant be updated!
+    def test4_update_nativeview(self):
         # get native view
         native_view_original = self.tm1.get_native_view(cube_name='Plan_BudgetPlan',
                                                         view_name=self.native_view_name,
                                                         private=self.random_boolean)
-        # modify it
-        native_view = self.tm1.get_native_view(cube_name='Plan_BudgetPlan',
-                                               view_name=self.native_view_name,
-                                               private=self.random_boolean)
 
-        native_view.remove_row(dimension_name='plan_version')
+        # Sum up all the values from the views
+        data_original = self.tm1.get_view_content('Plan_BudgetPlan', self.native_view_name, private=self.random_boolean)
+        sum_original = sum([value['Value'] for value in data_original.values() if value['Value']])
+
+        # modify it
+        native_view_original.remove_row(dimension_name='plan_version')
         subset = self.tm1.get_subset(dimension_name='plan_version', subset_name='All Versions')
-        native_view.add_column(dimension_name='plan_version',  subset=subset)
+        native_view_original.add_column(dimension_name='plan_version',  subset=subset)
+
         # update it on Server
-        self.tm1.update_view(native_view, private=self.random_boolean)
+        self.tm1.update_view(native_view_original, private=self.random_boolean)
+
         #get it and check if its different
         native_view_updated = self.tm1.get_native_view(cube_name='Plan_BudgetPlan',
                                                        view_name=self.native_view_name,
                                                        private=self.random_boolean)
-        self.assertNotEqual(native_view_original.body, native_view_updated.body)
+        data_updated = self.tm1.get_view_content('Plan_BudgetPlan', self.native_view_name, private=self.random_boolean)
+        sum_updated= sum([value['Value'] for value in data_updated.values() if value['Value']])
+        self.assertNotEqual(sum_original, sum_updated)
 
+
+    def test5_update_mdxview(self):
         # get mdx view
         mdx_view_original = self.tm1.get_mdx_view(cube_name='Plan_BudgetPlan',
                                                   view_name=self.mdx_view_name,
                                                   private=self.random_boolean)
-        # modify it
-        mdx_view = self.tm1.get_mdx_view(cube_name='Plan_BudgetPlan',
-                                         view_name=self.mdx_view_name,
-                                         private=self.random_boolean)
+
+        # get data from original view
+        data_mdx_original = self.tm1.get_view_content('Plan_BudgetPlan', mdx_view_original.name,
+                                                      private=self.random_boolean)
+
         mdx = "SELECT {([plan_version].[FY 2004 Budget], [plan_department].[105], [plan_chart_of_accounts].[61030], " \
         "[plan_exchange_rates].[local], [plan_source].[goal] , [plan_time].[Jan-2004]) } on COLUMNS," \
         "{[plan_business_unit].[10110]} on ROWS FROM [plan_BudgetPlan]"
-        mdx_view.set_MDX(mdx)
+        mdx_view_original.MDX = mdx
         # update it on Server
-        self.tm1.update_view(mdx_view)
+        self.tm1.update_view(mdx_view_original)
         # get it and check if its different
         mdx_view_updated = self.tm1.get_mdx_view(cube_name='Plan_BudgetPlan',
                                                  view_name=self.mdx_view_name,
                                                  private=self.random_boolean)
-        self.assertNotEqual(mdx_view_original.body, mdx_view_updated.body)
 
-    def test4_delete_view(self):
+
+        data_mdx_updated = self.tm1.get_view_content('Plan_BudgetPlan', mdx_view_updated.name, private=self.random_boolean)
+
+        # Sum up all the values from the views
+        sum_mdx_original = sum([value['Value'] for value in data_mdx_original.values() if value['Value']])
+        sum_mdx_updated = sum([value['Value'] for value in data_mdx_updated.values() if value['Value']])
+        self.assertNotEqual(sum_mdx_original, sum_mdx_updated)
+
+
+
+
+
+    def test6_delete_view(self):
         self.tm1.delete_view(cube_name='Plan_BudgetPlan', view_name=self.native_view_name, private=self.random_boolean)
         self.tm1.delete_view(cube_name='Plan_BudgetPlan', view_name=self.mdx_view_name, private=self.random_boolean)
 
-    def test5_logout(self):
-        self.tm1.logout()
+
+
+
 
 if __name__ == '__main__':
     unittest.main()
