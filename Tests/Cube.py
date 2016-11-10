@@ -7,7 +7,7 @@ class TestCubeMethods(unittest.TestCase):
     login = TM1pyLogin.native('admin', 'apple')
     tm1 = TM1(ip='', port=8001, login=login, ssl=False)
 
-    cube_name = 'TM1py_unittest_cube_{}'.format(int(uuid.uuid4()))
+    cube_name = 'TM1py_unittest_cube_{}'.format(str(uuid.uuid4()))
 
     def test1_create_cube(self):
         all_cubes_before = self.tm1.get_all_cube_names()

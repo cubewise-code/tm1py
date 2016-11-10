@@ -11,10 +11,10 @@ class TestChoreMethods(unittest.TestCase):
     # chore properties
     chore_name = 'TM1py_unittest_chore_' + str(uuid.uuid4())
     start_time = datetime.now()
-    frequency_days = int(random.uniform(0,355))
-    frequency_hours = int(random.uniform(0,23))
+    frequency_days = int(random.uniform(0, 355))
+    frequency_hours = int(random.uniform(0, 23))
     frequency_minutes = int(random.uniform(0, 59))
-    frequency_seconds = int(random.uniform(0,59))
+    frequency_seconds = int(random.uniform(0, 59))
 
     tasks = [ChoreTask(0, 'import_actuals', parameters=[{'Name': 'region', 'Value': 'UK'}]),
              ChoreTask(1, 'import_actuals', parameters=[{'Name': 'region', 'Value': 'FR'}]),

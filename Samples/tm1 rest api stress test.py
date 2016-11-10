@@ -21,7 +21,7 @@ def get_all_process_names(tm1):
 
 def read_pnl(tm1):
     for i in range(1000):
-        data = tm1.get_view_content('Plan_BudgetPlan', 'High Level Profit and Loss')
+        data = tm1.get_view_content('Plan_BudgetPlan', 'High Level Profit and Loss', private=False)
 
 # fire requests asynchronously
 async def main():

@@ -8,7 +8,8 @@ with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
     # get data from P&L cube
     pnl_data = tm1.get_view_content(cube_name='Plan_BudgetPlan',
                                     view_name='High Level Profit And Loss',
-                                    cell_properties=['Ordinal', 'Value'])
+                                    cell_properties=['Ordinal', 'Value'],
+                                    private=False)
 
     # restructure data
     pnl_data_clean = {}

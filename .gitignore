@@ -1,0 +1,6 @@
+.idea/misc.xml
+*.xml
+.idea/TM1py.iml
+temp.py
+*.pyc
+__pycache__/TM1py.cpython-35.pyc

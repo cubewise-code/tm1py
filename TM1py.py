@@ -158,6 +158,19 @@ class TM1pyHTTPClient:
         self._varify_response(response=r)
         return r.text
 
+    def PUT(self, request, data):
+        ''' PUT request against the TM1 instance
+
+        :param request: String, for instance : /api/v1/Dimensions('plan_business_unit')
+        :param data: String, the payload (json)
+        :return: String, the response as text
+        '''
+        url, data = self._url_and_body(request=request, data=data)
+        r = self._s.put(url=url, headers=self._headers, data=data, verify=False)
+        self._varify_response(response=r)
+        return r.text
+
+
     def DELETE(self, request, data=''):
         ''' Delete request against TM1 instance
 
@@ -1063,7 +1076,7 @@ class TM1pyQueries:
         request = "/api/v1/Annotations('{}')".format(id)
         return self._client.DELETE(request=request)
 
-    def create_subset(self, subset):
+    def create_subset(self, subset, private=True):
         ''' create subset on the TM1 Server
 
             :param subset: TM1py.Subset, the subset that shall be created
@@ -1071,12 +1084,13 @@ class TM1pyQueries:
             :return:
                 string: the response
         '''
-        request = '/api/v1/Dimensions(\'' + subset._dimension_name +  '\')/Hierarchies(\'' + subset._dimension_name\
-                  + '\')/Subsets'
+        subsets = "PrivateSubsets" if private else "Subsets"
+        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/{}'\
+            .format(subset._dimension_name, subset._dimension_name, subsets)
         response = self._client.POST(request, subset.body)
         return response
 
-    def get_subset(self, dimension_name, subset_name):
+    def get_subset(self, dimension_name, subset_name, private=True):
         ''' get a subset from the TM1 Server
 
             :param dimension_name: string, name of the dimension
@@ -1085,13 +1099,23 @@ class TM1pyQueries:
             :return:
                 subset: instance of the Subset class
         '''
-        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/Subsets(\'{}\')?$expand=' \
+        subsets = "PrivateSubsets" if private else "Subsets"
+        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/{}(\'{}\')?$expand=' \
                   'Hierarchy($select=Dimension),' \
-                  'Elements($select=Name)&$select=*,Alias'.format(dimension_name, dimension_name, subset_name)
+                  'Elements($select=Name)&$select=*,Alias'.format(dimension_name, dimension_name, subsets, subset_name)
         response = self._client.GET(request=request)
         return Subset.from_json(response)
 
-    def update_subset(self, subset):
+    def get_all_subset_names(self, dimension_name, hierarchy_name, private=True):
+        subsets = "PrivateSubsets" if private else "Subsets"
+        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/{}?$select=Name'\
+            .format(dimension_name, hierarchy_name, subsets)
+        response = self._client.GET(request=request)
+        subsets = json.loads(response)['value']
+        return [subset['Name'] for subset in subsets]
+
+    # TODO: When updating elements existing elements are never cleared
+    def update_subset(self, subset, private=True):
         ''' update a subset on the TM1 Server
             :Parameters:
                 `subset` : Subset
@@ -1100,12 +1124,33 @@ class TM1pyQueries:
             :return:
                 string: the response
         '''
-        request = '/api/v1/Dimensions(\'' + subset._dimension_name +  '\')/Hierarchies(\'' + subset._dimension_name\
-                  + '\')/Subsets(\'' + subset._subset_name + '\')'
-        response = self._client.PATCH(request=request, data=subset.body)
-        return response
+        if private:
+            # just delete it and rebuild it
+            return self._update_private_subset(subset)
 
-    def delete_subset(self, dimension_name, subset_name):
+        else:
+            # update it. Clear Elements with evil workaround
+            return self._update_public_subset(subset)
+
+    def _update_private_subset(self, subset):
+        # delete it
+        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/PrivateSubsets(\'{}\')' \
+            .format(subset._dimension_name, subset._dimension_name, subset._subset_name)
+        self._client.DELETE(request, '')
+        # rebuild it
+        return self.create_subset(subset, True)
+
+    def _update_public_subset(self, subset):
+        # clear elements of subset. evil workaround! Should be done through delete on the Elements Collection
+        ti = lines_prolog = "SubsetDeleteAllElements(\'{}\', \'{}\');".format(subset.dimension_name, subset.name)
+        self.execute_TI_code(lines_prolog=ti, lines_epilog='')
+
+        # update subset
+        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/Subsets(\'{}\')' \
+            .format(subset._dimension_name, subset._dimension_name, subset._subset_name)
+        return self._client.PATCH(request=request, data=subset.body)
+
+    def delete_subset(self, dimension_name, subset_name, private=True):
         ''' delete a subset on the TM1 Server
             :Parameters:
                 `name_dimension` : String, name of the dimension
@@ -1114,9 +1159,10 @@ class TM1pyQueries:
             :Returns:
                 `string` : the response
         '''
-        request = '/api/v1/Dimensions(\'' + dimension_name +  '\')/Hierarchies(\'' + dimension_name\
-                  + '\')/Subsets(\'' + subset_name + '\')'
-        response = self._client.DELETE(request=request,data='')
+        subsets = "PrivateSubsets" if private else "Subsets"
+        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/{}(\'{}\')'\
+            .format(dimension_name, dimension_name, subsets, subset_name)
+        response = self._client.DELETE(request=request, data='')
         return response
 
     # TODO class for Threads? TBD!
@@ -1365,6 +1411,7 @@ class Subset:
 
         :param dimension_name: String
         :param subset_name: String
+        :param alias: String, alias that is on in this subset.
         :param expression: String
         :param elements: List, element names
         '''
@@ -1404,7 +1451,7 @@ class Subset:
 
     @expression.setter
     def expression(self, value):
-        self._expression = expression
+        self._expression = value
 
     @property
     def elements(self):
@@ -1413,6 +1460,12 @@ class Subset:
     @elements.setter
     def elements(self, value):
         self._elements = value
+
+    @property
+    def type(self):
+        if self.expression:
+            return 'dynamic'
+        return 'static'
 
     @classmethod
     def from_json(cls, subset_as_json):
@@ -1454,13 +1507,14 @@ class Subset:
                 `elements` : list of element names
         '''
         self._elements = self._elements + elements
+        pass
 
     def _construct_body_dynamic(self):
         body_as_dict = collections.OrderedDict()
         body_as_dict['Name'] = self._subset_name
         body_as_dict['Alias'] = self._alias
-        body_as_dict['Hierarchy@odata.bind'] = "Dimensions('" + self._dimension_name + \
-                                               "')/Hierarchies('" + self._dimension_name + "')"
+        body_as_dict['Hierarchy@odata.bind'] = 'Dimensions(\'{}\')/Hierarchies(\'{}\')'\
+            .format(self._dimension_name, self._dimension_name)
         body_as_dict['Expression'] = self._expression
         return json.dumps(body_as_dict, ensure_ascii=False, sort_keys=False)
 
@@ -1468,13 +1522,10 @@ class Subset:
         body_as_dict = collections.OrderedDict()
         body_as_dict['Name'] = self._subset_name
         body_as_dict['Alias'] = self._alias
-        body_as_dict['Hierarchy@odata.bind'] = "Dimensions('" + self._dimension_name + \
-                                               "')/Hierarchies('" + self._dimension_name + "')"
-        elements_in_list = []
-        for element in self._elements:
-            elements_in_list.append('Dimensions(\'' + self._dimension_name + '\')/Hierarchies(\'' +
-                                    self._dimension_name + '\')/Elements(\'' + element + '\')')
-            body_as_dict['Elements@odata.bind'] = elements_in_list
+        body_as_dict['Hierarchy@odata.bind'] = 'Dimensions(\'{}\')/Hierarchies(\'{}\')'\
+            .format(self._dimension_name, self._dimension_name)
+        body_as_dict['Elements@odata.bind'] = ['Dimensions(\'{}\')/Hierarchies(\'{}\')/Elements(\'{}\')'
+             .format(self.dimension_name, self.dimension_name, element) for element in self.elements]
         return json.dumps(body_as_dict, ensure_ascii=False, sort_keys=False)
 
 class AnnonymousSubset(Subset):
@@ -1514,20 +1565,17 @@ class AnnonymousSubset(Subset):
 
     def _construct_body_dynamic(self):
         body_as_dict = collections.OrderedDict()
-        body_as_dict["Hierarchy@odata.bind"] = "Dimensions('" + self._dimension_name + \
-                                               "')/Hierarchies('" + self._dimension_name + "')"
+        body_as_dict['Hierarchy@odata.bind'] = 'Dimensions(\'{}\')/Hierarchies(\'{}\')'\
+            .format(self._dimension_name, self._dimension_name)
         body_as_dict['Expression'] = self._expression
         return json.dumps(body_as_dict, ensure_ascii=False, sort_keys=False)
 
     def _construct_body_static(self):
         body_as_dict = collections.OrderedDict()
-        body_as_dict["Hierarchy@odata.bind"] = "Dimensions('" + self._dimension_name + \
-                                               "')/Hierarchies('" + self._dimension_name + "')"
-        elements_in_list = []
-        for element in self._elements:
-            elements_in_list.append('Dimensions(\'' + self._dimension_name + '\')/Hierarchies(\'' +
-                                    self._dimension_name + '\')/Elements(\'' + element + '\')')
-            body_as_dict['Elements@odata.bind'] = elements_in_list
+        body_as_dict['Hierarchy@odata.bind'] = 'Dimensions(\'{}\')/Hierarchies(\'{}\')' \
+            .format(self._dimension_name, self._dimension_name)
+        body_as_dict['Elements@odata.bind'] = ['Dimensions(\'{}\')/Hierarchies(\'{}\')/Elements(\'{}\')'
+           .format(self.dimension_name, self.dimension_name, element) for element in self.elements]
         return json.dumps(body_as_dict, ensure_ascii=False, sort_keys=False)
 
 
@@ -2339,6 +2387,7 @@ class Process:
         :Notes:
         - class complete, functional and tested !!
         - issues with password for processes with for ODBC Datasource
+        - doenst work on Processes that were generated through the Wizard.
     '''
 
     def __init__(self, name, has_security_access=False, ui_data="CubeAction=1511€DataAction=1503€CubeLogChanges=0€",
@@ -2355,28 +2404,19 @@ class Process:
         :param others: all other parameters optional
         :return:
         '''
-        self.counter_variables = 0
-        self.counter_parameters = 0
         self.name = name
         self.has_security_access = has_security_access
         self.ui_data = ui_data
         self.parameters = []
-        for item in parameters:
-            self.parameters.append(item)
-            self.counter_parameters += 1
-        self.variables, self.variables_ui_data = [], []
-        for variable, ui_data in zip(variables, variables_ui_data):
-            self.variables.append(variable)
-            self.variables_ui_data.append(ui_data)
-            self.counter_variables += 1
-        self.prolog_procedure = self.auto_generated_string() + prolog_procedure \
-            if "#****Begin: Generated Statements***" not in prolog_procedure else prolog_procedure
-        self.metadata_procedure =self.auto_generated_string() + metadata_procedure \
-            if "#****Begin: Generated Statements***" not in metadata_procedure else metadata_procedure
-        self.data_procedure = self.auto_generated_string() +  data_procedure \
-            if "#****Begin: Generated Statements***" not in data_procedure else data_procedure
-        self.epilog_procedure = self.auto_generated_string() + epilog_procedure \
-            if "#****Begin: Generated Statements***" not in epilog_procedure else epilog_procedure
+        self.parameters = parameters if parameters else []
+        self.variables = variables if variables else []
+        self.variables_ui_data = variables_ui_data if variables_ui_data else []
+        add_generated_string = lambda code: self.auto_generated_string() + code \
+            if self.auto_generated_string() not in code else code
+        self.prolog_procedure = add_generated_string(prolog_procedure)
+        self.metadata_procedure = add_generated_string(metadata_procedure)
+        self.data_procedure = add_generated_string(data_procedure)
+        self.epilog_procedure = add_generated_string(epilog_procedure)
         self.datasource_type = datasource_type
         self.datasource_ascii_decimal_separator = datasource_ascii_decimal_separator
         self.datasource_ascii_delimiter_char = datasource_ascii_delimiter_char
@@ -2395,27 +2435,22 @@ class Process:
 
     @classmethod
     def from_json(cls, process_as_json):
-        ''' Alternative constructor
-                :Parameters:
-                    `process_as_json` : string, JSON
-                        response of /api/v1/Processes('x')?$expand=*
+        """
 
-                :Returns:
-                    `Process` : an instance of this class
-        '''
+        :param process_as_json: response of /api/v1/Processes('x')?$expand=*
+        :return: an instance of this class
+        """
+
         process_as_dict = json.loads(process_as_json)
         return cls.from_dict(process_as_dict)
 
     @classmethod
     def from_dict(cls, process_as_dict):
-        ''' Alternative constructor
-                :Parameters:
-                    `process_as_dict` : Dictionary
-                        process as a dictionary
+        """
 
-                :Returns:
-                    `Process` : an instance of this class
-        '''
+        :param process_as_json: Dictionary, process as dictionary
+        :return: an instance of this class
+        """
         f = lambda dict, key : dict[key] if key in dict else ''
         return cls(name=process_as_dict['Name'],
                    has_security_access=process_as_dict['HasSecurityAccess'],
@@ -2453,7 +2488,7 @@ class Process:
 
     @property
     def body(self):
-        return self.construct_body()
+        return self._construct_body()
 
     def add_variable(self, name_variable, type):
         ''' add variable to the process
@@ -2556,7 +2591,7 @@ class Process:
         self.datasource_subset = datasource_subset
 
     #construct self.body (json) from the class-attributes
-    def construct_body(self):
+    def _construct_body(self):
         # general parameters
         body_as_dict = {'Name': self.name,
                 'PrologProcedure': self.prolog_procedure,
@@ -2854,9 +2889,11 @@ class User:
             self._groups.append(group_name)
 
     def remove_group(self, group_name):
-        index = [group.upper() for group in self._groups].index(group_name.upper())
-        if index > 0:
+        try:
+            index = [group.upper() for group in self._groups].index(group_name.upper())
             self._groups.pop(index)
+        except ValueError:
+            pass
 
     @classmethod
     def from_json(cls, user_as_json):
@@ -2980,16 +3017,24 @@ class Cube:
         return json.dumps(body_as_dict, ensure_ascii=False, sort_keys=True)
 
 class Rules:
+    """
+        Abstraction of Rules on a cube.
+
+        is a collection of rulestatements, where each statement is without linebreaks.
+        comments are not included.
+
+
+    """
     keywords = ['SKIPCHECK', 'FEEDSTRINGS', 'UNDEFVALS', 'FEEDERS']
 
     def __init__(self, rules):
         self._text = rules
         self._rules_analytics = []
-        # remove comment-lines
         text_without_comments = '\n'.join([rule for rule in rules.split('\n') if len(rule) > 0 and rule.strip()[0] !='#'])
         for statement in text_without_comments.split(';'):
             if len(statement.strip()) > 0:
                 self._rules_analytics.append(statement.replace('\n',''))
+        # self._rules_analytics_upper serves for analysis on cube rules
         self._rules_analytics_upper = [rule.upper() for rule in self._rules_analytics]
 
     @property
@@ -3045,6 +3090,7 @@ class Rules:
     def __len__(self):
         return len(self.rules_analytics)
 
+    # iterate through actual rule statments without linebreaks. Ignore comments.
     def __iter__(self):
         return iter(self.rules_analytics)
 

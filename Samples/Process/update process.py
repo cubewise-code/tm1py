@@ -14,8 +14,5 @@ p.set_data_procedure(Process.auto_generated_string() + "a = 2;")
 # update on Server
 tm1.update_process(p)
 
-# delete Process from Server
-tm1.delete_process(p.name)
-
 # logout
 tm1.logout()

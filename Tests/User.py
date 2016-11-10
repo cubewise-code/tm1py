@@ -14,10 +14,12 @@ class TestUserMethods(unittest.TestCase):
         u = User(name=self.user_name, groups=[], password='TM1py')
         self.tm1.create_user(u)
         all_users_after = self.tm1.get_all_users()
+        # test it!
         self.assertEqual(len(all_users_before) + 1, len(all_users_after))
 
     def test2_get_user(self):
         u = self.tm1.get_user(self.user_name)
+        # test it !
         self.assertIsInstance(u, User)
 
     def test3_update_user(self):
@@ -26,13 +28,13 @@ class TestUserMethods(unittest.TestCase):
         # update user. Add Group
         u.add_group('10110')
         self.tm1.update_user(u)
-        # test
+        # test it !
         groups = self.tm1.get_groups_from_user(u.name)
         self.assertIn('10110', groups)
         # update user. Remove Group
         u.remove_group('10110')
         self.tm1.update_user(u)
-        # test
+        # test it !
         groups = self.tm1.get_groups_from_user(u.name)
         self.assertNotIn('10110', groups)
 
@@ -41,6 +43,8 @@ class TestUserMethods(unittest.TestCase):
         users_before = self.tm1.get_all_users()
         self.tm1.delete_user(self.user_name)
         users_after = self.tm1.get_all_users()
+
+        # test it !
         self.assertEqual(len(users_before) - 1, len(users_after))
 
 

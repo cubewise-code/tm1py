@@ -17,7 +17,8 @@ class TestViewMethods(unittest.TestCase):
     mdx_view_name = 'TM1py_unittest_mdx_view_' + random_string
 
     def test0_get_all_views(self):
-        pass
+        views = self.tm1.get_all_views('Plan_BudgetPlan')
+        self.assertGreater(len(views),0)
 
     def test1_create_view(self):
         # create instance of native View
@@ -25,32 +26,35 @@ class TestViewMethods(unittest.TestCase):
                                  view_name=self.native_view_name)
 
         # set up native view - put subsets on Rows, Columns and Titles
-        subset = self.tm1.get_subset(dimension_name='plan_version', subset_name='FY 2004 Budget')
+        subset = self.tm1.get_subset(dimension_name='plan_version', subset_name='FY 2004 Budget', private=False)
         native_view.add_row(dimension_name='plan_version', subset=subset)
 
-        subset = self.tm1.get_subset(dimension_name='plan_business_unit', subset_name='n level business unit')
+        subset = self.tm1.get_subset(dimension_name='plan_business_unit', subset_name='n level business unit',
+                                     private=False)
         native_view.add_row(dimension_name='plan_business_unit', subset=subset)
 
-        subset = self.tm1.get_subset(dimension_name='plan_department', subset_name='n level departments')
+        subset = self.tm1.get_subset(dimension_name='plan_department', subset_name='n level departments', private=False)
         native_view.add_row(dimension_name='plan_department', subset=subset)
 
-        subset = self.tm1.get_subset(dimension_name='plan_chart_of_accounts', subset_name='Consolidations')
+        subset = self.tm1.get_subset(dimension_name='plan_chart_of_accounts', subset_name='Consolidations',
+                                     private=False)
         native_view.add_row(dimension_name='plan_chart_of_accounts', subset=subset)
 
-        subset = self.tm1.get_subset(dimension_name='plan_exchange_rates', subset_name='local')
+        subset = self.tm1.get_subset(dimension_name='plan_exchange_rates', subset_name='local', private=False)
         native_view.add_title(dimension_name='plan_exchange_rates', subset=subset, selection='local')
 
-        subset = self.tm1.get_subset(dimension_name='plan_time', subset_name='2004 Total Year')
+        subset = self.tm1.get_subset(dimension_name='plan_time', subset_name='2004 Total Year', private=False)
         native_view.add_column(dimension_name='plan_time', subset=subset)
 
-        subset = self.tm1.get_subset(dimension_name='plan_source', subset_name='budget')
+        subset = self.tm1.get_subset(dimension_name='plan_source', subset_name='budget', private=False)
         native_view.add_column(dimension_name='plan_source', subset=subset)
 
         # create native view on Server
         self.tm1.create_view(view=native_view, private=self.random_boolean)
 
         # create instance of MDXView
-        nv_view = self.tm1.get_native_view(cube_name='Plan_BudgetPlan', view_name=self.native_view_name, private=self.random_boolean)
+        nv_view = self.tm1.get_native_view(cube_name='Plan_BudgetPlan', view_name=self.native_view_name,
+                                           private=self.random_boolean)
         mdx = nv_view.as_MDX
         mdx_view = MDXView(cube_name='Plan_BudgetPlan',
                            view_name=self.mdx_view_name,
@@ -82,7 +86,7 @@ class TestViewMethods(unittest.TestCase):
         sum_mdx = sum([value['Value'] for value in data_mdx.values() if value['Value']])
         self.assertEqual(sum_nv, sum_mdx)
 
-    # fails sometimes because PrivateMDXViews cant be updated!
+    # fails sometimes because PrivateMDXViews cant be updated in FP < 5.
     def test4_update_nativeview(self):
         # get native view
         native_view_original = self.tm1.get_native_view(cube_name='Plan_BudgetPlan',
@@ -95,7 +99,7 @@ class TestViewMethods(unittest.TestCase):
 
         # modify it
         native_view_original.remove_row(dimension_name='plan_version')
-        subset = self.tm1.get_subset(dimension_name='plan_version', subset_name='All Versions')
+        subset = self.tm1.get_subset(dimension_name='plan_version', subset_name='All Versions', private=False)
         native_view_original.add_column(dimension_name='plan_version',  subset=subset)
 
         # update it on Server
@@ -125,7 +129,7 @@ class TestViewMethods(unittest.TestCase):
         "{[plan_business_unit].[10110]} on ROWS FROM [plan_BudgetPlan]"
         mdx_view_original.MDX = mdx
         # update it on Server
-        self.tm1.update_view(mdx_view_original)
+        self.tm1.update_view(mdx_view_original, private=self.random_boolean)
         # get it and check if its different
         mdx_view_updated = self.tm1.get_mdx_view(cube_name='Plan_BudgetPlan',
                                                  view_name=self.mdx_view_name,
