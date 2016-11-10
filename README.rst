@@ -71,16 +71,16 @@ TM1py offers handy features to interact with TM1 from Python, such as
     >>> tm1.execute_TI_code(lines_prolog=lines_prolog, lines_epilog=lines_epilog)
 
 - CRUD features for CellAnnotations
-- CRUD featues for Processes
-- CRUD feautes for Chores
+- CRUD features for Processes
+- CRUD features for Chores
 - CRUD features for NativeViews
 - CRUD features for MDXViews
 - CRUD features for Subsets
-- CRUD featurs for Cubes
+- CRUD features for Cubes
+- CRUD features for Dimensions, Elements, ElementAttributes
 - CRUD features for Users
 - Generate MDX from NativeViews
-- Execute Processes
-- Execute Chores
+- Execute Processes and Chores
 - Query Threads
 - Query MessageLog and TransactionLog
 
