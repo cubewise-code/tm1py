@@ -25,10 +25,15 @@ with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
     print("Cubes sorted by number of Feeder Statements:")
     print([cube.name for cube in cubes])
 
+    # print plain rule stmts
+    print("Rule Statements:")
+    cube = tm1.get_cube('plan_Report')
+    for stmt in cube.rules.rule_statements:
+        print(stmt)
 
-
-
-
-
+    # print plain feeder stmts
+    print("Feeder Statements:")
+    for stmt in cube.rules.feeder_statements:
+        print(stmt)
 
 

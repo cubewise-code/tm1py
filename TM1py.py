@@ -130,7 +130,7 @@ class TM1pyHTTPClient:
 
         url, data = self._url_and_body(request=request, data=data)
         r = self._s.get(url=url, headers=self._headers, data=data, verify=False)
-        self._varify_response(response=r)
+        self._verify_response(response=r)
         return r.text
 
     def POST(self, request, data):
@@ -143,7 +143,7 @@ class TM1pyHTTPClient:
 
         url, data = self._url_and_body(request=request, data=data)
         r = self._s.post(url=url, headers=self._headers, data=data, verify=False)
-        self._varify_response(response=r)
+        self._verify_response(response=r)
         return r.text
 
     def PATCH(self, request, data):
@@ -155,7 +155,7 @@ class TM1pyHTTPClient:
         '''
         url, data = self._url_and_body(request=request, data=data)
         r = self._s.patch(url=url, headers=self._headers, data=data, verify=False)
-        self._varify_response(response=r)
+        self._verify_response(response=r)
         return r.text
 
     def PUT(self, request, data):
@@ -167,7 +167,7 @@ class TM1pyHTTPClient:
         '''
         url, data = self._url_and_body(request=request, data=data)
         r = self._s.put(url=url, headers=self._headers, data=data, verify=False)
-        self._varify_response(response=r)
+        self._verify_response(response=r)
         return r.text
 
 
@@ -182,7 +182,7 @@ class TM1pyHTTPClient:
 
         url, data = self._url_and_body(request=request, data=data)
         r = self._s.delete(url=url, headers=self._headers, data=data, verify=False)
-        self._varify_response(response=r)
+        self._verify_response(response=r)
         return r.text
 
     def _get_cookies(self):
@@ -207,7 +207,7 @@ class TM1pyHTTPClient:
         data = data.encode('utf-8')
         return url, data
 
-    def _varify_response(self, response):
+    def _verify_response(self, response):
         ''' check if Status Code is OK
 
         :Parameters:
@@ -421,10 +421,45 @@ class TM1pyQueries:
         self.create_process(p)
         try:
             self.execute_process(process_name)
+            pass
         except TM1pyException as e:
             raise e
         finally:
             self.delete_process(process_name)
+
+    def execute_mdx(self, mdx, cube_name=None, cell_properties=None, top=None):
+        """
+
+        :param mdx: MDX Query, as string
+        :param cube_name: optional. If not given, parse mdx. can be costly.
+        :param cell_properties: properties to be queried from the cell. Like Value, Ordinal, etc as iterable
+        :param top: integer
+        :return: content in sweet consice strcuture.
+        """
+        if not cell_properties:
+            cell_properties = ['Value', 'Ordinal']
+        if top:
+            request = '/api/v1/ExecuteMDX?$expand=Axes($expand=Tuples($expand=Members' \
+                      '($select=UniqueName);$top={})),Cells($select={};$top={})'\
+                .format(str(top), ','.join(cell_properties), str(top))
+        else:
+            request = '/api/v1/ExecuteMDX?$expand=Axes($expand=Tuples($expand=Members' \
+                      '($select=UniqueName))),Cells($select={})'\
+                .format(','.join(cell_properties))
+        data = {
+            'MDX': mdx
+        }
+        if not cube_name:
+            cube_name = TM1pyUtils.read_cube_name_from_mdx(mdx)
+        dimension_order = self.get_dimension_order(cube_name)
+        cellset = self._client.POST(request=request,data=json.dumps(data))
+        return self._build_content_from_cellset(dimension_order=dimension_order,
+                                                cellset_as_dict=json.loads(cellset),
+                                                cell_properties=cell_properties,
+                                                top=top)
+
+
+
 
     def get_last_message_from_messagelog(self, process_name):
         ''' get the latest messagelog entry for a process
@@ -918,7 +953,31 @@ class TM1pyQueries:
             cubes_as_dict[name_cube] = dimensions
         return cubes_as_dict
 
-    def _get_view_content_native(self,cube_name, view_name, cell_properties=None, private=True, top=None):
+
+
+    def get_view_content(self, cube_name, view_name, cell_properties=None, private=True, top=None):
+        ''' Get view content as dictionary with sweet and concise structure.
+            Works on NativeView and MDXView
+
+
+        Not Hierarchy aware !
+
+        :param cube_name: String
+        :param view_name: String
+        :param cell_properties: List, cell properties: Values, Status, HasPicklist, etc.
+        :param top: Int, number of cells
+
+        :return:
+            Dictionary : {([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }
+        '''
+        if not cell_properties:
+            cell_properties = ['Value','Ordinal']
+        dimension_order = self.get_dimension_order(cube_name)
+        cellset_as_dict = self._get_cellset_from_view(cube_name, view_name, cell_properties, private, top)
+        content_as_dict = self._build_content_from_cellset(dimension_order, cellset_as_dict, cell_properties, top)
+        return content_as_dict
+
+    def _get_cellset_from_view(self, cube_name, view_name, cell_properties=None, private=True, top=None):
         ''' Get view content as dictionary in its native (cellset-) structure.
 
         :param cube_name: String
@@ -934,44 +993,36 @@ class TM1pyQueries:
         views = 'PrivateViews' if  private else 'Views'
         if top:
             request = '/api/v1/Cubes(\'{}\')/{}(\'{}\')/tm1.Execute?$expand=Axes($expand=Tuples($expand=Members' \
-                      '($select=UniqueName);$top={})),Cells($select={};' \
-                      '$top={})'.format(cube_name, views, view_name, str(top), ','.join(cell_properties), str(top))
+                      '($select=UniqueName);$top={})),Cells($select={};$top={})'\
+                .format(cube_name, views, view_name, str(top), ','.join(cell_properties), str(top))
         else:
             request = '/api/v1/Cubes(\'{}\')/{}(\'{}\')/tm1.Execute?$expand=Axes($expand=Tuples($expand=Members' \
-                      '($select=UniqueName))),' \
-                      'Cells($select={})'.format(cube_name, views, view_name, ','.join(cell_properties))
+                      '($select=UniqueName))),Cells($select={})'\
+                .format(cube_name, views, view_name, ','.join(cell_properties))
         response = self._client.POST(request, '')
         return json.loads(response)
 
-    def get_view_content(self, cube_name, view_name, cell_properties=None, private=True, top=None):
-        ''' Get view content as dictionary with sweet and concise structure
 
-        :param cube_name: String
-        :param view_name: String
-        :param cell_properties: List, cell properties: Values, Status, HasPicklist, etc.
-        :param top: Int, number of cells
+    def _build_content_from_cellset(self, dimension_order, cellset_as_dict, cell_properties, top):
+        """
 
+        :param cellset_as_dict:
+        :param cell_properties:
+        :param top: Maximum Number of cells
         :return:
-            Dictionary : {([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }
-        '''
-        if not cell_properties:
-            cell_properties = ['Value','Ordinal']
+        """
+        content_as_dict = {}
 
-        view_as_dict = {}
-
-        response_as_dict = self._get_view_content_native(cube_name, view_name, cell_properties, private, top)
-        dimension_order = self.get_dimension_order(cube_name)
-
-        axe0_as_dict = response_as_dict['Axes'][0]
-        axe1_as_dict = response_as_dict['Axes'][1]
+        axe0_as_dict = cellset_as_dict['Axes'][0]
+        axe1_as_dict = cellset_as_dict['Axes'][1]
 
         ordinal_cells = 0
 
         ordinal_axe2 = 0
         # get coordinates on axe 2: Title
         # if there are no elements on axe 2 assign empty list to elements_on_axe2
-        if len(response_as_dict['Axes']) > 2:
-            axe2_as_dict = response_as_dict['Axes'][2]
+        if len(cellset_as_dict['Axes']) > 2:
+            axe2_as_dict = cellset_as_dict['Axes'][2]
             Tuples_as_dict = axe2_as_dict['Tuples'][ordinal_axe2]['Members']
             elements_on_axe2 = [data['UniqueName'] for data in Tuples_as_dict]
         else:
@@ -990,10 +1041,10 @@ class TM1pyQueries:
                 coordinates = elements_on_axe0 + elements_on_axe2 + elements_on_axe1
                 coordinates_sorted = self.sort_addresstuple(dimension_order, coordinates)
                 # get cell properties
-                view_as_dict[coordinates_sorted] = {}
+                content_as_dict[coordinates_sorted] = {}
                 for cell_property in cell_properties:
-                    value = response_as_dict['Cells'][ordinal_cells][cell_property]
-                    view_as_dict[coordinates_sorted][cell_property] = value
+                    value = cellset_as_dict['Cells'][ordinal_cells][cell_property]
+                    content_as_dict[coordinates_sorted][cell_property] = value
                 ordinal_axe0 += 1
                 ordinal_cells += 1
                 if top is not None and ordinal_cells >= top:
@@ -1001,7 +1052,8 @@ class TM1pyQueries:
             if top is not None and ordinal_cells >= top:
                 break
             ordinal_axe1 += 1
-        return view_as_dict
+        return content_as_dict
+
 
     def get_dimension_order(self, name_cube):
         ''' Get the correct order of dimensions in a cube
@@ -1376,6 +1428,18 @@ class TM1pyQueries:
     def delete_cube(self, cube_name):
         request = '/api/v1/Cubes(\'{}\')'.format(cube_name)
         return self._client.DELETE(request)
+
+class TM1pyUtils:
+    @staticmethod
+    def read_cube_name_from_mdx(mdx):
+        mdx_trimed = ''.join(mdx.split()).upper()
+        pos_oncolumnsfrom = mdx_trimed.find("}ONCOLUMNSFROM[") + len("}ONCOLUMNSFROM[")
+        pos_where = mdx_trimed.find("]WHERE", pos_oncolumnsfrom)
+        return mdx_trimed[pos_oncolumnsfrom:pos_where]
+
+
+
+
 
 class Server:
     ''' Abstraction of the TM1 Server
@@ -3020,9 +3084,11 @@ class Rules:
     """
         Abstraction of Rules on a cube.
 
+        rules_analytics
         is a collection of rulestatements, where each statement is without linebreaks.
         comments are not included.
 
+        Currently rules object not meant not be edited. To be written!
 
     """
     keywords = ['SKIPCHECK', 'FEEDSTRINGS', 'UNDEFVALS', 'FEEDERS']
@@ -3030,10 +3096,15 @@ class Rules:
     def __init__(self, rules):
         self._text = rules
         self._rules_analytics = []
-        text_without_comments = '\n'.join([rule for rule in rules.split('\n') if len(rule) > 0 and rule.strip()[0] !='#'])
+        self._rules_analytics_upper = []
+        self.init_analytics()
+
+    def init_analytics(self):
+        text_without_comments = '\n'.join(
+            [rule for rule in self._text.split('\n') if len(rule) > 0 and rule.strip()[0] != '#'])
         for statement in text_without_comments.split(';'):
             if len(statement.strip()) > 0:
-                self._rules_analytics.append(statement.replace('\n',''))
+                self._rules_analytics.append(statement.replace('\n', ''))
         # self._rules_analytics_upper serves for analysis on cube rules
         self._rules_analytics_upper = [rule.upper() for rule in self._rules_analytics]
 

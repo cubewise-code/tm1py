@@ -7,17 +7,15 @@ login = TM1pyLogin.native('admin', 'apple')
 with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
     # get data from P&L cube
     pnl_data = tm1.get_view_content(cube_name='Plan_BudgetPlan',
-                                    view_name='High Level Profit And Loss',
+                                    view_name='Budget Input Detailed',
                                     cell_properties=['Ordinal', 'Value'],
                                     private=False)
 
     # restructure data
     pnl_data_clean = {}
-    for item in pnl_data:
-        coordinates = []
-        for entry in item:
-            coordinates.append(entry[entry.find('].[')+3:-1])
-        pnl_data_clean[tuple(coordinates)] = pnl_data[item]['Value']
+    for coordinates, cell in pnl_data.items():
+        coordinates_clean = tuple([unique_name[unique_name.find('].[') + 3:-1] for unique_name in coordinates])
+        pnl_data_clean[coordinates_clean] = cell['Value']
 
     # create index
     names = tm1.get_dimension_order('Plan_BudgetPlan')
@@ -32,7 +30,6 @@ with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
     print(df)
 
     # print mean and median
-    print(df.mean())
-    print(df.median())
-
+    print("Mean: " + str(df.mean()))
+    print("Median: " + str(df.median()))
 
