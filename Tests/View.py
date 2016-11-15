@@ -105,13 +105,13 @@ class TestViewMethods(unittest.TestCase):
         # update it on Server
         self.tm1.update_view(native_view_original, private=self.random_boolean)
 
-        #get it and check if its different
+        #get it and check if the sum is still the same
         native_view_updated = self.tm1.get_native_view(cube_name='Plan_BudgetPlan',
                                                        view_name=self.native_view_name,
                                                        private=self.random_boolean)
         data_updated = self.tm1.get_view_content('Plan_BudgetPlan', self.native_view_name, private=self.random_boolean)
         sum_updated= sum([value['Value'] for value in data_updated.values() if value['Value']])
-        self.assertNotEqual(sum_original, sum_updated)
+        self.assertEqual(sum_original, sum_updated)
 
 
     def test5_update_mdxview(self):

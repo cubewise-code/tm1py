@@ -86,7 +86,6 @@ class TestChoreMethods(unittest.TestCase):
         c.deactivate()
 
         # update chore in TM1
-        print(c.body)
         self.tm1.update_chore(c)
 
         # get chore and check all properties

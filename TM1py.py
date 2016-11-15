@@ -88,7 +88,7 @@ class TM1pyLogin:
 
         :return: instance of TM1pyLogin
         '''
-        pass
+        raise NotImplementedError('not supported')
 
 class TM1pyHTTPClient:
     ''' low level communication with TM1 instance via HTTP
@@ -278,22 +278,7 @@ class TM1pyQueries:
             servers.append(server)
         return servers
 
-    @staticmethod
-    def sort_addresstuple(dimension_order, unsorted_addresstuple):
-        ''' Sort the given mixed up addresstuple
 
-        :param cube_name: String
-        :param dimension_order: list of dimension names in correct order
-        :param unsorted_addresstuple: list of Strings - ['[dim2].[elem4]','[dim1].[elem2]',...]
-
-        :return:
-            Tuple: ('[dim1].[elem2]','[dim2].[elem4]',...)
-        '''
-        sorted_addresstupple = []
-        for dimension in dimension_order:
-            address_element = [item for item in unsorted_addresstuple if item.startswith('[' + dimension + '].')]
-            sorted_addresstupple.append(address_element[0])
-        return tuple(sorted_addresstupple)
 
     def logout(self):
         ''' End TM1 Session and HTTP session
@@ -453,15 +438,20 @@ class TM1pyQueries:
             cube_name = TM1pyUtils.read_cube_name_from_mdx(mdx)
         dimension_order = self.get_dimension_order(cube_name)
         cellset = self._client.POST(request=request,data=json.dumps(data))
-        return self._build_content_from_cellset(dimension_order=dimension_order,
-                                                cellset_as_dict=json.loads(cellset),
-                                                cell_properties=cell_properties,
-                                                top=top)
+        return TM1pyUtils.build_content_from_cellset(dimension_order=dimension_order,
+                                                     cellset_as_dict=json.loads(cellset),
+                                                     cell_properties=cell_properties,
+                                                     top=top)
 
+    def get_last_message_log_entries(self, reverse=True, top=None):
+        reverse = 'true' if reverse else 'false'
+        request = '/api/v1/MessageLog(Reverse={})'.format(reverse)
+        if top:
+            request += '?$top={}'.format(top)
+        response = self._client.GET(request, '')
+        return json.loads(response)['value']
 
-
-
-    def get_last_message_from_messagelog(self, process_name):
+    def get_last_process_message_from_messagelog(self, process_name):
         ''' get the latest messagelog entry for a process
 
             :param process_name: name of the process
@@ -559,7 +549,6 @@ class TM1pyQueries:
         except (ConnectionError, ConnectionAbortedError):
             self._client = TM1pyHTTPClient(self._ip, self._port, self._login, self._ssl)
             self.get_all_process_names()
-
 
     def get_process(self, name_process):
         """ Get a process from TM1 Server
@@ -860,7 +849,6 @@ class TM1pyQueries:
         for hierarchy in dimension:
             self.update_hierarchy(hierarchy)
 
-
     def delete_dimension(self, dimension_name):
         '''
 
@@ -918,7 +906,6 @@ class TM1pyQueries:
         request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')'.format(hierarchy.dimension_name, hierarchy.name)
         return self._client.DELETE(request, '')
 
-
     def get_all_annotations_from_cube(self, name_cube):
         ''' Get all annotations from given cube as a List.
 
@@ -933,27 +920,6 @@ class TM1pyQueries:
         annotations_as_dict = json.loads(response)['value']
         annotations = [Annotation.from_json(json.dumps(element)) for element in annotations_as_dict]
         return annotations
-
-    # Obsolete since the Cube class exists
-    def get_cube_names_and_dimensions(self):
-        ''' Get all cubes with its dimensions in a dictionary from TM1 Server
-
-        :Returns:
-            `Dictionary` : {cube1 : [dim1, dim2, dim3, ... ], cube2 : ....}
-        '''
-        cubes_as_dict = {}
-        response = self._client.GET("/api/v1/Cubes?$select=Name&$expand=Dimensions", "")
-        resp_as_dict = json.loads(response)['value']
-        for entry in resp_as_dict:
-            name_cube = entry['Name']
-            dimensions = []
-            dimensions_as_dict = entry['Dimensions']
-            for dimension in dimensions_as_dict:
-                dimensions.append(dimension['Name'])
-            cubes_as_dict[name_cube] = dimensions
-        return cubes_as_dict
-
-
 
     def get_view_content(self, cube_name, view_name, cell_properties=None, private=True, top=None):
         ''' Get view content as dictionary with sweet and concise structure.
@@ -974,7 +940,7 @@ class TM1pyQueries:
             cell_properties = ['Value','Ordinal']
         dimension_order = self.get_dimension_order(cube_name)
         cellset_as_dict = self._get_cellset_from_view(cube_name, view_name, cell_properties, private, top)
-        content_as_dict = self._build_content_from_cellset(dimension_order, cellset_as_dict, cell_properties, top)
+        content_as_dict = TM1pyUtils.build_content_from_cellset(dimension_order, cellset_as_dict, cell_properties, top)
         return content_as_dict
 
     def _get_cellset_from_view(self, cube_name, view_name, cell_properties=None, private=True, top=None):
@@ -1003,66 +969,17 @@ class TM1pyQueries:
         return json.loads(response)
 
 
-    def _build_content_from_cellset(self, dimension_order, cellset_as_dict, cell_properties, top):
-        """
-
-        :param cellset_as_dict:
-        :param cell_properties:
-        :param top: Maximum Number of cells
-        :return:
-        """
-        content_as_dict = {}
-
-        axe0_as_dict = cellset_as_dict['Axes'][0]
-        axe1_as_dict = cellset_as_dict['Axes'][1]
-
-        ordinal_cells = 0
-
-        ordinal_axe2 = 0
-        # get coordinates on axe 2: Title
-        # if there are no elements on axe 2 assign empty list to elements_on_axe2
-        if len(cellset_as_dict['Axes']) > 2:
-            axe2_as_dict = cellset_as_dict['Axes'][2]
-            Tuples_as_dict = axe2_as_dict['Tuples'][ordinal_axe2]['Members']
-            elements_on_axe2 = [data['UniqueName'] for data in Tuples_as_dict]
-        else:
-            elements_on_axe2 = []
-
-        ordinal_axe1 = 0
-        for i in range(axe1_as_dict['Cardinality']):
-            #get coordinates on axe 1: Rows
-            Tuples_as_dict = axe1_as_dict['Tuples'][ordinal_axe1]['Members']
-            elements_on_axe1 = [data['UniqueName'] for data in Tuples_as_dict]
-            ordinal_axe0 = 0
-            for j in range(axe0_as_dict['Cardinality']):
-                # get coordinates on axe 0: Columns
-                Tuples_as_dict = axe0_as_dict['Tuples'][ordinal_axe0]['Members']
-                elements_on_axe0 = [data['UniqueName'] for data in Tuples_as_dict]
-                coordinates = elements_on_axe0 + elements_on_axe2 + elements_on_axe1
-                coordinates_sorted = self.sort_addresstuple(dimension_order, coordinates)
-                # get cell properties
-                content_as_dict[coordinates_sorted] = {}
-                for cell_property in cell_properties:
-                    value = cellset_as_dict['Cells'][ordinal_cells][cell_property]
-                    content_as_dict[coordinates_sorted][cell_property] = value
-                ordinal_axe0 += 1
-                ordinal_cells += 1
-                if top is not None and ordinal_cells >= top:
-                    break
-            if top is not None and ordinal_cells >= top:
-                break
-            ordinal_axe1 += 1
-        return content_as_dict
 
 
-    def get_dimension_order(self, name_cube):
+
+    def get_dimension_order(self, cube_name):
         ''' Get the correct order of dimensions in a cube
 
-        :param name_cube: String
+        :param cube_name: String
         :return:
             List : [dim1, dim2, dim3, etc.]
         '''
-        response = self._client.GET('/api/v1/Cubes(\'' + name_cube + '\')/Dimensions?$select=Name', '')
+        response = self._client.GET('/api/v1/Cubes(\'' + cube_name + '\')/Dimensions?$select=Name', '')
         response_as_dict = json.loads(response)['value']
         dimension_order = [element['Name'] for element in response_as_dict]
         return dimension_order
@@ -1166,7 +1083,6 @@ class TM1pyQueries:
         subsets = json.loads(response)['value']
         return [subset['Name'] for subset in subsets]
 
-    # TODO: When updating elements existing elements are never cleared
     def update_subset(self, subset, private=True):
         ''' update a subset on the TM1 Server
             :Parameters:
@@ -1177,7 +1093,7 @@ class TM1pyQueries:
                 string: the response
         '''
         if private:
-            # just delete it and rebuild it
+            # just delete it and rebuild it, since there are no dependencies
             return self._update_private_subset(subset)
 
         else:
@@ -1433,9 +1349,78 @@ class TM1pyUtils:
     @staticmethod
     def read_cube_name_from_mdx(mdx):
         mdx_trimed = ''.join(mdx.split()).upper()
-        pos_oncolumnsfrom = mdx_trimed.find("}ONCOLUMNSFROM[") + len("}ONCOLUMNSFROM[")
+        pos_oncolumnsfrom = mdx_trimed.rfind("FROM[") + len("FROM[")
         pos_where = mdx_trimed.find("]WHERE", pos_oncolumnsfrom)
         return mdx_trimed[pos_oncolumnsfrom:pos_where]
+
+    @staticmethod
+    def sort_addresstuple(dimension_order, unsorted_addresstuple):
+        ''' Sort the given mixed up addresstuple
+
+        :param cube_name: String
+        :param dimension_order: list of dimension names in correct order
+        :param unsorted_addresstuple: list of Strings - ['[dim2].[elem4]','[dim1].[elem2]',...]
+
+        :return:
+            Tuple: ('[dim1].[elem2]','[dim2].[elem4]',...)
+        '''
+        sorted_addresstupple = []
+        for dimension in dimension_order:
+            address_element = [item for item in unsorted_addresstuple if item.startswith('[' + dimension + '].')]
+            sorted_addresstupple.append(address_element[0])
+        return tuple(sorted_addresstupple)
+
+    @staticmethod
+    def build_content_from_cellset(dimension_order, cellset_as_dict, cell_properties, top):
+        """
+        :param dimension_order:
+        :param cellset_as_dict:
+        :param cell_properties:
+        :param top: Maximum Number of cells
+        :return:
+        """
+        content_as_dict = {}
+
+        axe0_as_dict = cellset_as_dict['Axes'][0]
+        axe1_as_dict = cellset_as_dict['Axes'][1]
+
+        ordinal_cells = 0
+
+        ordinal_axe2 = 0
+        # get coordinates on axe 2: Title
+        # if there are no elements on axe 2 assign empty list to elements_on_axe2
+        if len(cellset_as_dict['Axes']) > 2:
+            axe2_as_dict = cellset_as_dict['Axes'][2]
+            Tuples_as_dict = axe2_as_dict['Tuples'][ordinal_axe2]['Members']
+            elements_on_axe2 = [data['UniqueName'] for data in Tuples_as_dict]
+        else:
+            elements_on_axe2 = []
+
+        ordinal_axe1 = 0
+        for i in range(axe1_as_dict['Cardinality']):
+            # get coordinates on axe 1: Rows
+            Tuples_as_dict = axe1_as_dict['Tuples'][ordinal_axe1]['Members']
+            elements_on_axe1 = [data['UniqueName'] for data in Tuples_as_dict]
+            ordinal_axe0 = 0
+            for j in range(axe0_as_dict['Cardinality']):
+                # get coordinates on axe 0: Columns
+                Tuples_as_dict = axe0_as_dict['Tuples'][ordinal_axe0]['Members']
+                elements_on_axe0 = [data['UniqueName'] for data in Tuples_as_dict]
+                coordinates = elements_on_axe0 + elements_on_axe2 + elements_on_axe1
+                coordinates_sorted = TM1pyUtils.sort_addresstuple(dimension_order, coordinates)
+                # get cell properties
+                content_as_dict[coordinates_sorted] = {}
+                for cell_property in cell_properties:
+                    value = cellset_as_dict['Cells'][ordinal_cells][cell_property]
+                    content_as_dict[coordinates_sorted][cell_property] = value
+                ordinal_axe0 += 1
+                ordinal_cells += 1
+                if top is not None and ordinal_cells >= top:
+                    break
+            if top is not None and ordinal_cells >= top:
+                break
+            ordinal_axe1 += 1
+        return content_as_dict
 
 
 
@@ -2750,11 +2735,11 @@ class ChoreStartTime:
     def from_string(cls, start_time_string):
         # f to handle strange timestamp 2016-09-25T20:25Z instead of common 2016-09-25T20:25:01Z
         f = lambda x: int(x) if x else 0
-        return cls(year=f(start_time_string[0:4]),
-                   month=f(start_time_string[5:7]),
-                   day=f(start_time_string[8:10]),
-                   hour=f(start_time_string[11:13]),
-                   minute=f(start_time_string[14:16]),
+        return cls(year=start_time_string[0:4],
+                   month=start_time_string[5:7],
+                   day=start_time_string[8:10],
+                   hour=start_time_string[11:13],
+                   minute=start_time_string[14:16],
                    second=f(start_time_string[17:19]))
 
     @property

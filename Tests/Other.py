@@ -41,5 +41,6 @@ class TestCubeMethods(unittest.TestCase):
                     # test it !
                     self.assertEqual(sum_mdx, sum_native_view)
 
+
 if __name__ == '__main__':
     unittest.main()
