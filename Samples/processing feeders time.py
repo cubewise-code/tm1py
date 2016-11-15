@@ -7,11 +7,11 @@ from datetime import date, time, timedelta, datetime
 # time magic with python
 def get_time_from_tm1_timestamp(tm1_timestamp):
     f = lambda x: int(x) if x else 0
-    year = tm1_timestamp[0:4]
-    month = tm1_timestamp[5:7]
-    day = tm1_timestamp[8:10]
-    hour = tm1_timestamp[11:13]
-    minute = tm1_timestamp[14:16]
+    year = f(tm1_timestamp[0:4])
+    month = f(tm1_timestamp[5:7])
+    day = f(tm1_timestamp[8:10])
+    hour = f(tm1_timestamp[11:13])
+    minute = f(tm1_timestamp[14:16])
     second = f(tm1_timestamp[17:19])
     return datetime.combine(date(year, month, day), time(hour, minute, second))
 

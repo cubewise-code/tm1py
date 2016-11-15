@@ -2735,11 +2735,11 @@ class ChoreStartTime:
     def from_string(cls, start_time_string):
         # f to handle strange timestamp 2016-09-25T20:25Z instead of common 2016-09-25T20:25:01Z
         f = lambda x: int(x) if x else 0
-        return cls(year=start_time_string[0:4],
-                   month=start_time_string[5:7],
-                   day=start_time_string[8:10],
-                   hour=start_time_string[11:13],
-                   minute=start_time_string[14:16],
+        return cls(year=f(start_time_string[0:4]),
+                   month=f(start_time_string[5:7]),
+                   day=f(start_time_string[8:10]),
+                   hour=f(start_time_string[11:13]),
+                   minute=f(start_time_string[14:16]),
                    second=f(start_time_string[17:19]))
 
     @property
