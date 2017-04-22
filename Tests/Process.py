@@ -21,10 +21,10 @@ class TestProcessMethods(unittest.TestCase):
                       datasource_ascii_header_records=2,
                       datasource_ascii_quote_character='^',
                       datasource_ascii_thousand_separator='~',
-                      prolog_procedure=Process.auto_generated_string() + ' test prolog procedure',
-                      metadata_procedure=Process.auto_generated_string() + ' test metadata procedure',
-                      data_procedure=Process.auto_generated_string() + ' test data procedure',
-                      epilog_procedure=Process.auto_generated_string() + ' test epilog procedure',
+                      prolog_procedure=Process.auto_generated_string + ' test prolog procedure',
+                      metadata_procedure=Process.auto_generated_string + ' test metadata procedure',
+                      data_procedure=Process.auto_generated_string + ' test data procedure',
+                      epilog_procedure=Process.auto_generated_string + ' test epilog procedure',
                       datasource_data_source_name_for_server='C:\Data\file.csv',
                       datasource_data_source_name_for_client='C:\Data\file.csv')
     # variables
@@ -73,7 +73,7 @@ class TestProcessMethods(unittest.TestCase):
         # get
         p = self.tm1.get_process(self.p_ascii.name)
         # modify
-        p.set_data_procedure(Process.auto_generated_string() + "SaveDataAll;")
+        p.set_data_procedure(Process.auto_generated_string + "SaveDataAll;")
         # update on Server
         self.tm1.update_process(p)
         # get again

@@ -90,7 +90,7 @@ class TestChoreMethods(unittest.TestCase):
 
         # get chore and check all properties
         c = self.tm1.get_chore(chore_name=self.chore_name)
-        self.assertEqual(c._start_time._datetime, self.start_time.replace(microsecond=0))
+        self.assertEqual(c._start_time._datetime.replace(microsecond=0), self.start_time.replace(microsecond=0))
         self.assertEqual(c._name, self.chore_name)
         self.assertEqual(c._dst_sensitivity, False)
         self.assertEqual(c._active, False)

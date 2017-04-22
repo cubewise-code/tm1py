@@ -35,6 +35,8 @@ class TM1pyException(Exception):
 class TM1pyLogin:
     ''' Handle Login for different TM1 login types. Instance of this class to be passed to TM1pyHTTPClient, TM1pyQueries
 
+        :Notes: WIA not implemented.
+
     '''
     def __init__(self, user, password, auth_type, token=None):
         ''' Function is called from static methods
@@ -91,7 +93,8 @@ class TM1pyLogin:
         raise NotImplementedError('not supported')
 
 class TM1pyHTTPClient:
-    ''' low level communication with TM1 instance via HTTP
+    ''' low level communication with TM1 instance via HTTP.
+        based on requests module.
 
     '''
     def __init__(self, ip, port, login, ssl=True):
@@ -105,18 +108,20 @@ class TM1pyHTTPClient:
         self._ip = 'localhost' if ip == '' else ip
         self._port = port
         self._ssl = ssl
-        self._headers= {'Connection': 'keep-alive', 'Cache-Control': 'no-cache', 'User-Agent': 'TM1py',
-                       'Content-Type': 'application/json; odata.metadata=minimal; odata.streaming=true; charset=utf-8'}
+        self._version = None
+        self._headers = {'Connection': 'keep-alive',
+                        'User-Agent': 'TM1py',
+                        'Content-Type': 'application/json; odata.streaming=true; charset=utf-8',
+                        'Accept': 'application/json;odata.metadata=none'}
         # Authorization [Basic, CAM, WIA] through Headers
         if login.auth_type in ['native', 'CAM']:
             self._headers['Authorization'] = login.token
         elif login.auth_type == 'WIA':
             # To be written
             pass
+        self._disable_http_warnings()
         self._s = requests.session()
         self._get_cookies()
-        # disable HTTP verification warnings from requests library
-        requests.packages.urllib3.disable_warnings()
         # logging
         # http_client.HTTPConnection.debuglevel = 1
 
@@ -193,7 +198,9 @@ class TM1pyHTTPClient:
             url = 'https://' + self._ip + ':' + str(self._port) + '/api/v1/Configuration/ProductVersion'
         else:
             url = 'http://' + self._ip + ':' + str(self._port) + '/api/v1/Configuration/ProductVersion'
-        self._s.get(url=url, headers=self._headers, data='', verify=False)
+        response = self._s.get(url=url, headers=self._headers, data='', verify=False)
+        self._verify_response(response)
+        self._version = json.loads(response.text)['value']
 
     def _url_and_body(self, request, data):
         ''' create proper url and payload
@@ -220,11 +227,15 @@ class TM1pyHTTPClient:
         if not response.ok:
             raise TM1pyException(response.text, status_code=response.status_code, reason=response.reason)
 
+    def _disable_http_warnings(self):
+        # disable HTTP verification warnings from requests library
+        requests.packages.urllib3.disable_warnings()
+
 
 class TM1pyQueries:
     ''' Class offers Queries to interact with a TM1 Server.
 
-    - CRUD Features for TM1 objects (Process, Chore, Annotation, View, Subset)
+    - CRUD Features for all type of TM1 objects (Cube, Process, Dimension, etc.)
         Create method - `create` prefix
         Read methods - `get` prefix
         Update methods - `update prefix`
@@ -233,6 +244,8 @@ class TM1pyQueries:
     - Additional Features
         Retrieve and write data into TM1
         Execute Process, Chore or TI Code
+        Query Messagelog
+        Generate MDX from existing Cubeviews
         ...
     '''
 
@@ -255,30 +268,6 @@ class TM1pyQueries:
 
     def __exit__(self,exception_type, exception_value, traceback):
         self.logout()
-
-    @staticmethod
-    def get_all_servers_from_adminhost(adminhost='localhost'):
-        '''Ask Adminhost for TM1 Servers.
-
-        :Parameters:
-            `adminhost`: String
-                the IP address of the adminhost
-
-        :Returns:
-            List of Servers (instancedsof the TM1py.Server class)
-        '''
-        conn = http_client.HTTPConnection(adminhost, 5895)
-        request = '/api/v1/Servers'
-        conn.request('GET', request, body='')
-        response = conn.getresponse().read().decode('utf-8')
-        response_as_dict = json.loads(response)
-        servers = []
-        for server_as_dict in response_as_dict['value']:
-            server = Server(server_as_dict)
-            servers.append(server)
-        return servers
-
-
 
     def logout(self):
         ''' End TM1 Session and HTTP session
@@ -701,6 +690,11 @@ class TM1pyQueries:
         return mdx_view
 
     def get_all_views(self, cube_name):
+        """ get all public and private views from cube.
+
+        :param cube_name: String, name of the cube.
+        :return: 2 Lists of TM1py.View instances, private views, public views
+        """
         private_views, public_views = [], []
         for view_type in ('PrivateViews', 'Views'):
             request = "/api/v1/Cubes('" + cube_name + "')/" + view_type + "?$expand=" \
@@ -772,7 +766,7 @@ class TM1pyQueries:
 
 
     def delete_view(self, cube_name, view_name, private=True):
-        ''' delete an existing view on the TM1 Server
+        ''' delete an existing view (MDXView or NativeView) on the TM1 Server
 
         :param cube_name: String, name of the cube
         :param view_name: String, name of the view
@@ -789,13 +783,13 @@ class TM1pyQueries:
 
 
     def get_elements_filtered_by_attribute(self, dimension_name, hierarchy_name, attribute_name, attribute_value):
-        ''' get all elements from a dimension / hierarchy with given attribute value
+        ''' get all elements from a hierarchy with given attribute value
 
         :param dimension_name:
         :param hierarchy_name:
         :param attribute_name:
         :param attribute_value:
-        :return:
+        :return: List of element names
         '''
         attribute_name = attribute_name.replace(" ", "")
         if isinstance(attribute_value, str):
@@ -809,6 +803,11 @@ class TM1pyQueries:
         return [elem['Name'] for elem in response_as_dict['Elements']]
 
     def dimension_exists(self, dimension_name):
+        """ check if dimension exists
+
+        :param dimension_name:
+        :return: Boolean
+        """
         request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')'.format(dimension_name, dimension_name)
         try:
             self._client.GET(request, '')
@@ -817,10 +816,9 @@ class TM1pyQueries:
             return False
 
     def create_dimension(self, dimension):
-        '''
-        :notes:
+        ''' create a dimension
 
-        :param dimension, instance of TM1py.Dimension
+        :param dimension: instance of TM1py.Dimension
         :return: response
         '''
 
@@ -840,17 +838,27 @@ class TM1pyQueries:
         return response
 
     def get_dimension(self, dimension_name):
+        """
+
+        :param dimension_name:
+        :return:
+        """
         request = '/api/v1/Dimensions(\'{}\')?$expand=Hierarchies($expand=*)'.format(dimension_name)
         dimension_as_json = self._client.GET(request)
         return Dimension.from_json(dimension_as_json)
 
     def update_dimension(self, dimension):
-        # update Hierarchy
+        """ update an existing dimension
+
+        :param dimension: instance of TM1py.Dimension
+        :return: None
+        """
+        # update Hierarchies
         for hierarchy in dimension:
             self.update_hierarchy(hierarchy)
 
     def delete_dimension(self, dimension_name):
-        '''
+        ''' delete a dimension
 
         :param dimension_name:
         :return:
@@ -859,9 +867,20 @@ class TM1pyQueries:
         return self._client.DELETE(request)
 
     def create_hierarchy(self, hierarchy):
-        pass
+        """ create a hierarchy in a dimension
+
+        :param hierarchy:
+        :return:
+        """
+        raise NotImplementedError('not supported')
 
     def get_element_attributes(self, dimension_name, hierarchy_name):
+        """ get element attributes from hierarchy
+
+        :param dimension_name:
+        :param hierarchy_name:
+        :return:
+        """
         request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/ElementAttributes'.format(dimension_name,
                                                                                             hierarchy_name)
         response = self._client.GET(request,'')
@@ -869,17 +888,33 @@ class TM1pyQueries:
         return element_attributes
 
     def get_hierarchy(self, dimension_name, hierarchy_name):
-        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')'.format(hierarchy.dimension_name, hierarchy.name)
+        """ get hierarchy
+
+        :param dimension_name: name of the dimension
+        :param hierarchy_name: name of the hierarchy
+        :return:
+        """
+        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')'.format(dimension_name, hierarchy_name)
         response = self._client.GET(request, '')
         return response
 
     def update_hierarchy(self, hierarchy):
+        """ update a hierarchy
+
+        :param hierarchy: instance of TM1py.Hierarchy
+        :return:
+        """
         # update Hierarchy
         request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')'.format(hierarchy.dimension_name, hierarchy.name)
         response = self._client.PATCH(request, hierarchy.body)
         return self.update_hierarchy_attributes(hierarchy=hierarchy)
 
     def update_hierarchy_attributes(self, hierarchy):
+        """ update elementsattributes of a hierarchy
+
+        :param hierarchy: instance of TM1py.Hierarchy
+        :return:
+        """
         # get existing attributes first.
         element_attribute_names = [ea.name for ea in self.get_element_attributes(dimension_name=hierarchy.dimension_name,
                                                                                  hierarchy_name=hierarchy.name)]
@@ -891,7 +926,7 @@ class TM1pyQueries:
                                           element_attribute=element_attribute)
 
     def create_element_attribute(self, dimension_name, hierarchy_name, element_attribute):
-        """ Like AttrInsert
+        """ like AttrInsert
 
         :param dimension_name:
         :param hierarchy_name:
@@ -903,18 +938,15 @@ class TM1pyQueries:
         return self._client.POST(request, element_attribute.body)
 
     def delete_hierarchy(self, dimension_name, hierarchy_name):
-        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')'.format(hierarchy.dimension_name, hierarchy.name)
+        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')'.format(dimension_name, hierarchy_name)
         return self._client.DELETE(request, '')
 
     def get_all_annotations_from_cube(self, name_cube):
-        ''' Get all annotations from given cube as a List.
+        """ get all annotations from given cube as a List.
 
-        :Parameters:
-            `name_cube`: name of the cube
-
-        :Returns:
-            `List` : list of instances of TM1py.Annotation
-        '''
+        :param name_cube:
+        :return: list of instances of TM1py.Annotation
+        """
         request = "/api/v1/Cubes('{}')/Annotations?$expand=DimensionalContext($select=Name)".format(name_cube)
         response = self._client.GET(request, '')
         annotations_as_dict = json.loads(response)['value']
@@ -922,20 +954,18 @@ class TM1pyQueries:
         return annotations
 
     def get_view_content(self, cube_name, view_name, cell_properties=None, private=True, top=None):
-        ''' Get view content as dictionary with sweet and concise structure.
-            Works on NativeView and MDXView
-
-
-        Not Hierarchy aware !
+        """ get view content as dictionary with sweet and concise structure.
+            Works on NativeView and MDXView !
+            Not Hierarchy aware !
 
         :param cube_name: String
         :param view_name: String
-        :param cell_properties: List, cell properties: Values, Status, HasPicklist, etc.
+        :param cell_properties: List, cell properties: [Values, Status, HasPicklist, etc.]
+        :param private: Boolean
         :param top: Int, number of cells
 
-        :return:
-            Dictionary : {([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }
-        '''
+        :return: Dictionary : {([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }
+        """
         if not cell_properties:
             cell_properties = ['Value','Ordinal']
         dimension_order = self.get_dimension_order(cube_name)
@@ -944,16 +974,18 @@ class TM1pyQueries:
         return content_as_dict
 
     def _get_cellset_from_view(self, cube_name, view_name, cell_properties=None, private=True, top=None):
-        ''' Get view content as dictionary in its native (cellset-) structure.
+        """ get view content as dictionary in its native (cellset-) structure.
 
         :param cube_name: String
         :param view_name: String
+        :param cell_properties: List of cell properties
+        :param private: Boolean
         :param top: Int, number of cells
 
         :return:
             `Dictionary` : {Cells : {}, 'ID' : '', 'Axes' : [{'Ordinal' : 1, Members: [], ...},
             {'Ordinal' : 2, Members: [], ...}, {'Ordinal' : 3, Members: [], ...} ] }
-        '''
+        """
         if not cell_properties:
             cell_properties = ['Value','Ordinal']
         views = 'PrivateViews' if  private else 'Views'
@@ -969,29 +1001,23 @@ class TM1pyQueries:
         return json.loads(response)
 
 
-
-
-
     def get_dimension_order(self, cube_name):
-        ''' Get the correct order of dimensions in a cube
+        """ get name of the dimensions of a cube in their correct order
 
         :param cube_name: String
-        :return:
-            List : [dim1, dim2, dim3, etc.]
-        '''
+        :return:  List : [dim1, dim2, dim3, etc.]
+        """
         response = self._client.GET('/api/v1/Cubes(\'' + cube_name + '\')/Dimensions?$select=Name', '')
         response_as_dict = json.loads(response)['value']
         dimension_order = [element['Name'] for element in response_as_dict]
         return dimension_order
 
     def create_annotation(self, annotation):
-        ''' create an Annotation
+        """ create an Annotation
 
             :param annotation: instance of TM1py.Annotation
-
-            :return
-                string: the response
-        '''
+            :return string: the response
+        """
         request = "/api/v1/Annotations"
 
         payload = collections.OrderedDict()
@@ -1010,12 +1036,12 @@ class TM1pyQueries:
         return response
 
     def get_annotation(self, id):
-        ''' get an annotation from any cube from TM1 Server
+        ''' get an annotation from any cube in TM1 Server through its id
 
             :param id: String, the id of the annotation
 
             :return:
-                Annotation: an instance of the TM1py.Annoation
+                Annotation: an instance of TM1py.Annoation
         '''
         request = "/api/v1/Annotations('{}')?$expand=DimensionalContext($select=Name)".format(id)
         annotation_as_json = self._client.GET(request=request)
@@ -1060,14 +1086,14 @@ class TM1pyQueries:
         return response
 
     def get_subset(self, dimension_name, subset_name, private=True):
-        ''' get a subset from the TM1 Server
+        """ get a subset from the TM1 Server
 
             :param dimension_name: string, name of the dimension
             :param subset_name: string, name of the subset
+            :param private: Boolean
 
-            :return:
-                subset: instance of the Subset class
-        '''
+            :return: instance of TM1py.Subset
+        """
         subsets = "PrivateSubsets" if private else "Subsets"
         request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/{}(\'{}\')?$expand=' \
                   'Hierarchy($select=Dimension),' \
@@ -1076,6 +1102,13 @@ class TM1pyQueries:
         return Subset.from_json(response)
 
     def get_all_subset_names(self, dimension_name, hierarchy_name, private=True):
+        """ get names of all private or public subsets in a hierarchy
+
+        :param dimension_name:
+        :param hierarchy_name:
+        :param private: Boolean
+        :return: List of Strings
+        """
         subsets = "PrivateSubsets" if private else "Subsets"
         request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/{}?$select=Name'\
             .format(dimension_name, hierarchy_name, subsets)
@@ -1084,14 +1117,13 @@ class TM1pyQueries:
         return [subset['Name'] for subset in subsets]
 
     def update_subset(self, subset, private=True):
-        ''' update a subset on the TM1 Server
-            :Parameters:
-                `subset` : Subset
-                    the new subset
+        """ update a subset on the TM1 Server
 
-            :return:
-                string: the response
-        '''
+        :param subset: instance of TM1py.Subset.
+        :param private: Boolean
+        :return: response
+        """
+
         if private:
             # just delete it and rebuild it, since there are no dependencies
             return self._update_private_subset(subset)
@@ -1101,6 +1133,11 @@ class TM1pyQueries:
             return self._update_public_subset(subset)
 
     def _update_private_subset(self, subset):
+        """ update a private subset on the TM1 Server
+
+        :param subset: instance of TM1py.Subset
+        :return: response
+        """
         # delete it
         request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/PrivateSubsets(\'{}\')' \
             .format(subset._dimension_name, subset._dimension_name, subset._subset_name)
@@ -1109,6 +1146,11 @@ class TM1pyQueries:
         return self.create_subset(subset, True)
 
     def _update_public_subset(self, subset):
+        """ update a public subset on the TM1 Server
+
+        :param subset: instance of TM1py.Subset
+        :return: response
+        """
         # clear elements of subset. evil workaround! Should be done through delete on the Elements Collection
         ti = lines_prolog = "SubsetDeleteAllElements(\'{}\', \'{}\');".format(subset.dimension_name, subset.name)
         self.execute_TI_code(lines_prolog=ti, lines_epilog='')
@@ -1119,21 +1161,19 @@ class TM1pyQueries:
         return self._client.PATCH(request=request, data=subset.body)
 
     def delete_subset(self, dimension_name, subset_name, private=True):
-        ''' delete a subset on the TM1 Server
-            :Parameters:
-                `name_dimension` : String, name of the dimension
-                `name_subset` : String, name of the subset
+        """ delete a subset on the TM1 Server
 
-            :Returns:
-                `string` : the response
-        '''
+        :param dimension_name: String, name of the dimension
+        :param subset_name: String, name of the subset
+        :param private: Boolean
+        :return:
+        """
         subsets = "PrivateSubsets" if private else "Subsets"
         request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/{}(\'{}\')'\
             .format(dimension_name, dimension_name, subsets, subset_name)
         response = self._client.DELETE(request=request, data='')
         return response
 
-    # TODO class for Threads? TBD!
     def get_threads(self):
         ''' return a dict of threads from the TM1 Server
 
@@ -1150,12 +1190,21 @@ class TM1pyQueries:
 
 
     def get_chore(self, chore_name):
+        """ get a chore from the TM1 Server
+
+        :param chore_name:
+        :return: instance of TM1py.Chore
+        """
         request = "/api/v1/Chores('{}')?$expand=Tasks($expand=*,Process($select=Name),Chore($select=Name))".format(chore_name)
         response = self._client.GET(request)
         response_as_dict = json.loads(response)
         return Chore.from_dict(response_as_dict)
 
     def get_all_chores(self):
+        """ get a List of all Chores
+
+        :return: List of TM1py.Chore
+        """
         request = "/api/v1/Chores?$expand=Tasks($expand=*,Process($select=Name),Chore($select=Name))"
         response = self._client.GET(request)
         response_as_dict = json.loads(response)
@@ -1163,6 +1212,11 @@ class TM1pyQueries:
 
 
     def create_chore(self, chore):
+        """ create chore in TM1
+
+        :param chore: instance of TM1py.Chore
+        :return:
+        """
         request = "/api/v1/Chores"
         response = self._client.POST(request, chore.body)
         if chore._active is True:
@@ -1170,15 +1224,22 @@ class TM1pyQueries:
         return response
 
     def delete_chore(self, chore_name):
+        """ delete chore in TM1
+
+        :param chore_name:
+        :return: response
+        """
+
         request = "/api/v1/Chores('{}')".format(chore_name)
         response = self._client.DELETE(request)
         return response
 
     def update_chore(self, chore):
-        '''
-        does not update: DST Sensitivity !
+        ''' update chore on TM1 Server
+
+        does not update: DST Sensitivity!
         :param chore:
-        :return:
+        :return: response
         '''
         try:
             # deactivate
@@ -1201,10 +1262,21 @@ class TM1pyQueries:
                 self.activate_chore(chore._name)
 
     def activate_chore(self, chore_name):
+        """ active chore on TM1 Server
+
+        :param chore_name:
+        :return: response
+        """
         request = "/api/v1/Chores('{}')/tm1.Activate".format(chore_name)
         return self._client.POST(request, '')
 
     def deactivate_chore(self, chore_name):
+        """ deactive chore on TM1 Server
+
+        :param chore_name:
+        :return: response
+        """
+
         request = "/api/v1/Chores('{}')/tm1.Deactivate".format(chore_name)
         return self._client.POST(request, '')
 
@@ -1225,33 +1297,66 @@ class TM1pyQueries:
         return self._client.POST(request, json.dumps(data))
 
     def get_chore_task(self, chore_name, step):
+        """ get task from chore
+
+        :param chore_name: name of the chore
+        :param step: integer
+        :return: instance of TM1py.ChoreTask
+        """
         request = "/api/v1/Chores('{}')/Tasks({})?$expand=*,Process($select=Name),Chore($select=Name)".format(chore_name, step)
         response = self._client.GET(request)
         response_as_dict = json.loads(response)
         return ChoreTask.from_dict(response_as_dict)
 
     def create_chore_task(self, chore_name, chore_task):
+        """ create Chore task on TM1 Server
+
+        :param chore_name: name of Chore to update
+        :param chore_task: instance of TM1py.ChoreTask
+        :return: response
+        """
         request = "/api/v1/Chores('{}')/Tasks".format(chore_name)
         chore_task_body_as_string = json.dumps(chore_task.body, ensure_ascii=False, sort_keys=False)
         response = self._client.POST(request, chore_task_body_as_string)
         return response
 
     def update_chore_task(self, chore_name, chore_task):
+        """ update a chore task
+
+        :param chore_name: name of the Chore
+        :param chore_task: instance TM1py.ChoreTask
+        :return: response
+        """
         request = "/api/v1/Chores('{}')/Tasks({})".format(chore_name, chore_task._step)
         chore_task_body_as_string = json.dumps(chore_task.body, ensure_ascii=False, sort_keys=False)
         response = self._client.PATCH(request, chore_task_body_as_string)
         return response
 
     def create_user(self, user):
+        """ create a user on TM1 Server
+
+        :param user: instance of TM1py.User
+        :return: response
+        """
         request = '/api/v1/Users'
         self._client.POST(request, user.body)
 
     def get_user(self, user_name):
+        """ get user from TM1 Server
+
+        :param user_name:
+        :return: instance of TM1py.User
+        """
         request = '/api/v1/Users(\'{}\')?$expand=Groups'.format(user_name)
         response = self._client.GET(request)
         return User.from_json(response)
 
     def update_user(self, user):
+        """ update user on TM1 Server
+
+        :param user: instance of TM1py.User
+        :return: response
+        """
         for current_group in self.get_groups_from_user(user.name):
             if current_group not in user.groups:
                 self.remove_user_from_group(current_group, user.name)
@@ -1259,10 +1364,19 @@ class TM1pyQueries:
         return self._client.PATCH(request, user.body)
 
     def delete_user(self, user_name):
+        """ delete user on TM1 Server
+
+        :param user_name:
+        :return: response
+        """
         request = '/api/v1/Users(\'{}\')'.format(user_name)
         return self._client.DELETE(request)
 
     def get_all_users(self):
+        """ get all users from TM1 Server
+
+        :return: List of TM1py.User instances
+        """
         request = '/api/v1/Users?$expand=Groups'
         response = self._client.GET(request)
         response_as_dict = json.loads(response)
@@ -1270,6 +1384,10 @@ class TM1pyQueries:
         return users
 
     def get_active_users(self):
+        """ get the active users in TM1 Server
+
+        :return: List of TM1py.User instances
+        """
         request = '/api/v1/Users?$filter=IsActive eq true&$expand=Groups'
         response = self._client.GET(request)
         response_as_dict = json.loads(response)
@@ -1277,11 +1395,21 @@ class TM1pyQueries:
         return users
 
     def user_is_active(self, user_name):
+        """ check if user is currently active in TM1
+
+        :param user_name:
+        :return: Boolean
+        """
         request = "/api/v1/Users('{}')/IsActive".format(user_name)
         response = self._client.GET(request)
         return json.loads(response)['value']
 
     def get_users_from_group(self, group_name):
+        """ get all users from group
+
+        :param group_name:
+        :return: List of TM1py.User instances
+        """
         request = '/api/v1/Groups(\'{}\')?$expand=Users($expand=Groups)'.format(group_name)
         response = self._client.GET(request)
         response_as_dict = json.loads(response)
@@ -1289,16 +1417,32 @@ class TM1pyQueries:
         return users
 
     def get_groups_from_user(self, user_name):
+        """ get the groups of a user in TM1 Server
+
+        :param user_name:
+        :return: List of strings
+        """
         request = '/api/v1/Users(\'{}\')/Groups'.format(user_name)
         response = self._client.GET(request)
         groups = json.loads(response)['value']
         return [group['Name'] for group in groups]
 
     def remove_user_from_group(self, group_name, user_name):
+        """ remove user from group in TM1 Server
+
+        :param group_name:
+        :param user_name:
+        :return: response
+        """
         request = '/api/v1/Users(\'{}\')/Groups?$id=Groups(\'{}\')'.format(user_name, group_name)
         return self._client.DELETE(request)
 
     def get_all_groups(self):
+        """ get all groups from TM1 Server
+
+        :return: List of strings
+        """
+
         request = '/api/v1/Groups?$select=Name'
         response = self._client.GET(request)
         response_as_dict = json.loads(response)
@@ -1306,17 +1450,32 @@ class TM1pyQueries:
         return groups
 
     def create_cube(self, cube):
+        """ create new cube on TM1 Server
+
+        :param cube:
+        :return: response
+        """
         request = '/api/v1/Cubes'
         return self._client.POST(request, cube.body)
 
 
     def get_cube(self, cube_name):
+        """ get cube from TM1 Server
+
+        :param cube_name:
+        :return: instance of TM1py.Cube
+        """
+
         request = '/api/v1/Cubes(\'{}\')?$expand=Dimensions($select=Name)'.format(cube_name)
         response = self._client.GET(request)
         cube = Cube.from_json(response)
         return cube
 
     def get_all_cubes(self):
+        """ get all cubes from TM1 Server as TM1py.Cube instances
+
+        :return: List of TM1py.Cube instances
+        """
         request = '/api/v1/Cubes?$expand=Dimensions($select=Name)'
         response = self._client.GET(request)
         response_as_dict = json.loads(response)
@@ -1324,6 +1483,10 @@ class TM1pyQueries:
         return cubes
 
     def get_model_cubes(self):
+        """ get all Cubes without } prefix from TM1 Server as TM1py.Cube instances
+
+        :return: List of TM1py.Cube instances
+        """
         request = '/api/v1/ModelCubes()?$expand=Dimensions($select=Name)'
         response = self._client.GET(request)
         response_as_dict = json.loads(response)
@@ -1331,6 +1494,10 @@ class TM1pyQueries:
         return cubes
 
     def get_control_cubes(self):
+        """ get all Cubes with } prefix from TM1 Server as TM1py.Cube instances
+
+        :return: List of TM1py.Cube instances
+        """
         request = '/api/v1/ControlCubes()?$expand=Dimensions($select=Name)'
         response = self._client.GET(request)
         response_as_dict = json.loads(response)
@@ -1338,16 +1505,51 @@ class TM1pyQueries:
         return cubes
 
     def update_cube(self, cube):
+        """ update existing cube on TM1 Server
+
+        :param cube: instance of TM1py.Cube
+        :return: response
+        """
         request = '/api/v1/Cubes(\'{}\')'.format(cube.name)
         return self._client.PATCH(request, cube.body)
 
     def delete_cube(self, cube_name):
+        """ delete a cube in TM1
+
+        :param cube_name:
+        :return: response
+        """
         request = '/api/v1/Cubes(\'{}\')'.format(cube_name)
         return self._client.DELETE(request)
 
 class TM1pyUtils:
     @staticmethod
+    def get_all_servers_from_adminhost(adminhost='localhost'):
+        """ Ask Adminhost for TM1 Servers
+
+        :param adminhost: IP or DNS Alias of the adminhost
+        :return: List of Servers (instances of the TM1py.Server class)
+        """
+
+        conn = http_client.HTTPConnection(adminhost, 5895)
+        request = '/api/v1/Servers'
+        conn.request('GET', request, body='')
+        response = conn.getresponse().read().decode('utf-8')
+        response_as_dict = json.loads(response)
+        servers = []
+        for server_as_dict in response_as_dict['value']:
+            server = Server(server_as_dict)
+            servers.append(server)
+        return servers
+
+    @staticmethod
     def read_cube_name_from_mdx(mdx):
+        """ read the cubename from a valid MDX Query
+
+        :param mdx: The MDX Query as String
+        :return: String, name of a cube
+        """
+
         mdx_trimed = ''.join(mdx.split()).upper()
         pos_oncolumnsfrom = mdx_trimed.rfind("FROM[") + len("FROM[")
         pos_where = mdx_trimed.find("]WHERE", pos_oncolumnsfrom)
@@ -1357,7 +1559,6 @@ class TM1pyUtils:
     def sort_addresstuple(dimension_order, unsorted_addresstuple):
         ''' Sort the given mixed up addresstuple
 
-        :param cube_name: String
         :param dimension_order: list of dimension names in correct order
         :param unsorted_addresstuple: list of Strings - ['[dim2].[elem4]','[dim1].[elem2]',...]
 
@@ -1372,7 +1573,8 @@ class TM1pyUtils:
 
     @staticmethod
     def build_content_from_cellset(dimension_order, cellset_as_dict, cell_properties, top):
-        """
+        """ transform cellset data into concise dictionary
+
         :param dimension_order:
         :param cellset_as_dict:
         :param cell_properties:
@@ -1422,10 +1624,6 @@ class TM1pyUtils:
             ordinal_axe1 += 1
         return content_as_dict
 
-
-
-
-
 class Server:
     ''' Abstraction of the TM1 Server
 
@@ -1444,16 +1642,10 @@ class Server:
         self.accepting_clients = server_as_dict['AcceptingClients']
 
 class Subset:
-    ''' Abstraction of the TM1 Subset
+    ''' Abstraction of the TM1 Subset (dynamic and static)
 
         :Notes:
             Done and tested. unittests available.
-
-            subset-type
-                class handles subset type implicitly. According to this logic:
-                    self._elements is not None -> static
-                    self._expression is not None -> dyamic
-                    self._expression is not None and self._elements is not None -> dynamic
     '''
     def __init__(self, dimension_name, subset_name, alias, expression=None, elements=None):
         '''
@@ -1481,10 +1673,6 @@ class Subset:
     @property
     def name(self):
         return self._subset_name
-
-    @name.setter
-    def name(self):
-        self._name = name
 
     @property
     def alias(self):
@@ -1627,7 +1815,6 @@ class AnnonymousSubset(Subset):
            .format(self.dimension_name, self.dimension_name, element) for element in self.elements]
         return json.dumps(body_as_dict, ensure_ascii=False, sort_keys=False)
 
-
 class View:
     ''' Abstraction of TM1 View
         serves as a parentclass for TM1py.MDXView and TM1py.NativeView
@@ -1662,7 +1849,7 @@ class MDXView(View):
 
         :Notes:
             Complete, functional and tested.
-            IMPORTANT. MDXViews cant be seen through Archtict, Perspectives. They do exist though!
+            IMPORTANT. MDXViews cant be seen through the old TM1 clients (Archict, Perspectives). They do exist though!
     '''
     def __init__(self, cube_name, view_name, MDX):
         View.__init__(self, cube_name, view_name)
@@ -1699,11 +1886,7 @@ class MDXView(View):
         return json.dumps(mdx_view_as_dict, ensure_ascii=False, sort_keys=False)
 
 class NativeView(View):
-    ''' Abstraction of TM1 Nativeview
-
-        :usecase:
-            user defines view with this class and creates it on TM1 Server.
-            user calls get_view_content method from TM1pyQueries to retrieve data from View
+    ''' Abstraction of TM1 NativeView (classic cube view)
 
         :Notes:
             Complete, functional and tested
@@ -1733,9 +1916,6 @@ class NativeView(View):
     def as_MDX(self):
         # create the MDX Query
         mdx = 'SELECT '
-        if self.suppress_empty_cells:
-            mdx += ' NON EMPTY'
-
         # Iterate through axes - append ON COLUMNS, ON ROWS statement
         # 4 Options
         # 1. No elements on rows - no elements on columns -> exception
@@ -1746,12 +1926,19 @@ class NativeView(View):
             for j, axis_selection in enumerate(axe):
                 subset = axis_selection._subset
                 if subset._expression is not None:
-                    mdx += subset._expression
+                    if j == 0:
+                        if self.suppress_empty_rows:
+                            mdx += 'NON EMPTY '
+                        mdx += subset._expression
+                    else:
+                        mdx += '*' + subset._expression
                 else:
                     elements_as_unique_names = ['[' + axis_selection._dimension_name + '].[' + elem + ']' for elem in
                                                 subset._elements]
                     mdx_subset = '{' + ','.join(elements_as_unique_names) + '}'
                     if j == 0:
+                        if self.suppress_empty_columns:
+                            mdx += 'NON EMPTY '
                         mdx += mdx_subset
                     else:
                         mdx += '*' + mdx_subset
@@ -1928,7 +2115,7 @@ class NativeView(View):
                     '],\"Titles\":[' + titles_json + '],' + bottom_json
 
 class ViewAxisSelection:
-    ''' Describing what is selected in a dimension on an axis. Can be a registered Subset or an annonymous subset
+    ''' Describes what is selected in a dimension on an axis. Can be a Registered Subset or an Annonymous Subset
 
     '''
     def __init__(self, dimension_name, subset):
@@ -1960,7 +2147,8 @@ class ViewAxisSelection:
         return json.dumps(body_as_dict, ensure_ascii=False, sort_keys=False)
 
 class ViewTitleSelection:
-    ''' Describing what is selected in a dimension on the title. Can be a registered Subset or an Annonymous subset
+    ''' Describes what is selected in a dimension on the view title.
+        Can be a Registered Subset or an Annonymous Subset
 
     '''
     def __init__(self, dimension_name, subset, selected):
@@ -1991,7 +2179,7 @@ class ViewTitleSelection:
         return json.dumps(body_as_dict, ensure_ascii=False, sort_keys=False)
 
 class Dimension:
-    ''' Abstraction of TM1 Dimension.
+    ''' Abstraction of TM1 Dimension
 
         :Notes:
             Not complete. Not tested.
@@ -2006,7 +2194,6 @@ class Dimension:
         if hierarchies is None:
             hierarchies=[]
         self._name = name
-        self._unique_name = '[{}]'.format(name)
         self._hierarchies = hierarchies
         self._attributes = {'Caption': name}
 
@@ -2072,10 +2259,10 @@ class Dimension:
         body_as_dict["Attributes"] = self._attributes
         body_as_dict["Hierarchies"] = [hierarchy.body_as_dict for hierarchy in self.hierarchies]
         return body_as_dict
-       
 
 class Hierarchy:
-    '''
+    ''' Abstraction of TM1 Hierarchy
+
         :Notes:
 
     '''
@@ -2124,10 +2311,6 @@ class Hierarchy:
     @property
     def edges(self):
         return self._edges
-
-    @property
-    def subsets(self):
-        return self._subsets
 
     @property
     def subsets(self):
@@ -2190,6 +2373,9 @@ class Hierarchy:
         return len(self._elements.values())
 
 class Element:
+    """ Abstraction of TM1 Element
+
+    """
     valid_types = ['NUMERIC', 'STRING', 'CONSOLIDATED']
     def __init__(self, name, element_type, attributes= None, unique_name=None, index=None):
         self._name = name
@@ -2249,6 +2435,11 @@ class Element:
         return body_as_dict
 
 class Edge:
+    """
+
+    :Notes: Maybe obsolete. Edges could be stored in Hierarchy as dictioary of element names as key and weight as value
+
+    """
     def __init__(self, parent_name, component_name, weight):
         self._parent_name = parent_name
         self._component_name = component_name
@@ -2335,10 +2526,10 @@ class ElementAttribute:
 
 
 class Annotation:
-    ''' abtraction of TM1 Annotation
+    ''' Abtraction of TM1 Annotation
 
         :Notes:
-            - Class complete, functional and tested for text annotations !
+            - Class complete, functional and tested.
             - doesnt cover Attachments though
     '''
     def __init__(self, comment_value, object_name, dimensional_context, comment_type = 'ANNOTATION', id=None, text='',
@@ -2435,9 +2626,12 @@ class Process:
 
         :Notes:
         - class complete, functional and tested !!
-        - issues with password for processes with for ODBC Datasource
-        - doenst work on Processes that were generated through the Wizard.
+        - issues with password for processes with ODBC Datasource
+        - doenst work with Processes that were generated through the Wizard
     '''
+
+    ''' the auto_generated_string code is required to be in all code-tabs. '''
+    auto_generated_string = "#****Begin: Generated Statements***\r\n#****End: Generated Statements****"
 
     def __init__(self, name, has_security_access=False, ui_data="CubeAction=1511€DataAction=1503€CubeLogChanges=0€",
                  parameters=None, variables=None, variables_ui_data=None, prolog_procedure='', metadata_procedure='',
@@ -2460,8 +2654,8 @@ class Process:
         self.parameters = parameters if parameters else []
         self.variables = variables if variables else []
         self.variables_ui_data = variables_ui_data if variables_ui_data else []
-        add_generated_string = lambda code: self.auto_generated_string() + code \
-            if self.auto_generated_string() not in code else code
+        add_generated_string = lambda code: self.auto_generated_string + code \
+            if self.auto_generated_string not in code else code
         self.prolog_procedure = add_generated_string(prolog_procedure)
         self.metadata_procedure = add_generated_string(metadata_procedure)
         self.data_procedure = add_generated_string(data_procedure)
@@ -2526,14 +2720,6 @@ class Process:
                    datasource_uses_unicode=f(process_as_dict['DataSource'], 'usesUnicode'),
                    datasource_view=f(process_as_dict['DataSource'], 'view'),
                    datasource_subset=f(process_as_dict['DataSource'], 'subset'))
-
-    @staticmethod
-    def auto_generated_string():
-        ''' the auto_generated_string code is required to be in all code-tabs.
-
-        :return: string
-        '''
-        return "\r\n#****Begin: Generated Statements***\r\n#****End: Generated Statements****\r\n\r\n\r\n"
 
     @property
     def body(self):
@@ -2994,6 +3180,10 @@ class Cube:
     @property
     def dimensions(self):
         return self._dimensions
+
+    @dimensions.setter
+    def dimensions(self, value):
+        self._dimensions = value
 
     @property
     def has_rules(self):

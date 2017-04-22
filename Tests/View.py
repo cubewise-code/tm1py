@@ -1,10 +1,16 @@
-from TM1py import TM1pyQueries as TM1,TM1pyLogin, NativeView, MDXView
+from TM1py import TM1pyQueries as TM1,TM1pyLogin, NativeView, MDXView, AnnonymousSubset
 import uuid
 import unittest
 import random
+import time
 
 '''
+TM1 10.2.2 FP < 6
 Fails when random_boolean is True - private MDXViews cant be read, updated, deleted (TM1 Bug).
+
+TM1 10.2.2 FP 6
+Fails when random boolean is True. Private NativeViews cant be updated
+
 '''
 
 class TestViewMethods(unittest.TestCase):
@@ -18,7 +24,7 @@ class TestViewMethods(unittest.TestCase):
 
     def test0_get_all_views(self):
         views = self.tm1.get_all_views('Plan_BudgetPlan')
-        self.assertGreater(len(views),0)
+        self.assertGreater(len(views), 0)
 
     def test1_create_view(self):
         # create instance of native View
@@ -98,19 +104,16 @@ class TestViewMethods(unittest.TestCase):
         sum_original = sum([value['Value'] for value in data_original.values() if value['Value']])
 
         # modify it
-        native_view_original.remove_row(dimension_name='plan_version')
-        subset = self.tm1.get_subset(dimension_name='plan_version', subset_name='All Versions', private=False)
-        native_view_original.add_column(dimension_name='plan_version',  subset=subset)
+        native_view_original.remove_row(dimension_name='plan_department')
+        subset = AnnonymousSubset('plan_department', elements=["200", "405"])
+        native_view_original.add_column(dimension_name='plan_department',  subset=subset)
 
         # update it on Server
         self.tm1.update_view(native_view_original, private=self.random_boolean)
 
         #get it and check if its different
-        native_view_updated = self.tm1.get_native_view(cube_name='Plan_BudgetPlan',
-                                                       view_name=self.native_view_name,
-                                                       private=self.random_boolean)
         data_updated = self.tm1.get_view_content('Plan_BudgetPlan', self.native_view_name, private=self.random_boolean)
-        sum_updated= sum([value['Value'] for value in data_updated.values() if value['Value']])
+        sum_updated = sum([value['Value'] for value in data_updated.values() if value['Value']])
         self.assertNotEqual(sum_original, sum_updated)
 
 
