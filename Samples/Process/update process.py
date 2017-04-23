@@ -9,7 +9,7 @@ tm1 = TM1(ip='', port=8001, login=login, ssl=False)
 p = tm1.get_process('TM1py process')
 
 # modify
-p.set_data_procedure(Process.auto_generated_string() + "a = 2;")
+p.set_data_procedure(Process.auto_generated_string + "a = 2;")
 
 # update on Server
 tm1.update_process(p)

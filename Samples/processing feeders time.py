@@ -33,6 +33,7 @@ with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
             # filter logs
             filtered_logs = (entry for entry in logs if entry['Logger'] == 'TM1.Server' and
                             'TM1CubeImpl::ProcessFeeders:' in entry['Message'] and cube.name in entry['Message'])
+
             # get start time and end time
             endtime_processing = next(filtered_logs)['TimeStamp']
             starttime_processing = next(filtered_logs)['TimeStamp']

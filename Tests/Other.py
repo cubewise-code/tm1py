@@ -1,4 +1,4 @@
-from TM1py import TM1pyQueries as TM1, TM1pyLogin, NativeView, MDXView
+from TM1py import TM1pyQueries as TM1, TM1pyLogin, NativeView, MDXView, TM1pyUtils
 import uuid
 import random
 import unittest
@@ -40,6 +40,18 @@ class TestCubeMethods(unittest.TestCase):
 
                     # test it !
                     self.assertEqual(sum_mdx, sum_native_view)
+
+
+    def test2_read_cube_name_from_mdx(self):
+        all_cube_names = self.tm1.get_all_cube_names()
+        all_cube_names_normalized = [cube_name.upper().replace(" ", "") for cube_name in all_cube_names]
+        for cube_name in all_cube_names:
+            private_views, public_views = self.tm1.get_all_views(cube_name)
+            for view in private_views + public_views:
+                mdx = view.MDX
+                cube_name = TM1pyUtils.read_cube_name_from_mdx(mdx)
+                self.assertIn(cube_name, all_cube_names_normalized)
+
 
 
 if __name__ == '__main__':

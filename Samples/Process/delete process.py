@@ -9,5 +9,5 @@ tm1 = TM1(ip='', port=8001, login=login, ssl=False)
 p = tm1.delete_process('TM1py process')
 
 # logout
-p.logout()
+tm1.logout()
 

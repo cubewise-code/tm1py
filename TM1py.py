@@ -390,8 +390,8 @@ class TM1pyQueries:
         '''
         process_name = '}' + 'TM1py' + str(uuid.uuid4())
         p = Process(name=process_name,
-                    prolog_procedure=Process.auto_generated_string() + '\r\n'.join(lines_prolog),
-                    epilog_procedure=Process.auto_generated_string() + '\r\n'.join(lines_epilog))
+                    prolog_procedure=Process.auto_generated_string + '\r\n'.join(lines_prolog),
+                    epilog_procedure=Process.auto_generated_string + '\r\n'.join(lines_epilog))
         self.create_process(p)
         try:
             self.execute_process(process_name)
@@ -1913,6 +1913,10 @@ class NativeView(View):
         return self._construct_body()
 
     @property
+    def MDX(self):
+        return self.as_MDX
+
+    @property
     def as_MDX(self):
         # create the MDX Query
         mdx = 'SELECT '
@@ -2631,7 +2635,7 @@ class Process:
     '''
 
     ''' the auto_generated_string code is required to be in all code-tabs. '''
-    auto_generated_string = "#****Begin: Generated Statements***\r\n#****End: Generated Statements****"
+    auto_generated_string = "#****Begin: Generated Statements***\r\n#****End: Generated Statements****\r\n"
 
     def __init__(self, name, has_security_access=False, ui_data="CubeAction=1511€DataAction=1503€CubeLogChanges=0€",
                  parameters=None, variables=None, variables_ui_data=None, prolog_procedure='', metadata_procedure='',
@@ -2765,20 +2769,20 @@ class Process:
         self.has_security_access = has_security_access
 
     def set_prolog_procedure(self, prolog_procedure):
-        self.prolog_procedure = self.auto_generated_string() + prolog_procedure \
-            if "#****Begin: Generated Statements***" not in prolog_procedure else prolog_procedure
+        self.prolog_procedure = self.auto_generated_string + prolog_procedure \
+            if self.auto_generated_string not in prolog_procedure else prolog_procedure
 
     def set_metadata_procedure(self, metadata_procedure):
-        self.metadata_procedure =self.auto_generated_string() + metadata_procedure \
-            if "#****Begin: Generated Statements***" not in metadata_procedure else metadata_procedure
+        self.metadata_procedure =self.auto_generated_string + metadata_procedure \
+            if self.auto_generated_string not in metadata_procedure else metadata_procedure
 
     def set_data_procedure(self, data_procedure):
-        self.data_procedure = self.auto_generated_string() +  data_procedure \
-            if "#****Begin: Generated Statements***" not in data_procedure else data_procedure
+        self.data_procedure = self.auto_generated_string +  data_procedure \
+            if self.auto_generated_string not in data_procedure else data_procedure
 
     def set_epilog_procedure(self, epilog_procedure):
-        self.epilog_procedure = self.auto_generated_string() + epilog_procedure \
-            if "#****Begin: Generated Statements***" not in epilog_procedure else epilog_procedure
+        self.epilog_procedure = self.auto_generated_string + epilog_procedure \
+            if self.auto_generated_string not in epilog_procedure else epilog_procedure
 
     def set_datasource_type(self, datasource_type):
         self.datasource_type = datasource_type
@@ -3329,8 +3333,8 @@ class Rules:
         if 'FEEDERS' in self._rules_analytics_upper:
             # has feeders declaration
             feeders = self.rules_analytics[self._rules_analytics_upper.index('FEEDERS'):]
-            # has more than 0 feeder statements
-            return len(feeders) > 0
+            # has more at least one actual feeder statements
+            return len(feeders) > 1
         return False
 
     def __len__(self):
