@@ -1,6 +1,10 @@
-from TM1py import TM1pyQueries as TM1, TM1pyLogin
+from Services.LoginService import LoginService
+from Services.RESTService import RESTService
+from Services.CubeService import CubeService
 
-login = TM1pyLogin.native('admin', 'apple')
 
-with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
-    tm1.delete_cube('Rubiks Cube')
+login = LoginService.native('admin', 'apple')
+
+with RESTService(ip='', port=8001, login=login, ssl=False) as tm1_rest:
+    cube_service = CubeService(tm1_rest)
+    cube_service.delete('Rubiks Cube')

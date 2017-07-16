@@ -1,90 +1,124 @@
-from TM1py import TM1pyQueries as TM1, TM1pyLogin, Subset
-import uuid
 import unittest
+import uuid
 import random
 
-class TestSubsetMethods(unittest.TestCase):
-    login = TM1pyLogin.native('admin', 'apple')
-    tm1 = TM1(ip='', port=8001, login=login, ssl=False)
+from Services.RESTService import RESTService
+from Services.LoginService import LoginService
+from Services.SubsetService import SubsetService
+from Services.DimensionService import DimensionService
+from Objects.Dimension import Dimension
+from Objects.Hierarchy import Hierarchy
+from Objects.Subset import Subset
+from Objects.Element import Element
+from Objects.ElementAttribute import ElementAttribute
 
+
+# Configuration for tests
+port = 8001
+user = 'admin'
+pwd = 'apple'
+
+
+class TestSubsetMethods(unittest.TestCase):
+    login = LoginService.native(user, pwd)
+    tm1_rest = RESTService(ip='', port=port, login=login, ssl=False)
+    subset_service = SubsetService(tm1_rest)
+
+    # Do random stuff
     random_string = str(uuid.uuid4())
-    subset_name_static = 'TM1py_unittest_static_subset_' + random_string
-    subset_name_dynamic = 'TM1py_unittest_dynamic_subset_' + random_string
     private = bool(random.getrandbits(1))
 
-    # 1. create subset
+    # Define Names
+    dimension_name = 'TM1py_unittest_dimension_' + random_string
+    subset_name_static = 'TM1py_unittest_static_subset_' + random_string
+    subset_name_dynamic = 'TM1py_unittest_dynamic_subset_' + random_string
+
+    # Instantiate Subsets
+    static_subset = Subset(dimension_name=dimension_name,
+                           subset_name=subset_name_static,
+                           elements=['USD', 'EUR', 'NZD'])
+    dynamic_subset = Subset(dimension_name=dimension_name,
+                            subset_name=subset_name_dynamic,
+                            expression='{ HIERARCHIZE( {TM1SUBSETALL( [' + dimension_name + '] )} ) }')
+
+    # Check if Dimensions exists. If not create it
+    @classmethod
+    def setup_class(cls):
+        tm1_rest = RESTService(ip='', port=port, login=LoginService.native(user, pwd), ssl=False)
+        dimension_service = DimensionService(tm1_rest)
+        elements = [Element('USD', 'Numeric'),
+                    Element('EUR', 'Numeric'),
+                    Element('JPY', 'Numeric'),
+                    Element('CNY', 'Numeric'),
+                    Element('GBP', 'Numeric'),
+                    Element('NZD', 'Numeric')]
+        element_attributes = [ElementAttribute('Currency Name', 'String')]
+        h = Hierarchy(cls.dimension_name, cls.dimension_name, elements, element_attributes)
+        d = Dimension(cls.dimension_name, hierarchies=[h])
+        dimension_service.create(d)
+        tm1_rest.logout()
+
+    # 1. Create subset
     def test_1create_subset(self):
-        s = Subset(dimension_name='plan_business_unit',
-                   subset_name=self.subset_name_static,
-                   alias='BusinessUnit',
-                   elements=['10110', '10300', '10210', '10000'])
-        self.tm1.create_subset(s, private=self.private)
+        self.subset_service.create(self.static_subset, private=self.private)
+        self.subset_service.create(self.dynamic_subset, private=self.private)
 
-        s = Subset(dimension_name='plan_business_unit',
-                   subset_name=self.subset_name_dynamic,
-                   alias='BusinessUnit',
-                   expression='{ HIERARCHIZE( {TM1SUBSETALL( [plan_business_unit] )} ) }')
-        self.tm1.create_subset(s, private=self.private)
-
-    # 2. get subset
+    # 2. Get subset
     def test_2get_subset(self):
-        s = self.tm1.get_subset(dimension_name='plan_business_unit',
-                                subset_name=self.subset_name_static,
-                                private=self.private)
-        self.assertIsInstance(s, Subset)
+        s = self.subset_service.get(dimension_name=self.dimension_name,
+                                    subset_name=self.subset_name_static,
+                                    private=self.private)
+        self.assertEqual(self.static_subset.body, s.body)
+        s = self.subset_service.get(dimension_name=self.dimension_name,
+                                    subset_name=self.subset_name_dynamic,
+                                    private=self.private)
+        self.assertEqual(self.dynamic_subset.body, s.body)
 
-        s = self.tm1.get_subset(dimension_name='plan_business_unit',
-                                subset_name=self.subset_name_dynamic,
-                                private=self.private)
-        self.assertIsInstance(s, Subset)
-
-    # 3. update subset
+    # 3. Update subset
     def test_3update_subset(self):
-        s = self.tm1.get_subset(dimension_name='plan_business_unit',
-                                subset_name=self.subset_name_static,
-                                private=self.private)
-        s.add_elements(['10110'])
-        # update it
-        self.tm1.update_subset(s, private=self.private)
+        s = self.subset_service.get(dimension_name=self.dimension_name,
+                                    subset_name=self.subset_name_static,
+                                    private=self.private)
+        s.add_elements(['NZD'])
+        # Update it
+        self.subset_service.update(s, private=self.private)
+        # Get it again
+        s = self.subset_service.get(dimension_name=self.dimension_name,
+                                    subset_name=self.subset_name_static,
+                                    private=self.private)
+        # Test it !
+        self.assertEquals(len(s.elements), 4)
+        # Get subset
+        s = self.subset_service.get(dimension_name=self.dimension_name,
+                                    subset_name=self.subset_name_dynamic,
+                                    private=self.private)
 
-        # get it again
-        s = self.tm1.get_subset(dimension_name='plan_business_unit',
-                                subset_name=self.subset_name_static,
-                                private=self.private)
-        # test it !
-        self.assertEquals(len(s.elements), 5)
+        s.expression = '{{ [{}].[EUR], [{}].[USD] }})'.format(self.dimension_name, self.dimension_name)
+        # Update it
+        self.subset_service.update(subset=s,
+                                   private=self.private)
+        # Get it again
+        s = self.subset_service.get(dimension_name=self.dimension_name,
+                                    subset_name=self.subset_name_dynamic,
+                                    private=self.private)
+        # Test it !
+        self.assertEquals(s.expression,
+                          '{{ [{}].[EUR], [{}].[USD] }})'.format(self.dimension_name, self.dimension_name))
 
-        # get subset
-        s = self.tm1.get_subset(dimension_name='plan_business_unit',
-                                subset_name=self.subset_name_dynamic,
-                                private=self.private)
-        s.expression = '{FILTER( {TM1SUBSETALL( [plan_business_unit] )}, [plan_business_unit].[Currency] = "EUR")}'
-
-        # update it
-        self.tm1.update_subset(subset=s,
-                               private=self.private)
-
-        # get it again
-        s = self.tm1.get_subset(dimension_name='plan_business_unit',
-                                subset_name=self.subset_name_dynamic,
-                                private=self.private)
-
-        # test it !
-        self.assertEquals(s.expression, '{FILTER( {TM1SUBSETALL( [plan_business_unit] )}, [plan_business_unit].[Currency] = "EUR")}')
-
-
-
-    # 4. delete subset
+    # 4. Delete subsets
     def test_4delete_subset(self):
-        self.tm1.delete_subset(dimension_name='plan_business_unit',
-                               subset_name=self.subset_name_static,
-                               private=self.private)
-        self.tm1.delete_subset(dimension_name='plan_business_unit',
-                               subset_name=self.subset_name_dynamic,
-                               private=self.private)
+        self.subset_service.delete(dimension_name=self.dimension_name,
+                                   subset_name=self.subset_name_static,
+                                   private=self.private)
+        self.subset_service.delete(dimension_name=self.dimension_name,
+                                   subset_name=self.subset_name_dynamic,
+                                   private=self.private)
 
-    def test_5logout(self):
-        self.tm1.logout()
+    @classmethod
+    def teardown_class(cls):
+        dimension_service = DimensionService(cls.tm1_rest)
+        dimension_service.delete(cls.dimension_name)
+        cls.tm1_rest.logout()
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,13 +1,16 @@
-from TM1py import TM1pyQueries as TM1, TM1pyLogin
+from Services.RESTService import RESTService
+from Services.LoginService import LoginService
+from Services.ChoreService import ChoreService
 
-login = TM1pyLogin.native('admin', 'apple')
 
-# connection to TM1 Server
-with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
-    # get all chores and update them
-    for chore in tm1.get_all_chores():
+login = LoginService.native('admin', 'apple')
+
+with RESTService(ip='', port=8001, login=login, ssl=False) as tm1_rest:
+    chore_service = ChoreService(tm1_rest)
+    # Get all chores and update them
+    for chore in chore_service.get_all():
         chore.reschedule(hours=-1)
-        tm1.update_chore(chore)
+        chore_service.update(chore)
 
 
 

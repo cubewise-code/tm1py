@@ -1,5 +1,11 @@
 import asyncio
-from TM1py import TM1pyQueries as TM1, TM1pyLogin
+
+from Services.RESTService import RESTService
+from Services.LoginService import LoginService
+from Services.InfoService import InfoService
+from Services.DimensionService import DimensionService
+from Services.ProcessService import ProcessService
+from Services.DataService import DataService
 
 
 # define functions
@@ -13,11 +19,11 @@ def get_product_version(tm1):
 
 def get_all_dimension_names(tm1):
     for i in range(1000):
-        data = tm1.get_all_dimension_names()
+        data = tm1.get_all_names()
 
 def get_all_process_names(tm1):
     for i in range(1000):
-        data = tm1.get_all_process_names()
+        data = tm1.get_all_names()
 
 def read_pnl(tm1):
     for i in range(1000):
@@ -26,15 +32,20 @@ def read_pnl(tm1):
 # fire requests asynchronously
 async def main():
     loop = asyncio.get_event_loop()
-    tm1 = TM1('', 8001, TM1pyLogin.native('admin', 'apple'), ssl=False)
-    future1 = loop.run_in_executor(None, get_product_version, tm1)
-    future2 = loop.run_in_executor(None, get_server_name, tm1)
-    future3 = loop.run_in_executor(None, read_pnl, tm1)
-    future4 = loop.run_in_executor(None, get_all_dimension_names, tm1)
-    future5 = loop.run_in_executor(None, get_all_process_names, tm1)
+    tm1_rest = RESTService('', 8001, LoginService.native('admin', 'apple'), ssl=False)
+    info_service = InfoService(tm1_rest)
+    dimension_service = DimensionService(tm1_rest)
+    process_service = ProcessService(tm1_rest)
+    data_service = DataService(tm1_rest)
+
+    future1 = loop.run_in_executor(None, get_product_version, info_service)
+    future2 = loop.run_in_executor(None, get_server_name, info_service)
+    future3 = loop.run_in_executor(None, read_pnl, data_service)
+    future4 = loop.run_in_executor(None, get_all_dimension_names, dimension_service)
+    future5 = loop.run_in_executor(None, get_all_process_names, process_service)
     response1, response, response3, response4, response5 = \
         await future1, await future2, await future3, await future4, await future5
-    tm1.logout()
+    tm1_rest.logout()
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(main())

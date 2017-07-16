@@ -1,17 +1,17 @@
-from TM1py import TM1pyQueries as TM1, TM1pyLogin, Chore
-import uuid
+from Services.LoginService import LoginService
+from Services.RESTService import RESTService
+from Services.ChoreService import ChoreService
 
-# connection to TM1 Server
-login = TM1pyLogin.native('admin', 'apple')
-tm1 = TM1(ip='', port=8001, login=login, ssl=False)
 
-#read Process:
-c = tm1.get_chore('real chore')
+# Connection to TM1 Server
+login = LoginService.native('admin', 'apple')
+with RESTService(ip='', port=8001, login=login, ssl=False) as tm1_rest:
+    chore_service = ChoreService(tm1_rest)
+    # Read Chore:
+    c = chore_service.get('real chore')
 
-# print out processes and parameters
-for task in c._tasks:
-    print("Process: {} Parameters: {}".format(task._process_name, task._parameters))
+    # Print out the tasks
+    for task in c.tasks:
+        print("Process: {} Parameters: {}".format(task, task.parameters))
 
-# logout
-tm1.logout()
 

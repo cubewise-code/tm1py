@@ -1,18 +1,20 @@
-from TM1py import TM1pyQueries as TM1, TM1pyLogin, Process
-import uuid
+from Services.RESTService import RESTService
+from Services.ProcessService import ProcessService
+from Services.LoginService import LoginService
 
 # connection to TM1 Server
-login = TM1pyLogin.native('admin', 'apple')
-tm1 = TM1(ip='', port=8001, login=login, ssl=False)
+login = LoginService.native('admin', 'apple')
+with RESTService(ip='', port=8001, login=login, ssl=False) as tm1_rest:
+    #read
+    process_service = ProcessService(tm1_rest)
+    p = process_service.get('TM1py process')
 
-#read Process:
-p = tm1.get_process('TM1py process')
+    # modify
+    p.datasource_type = 'None'
+    p.epilog_procedure = "nRevenue = 100000;\r\nsCostCenter = 'UK01';"
+    p.remove_parameter('pCompanyCode')
+    p.add_parameter('pBU', prompt='', value='UK02')
 
-# modify
-p.set_data_procedure(Process.auto_generated_string + "a = 2;")
+    # update
+    process_service.update(p)
 
-# update on Server
-tm1.update_process(p)
-
-# logout
-tm1.logout()

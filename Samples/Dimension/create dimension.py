@@ -1,12 +1,21 @@
-from TM1py import TM1pyQueries as TM1, TM1pyLogin, Dimension, Hierarchy, Element, Edge, ElementAttribute
+from Services.LoginService import LoginService
+from Services.RESTService import RESTService
+from Services.DimensionService import DimensionService
 
-# login object
-login = TM1pyLogin.native('admin', 'apple')
+from Objects.Element import Element
+from Objects.ElementAttribute import ElementAttribute
+from Objects.Hierarchy import Hierarchy
+from Objects.Dimension import Dimension
+
+
+login = LoginService.native('admin', 'apple')
 
 name = 'TM1py Region'
 
 # Connection to TM1. Needs IP, Port, Credentials, and SSL
-with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
+with RESTService(ip='', port=8001, login=login, ssl=False) as tm1_rest:
+    dimension_service = DimensionService(tm1_rest)
+
     # create elements objects
     elements = [Element(name='Europe', element_type='Consolidated'),
                 Element(name='CH', element_type='Numeric'),
@@ -14,9 +23,9 @@ with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
                 Element(name='BE', element_type='Numeric')]
 
     # create edge object
-    edges = [Edge(parent_name='Europe', component_name='CH', weight=1),
-             Edge(parent_name='Europe', component_name='UK', weight=1),
-             Edge(parent_name='Europe', component_name='BE', weight=1)]
+    edges = {('Europe', 'CH'): 1,
+             ('Europe', 'UK'): 1,
+             ('Europe', 'BE'): 1}
 
     # create the element_attributes
     element_attributes = [ElementAttribute(name='Name Long', attribute_type='Alias'),
@@ -31,6 +40,6 @@ with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
     d = Dimension(name=name, hierarchies=[hierarchy])
 
     # create dimension in TM1 !
-    tm1.create_dimension(d)
+    dimension_service.create(d)
 
 

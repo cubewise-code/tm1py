@@ -1,7 +1,11 @@
-from TM1py import TM1pyQueries as TM1, TM1pyLogin, User
+from Services.RESTService import RESTService
+from Services.UserService import UserService
+from Services.LoginService import LoginService
+from Objects.User import User
 
-login = TM1pyLogin.native('admin', 'apple')
+login = LoginService.native('admin', 'apple')
 
-with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
+with RESTService(ip='', port=8001, login=login, ssl=False) as tm1_rest:
+    user_service = UserService(tm1_rest)
     u = User(name='Hodor Hodor', friendly_name='Hodor', groups=['Admin'], password='apple')
-    tm1.create_user(u)
+    user_service.create(u)

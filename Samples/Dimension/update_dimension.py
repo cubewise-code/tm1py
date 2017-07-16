@@ -1,12 +1,17 @@
-from TM1py import TM1pyQueries as TM1, TM1pyLogin, Edge
 import uuid
 
-login = TM1pyLogin.native('admin', 'apple')
+from Services.LoginService import LoginService
+from Services.RESTService import RESTService
+from Services.DimensionService import DimensionService
 
-with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
+login = LoginService.native('admin', 'apple')
+
+# Connection to TM1. Needs IP, Port, Credentials, and SSL
+with RESTService(ip='', port=8001, login=login, ssl=False) as tm1_rest:
+    dimension_service = DimensionService(tm1_rest)
 
     # get dimension
-    dimension = tm1.get_dimension('plan_department')
+    dimension = dimension_service.get('plan_department')
 
     # get the default hierarchy of the dimension
     h = dimension.hierarchies[0]
@@ -18,7 +23,7 @@ with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
     h.add_element(element_name=element_name, element_type='Numeric')
 
     # add edge to hierarchy
-    h.add_edge(edge=Edge(parent_name='TM1py elem', component_name=element_name, weight=1000))
+    h.add_edge('TM1py elem', element_name, 1000)
 
     # write Hierarchy back to TM1
-    tm1.update_hierarchy(h)
+    dimension_service.update(dimension)

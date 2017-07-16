@@ -1,27 +1,34 @@
 import uuid
-from TM1py import Subset, TM1pyQueries as TM1, TM1pyLogin
 
-login = TM1pyLogin.native('admin', 'apple')
+from Services.RESTService import RESTService
+from Services.SubsetService import SubsetService
+from Services.LoginService import LoginService
 
-with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
+from Objects.Subset import Subset
+
+login = LoginService.native('admin', 'apple')
+
+with RESTService(ip='', port=8001, login=login, ssl=False) as tm1_rest:
+    subset_service = SubsetService(tm1_rest)
+
     subset_name = str(uuid.uuid4())
 
     # create subset
     s = Subset(dimension_name='Plan_Department', subset_name=subset_name, alias='', elements=['200', '405', '410'])
-    tm1.create_subset(s, True)
+    subset_service.create(s, True)
 
     # get it and print out the elements
-    s = tm1.get_subset(dimension_name='Plan_Department', subset_name=subset_name, private=True)
+    s = subset_service.get(dimension_name='Plan_Department', subset_name=subset_name, private=True)
     print(s.elements)
 
     # update it
     s.add_elements(['105', '115'])
-    tm1.update_subset(s, True)
+    subset_service.update(s, True)
 
     # get it and print out the elements
-    s = tm1.get_subset(dimension_name='Plan_Department', subset_name=subset_name, private=True)
+    s = subset_service.get(dimension_name='Plan_Department', subset_name=subset_name, private=True)
     print(s.elements)
 
     # delete it
-    tm1.delete_subset(dimension_name='Plan_Department', subset_name=subset_name , private=True)
+    subset_service.delete(dimension_name='Plan_Department', subset_name=subset_name, private=True)
 

@@ -1,17 +1,24 @@
-from TM1py import TM1pyQueries as TM1, TM1pyLogin
+from Services.RESTService import RESTService
+from Services.ProcessService import ProcessService
+from Services.LoginService import LoginService
+
 
 # connect to TM1 source instance
-tm1_source = TM1(ip='', port=8001, login=TM1pyLogin.native('admin', 'apple'), ssl=False)
+tm1_source = RESTService(ip='', port=8001, login=LoginService.native('admin', 'apple'), ssl=False)
 
 # connect to TM1 target instance
-tm1_target = TM1(ip='', port=8034, login=TM1pyLogin.native('admin', 'apple'), ssl=True)
+tm1_target = RESTService(ip='', port=32893, login=LoginService.native('admin', 'apple'), ssl=False)
 
 # read process from source
-p = tm1_source.get_process('TM1py process')
+process_service_source = ProcessService(tm1_source)
+p = process_service_source.get('TM1py process')
 
-# create process on target instance
-tm1_target.create_process(p)
+process_service_target = ProcessService(tm1_target)
+# create/update process on target instance
+if p.name in process_service_target.get_all_names():
+    process_service_target.update(p)
+else:
+    process_service_target.create(p)
 
-# explicit logout, since HTTPSessionTimeoutMinutes doesnt work (FP < 5)
 tm1_source.logout()
 tm1_target.logout()

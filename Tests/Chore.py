@@ -1,12 +1,32 @@
-from TM1py import TM1pyQueries as TM1, TM1pyLogin, Chore, ChoreFrequency, ChoreStartTime, ChoreTask
-import uuid
 import unittest
 import random
+import uuid
 from datetime import datetime
 
+from Services.ProcessService import ProcessService
+from Services.ChoreService import ChoreService
+from Services.RESTService import RESTService
+from Services.LoginService import LoginService
+from Objects.Process import Process
+from Objects.Chore import Chore
+from Objects.ChoreTask import ChoreTask
+from Objects.ChoreStartTime import ChoreStartTime
+from Objects.ChoreFrequency import ChoreFrequency
+
+
+# Configuration for tests
+port = 8001
+user = 'admin'
+pwd = 'apple'
+process_name1 = 'TM1py_unittest_process1'
+process_name2 = 'TM1py_unittest_process2'
+
+
 class TestChoreMethods(unittest.TestCase):
-    login = TM1pyLogin.native('admin', 'apple')
-    tm1 = TM1(ip='', port=8001, login=login, ssl=False)
+    login = LoginService.native(user, pwd)
+    tm1_rest = RESTService(ip='', port=port, login=login, ssl=False)
+
+    chore_service = ChoreService(tm1_rest)
 
     # chore properties
     chore_name = 'TM1py_unittest_chore_' + str(uuid.uuid4())
@@ -15,33 +35,44 @@ class TestChoreMethods(unittest.TestCase):
     frequency_hours = int(random.uniform(0, 23))
     frequency_minutes = int(random.uniform(0, 59))
     frequency_seconds = int(random.uniform(0, 59))
+    frequency = ChoreFrequency(days=frequency_days, hours=frequency_hours,
+                               minutes=frequency_minutes, seconds=frequency_seconds)
 
-    tasks = [ChoreTask(0, 'import_actuals', parameters=[{'Name': 'region', 'Value': 'UK'}]),
-             ChoreTask(1, 'import_actuals', parameters=[{'Name': 'region', 'Value': 'FR'}]),
-             ChoreTask(2, 'import_actuals', parameters=[{'Name': 'region', 'Value': 'CH'}])]
+    tasks = [ChoreTask(0, process_name1, parameters=[{'Name': 'pRegion', 'Value': 'UK'}]),
+             ChoreTask(1, process_name1, parameters=[{'Name': 'pRegion', 'Value': 'FR'}]),
+             ChoreTask(2, process_name1, parameters=[{'Name': 'pRegion', 'Value': 'CH'}])]
 
-    # 1. create chore
+    # Check if process exists. If not create it
+    @classmethod
+    def setup_class(cls):
+        process_service = ProcessService(cls.tm1_rest)
+        p1 = Process(name=process_name1)
+        p1.add_parameter('pRegion', 'pRegion (String)', value='US')
+        if process_service.exists(p1.name):
+            process_service.delete(p1.name)
+        process_service.create(p1)
+        p2 = Process(name=process_name2)
+        p2.add_parameter('pRegion', 'pRegion (String)', value='UK')
+        if process_service.exists(p2.name):
+            process_service.delete(p2.name)
+        process_service.create(p2)
+
+    # 1. Create chore
     def test_1create_chore(self):
-
-        frequency = ChoreFrequency(days=self.frequency_days, hours=self.frequency_hours,
-                                   minutes=self.frequency_minutes, seconds=self.frequency_seconds)
-
         c = Chore(name=self.chore_name,
                   start_time=ChoreStartTime(self.start_time.year, self.start_time.month, self.start_time.day,
                                             self.start_time.hour, self.start_time.minute, self.start_time.second),
                   dst_sensitivity=False,
                   active=True,
                   execution_mode='MultipleCommit',
-                  frequency=frequency,
+                  frequency=self.frequency,
                   tasks=self.tasks)
+        # No exceptions -> means test passed
+        self.chore_service.create(c)
 
-
-        # no exceptions means test passed
-        self.tm1.create_chore(c)
-
-    # 2. get chore
+    # 2. Get chore
     def test_2get_chore(self):
-        c = self.tm1.get_chore(self.chore_name)
+        c = self.chore_service.get(self.chore_name)
         # check all properties
         self.assertEqual(c._start_time._datetime, self.start_time.replace(microsecond=0))
         self.assertEqual(c._name, self.chore_name)
@@ -55,10 +86,10 @@ class TestChoreMethods(unittest.TestCase):
         for task1, task2 in zip(self.tasks, c._tasks):
             self.assertEqual(task1, task2)
 
-    # 3. update chore
+    # 3. Update chore
     def test_3update_chore(self):
         # get chore
-        c = self.tm1.get_chore(self.chore_name)
+        c = self.chore_service.get(self.chore_name)
 
         # update all properties
         # update start time
@@ -74,22 +105,22 @@ class TestChoreMethods(unittest.TestCase):
                                       minutes=frequency_minutes, seconds=frequency_seconds)
 
         # update tasks
-        tasks = [ChoreTask(0, 'import_forecast', parameters=[{'Name': 'region', 'Value': 'DE'}]),
-                 ChoreTask(1, 'import_forecast', parameters=[{'Name': 'region', 'Value': 'ES'}]),
-                 ChoreTask(2, 'import_forecast', parameters=[{'Name': 'region', 'Value': 'US'}])]
+        tasks = [ChoreTask(0, process_name2, parameters=[{'Name': 'pRegion', 'Value': 'DE'}]),
+                 ChoreTask(1, process_name2, parameters=[{'Name': 'pRegion', 'Value': 'ES'}]),
+                 ChoreTask(2, process_name2, parameters=[{'Name': 'pRegion', 'Value': 'US'}])]
         c._tasks = tasks
 
         # execution mode
         c._execution_mode = "SingleCommit"
 
-        # active
+        # activate
         c.deactivate()
 
         # update chore in TM1
-        self.tm1.update_chore(c)
+        self.chore_service.update(c)
 
         # get chore and check all properties
-        c = self.tm1.get_chore(chore_name=self.chore_name)
+        c = self.chore_service.get(chore_name=self.chore_name)
         self.assertEqual(c._start_time._datetime.replace(microsecond=0), self.start_time.replace(microsecond=0))
         self.assertEqual(c._name, self.chore_name)
         self.assertEqual(c._dst_sensitivity, False)
@@ -102,14 +133,16 @@ class TestChoreMethods(unittest.TestCase):
         for task1, task2 in zip(tasks, c._tasks):
             self.assertEqual(task1, task2)
 
-    # 4. delete chore
+    # 4. Delete chore
     def test_4delete_chore(self):
-        self.tm1.delete_chore(self.chore_name)
+        self.chore_service.delete(self.chore_name)
 
-    # logout
-    def test_5logout(self):
-        pass
-        self.tm1.logout()
+    @classmethod
+    def teardown_class(cls):
+        process_service = ProcessService(cls.tm1_rest)
+        process_service.delete(process_name1)
+        process_service.delete(process_name2)
+        cls.tm1_rest.logout()
 
 if __name__ == '__main__':
     unittest.main()

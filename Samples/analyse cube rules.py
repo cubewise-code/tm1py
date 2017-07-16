@@ -1,9 +1,13 @@
-from TM1py import TM1pyQueries as TM1, TM1pyLogin
+from Services.RESTService import RESTService
+from Services.CubeService import CubeService
+from Services.LoginService import LoginService
 
-login = TM1pyLogin.native('admin', 'apple')
 
-with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
-    cubes = tm1.get_all_cubes()
+login = LoginService.native('admin', 'apple')
+
+with RESTService(ip='', port=8001, login=login, ssl=False) as tm1_rest:
+    cube_service = CubeService(tm1_rest)
+    cubes = cube_service.get_all()
 
     # cubes with SKIPCHECK
     cubes_with_skipcheck = [cube.name for cube in cubes if cube.skipcheck]
@@ -25,7 +29,7 @@ with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
     print("Cubes sorted by number of Feeder Statements:")
     print([cube.name for cube in cubes])
 
-    cube = tm1.get_cube('plan_Report')
+    cube = cube_service.get('plan_Report')
     # print plain rule stmts
     print("Rule Statements:")
     for stmt in cube.rules.rule_statements:
@@ -34,5 +38,3 @@ with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
     print("Feeder Statements:")
     for stmt in cube.rules.feeder_statements:
         print(stmt)
-
-

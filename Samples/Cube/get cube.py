@@ -1,9 +1,14 @@
-from TM1py import TM1pyQueries as TM1, TM1pyLogin
+from Objects.Cube import Cube
 
-login = TM1pyLogin.native('admin', 'apple')
+from Services.LoginService import LoginService
+from Services.RESTService import RESTService
+from Services.CubeService import CubeService
 
-with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
-    c = tm1.get_cube('Rubiks Cube')
+login = LoginService.native('admin', 'apple')
+
+with RESTService(ip='', port=8001, login=login, ssl=False) as tm1_rest:
+    cube_service = CubeService(tm1_rest)
+    c = cube_service.get('Rubiks Cube')
     print(c.name)
     print(c.dimensions)
     if c.has_rules:

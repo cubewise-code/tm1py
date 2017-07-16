@@ -1,47 +1,65 @@
-from TM1py import TM1pyQueries as TM1, TM1pyLogin, Cube, Rules
 import uuid
 import unittest
+from random import shuffle
+
+from Services.RESTService import RESTService
+from Services.LoginService import LoginService
+from Services.CubeService import CubeService
+from Services.DimensionService import DimensionService
+from Objects.Cube import Cube
+from Objects.Rules import Rules
+
+
+# Configuration for tests
+port = 8001
+user = 'admin'
+pwd = 'apple'
 
 
 class TestCubeMethods(unittest.TestCase):
-    login = TM1pyLogin.native('admin', 'apple')
-    tm1 = TM1(ip='', port=8001, login=login, ssl=False)
+    login = LoginService.native(user, pwd)
+    tm1_rest = RESTService(ip='', port=port, login=login, ssl=False)
+    cube_service = CubeService(tm1_rest)
+    dimension_service = DimensionService(tm1_rest)
 
     cube_name = 'TM1py_unittest_cube_{}'.format(str(uuid.uuid4()))
 
     def test1_create_cube(self):
-        all_cubes_before = self.tm1.get_all_cube_names()
-        c = Cube(self.cube_name, dimensions=['plan_version','plan_business_unit'], rules=Rules(''))
-        self.tm1.create_cube(c)
-        all_cubes_after = self.tm1.get_all_cube_names()
+        all_cubes_before = self.cube_service.get_all_names()
+
+        dimensions = self.dimension_service.get_all_names()
+        shuffle(dimensions)
+
+        c = Cube(self.cube_name, dimensions=dimensions[0:10], rules=Rules(''))
+        self.cube_service.create(c)
+        all_cubes_after = self.cube_service.get_all_names()
         self.assertEqual(len(all_cubes_before) + 1, len(all_cubes_after))
 
     def test2_get_cube(self):
-        c = self.tm1.get_cube(self.cube_name)
+        c = self.cube_service.get(self.cube_name)
         self.assertIsInstance(c, Cube)
 
-        cubes = self.tm1.get_all_cubes()
-        control_cubes = self.tm1.get_control_cubes()
-        model_cubes = self.tm1.get_model_cubes()
+        cubes = self.cube_service.get_all()
+        control_cubes = self.cube_service.get_control_cubes()
+        model_cubes = self.cube_service.get_model_cubes()
         self.assertEqual(len(cubes), len(control_cubes+model_cubes))
 
-
     def test3_update_cube(self):
-        c = self.tm1.get_cube(self.cube_name)
+        c = self.cube_service.get(self.cube_name)
         c.rules = Rules("SKIPCHECK;\nFEEDERS;")
-        self.tm1.update_cube(c)
+        self.cube_service.update(c)
         # test if rule was actually updated
-        c = self.tm1.get_cube(self.cube_name)
+        c = self.cube_service.get(self.cube_name)
         self.assertTrue(c.skipcheck)
 
     def test4_delete_cube(self):
-        all_cubes_before = self.tm1.get_all_cube_names()
-        self.tm1.delete_cube(self.cube_name)
-        all_cubes_after = self.tm1.get_all_cube_names()
+        all_cubes_before = self.cube_service.get_all_names()
+        self.cube_service.delete(self.cube_name)
+        all_cubes_after = self.cube_service.get_all_names()
         self.assertEqual(len(all_cubes_before) - 1, len(all_cubes_after))
 
     def test5_logout(self):
-        self.tm1.logout()
+        self.tm1_rest.logout()
 
 
 if __name__ == '__main__':

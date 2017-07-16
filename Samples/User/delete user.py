@@ -1,6 +1,9 @@
-from TM1py import TM1pyQueries as TM1, TM1pyLogin, User
+from Services.RESTService import RESTService
+from Services.UserService import UserService
+from Services.LoginService import LoginService
 
-login = TM1pyLogin.native('admin', 'apple')
+login = LoginService.native('admin', 'apple')
 
-with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
-    tm1.delete_user('Hodor Hodor')
+with RESTService(ip='', port=8001, login=login, ssl=False) as tm1_rest:
+    user_service = UserService(tm1_rest)
+    user_service.delete('Hodor Hodor')

@@ -1,91 +1,137 @@
-from TM1py import TM1pyQueries as TM1,TM1pyLogin, NativeView, MDXView, AnnonymousSubset
 import uuid
 import unittest
 import random
-import time
 
-'''
-TM1 10.2.2 FP < 6
-Fails when random_boolean is True - private MDXViews cant be read, updated, deleted (TM1 Bug).
+from Objects.Cube import Cube
+from Objects.Dimension import Dimension
+from Objects.Hierarchy import Hierarchy
+from Objects.NativeView import NativeView
+from Objects.MDXView import MDXView
+from Objects.Subset import AnnonymousSubset, Subset
+from Objects.ElementAttribute import ElementAttribute
+from Objects.Element import Element
 
-TM1 10.2.2 FP 6
-Fails when random boolean is True. Private NativeViews cant be updated
+from Services.LoginService import LoginService
+from Services.RESTService import RESTService
+from Services.InfoService import InfoService
+from Services.CubeService import CubeService
+from Services.DimensionService import DimensionService
+from Services.ViewService import ViewService
+from Services.SubsetService import SubsetService
+from Services.DataService import DataService
 
-'''
+
+# Configuration for tests
+port = 8001
+user = 'admin'
+pwd = 'apple'
+
+cube_name = 'TM1py_unittest_cube'
+dimension_names = ['TM1py_unittest_dimension1',
+                   'TM1py_unittest_dimension2',
+                   'TM1py_unittest_dimension3']
+
 
 class TestViewMethods(unittest.TestCase):
-    login = TM1pyLogin.native('admin', 'apple')
-    tm1 = TM1(ip='', port=8001, login=login, ssl=False)
+    login = LoginService.native(user, pwd)
+    tm1_rest = RESTService(ip='', port=port, login=login, ssl=False)
+
+    info_service = InfoService(tm1_rest)
+    view_service = ViewService(tm1_rest)
+    cube_service = CubeService(tm1_rest)
+    dimension_service = DimensionService(tm1_rest)
+    subset_service = SubsetService(tm1_rest)
+    data_service = DataService(tm1_rest)
+
     random_string = str(uuid.uuid4())
-    random_boolean = bool(random.getrandbits(1))
+    # Fails when random boolean is True. Private NativeViews cant be updated with TM1 10.2.2 FP 6
+    random_boolean = bool(random.getrandbits(1)) \
+        if int(info_service.get_product_version().split('.')[2]) > 20602 \
+        else False
 
     native_view_name = 'TM1py_unittest_native_view_' + random_string
     mdx_view_name = 'TM1py_unittest_mdx_view_' + random_string
 
-    def test0_get_all_views(self):
-        views = self.tm1.get_all_views('Plan_BudgetPlan')
-        self.assertGreater(len(views), 0)
+    # Setup Cubes, Dimensions and Subsets
+    @classmethod
+    def setup_class(cls):
+        # Build Dimensions
+        for i in range(3):
+            elements = [Element('Element {}'.format(str(j)), 'Numeric') for j in range(1, 1001)]
+            hierarchy = Hierarchy(dimension_names[i], dimension_names[i], elements)
+            dimension = Dimension(dimension_names[i], [hierarchy])
+            if not cls.dimension_service.exists(dimension.name):
+                cls.dimension_service.create(dimension)
+        # Build Cube
+        cube = Cube(cube_name, dimension_names)
+        if not cls.cube_service.exists(cube_name):
+            cls.cube_service.create(cube)
+        # Write data into cube
+        cellset = {}
+        for i in range(10000):
+            element1 = 'Element ' + str(random.randint(1, 1000))
+            element2 = 'Element ' + str(random.randint(1, 1000))
+            element3 = 'Element ' + str(random.randint(1, 1000))
+            cellset[(element1, element2, element3)] = random.randint(1, 1000)
+        cls.data_service.write_values(cube_name, cellset)
 
     def test1_create_view(self):
         # create instance of native View
-        native_view = NativeView(cube_name='Plan_BudgetPlan',
+        native_view = NativeView(cube_name=cube_name,
                                  view_name=self.native_view_name)
 
-        # set up native view - put subsets on Rows, Columns and Titles
-        subset = self.tm1.get_subset(dimension_name='plan_version', subset_name='FY 2004 Budget', private=False)
-        native_view.add_row(dimension_name='plan_version', subset=subset)
+        # Set up native view - put subsets on Rows, Columns and Titles
+        subset = Subset(dimension_names[0], str(uuid.uuid4()), expression='{{[{}].Members}}'.format(dimension_names[0]))
+        self.subset_service.create(subset, private=False)
+        native_view.add_row(dimension_name=dimension_names[0], subset=subset)
 
-        subset = self.tm1.get_subset(dimension_name='plan_business_unit', subset_name='n level business unit',
-                                     private=False)
-        native_view.add_row(dimension_name='plan_business_unit', subset=subset)
+        subset = AnnonymousSubset(dimension_names[1], elements=['element1', 'element123', 'element432'])
+        native_view.add_title(dimension_name=dimension_names[1], subset=subset, selection='element123')
 
-        subset = self.tm1.get_subset(dimension_name='plan_department', subset_name='n level departments', private=False)
-        native_view.add_row(dimension_name='plan_department', subset=subset)
+        elements = ['Element{}'.format(str(i)) for i in range(1, 201)]
+        subset = Subset(dimension_names[2], str(uuid.uuid4()), elements=elements)
+        self.subset_service.create(subset, private=False)
+        native_view.add_column(dimension_name=dimension_names[2], subset=subset)
 
-        subset = self.tm1.get_subset(dimension_name='plan_chart_of_accounts', subset_name='Consolidations',
-                                     private=False)
-        native_view.add_row(dimension_name='plan_chart_of_accounts', subset=subset)
-
-        subset = self.tm1.get_subset(dimension_name='plan_exchange_rates', subset_name='local', private=False)
-        native_view.add_title(dimension_name='plan_exchange_rates', subset=subset, selection='local')
-
-        subset = self.tm1.get_subset(dimension_name='plan_time', subset_name='2004 Total Year', private=False)
-        native_view.add_column(dimension_name='plan_time', subset=subset)
-
-        subset = self.tm1.get_subset(dimension_name='plan_source', subset_name='budget', private=False)
-        native_view.add_column(dimension_name='plan_source', subset=subset)
+        # Suppress Null Values
+        native_view.suppress_empty_cells = True
 
         # create native view on Server
-        self.tm1.create_view(view=native_view, private=self.random_boolean)
+        self.view_service.create(view=native_view, private=self.random_boolean)
 
         # create instance of MDXView
-        nv_view = self.tm1.get_native_view(cube_name='Plan_BudgetPlan', view_name=self.native_view_name,
-                                           private=self.random_boolean)
-        mdx = nv_view.as_MDX
-        mdx_view = MDXView(cube_name='Plan_BudgetPlan',
+        nv_view = self.view_service.get_native_view(cube_name=cube_name,
+                                                    view_name=self.native_view_name,
+                                                    private=self.random_boolean)
+        mdx = nv_view.MDX
+        mdx_view = MDXView(cube_name=cube_name,
                            view_name=self.mdx_view_name,
                            MDX=mdx)
         # create mdx view on Server
-        self.tm1.create_view(view=mdx_view, private=self.random_boolean)
+        self.view_service.create(view=mdx_view, private=self.random_boolean)
 
-    def test2_get_view(self):
+    def test2_get_all_views(self):
+        views = self.view_service.get_all(cube_name)
+        self.assertGreater(len(views), 0)
+
+    def test3_get_view(self):
         # get native view
-        native_view = self.tm1.get_native_view(cube_name='Plan_BudgetPlan',
-                                               view_name=self.native_view_name,
-                                               private=self.random_boolean)
+        native_view = self.view_service.get_native_view(cube_name=cube_name,
+                                                        view_name=self.native_view_name,
+                                                        private=self.random_boolean)
         # check if instance
         self.assertIsInstance(native_view, NativeView)
 
         # get mdx view
-        mdx_view = self.tm1.get_mdx_view(cube_name='Plan_BudgetPlan',
-                                         view_name=self.mdx_view_name,
-                                         private=self.random_boolean)
+        mdx_view = self.view_service.get_mdx_view(cube_name=cube_name,
+                                                  view_name=self.mdx_view_name,
+                                                  private=self.random_boolean)
         # check if instance
         self.assertIsInstance(mdx_view, MDXView)
 
-    def test3_compare_data(self):
-        data_nv = self.tm1.get_view_content('Plan_BudgetPlan', self.native_view_name, private=self.random_boolean)
-        data_mdx = self.tm1.get_view_content('Plan_BudgetPlan', self.mdx_view_name, private=self.random_boolean)
+    def test4_compare_data(self):
+        data_nv = self.data_service.get_view_content(cube_name, self.native_view_name, private=self.random_boolean)
+        data_mdx = self.data_service.get_view_content(cube_name, self.mdx_view_name, private=self.random_boolean)
 
         # Sum up all the values from the views
         sum_nv = sum([value['Value'] for value in data_nv.values() if value['Value']])
@@ -93,70 +139,72 @@ class TestViewMethods(unittest.TestCase):
         self.assertEqual(sum_nv, sum_mdx)
 
     # fails sometimes because PrivateMDXViews cant be updated in FP < 5.
-    def test4_update_nativeview(self):
+    def test5_update_nativeview(self):
         # get native view
-        native_view_original = self.tm1.get_native_view(cube_name='Plan_BudgetPlan',
-                                                        view_name=self.native_view_name,
-                                                        private=self.random_boolean)
+        native_view_original = self.view_service.get_native_view(cube_name=cube_name,
+                                                                 view_name=self.native_view_name,
+                                                                 private=self.random_boolean)
 
         # Sum up all the values from the views
-        data_original = self.tm1.get_view_content('Plan_BudgetPlan', self.native_view_name, private=self.random_boolean)
+        data_original = self.data_service.get_view_content(cube_name, self.native_view_name, private=self.random_boolean)
         sum_original = sum([value['Value'] for value in data_original.values() if value['Value']])
 
         # modify it
-        native_view_original.remove_row(dimension_name='plan_department')
-        subset = AnnonymousSubset('plan_department', elements=["200", "405"])
-        native_view_original.add_column(dimension_name='plan_department',  subset=subset)
+        native_view_original.remove_row(dimension_name=dimension_names[0])
+        subset = AnnonymousSubset(dimension_name=dimension_names[0],
+                                  elements=["Element 1", "Element 2", "Element 3", "Element 4", "Element 5"])
+        native_view_original.add_column(dimension_name=dimension_names[0], subset=subset)
 
         # update it on Server
-        self.tm1.update_view(native_view_original, private=self.random_boolean)
+        self.view_service.update(native_view_original, private=self.random_boolean)
 
-        #get it and check if its different
-        data_updated = self.tm1.get_view_content('Plan_BudgetPlan', self.native_view_name, private=self.random_boolean)
+        # Get it and check if its different
+        data_updated = self.data_service.get_view_content(cube_name, self.native_view_name, private=self.random_boolean)
         sum_updated = sum([value['Value'] for value in data_updated.values() if value['Value']])
         self.assertNotEqual(sum_original, sum_updated)
 
-
-    def test5_update_mdxview(self):
-        # get mdx view
-        mdx_view_original = self.tm1.get_mdx_view(cube_name='Plan_BudgetPlan',
-                                                  view_name=self.mdx_view_name,
-                                                  private=self.random_boolean)
-
-        # get data from original view
-        data_mdx_original = self.tm1.get_view_content('Plan_BudgetPlan', mdx_view_original.name,
-                                                      private=self.random_boolean)
-
-        mdx = "SELECT {([plan_version].[FY 2004 Budget], [plan_department].[105], [plan_chart_of_accounts].[61030], " \
-        "[plan_exchange_rates].[local], [plan_source].[goal] , [plan_time].[Jan-2004]) } on COLUMNS," \
-        "{[plan_business_unit].[10110]} on ROWS FROM [plan_BudgetPlan]"
+    def test6_update_mdxview(self):
+        # Get mdx view
+        mdx_view_original = self.view_service.get_mdx_view(cube_name=cube_name,
+                                                           view_name=self.mdx_view_name,
+                                                           private=self.random_boolean)
+        # Get data from mdx view
+        data_mdx_original = self.data_service.get_view_content(cube_name=cube_name,
+                                                               view_name=mdx_view_original.name,
+                                                               private=self.random_boolean)
+        mdx = "SELECT " \
+              "NON EMPTY{{ [{}].Members }} ON 0," \
+              "NON EMPTY {{ [{}].Members }} ON 1 " \
+              "FROM [{}] " \
+              "WHERE ([{}].[Element172])".format(dimension_names[0], dimension_names[1], cube_name, dimension_names[2])
         mdx_view_original.MDX = mdx
-        # update it on Server
-        self.tm1.update_view(mdx_view_original, private=self.random_boolean)
-        # get it and check if its different
-        mdx_view_updated = self.tm1.get_mdx_view(cube_name='Plan_BudgetPlan',
-                                                 view_name=self.mdx_view_name,
-                                                 private=self.random_boolean)
+        # Update mdx view on Server
+        self.view_service.update(mdx_view_original, private=self.random_boolean)
+        # Get it and check if its different
+        mdx_view_updated = self.view_service.get_mdx_view(cube_name=cube_name,
+                                                          view_name=self.mdx_view_name,
+                                                          private=self.random_boolean)
 
-
-        data_mdx_updated = self.tm1.get_view_content('Plan_BudgetPlan', mdx_view_updated.name, private=self.random_boolean)
+        data_mdx_updated = self.data_service.get_view_content(cube_name,
+                                                              mdx_view_updated.name,
+                                                              private=self.random_boolean)
 
         # Sum up all the values from the views
         sum_mdx_original = sum([value['Value'] for value in data_mdx_original.values() if value['Value']])
         sum_mdx_updated = sum([value['Value'] for value in data_mdx_updated.values() if value['Value']])
         self.assertNotEqual(sum_mdx_original, sum_mdx_updated)
 
+    def test7_delete_view(self):
+        self.view_service.delete(cube_name=cube_name, view_name=self.native_view_name, private=self.random_boolean)
+        self.view_service.delete(cube_name=cube_name, view_name=self.mdx_view_name, private=self.random_boolean)
 
+    @classmethod
+    def teardown_class(cls):
+        cls.cube_service.delete(cube_name)
+        for dimension_name in dimension_names:
+            cls.dimension_service.delete(dimension_name)
+        cls.tm1_rest.logout()
 
-
-
-    def test6_delete_view(self):
-        self.tm1.delete_view(cube_name='Plan_BudgetPlan', view_name=self.native_view_name, private=self.random_boolean)
-        self.tm1.delete_view(cube_name='Plan_BudgetPlan', view_name=self.mdx_view_name, private=self.random_boolean)
-
-
-
-
-
+    
 if __name__ == '__main__':
     unittest.main()

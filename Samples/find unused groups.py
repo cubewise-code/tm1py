@@ -1,19 +1,28 @@
-from TM1py import TM1pyQueries as TM1, TM1pyLogin
+from Services.RESTService import RESTService
+from Services.LoginService import LoginService
+from Services.UserService import UserService
+from Services.DataService import DataService
 
-login = TM1pyLogin.native('admin', 'apple')
 
-with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
-    # get all groups
-    all_groups = tm1.get_all_groups()
+login = LoginService.native('admin', 'apple')
 
-    # determine the used groups from }ClientGroups Cube
+with RESTService(ip='', port=8001, login=login, ssl=False) as tm1_rest:
+    # Setup Services
+    user_service = UserService(tm1_rest)
+    data_service = DataService(tm1_rest)
+
+    # Get all groups
+    all_groups = user_service.get_all_groups()
+
+    # Determine the used groups from }ClientGroups Cube
     mdx = "SELECT NON EMPTY {TM1SUBSETALL( [}Clients] )} on ROWS, NON EMPTY {TM1SUBSETALL( [}Groups] )} ON COLUMNS " \
           "FROM [}ClientGroups]"
-    cube_content = tm1.execute_mdx(mdx, '}ClientGroups', ['Value'])
+    cube_content = data_service.execute_mdx(mdx, ['Value'])
+
     used_groups = {cell['Value'] for cell in cube_content.values() if cell['Value'] != ''}
 
-    # determine the unused groups
+    # Determine the unused groups
     unused_groups = set(all_groups) - used_groups
 
-    # print out the unused groups
+    # Print out the unused groups
     print(unused_groups)

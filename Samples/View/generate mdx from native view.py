@@ -1,12 +1,16 @@
-from TM1py import TM1pyQueries as TM1, TM1pyLogin, MDXView
+from Services.RESTService import RESTService
+from Services.ViewService import ViewService
+from Services.LoginService import LoginService
 
-login = TM1pyLogin.native('admin', 'apple')
+
+login = LoginService.native('admin', 'apple')
 
 # establish connection to TM1 Server
-with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
+with RESTService(ip='', port=8001, login=login, ssl=False) as tm1_rest:
 
     # instantiate TM1py.NativeView object
-    nv = tm1.get_native_view('Plan_BudgetPlan', 'High Level Profit And Loss', private=False)
+    view_service = ViewService(tm1_rest)
+    nv = view_service.get_native_view('Plan_BudgetPlan', 'High Level Profit And Loss', private=False)
 
     # retrieve MDX from native view. print it
     print(nv.as_MDX)

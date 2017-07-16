@@ -1,15 +1,22 @@
-from TM1py import TM1pyQueries as TM1, TM1pyLogin
-from pandas import pandas as pd
+from Services.RESTService import RESTService
+from Services.LoginService import LoginService
+from Services.DataService import DataService
+from Services.CubeService import CubeService
 
-login = TM1pyLogin.native('admin', 'apple')
+import pandas as pd
 
-# connect to TM1
-with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
+login = LoginService.native('admin', 'apple')
+
+with RESTService(ip='', port=8001, login=login, ssl=False) as tm1_rest:
+    # Services for interaction with TM1
+    data_service = DataService(tm1_rest)
+    cube_service = CubeService(tm1_rest)
+
     # get data from P&L cube
-    pnl_data = tm1.get_view_content(cube_name='Plan_BudgetPlan',
-                                    view_name='Budget Input Detailed',
-                                    cell_properties=['Ordinal', 'Value'],
-                                    private=False)
+    pnl_data = data_service.get_view_content(cube_name='Plan_BudgetPlan',
+                                             view_name='Budget Input Detailed',
+                                             cell_properties=['Ordinal', 'Value'],
+                                             private=False)
 
     # restructure data
     pnl_data_clean = {}
@@ -18,7 +25,7 @@ with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
         pnl_data_clean[coordinates_clean] = cell['Value']
 
     # create index
-    names = tm1.get_dimension_order('Plan_BudgetPlan')
+    names = cube_service.get_dimension_names('Plan_BudgetPlan')
     keylist = list(pnl_data_clean.keys())
     multiindex = pd.MultiIndex.from_tuples(keylist, names=names)
 
@@ -32,4 +39,3 @@ with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
     # print mean and median
     print("Mean: " + str(df.mean()))
     print("Median: " + str(df.median()))
-

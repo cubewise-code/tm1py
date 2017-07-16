@@ -1,16 +1,20 @@
-from TM1py import TM1pyQueries as TM1, TM1pyLogin
+from Services.RESTService import RESTService
+from Services.LoginService import LoginService
+from Services.UserService import UserService
 
-login = TM1pyLogin.native('admin', 'apple')
 
-with TM1(ip='', port=8001, login=login, ssl=False) as tm1:
-    # get existing ADMIN
-    u = tm1.get_user('admin')
+login = LoginService.native('admin', 'apple')
 
-    # edit it
+with RESTService(ip='', port=8001, login=login, ssl=False) as tm1_rest:
+    user_service = UserService(tm1_rest)
+    # Get existing ADMIN
+    u = user_service.get('admin')
+
+    # Edit it
     u.name = 'Han Solo'
     u.friendly_name = 'Han'
     u.password = 'MilleniumFalcon'
     u.add_group('Resistance')
 
-    # create new user on TM1 Server
-    tm1.create_user(u)
+    # Create new user on TM1 Server
+    user_service.create(u)

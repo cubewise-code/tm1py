@@ -1,22 +1,25 @@
-from TM1py import TM1pyQueries as TM1, TM1pyLogin, Chore, ChoreFrequency
-import uuid
+from Objects.ChoreFrequency import ChoreFrequency
 
-# connection to TM1 Server
-login = TM1pyLogin.native('admin', 'apple')
-tm1 = TM1(ip='', port=8001, login=login, ssl=False)
+from Services.LoginService import LoginService
+from Services.RESTService import RESTService
+from Services.ChoreService import ChoreService
 
-# read chore:
-c = tm1.get_chore('real chore')
 
-# update properties
-c.reschedule(minutes=-3)
-c._frequency = ChoreFrequency(days=7, hours=22, minutes=5, seconds=1)
-c._execution_mode = 'MultipleCommit'
-c.activate()
+# Connection to TM1 Server
+login = LoginService.native('admin', 'apple')
+with RESTService(ip='', port=8001, login=login, ssl=False) as tm1_rest:
+    chore_service = ChoreService(tm1_rest)
 
-# update the TM1 chore
-tm1.update_chore(c)
+    # Read chore:
+    c = chore_service.get('real chore')
 
-# logout
-tm1.logout()
+    # Update properties
+    c.reschedule(minutes=-3)
+    c._frequency = ChoreFrequency(days=7, hours=22, minutes=5, seconds=1)
+    c._execution_mode = 'MultipleCommit'
+    c.activate()
+
+    # Update the TM1 chore
+    chore_service.update(c)
+
 

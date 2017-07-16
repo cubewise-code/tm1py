@@ -1,18 +1,18 @@
-from TM1py import TM1pyQueries as TM1, TM1pyLogin, Chore, ChoreFrequency
-import uuid
+from Services.LoginService import LoginService
+from Services.RESTService import RESTService
+from Services.ChoreService import ChoreService
+
 
 # connection to TM1 Server
-login = TM1pyLogin.native('admin', 'apple')
-tm1 = TM1(ip='', port=8001, login=login, ssl=False)
+login = LoginService.native('admin', 'apple')
+with RESTService(ip='', port=8001, login=login, ssl=False) as tm1_rest:
+    chore_service = ChoreService(tm1_rest)
+    # read Chore:
+    chores = chore_service.get_all()
 
-# read Chore:
-chores = tm1.get_all_chores()
+    # delete the TM1py Chores
+    for chore in chores:
+        if 'TM1py' in chore.name:
+            chore_service.delete(chore.name)
 
-# delete the TM1py Chores
-for chore in chores:
-    if 'TM1py' in chore._name:
-        tm1.delete_chore(chore._name)
-
-# logout
-tm1.logout()
 
