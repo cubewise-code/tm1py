@@ -1,7 +1,6 @@
 import requests
-import urllib
 import functools
-import json
+import http.client as http_client
 
 from Exceptions.Exceptions import TM1pyException
 

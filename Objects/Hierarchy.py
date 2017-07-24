@@ -45,15 +45,10 @@ class Hierarchy:
 
     @classmethod
     def from_dict(cls, hierarchy_as_dict):
-
         # Build the Dictionary for the edges
         edges = CaseAndSpaceInsensitiveTuplesDict({(edge['ParentName'], edge['ComponentName']): edge['Weight']
                                                    for edge
                                                    in hierarchy_as_dict['Edges']})
-        # build the Dictionary for the edges
-        # for edge in hierarchy_as_dict['Edges']:
-        #    edges[(edge['ParentName'], edge['ComponentName'])] = edge['Weight']
-        # build the full Object
         return cls(name=hierarchy_as_dict['Name'],
                    dimension_name=hierarchy_as_dict['Dimension']['Name'],
                    elements=[Element.from_dict(elem) for elem in hierarchy_as_dict['Elements']],
@@ -135,7 +130,7 @@ class Hierarchy:
         """ 
         With TM1 10.2.2 Hierarch and Element Attributes cant be created in one batch
         -> https://www.ibm.com/developerworks/community/forums/html/threadTopic?id=d91f3e0e-d305-44db-ac02-2fdcbee00393
-        Thus, no need have the ElementAttribute included in the JSON
+        Thus, no need to have the ElementAttribute included in the JSON
 
         :param element_attributes: Only include element_attributes in body if explicitly asked for
         :return:
