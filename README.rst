@@ -1,6 +1,6 @@
 TM1py
 =======================
-TM1py facilitates writing Python Scripts and Apps for TM1, by wrapping the IBM Planning Analytics (TM1) REST API in a concise Python framework.
+By wrapping the IBM Planning Analytics (TM1) REST API in a concise Python framework, TM1py facilitates Python developments for TM1. 
 
 Interacting with TM1 programmatically has never been so easy
 
