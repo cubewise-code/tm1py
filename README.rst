@@ -70,15 +70,15 @@ https://www.python.org/downloads/
 
 How do I install TM1py?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Open the commandline and type: pip install TM1py
+Open the command-line and type
 
 .. code-block:: bash
 
     pip install TM1py
 
-Do I have to change something in tms.cfg
+Do I have to change something in the tms.cfg
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Yes. You have to assign an HTTPPortNumber to TM1.
+Yes. You have to assign an HTTP port number to TM1
 
 .. code-block:: bash
 
