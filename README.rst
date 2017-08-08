@@ -1,3 +1,4 @@
+TM1py
 =======================
 By wrapping the IBM Planning Analytics (TM1) REST API in a concise Python framework, TM1py facilitates Python developments for TM1. 
 
