@@ -1,7 +1,6 @@
-from Services.LoginService import LoginService
-from Services.RESTService import RESTService
-from Services.DimensionService import DimensionService
-
+from TM1py.Services import DimensionService
+from TM1py.Services import LoginService
+from TM1py.Services import RESTService
 
 name = 'TM1py Region'
 

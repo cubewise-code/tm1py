@@ -1,14 +1,12 @@
-from Objects.Chore import Chore
-from Objects.ChoreFrequency import ChoreFrequency
-from Objects.ChoreStartTime import ChoreStartTime
-from Objects.ChoreTask import ChoreTask
-
-from Services.LoginService import LoginService
-from Services.RESTService import RESTService
-from Services.ChoreService import ChoreService
-
 import uuid
 from datetime import datetime
+
+from TM1py.Objects import Chore, ChoreStartTime
+from TM1py.Objects import ChoreFrequency
+from TM1py.Objects import ChoreTask
+from TM1py.Services import ChoreService
+from TM1py.Services import LoginService
+from TM1py.Services import RESTService
 
 # connection to TM1 Server
 login = LoginService.native('admin', 'apple')

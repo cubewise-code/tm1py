@@ -1,7 +1,6 @@
-from Services.LoginService import LoginService
-from Services.RESTService import RESTService
-from Services.ChoreService import ChoreService
-
+from TM1py.Services import ChoreService
+from TM1py.Services import LoginService
+from TM1py.Services import RESTService
 
 # connection to TM1 Server
 login = LoginService.native('admin', 'apple')

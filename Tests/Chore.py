@@ -1,18 +1,10 @@
-import unittest
 import random
+import unittest
 import uuid
 from datetime import datetime
 
-from Services.ProcessService import ProcessService
-from Services.ChoreService import ChoreService
-from Services.RESTService import RESTService
-from Services.LoginService import LoginService
-from Objects.Process import Process
-from Objects.Chore import Chore
-from Objects.ChoreTask import ChoreTask
-from Objects.ChoreStartTime import ChoreStartTime
-from Objects.ChoreFrequency import ChoreFrequency
-
+from TM1py.Objects import Chore, ChoreStartTime, ChoreFrequency, ChoreTask, Process
+from TM1py.Services import ChoreService, LoginService, ProcessService, RESTService
 
 # Configuration for tests
 port = 8001
@@ -121,7 +113,7 @@ class TestChoreMethods(unittest.TestCase):
 
         # get chore and check all properties
         c = self.chore_service.get(chore_name=self.chore_name)
-        self.assertEqual(c._start_time._datetime.replace(microsecond=0), self.start_time.replace(microsecond=0))
+        self.assertEqual(c._start_time._datetime.replace(microsecond=0), start_time.replace(microsecond=0))
         self.assertEqual(c._name, self.chore_name)
         self.assertEqual(c._dst_sensitivity, False)
         self.assertEqual(c._active, False)

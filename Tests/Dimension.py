@@ -1,14 +1,9 @@
-import uuid
 import unittest
+import uuid
 
-from Services.RESTService import RESTService
-from Services.LoginService import LoginService
-from Services.DimensionService import DimensionService
-from Objects.Dimension import Dimension
-from Objects.Hierarchy import Hierarchy
-from Objects.Element import Element
-from Objects.ElementAttribute import ElementAttribute
-
+from TM1py.Objects import Dimension, Hierarchy, Element
+from TM1py.Objects import ElementAttribute
+from TM1py.Services import RESTService, LoginService, DimensionService
 
 # Configuration for tests
 port = 8001

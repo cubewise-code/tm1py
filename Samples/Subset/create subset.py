@@ -1,9 +1,9 @@
 import uuid
 
-from Services.RESTService import RESTService
-from Services.SubsetService import SubsetService
-from Services.LoginService import LoginService
-from Objects.Subset import Subset
+from TM1py.Objects import Subset
+from TM1py.Services import LoginService
+from TM1py.Services import RESTService
+from TM1py.Services import SubsetService
 
 login = LoginService.native('admin', 'apple')
 
@@ -11,7 +11,6 @@ with RESTService(ip='', port=8001, login=login, ssl=False) as tm1_rest:
     subset_service = SubsetService(tm1_rest)
 
     subset_name = str(uuid.uuid4())
-
 
     # create subset
     s = Subset(dimension_name='Plan_Department', subset_name=subset_name, alias='', elements=['200', '405', '410'])

@@ -1,9 +1,9 @@
-from Services.RESTService import RESTService
-from Services.LoginService import LoginService
-from Services.DataService import DataService
-from Services.CubeService import CubeService
-
 import pandas as pd
+
+from TM1py.Services import CubeService
+from TM1py.Services import DataService
+from TM1py.Services import LoginService
+from TM1py.Services import RESTService
 
 login = LoginService.native('admin', 'apple')
 

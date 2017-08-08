@@ -1,13 +1,9 @@
-import uuid
 import unittest
+import uuid
 
-from Services.RESTService import RESTService
-from Services.LoginService import LoginService
-from Services.DimensionService import DimensionService
-from Services.HierarchyService import HierarchyService
-from Objects.Dimension import Dimension
-from Objects.Hierarchy import Hierarchy
-
+from TM1py.Objects import Dimension
+from TM1py.Objects import Hierarchy
+from TM1py.Services import RESTService, LoginService, DimensionService, HierarchyService
 
 # Configuration for tests
 port = 8001
@@ -26,7 +22,7 @@ class TestHierarchyMethods(unittest.TestCase):
     dimension_name = dimension_prefix.format(uuid.uuid4())
 
     # create dimension with a default hierarchy
-    def test1_create(self):
+    def test1_create_hierarchy(self):
         d = Dimension(self.dimension_name)
         h = Hierarchy(self.dimension_name, self.dimension_name)
         h.add_element('Total Years', 'Consolidated')
@@ -38,7 +34,7 @@ class TestHierarchyMethods(unittest.TestCase):
         d.add_hierarchy(h)
         self.dimension_service.create(d)
 
-    def test2_get(self):
+    def test2_get_hierarchy(self):
         d = self.dimension_service.get(dimension_name=self.dimension_name)
         h = d.default_hierarchy
         self.assertIn('Total Years', h.elements.keys())
@@ -47,7 +43,7 @@ class TestHierarchyMethods(unittest.TestCase):
         self.assertIn('Next Year', [ea.name for ea in h.element_attributes])
         self.assertIn('Previous Year', [ea.name for ea in h.element_attributes])
 
-    def test3_update(self):
+    def test3_update_hierarchy(self):
         # Get dimension and hierarchy
         d = self.dimension_service.get(dimension_name=self.dimension_name)
         h = d.default_hierarchy
@@ -88,7 +84,7 @@ class TestHierarchyMethods(unittest.TestCase):
         self.assertEqual(h.edges[('Total Years', '2011')], 2)
         self.assertEqual(h.elements['No Year'].element_type, 'String')
 
-    def test4_test_delete(self):
+    def test4_test_delete_hierarchy(self):
         self.dimension_service.delete(self.dimension_name)
 
     def test5_logout(self):

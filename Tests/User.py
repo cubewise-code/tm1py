@@ -1,12 +1,11 @@
-import uuid
 import unittest
+import uuid
 
-from Services.LoginService import LoginService
-from Services.RESTService import RESTService
-from Services.UserService import UserService
-from Services.ProcessService import ProcessService
-
-from Objects.User import User
+from TM1py.Objects import User
+from TM1py.Services import LoginService
+from TM1py.Services import ProcessService
+from TM1py.Services import RESTService
+from TM1py.Services import UserService
 
 # Configuration for tests
 port = 8001

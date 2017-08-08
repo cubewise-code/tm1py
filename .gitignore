@@ -2,5 +2,11 @@
 *.xml
 .idea/TM1py.iml
 temp.py
+temp1.py
+temp2.py
+temp3.py
+temp4.py
 *.pyc
 __pycache__/TM1py.cpython-35.pyc
+Samples/binary string to cell.py
+Samples/binary.txt

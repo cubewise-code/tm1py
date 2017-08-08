@@ -1,25 +1,22 @@
-import uuid
-import unittest
 import random
+import unittest
+import uuid
 
-from Objects.Cube import Cube
-from Objects.Dimension import Dimension
-from Objects.Hierarchy import Hierarchy
-from Objects.NativeView import NativeView
-from Objects.MDXView import MDXView
-from Objects.Subset import AnnonymousSubset, Subset
-from Objects.ElementAttribute import ElementAttribute
-from Objects.Element import Element
-
-from Services.LoginService import LoginService
-from Services.RESTService import RESTService
-from Services.InfoService import InfoService
-from Services.CubeService import CubeService
-from Services.DimensionService import DimensionService
-from Services.ViewService import ViewService
-from Services.SubsetService import SubsetService
-from Services.DataService import DataService
-
+from TM1py.Objects import AnnonymousSubset, Subset
+from TM1py.Objects import Cube
+from TM1py.Objects import Dimension
+from TM1py.Objects import Element
+from TM1py.Objects import Hierarchy
+from TM1py.Objects import MDXView
+from TM1py.Objects import NativeView
+from TM1py.Services import CubeService
+from TM1py.Services import DataService
+from TM1py.Services import DimensionService
+from TM1py.Services import InfoService
+from TM1py.Services import LoginService
+from TM1py.Services import RESTService
+from TM1py.Services import SubsetService
+from TM1py.Services import ViewService
 
 # Configuration for tests
 port = 8001

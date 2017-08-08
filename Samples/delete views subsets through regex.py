@@ -1,12 +1,11 @@
 import re
 
-from Services.RESTService import RESTService
-from Services.LoginService import LoginService
-from Services.CubeService import CubeService
-from Services.DimensionService import DimensionService
-from Services.ViewService import ViewService
-from Services.SubsetService import SubsetService
-
+from TM1py.Services import CubeService
+from TM1py.Services import DimensionService
+from TM1py.Services import LoginService
+from TM1py.Services import RESTService
+from TM1py.Services import SubsetService
+from TM1py.Services import ViewService
 
 login = LoginService.native('admin', 'apple')
 

@@ -1,14 +1,14 @@
-import uuid
 import unittest
+import uuid
 from random import shuffle
 
-from Services.RESTService import RESTService
-from Services.LoginService import LoginService
-from Services.CubeService import CubeService
-from Services.DimensionService import DimensionService
-from Objects.Cube import Cube
-from Objects.Rules import Rules
+from TM1py.Objects import Cube
+from TM1py.Objects import Rules
 
+from TM1py.Services import CubeService
+from TM1py.Services import DimensionService
+from TM1py.Services import LoginService
+from TM1py.Services import RESTService
 
 # Configuration for tests
 port = 8001

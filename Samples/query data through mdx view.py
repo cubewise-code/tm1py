@@ -1,11 +1,10 @@
 import uuid
 
-from Services.RESTService import RESTService
-from Services.LoginService import LoginService
-from Services.ViewService import ViewService
-from Services.DataService import DataService
-
-from Objects.MDXView import MDXView
+from TM1py.Objects import MDXView
+from TM1py.Services import DataService
+from TM1py.Services import LoginService
+from TM1py.Services import RESTService
+from TM1py.Services import ViewService
 
 login = LoginService.native('admin', 'apple')
 

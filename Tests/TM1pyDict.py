@@ -1,8 +1,8 @@
 import unittest
 
-from Services.LoginService import LoginService
-from Services.RESTService import RESTService
-from Services.DataService import DataService
+from TM1py.Services import DataService
+from TM1py.Services import LoginService
+from TM1py.Services import RESTService
 
 # Configuration for tests
 port = 8001

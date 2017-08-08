@@ -1,8 +1,7 @@
-from Objects.Rules import Rules
-
-from Services.LoginService import LoginService
-from Services.RESTService import RESTService
-from Services.CubeService import CubeService
+from TM1py.Objects import Rules
+from TM1py.Services import CubeService
+from TM1py.Services import LoginService
+from TM1py.Services import RESTService
 
 login = LoginService.native('admin', 'apple')
 

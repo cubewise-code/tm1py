@@ -1,12 +1,10 @@
-from Services.LoginService import LoginService
-from Services.RESTService import RESTService
-from Services.DimensionService import DimensionService
-
-from Objects.Element import Element
-from Objects.ElementAttribute import ElementAttribute
-from Objects.Hierarchy import Hierarchy
-from Objects.Dimension import Dimension
-
+from TM1py.Objects import Dimension
+from TM1py.Objects import Element
+from TM1py.Objects import ElementAttribute
+from TM1py.Objects import Hierarchy
+from TM1py.Services import DimensionService
+from TM1py.Services import LoginService
+from TM1py.Services import RESTService
 
 login = LoginService.native('admin', 'apple')
 

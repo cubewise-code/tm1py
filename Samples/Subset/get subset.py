@@ -1,7 +1,6 @@
-from Services.RESTService import RESTService
-from Services.SubsetService import SubsetService
-from Services.LoginService import LoginService
-
+from TM1py.Services import LoginService
+from TM1py.Services import RESTService
+from TM1py.Services import SubsetService
 
 login = LoginService.native('admin', 'apple')
 

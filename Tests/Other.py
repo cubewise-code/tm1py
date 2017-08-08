@@ -1,13 +1,13 @@
 import random
 import unittest
 
-from Services.RESTService import RESTService
-from Services.LoginService import LoginService
-from Services.DataService import DataService
-from Services.CubeService import CubeService
-from Services.ViewService import ViewService
-from Objects.MDXView import MDXView
-from Utils import Utils
+from TM1py.Objects import MDXView
+from TM1py.Services import CubeService
+from TM1py.Services import DataService
+from TM1py.Services import LoginService
+from TM1py.Services import RESTService
+from TM1py.Services import ViewService
+from TM1py.Utils import Utils
 
 # Configuration for tests
 port = 8001

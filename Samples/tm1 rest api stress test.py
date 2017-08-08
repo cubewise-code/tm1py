@@ -1,11 +1,11 @@
 import asyncio
 
-from Services.RESTService import RESTService
-from Services.LoginService import LoginService
-from Services.InfoService import InfoService
-from Services.DimensionService import DimensionService
-from Services.ProcessService import ProcessService
-from Services.DataService import DataService
+from TM1py.Services import DataService
+from TM1py.Services import DimensionService
+from TM1py.Services import InfoService
+from TM1py.Services import LoginService
+from TM1py.Services import ProcessService
+from TM1py.Services import RESTService
 
 
 # define functions

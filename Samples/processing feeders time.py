@@ -1,11 +1,11 @@
 import time as t
 from datetime import date, time, datetime
 
-from Services.RESTService import RESTService
-from Services.LoginService import LoginService
-from Services.CubeService import CubeService
-from Services.ProcessService import ProcessService
-from Services.InfoService import InfoService
+from TM1py.Services import CubeService
+from TM1py.Services import InfoService
+from TM1py.Services import LoginService
+from TM1py.Services import ProcessService
+from TM1py.Services import RESTService
 
 
 # time magic with python

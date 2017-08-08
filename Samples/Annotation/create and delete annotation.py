@@ -1,8 +1,9 @@
-from Objects.Annotation import Annotation
-from Services.LoginService import LoginService
-from Services.RESTService import RESTService
-from Services.AnnotationService import AnnotationService
 import uuid
+
+from TM1py.Objects import Annotation
+from TM1py.Services import AnnotationService
+from TM1py.Services import LoginService
+from TM1py.Services import RESTService
 
 # connection to TM1 Server
 login = LoginService.native('admin', 'apple')

@@ -1,14 +1,11 @@
 import json
-import unittest
 import random
 import string
+import unittest
 
-from Services.AnnotationService import AnnotationService
-from Services.RESTService import RESTService
-from Services.LoginService import LoginService
-from Services.DataService import DataService
-from Objects.Annotation import Annotation
 
+from TM1py.Services import RESTService, LoginService, AnnotationService, DataService
+from TM1py.Objects import Annotation
 
 # Configuration for tests
 port = 8001

@@ -1,18 +1,9 @@
-import time
 import asyncio
+import time
 from concurrent.futures import ThreadPoolExecutor
 
-from Services.RESTService import RESTService
-from Services.LoginService import LoginService
-from Services.DataService import DataService
-from Services.CubeService import CubeService
-from Services.DimensionService import DimensionService
-
-
-from Objects.Cube import Cube
-from Objects.Dimension import Dimension
-from Objects.Hierarchy import Hierarchy
-from Objects.Element import Element
+from TM1py.Objects import Cube, Dimension, Element, Hierarchy
+from TM1py.Services import CubeService, DataService, DimensionService, LoginService, RESTService
 
 
 # MDX Template
