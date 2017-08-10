@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # TM1py Exceptions are defined here
 
 

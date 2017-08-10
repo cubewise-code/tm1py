@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json
 
 from TM1py.Objects.ElementAttribute import ElementAttribute

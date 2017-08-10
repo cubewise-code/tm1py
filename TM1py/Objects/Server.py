@@ -1,4 +1,4 @@
-
+# -*- coding: utf-8 -*-
 
 class Server:
     """ Abstraction of the TM1 Server

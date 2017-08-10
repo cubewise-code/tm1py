@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from TM1py.Services.ElementService import ElementService
 from TM1py.Services import ObjectService
 

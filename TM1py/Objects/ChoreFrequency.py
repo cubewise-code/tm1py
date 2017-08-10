@@ -1,4 +1,4 @@
-
+# -*- coding: utf-8 -*-
 
 class ChoreFrequency:
     """ Utility class to handle time representation fore Chore Frequency

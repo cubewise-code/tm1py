@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 
 class View:
     """ Abstraction of TM1 View

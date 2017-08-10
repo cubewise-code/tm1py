@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from TM1py.Exceptions import TM1pyException
 
 

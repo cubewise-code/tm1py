@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json
 import collections
 from base64 import b64encode
