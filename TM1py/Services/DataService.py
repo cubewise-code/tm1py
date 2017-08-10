@@ -64,28 +64,29 @@ class DataService:
     def write_values_through_cellset(self, mdx, values):
         """ Significantly faster than write_values function
 
-        Cellset gets created according to MDX Expression. For instance:
-            [  61, 29 ,13
-               42, 54, 15,
-               17, 28, 81  ]
-        Each value in the cellset can be addressed through its position: The ordinal integer value. 
-        Ordinal-enumeration goes from top to bottom from left to right
-        Number 61 has Ordinal 0, 29 has Ordinal 1, etc.
-
-        The order of the iterable determines the insertion point in the cellset. 
-        For instance:
-            [91, 85, 72, 68, 51, 42, 35, 28, 11]
-
-        would lead to:
-            [  91, 85 ,72
-               68, 51, 42,
-               35, 28, 11  ]
-
-        When writing large datasets into TM1 Cubes it can be convenient to call this function asynchronously.
-
-        :param mdx: Valid MDX Expression.
-        :param values: List of values. The Order of the List/ Iterable determines the insertion point in the cellset.
-        :return: 
+            Cellset gets created according to MDX Expression. For instance:
+                [  61, 29 ,13
+                   42, 54, 15,
+                   17, 28, 81  ]
+                   
+            Each value in the cellset can be addressed through its position: The ordinal integer value. 
+            Ordinal-enumeration goes from top to bottom from left to right
+            Number 61 has Ordinal 0, 29 has Ordinal 1, etc.
+    
+            The order of the iterable determines the insertion point in the cellset. 
+            For instance:
+                [91, 85, 72, 68, 51, 42, 35, 28, 11]
+    
+            would lead to:
+                [  91, 85 ,72
+                   68, 51, 42,
+                   35, 28, 11  ]
+    
+            When writing large datasets into TM1 Cubes it can be convenient to call this function asynchronously.
+    
+            :param mdx: Valid MDX Expression.
+            :param values: List of values. The Order of the List/ Iterable determines the insertion point in the cellset.
+            :return: 
         """
         # execute mdx and create cellset at Server
         cellset_id = self.create_cellset(mdx)

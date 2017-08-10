@@ -26,8 +26,8 @@ class Annotation:
     def from_json(cls, annotation_as_json):
         """ Alternative constructor
 
-        :param annotation_as_json: String, JSON
-        :return: instance of TM1py.Process
+            :param annotation_as_json: String, JSON
+            :return: instance of TM1py.Process
         """
         annotation_as_dict = json.loads(annotation_as_json)
         annotation_id = annotation_as_dict['ID']
@@ -85,16 +85,13 @@ class Annotation:
         return self._id
 
     def move(self, dimension_order, dimension, target_element, source_element=None):
-        """ move annotation on given dimension from source_element to target_element
-            :Parameters:
-                `dimension_order` : List
-                    order of the dimensions in the cube
-                `dimension` : String
-                    name of the dimension
-                `target_element` : String
-                    name of the target_element
-                `source_element` : String
-                    name of the source element, optional
+        """ Move annotation on given dimension from source_element to target_element
+        
+            :param dimension_order: List, order of the dimensions in the cube
+            :param dimension: dimension name
+            :param target_element: target element name
+            :param source_element:  source element name
+            :return: 
         """
         for i, dimension_name in enumerate(dimension_order):
             if dimension_name.lower() == dimension.lower():
@@ -104,7 +101,7 @@ class Annotation:
     def _construct_body(self):
         """ construct the ODATA conform JSON represenation for the Annotation entity.
 
-        :return: string, the valid JSON
+            :return: string, the valid JSON
         """
         dimensional_context = [{'Name': element} for element in self._dimensional_context]
         body = collections.OrderedDict()

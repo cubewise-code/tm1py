@@ -7,7 +7,7 @@ from ..Exceptions import TM1pyException
 def httpmethod(func):
     """ Higher Order Function to wrap the GET, POST, PATCH, PUT, DELETE methods in TM1pyHTTPClient
 
-    Takes care of:
+        Takes care of:
         - encoding of url and payload
         - verfiying response. Throws TM1pyException if StatusCode of Reponse is not OK
     """

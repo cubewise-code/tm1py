@@ -21,8 +21,8 @@ class Hierarchy:
 
         Edges are represented as a TM1py.Utils.CaseAndSpaceInsensitiveTupleDict: 
         {
-          (parent1, component1) : 10,
-          (parent1, component2) : 30
+            (parent1, component1) : 10,
+            (parent1, component2) : 30
         }
 
         Subsets is list of type TM1py.Subset
@@ -134,6 +134,7 @@ class Hierarchy:
         :param element_attributes: Only include element_attributes in body if explicitly asked for
         :return:
         """
+
         body_as_dict = collections.OrderedDict()
         body_as_dict['Name'] = self._name
         body_as_dict['Elements'] = []
