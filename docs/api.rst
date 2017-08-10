@@ -7,7 +7,7 @@ Developer Interface
 
 This part of the documentation covers all the classes of TM1py.
 
-Services
+TM1 Services
 -------
 
 .. autoclass:: TM1py.Services.AnnotationService
@@ -70,10 +70,10 @@ Services
    :members:
    :undoc-members:
 
-Objects
+TM1 Objects
 -------
 
-.. autoclass:: TM1py.Objects.Annotation
+.. autoclass:: TM1py.Objects.Annotation.Annotation
    :members:
    :undoc-members:
 
