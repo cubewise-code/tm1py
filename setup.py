@@ -1,8 +1,10 @@
 import codecs
+import os
+import sys
 from setuptools import setup
 
 
-SCHEDULE_VERSION = '0.0.1'
+SCHEDULE_VERSION = '0.0.2'
 SCHEDULE_DOWNLOAD_URL = (
     'https://github.com/MariusWirtz/TM1py/tarball/' + SCHEDULE_VERSION
 )
@@ -17,7 +19,7 @@ def read_file(filename):
 
 setup(
     name='TM1py',
-    packages=['TM1py'],
+    packages=['TM1py', 'TM1py/Exceptions', 'TM1py/Objects', 'TM1py/Objects', 'TM1py/Services', 'TM1py/Utils'],
     version=SCHEDULE_VERSION,
     description='A python module for TM1.',
     long_description=read_file('README.rst'),

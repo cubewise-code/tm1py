@@ -10,3 +10,10 @@ temp4.py
 __pycache__/TM1py.cpython-35.pyc
 Samples/binary string to cell.py
 Samples/binary.txt
+TM1py.egg-info/dependency_links.txt
+TM1py.egg-info/PKG-INFO
+TM1py.egg-info/requires.txt
+TM1py.egg-info/SOURCES.txt
+TM1py.egg-info/top_level.txt
+build/lib/TM1py/__init__.py
+dist/TM1py-0.0.2.zip
