@@ -5,10 +5,10 @@ Developer Interface
 
 .. module:: schedule
 
-This part of the documentation covers all the classes of TM1py.TM1py.
+This part of the documentation covers all the classes of TM1py.
 
 TM1 Services
--------
+------------------
 
 .. autoclass:: TM1py.AnnotationService
    :members:
@@ -71,7 +71,7 @@ TM1 Services
    :undoc-members:
 
 TM1 Objects
--------
+------------------
 
 .. autoclass:: TM1py.Annotation
    :members:
@@ -133,9 +133,8 @@ TM1 Objects
    :members:
    :undoc-members:
 
-
 Exceptions
-----------
+------------------
 
 .. autoexception:: TM1py.Exceptions.Exceptions.TM1pyException
 
