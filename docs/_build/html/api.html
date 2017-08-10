@@ -42,8 +42,8 @@
   <div class="section" id="module-schedule">
 <span id="developer-interface"></span><span id="api"></span><h1>Developer Interface<a class="headerlink" href="#module-schedule" title="Permalink to this headline">¶</a></h1>
 <p>This part of the documentation covers all the classes of TM1py.</p>
-<div class="section" id="services">
-<h2>Services<a class="headerlink" href="#services" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="tm1-services">
+<h2>TM1 Services<a class="headerlink" href="#tm1-services" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="TM1py.Services.AnnotationService">
 <em class="property">class </em><code class="descclassname">TM1py.Services.</code><code class="descname">AnnotationService</code><span class="sig-paren">(</span><em>rest</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.AnnotationService" title="Permalink to this definition">¶</a></dt>
@@ -1991,8 +1991,8 @@ Allows to execute HTTP Methods</p>
 </dd></dl>
 
 </div>
-<div class="section" id="objects">
-<h2>Objects<a class="headerlink" href="#objects" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="tm1-objects">
+<h2>TM1 Objects<a class="headerlink" href="#tm1-objects" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="TM1py.Objects.Annotation">
 <em class="property">class </em><code class="descclassname">TM1py.Objects.</code><code class="descname">Annotation</code><span class="sig-paren">(</span><em>comment_value</em>, <em>object_name</em>, <em>dimensional_context</em>, <em>comment_type='ANNOTATION'</em>, <em>annotation_id=None</em>, <em>text=''</em>, <em>creator=None</em>, <em>created=None</em>, <em>last_updated_by=None</em>, <em>last_updated=None</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Annotation" title="Permalink to this definition">¶</a></dt>
@@ -2375,6 +2375,71 @@ Allows to execute HTTP Methods</p>
 <dl class="attribute">
 <dt id="TM1py.Objects.Cube.undefvals">
 <code class="descname">undefvals</code><a class="headerlink" href="#TM1py.Objects.Cube.undefvals" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Objects.Dimension">
+<em class="property">class </em><code class="descclassname">TM1py.Objects.</code><code class="descname">Dimension</code><span class="sig-paren">(</span><em>name</em>, <em>hierarchies=None</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Dimension" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abstraction of TM1 Dimension</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Notes:</th><td class="field-body">Not complete. Not tested.
+A Dimension is a container for hierarchies.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="TM1py.Objects.Dimension.add_hierarchy">
+<code class="descname">add_hierarchy</code><span class="sig-paren">(</span><em>hierarchy</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Dimension.add_hierarchy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Dimension.body">
+<code class="descname">body</code><a class="headerlink" href="#TM1py.Objects.Dimension.body" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Dimension.body_as_dict">
+<code class="descname">body_as_dict</code><a class="headerlink" href="#TM1py.Objects.Dimension.body_as_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Dimension.default_hierarchy">
+<code class="descname">default_hierarchy</code><a class="headerlink" href="#TM1py.Objects.Dimension.default_hierarchy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="TM1py.Objects.Dimension.from_dict">
+<em class="property">classmethod </em><code class="descname">from_dict</code><span class="sig-paren">(</span><em>dimension_as_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Dimension.from_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="TM1py.Objects.Dimension.from_json">
+<em class="property">classmethod </em><code class="descname">from_json</code><span class="sig-paren">(</span><em>dimension_as_json</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Dimension.from_json" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Dimension.hierarchies">
+<code class="descname">hierarchies</code><a class="headerlink" href="#TM1py.Objects.Dimension.hierarchies" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Dimension.name">
+<code class="descname">name</code><a class="headerlink" href="#TM1py.Objects.Dimension.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.Dimension.remove_hierarchy">
+<code class="descname">remove_hierarchy</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Dimension.remove_hierarchy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Dimension.unique_name">
+<code class="descname">unique_name</code><a class="headerlink" href="#TM1py.Objects.Dimension.unique_name" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -3088,8 +3153,8 @@ comments are not included.</dd>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Developer Interface</a><ul>
-<li><a class="reference internal" href="#services">Services</a></li>
-<li><a class="reference internal" href="#objects">Objects</a></li>
+<li><a class="reference internal" href="#tm1-services">TM1 Services</a></li>
+<li><a class="reference internal" href="#tm1-objects">TM1 Objects</a></li>
 <li><a class="reference internal" href="#exceptions">Exceptions</a></li>
 </ul>
 </li>

@@ -73,7 +73,7 @@ TM1 Services
 TM1 Objects
 -------
 
-.. autoclass:: TM1py.Objects.Annotation.Annotation
+.. autoclass:: TM1py.Objects.Annotation
    :members:
    :undoc-members:
 
@@ -101,7 +101,7 @@ TM1 Objects
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.Objects.Dimensions
+.. autoclass:: TM1py.Objects.Dimension
    :members:
    :undoc-members:
 
