@@ -3,6 +3,9 @@ from TM1py.Services import ObjectService
 
 
 class HierarchyService(ObjectService):
+    """ Service to handle CRUD for TM1 Hierarchies
+    
+    """
     def __init__(self, rest):
         super().__init__(rest)
         self._element_service = ElementService(rest)

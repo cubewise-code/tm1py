@@ -4,10 +4,8 @@ class Rules:
         Abstraction of Rules on a cube.
 
         rules_analytics
-            A collection of rulestatements, where each statement is stored without linebreaks.
+            A collection of rulestatements, where each statement is stored in uppercase without linebreaks.
             comments are not included.
-
-        Currently rules object is not meant not be edited. To be written!
 
     """
     keywords = ['SKIPCHECK', 'FEEDSTRINGS', 'UNDEFVALS', 'FEEDERS']
@@ -15,17 +13,17 @@ class Rules:
     def __init__(self, rules):
         self._text = rules
         self._rules_analytics = []
-        self._rules_analytics_upper = []
         self.init_analytics()
 
+    # self._rules_analytics_upper serves for analysis on cube rules
     def init_analytics(self):
         text_without_comments = '\n'.join(
-            [rule for rule in self._text.split('\n') if len(rule) > 0 and rule.strip()[0] != '#'])
+            [rule
+             for rule in self._text.split('\n')
+             if len(rule) > 0 and rule.strip()[0] != '#'])
         for statement in text_without_comments.split(';'):
             if len(statement.strip()) > 0:
-                self._rules_analytics.append(statement.replace('\n', ''))
-        # self._rules_analytics_upper serves for analysis on cube rules
-        self._rules_analytics_upper = [rule.upper() for rule in self._rules_analytics]
+                self._rules_analytics.append(statement.replace('\n', '').upper())
 
     @property
     def text(self):
@@ -38,41 +36,41 @@ class Rules:
     @property
     def rule_statements(self):
         if self.has_feeders:
-            return self.rules_analytics[:self._rules_analytics_upper.index('FEEDERS')]
+            return self.rules_analytics[:self._rules_analytics.index('FEEDERS')]
         return self.rules_analytics
 
     @property
     def feeder_statements(self):
         if self.has_feeders:
-            return self.rules_analytics[self._rules_analytics_upper.index('FEEDERS')+1:]
+            return self.rules_analytics[self._rules_analytics.index('FEEDERS')+1:]
         return []
 
     @property
     def skipcheck(self):
-        for rule in self._rules_analytics_upper[0:5]:
+        for rule in self._rules_analytics[0:5]:
             if rule == 'SKIPCHECK':
                 return True
         return False
 
     @property
     def undefvals(self):
-        for rule in self._rules_analytics_upper[0:5]:
+        for rule in self._rules_analytics[0:5]:
             if rule == 'UNDEFVALS':
                 return True
         return False
 
     @property
     def feedstrings(self):
-        for rule in self._rules_analytics_upper[0:5]:
+        for rule in self._rules_analytics[0:5]:
             if rule == 'FEEDSTRINGS':
                 return True
         return False
 
     @property
     def has_feeders(self):
-        if 'FEEDERS' in self._rules_analytics_upper:
+        if 'FEEDERS' in self._rules_analytics:
             # has feeders declaration
-            feeders = self.rules_analytics[self._rules_analytics_upper.index('FEEDERS'):]
+            feeders = self.rules_analytics[self._rules_analytics.index('FEEDERS'):]
             # has at least one actual feeder statements
             return len(feeders) > 1
         return False

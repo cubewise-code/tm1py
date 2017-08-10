@@ -1,7 +1,7 @@
 import collections
 
 
-# TODO proper handling of attributes required
+# TODO proper handling of attributes required.
 class Element:
     """ Abstraction of TM1 Element
 
@@ -53,7 +53,7 @@ class Element:
         if value.upper() in self.valid_types:
             self._element_type = value
         else:
-            raise Exception('{} not a valid Element Type'.format(value))
+            raise ValueError('{} not a valid Element Type'.format(value))
 
     @property
     def body_as_dict(self):

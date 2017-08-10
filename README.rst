@@ -183,9 +183,9 @@ Find all unused dimensions with TM1py
     >>> login = LoginService.native('admin', 'apple')
     >>> # Connect to TM1. Requires a few parameters to connect:
     >>> # - ip: Address of the TM1 instance. 'localhost' or '' if you run the TM1 instance locally
-    >>> # - Port: HTTPPortNumber as specified in the TM1s.cfg
+    >>> # - port: HTTPPortNumber as specified in the TM1s.cfg
     >>> # - login: Login object to handle authentication
-    >>> # - SSL: True or False, as stated in the TM1s.cfg
+    >>> # - ssl: True or False, as stated in the TM1s.cfg
     >>> with RESTService(ip='', port=8001, login=login, ssl=False) as tm1_rest:
     >>>    # Setup the CubeService. It offers Create, Read, Update, Delete functions for Cubes
     >>>    cube_service = CubeService(tm1_rest)
@@ -196,12 +196,12 @@ Find all unused dimensions with TM1py
     >>>    # Ask the cube service to return the names of all existing dimensions
     >>>    all_cubes = cube_service.get_all()
     >>>    # Now find all dimensions that are actually being used in cubes
-    >>>    # First we create a set (in python: a list of unique elements)
+    >>>    # Create a set (in Python: a list of unique elements)
     >>>    used_dimensions = set()
-    >>>    # We populate the set by iterating through the list of cubes and pushing each cube's dimensions into the set
+    >>>    # Populate the set: iterate Ithrough the list of cubes and push each cube's dimensions into the set
     >>>    for cube in all_cubes:
     >>>       used_dimensions.update(cube.dimensions)
-    >>>    # Now we can determine the unused dimensions: the delta between all dimensions and the used dimensions
+    >>>    # Determine the unused dimensions: The delta between all dimensions and the used dimensions
     >>>    unused_dimensions = set(all_dimensions) - used_dimensions
     >>>    # Print out the unused dimensions
     >>>    print(unused_dimensions)

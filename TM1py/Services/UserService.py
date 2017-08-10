@@ -5,6 +5,9 @@ from TM1py.Services.ObjectService import ObjectService
 
 
 class UserService(ObjectService):
+    """ Service to handle CRUD for Users
+    
+    """
     def __init__(self, rest):
         super().__init__(rest)
 

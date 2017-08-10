@@ -7,6 +7,9 @@ from TM1py.Services.ObjectService import ObjectService
 
 
 class AnnotationService(ObjectService):
+    """ Service to handle CRUD for TM1 CellAnnotations
+    
+    """
     def __init__(self, rest):
         super().__init__(rest)
         self._cube_service = CubeService(rest)

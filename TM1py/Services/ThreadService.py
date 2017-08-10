@@ -4,6 +4,9 @@ from TM1py.Services.ObjectService import ObjectService
 
 
 class ThreadService(ObjectService):
+    """ Service to Query and Cancel Threads in TM1
+    
+    """
     def __init__(self, rest):
         super().__init__(rest)
 

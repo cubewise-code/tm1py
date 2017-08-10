@@ -5,6 +5,9 @@ from TM1py.Services.ObjectService import ObjectService
 
 
 class ChoreService(ObjectService):
+    """ Service to handle CRUD for TM1 Chores
+    
+    """
     def __init__(self, rest):
         super().__init__(rest)
 

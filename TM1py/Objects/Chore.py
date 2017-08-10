@@ -8,6 +8,10 @@ from TM1py.Objects.ChoreStartTime import ChoreStartTime
 
 
 class Chore:
+    """ Abstraction of TM1 Chore
+        
+    
+    """
     def __init__(self, name, start_time, dst_sensitivity, active, execution_mode, frequency, tasks):
         self._name = name
         self._start_time = start_time

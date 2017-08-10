@@ -7,7 +7,7 @@ class Annotation:
 
         :Notes:
             - Class complete, functional and tested.
-            - doesnt cover Attachments though
+            - doesn't cover Attachments though
     """
     def __init__(self, comment_value, object_name, dimensional_context, comment_type='ANNOTATION', annotation_id=None,
                  text='', creator=None, created=None, last_updated_by=None, last_updated=None):

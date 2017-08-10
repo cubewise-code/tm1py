@@ -4,9 +4,12 @@ from base64 import b64encode
 
 
 class User:
+    """ Abstraction of a TM1 User
+    
+    """
     def __init__(self, name, groups, friendly_name=None, password=None):
         self._name = name
-        self._groups = [group for group in groups]
+        self._groups = list(groups)
         self._friendly_name = friendly_name
         self._password = password
 

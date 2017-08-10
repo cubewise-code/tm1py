@@ -5,6 +5,9 @@ from TM1py.Services.ObjectService import ObjectService
 
 
 class CubeService(ObjectService):
+    """ Service to handle CRUD for TM1 Cubes
+
+    """
     def __init__(self, rest):
         super().__init__(rest)
 

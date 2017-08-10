@@ -5,7 +5,16 @@ from TM1py.Objects.Rules import Rules
 
 
 class Cube:
+    """ Abstraction of a TM1 Cube
+        
+    """
     def __init__(self, name, dimensions, rules=None):
+        """
+        
+        :param name: name of the Cube
+        :param dimensions: list of (existing) dimension names
+        :param rules: instance of TM1py.Objects.Rules
+        """
         self._name = name
         self._dimensions = dimensions
         self._rules = rules

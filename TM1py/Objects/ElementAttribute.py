@@ -2,12 +2,13 @@ import json
 
 
 class ElementAttribute:
+    """ Abstraction of TM1 Element Attributes
+    
+    """
     valid_types = ['NUMERIC', 'STRING', 'ALIAS']
 
     def __init__(self, name, attribute_type):
-        self._name = None
         self.name = name
-        self._attribute_type = None
         self.attribute_type = attribute_type
 
     @property

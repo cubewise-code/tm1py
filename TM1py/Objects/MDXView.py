@@ -7,7 +7,7 @@ from TM1py.Objects.View import View
 class MDXView(View):
     """ Abstraction on TM1 MDX view
 
-        IMPORTANT. MDXViews cant be seen through the old TM1 clients (Archict, Perspectives). They do exist though!
+        IMPORTANT. MDXViews can't be seen through the old TM1 clients (Archict, Perspectives). They do exist though!
     """
     def __init__(self, cube_name, view_name, MDX):
         View.__init__(self, cube_name, view_name)

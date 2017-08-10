@@ -8,6 +8,9 @@ from TM1py.Services.HierarchyService import HierarchyService
 
 
 class DimensionService(ObjectService):
+    """ Service to handle CRUD for TM1 Dimensions
+    
+    """
     def __init__(self, rest):
         super().__init__(rest)
         self._hierarchy_service = HierarchyService(rest)

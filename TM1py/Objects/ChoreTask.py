@@ -3,7 +3,28 @@ import json
 
 
 class ChoreTask:
+    """ Abstraction of a Chore Task
+    
+        A Chore task always conistst of
+        - The step integer ID: it's order in the execution plan.
+          1 to n, where n is the last Process in the Chore
+        - The name of the process to execute
+        - The parameters for the process
+    
+    """
     def __init__(self, step, process_name, parameters):
+        """
+        
+        :param step: step in the execution order of the Chores' processes. 1 to n, where n the number of processes
+        :param process_name: name of the process
+        :param parameters: list of dictionaries with 'Name' and 'Value' property:
+                            [{
+                                'Name': '..',
+                                'Value': '..'
+                            },
+                            ...
+                            ]            
+        """
         self._step = step
         self._process_name = process_name
         self._parameters = parameters

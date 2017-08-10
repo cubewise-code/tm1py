@@ -76,7 +76,6 @@ class NativeView(View):
                     else:
                         mdx += '*' + mdx_set
 
-
             if i == 0:
                 if len(self._rows) > 0:
                     mdx += ' on {}, '.format('ROWS')
@@ -94,7 +93,6 @@ class NativeView(View):
                 selection = title_selection._selected
                 unique_names.append('[' + dimension_name + '].[' + selection + ']')
             mdx += 'WHERE (' + ','.join(unique_names) + ') '
-
         return mdx
 
     @property
@@ -240,7 +238,7 @@ class NativeView(View):
 
         :return: string, the valid JSON
         """
-        top_json = "{\"@odata.type\": \"ibm.tm1.api.v1.NativeView\",\"Name\": \"" + self._name +"\","
+        top_json = "{\"@odata.type\": \"ibm.tm1.api.v1.NativeView\",\"Name\": \"" + self._name + "\","
         columns_json = ','.join([column.body for column in self._columns])
         rows_json = ','.join([row.body for row in self._rows])
         titles_json = ','.join([title.body for title in self._titles])

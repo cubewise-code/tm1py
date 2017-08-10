@@ -2,10 +2,19 @@ import datetime
 
 
 class ChoreStartTime:
-    """
-    GMT Time!
+    """ Utility class to handle time representation for Chore Start Time
+        
     """
     def __init__(self, year, month, day, hour, minute, second):
+        """
+        
+        :param year: year 
+        :param month: month
+        :param day: day
+        :param hour: hour or None
+        :param minute: minute or None
+        :param second: second or None
+        """
         self._datetime = datetime.datetime.combine(datetime.date(year, month, day), datetime.time(hour, minute, second))
 
     @classmethod

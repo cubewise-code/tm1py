@@ -8,7 +8,7 @@ from TM1py.Utils import Utils
 
 
 class DataService:
-    """
+    """ Service to handle Read and Write operations to TM1 cubes
     
     """
     def __init__(self, tm1_rest):

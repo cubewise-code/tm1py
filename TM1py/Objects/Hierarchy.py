@@ -17,9 +17,9 @@ class Hierarchy:
             'AU': instance of TM1py.Element
         }
 
-        ElementAttributes of type TM1py.ElementAttribute
+        ElementAttributes of type TM1py.Objects.ElementAttribute
 
-        Edges are represented as a TM1py.CaseAndSpaceInsensitiveTupleDict: 
+        Edges are represented as a TM1py.Utils.CaseAndSpaceInsensitiveTupleDict: 
         {
           (parent1, component1) : 10,
           (parent1, component2) : 30
@@ -127,7 +127,7 @@ class Hierarchy:
 
     def _construct_body(self, element_attributes=False):
         """ 
-        With TM1 10.2.2 Hierarch and Element Attributes cant be created in one batch
+        With TM1 10.2.2 Hierarchy and Element Attributes can't be created in one batch
         -> https://www.ibm.com/developerworks/community/forums/html/threadTopic?id=d91f3e0e-d305-44db-ac02-2fdcbee00393
         Thus, no need to have the ElementAttribute included in the JSON
 

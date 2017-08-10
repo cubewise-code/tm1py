@@ -1,0 +1,3145 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Developer Interface &mdash; TM1py 0.0.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="TM1py 0.0.2 documentation" href="index.html" />
+    <link rel="prev" title="TM1py" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-schedule">
+<span id="developer-interface"></span><span id="api"></span><h1>Developer Interface<a class="headerlink" href="#module-schedule" title="Permalink to this headline">¶</a></h1>
+<p>This part of the documentation covers all the classes of TM1py.</p>
+<div class="section" id="services">
+<h2>Services<a class="headerlink" href="#services" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="TM1py.Services.AnnotationService">
+<em class="property">class </em><code class="descclassname">TM1py.Services.</code><code class="descname">AnnotationService</code><span class="sig-paren">(</span><em>rest</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.AnnotationService" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="TM1py.Services.AnnotationService.create">
+<code class="descname">create</code><span class="sig-paren">(</span><em>annotation</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.AnnotationService.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>create an Annotation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>annotation</strong> &#8211; instance of TM1py.Annotation</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return string:</th><td class="field-body">the response</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.AnnotationService.delete">
+<code class="descname">delete</code><span class="sig-paren">(</span><em>annotation_id</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.AnnotationService.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>delete Annotation on TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>annotation_id</strong> &#8211; string, the id of the annotation</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">string: the response</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.AnnotationService.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>annotation_id</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.AnnotationService.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>get an annotation from any cube in TM1 Server through its id</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>annotation_id</strong> &#8211; String, the id of the annotation</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Annotation: an instance of TM1py.Annoation</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.AnnotationService.get_all">
+<code class="descname">get_all</code><span class="sig-paren">(</span><em>cube_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.AnnotationService.get_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>get all annotations from given cube as a List.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cube_name</strong> &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">list of instances of TM1py.Annotation</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.AnnotationService.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>annotation</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.AnnotationService.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>update Annotation on TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>annotation</strong> &#8211; instance of TM1py.Annotation</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Notes:</th><td class="field-body"><dl class="first last docutils">
+<dt>updateable attributes:</dt>
+<dd><p class="first last">commentValue</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Services.ChoreService">
+<em class="property">class </em><code class="descclassname">TM1py.Services.</code><code class="descname">ChoreService</code><span class="sig-paren">(</span><em>rest</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ChoreService" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="TM1py.Services.ChoreService.activate">
+<code class="descname">activate</code><span class="sig-paren">(</span><em>chore_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ChoreService.activate" title="Permalink to this definition">¶</a></dt>
+<dd><p>activate chore on TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>chore_name</strong> &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">response</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ChoreService.create">
+<code class="descname">create</code><span class="sig-paren">(</span><em>chore</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ChoreService.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>create chore in TM1</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>chore</strong> &#8211; instance of TM1py.Chore</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ChoreService.create_task">
+<code class="descname">create_task</code><span class="sig-paren">(</span><em>chore_name</em>, <em>chore_task</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ChoreService.create_task" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create Chore task on TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>chore_name</strong> &#8211; name of Chore to update</li>
+<li><strong>chore_task</strong> &#8211; instance of TM1py.ChoreTask</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">response</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ChoreService.deactivate">
+<code class="descname">deactivate</code><span class="sig-paren">(</span><em>chore_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ChoreService.deactivate" title="Permalink to this definition">¶</a></dt>
+<dd><p>deactivate chore on TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>chore_name</strong> &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">response</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ChoreService.delete">
+<code class="descname">delete</code><span class="sig-paren">(</span><em>chore_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ChoreService.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>delete chore in TM1</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>chore_name</strong> &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">response</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ChoreService.execute_chore">
+<code class="descname">execute_chore</code><span class="sig-paren">(</span><em>name_chore</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ChoreService.execute_chore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ask TM1 Server to execute a chore</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name_chore</strong> &#8211; String, name of the chore to be executed</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">String, the response</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ChoreService.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>chore_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ChoreService.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a chore from the TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>chore_name</strong> &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">instance of TM1py.Chore</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ChoreService.get_all">
+<code class="descname">get_all</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ChoreService.get_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>get a List of all Chores</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">List of TM1py.Chore</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ChoreService.get_task">
+<code class="descname">get_task</code><span class="sig-paren">(</span><em>chore_name</em>, <em>step</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ChoreService.get_task" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get task from chore</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>chore_name</strong> &#8211; name of the chore</li>
+<li><strong>step</strong> &#8211; integer</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">instance of TM1py.ChoreTask</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ChoreService.set_local_start_time">
+<code class="descname">set_local_start_time</code><span class="sig-paren">(</span><em>chore_name</em>, <em>date_time</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ChoreService.set_local_start_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Makes Server crash if chore is activate (FP6) :)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>chore_name</strong> &#8211; </li>
+<li><strong>date_time</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ChoreService.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>chore</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ChoreService.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>update chore on TM1 Server</p>
+<p>does not update: DST Sensitivity!
+:param chore:
+:return: response</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ChoreService.update_task">
+<code class="descname">update_task</code><span class="sig-paren">(</span><em>chore_name</em>, <em>chore_task</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ChoreService.update_task" title="Permalink to this definition">¶</a></dt>
+<dd><p>update a chore task</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>chore_name</strong> &#8211; name of the Chore</li>
+<li><strong>chore_task</strong> &#8211; instance TM1py.ChoreTask</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">response</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Services.CubeService">
+<em class="property">class </em><code class="descclassname">TM1py.Services.</code><code class="descname">CubeService</code><span class="sig-paren">(</span><em>rest</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.CubeService" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="TM1py.Services.CubeService.create">
+<code class="descname">create</code><span class="sig-paren">(</span><em>cube</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.CubeService.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>create new cube on TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cube</strong> &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">response</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.CubeService.delete">
+<code class="descname">delete</code><span class="sig-paren">(</span><em>cube_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.CubeService.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete a cube in TM1</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cube_name</strong> &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">response</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.CubeService.exists">
+<code class="descname">exists</code><span class="sig-paren">(</span><em>cube_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.CubeService.exists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if a cube exists. Return boolean.
+Assumption: Connection is established and functional.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cube_name</strong> &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Boolean</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.CubeService.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>cube_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.CubeService.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>get cube from TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cube_name</strong> &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">instance of TM1py.Cube</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.CubeService.get_all">
+<code class="descname">get_all</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.CubeService.get_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>get all cubes from TM1 Server as TM1py.Cube instances</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">List of TM1py.Cube instances</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.CubeService.get_all_names">
+<code class="descname">get_all_names</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.CubeService.get_all_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ask TM1 Server for list with all cube names</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">List of Strings</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.CubeService.get_control_cubes">
+<code class="descname">get_control_cubes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.CubeService.get_control_cubes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all Cubes with } prefix from TM1 Server as TM1py.Cube instances</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">List of TM1py.Cube instances</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.CubeService.get_dimension_names">
+<code class="descname">get_dimension_names</code><span class="sig-paren">(</span><em>cube_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.CubeService.get_dimension_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>get name of the dimensions of a cube in their correct order</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cube_name</strong> &#8211; String</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">List : [dim1, dim2, dim3, etc.]</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.CubeService.get_model_cubes">
+<code class="descname">get_model_cubes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.CubeService.get_model_cubes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all Cubes without } prefix from TM1 Server as TM1py.Cube instances</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">List of TM1py.Cube instances</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.CubeService.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>cube</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.CubeService.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update existing cube on TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cube</strong> &#8211; instance of TM1py.Cube</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">response</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Services.DataService">
+<em class="property">class </em><code class="descclassname">TM1py.Services.</code><code class="descname">DataService</code><span class="sig-paren">(</span><em>tm1_rest</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.DataService" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="TM1py.Services.DataService.create_cellset">
+<code class="descname">create_cellset</code><span class="sig-paren">(</span><em>mdx</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.DataService.create_cellset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute MDX in order to create cellset at server. return the cellset-id</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>mdx</strong> &#8211; MDX Query, as string</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.DataService.delete_cellset">
+<code class="descname">delete_cellset</code><span class="sig-paren">(</span><em>cellset_id</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.DataService.delete_cellset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete a cellset</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cellset_id</strong> &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.DataService.execute_mdx">
+<code class="descname">execute_mdx</code><span class="sig-paren">(</span><em>mdx</em>, <em>cell_properties=None</em>, <em>top=None</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.DataService.execute_mdx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute MDX and return the cells with their properties</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>mdx</strong> &#8211; MDX Query, as string</li>
+<li><strong>cell_properties</strong> &#8211; properties to be queried from the cell. Like Value, Ordinal, etc as iterable</li>
+<li><strong>top</strong> &#8211; integer</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">content in sweet consice strcuture.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.DataService.get_random_intersection">
+<code class="descname">get_random_intersection</code><span class="sig-paren">(</span><em>cube_name</em>, <em>unique_names=False</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.DataService.get_random_intersection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a random Intersection in a cube
+used mostly for unittesting. 
+Not optimized in terms of performance. Function Loads ALL elements for EACH dim.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cube_name</strong> &#8211; </li>
+<li><strong>unique_names</strong> &#8211; unique names instead of plain element names</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">List of elements</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.DataService.get_view_content">
+<code class="descname">get_view_content</code><span class="sig-paren">(</span><em>cube_name</em>, <em>view_name</em>, <em>cell_properties=None</em>, <em>private=True</em>, <em>top=None</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.DataService.get_view_content" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>get view content as dictionary with sweet and concise structure.</dt>
+<dd>Works on NativeView and MDXView !
+Not Hierarchy aware !</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cube_name</strong> &#8211; String</li>
+<li><strong>view_name</strong> &#8211; String</li>
+<li><strong>cell_properties</strong> &#8211; List, cell properties: [Values, Status, HasPicklist, etc.]</li>
+<li><strong>private</strong> &#8211; Boolean</li>
+<li><strong>top</strong> &#8211; Int, number of cells</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Dictionary : {([dim1].[elem1], [dim2][elem6]): {&#8216;Value&#8217;:3127.312, &#8216;Ordinal&#8217;:12}   ....  }</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.DataService.update_cellset">
+<code class="descname">update_cellset</code><span class="sig-paren">(</span><em>cellset_id</em>, <em>values</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.DataService.update_cellset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write values into cellset</p>
+<p>Number of values must match the number of cells in the cellset</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cellset_id</strong> &#8211; </li>
+<li><strong>values</strong> &#8211; iterable with Numeric and String values</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.DataService.write_value">
+<code class="descname">write_value</code><span class="sig-paren">(</span><em>cube_name</em>, <em>dimension_order</em>, <em>element_tuple</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.DataService.write_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write value into cube at specified coordinates</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cube_name</strong> &#8211; name of the target cube</li>
+<li><strong>dimension_order</strong> &#8211; dimension names in their correct order</li>
+<li><strong>element_tuple</strong> &#8211; target coordinates</li>
+<li><strong>value</strong> &#8211; the actual value</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">response</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.DataService.write_values">
+<code class="descname">write_values</code><span class="sig-paren">(</span><em>cube_name</em>, <em>cellset_as_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.DataService.write_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write values in cube.  
+Easy to use but doesnt scale. Not suitable for cellsets with &gt; 1000 cells</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cube_name</strong> &#8211; name of the cube</li>
+<li><strong>cellset_as_dict</strong> &#8211; {(elem_a, elem_b, elem_c): 243, (elem_d, elem_e, elem_f) : 109}</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.DataService.write_values_through_cellset">
+<code class="descname">write_values_through_cellset</code><span class="sig-paren">(</span><em>mdx</em>, <em>values</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.DataService.write_values_through_cellset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Significantly faster than write_values function</p>
+<dl class="docutils">
+<dt>Cellset gets created according to MDX Expression. For instance:</dt>
+<dd><dl class="first last docutils">
+<dt>[  61, 29 ,13</dt>
+<dd>42, 54, 15,
+17, 28, 81  ]</dd>
+</dl>
+</dd>
+</dl>
+<p>Each value in the cellset can be addressed through its position: The ordinal integer value. 
+Ordinal-enumeration goes from top to bottom from left to right
+Number 61 has Ordinal 0, 29 has Ordinal 1, etc.</p>
+<p>The order of the iterable determines the insertion point in the cellset. 
+For instance:</p>
+<blockquote>
+<div>[91, 85, 72, 68, 51, 42, 35, 28, 11]</div></blockquote>
+<dl class="docutils">
+<dt>would lead to:</dt>
+<dd><dl class="first last docutils">
+<dt>[  91, 85 ,72</dt>
+<dd>68, 51, 42,
+35, 28, 11  ]</dd>
+</dl>
+</dd>
+</dl>
+<p>When writing large datasets into TM1 Cubes it can be convenient to call this function asynchronously.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>mdx</strong> &#8211; Valid MDX Expression.</li>
+<li><strong>values</strong> &#8211; List of values. The Order of the List/ Iterable determines the insertion point in the cellset.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Services.DimensionService">
+<em class="property">class </em><code class="descclassname">TM1py.Services.</code><code class="descname">DimensionService</code><span class="sig-paren">(</span><em>rest</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.DimensionService" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="TM1py.Services.DimensionService.create">
+<code class="descname">create</code><span class="sig-paren">(</span><em>dimension</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.DimensionService.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>create a dimension</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dimension</strong> &#8211; instance of TM1py.Dimension</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">response</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.DimensionService.delete">
+<code class="descname">delete</code><span class="sig-paren">(</span><em>dimension_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.DimensionService.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete a dimension</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dimension_name</strong> &#8211; Name of the dimension</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.DimensionService.exists">
+<code class="descname">exists</code><span class="sig-paren">(</span><em>dimension_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.DimensionService.exists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if dimension exists</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.DimensionService.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>dimension_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.DimensionService.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a Dimension</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dimension_name</strong> &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.DimensionService.get_all_names">
+<code class="descname">get_all_names</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.DimensionService.get_all_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ask TM1 Server for list with all dimension names</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">List of Strings</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.DimensionService.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>dimension</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.DimensionService.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update an existing dimension</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dimension</strong> &#8211; instance of TM1py.Dimension</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">None</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Services.ElementService">
+<em class="property">class </em><code class="descclassname">TM1py.Services.</code><code class="descname">ElementService</code><span class="sig-paren">(</span><em>rest</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ElementService" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="TM1py.Services.ElementService.create_element_attribute">
+<code class="descname">create_element_attribute</code><span class="sig-paren">(</span><em>dimension_name</em>, <em>hierarchy_name</em>, <em>element_attribute</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ElementService.create_element_attribute" title="Permalink to this definition">¶</a></dt>
+<dd><p>like AttrInsert</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dimension_name</strong> &#8211; </li>
+<li><strong>hierarchy_name</strong> &#8211; </li>
+<li><strong>element_attribute</strong> &#8211; instance of TM1py.ElementAttribute</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ElementService.delete_element_attribute">
+<code class="descname">delete_element_attribute</code><span class="sig-paren">(</span><em>dimension_name</em>, <em>hierarchy_name</em>, <em>element_attribute</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ElementService.delete_element_attribute" title="Permalink to this definition">¶</a></dt>
+<dd><p>like AttrDelete</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dimension_name</strong> &#8211; </li>
+<li><strong>hierarchy_name</strong> &#8211; </li>
+<li><strong>element_attribute</strong> &#8211; instance of TM1py.ElementAttribute</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ElementService.get_element_attributes">
+<code class="descname">get_element_attributes</code><span class="sig-paren">(</span><em>dimension_name</em>, <em>hierarchy_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ElementService.get_element_attributes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get element attributes from hierarchy</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dimension_name</strong> &#8211; </li>
+<li><strong>hierarchy_name</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ElementService.get_elements_filtered_by_attribute">
+<code class="descname">get_elements_filtered_by_attribute</code><span class="sig-paren">(</span><em>dimension_name</em>, <em>hierarchy_name</em>, <em>attribute_name</em>, <em>attribute_value</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ElementService.get_elements_filtered_by_attribute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all elements from a hierarchy with given attribute value</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dimension_name</strong> &#8211; </li>
+<li><strong>hierarchy_name</strong> &#8211; </li>
+<li><strong>attribute_name</strong> &#8211; </li>
+<li><strong>attribute_value</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">List of element names</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Services.HierarchyService">
+<em class="property">class </em><code class="descclassname">TM1py.Services.</code><code class="descname">HierarchyService</code><span class="sig-paren">(</span><em>rest</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.HierarchyService" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="TM1py.Services.HierarchyService.create">
+<code class="descname">create</code><span class="sig-paren">(</span><em>hierarchy</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.HierarchyService.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a hierarchy in an existing dimension</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>hierarchy</strong> &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.HierarchyService.delete">
+<code class="descname">delete</code><span class="sig-paren">(</span><em>dimension_name</em>, <em>hierarchy_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.HierarchyService.delete" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.HierarchyService.exists">
+<code class="descname">exists</code><span class="sig-paren">(</span><em>dimension_name</em>, <em>hierarchy_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.HierarchyService.exists" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dimension_name</strong> &#8211; </li>
+<li><strong>hierarchy_name</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.HierarchyService.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>dimension_name</em>, <em>hierarchy_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.HierarchyService.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>get hierarchy</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dimension_name</strong> &#8211; name of the dimension</li>
+<li><strong>hierarchy_name</strong> &#8211; name of the hierarchy</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.HierarchyService.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>hierarchy</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.HierarchyService.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>update a hierarchy. Is a two step process.
+1. Update Hierarchy
+2. Update Element-Attributes</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>hierarchy</strong> &#8211; instance of TM1py.Hierarchy</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Services.InfoService">
+<em class="property">class </em><code class="descclassname">TM1py.Services.</code><code class="descname">InfoService</code><span class="sig-paren">(</span><em>rest</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.InfoService" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="TM1py.Services.InfoService.get_last_message_log_entries">
+<code class="descname">get_last_message_log_entries</code><span class="sig-paren">(</span><em>reverse=True</em>, <em>top=None</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.InfoService.get_last_message_log_entries" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.InfoService.get_last_process_message_from_messagelog">
+<code class="descname">get_last_process_message_from_messagelog</code><span class="sig-paren">(</span><em>process_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.InfoService.get_last_process_message_from_messagelog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the latest messagelog entry for a process</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>process_name</strong> &#8211; name of the process</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">String - the message, for instance: &#8220;Ausführung normal beendet, verstrichene Zeit 0.03  Sekunden&#8221;</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.InfoService.get_product_version">
+<code class="descname">get_product_version</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.InfoService.get_product_version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ask TM1 Server for its version</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">String, the version</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.InfoService.get_server_name">
+<code class="descname">get_server_name</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.InfoService.get_server_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ask TM1 Server for its name</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">String, the server name</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Services.LoginService">
+<em class="property">class </em><code class="descclassname">TM1py.Services.</code><code class="descname">LoginService</code><span class="sig-paren">(</span><em>user</em>, <em>password</em>, <em>auth_type</em>, <em>token=None</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.LoginService" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handle Login for different TM1 login types. Instance of this class to be passed to TM1pyHTTPClient, TM1pyQueries</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Notes:</th><td class="field-body">WIA not implemented.</td>
+</tr>
+</tbody>
+</table>
+<dl class="classmethod">
+<dt id="TM1py.Services.LoginService.CAM">
+<em class="property">classmethod </em><code class="descname">CAM</code><span class="sig-paren">(</span><em>user</em>, <em>password</em>, <em>CAM_namespace</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.LoginService.CAM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alternate constructor for CAM login</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>user</strong> &#8211; </li>
+<li><strong>password</strong> &#8211; </li>
+<li><strong>CAM_namespace</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">instance of TM1pyLogin</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="TM1py.Services.LoginService.WIA_login">
+<em class="property">classmethod </em><code class="descname">WIA_login</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.LoginService.WIA_login" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be implemented :)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">instance of TM1pyLogin</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Services.LoginService.auth_type">
+<code class="descname">auth_type</code><a class="headerlink" href="#TM1py.Services.LoginService.auth_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="TM1py.Services.LoginService.native">
+<em class="property">classmethod </em><code class="descname">native</code><span class="sig-paren">(</span><em>user</em>, <em>password</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.LoginService.native" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alternate constructor for native login</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>user</strong> &#8211; </li>
+<li><strong>password</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">instance of TM1pyLogin</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Services.LoginService.token">
+<code class="descname">token</code><a class="headerlink" href="#TM1py.Services.LoginService.token" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Services.ProcessService">
+<em class="property">class </em><code class="descclassname">TM1py.Services.</code><code class="descname">ProcessService</code><span class="sig-paren">(</span><em>rest</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ProcessService" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="TM1py.Services.ProcessService.create">
+<code class="descname">create</code><span class="sig-paren">(</span><em>process</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ProcessService.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new process on TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>process</strong> &#8211; Instance of TM1py.Process class</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Response</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ProcessService.delete">
+<code class="descname">delete</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ProcessService.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete a process in TM1</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Response</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ProcessService.execute">
+<code class="descname">execute</code><span class="sig-paren">(</span><em>name_process</em>, <em>parameters=None</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ProcessService.execute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ask TM1 Server to execute a process</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name_process</strong> &#8211; </li>
+<li><strong>parameters</strong> &#8211; dictionary, for instance {&#8220;Parameters&#8221;: [ { &#8220;Name&#8221;: &#8220;pLegalEntity&#8221;, &#8220;Value&#8221;: &#8220;UK01&#8221; }] }</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ProcessService.execute_ti_code">
+<code class="descname">execute_ti_code</code><span class="sig-paren">(</span><em>lines_prolog</em>, <em>lines_epilog=None</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ProcessService.execute_ti_code" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute lines of code on the TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>lines_prolog</strong> &#8211; list - where each element is a valid statement of TI code.</li>
+<li><strong>lines_epilog</strong> &#8211; list - where each element is a valid statement of TI code.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ProcessService.exists">
+<code class="descname">exists</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ProcessService.exists" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ProcessService.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>name_process</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ProcessService.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a process from TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name_process</strong> &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Instance of the TM1py.Process</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ProcessService.get_all">
+<code class="descname">get_all</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ProcessService.get_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a processes from TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">List, instances of the TM1py.Process</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ProcessService.get_all_names">
+<code class="descname">get_all_names</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ProcessService.get_all_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get List with all process names from TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">List of Strings</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ProcessService.get_all_process_names_filtered">
+<code class="descname">get_all_process_names_filtered</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ProcessService.get_all_process_names_filtered" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Get List with all process names from TM1 Server.</dt>
+<dd><dl class="first last docutils">
+<dt>Does not return:</dt>
+<dd><ul class="first last simple">
+<li>system process</li>
+<li>Processes that have Subset as Datasource</li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">List of Strings</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ProcessService.get_last_message_from_processerrorlog">
+<code class="descname">get_last_message_from_processerrorlog</code><span class="sig-paren">(</span><em>process_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ProcessService.get_last_message_from_processerrorlog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the latest ProcessErrorLog from a process entity</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>process_name</strong> &#8211; name of the process</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">String - the errorlog, e.g.: &#8220;Fehler: Prolog Prozedurzeile (9): Zeichenfolge &#8220;US772131</td>
+</tr>
+</tbody>
+</table>
+<p>kann nicht in eine reelle Zahl umgewandelt werden.&#8221;</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ProcessService.get_processerrorlogs">
+<code class="descname">get_processerrorlogs</code><span class="sig-paren">(</span><em>process_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ProcessService.get_processerrorlogs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all ProcessErrorLog entries for a process</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>process_name</strong> &#8211; name of the process</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">list - Collection of ProcessErrorLogs</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ProcessService.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>process</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ProcessService.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update an existing Process on TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>process</strong> &#8211; Instance of TM1py.Process class</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Response</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Services.RESTService">
+<em class="property">class </em><code class="descclassname">TM1py.Services.</code><code class="descname">RESTService</code><span class="sig-paren">(</span><em>ip</em>, <em>port</em>, <em>login</em>, <em>ssl=True</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.RESTService" title="Permalink to this definition">¶</a></dt>
+<dd><p>Low level communication with TM1 instance through HTTP.
+Allows to execute HTTP Methods</p>
+<blockquote>
+<div><ul class="simple">
+<li>GET</li>
+<li>POST</li>
+<li>PATCH</li>
+<li>DELETE</li>
+</ul>
+</div></blockquote>
+<dl class="docutils">
+<dt>Takes Care of </dt>
+<dd><ul class="first last simple">
+<li>Encodings</li>
+<li>TM1 User-Login</li>
+<li>HTTP Headers</li>
+<li>HTTP Session Management</li>
+<li>Response Handling</li>
+</ul>
+</dd>
+</dl>
+<p>Based on requests module</p>
+<dl class="method">
+<dt id="TM1py.Services.RESTService.DELETE">
+<code class="descname">DELETE</code><span class="sig-paren">(</span><em>request</em>, <em>data=''</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.RESTService.DELETE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete request against TM1 instance</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request</strong> &#8211; String, for instance : /api/v1/Dimensions(&#8216;plan_business_unit&#8217;)</li>
+<li><strong>data</strong> &#8211; String, empty</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">String, the response in text</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.RESTService.GET">
+<code class="descname">GET</code><span class="sig-paren">(</span><em>request</em>, <em>data=''</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.RESTService.GET" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a GET request against TM1 instance</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request</strong> &#8211; String, for instance : /api/v1/Cubes?$top=1</li>
+<li><strong>data</strong> &#8211; String, empty</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">String, the response as text</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.RESTService.PATCH">
+<code class="descname">PATCH</code><span class="sig-paren">(</span><em>request</em>, <em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.RESTService.PATCH" title="Permalink to this definition">¶</a></dt>
+<dd><p>PATCH request against the TM1 instance</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request</strong> &#8211; String, for instance : /api/v1/Dimensions(&#8216;plan_business_unit&#8217;)</li>
+<li><strong>data</strong> &#8211; String, the payload (json)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">String, the response as text</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.RESTService.POST">
+<code class="descname">POST</code><span class="sig-paren">(</span><em>request</em>, <em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.RESTService.POST" title="Permalink to this definition">¶</a></dt>
+<dd><p>POST request against the TM1 instance</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request</strong> &#8211; String, /api/v1/Cubes</li>
+<li><strong>data</strong> &#8211; String, the payload (json)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">String, the response as text</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="TM1py.Services.RESTService.disable_http_warnings">
+<em class="property">static </em><code class="descname">disable_http_warnings</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.RESTService.disable_http_warnings" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.RESTService.is_connected">
+<code class="descname">is_connected</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.RESTService.is_connected" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if Connection to TM1 Server is established.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Boolean</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.RESTService.logout">
+<code class="descname">logout</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.RESTService.logout" title="Permalink to this definition">¶</a></dt>
+<dd><p>End TM1 Session and HTTP session</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="TM1py.Services.RESTService.verify_response">
+<em class="property">static </em><code class="descname">verify_response</code><span class="sig-paren">(</span><em>response</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.RESTService.verify_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>check if Status Code is OK</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><cite>response</cite>: String</dt>
+<dd><p class="first last">the response that is returned from a method call</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Exceptions:</th><td class="field-body"><p class="first last">TM1pyException, raises TM1pyException when Code is not 200, 204 etc.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Services.SubsetService">
+<em class="property">class </em><code class="descclassname">TM1py.Services.</code><code class="descname">SubsetService</code><span class="sig-paren">(</span><em>rest</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.SubsetService" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="TM1py.Services.SubsetService.create">
+<code class="descname">create</code><span class="sig-paren">(</span><em>subset</em>, <em>private=True</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.SubsetService.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>create subset on the TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>subset</strong> &#8211; TM1py.Subset, the subset that shall be created</li>
+<li><strong>private</strong> &#8211; boolean</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">string: the response</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.SubsetService.delete">
+<code class="descname">delete</code><span class="sig-paren">(</span><em>dimension_name</em>, <em>subset_name</em>, <em>private=True</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.SubsetService.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete an existing subset on the TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dimension_name</strong> &#8211; String, name of the dimension</li>
+<li><strong>subset_name</strong> &#8211; String, name of the subset</li>
+<li><strong>private</strong> &#8211; Boolean</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.SubsetService.exists">
+<code class="descname">exists</code><span class="sig-paren">(</span><em>dimension_name</em>, <em>hierarchy_name</em>, <em>subset_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.SubsetService.exists" title="Permalink to this definition">¶</a></dt>
+<dd><p>checks if subset exists as private and / or public</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dimension_name</strong> &#8211; </li>
+<li><strong>hierarchy_name</strong> &#8211; </li>
+<li><strong>subset_name</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">2 booleans: (Private subset exsits, Public subset exists)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.SubsetService.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>dimension_name</em>, <em>subset_name</em>, <em>private=True</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.SubsetService.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>get a subset from the TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dimension_name</strong> &#8211; string, name of the dimension</li>
+<li><strong>subset_name</strong> &#8211; string, name of the subset</li>
+<li><strong>private</strong> &#8211; Boolean</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">instance of TM1py.Subset</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.SubsetService.get_all_names">
+<code class="descname">get_all_names</code><span class="sig-paren">(</span><em>dimension_name</em>, <em>hierarchy_name</em>, <em>private=True</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.SubsetService.get_all_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>get names of all private or public subsets in a hierarchy</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dimension_name</strong> &#8211; </li>
+<li><strong>hierarchy_name</strong> &#8211; </li>
+<li><strong>private</strong> &#8211; Boolean</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">List of Strings</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.SubsetService.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>subset</em>, <em>private=True</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.SubsetService.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>update a subset on the TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>subset</strong> &#8211; instance of TM1py.Subset.</li>
+<li><strong>private</strong> &#8211; Boolean</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">response</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Services.ThreadService">
+<em class="property">class </em><code class="descclassname">TM1py.Services.</code><code class="descname">ThreadService</code><span class="sig-paren">(</span><em>rest</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ThreadService" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="TM1py.Services.ThreadService.cancel_thread">
+<code class="descname">cancel_thread</code><span class="sig-paren">(</span><em>thread_id</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ThreadService.cancel_thread" title="Permalink to this definition">¶</a></dt>
+<dd><p>Kill a running thread</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>thread_id</strong> &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ThreadService.get_threads">
+<code class="descname">get_threads</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ThreadService.get_threads" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a dict of the currently running threads from the TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dict: the response</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Services.UserService">
+<em class="property">class </em><code class="descclassname">TM1py.Services.</code><code class="descname">UserService</code><span class="sig-paren">(</span><em>rest</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.UserService" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="TM1py.Services.UserService.create">
+<code class="descname">create</code><span class="sig-paren">(</span><em>user</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.UserService.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a user on TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>user</strong> &#8211; instance of TM1py.User</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">response</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.UserService.delete">
+<code class="descname">delete</code><span class="sig-paren">(</span><em>user_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.UserService.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete user on TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>user_name</strong> &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">response</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.UserService.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>user_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.UserService.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get user from TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>user_name</strong> &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">instance of TM1py.User</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.UserService.get_active">
+<code class="descname">get_active</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.UserService.get_active" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the activate users in TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">List of TM1py.User instances</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.UserService.get_all">
+<code class="descname">get_all</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.UserService.get_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all users from TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">List of TM1py.User instances</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.UserService.get_all_groups">
+<code class="descname">get_all_groups</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.UserService.get_all_groups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all groups from TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">List of strings</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.UserService.get_from_group">
+<code class="descname">get_from_group</code><span class="sig-paren">(</span><em>group_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.UserService.get_from_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all users from group</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>group_name</strong> &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">List of TM1py.User instances</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.UserService.get_groups">
+<code class="descname">get_groups</code><span class="sig-paren">(</span><em>user_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.UserService.get_groups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the groups of a user in TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>user_name</strong> &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">List of strings</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.UserService.is_active">
+<code class="descname">is_active</code><span class="sig-paren">(</span><em>user_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.UserService.is_active" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if user is currently activate in TM1</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>user_name</strong> &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Boolean</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.UserService.remove_from_group">
+<code class="descname">remove_from_group</code><span class="sig-paren">(</span><em>group_name</em>, <em>user_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.UserService.remove_from_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove user from group in TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>group_name</strong> &#8211; </li>
+<li><strong>user_name</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">response</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.UserService.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>user</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.UserService.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update user on TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>user</strong> &#8211; instance of TM1py.User</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">response</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Services.ViewService">
+<em class="property">class </em><code class="descclassname">TM1py.Services.</code><code class="descname">ViewService</code><span class="sig-paren">(</span><em>rest</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ViewService" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="TM1py.Services.ViewService.create">
+<code class="descname">create</code><span class="sig-paren">(</span><em>view</em>, <em>private=True</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ViewService.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>create a new view on TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>view</strong> &#8211; instance of subclass of TM1py.View (TM1py.NativeView or TM1py.MDXView)</li>
+<li><strong>private</strong> &#8211; boolean</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Response</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ViewService.delete">
+<code class="descname">delete</code><span class="sig-paren">(</span><em>cube_name</em>, <em>view_name</em>, <em>private=True</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ViewService.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete an existing view (MDXView or NativeView) on the TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cube_name</strong> &#8211; String, name of the cube</li>
+<li><strong>view_name</strong> &#8211; String, name of the view</li>
+<li><strong>private</strong> &#8211; Boolean</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">String, the response</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ViewService.exists">
+<code class="descname">exists</code><span class="sig-paren">(</span><em>cube_name</em>, <em>view_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ViewService.exists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if view exists</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>cube_name</strong> &#8211; string, name of the cube</li>
+<li><strong>view_name</strong> &#8211; string, name of the view</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>:return boolean tuple</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ViewService.get_all">
+<code class="descname">get_all</code><span class="sig-paren">(</span><em>cube_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ViewService.get_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all public and private views from cube.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cube_name</strong> &#8211; String, name of the cube.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">2 Lists of TM1py.View instances: private views, public views</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ViewService.get_mdx_view">
+<code class="descname">get_mdx_view</code><span class="sig-paren">(</span><em>cube_name</em>, <em>view_name</em>, <em>private=True</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ViewService.get_mdx_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get an MDXView from TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cube_name</strong> &#8211; String, name of the cube</li>
+<li><strong>view_name</strong> &#8211; String, name of the MDX view</li>
+<li><strong>private</strong> &#8211; boolean</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">instance of TM1py.MDXView</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ViewService.get_native_view">
+<code class="descname">get_native_view</code><span class="sig-paren">(</span><em>cube_name</em>, <em>view_name</em>, <em>private=True</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ViewService.get_native_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a NativeView from TM1 Server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cube_name</strong> &#8211; string, name of the cube</li>
+<li><strong>view_name</strong> &#8211; string, name of the native view</li>
+<li><strong>private</strong> &#8211; boolean</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">instance of TM1py.NativeView</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Services.ViewService.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>view</em>, <em>private=True</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Services.ViewService.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update an existing view</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>view</strong> &#8211; instance of TM1py.NativeView or TM1py.MDXView</li>
+<li><strong>private</strong> &#8211; boolean</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">response</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="objects">
+<h2>Objects<a class="headerlink" href="#objects" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="TM1py.Objects.Annotation">
+<em class="property">class </em><code class="descclassname">TM1py.Objects.</code><code class="descname">Annotation</code><span class="sig-paren">(</span><em>comment_value</em>, <em>object_name</em>, <em>dimensional_context</em>, <em>comment_type='ANNOTATION'</em>, <em>annotation_id=None</em>, <em>text=''</em>, <em>creator=None</em>, <em>created=None</em>, <em>last_updated_by=None</em>, <em>last_updated=None</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Annotation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abtraction of TM1 Annotation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Notes:</th><td class="field-body"><ul class="first last simple">
+<li>Class complete, functional and tested.</li>
+<li>doesnt cover Attachments though</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="TM1py.Objects.Annotation.body">
+<code class="descname">body</code><a class="headerlink" href="#TM1py.Objects.Annotation.body" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Annotation.comment_value">
+<code class="descname">comment_value</code><a class="headerlink" href="#TM1py.Objects.Annotation.comment_value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Annotation.created">
+<code class="descname">created</code><a class="headerlink" href="#TM1py.Objects.Annotation.created" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Annotation.dimensional_context">
+<code class="descname">dimensional_context</code><a class="headerlink" href="#TM1py.Objects.Annotation.dimensional_context" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="TM1py.Objects.Annotation.from_json">
+<em class="property">classmethod </em><code class="descname">from_json</code><span class="sig-paren">(</span><em>annotation_as_json</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Annotation.from_json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alternative constructor</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>annotation_as_json</strong> &#8211; String, JSON</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">instance of TM1py.Process</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Annotation.id">
+<code class="descname">id</code><a class="headerlink" href="#TM1py.Objects.Annotation.id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Annotation.last_updated">
+<code class="descname">last_updated</code><a class="headerlink" href="#TM1py.Objects.Annotation.last_updated" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Annotation.last_updated_by">
+<code class="descname">last_updated_by</code><a class="headerlink" href="#TM1py.Objects.Annotation.last_updated_by" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.Annotation.move">
+<code class="descname">move</code><span class="sig-paren">(</span><em>dimension_order</em>, <em>dimension</em>, <em>target_element</em>, <em>source_element=None</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Annotation.move" title="Permalink to this definition">¶</a></dt>
+<dd><p>move annotation on given dimension from source_element to target_element
+:Parameters:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt><cite>dimension_order</cite> <span class="classifier-delimiter">:</span> <span class="classifier">List</span></dt>
+<dd>order of the dimensions in the cube</dd>
+<dt><cite>dimension</cite> <span class="classifier-delimiter">:</span> <span class="classifier">String</span></dt>
+<dd>name of the dimension</dd>
+<dt><cite>target_element</cite> <span class="classifier-delimiter">:</span> <span class="classifier">String</span></dt>
+<dd>name of the target_element</dd>
+<dt><cite>source_element</cite> <span class="classifier-delimiter">:</span> <span class="classifier">String</span></dt>
+<dd>name of the source element, optional</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Annotation.object_name">
+<code class="descname">object_name</code><a class="headerlink" href="#TM1py.Objects.Annotation.object_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Annotation.text">
+<code class="descname">text</code><a class="headerlink" href="#TM1py.Objects.Annotation.text" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Axis">
+<code class="descclassname">TM1py.Objects.</code><code class="descname">Axis</code><a class="headerlink" href="#TM1py.Objects.Axis" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#TM1py.Objects.Axis" title="TM1py.Objects.Axis"><code class="xref py py-class docutils literal"><span class="pre">TM1py.Objects.Axis</span></code></a></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Objects.Chore">
+<em class="property">class </em><code class="descclassname">TM1py.Objects.</code><code class="descname">Chore</code><span class="sig-paren">(</span><em>name</em>, <em>start_time</em>, <em>dst_sensitivity</em>, <em>active</em>, <em>execution_mode</em>, <em>frequency</em>, <em>tasks</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Chore" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="TM1py.Objects.Chore.activate">
+<code class="descname">activate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Chore.activate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Chore.active">
+<code class="descname">active</code><a class="headerlink" href="#TM1py.Objects.Chore.active" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.Chore.add_task">
+<code class="descname">add_task</code><span class="sig-paren">(</span><em>task</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Chore.add_task" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Chore.body">
+<code class="descname">body</code><a class="headerlink" href="#TM1py.Objects.Chore.body" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.Chore.construct_body">
+<code class="descname">construct_body</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Chore.construct_body" title="Permalink to this definition">¶</a></dt>
+<dd><p>construct self.body (json) from the class attributes
+:return: String, TM1 JSON representation of a chore</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.Chore.deactivate">
+<code class="descname">deactivate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Chore.deactivate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Chore.dst_sensitivity">
+<code class="descname">dst_sensitivity</code><a class="headerlink" href="#TM1py.Objects.Chore.dst_sensitivity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Chore.execution_mode">
+<code class="descname">execution_mode</code><a class="headerlink" href="#TM1py.Objects.Chore.execution_mode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Chore.frequency">
+<code class="descname">frequency</code><a class="headerlink" href="#TM1py.Objects.Chore.frequency" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="TM1py.Objects.Chore.from_dict">
+<em class="property">classmethod </em><code class="descname">from_dict</code><span class="sig-paren">(</span><em>chore_as_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Chore.from_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alternative constructor</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>chore_as_dict</strong> &#8211; Chore as dict</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Chore, an instance of this class</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="TM1py.Objects.Chore.from_json">
+<em class="property">classmethod </em><code class="descname">from_json</code><span class="sig-paren">(</span><em>chore_as_json</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Chore.from_json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alternative constructor</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>chore_as_json</strong> &#8211; string, JSON. Response of /api/v1/Chores(&#8216;x&#8217;)/Tasks?$expand=*</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Chore, an instance of this class</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Chore.name">
+<code class="descname">name</code><a class="headerlink" href="#TM1py.Objects.Chore.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.Chore.reschedule">
+<code class="descname">reschedule</code><span class="sig-paren">(</span><em>days=0</em>, <em>hours=0</em>, <em>minutes=0</em>, <em>seconds=0</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Chore.reschedule" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Chore.start_time">
+<code class="descname">start_time</code><a class="headerlink" href="#TM1py.Objects.Chore.start_time" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Chore.tasks">
+<code class="descname">tasks</code><a class="headerlink" href="#TM1py.Objects.Chore.tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Objects.ChoreFrequency">
+<em class="property">class </em><code class="descclassname">TM1py.Objects.</code><code class="descname">ChoreFrequency</code><span class="sig-paren">(</span><em>days</em>, <em>hours</em>, <em>minutes</em>, <em>seconds</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.ChoreFrequency" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="TM1py.Objects.ChoreFrequency.days">
+<code class="descname">days</code><a class="headerlink" href="#TM1py.Objects.ChoreFrequency.days" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.ChoreFrequency.frequency_string">
+<code class="descname">frequency_string</code><a class="headerlink" href="#TM1py.Objects.ChoreFrequency.frequency_string" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="TM1py.Objects.ChoreFrequency.from_string">
+<em class="property">classmethod </em><code class="descname">from_string</code><span class="sig-paren">(</span><em>frequency_string</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.ChoreFrequency.from_string" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.ChoreFrequency.hours">
+<code class="descname">hours</code><a class="headerlink" href="#TM1py.Objects.ChoreFrequency.hours" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.ChoreFrequency.minutes">
+<code class="descname">minutes</code><a class="headerlink" href="#TM1py.Objects.ChoreFrequency.minutes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.ChoreFrequency.seconds">
+<code class="descname">seconds</code><a class="headerlink" href="#TM1py.Objects.ChoreFrequency.seconds" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Objects.ChoreStartTime">
+<em class="property">class </em><code class="descclassname">TM1py.Objects.</code><code class="descname">ChoreStartTime</code><span class="sig-paren">(</span><em>year</em>, <em>month</em>, <em>day</em>, <em>hour</em>, <em>minute</em>, <em>second</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.ChoreStartTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>GMT Time!</p>
+<dl class="method">
+<dt id="TM1py.Objects.ChoreStartTime.add">
+<code class="descname">add</code><span class="sig-paren">(</span><em>days=0</em>, <em>hours=0</em>, <em>minutes=0</em>, <em>seconds=0</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.ChoreStartTime.add" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="TM1py.Objects.ChoreStartTime.from_string">
+<em class="property">classmethod </em><code class="descname">from_string</code><span class="sig-paren">(</span><em>start_time_string</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.ChoreStartTime.from_string" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.ChoreStartTime.set_time">
+<code class="descname">set_time</code><span class="sig-paren">(</span><em>year=None</em>, <em>month=None</em>, <em>day=None</em>, <em>hour=None</em>, <em>minute=None</em>, <em>second=None</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.ChoreStartTime.set_time" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.ChoreStartTime.start_time_string">
+<code class="descname">start_time_string</code><a class="headerlink" href="#TM1py.Objects.ChoreStartTime.start_time_string" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.ChoreStartTime.substract">
+<code class="descname">substract</code><span class="sig-paren">(</span><em>days=0</em>, <em>hours=0</em>, <em>minutes=0</em>, <em>seconds=0</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.ChoreStartTime.substract" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Objects.ChoreTask">
+<em class="property">class </em><code class="descclassname">TM1py.Objects.</code><code class="descname">ChoreTask</code><span class="sig-paren">(</span><em>step</em>, <em>process_name</em>, <em>parameters</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.ChoreTask" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="TM1py.Objects.ChoreTask.body">
+<code class="descname">body</code><a class="headerlink" href="#TM1py.Objects.ChoreTask.body" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.ChoreTask.body_as_dict">
+<code class="descname">body_as_dict</code><a class="headerlink" href="#TM1py.Objects.ChoreTask.body_as_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="TM1py.Objects.ChoreTask.from_dict">
+<em class="property">classmethod </em><code class="descname">from_dict</code><span class="sig-paren">(</span><em>chore_task_as_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.ChoreTask.from_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.ChoreTask.parameters">
+<code class="descname">parameters</code><a class="headerlink" href="#TM1py.Objects.ChoreTask.parameters" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.ChoreTask.process_name">
+<code class="descname">process_name</code><a class="headerlink" href="#TM1py.Objects.ChoreTask.process_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.ChoreTask.step">
+<code class="descname">step</code><a class="headerlink" href="#TM1py.Objects.ChoreTask.step" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Objects.Cube">
+<em class="property">class </em><code class="descclassname">TM1py.Objects.</code><code class="descname">Cube</code><span class="sig-paren">(</span><em>name</em>, <em>dimensions</em>, <em>rules=None</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Cube" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="TM1py.Objects.Cube.body">
+<code class="descname">body</code><a class="headerlink" href="#TM1py.Objects.Cube.body" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Cube.dimensions">
+<code class="descname">dimensions</code><a class="headerlink" href="#TM1py.Objects.Cube.dimensions" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Cube.feedstrings">
+<code class="descname">feedstrings</code><a class="headerlink" href="#TM1py.Objects.Cube.feedstrings" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="TM1py.Objects.Cube.from_dict">
+<em class="property">classmethod </em><code class="descname">from_dict</code><span class="sig-paren">(</span><em>cube_as_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Cube.from_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alternative constructor</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cube_as_dict</strong> &#8211; user as dict</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">user, an instance of this class</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="TM1py.Objects.Cube.from_json">
+<em class="property">classmethod </em><code class="descname">from_json</code><span class="sig-paren">(</span><em>cube_as_json</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Cube.from_json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alternative constructor</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cube_as_json</strong> &#8211; user as JSON string</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">cube, an instance of this class</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Cube.has_rules">
+<code class="descname">has_rules</code><a class="headerlink" href="#TM1py.Objects.Cube.has_rules" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Cube.name">
+<code class="descname">name</code><a class="headerlink" href="#TM1py.Objects.Cube.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Cube.rules">
+<code class="descname">rules</code><a class="headerlink" href="#TM1py.Objects.Cube.rules" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Cube.skipcheck">
+<code class="descname">skipcheck</code><a class="headerlink" href="#TM1py.Objects.Cube.skipcheck" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Cube.undefvals">
+<code class="descname">undefvals</code><a class="headerlink" href="#TM1py.Objects.Cube.undefvals" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Objects.Element">
+<em class="property">class </em><code class="descclassname">TM1py.Objects.</code><code class="descname">Element</code><span class="sig-paren">(</span><em>name</em>, <em>element_type</em>, <em>attributes=None</em>, <em>unique_name=None</em>, <em>index=None</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Element" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abstraction of TM1 Element</p>
+<dl class="attribute">
+<dt id="TM1py.Objects.Element.body_as_dict">
+<code class="descname">body_as_dict</code><a class="headerlink" href="#TM1py.Objects.Element.body_as_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Element.element_attributes">
+<code class="descname">element_attributes</code><a class="headerlink" href="#TM1py.Objects.Element.element_attributes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Element.element_type">
+<code class="descname">element_type</code><a class="headerlink" href="#TM1py.Objects.Element.element_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="TM1py.Objects.Element.from_dict">
+<em class="property">static </em><code class="descname">from_dict</code><span class="sig-paren">(</span><em>element_as_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Element.from_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Element.index">
+<code class="descname">index</code><a class="headerlink" href="#TM1py.Objects.Element.index" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Element.name">
+<code class="descname">name</code><a class="headerlink" href="#TM1py.Objects.Element.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Element.unique_name">
+<code class="descname">unique_name</code><a class="headerlink" href="#TM1py.Objects.Element.unique_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Element.valid_types">
+<code class="descname">valid_types</code><em class="property"> = ['NUMERIC', 'STRING', 'CONSOLIDATED']</em><a class="headerlink" href="#TM1py.Objects.Element.valid_types" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Objects.ElementAttribute">
+<em class="property">class </em><code class="descclassname">TM1py.Objects.</code><code class="descname">ElementAttribute</code><span class="sig-paren">(</span><em>name</em>, <em>attribute_type</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.ElementAttribute" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="TM1py.Objects.ElementAttribute.attribute_type">
+<code class="descname">attribute_type</code><a class="headerlink" href="#TM1py.Objects.ElementAttribute.attribute_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.ElementAttribute.body">
+<code class="descname">body</code><a class="headerlink" href="#TM1py.Objects.ElementAttribute.body" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.ElementAttribute.body_as_dict">
+<code class="descname">body_as_dict</code><a class="headerlink" href="#TM1py.Objects.ElementAttribute.body_as_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="TM1py.Objects.ElementAttribute.from_dict">
+<em class="property">classmethod </em><code class="descname">from_dict</code><span class="sig-paren">(</span><em>element_attribute_as_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.ElementAttribute.from_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="TM1py.Objects.ElementAttribute.from_json">
+<em class="property">classmethod </em><code class="descname">from_json</code><span class="sig-paren">(</span><em>element_attribute_as_json</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.ElementAttribute.from_json" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.ElementAttribute.name">
+<code class="descname">name</code><a class="headerlink" href="#TM1py.Objects.ElementAttribute.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.ElementAttribute.valid_types">
+<code class="descname">valid_types</code><em class="property"> = ['NUMERIC', 'STRING', 'ALIAS']</em><a class="headerlink" href="#TM1py.Objects.ElementAttribute.valid_types" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Objects.Hierarchy">
+<em class="property">class </em><code class="descclassname">TM1py.Objects.</code><code class="descname">Hierarchy</code><span class="sig-paren">(</span><em>name</em>, <em>dimension_name</em>, <em>elements=None</em>, <em>element_attributes=None</em>, <em>edges=None</em>, <em>subsets=None</em>, <em>default_member=None</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Hierarchy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abstraction of TM1 Hierarchy
+Requires reference to a Dimension</p>
+<p>Elements modeled as a Dictionary where key is the element name and value an instance of TM1py.Element
+{</p>
+<blockquote>
+<div>&#8216;US&#8217;: instance of TM1py.Element,
+&#8216;CN&#8217;: instance of TM1py.Element,
+&#8216;AU&#8217;: instance of TM1py.Element</div></blockquote>
+<p>}</p>
+<p>ElementAttributes of type TM1py.ElementAttribute</p>
+<p>Edges are represented as a TM1py.CaseAndSpaceInsensitiveTupleDict: 
+{</p>
+<blockquote>
+<div>(parent1, component1) : 10,
+(parent1, component2) : 30</div></blockquote>
+<p>}</p>
+<p>Subsets is list of type TM1py.Subset</p>
+<dl class="method">
+<dt id="TM1py.Objects.Hierarchy.add_edge">
+<code class="descname">add_edge</code><span class="sig-paren">(</span><em>parent</em>, <em>component</em>, <em>weight</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Hierarchy.add_edge" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.Hierarchy.add_element">
+<code class="descname">add_element</code><span class="sig-paren">(</span><em>element_name</em>, <em>element_type</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Hierarchy.add_element" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.Hierarchy.add_element_attribute">
+<code class="descname">add_element_attribute</code><span class="sig-paren">(</span><em>name</em>, <em>attribute_type</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Hierarchy.add_element_attribute" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Hierarchy.body">
+<code class="descname">body</code><a class="headerlink" href="#TM1py.Objects.Hierarchy.body" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Hierarchy.body_as_dict">
+<code class="descname">body_as_dict</code><a class="headerlink" href="#TM1py.Objects.Hierarchy.body_as_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Hierarchy.default_member">
+<code class="descname">default_member</code><a class="headerlink" href="#TM1py.Objects.Hierarchy.default_member" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Hierarchy.dimension_name">
+<code class="descname">dimension_name</code><a class="headerlink" href="#TM1py.Objects.Hierarchy.dimension_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Hierarchy.edges">
+<code class="descname">edges</code><a class="headerlink" href="#TM1py.Objects.Hierarchy.edges" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Hierarchy.element_attributes">
+<code class="descname">element_attributes</code><a class="headerlink" href="#TM1py.Objects.Hierarchy.element_attributes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Hierarchy.elements">
+<code class="descname">elements</code><a class="headerlink" href="#TM1py.Objects.Hierarchy.elements" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="TM1py.Objects.Hierarchy.from_dict">
+<em class="property">classmethod </em><code class="descname">from_dict</code><span class="sig-paren">(</span><em>hierarchy_as_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Hierarchy.from_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Hierarchy.name">
+<code class="descname">name</code><a class="headerlink" href="#TM1py.Objects.Hierarchy.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.Hierarchy.remove_edge">
+<code class="descname">remove_edge</code><span class="sig-paren">(</span><em>parent</em>, <em>component</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Hierarchy.remove_edge" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.Hierarchy.remove_element_attribute">
+<code class="descname">remove_element_attribute</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Hierarchy.remove_element_attribute" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Hierarchy.subsets">
+<code class="descname">subsets</code><a class="headerlink" href="#TM1py.Objects.Hierarchy.subsets" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.Hierarchy.update_edge">
+<code class="descname">update_edge</code><span class="sig-paren">(</span><em>parent</em>, <em>component</em>, <em>weight</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Hierarchy.update_edge" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.Hierarchy.update_element">
+<code class="descname">update_element</code><span class="sig-paren">(</span><em>element_name</em>, <em>element_type=None</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Hierarchy.update_element" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Objects.MDXView">
+<em class="property">class </em><code class="descclassname">TM1py.Objects.</code><code class="descname">MDXView</code><span class="sig-paren">(</span><em>cube_name</em>, <em>view_name</em>, <em>MDX</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.MDXView" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abstraction on TM1 MDX view</p>
+<p>IMPORTANT. MDXViews cant be seen through the old TM1 clients (Archict, Perspectives). They do exist though!</p>
+<dl class="attribute">
+<dt id="TM1py.Objects.MDXView.MDX">
+<code class="descname">MDX</code><a class="headerlink" href="#TM1py.Objects.MDXView.MDX" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.MDXView.body">
+<code class="descname">body</code><a class="headerlink" href="#TM1py.Objects.MDXView.body" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.MDXView.construct_body">
+<code class="descname">construct_body</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.MDXView.construct_body" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="TM1py.Objects.MDXView.from_dict">
+<em class="property">classmethod </em><code class="descname">from_dict</code><span class="sig-paren">(</span><em>view_as_dict</em>, <em>cube_name=None</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.MDXView.from_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="TM1py.Objects.MDXView.from_json">
+<em class="property">classmethod </em><code class="descname">from_json</code><span class="sig-paren">(</span><em>view_as_json</em>, <em>cube_name=None</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.MDXView.from_json" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Objects.NativeView">
+<em class="property">class </em><code class="descclassname">TM1py.Objects.</code><code class="descname">NativeView</code><span class="sig-paren">(</span><em>cube_name</em>, <em>view_name</em>, <em>suppress_empty_columns=False</em>, <em>suppress_empty_rows=False</em>, <em>format_string='0.#########x0cG|0|'</em>, <em>titles=None</em>, <em>columns=None</em>, <em>rows=None</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.NativeView" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abstraction of TM1 NativeView (classic cube view)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Notes:</th><td class="field-body">Complete, functional and tested</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="TM1py.Objects.NativeView.MDX">
+<code class="descname">MDX</code><a class="headerlink" href="#TM1py.Objects.NativeView.MDX" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.NativeView.add_column">
+<code class="descname">add_column</code><span class="sig-paren">(</span><em>dimension_name</em>, <em>subset=None</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.NativeView.add_column" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add Dimension or Subset to the column-axis</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dimension_name</strong> &#8211; name of the dimension</li>
+<li><strong>subset</strong> &#8211; instance of TM1py.Subset. Can be None instead.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.NativeView.add_row">
+<code class="descname">add_row</code><span class="sig-paren">(</span><em>dimension_name</em>, <em>subset=None</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.NativeView.add_row" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add Dimension or Subset to the row-axis</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dimension_name</strong> &#8211; </li>
+<li><strong>subset</strong> &#8211; instance of TM1py.Subset. Can be None instead.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.NativeView.add_title">
+<code class="descname">add_title</code><span class="sig-paren">(</span><em>dimension_name</em>, <em>selection</em>, <em>subset=None</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.NativeView.add_title" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add subset and element to the titles-axis</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dimension_name</strong> &#8211; name of the dimension.</li>
+<li><strong>selection</strong> &#8211; name of an element.</li>
+<li><strong>subset</strong> &#8211; instance of TM1py.Subset. Can be None instead.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.NativeView.as_MDX">
+<code class="descname">as_MDX</code><a class="headerlink" href="#TM1py.Objects.NativeView.as_MDX" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build a valid MDX Query from an Existing cubeview. 
+Takes Zero suppression into account. 
+Throws an Exception when no elements are place on the columns.
+Subsets are referenced in the result-MDX through the TM1SubsetToSet Function</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">String, the MDX Query</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.NativeView.body">
+<code class="descname">body</code><a class="headerlink" href="#TM1py.Objects.NativeView.body" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.NativeView.format_string">
+<code class="descname">format_string</code><a class="headerlink" href="#TM1py.Objects.NativeView.format_string" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="TM1py.Objects.NativeView.from_dict">
+<em class="property">classmethod </em><code class="descname">from_dict</code><span class="sig-paren">(</span><em>view_as_dict</em>, <em>cube_name=None</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.NativeView.from_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="TM1py.Objects.NativeView.from_json">
+<em class="property">classmethod </em><code class="descname">from_json</code><span class="sig-paren">(</span><em>view_as_json</em>, <em>cube_name=None</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.NativeView.from_json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alternative constructor
+:Parameters:</p>
+<blockquote>
+<div><cite>view_as_json</cite> : string, JSON</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><cite>View</cite> : an instance of this class</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.NativeView.remove_column">
+<code class="descname">remove_column</code><span class="sig-paren">(</span><em>dimension_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.NativeView.remove_column" title="Permalink to this definition">¶</a></dt>
+<dd><p>remove dimension from the column axis</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dimension_name</strong> &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.NativeView.remove_row">
+<code class="descname">remove_row</code><span class="sig-paren">(</span><em>dimension_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.NativeView.remove_row" title="Permalink to this definition">¶</a></dt>
+<dd><p>remove dimension from the row axis</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dimension_name</strong> &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.NativeView.remove_title">
+<code class="descname">remove_title</code><span class="sig-paren">(</span><em>dimension_name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.NativeView.remove_title" title="Permalink to this definition">¶</a></dt>
+<dd><p>remove dimension from the titles-axis</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dimension_name</strong> &#8211; name of the dimension.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.NativeView.suppress_empty_cells">
+<code class="descname">suppress_empty_cells</code><a class="headerlink" href="#TM1py.Objects.NativeView.suppress_empty_cells" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.NativeView.suppress_empty_columns">
+<code class="descname">suppress_empty_columns</code><a class="headerlink" href="#TM1py.Objects.NativeView.suppress_empty_columns" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.NativeView.suppress_empty_rows">
+<code class="descname">suppress_empty_rows</code><a class="headerlink" href="#TM1py.Objects.NativeView.suppress_empty_rows" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Objects.Process">
+<em class="property">class </em><code class="descclassname">TM1py.Objects.</code><code class="descname">Process</code><span class="sig-paren">(</span><em>name</em>, <em>has_security_access=False</em>, <em>ui_data='CubeAction=1511€DataAction=1503€CubeLogChanges=0€'</em>, <em>parameters=None</em>, <em>variables=None</em>, <em>variables_ui_data=None</em>, <em>prolog_procedure=''</em>, <em>metadata_procedure=''</em>, <em>data_procedure=''</em>, <em>epilog_procedure=''</em>, <em>datasource_type='None'</em>, <em>datasource_ascii_decimal_separator='.'</em>, <em>datasource_ascii_delimiter_char=';'</em>, <em>datasource_ascii_delimiter_type='Character'</em>, <em>datasource_ascii_header_records=1</em>, <em>datasource_ascii_quote_character=''</em>, <em>datasource_ascii_thousand_separator='</em>, <em>'</em>, <em>datasource_data_source_name_for_client=''</em>, <em>datasource_data_source_name_for_server=''</em>, <em>datasource_password=''</em>, <em>datasource_user_name=''</em>, <em>datasource_query=''</em>, <em>datasource_uses_unicode=True</em>, <em>datasource_view=''</em>, <em>datasource_subset=''</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Process" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abstraction of a TM1 Process.</p>
+<p>IMPORTANT. doenst work with Processes that were generated through the Wizard</p>
+<dl class="staticmethod">
+<dt id="TM1py.Objects.Process.add_generated_string_to_code">
+<em class="property">static </em><code class="descname">add_generated_string_to_code</code><span class="sig-paren">(</span><em>code</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Process.add_generated_string_to_code" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.Process.add_parameter">
+<code class="descname">add_parameter</code><span class="sig-paren">(</span><em>name</em>, <em>prompt</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Process.add_parameter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.Process.add_variable">
+<code class="descname">add_variable</code><span class="sig-paren">(</span><em>name</em>, <em>type</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Process.add_variable" title="Permalink to this definition">¶</a></dt>
+<dd><p>add variable to the process</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name_variable</strong> &#8211; <ul>
+<li></li>
+</ul>
+</li>
+<li><strong>type</strong> &#8211; String or Numeric</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Process.auto_generated_string">
+<code class="descname">auto_generated_string</code><em class="property"> = '#****Begin: Generated Statements***\r\n#****End: Generated Statements****\r\n'</em><a class="headerlink" href="#TM1py.Objects.Process.auto_generated_string" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Process.body">
+<code class="descname">body</code><a class="headerlink" href="#TM1py.Objects.Process.body" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Process.data_procedure">
+<code class="descname">data_procedure</code><a class="headerlink" href="#TM1py.Objects.Process.data_procedure" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Process.datasource_ascii_decimal_seperator">
+<code class="descname">datasource_ascii_decimal_seperator</code><a class="headerlink" href="#TM1py.Objects.Process.datasource_ascii_decimal_seperator" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Process.datasource_ascii_delimiter_char">
+<code class="descname">datasource_ascii_delimiter_char</code><a class="headerlink" href="#TM1py.Objects.Process.datasource_ascii_delimiter_char" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Process.datasource_ascii_delimiter_type">
+<code class="descname">datasource_ascii_delimiter_type</code><a class="headerlink" href="#TM1py.Objects.Process.datasource_ascii_delimiter_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Process.datasource_ascii_header_records">
+<code class="descname">datasource_ascii_header_records</code><a class="headerlink" href="#TM1py.Objects.Process.datasource_ascii_header_records" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Process.datasource_ascii_quote_character">
+<code class="descname">datasource_ascii_quote_character</code><a class="headerlink" href="#TM1py.Objects.Process.datasource_ascii_quote_character" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Process.datasource_ascii_thousand_separator">
+<code class="descname">datasource_ascii_thousand_separator</code><a class="headerlink" href="#TM1py.Objects.Process.datasource_ascii_thousand_separator" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Process.datasource_data_source_name_for_client">
+<code class="descname">datasource_data_source_name_for_client</code><a class="headerlink" href="#TM1py.Objects.Process.datasource_data_source_name_for_client" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Process.datasource_data_source_name_for_server">
+<code class="descname">datasource_data_source_name_for_server</code><a class="headerlink" href="#TM1py.Objects.Process.datasource_data_source_name_for_server" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Process.datasource_password">
+<code class="descname">datasource_password</code><a class="headerlink" href="#TM1py.Objects.Process.datasource_password" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Process.datasource_query">
+<code class="descname">datasource_query</code><a class="headerlink" href="#TM1py.Objects.Process.datasource_query" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Process.datasource_subset">
+<code class="descname">datasource_subset</code><a class="headerlink" href="#TM1py.Objects.Process.datasource_subset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Process.datasource_type">
+<code class="descname">datasource_type</code><a class="headerlink" href="#TM1py.Objects.Process.datasource_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Process.datasource_user_name">
+<code class="descname">datasource_user_name</code><a class="headerlink" href="#TM1py.Objects.Process.datasource_user_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Process.datasource_uses_unicode">
+<code class="descname">datasource_uses_unicode</code><a class="headerlink" href="#TM1py.Objects.Process.datasource_uses_unicode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Process.datasource_view">
+<code class="descname">datasource_view</code><a class="headerlink" href="#TM1py.Objects.Process.datasource_view" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Process.epilog_procedure">
+<code class="descname">epilog_procedure</code><a class="headerlink" href="#TM1py.Objects.Process.epilog_procedure" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="TM1py.Objects.Process.from_dict">
+<em class="property">classmethod </em><code class="descname">from_dict</code><span class="sig-paren">(</span><em>process_as_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Process.from_dict" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>process_as_json</strong> &#8211; Dictionary, process as dictionary</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">an instance of this class</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="TM1py.Objects.Process.from_json">
+<em class="property">classmethod </em><code class="descname">from_json</code><span class="sig-paren">(</span><em>process_as_json</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Process.from_json" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>process_as_json</strong> &#8211; response of /api/v1/Processes(&#8216;x&#8217;)?$expand=*</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">an instance of this class</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Process.has_security_access">
+<code class="descname">has_security_access</code><a class="headerlink" href="#TM1py.Objects.Process.has_security_access" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Process.metadata_procedure">
+<code class="descname">metadata_procedure</code><a class="headerlink" href="#TM1py.Objects.Process.metadata_procedure" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Process.name">
+<code class="descname">name</code><a class="headerlink" href="#TM1py.Objects.Process.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Process.parameters">
+<code class="descname">parameters</code><a class="headerlink" href="#TM1py.Objects.Process.parameters" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Process.prolog_procedure">
+<code class="descname">prolog_procedure</code><a class="headerlink" href="#TM1py.Objects.Process.prolog_procedure" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.Process.remove_parameter">
+<code class="descname">remove_parameter</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Process.remove_parameter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.Process.remove_variables">
+<code class="descname">remove_variables</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Process.remove_variables" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Process.variables">
+<code class="descname">variables</code><a class="headerlink" href="#TM1py.Objects.Process.variables" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TM1py.Objects.Rules">
+<em class="property">class </em><code class="descclassname">TM1py.Objects.</code><code class="descname">Rules</code><span class="sig-paren">(</span><em>rules</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Rules" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abstraction of Rules on a cube.</p>
+<dl class="docutils">
+<dt>rules_analytics</dt>
+<dd>A collection of rulestatements, where each statement is stored without linebreaks.
+comments are not included.</dd>
+</dl>
+<p>Currently rules object is not meant not be edited. To be written!</p>
+<dl class="attribute">
+<dt id="TM1py.Objects.Rules.feeder_statements">
+<code class="descname">feeder_statements</code><a class="headerlink" href="#TM1py.Objects.Rules.feeder_statements" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Rules.feedstrings">
+<code class="descname">feedstrings</code><a class="headerlink" href="#TM1py.Objects.Rules.feedstrings" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Rules.has_feeders">
+<code class="descname">has_feeders</code><a class="headerlink" href="#TM1py.Objects.Rules.has_feeders" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TM1py.Objects.Rules.init_analytics">
+<code class="descname">init_analytics</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Objects.Rules.init_analytics" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Rules.keywords">
+<code class="descname">keywords</code><em class="property"> = ['SKIPCHECK', 'FEEDSTRINGS', 'UNDEFVALS', 'FEEDERS']</em><a class="headerlink" href="#TM1py.Objects.Rules.keywords" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Rules.rule_statements">
+<code class="descname">rule_statements</code><a class="headerlink" href="#TM1py.Objects.Rules.rule_statements" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Rules.rules_analytics">
+<code class="descname">rules_analytics</code><a class="headerlink" href="#TM1py.Objects.Rules.rules_analytics" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Rules.skipcheck">
+<code class="descname">skipcheck</code><a class="headerlink" href="#TM1py.Objects.Rules.skipcheck" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Rules.text">
+<code class="descname">text</code><a class="headerlink" href="#TM1py.Objects.Rules.text" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TM1py.Objects.Rules.undefvals">
+<code class="descname">undefvals</code><a class="headerlink" href="#TM1py.Objects.Rules.undefvals" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="exceptions">
+<h2>Exceptions<a class="headerlink" href="#exceptions" title="Permalink to this headline">¶</a></h2>
+<dl class="exception">
+<dt id="TM1py.Exceptions.Exceptions.TM1pyException">
+<em class="property">exception </em><code class="descclassname">TM1py.Exceptions.Exceptions.</code><code class="descname">TM1pyException</code><span class="sig-paren">(</span><em>response</em>, <em>status_code</em>, <em>reason</em><span class="sig-paren">)</span><a class="headerlink" href="#TM1py.Exceptions.Exceptions.TM1pyException" title="Permalink to this definition">¶</a></dt>
+<dd><p>The default exception for TM1py</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Developer Interface</a><ul>
+<li><a class="reference internal" href="#services">Services</a></li>
+<li><a class="reference internal" href="#objects">Objects</a></li>
+<li><a class="reference internal" href="#exceptions">Exceptions</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">TM1py</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/api.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Marius Wirtz.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+      |
+      <a href="_sources/api.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

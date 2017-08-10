@@ -6,16 +6,15 @@ from TM1py.Objects.Hierarchy import Hierarchy
 
 class Dimension:
     """ Abstraction of TM1 Dimension
-
-        :Notes:
-            Not complete. Not tested.
-            A Dimension is a container for hierarchies.
+        
+        A Dimension is a container for hierarchies.
     """
     def __init__(self, name, hierarchies=None):
-        """
-        :Parameters:
-            - `name` : string
-                the name of the dimension
+        """ Abstraction of TM1 Dimension
+        
+         
+        :param name: Name of the dimension
+        :param hierarchies: List of TM1py.Objects.Hierarchy instances
         """
         self._name = name
         self._hierarchies = list(hierarchies) if hierarchies else []

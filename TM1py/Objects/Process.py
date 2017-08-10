@@ -4,7 +4,7 @@ import json
 class Process:
     """ Abstraction of a TM1 Process.
 
-        IMPORTANT. doenst work with Processes that were generated through the Wizard
+        IMPORTANT. doesn't work with Processes that were generated through the Wizard
     """
 
     """ the auto_generated_string code is required to be in all code-tabs. """

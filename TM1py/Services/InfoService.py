@@ -4,6 +4,9 @@ from TM1py.Services.ObjectService import ObjectService
 
 
 class InfoService(ObjectService):
+    """ Service to query common information from the TM1 Server
+    
+    """
     def __init__(self, rest):
         super().__init__(rest)
 

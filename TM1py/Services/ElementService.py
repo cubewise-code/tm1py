@@ -5,6 +5,9 @@ from TM1py.Services.ObjectService import ObjectService
 
 
 class ElementService(ObjectService):
+    """ Service to handle CRUD for TM1 Dimension (resp. Hierarchy) Elements
+    
+    """
     def __init__(self, rest):
         super().__init__(rest)
 

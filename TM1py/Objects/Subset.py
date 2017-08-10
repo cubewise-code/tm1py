@@ -5,8 +5,7 @@ import collections
 class Subset:
     """ Abstraction of the TM1 Subset (dynamic and static)
 
-        :Notes:
-            Done and tested. unittests available.
+        Done and tested. unittests available.
     """
     def __init__(self, dimension_name, subset_name, alias=None, expression=None, elements=None):
         """

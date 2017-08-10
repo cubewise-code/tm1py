@@ -8,6 +8,9 @@ from TM1py.Services import ProcessService
 
 
 class SubsetService(ObjectService):
+    """ Service to handle CRUD for TM1 Subsets (dynamic and static)
+    
+    """
     def __init__(self, rest):
         super().__init__(rest)
         self._process_service = ProcessService(rest)

@@ -1,3 +1,20 @@
+"""
+A python module for TM1.
+
+https://github.com/MariusWirtz-cubewise/TM1py
+
+TM1py wraps the TM1 REST API into concise Python classes and Services that simplify TM1 interactions from python.
+
+Usage:
+>>> login = LoginService.native('admin', 'apple')
+>>> with RESTService(ip='', port=8001, login=login, ssl=False) as tm1_rest:
+>>>     subset_service = SubsetService(tm1_rest)
+>>>     subset = Subset(dimension_name='Month', subset_name='Q1', elements=['Jan', 'Feb', 'Mar'])
+>>>     subset_service.create(subset, private=True)
+
+"""
+
+
 # __init__ can hoist attributes from submodules into higher namespaces for convenience
 
 from TM1py.Services.ObjectService import ObjectService

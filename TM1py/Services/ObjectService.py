@@ -2,7 +2,8 @@ from TM1py.Exceptions import TM1pyException
 
 
 class ObjectService:
-    """
+    """ Parentclass for all Object Services
+    
     """
     def __init__(self, rest_service):
         """ Constructor, Create an instance of ObjectService

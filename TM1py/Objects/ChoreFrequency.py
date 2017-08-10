@@ -1,6 +1,9 @@
 
 
 class ChoreFrequency:
+    """ Utility class to handle time representation fore Chore Frequency
+    
+    """
     def __init__(self, days, hours, minutes, seconds):
         self._days = str(days).zfill(2)
         self._hours = str(hours).zfill(2)

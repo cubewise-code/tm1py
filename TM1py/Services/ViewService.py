@@ -10,6 +10,9 @@ from TM1py.Services.ObjectService import ObjectService
 
 
 class ViewService(ObjectService):
+    """ Service to handle CRUD for cube views (NativeViews and MDXViews)
+    
+    """
     def __init__(self, rest):
         super().__init__(rest)
 

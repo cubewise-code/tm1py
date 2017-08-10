@@ -1,7 +1,7 @@
 
 class View:
     """ Abstraction of TM1 View
-        serves as a parentclass for TM1py.MDXView and TM1py.NativeView
+        serves as a parentclass for TM1py.Objects.MDXView and TM1py.Objects.NativeView
 
     """
     def __init__(self, cube, name):
