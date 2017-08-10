@@ -5,7 +5,7 @@ By wrapping the IBM Planning Analytics (TM1) REST API in a concise Python framew
 
 Interacting with TM1 programmatically has never been easier.
 
-.. code-block:: Python
+ .. code-block:: Python
 
     >>> login = LoginService.native('admin', 'apple')
     >>> with RESTService(ip='', port=8001, login=login, ssl=False) as tm1_rest:
@@ -57,7 +57,7 @@ To check if the installation was successful just type
     Python
 
 into the command-line.
-This will print out the installed version of Python and switch into an interactive mode where you can code Python.
+This will print out the installed version of Python and switch to an interactive mode where you can code Python.
 
 If you didn't check the checkbox during the installation you can type
 
@@ -78,7 +78,7 @@ In order to be able to communicate with TM1 through HTTP, you have to assign an 
 
 The parameter will only be effective after restarting the TM1 instance.
 
-3. Check Connectivity from the Browser
+3. Check Connectivity to TM1 from the Browser
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Before we move on, we have to make sure that we can access TM1 through the REST API.
@@ -88,11 +88,14 @@ Copy and paste the following request into your browser
 http://localhost:8002/api/v1/$metadata
 
 We might have to adjust 3 things here.
+
 1. http has to be replaced by https if the USESSL parameter in the tm1s.cfg is set to T.
+
 2. localhost has to replaced by the address of the Server where the TM1 instance runs.
+
 3. 8002 has to be replaced by the HTTPPortNumber that is specified in the tm1s.cfg.
 
-If the request is successfull it will show the metadata document (XML) of the TM1 REST API in the browser
+If the request is successfull it will show the metadata document (XML) of the TM1 REST API in the browser.
 
 4. Install TM1py
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -124,11 +127,11 @@ In order to check if TM1py works fine with your TM1 instances, Copy the sample '
 
 adjust the
 
-- Port      (As HTTPPortNumber as specified in the TM1s.cfg)
-- Address   (Address of the TM1 instance. 'localhost' or '' if you run the TM1 instance locally)
-- SSL       (True or False, as stated in the TM1s.cfg)
-- User      (Name of the TM1 User)
-- Password  (The user's password)
+- port      (As HTTPPortNumber as specified in the TM1s.cfg)
+- ip   (Address of the TM1 instance. 'localhost' or '' if you run the TM1 instance locally)
+- ssl       (True or False, as stated in the TM1s.cfg)
+- user      (Name of the TM1 User)
+- password  (The user's password)
 
 parameters in the file and run it with Python
 
@@ -146,6 +149,9 @@ If something doesn't work as expected in the installation, feel free to open an 
 Usage
 =======================
 
+Idea
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
  .. code-block:: Python
 
     >>> from TM1py.Services import ChoreService
@@ -158,6 +164,48 @@ Usage
     >>>     for chore in chore_service.get_all():
     >>>         chore.reschedule(hours=-1)
     >>>         chore_service.update(chore)
+
+
+My first Python TM1 script
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Find all unused dimensions with TM1py
+
+ .. code-block:: Python
+
+    >>> # Housekeeping: import services
+    >>> from TM1py.Services import CubeService
+    >>> from TM1py.Services import DimensionService
+    >>> from TM1py.Services import LoginService
+    >>> from TM1py.Services import RESTService
+
+    >>> # Create a login object. It handles the authentication with the TM1 Server
+    >>> login = LoginService.native('admin', 'apple')
+    >>> # Connect to TM1. Requires a few parameters to connect:
+    >>> # - ip: Address of the TM1 instance. 'localhost' or '' if you run the TM1 instance locally
+    >>> # - Port: HTTPPortNumber as specified in the TM1s.cfg
+    >>> # - login: Login object to handle authentication
+    >>> # - SSL: True or False, as stated in the TM1s.cfg
+    >>> with RESTService(ip='', port=8001, login=login, ssl=False) as tm1_rest:
+    >>>    # Setup the CubeService. It offers Create, Read, Update, Delete functions for Cubes
+    >>>    cube_service = CubeService(tm1_rest)
+    >>>    # Setup the DimensionService. It offers Create, Read, Update, Delete functions for Dimensions
+    >>>    dimension_service = DimensionService(tm1_rest)
+    >>>    # Ask the dimension service to return the names of all existing dimensions
+    >>>    all_dimensions = dimension_service.get_all_names()
+    >>>    # Ask the cube service to return the names of all existing dimensions
+    >>>    all_cubes = cube_service.get_all()
+    >>>    # Now find all dimensions that are actually being used in cubes
+    >>>    # First we create a set (in python: a list of unique elements)
+    >>>    used_dimensions = set()
+    >>>    # We populate the set by iterating through the list of cubes and pushing each cube's dimensions into the set
+    >>>    for cube in all_cubes:
+    >>>       used_dimensions.update(cube.dimensions)
+    >>>    # Now we can determine the unused dimensions: the delta between all dimensions and the used dimensions
+    >>>    unused_dimensions = set(all_dimensions) - used_dimensions
+    >>>    # Print out the unused dimensions
+    >>>    print(unused_dimensions)
+
 
 Documentation
 =======================
