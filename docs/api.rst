@@ -10,126 +10,126 @@ This part of the documentation covers all the classes of TM1py.TM1py.
 TM1 Services
 -------
 
-.. autoclass:: TM1py.TM1py.Services.AnnotationService
+.. autoclass:: TM1py.AnnotationService
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Services.ChoreService
+.. autoclass:: TM1py.ChoreService
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Services.CubeService
+.. autoclass:: TM1py.CubeService
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Services.DataService
+.. autoclass:: TM1py.DataService
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Services.DimensionService
+.. autoclass:: TM1py.DimensionService
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Services.ElementService
+.. autoclass:: TM1py.ElementService
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Services.HierarchyService
+.. autoclass:: TM1py.HierarchyService
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Services.InfoService
+.. autoclass:: TM1py.InfoService
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Services.LoginService
+.. autoclass:: TM1py.LoginService
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Services.ProcessService
+.. autoclass:: TM1py.ProcessService
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Services.RESTService
+.. autoclass:: TM1py.RESTService
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Services.SubsetService
+.. autoclass:: TM1py.SubsetService
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Services.ThreadService
+.. autoclass:: TM1py.ThreadService
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Services.UserService
+.. autoclass:: TM1py.UserService
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Services.ViewService
+.. autoclass:: TM1py.ViewService
    :members:
    :undoc-members:
 
 TM1 Objects
 -------
 
-.. autoclass:: TM1py.TM1py.Objects.Annotation
+.. autoclass:: TM1py.Annotation
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Objects.Axis
+.. autoclass:: TM1py.Axis
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Objects.Chore
+.. autoclass:: TM1py.Chore
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Objects.ChoreFrequency
+.. autoclass:: TM1py.ChoreFrequency
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Objects.ChoreStartTime
+.. autoclass:: TM1py.ChoreStartTime
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Objects.ChoreTask
+.. autoclass:: TM1py.ChoreTask
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Objects.Cube
+.. autoclass:: TM1py.Cube
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Objects.Dimension
+.. autoclass:: TM1py.Dimension
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Objects.Element
+.. autoclass:: TM1py.Element
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Objects.ElementAttribute
+.. autoclass:: TM1py.ElementAttribute
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Objects.Hierarchy
+.. autoclass:: TM1py.Hierarchy
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Objects.MDXView
+.. autoclass:: TM1py.MDXView
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Objects.NativeView
+.. autoclass:: TM1py.NativeView
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Objects.Process
+.. autoclass:: TM1py.Process
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.TM1py.Objects.Rules
+.. autoclass:: TM1py.Rules
    :members:
    :undoc-members:
 
@@ -137,6 +137,6 @@ TM1 Objects
 Exceptions
 ----------
 
-.. autoexception:: TM1py.TM1py.Exceptions.Exceptions.TM1py.TM1pyException
+.. autoexception:: TM1py.Exceptions.Exceptions.TM1pyException
 
 
