@@ -7,10 +7,10 @@ from TM1py.Services.DataService import DataService
 from TM1py.Services.DimensionService import DimensionService
 from TM1py.Services.ElementService import ElementService
 from TM1py.Services.HierarchyService import HierarchyService
-from TM1py.Services.InfoService import InfoService
-from TM1py.Services.LoginService import LoginService
+from TM1py.Services.ServerService import ServerService
 from TM1py.Services.ProcessService import ProcessService
 from TM1py.Services.SubsetService import SubsetService
-from TM1py.Services.ThreadService import ThreadService
-from TM1py.Services.UserService import UserService
+from TM1py.Services.MonitoringService import MonitoringService
+from TM1py.Services.SecurityService import SecurityService
 from TM1py.Services.ViewService import ViewService
+from TM1py.Services.TM1Service import TM1Service

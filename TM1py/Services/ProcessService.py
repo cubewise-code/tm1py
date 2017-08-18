@@ -9,7 +9,7 @@ from TM1py.Services import ObjectService
 
 
 class ProcessService(ObjectService):
-    """ Service to handle CRUD for TI Processes
+    """ Service to handle Object Updates for TI Processes
     
     """
     def __init__(self, rest):

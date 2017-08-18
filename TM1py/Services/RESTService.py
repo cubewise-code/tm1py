@@ -2,8 +2,9 @@
 
 import functools
 import requests
+from base64 import b64encode
 
-from ..Exceptions import TM1pyException
+from TM1py.Exceptions import TM1pyException
 
 
 def httpmethod(func):
@@ -45,28 +46,32 @@ class RESTService:
 
     """
 
-    def __init__(self, ip, port, login, ssl=True):
+    def __init__(self, **kwargs):
         """ Create an instance of RESTService
 
         :param ip: String - address of the TM1 instance
         :param port: Int - HTTPPortNumber as specified in the tm1s.cfg
-        :param login: instance of TM1pyLogin
+        :param user: String - name of the user
+        :param password String - password of the user
+        :param namespace strong - optional CAM namespace
         :param ssl: boolean -  as specified in the tm1s.cfg
         """
-        self._ip = 'localhost' if ip == '' else ip
-        self._port = port
-        self._ssl = ssl
+        self._address = 'localhost' if kwargs['address'] == '' else kwargs['address']
+        self._port = kwargs['port']
+        self._ssl = kwargs['ssl']
         self._version = None
         self._headers = {'Connection': 'keep-alive',
                          'User-Agent': 'TM1py',
                          'Content-Type': 'application/json; odata.streaming=true; charset=utf-8',
                          'Accept': 'application/json,text/plain;odata.metadata=none'}
         # Authorization [Basic, CAM, WIA] through Headers
-        if login.auth_type in ['native', 'CAM']:
-            self._headers['Authorization'] = login.token
-        elif login.auth_type == 'WIA':
-            # To be written
-            pass
+        if 'namespace' in kwargs:
+            token = 'CAMNamespace ' + b64encode(
+                str.encode("{}:{}:{}".format(kwargs['user'], kwargs['password'], kwargs['namespace']))).decode("ascii")
+        else:
+            token = 'Basic ' + b64encode(
+                str.encode("{}:{}".format(kwargs['user'], kwargs['password']))).decode("ascii")
+        self._headers['Authorization'] = token
         self.disable_http_warnings(self)
         self._s = requests.session()
         self._get_cookies()
@@ -138,7 +143,7 @@ class RESTService:
         """
         url = '{}://{}:{}/api/v1/Configuration/ProductVersion/$value'.format(
             'https' if self._ssl else 'http',
-            self._ip,
+            self._address,
             self._port)
         response = self._s.get(url=url, headers=self._headers, data='', verify=False)
         self.verify_response(response)
@@ -149,9 +154,9 @@ class RESTService:
 
         """
         if self._ssl:
-            url = 'https://' + self._ip + ':' + str(self._port) + request
+            url = 'https://' + self._address + ':' + str(self._port) + request
         else:
-            url = 'http://' + self._ip + ':' + str(self._port) + request
+            url = 'http://' + self._address + ':' + str(self._port) + request
         url = url.replace(' ', '%20').replace('#', '%23')
         data = data.encode('utf-8')
         return url, data

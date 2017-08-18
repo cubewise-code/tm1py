@@ -2,10 +2,8 @@
 
 import collections
 import json
-import random
 
 from TM1py.Services.CubeService import CubeService
-from TM1py.Services.DimensionService import DimensionService
 from TM1py.Utils import Utils
 
 
@@ -20,22 +18,23 @@ class DataService:
         """
         self._rest = tm1_rest
 
-    def write_value(self, cube_name, dimension_order, element_tuple, value):
+    def write_value(self, value, cube_name, element_tuple, dimensions=None):
         """ Write value into cube at specified coordinates
 
-        :param cube_name: name of the target cube
-        :param dimension_order: dimension names in their correct order
-        :param element_tuple: target coordinates
         :param value: the actual value
+        :param cube_name: name of the target cube
+        :param element_tuple: target coordinates
+        :param dimensions: optional. Dimension names in their natural order. Will speed up the request!
         :return: response
         """
-
+        if not dimensions:
+            dimensions = CubeService(self._rest).get(cube_name).dimensions
         request = "/api/v1/Cubes('{}')/tm1.Update".format(cube_name)
         body_as_dict = collections.OrderedDict()
         body_as_dict["Cells"] = [{}]
         body_as_dict["Cells"][0]["Tuple@odata.bind"] = \
             ["Dimensions('{}')/Hierarchies('{}')/Elements('{}')".format(dim, dim, elem)
-             for dim, elem in zip(dimension_order, element_tuple)]
+             for dim, elem in zip(dimensions, element_tuple)]
         body_as_dict["Value"] = str(value)
         data = json.dumps(body_as_dict, ensure_ascii=False)
         return self._rest.POST(request=request, data=data)
@@ -51,7 +50,7 @@ class DataService:
         cube_service = CubeService(self._rest)
         dimension_order = cube_service.get_dimension_names(cube_name)
         request = "/api/v1/Cubes('{}')/tm1.Update".format(cube_name)
-        updates = ''
+        updates = []
         for element_tuple, value in cellset_as_dict.items():
             body_as_dict = collections.OrderedDict()
             body_as_dict["Cells"] = [{}]
@@ -59,8 +58,8 @@ class DataService:
                 ["Dimensions('{}')/Hierarchies('{}')/Elements('{}')".format(dim, dim, elem)
                  for dim, elem in zip(dimension_order, element_tuple)]
             body_as_dict["Value"] = str(value)
-            updates += ',' + json.dumps(body_as_dict, ensure_ascii=False)
-        updates = '[' + updates[1:] + ']'
+            updates.append(json.dumps(body_as_dict, ensure_ascii=False))
+        updates = '[' + ','.join(updates) + ']'
         self._rest.POST(request=request, data=updates)
 
     def write_values_through_cellset(self, mdx, values):
@@ -98,27 +97,6 @@ class DataService:
 
         # delete cellset (free up memory on server side)!
         self.delete_cellset(cellset_id)
-
-    def get_random_intersection(self, cube_name, unique_names=False):
-        """ Get a random Intersection in a cube
-        used mostly for unittesting. 
-        Not optimized in terms of performance. Function Loads ALL elements for EACH dim.
-
-        :param cube_name: 
-        :param unique_names: unique names instead of plain element names 
-        :return: List of elements
-        """
-        cube_service = CubeService(self._rest)
-        dimension_service = DimensionService(self._rest)
-        dimensions = cube_service.get_dimension_names(cube_name)
-        elements = []
-        for dimension in dimensions:
-            hierarchy = dimension_service.get(dimension).default_hierarchy
-            element = random.choice(list((hierarchy.elements.keys())))
-            if unique_names:
-                element = '[{}].[{}]'.format(dimension, element)
-            elements.append(element)
-        return elements
 
     def update_cellset(self, cellset_id, values):
         """ Write values into cellset
@@ -160,7 +138,7 @@ class DataService:
             'MDX': mdx
         }
         cellset = self._rest.POST(request=request, data=json.dumps(data, ensure_ascii=False))
-        return Utils.build_content_from_cellset(cellset_as_dict=json.loads(cellset),
+        return Utils.build_content_from_cellset(raw_cellset_as_dict=json.loads(cellset),
                                                 cell_properties=cell_properties,
                                                 top=top)
 

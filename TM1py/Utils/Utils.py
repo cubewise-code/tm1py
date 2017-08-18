@@ -62,28 +62,28 @@ def sort_addresstuple(dimension_order, unsorted_addresstuple):
     return tuple(sorted_addresstupple)
 
 
-def build_content_from_cellset(cellset_as_dict, cell_properties, top):
-    """ transform cellset data into concise dictionary
+def build_content_from_cellset(raw_cellset_as_dict, cell_properties, top):
+    """ transform raw cellset data into concise dictionary
 
-    :param cellset_as_dict:
+    :param raw_cellset_as_dict:
     :param cell_properties:
     :param top: Maximum Number of cells
     :return:
     """
     content_as_dict = CaseAndSpaceInsensitiveTuplesDict()
 
-    cube_dimensions = [dim['Name'] for dim in cellset_as_dict['Cube']['Dimensions']]
+    cube_dimensions = [dim['Name'] for dim in raw_cellset_as_dict['Cube']['Dimensions']]
 
-    axe0_as_dict = cellset_as_dict['Axes'][0]
-    axe1_as_dict = cellset_as_dict['Axes'][1]
+    axe0_as_dict = raw_cellset_as_dict['Axes'][0]
+    axe1_as_dict = raw_cellset_as_dict['Axes'][1]
 
     ordinal_cells = 0
 
     ordinal_axe2 = 0
     # get coordinates on axe 2: Title
     # if there are no elements on axe 2 assign empty list to elements_on_axe2
-    if len(cellset_as_dict['Axes']) > 2:
-        axe2_as_dict = cellset_as_dict['Axes'][2]
+    if len(raw_cellset_as_dict['Axes']) > 2:
+        axe2_as_dict = raw_cellset_as_dict['Axes'][2]
         tuples_as_dict = axe2_as_dict['Tuples'][ordinal_axe2]['Members']
         elements_on_axe2 = [data['UniqueName'] for data in tuples_as_dict]
     else:
@@ -104,7 +104,7 @@ def build_content_from_cellset(cellset_as_dict, cell_properties, top):
             # get cell properties
             content_as_dict[coordinates_sorted] = {}
             for cell_property in cell_properties:
-                value = cellset_as_dict['Cells'][ordinal_cells][cell_property]
+                value = raw_cellset_as_dict['Cells'][ordinal_cells][cell_property]
                 content_as_dict[coordinates_sorted][cell_property] = value
             ordinal_axe0 += 1
             ordinal_cells += 1
@@ -114,6 +114,26 @@ def build_content_from_cellset(cellset_as_dict, cell_properties, top):
             break
         ordinal_axe1 += 1
     return content_as_dict
+
+
+def build_pandas_dataframe_from_cellset(cellset):
+    import pandas as pd
+
+    cellset_clean = {}
+    for coordinates, cell in cellset.items():
+        coordinates_clean = tuple([unique_name[unique_name.rfind('].[',) + 3:-1] for unique_name in coordinates])
+        cellset_clean[coordinates_clean] = cell['Value']
+
+    dimension_names = tuple([unique_name[1:unique_name.find('].[')] for unique_name in coordinates])
+
+    # create index
+    keylist = list(cellset_clean.keys())
+    print(keylist)
+    multiindex = pd.MultiIndex.from_tuples(keylist, names=dimension_names)
+
+    # create DataFrame
+    values = list(cellset_clean.values())
+    return pd.DataFrame(values, index=multiindex)
 
 
 class CaseAndSpaceInsensitiveDict(collections.MutableMapping):

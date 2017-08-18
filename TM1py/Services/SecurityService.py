@@ -6,8 +6,8 @@ from TM1py.Objects.User import User
 from TM1py.Services.ObjectService import ObjectService
 
 
-class UserService(ObjectService):
-    """ Service to handle CRUD for Users
+class SecurityService(ObjectService):
+    """ Service to handle Security stuff
     
     """
     def __init__(self, rest):
@@ -63,27 +63,6 @@ class UserService(ObjectService):
         response_as_dict = json.loads(response)
         users = [User.from_dict(user) for user in response_as_dict['value']]
         return users
-
-    def get_active(self):
-        """ Get the activate users in TM1 Server
-
-        :return: List of TM1py.User instances
-        """
-        request = '/api/v1/Users?$filter=IsActive eq true&$expand=Groups'
-        response = self._rest.GET(request)
-        response_as_dict = json.loads(response)
-        users = [User.from_dict(user) for user in response_as_dict['value']]
-        return users
-
-    def is_active(self, user_name):
-        """ Check if user is currently activate in TM1
-
-        :param user_name:
-        :return: Boolean
-        """
-        request = "/api/v1/Users('{}')/IsActive".format(user_name)
-        response = self._rest.GET(request)
-        return json.loads(response)['value']
 
     def get_from_group(self, group_name):
         """ Get all users from group

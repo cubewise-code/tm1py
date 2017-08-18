@@ -1,4 +1,5 @@
 dist/**
+docs/_build/**
 .idea/misc.xml
 *.xml
 .idea/TM1py.iml

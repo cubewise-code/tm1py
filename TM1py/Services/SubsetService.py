@@ -10,7 +10,7 @@ from TM1py.Services import ProcessService
 
 
 class SubsetService(ObjectService):
-    """ Service to handle CRUD for TM1 Subsets (dynamic and static)
+    """ Service to handle Object Updates for TM1 Subsets (dynamic and static)
     
     """
     def __init__(self, rest):

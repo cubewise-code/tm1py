@@ -3,31 +3,28 @@ import uuid
 
 from TM1py.Objects import Process
 from TM1py.Objects import Subset
-from TM1py.Services import LoginService
-from TM1py.Services import ProcessService
-from TM1py.Services import RESTService
-from TM1py.Services import SubsetService
+from TM1py.Services import TM1Service
 
 # Configuration for tests
+address = 'localhost'
 port = 8001
 user = 'admin'
 pwd = 'apple'
+ssl = False
+process_prefix = '}TM1py_unittest'
 
 
 class TestProcessMethods(unittest.TestCase):
-    login = LoginService.native(user, pwd)
-    tm1_rest = RESTService(ip='', port=port, login=login, ssl=False)
-    process_service = ProcessService(tm1_rest)
-    subset_service = SubsetService(tm1_rest)
+    tm1 = TM1Service(address=address, port=port, user=user, password=pwd, ssl=ssl)
 
     random_string = str(uuid.uuid4())
 
     # None process
-    p_none = Process(name='}TM1py_unittest_none_' + random_string,
+    p_none = Process(name=process_prefix + '_none_' + random_string,
                      datasource_type='None')
 
     # ACII process
-    p_ascii = Process(name='}TM1py_unittest_ascii_' + random_string,
+    p_ascii = Process(name=process_prefix + '_ascii_' + random_string,
                       datasource_type='ASCII',
                       datasource_ascii_delimiter_type='Character',
                       datasource_ascii_delimiter_char=',',
@@ -49,25 +46,25 @@ class TestProcessMethods(unittest.TestCase):
     p_ascii.add_parameter('p_Year', 'year?', '2016')
 
     # View process
-    p_view = Process(name='}TM1py_unittest_view_' + random_string,
+    p_view = Process(name=process_prefix + '_view_' + random_string,
                      datasource_type='TM1CubeView',
                      datasource_view='view1',
                      datasource_data_source_name_for_client='Plan_BudgetPlan',
                      datasource_data_source_name_for_server='Plan_BudgetPlan')
 
     # ODBC process
-    p_odbc = Process(name='}TM1py_unittest_odbc_' + random_string,
+    p_odbc = Process(name=process_prefix + '_odbc_' + random_string,
                      datasource_type='ODBC',
                      datasource_password='password',
                      datasource_user_name='user')
 
     # Subset process
-    subset_name = '}TM1py_unittest_subset_' + random_string
+    subset_name = process_prefix + '_subset_' + random_string
     subset = Subset(dimension_name='plan_business_unit',
                     subset_name=subset_name,
                     elements=['10110', '10120', '10200', '10210'])
-    subset_service.create(subset, False)
-    p_subset = Process(name='}TM1py_unittest_subset_' + random_string,
+    tm1.subsets.create(subset, False)
+    p_subset = Process(name=process_prefix + '_subset_' + random_string,
                        datasource_type='TM1DimensionSubset',
                        datasource_data_source_name_for_server=subset.dimension_name,
                        datasource_subset=subset.name,
@@ -75,51 +72,51 @@ class TestProcessMethods(unittest.TestCase):
 
     # Create Process
     def test1_create_process(self):
-        self.process_service.create(self.p_none)
-        self.process_service.create(self.p_ascii)
-        self.process_service.create(self.p_view)
-        self.process_service.create(self.p_odbc)
-        self.process_service.create(self.p_subset)
+        self.tm1.processes.create(self.p_none)
+        self.tm1.processes.create(self.p_ascii)
+        self.tm1.processes.create(self.p_view)
+        self.tm1.processes.create(self.p_odbc)
+        self.tm1.processes.create(self.p_subset)
 
     # Get Process
     def test2_get_process(self):
-        p1 = self.process_service.get(self.p_ascii.name)
+        p1 = self.tm1.processes.get(self.p_ascii.name)
         self.assertEqual(p1.body, self.p_ascii.body)
-        p2 = self.process_service.get(self.p_none.name)
+        p2 = self.tm1.processes.get(self.p_none.name)
         self.assertEqual(p2.body, self.p_none.body)
-        p3 = self.process_service.get(self.p_view.name)
+        p3 = self.tm1.processes.get(self.p_view.name)
         self.assertEqual(p3.body, self.p_view.body)
-        p4 = self.process_service.get(self.p_odbc.name)
+        p4 = self.tm1.processes.get(self.p_odbc.name)
         p4.datasource_password = None
         self.p_odbc.datasource_password = None
         self.assertEqual(p4.body, self.p_odbc.body)
-        p5 = self.process_service.get(self.p_subset.name)
+        p5 = self.tm1.processes.get(self.p_subset.name)
         self.assertEqual(p5.body, self.p_subset.body)
 
     # Update process
     def test3_update_process(self):
         # get
-        p = self.process_service.get(self.p_ascii.name)
+        p = self.tm1.processes.get(self.p_ascii.name)
         # modify
         p.data_procedure = "SaveDataAll;"
         # update on Server
-        self.process_service.update(p)
+        self.tm1.processes.update(p)
         # get again
-        p_ascii_updated = self.process_service.get(p.name)
+        p_ascii_updated = self.tm1.processes.get(p.name)
         # assert
         self.assertNotEqual(p_ascii_updated.data_procedure, self.p_ascii.data_procedure)
 
     # Delete process
     def test4_delete_process(self):
-        self.process_service.delete(self.p_none.name)
-        self.process_service.delete(self.p_ascii.name)
-        self.process_service.delete(self.p_view.name)
-        self.process_service.delete(self.p_odbc.name)
-        self.process_service.delete(self.p_subset.name)
-        self.subset_service.delete(self.subset.dimension_name, self.subset_name, False)
+        self.tm1.processes.delete(self.p_none.name)
+        self.tm1.processes.delete(self.p_ascii.name)
+        self.tm1.processes.delete(self.p_view.name)
+        self.tm1.processes.delete(self.p_odbc.name)
+        self.tm1.processes.delete(self.p_subset.name)
+        self.tm1.subsets.delete(self.subset.dimension_name, self.subset_name, False)
 
     def test5_logout(self):
-        self.tm1_rest.logout()
+        self.tm1.logout()
 
 
 if __name__ == '__main__':

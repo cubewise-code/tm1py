@@ -4,21 +4,20 @@ import uuid
 from datetime import datetime
 
 from TM1py.Objects import Chore, ChoreStartTime, ChoreFrequency, ChoreTask, Process
-from TM1py.Services import ChoreService, LoginService, ProcessService, RESTService
+from TM1py.Services import TM1Service
 
 # Configuration for tests
+address = 'localhost'
 port = 8001
 user = 'admin'
 pwd = 'apple'
+ssl = False
 process_name1 = 'TM1py_unittest_process1'
 process_name2 = 'TM1py_unittest_process2'
 
 
 class TestChoreMethods(unittest.TestCase):
-    login = LoginService.native(user, pwd)
-    tm1_rest = RESTService(ip='', port=port, login=login, ssl=False)
-
-    chore_service = ChoreService(tm1_rest)
+    tm1 = TM1Service(address=address, port=port, user=user, password=pwd, ssl=ssl)
 
     # chore properties
     chore_name = 'TM1py_unittest_chore_' + str(uuid.uuid4())
@@ -37,17 +36,16 @@ class TestChoreMethods(unittest.TestCase):
     # Check if process exists. If not create it
     @classmethod
     def setup_class(cls):
-        process_service = ProcessService(cls.tm1_rest)
         p1 = Process(name=process_name1)
         p1.add_parameter('pRegion', 'pRegion (String)', value='US')
-        if process_service.exists(p1.name):
-            process_service.delete(p1.name)
-        process_service.create(p1)
+        if cls.tm1.processes.exists(p1.name):
+            cls.tm1.processes.delete(p1.name)
+        cls.tm1.processes.create(p1)
         p2 = Process(name=process_name2)
         p2.add_parameter('pRegion', 'pRegion (String)', value='UK')
-        if process_service.exists(p2.name):
-            process_service.delete(p2.name)
-        process_service.create(p2)
+        if cls.tm1.processes.exists(p2.name):
+            cls.tm1.processes.delete(p2.name)
+        cls.tm1.processes.create(p2)
 
     # 1. Create chore
     def test_1create_chore(self):
@@ -60,11 +58,11 @@ class TestChoreMethods(unittest.TestCase):
                   frequency=self.frequency,
                   tasks=self.tasks)
         # No exceptions -> means test passed
-        self.chore_service.create(c)
+        self.tm1.chores.create(c)
 
     # 2. Get chore
     def test_2get_chore(self):
-        c = self.chore_service.get(self.chore_name)
+        c = self.tm1.chores.get(self.chore_name)
         # check all properties
         self.assertEqual(c._start_time._datetime, self.start_time.replace(microsecond=0))
         self.assertEqual(c._name, self.chore_name)
@@ -81,7 +79,7 @@ class TestChoreMethods(unittest.TestCase):
     # 3. Update chore
     def test_3update_chore(self):
         # get chore
-        c = self.chore_service.get(self.chore_name)
+        c = self.tm1.chores.get(self.chore_name)
 
         # update all properties
         # update start time
@@ -109,10 +107,10 @@ class TestChoreMethods(unittest.TestCase):
         c.deactivate()
 
         # update chore in TM1
-        self.chore_service.update(c)
+        self.tm1.chores.update(c)
 
         # get chore and check all properties
-        c = self.chore_service.get(chore_name=self.chore_name)
+        c = self.tm1.chores.get(chore_name=self.chore_name)
         self.assertEqual(c._start_time._datetime.replace(microsecond=0), start_time.replace(microsecond=0))
         self.assertEqual(c._name, self.chore_name)
         self.assertEqual(c._dst_sensitivity, False)
@@ -127,14 +125,13 @@ class TestChoreMethods(unittest.TestCase):
 
     # 4. Delete chore
     def test_4delete_chore(self):
-        self.chore_service.delete(self.chore_name)
+        self.tm1.chores.delete(self.chore_name)
 
     @classmethod
     def teardown_class(cls):
-        process_service = ProcessService(cls.tm1_rest)
-        process_service.delete(process_name1)
-        process_service.delete(process_name2)
-        cls.tm1_rest.logout()
+        cls.tm1.processes.delete(process_name1)
+        cls.tm1.processes.delete(process_name2)
+        cls.tm1.logout()
 
 if __name__ == '__main__':
     unittest.main()

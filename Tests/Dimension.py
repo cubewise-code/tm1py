@@ -3,19 +3,18 @@ import uuid
 
 from TM1py.Objects import Dimension, Hierarchy, Element
 from TM1py.Objects import ElementAttribute
-from TM1py.Services import RESTService, LoginService, DimensionService
+from TM1py.Services import TM1Service
 
 # Configuration for tests
+address = 'localhost'
 port = 8001
 user = 'admin'
 pwd = 'apple'
+ssl = False
 
 
 class TestDimensionMethods(unittest.TestCase):
-    login = LoginService.native(user, pwd)
-    tm1_rest = RESTService(ip='', port=port, login=login, ssl=False)
-
-    dimension_service = DimensionService(tm1_rest)
+    tm1 = TM1Service(address=address, port=port, user=user, password=pwd, ssl=ssl)
 
     dimension_name = 'TM1py_unittest_dimension_{}'.format(int(uuid.uuid4()))
     hierarchy_name = dimension_name
@@ -31,21 +30,21 @@ class TestDimensionMethods(unittest.TestCase):
         h = Hierarchy(name=self.dimension_name, dimension_name=self.dimension_name, elements=elements, edges=edges)
         d = Dimension(name=self.dimension_name, hierarchies=[h])
         # create it
-        self.dimension_service.create(d)
+        self.tm1.dimensions.create(d)
 
         # Test
-        dimensions = self.dimension_service.get_all_names()
+        dimensions = self.tm1.dimensions.get_all_names()
         self.assertIn(self.dimension_name, dimensions)
 
     def test2_get_dimension(self):
         # get it
-        d = self.dimension_service.get(dimension_name=self.dimension_name)
+        d = self.tm1.dimensions.get(dimension_name=self.dimension_name)
         # Test
         self.assertEqual(len(d.hierarchies[0].elements), 1001)
 
     def test3_update_dimension(self):
         # get dimension from tm1
-        d = self.dimension_service.get(dimension_name=self.dimension_name)
+        d = self.tm1.dimensions.get(dimension_name=self.dimension_name)
         # create element objects
         elements = [Element(name='e1', element_type='Consolidated'),
                     Element(name='e2', element_type='Numeric'),
@@ -69,23 +68,23 @@ class TestDimensionMethods(unittest.TestCase):
         d.add_hierarchy(hierarchy)
 
         # update dimension in TM1
-        self.dimension_service.update(d)
+        self.tm1.dimensions.update(d)
 
         # Test
-        dimension = self.dimension_service.get(self.dimension_name)
+        dimension = self.tm1.dimensions.get(self.dimension_name)
         self.assertEqual(len(dimension.hierarchies[0].elements), len(elements))
 
     def test4_delete_dimension(self):
-        dimensions_before = self.dimension_service.get_all_names()
-        self.dimension_service.delete(self.dimension_name)
-        dimensions_after = self.dimension_service.get_all_names()
+        dimensions_before = self.tm1.dimensions.get_all_names()
+        self.tm1.dimensions.delete(self.dimension_name)
+        dimensions_after = self.tm1.dimensions.get_all_names()
 
         # Test
         self.assertIn(self.dimension_name,dimensions_before)
         self.assertNotIn(self.dimension_name, dimensions_after)
 
     def test5_logout(self):
-        self.tm1_rest.logout()
+        self.tm1.logout()
 
 if __name__ == '__main__':
     unittest.main()

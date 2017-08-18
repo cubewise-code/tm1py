@@ -9,7 +9,7 @@ from TM1py.Services.ObjectService import ObjectService
 
 
 class AnnotationService(ObjectService):
-    """ Service to handle CRUD for TM1 CellAnnotations
+    """ Service to handle Object Updates for TM1 CellAnnotations
     
     """
     def __init__(self, rest):

@@ -38,11 +38,11 @@ TM1 Services
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.InfoService
+.. autoclass:: TM1py.MonitoringService
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.LoginService
+.. autoclass:: TM1py.ServerService
    :members:
    :undoc-members:
 
@@ -54,15 +54,19 @@ TM1 Services
    :members:
    :undoc-members:
 
+.. autoclass:: TM1py.SecurityService
+   :members:
+   :undoc-members:
+
+.. autoclass:: TM1py.ServerService
+   :members:
+   :undoc-members:
+
 .. autoclass:: TM1py.SubsetService
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.ThreadService
-   :members:
-   :undoc-members:
-
-.. autoclass:: TM1py.UserService
+.. autoclass:: TM1py.TM1Service
    :members:
    :undoc-members:
 

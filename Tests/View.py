@@ -2,26 +2,15 @@ import random
 import unittest
 import uuid
 
-from TM1py.Objects import AnnonymousSubset, Subset
-from TM1py.Objects import Cube
-from TM1py.Objects import Dimension
-from TM1py.Objects import Element
-from TM1py.Objects import Hierarchy
-from TM1py.Objects import MDXView
-from TM1py.Objects import NativeView
-from TM1py.Services import CubeService
-from TM1py.Services import DataService
-from TM1py.Services import DimensionService
-from TM1py.Services import InfoService
-from TM1py.Services import LoginService
-from TM1py.Services import RESTService
-from TM1py.Services import SubsetService
-from TM1py.Services import ViewService
+from TM1py.Objects import AnnonymousSubset, Subset, Cube, Dimension, Element, Hierarchy, MDXView, NativeView
+from TM1py.Services import TM1Service
 
 # Configuration for tests
+address = 'localhost'
 port = 8001
 user = 'admin'
 pwd = 'apple'
+ssl = False
 
 cube_name = 'TM1py_unittest_cube'
 dimension_names = ['TM1py_unittest_dimension1',
@@ -30,20 +19,12 @@ dimension_names = ['TM1py_unittest_dimension1',
 
 
 class TestViewMethods(unittest.TestCase):
-    login = LoginService.native(user, pwd)
-    tm1_rest = RESTService(ip='', port=port, login=login, ssl=False)
-
-    info_service = InfoService(tm1_rest)
-    view_service = ViewService(tm1_rest)
-    cube_service = CubeService(tm1_rest)
-    dimension_service = DimensionService(tm1_rest)
-    subset_service = SubsetService(tm1_rest)
-    data_service = DataService(tm1_rest)
+    tm1 = TM1Service(address=address, port=port, user=user, password=pwd, ssl=ssl)
 
     random_string = str(uuid.uuid4())
     # Fails when random boolean is True. Private NativeViews cant be updated with TM1 10.2.2 FP 6
     random_boolean = bool(random.getrandbits(1)) \
-        if int(info_service.get_product_version().split('.')[2]) > 20602 \
+        if int(tm1.server.get_product_version().split('.')[2]) > 20602 \
         else False
 
     native_view_name = 'TM1py_unittest_native_view_' + random_string
@@ -57,12 +38,12 @@ class TestViewMethods(unittest.TestCase):
             elements = [Element('Element {}'.format(str(j)), 'Numeric') for j in range(1, 1001)]
             hierarchy = Hierarchy(dimension_names[i], dimension_names[i], elements)
             dimension = Dimension(dimension_names[i], [hierarchy])
-            if not cls.dimension_service.exists(dimension.name):
-                cls.dimension_service.create(dimension)
+            if not cls.tm1.dimensions.exists(dimension.name):
+                cls.tm1.dimensions.create(dimension)
         # Build Cube
         cube = Cube(cube_name, dimension_names)
-        if not cls.cube_service.exists(cube_name):
-            cls.cube_service.create(cube)
+        if not cls.tm1.cubes.exists(cube_name):
+            cls.tm1.cubes.create(cube)
         # Write data into cube
         cellset = {}
         for i in range(10000):
@@ -70,7 +51,7 @@ class TestViewMethods(unittest.TestCase):
             element2 = 'Element ' + str(random.randint(1, 1000))
             element3 = 'Element ' + str(random.randint(1, 1000))
             cellset[(element1, element2, element3)] = random.randint(1, 1000)
-        cls.data_service.write_values(cube_name, cellset)
+        cls.tm1.data.write_values(cube_name, cellset)
 
     def test1_create_view(self):
         # create instance of native View
@@ -79,7 +60,7 @@ class TestViewMethods(unittest.TestCase):
 
         # Set up native view - put subsets on Rows, Columns and Titles
         subset = Subset(dimension_names[0], str(uuid.uuid4()), expression='{{[{}].Members}}'.format(dimension_names[0]))
-        self.subset_service.create(subset, private=False)
+        self.tm1.subsets.create(subset, private=False)
         native_view.add_row(dimension_name=dimension_names[0], subset=subset)
 
         subset = AnnonymousSubset(dimension_names[1], elements=['element1', 'element123', 'element432'])
@@ -87,17 +68,17 @@ class TestViewMethods(unittest.TestCase):
 
         elements = ['Element{}'.format(str(i)) for i in range(1, 201)]
         subset = Subset(dimension_names[2], str(uuid.uuid4()), elements=elements)
-        self.subset_service.create(subset, private=False)
+        self.tm1.subsets.create(subset, private=False)
         native_view.add_column(dimension_name=dimension_names[2], subset=subset)
 
         # Suppress Null Values
         native_view.suppress_empty_cells = True
 
         # create native view on Server
-        self.view_service.create(view=native_view, private=self.random_boolean)
+        self.tm1.views.create(view=native_view, private=self.random_boolean)
 
         # create instance of MDXView
-        nv_view = self.view_service.get_native_view(cube_name=cube_name,
+        nv_view = self.tm1.views.get_native_view(cube_name=cube_name,
                                                     view_name=self.native_view_name,
                                                     private=self.random_boolean)
         mdx = nv_view.MDX
@@ -105,30 +86,30 @@ class TestViewMethods(unittest.TestCase):
                            view_name=self.mdx_view_name,
                            MDX=mdx)
         # create mdx view on Server
-        self.view_service.create(view=mdx_view, private=self.random_boolean)
+        self.tm1.views.create(view=mdx_view, private=self.random_boolean)
 
     def test2_get_all_views(self):
-        views = self.view_service.get_all(cube_name)
+        views = self.tm1.views.get_all(cube_name)
         self.assertGreater(len(views), 0)
 
     def test3_get_view(self):
         # get native view
-        native_view = self.view_service.get_native_view(cube_name=cube_name,
+        native_view = self.tm1.views.get_native_view(cube_name=cube_name,
                                                         view_name=self.native_view_name,
                                                         private=self.random_boolean)
         # check if instance
         self.assertIsInstance(native_view, NativeView)
 
         # get mdx view
-        mdx_view = self.view_service.get_mdx_view(cube_name=cube_name,
+        mdx_view = self.tm1.views.get_mdx_view(cube_name=cube_name,
                                                   view_name=self.mdx_view_name,
                                                   private=self.random_boolean)
         # check if instance
         self.assertIsInstance(mdx_view, MDXView)
 
     def test4_compare_data(self):
-        data_nv = self.data_service.get_view_content(cube_name, self.native_view_name, private=self.random_boolean)
-        data_mdx = self.data_service.get_view_content(cube_name, self.mdx_view_name, private=self.random_boolean)
+        data_nv = self.tm1.data.get_view_content(cube_name, self.native_view_name, private=self.random_boolean)
+        data_mdx = self.tm1.data.get_view_content(cube_name, self.mdx_view_name, private=self.random_boolean)
 
         # Sum up all the values from the views
         sum_nv = sum([value['Value'] for value in data_nv.values() if value['Value']])
@@ -138,12 +119,12 @@ class TestViewMethods(unittest.TestCase):
     # fails sometimes because PrivateMDXViews cant be updated in FP < 5.
     def test5_update_nativeview(self):
         # get native view
-        native_view_original = self.view_service.get_native_view(cube_name=cube_name,
+        native_view_original = self.tm1.views.get_native_view(cube_name=cube_name,
                                                                  view_name=self.native_view_name,
                                                                  private=self.random_boolean)
 
         # Sum up all the values from the views
-        data_original = self.data_service.get_view_content(cube_name, self.native_view_name, private=self.random_boolean)
+        data_original = self.tm1.data.get_view_content(cube_name, self.native_view_name, private=self.random_boolean)
         sum_original = sum([value['Value'] for value in data_original.values() if value['Value']])
 
         # modify it
@@ -153,20 +134,20 @@ class TestViewMethods(unittest.TestCase):
         native_view_original.add_column(dimension_name=dimension_names[0], subset=subset)
 
         # update it on Server
-        self.view_service.update(native_view_original, private=self.random_boolean)
+        self.tm1.views.update(native_view_original, private=self.random_boolean)
 
         # Get it and check if its different
-        data_updated = self.data_service.get_view_content(cube_name, self.native_view_name, private=self.random_boolean)
+        data_updated = self.tm1.data.get_view_content(cube_name, self.native_view_name, private=self.random_boolean)
         sum_updated = sum([value['Value'] for value in data_updated.values() if value['Value']])
         self.assertNotEqual(sum_original, sum_updated)
 
     def test6_update_mdxview(self):
         # Get mdx view
-        mdx_view_original = self.view_service.get_mdx_view(cube_name=cube_name,
+        mdx_view_original = self.tm1.views.get_mdx_view(cube_name=cube_name,
                                                            view_name=self.mdx_view_name,
                                                            private=self.random_boolean)
         # Get data from mdx view
-        data_mdx_original = self.data_service.get_view_content(cube_name=cube_name,
+        data_mdx_original = self.tm1.data.get_view_content(cube_name=cube_name,
                                                                view_name=mdx_view_original.name,
                                                                private=self.random_boolean)
         mdx = "SELECT " \
@@ -176,13 +157,13 @@ class TestViewMethods(unittest.TestCase):
               "WHERE ([{}].[Element172])".format(dimension_names[0], dimension_names[1], cube_name, dimension_names[2])
         mdx_view_original.MDX = mdx
         # Update mdx view on Server
-        self.view_service.update(mdx_view_original, private=self.random_boolean)
+        self.tm1.views.update(mdx_view_original, private=self.random_boolean)
         # Get it and check if its different
-        mdx_view_updated = self.view_service.get_mdx_view(cube_name=cube_name,
+        mdx_view_updated = self.tm1.views.get_mdx_view(cube_name=cube_name,
                                                           view_name=self.mdx_view_name,
                                                           private=self.random_boolean)
 
-        data_mdx_updated = self.data_service.get_view_content(cube_name,
+        data_mdx_updated = self.tm1.data.get_view_content(cube_name,
                                                               mdx_view_updated.name,
                                                               private=self.random_boolean)
 
@@ -192,15 +173,15 @@ class TestViewMethods(unittest.TestCase):
         self.assertNotEqual(sum_mdx_original, sum_mdx_updated)
 
     def test7_delete_view(self):
-        self.view_service.delete(cube_name=cube_name, view_name=self.native_view_name, private=self.random_boolean)
-        self.view_service.delete(cube_name=cube_name, view_name=self.mdx_view_name, private=self.random_boolean)
+        self.tm1.views.delete(cube_name=cube_name, view_name=self.native_view_name, private=self.random_boolean)
+        self.tm1.views.delete(cube_name=cube_name, view_name=self.mdx_view_name, private=self.random_boolean)
 
     @classmethod
     def teardown_class(cls):
-        cls.cube_service.delete(cube_name)
+        cls.tm1.cubes.delete(cube_name)
         for dimension_name in dimension_names:
-            cls.dimension_service.delete(dimension_name)
-        cls.tm1_rest.logout()
+            cls.tm1.dimensions.delete(dimension_name)
+        cls.tm1.logout()
 
     
 if __name__ == '__main__':

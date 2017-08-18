@@ -3,21 +3,19 @@ import uuid
 
 from TM1py.Objects import Dimension
 from TM1py.Objects import Hierarchy
-from TM1py.Services import RESTService, LoginService, DimensionService, HierarchyService
+from TM1py.Services import TM1Service
 
 # Configuration for tests
+address = 'localhost'
 port = 8001
 user = 'admin'
 pwd = 'apple'
+ssl = False
 dimension_prefix = 'TM1py_unittest_dimension_{}'
 
 
 class TestHierarchyMethods(unittest.TestCase):
-    login = LoginService.native(user, pwd)
-    tm1_rest = RESTService(ip='', port=port, login=login, ssl=False)
-
-    dimension_service = DimensionService(tm1_rest)
-    hierarchy_service = HierarchyService(tm1_rest)
+    tm1 = TM1Service(address=address, port=port, user=user, password=pwd, ssl=ssl)
 
     dimension_name = dimension_prefix.format(uuid.uuid4())
 
@@ -32,10 +30,10 @@ class TestHierarchyMethods(unittest.TestCase):
         h.add_element_attribute('Next Year', 'String')
         h.add_edge('Total Years', '1989', 2)
         d.add_hierarchy(h)
-        self.dimension_service.create(d)
+        self.tm1.dimensions.create(d)
 
     def test2_get_hierarchy(self):
-        d = self.dimension_service.get(dimension_name=self.dimension_name)
+        d = self.tm1.dimensions.get(dimension_name=self.dimension_name)
         h = d.default_hierarchy
         self.assertIn('Total Years', h.elements.keys())
         self.assertIn('No Year', h.elements.keys())
@@ -45,7 +43,7 @@ class TestHierarchyMethods(unittest.TestCase):
 
     def test3_update_hierarchy(self):
         # Get dimension and hierarchy
-        d = self.dimension_service.get(dimension_name=self.dimension_name)
+        d = self.tm1.dimensions.get(dimension_name=self.dimension_name)
         h = d.default_hierarchy
         # Edit Elements and Edges
         for year in range(2010, 2021, 1):
@@ -68,10 +66,10 @@ class TestHierarchyMethods(unittest.TestCase):
         h.update_edge('Total Years', '2011', 2)
         # Update_element
         h.update_element('No Year', 'String')
-        self.dimension_service.update(d)
+        self.tm1.dimensions.update(d)
 
         # Check if update workes
-        d = self.dimension_service.get(self.dimension_name)
+        d = self.tm1.dimensions.get(self.dimension_name)
         h = d.default_hierarchy
         self.assertIn('2010-Jan', h.elements.keys())
         self.assertIn('2020-Dec', h.elements.keys())
@@ -85,8 +83,8 @@ class TestHierarchyMethods(unittest.TestCase):
         self.assertEqual(h.elements['No Year'].element_type, 'String')
 
     def test4_test_delete_hierarchy(self):
-        self.dimension_service.delete(self.dimension_name)
+        self.tm1.dimensions.delete(self.dimension_name)
 
     def test5_logout(self):
-        self.tm1_rest.logout()
+        self.tm1.logout()
 

@@ -5,7 +5,7 @@ import json
 from TM1py.Services.ObjectService import ObjectService
 
 
-class InfoService(ObjectService):
+class ServerService(ObjectService):
     """ Service to query common information from the TM1 Server
     
     """

@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import json
+import random
 
 from TM1py.Objects.Cube import Cube
-from TM1py.Services.ObjectService import ObjectService
+from TM1py.Services import ObjectService
 
 
 class CubeService(ObjectService):
-    """ Service to handle CRUD for TM1 Cubes
+    """ Service to handle Object Updates for TM1 Cubes
 
     """
     def __init__(self, rest):
@@ -16,7 +17,7 @@ class CubeService(ObjectService):
     def create(self, cube):
         """ create new cube on TM1 Server
 
-        :param cube:
+        :param cube: instance of TM1py.Cube
         :return: response
         """
         request = "/api/v1/Cubes"
@@ -115,3 +116,24 @@ class CubeService(ObjectService):
         response_as_dict = json.loads(response)['value']
         dimension_names = [element['Name'] for element in response_as_dict]
         return dimension_names
+
+    def get_random_intersection(self, cube_name, unique_names=False):
+        """ Get a random Intersection in a cube
+        used mostly for unittesting. 
+        Not optimized in terms of performance. Function Loads ALL elements for EACH dim.
+
+        :param cube_name: 
+        :param unique_names: unique names instead of plain element names 
+        :return: List of elements
+        """
+        from TM1py.Services import DimensionService
+        dimension_service = DimensionService(self._rest)
+        dimensions = self.get_dimension_names(cube_name)
+        elements = []
+        for dimension in dimensions:
+            hierarchy = dimension_service.get(dimension).default_hierarchy
+            element = random.choice(list((hierarchy.elements.keys())))
+            if unique_names:
+                element = '[{}].[{}]'.format(dimension, element)
+            elements.append(element)
+        return elements

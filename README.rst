@@ -5,13 +5,12 @@ By wrapping the IBM Planning Analytics (TM1) REST API in a concise Python framew
 
 Interacting with TM1 programmatically has never been easier.
 
- .. code-block:: Python
 
-    >>> login = LoginService.native('admin', 'apple')
-    >>> with RESTService(ip='', port=8001, login=login, ssl=False) as tm1_rest:
-    >>>     subset_service = SubsetService(tm1_rest)
-    >>>     subset = Subset(dimension_name='Month', subset_name='Q1', elements=['Jan', 'Feb', 'Mar'])
-    >>>     subset_service.create(subset, private=True)
+.. code-block:: Python
+
+    with TM1Service(address='localhost', port=8001, user='admin', password='apple', ssl=False) as tm1:
+        subset = Subset(dimension_name='Month', subset_name='Q1', elements=['Jan', 'Feb', 'Mar'])
+        tm1.subsets.create(subset, private=True)
 
 Features
 =======================
@@ -30,10 +29,10 @@ TM1py offers handy features to interact with TM1 from Python, such as
 Requirements
 =======================
 
-- Python    (at least version 3.5)
-- TM1       (at least 10.2.2 FP 5)
+- Python    (3.5 or higher)
+- TM1       (10.2.2 FP 5 or higher)
 
-Steo by Step Installation
+Step by Step Installation
 ==============================================
 
 1. Install Python
@@ -41,7 +40,10 @@ Steo by Step Installation
 
 The TM1py libraries will run on all Python versions >= 3.5. Python can be downloaded at
 
-https://www.Python.org/downloads/
+Python Windows 64 bit installer
+
+https://www.python.org/ftp/python/3.6.2/python-3.6.2-amd64.exe
+
 
 Python (3.6) installation walkthrough on Youtube:
 
@@ -50,11 +52,13 @@ https://www.youtube.com/watch?v=dX2-V2BocqQ
 You have to make sure, you check the "Add Python 3.6 to PATH" Checkbox in the installation!
 This allows you to run Python stuff more easily in the future through the command-line.
 
+
 To check if the installation was successful just type
 
  .. code-block:: bash
 
-    Python
+    Python --version
+
 
 into the command-line.
 This will print out the installed version of Python and switch to an interactive mode where you can code Python.
@@ -63,12 +67,12 @@ If you didn't check the checkbox during the installation you can type
 
  .. code-block:: bash
 
-    C:\Python35\python.exe
+    C:\Python35\python.exe --version
 
 2. Configure TM1
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-TM1py requires at least TM1 version 10.2.2 FP5. If you consider using the REST API in production it is recommended to upgrade to TM1 10.2.2 FP 7 or TM1 11, due to minor bugs in earlier versions. E.g. GET http://localhost:8001/api/v1/Users('Admin')/Password
+TM1py requires at least TM1 version 10.2.2 FP5. If you consider using the REST API in production it is recommended to upgrade to TM1 10.2.2 FP 7 or TM1 11, due to minor bugs in earlier versions.
 
 In order to be able to communicate with TM1 through HTTP, you have to assign an HTTP port number to TM1 in the tm1s.cfg file
 
@@ -77,6 +81,12 @@ In order to be able to communicate with TM1 through HTTP, you have to assign an 
     HTTPPortNumber=8002
 
 The parameter will only be effective after restarting the TM1 instance.
+
+For more information about how to enable the TM1 REST API, check out the following article:
+
+https://code.cubewise.com/blog/enabling-the-tm1-rest-api
+
+
 
 3. Check Connectivity to TM1 from the Browser
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -96,6 +106,7 @@ We might have to adjust 3 things here.
 3. 8002 has to be replaced by the HTTPPortNumber that is specified in the tm1s.cfg.
 
 If the request is successfull it will show the metadata document (XML) of the TM1 REST API in the browser.
+
 
 4. Install TM1py
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -152,18 +163,15 @@ Usage
 Idea
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
- .. code-block:: Python
+.. code-block:: Python
 
-    >>> from TM1py.Services import ChoreService
-    >>> from TM1py.Services import LoginService
-    >>> from TM1py.Services import RESTService
+   from TM1py.Services import TM1Service
 
-    >>> login = LoginService.native('admin', 'apple')
-    >>> with RESTService(ip='', port=8001, login=login, ssl=False) as tm1_rest:
-    >>>     chore_service = ChoreService(tm1_rest)
-    >>>     for chore in chore_service.get_all():
-    >>>         chore.reschedule(hours=-1)
-    >>>         chore_service.update(chore)
+   with TM1Service(address='', port=8001, user='admin', password='apple', ssl=False) as tm1:
+      subset = Subset(dimension_name='Month',
+                      subset_name='Q1',
+                      elements=['Jan', 'Feb', 'Mar'])
+      tm1.subsets.create(subset, private=True)
 
 
 My first Python TM1 script
@@ -173,44 +181,37 @@ Find all unused dimensions with TM1py
 
  .. code-block:: Python
 
-    >>> # Housekeeping: import services
-    >>> from TM1py.Services import CubeService
-    >>> from TM1py.Services import DimensionService
-    >>> from TM1py.Services import LoginService
-    >>> from TM1py.Services import RESTService
+    # Housekeeping: import TM1 Service
+    from TM1py.Services import TM1Service
 
-    >>> # Create a login object. It handles the authentication with the TM1 Server
-    >>> login = LoginService.native('admin', 'apple')
-    >>> # Connect to TM1. Requires a few parameters to connect:
-    >>> # - ip: Address of the TM1 instance. 'localhost' or '' if you run the TM1 instance locally
-    >>> # - port: HTTPPortNumber as specified in the TM1s.cfg
-    >>> # - login: Login object to handle authentication
-    >>> # - ssl: True or False, as stated in the TM1s.cfg
-    >>> with RESTService(ip='', port=8001, login=login, ssl=False) as tm1_rest:
-    >>>    # Setup the CubeService. It offers Create, Read, Update, Delete functions for Cubes
-    >>>    cube_service = CubeService(tm1_rest)
-    >>>    # Setup the DimensionService. It offers Create, Read, Update, Delete functions for Dimensions
-    >>>    dimension_service = DimensionService(tm1_rest)
-    >>>    # Ask the dimension service to return the names of all existing dimensions
-    >>>    all_dimensions = dimension_service.get_all_names()
-    >>>    # Ask the cube service to return the names of all existing dimensions
-    >>>    all_cubes = cube_service.get_all()
-    >>>    # Now find all dimensions that are actually being used in cubes
-    >>>    # Create a set (in Python: a list of unique elements)
-    >>>    used_dimensions = set()
-    >>>    # Populate the set: iterate Ithrough the list of cubes and push each cube's dimensions into the set
-    >>>    for cube in all_cubes:
-    >>>       used_dimensions.update(cube.dimensions)
-    >>>    # Determine the unused dimensions: The delta between all dimensions and the used dimensions
-    >>>    unused_dimensions = set(all_dimensions) - used_dimensions
-    >>>    # Print out the unused dimensions
-    >>>    print(unused_dimensions)
+    # Connect to TM1. Requires a few parameters to connect:
+    # - address: Address of the machine. 'localhost' or '' if you run the TM1 instance locally
+    # - port: HTTPPortNumber as specified in the TM1s.cfg
+    # - user: The TM1 user
+    # - password: Password of the user
+    # - ssl: True or False, as stated in the TM1s.cfg
+    with TM1Service(address='', port=8001, user='admin', password='apple', ssl=False) as tm1:
+       # Ask TM1 to return the names of all existing dimensions
+       all_dimensions = tm1.dimensions.get_all_names()
+       # Ask TM1 to return the names of all existing dimensions
+       all_cubes = tm1.cubes.get_all()
+       # Now find all dimensions that are actually being used in cubes
+       # Create a set (in Python: a list of unique elements)
+       used_dimensions = set()
+       # Populate the set: iterate Ithrough the list of cubes and push each cube's dimensions into the set
+       for cube in all_cubes:
+          used_dimensions.update(cube.dimensions)
+       # Determine the unused dimensions: The delta between all dimensions and the used dimensions
+       unused_dimensions = set(all_dimensions) - used_dimensions
+       # Print out the unused dimensions
+       print(unused_dimensions)
 
 
 Documentation
 =======================
 
-Work in progress
+http://tm1py.readthedocs.io/en/latest/
+
 
 Other
 =======================

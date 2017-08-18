@@ -10,7 +10,7 @@ from TM1py.Services.HierarchyService import HierarchyService
 
 
 class DimensionService(ObjectService):
-    """ Service to handle CRUD for TM1 Dimensions
+    """ Service to handle Object Updates for TM1 Dimensions
     
     """
     def __init__(self, rest):

@@ -1,36 +1,34 @@
 import unittest
 
-from TM1py.Services import DataService
-from TM1py.Services import LoginService
-from TM1py.Services import RESTService
+from TM1py.Services import TM1Service
 
 # Configuration for tests
+address = 'localhost'
 port = 8001
 user = 'admin'
 pwd = 'apple'
+ssl = False
 
 
 class TestTM1pyDictMethods(unittest.TestCase):
-    login = LoginService.native(user, pwd)
-    tm1_rest = RESTService(ip='', port=port, login=login, ssl=False)
-    data_service = DataService(tm1_rest)
+    tm1 = TM1Service(address=address, port=port, user=user, password=pwd, ssl=ssl)
 
     def test_stuff(self):
         mdx_rows = '[}Clients].Members'
         mdx_columns = '[}Groups].Members'
         cube_name = '[}ClientGroups]'
         mdx = 'SELECT {} ON ROWS, {} ON COLUMNS FROM {}'.format(mdx_rows, mdx_columns, cube_name)
-        data = self.data_service.execute_mdx(mdx)
+        data = self.tm1.data.execute_mdx(mdx)
 
-        ### Get
+        # Get
         self.assertIsNotNone(data[('[}Clients].[ad min]', '[}Groups].[ADM IN]')])
 
-        ### Delete
+        # Delete
         self.assertTrue(('[}clients].[admin]', '[}groups].[admin]') in data)
         del data[('[}Clients].[ad min]', '[}Groups].[ADM IN]')]
         self.assertFalse(('[}clients].[admin]', '[}groups].[admin]') in data)
 
-        ### Copy
+        # Copy
         data_cloned = data.copy()
         self.assertTrue(data_cloned == data)
         self.assertFalse(data_cloned is data)
