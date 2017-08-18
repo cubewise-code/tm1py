@@ -8,7 +8,7 @@ Interacting with TM1 programmatically has never been easier.
 
 .. code-block:: Python
 
-    with TM1Service(address='localhost', port=8001, user='admin', password='apple', ssl=False) as tm1:
+    with TM1Service(address='localhost', port=8001, user='admin', password='apple', ssl=True) as tm1:
         subset = Subset(dimension_name='Month', subset_name='Q1', elements=['Jan', 'Feb', 'Mar'])
         tm1.subsets.create(subset, private=True)
 
@@ -38,11 +38,22 @@ Step by Step Installation
 1. Install Python
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The TM1py libraries will run on all Python versions >= 3.5. Python can be downloaded at
+The TM1py libraries will run on all Python versions >= 3.5.
 
-Python Windows 64 bit installer
+Check if you have python installed. open the command-line and type
+
+ .. code-block:: bash
+
+    Python --version
+
+This will print out the installed version of Python.
+
+If python is not installed it has to be downloaded.
+
+Python for Windows installer (32 and 64 bit):
 
 https://www.python.org/ftp/python/3.6.2/python-3.6.2-amd64.exe
+
 
 
 Python (3.6) installation walkthrough on Youtube:
@@ -61,7 +72,7 @@ To check if the installation was successful just type
 
 
 into the command-line.
-This will print out the installed version of Python and switch to an interactive mode where you can code Python.
+This will print out the installed version of Python.
 
 If you didn't check the checkbox during the installation you can type
 
@@ -69,10 +80,10 @@ If you didn't check the checkbox during the installation you can type
 
     C:\Python35\python.exe --version
 
-2. Configure TM1
+2. Configure the TM1 REST API
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-TM1py requires at least TM1 version 10.2.2 FP5. If you consider using the REST API in production it is recommended to upgrade to TM1 10.2.2 FP 7 or TM1 11, due to minor bugs in earlier versions.
+TM1py requires at least TM1 version 10.2.2 FP5. If you consider using the REST API in production it is recommended to upgrade to TM1 10.2.2 FP 7 or TM1 11.
 
 In order to be able to communicate with TM1 through HTTP, you have to assign an HTTP port number to TM1 in the tm1s.cfg file
 
@@ -82,10 +93,9 @@ In order to be able to communicate with TM1 through HTTP, you have to assign an 
 
 The parameter will only be effective after restarting the TM1 instance.
 
-For more information about how to enable the TM1 REST API, check out the following article:
+For more information on how to enable the TM1 REST API, check out the following article:
 
 https://code.cubewise.com/blog/enabling-the-tm1-rest-api
-
 
 
 3. Check Connectivity to TM1 from the Browser
@@ -95,6 +105,7 @@ Before we move on, we have to make sure that we can access TM1 through the REST 
 The easiest way to do this is through the Browser (preferably Chrome)
 
 Copy and paste the following request into your browser
+
 http://localhost:8002/api/v1/$metadata
 
 We might have to adjust 3 things here.
@@ -167,7 +178,7 @@ Idea
 
    from TM1py.Services import TM1Service
 
-   with TM1Service(address='', port=8001, user='admin', password='apple', ssl=False) as tm1:
+   with TM1Service(address='', port=8001, user='admin', password='apple', ssl=True) as tm1:
       subset = Subset(dimension_name='Month',
                       subset_name='Q1',
                       elements=['Jan', 'Feb', 'Mar'])
@@ -190,7 +201,7 @@ Find all unused dimensions with TM1py
     # - user: The TM1 user
     # - password: Password of the user
     # - ssl: True or False, as stated in the TM1s.cfg
-    with TM1Service(address='', port=8001, user='admin', password='apple', ssl=False) as tm1:
+    with TM1Service(address='', port=8001, user='admin', password='apple', ssl=True) as tm1:
        # Ask TM1 to return the names of all existing dimensions
        all_dimensions = tm1.dimensions.get_all_names()
        # Ask TM1 to return the names of all existing dimensions
