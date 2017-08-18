@@ -190,7 +190,7 @@ My first Python TM1 script
 
 Find all unused dimensions with TM1py
 
- .. code-block:: Python
+.. code-block:: Python
 
     # Housekeeping: import TM1 Service
     from TM1py.Services import TM1Service
