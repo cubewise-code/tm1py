@@ -128,7 +128,6 @@ def build_pandas_dataframe_from_cellset(cellset):
 
     # create index
     keylist = list(cellset_clean.keys())
-    print(keylist)
     multiindex = pd.MultiIndex.from_tuples(keylist, names=dimension_names)
 
     # create DataFrame

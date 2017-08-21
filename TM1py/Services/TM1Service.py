@@ -2,7 +2,7 @@ from TM1py.Services import *
 
 
 class TM1Service:
-    """ We expose all features of TM1py through this service
+    """ All features of TM1py are exposed through this service
     
     """
 

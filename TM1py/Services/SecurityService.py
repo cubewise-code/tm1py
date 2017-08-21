@@ -40,7 +40,7 @@ class SecurityService(ObjectService):
         """
         for current_group in self.get_groups(user.name):
             if current_group not in user.groups:
-                self.remove_from_group(current_group, user.name)
+                self.remove_user_from_group(current_group, user.name)
         request = '/api/v1/Users(\'{}\')'.format(user.name)
         return self._rest.PATCH(request, user.body)
 
@@ -53,7 +53,7 @@ class SecurityService(ObjectService):
         request = '/api/v1/Users(\'{}\')'.format(user_name)
         return self._rest.DELETE(request)
 
-    def get_all(self):
+    def get_all_users(self):
         """ Get all users from TM1 Server
 
         :return: List of TM1py.User instances
@@ -64,7 +64,7 @@ class SecurityService(ObjectService):
         users = [User.from_dict(user) for user in response_as_dict['value']]
         return users
 
-    def get_from_group(self, group_name):
+    def get_users_from_group(self, group_name):
         """ Get all users from group
 
         :param group_name:
@@ -87,7 +87,7 @@ class SecurityService(ObjectService):
         groups = json.loads(response)['value']
         return [group['Name'] for group in groups]
 
-    def remove_from_group(self, group_name, user_name):
+    def remove_user_from_group(self, group_name, user_name):
         """ Remove user from group in TM1 Server
 
         :param group_name:
