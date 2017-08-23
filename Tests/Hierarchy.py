@@ -10,7 +10,7 @@ address = 'localhost'
 port = 8001
 user = 'admin'
 pwd = 'apple'
-ssl = False
+ssl = True
 dimension_prefix = 'TM1py_unittest_dimension_{}'
 
 

@@ -2,12 +2,12 @@ import collections
 import json
 import sys
 
+from TM1py.Objects.Server import Server
+
 if sys.version[0] == '2':
     import httplib as http_client
 else:
     import http.client as http_client
-
-from TM1py.Objects import Server
 
 
 def get_all_servers_from_adminhost(adminhost='localhost'):
@@ -116,13 +116,24 @@ def build_content_from_cellset(raw_cellset_as_dict, cell_properties, top):
     return content_as_dict
 
 
+def element_names_from_element_unqiue_names(element_unique_names):
+    """ Get tuple of simple element names from the full unique element names
+    
+    :param element_unique_names: tuple of element unique names ([dim1].[hier1].[elem1], ... )
+    :return: tuple of element names: (elem1, elem2, ... )
+    """
+    return tuple([unique_name[unique_name.rfind('].[',) + 3:-1]
+                  for unique_name
+                  in element_unique_names])
+
+
 def build_pandas_dataframe_from_cellset(cellset):
     import pandas as pd
 
     cellset_clean = {}
     for coordinates, cell in cellset.items():
-        coordinates_clean = tuple([unique_name[unique_name.rfind('].[',) + 3:-1] for unique_name in coordinates])
-        cellset_clean[coordinates_clean] = cell['Value']
+        element_names = element_names_from_element_unqiue_names(coordinates)
+        cellset_clean[element_names] = cell['Value']
 
     dimension_names = tuple([unique_name[1:unique_name.find('].[')] for unique_name in coordinates])
 

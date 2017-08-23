@@ -8,14 +8,16 @@ from TM1py.Services import TM1Service
 from TM1py.Objects import Annotation
 
 # Configuration for tests
+address = 'localhost'
 port = 8001
 user = 'admin'
 pwd = 'apple'
+ssl = True
 cube_name = 'Plan_BudgetPlan'
 
 
 class TestAnnotationMethods(unittest.TestCase):
-    tm1 = TM1Service(address='', port=port, user=user, password=pwd, ssl=False)
+    tm1 = TM1Service(address=address, port=port, user=user, password=pwd, ssl=ssl)
 
     # Get Random Cube + Intersection
     random_intersection = tm1.cubes.get_random_intersection(cube_name, False)

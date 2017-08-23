@@ -5,5 +5,5 @@ from Tests.Dimension import TestDimensionMethods
 from Tests.Hierarchy import TestHierarchyMethods
 from Tests.Process import TestProcessMethods
 from Tests.Subset import TestSubsetMethods
-from Tests.User import TestUserMethods
+from Tests.Security import TestUserMethods
 from Tests.View import TestViewMethods

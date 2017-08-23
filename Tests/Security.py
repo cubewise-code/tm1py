@@ -9,7 +9,7 @@ address = 'localhost'
 port = 8001
 user = 'admin'
 pwd = 'apple'
-ssl = False
+ssl = True
 
 
 class TestUserMethods(unittest.TestCase):
@@ -26,14 +26,14 @@ class TestUserMethods(unittest.TestCase):
         cls.tm1.processes.execute_ti_code([code])
 
     def test1_create_user(self):
-        all_users_before = self.tm1.security.get_all()
-        self.tm1.security.create(self.user)
-        all_users_after = self.tm1.security.get_all()
+        all_users_before = self.tm1.security.get_all_users()
+        self.tm1.security.create_user(self.user)
+        all_users_after = self.tm1.security.get_all_users()
         # test it!
         self.assertEqual(len(all_users_before) + 1, len(all_users_after))
 
     def test2_get_user(self):
-        u = self.tm1.security.get(self.user_name)
+        u = self.tm1.security.get_user(self.user_name)
         # Adjust it a little bit
         u.password = 'TM1py'
         u.friendly_name = None
@@ -43,24 +43,24 @@ class TestUserMethods(unittest.TestCase):
 
     def test3_update_user(self):
         # get user
-        u = self.tm1.security.get(self.user_name)
+        u = self.tm1.security.get_user(self.user_name)
         # update user. Add Group
         u.add_group(self.group_name)
-        self.tm1.security.update(u)
+        self.tm1.security.update_user(u)
         # test it !
         groups = self.tm1.security.get_groups(u.name)
         self.assertIn(self.group_name, groups)
         # update user. Remove Group
         u.remove_group(self.group_name)
-        self.tm1.security.update(u)
+        self.tm1.security.update_user(u)
         # test it !
         groups = self.tm1.security.get_groups(u.name)
         self.assertNotIn(self.group_name, groups)
 
     def test4_delete_user(self):
-        users_before = self.tm1.security.get_all()
-        self.tm1.security.delete(self.user_name)
-        users_after = self.tm1.security.get_all()
+        users_before = self.tm1.security.get_all_users()
+        self.tm1.security.delete_user(self.user_name)
+        users_after = self.tm1.security.get_all_users()
 
         # test it !
         self.assertEqual(len(users_before) - 1, len(users_after))

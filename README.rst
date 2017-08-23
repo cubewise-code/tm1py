@@ -1,6 +1,7 @@
 
 
 .. image:: Images/TM1pyText.png
+    :align: center
 
 By wrapping the IBM Planning Analytics (TM1) REST API in a concise Python framework, TM1py facilitates Python developments for TM1.
 
@@ -36,7 +37,7 @@ Requirements
 Usage
 =======================
 
-.. code-block:: Bash
+ .. code-block:: Bash
 
     pip install TM1py
 
@@ -57,11 +58,18 @@ Documentation
 Code Documentation:
 http://tm1py.readthedocs.io/en/latest/
 
-Detailed Installation instructions:
-https://github.com/MariusWirtz/TM1py-samples
+Detailed Installation instructions and Samples:
+https://github.com/cubewise-code/TM1py-samples
 
 
 Issues
 =======================
 
 If you find issues, sign up in Github and open an Issue in this repository
+
+
+Contribution
+=======================
+
+TM1py is an open source project. It thrives on contribution from the TM1 community.
+If you find a bug or feel like you can contribute please fork the repository, update the code and then create a pull request so we can merge in the changes.

@@ -120,7 +120,7 @@ class CellService:
         """ Execute MDX and return the cells with their properties
 
         :param mdx: MDX Query, as string
-        :param cell_properties: properties to be queried from the cell. Like Value, Ordinal, etc as iterable
+        :param cell_properties: properties to be queried from the cell. E.g. Value, Ordinal, RuleDerived, ... 
         :param top: integer
         :return: content in sweet consice strcuture.
         """

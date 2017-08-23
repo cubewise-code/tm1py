@@ -7,7 +7,7 @@ address = 'localhost'
 port = 8001
 user = 'admin'
 pwd = 'apple'
-ssl = False
+ssl = True
 
 
 class TestTM1pyDictMethods(unittest.TestCase):

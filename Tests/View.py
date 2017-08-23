@@ -10,7 +10,7 @@ address = 'localhost'
 port = 8001
 user = 'admin'
 pwd = 'apple'
-ssl = False
+ssl = True
 
 cube_name = 'TM1py_unittest_cube'
 dimension_names = ['TM1py_unittest_dimension1',

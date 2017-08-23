@@ -11,7 +11,7 @@ address = 'localhost'
 port = 8001
 user = 'admin'
 pwd = 'apple'
-ssl = False
+ssl = True
 process_name1 = 'TM1py_unittest_process1'
 process_name2 = 'TM1py_unittest_process2'
 
@@ -69,7 +69,7 @@ class TestChoreMethods(unittest.TestCase):
         self.assertEqual(c._dst_sensitivity, False)
         self.assertEqual(c._active, True)
         self.assertEqual(c._execution_mode, 'MultipleCommit')
-        self.assertEqual(c._frequency._days, str(self.frequency_days))
+        self.assertEqual(c._frequency._days, str(self.frequency_days).zfill(2))
         self.assertEqual(c._frequency._hours, str(self.frequency_hours).zfill(2))
         self.assertEqual(c._frequency._minutes, str(self.frequency_minutes).zfill(2))
         self.assertEqual(c._frequency._seconds, str(self.frequency_seconds).zfill(2))

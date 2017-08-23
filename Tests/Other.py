@@ -10,7 +10,7 @@ address = 'localhost'
 port = 8001
 user = 'admin'
 pwd = 'apple'
-ssl = False
+ssl = True
 dimension_prefix = 'TM1py_unittest_dimension_{}'
 
 
@@ -58,6 +58,11 @@ class TestOtherMethods(unittest.TestCase):
                 mdx = view.MDX
                 cube_name = Utils.read_cube_name_from_mdx(mdx)
                 self.assertIn(cube_name, all_cube_names_normalized)
+
+    def test3_get_instances_from_adminhost(self):
+        servers = Utils.get_all_servers_from_adminhost('localhost')
+        print(servers)
+        self.assertGreater(len(servers), 0)
 
 
 if __name__ == '__main__':

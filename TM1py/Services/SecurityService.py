@@ -13,7 +13,7 @@ class SecurityService(ObjectService):
     def __init__(self, rest):
         super().__init__(rest)
 
-    def create(self, user):
+    def create_user(self, user):
         """ Create a user on TM1 Server
 
         :param user: instance of TM1py.User
@@ -22,7 +22,7 @@ class SecurityService(ObjectService):
         request = '/api/v1/Users'
         self._rest.POST(request, user.body)
 
-    def get(self, user_name):
+    def get_user(self, user_name):
         """ Get user from TM1 Server
 
         :param user_name:
@@ -32,7 +32,7 @@ class SecurityService(ObjectService):
         response = self._rest.GET(request)
         return User.from_json(response)
 
-    def update(self, user):
+    def update_user(self, user):
         """ Update user on TM1 Server
 
         :param user: instance of TM1py.User
@@ -44,7 +44,7 @@ class SecurityService(ObjectService):
         request = '/api/v1/Users(\'{}\')'.format(user.name)
         return self._rest.PATCH(request, user.body)
 
-    def delete(self, user_name):
+    def delete_user(self, user_name):
         """ Delete user on TM1 Server
 
         :param user_name:
