@@ -50,58 +50,57 @@ class TestSubsetMethods(unittest.TestCase):
     # 1. Create subset
     def test_1create_subset(self):
         self.tm1.subsets.create(self.static_subset, private=self.private)
-        self.tm1.subsets.create(self.dynamic_subset, private=self.private)
+        self.tm1.dimensions.hierarchies.subsets.create(self.dynamic_subset, private=self.private)
 
     # 2. Get subset
     def test_2get_subset(self):
-        s = self.tm1.subsets.get(dimension_name=self.dimension_name,
-                                 subset_name=self.subset_name_static,
-                                 private=self.private)
+        s = self.tm1.dimensions.hierarchies.subsets.get(dimension_name=self.dimension_name,
+                                                        subset_name=self.subset_name_static,
+                                                        private=self.private)
         self.assertEqual(self.static_subset.body, s.body)
-        s = self.tm1.subsets.get(dimension_name=self.dimension_name,
-                                 subset_name=self.subset_name_dynamic,
-                                 private=self.private)
+        s = self.tm1.dimensions.hierarchies.subsets.get(dimension_name=self.dimension_name,
+                                                        subset_name=self.subset_name_dynamic,
+                                                        private=self.private)
         self.assertEqual(self.dynamic_subset.body, s.body)
 
     # 3. Update subset
     def test_3update_subset(self):
-        s = self.tm1.subsets.get(dimension_name=self.dimension_name,
-                                 subset_name=self.subset_name_static,
-                                 private=self.private)
+        s = self.tm1.dimensions.hierarchies.subsets.get(dimension_name=self.dimension_name,
+                                                        subset_name=self.subset_name_static,
+                                                        private=self.private)
         s.add_elements(['NZD'])
         # Update it
-        self.tm1.subsets.update(s, private=self.private)
+        self.tm1.dimensions.hierarchies.subsets.update(s, private=self.private)
         # Get it again
-        s = self.tm1.subsets.get(dimension_name=self.dimension_name,
-                                 subset_name=self.subset_name_static,
-                                 private=self.private)
+        s = self.tm1.dimensions.hierarchies.subsets.get(dimension_name=self.dimension_name,
+                                                        subset_name=self.subset_name_static,
+                                                        private=self.private)
         # Test it !
         self.assertEquals(len(s.elements), 4)
         # Get subset
-        s = self.tm1.subsets.get(dimension_name=self.dimension_name,
-                                 subset_name=self.subset_name_dynamic,
-                                 private=self.private)
+        s = self.tm1.dimensions.hierarchies.subsets.get(dimension_name=self.dimension_name,
+                                                        subset_name=self.subset_name_dynamic,
+                                                        private=self.private)
 
         s.expression = '{{ [{}].[EUR], [{}].[USD] }})'.format(self.dimension_name, self.dimension_name)
         # Update it
-        self.tm1.subsets.update(subset=s,
-                                private=self.private)
+        self.tm1.dimensions.hierarchies.subsets.update(subset=s, private=self.private)
         # Get it again
-        s = self.tm1.subsets.get(dimension_name=self.dimension_name,
-                                 subset_name=self.subset_name_dynamic,
-                                 private=self.private)
+        s = self.tm1.dimensions.hierarchies.subsets.get(dimension_name=self.dimension_name,
+                                                        subset_name=self.subset_name_dynamic,
+                                                        private=self.private)
         # Test it !
         self.assertEquals(s.expression,
                           '{{ [{}].[EUR], [{}].[USD] }})'.format(self.dimension_name, self.dimension_name))
 
     # 4. Delete subsets
     def test_4delete_subset(self):
-        self.tm1.subsets.delete(dimension_name=self.dimension_name,
-                                subset_name=self.subset_name_static,
-                                private=self.private)
-        self.tm1.subsets.delete(dimension_name=self.dimension_name,
-                                subset_name=self.subset_name_dynamic,
-                                private=self.private)
+        self.tm1.dimensions.hierarchies.subsets.delete(dimension_name=self.dimension_name,
+                                                       subset_name=self.subset_name_static,
+                                                       private=self.private)
+        self.tm1.dimensions.hierarchies.subsets.delete(dimension_name=self.dimension_name,
+                                                       subset_name=self.subset_name_dynamic,
+                                                       private=self.private)
 
     @classmethod
     def teardown_class(cls):

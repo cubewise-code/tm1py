@@ -7,7 +7,7 @@ from TM1py.Services.CubeService import CubeService
 from TM1py.Utils import Utils
 
 
-class DataService:
+class CellService:
     """ Service to handle Read and Write operations to TM1 cubes
     
     """

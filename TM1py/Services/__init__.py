@@ -3,7 +3,7 @@ from TM1py.Services.RESTService import RESTService
 from TM1py.Services.AnnotationService import AnnotationService
 from TM1py.Services.ChoreService import ChoreService
 from TM1py.Services.CubeService import CubeService
-from TM1py.Services.DataService import DataService
+from TM1py.Services.CellService import CellService
 from TM1py.Services.DimensionService import DimensionService
 from TM1py.Services.ElementService import ElementService
 from TM1py.Services.HierarchyService import HierarchyService

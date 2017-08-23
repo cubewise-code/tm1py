@@ -10,7 +10,7 @@ class HierarchyService(ObjectService):
     """
     def __init__(self, rest):
         super().__init__(rest)
-        self._element_service = ElementService(rest)
+        self.elements = ElementService(rest)
 
     def create(self, hierarchy):
         """ Create a hierarchy in an existing dimension
@@ -67,20 +67,20 @@ class HierarchyService(ObjectService):
         :return:
         """
         # get existing attributes first.
-        element_attributes = self._element_service.get_element_attributes(dimension_name=hierarchy.dimension_name,
-                                                                          hierarchy_name=hierarchy.name)
+        element_attributes = self.elements.get_element_attributes(dimension_name=hierarchy.dimension_name,
+                                                                  hierarchy_name=hierarchy.name)
         element_attribute_names = [ea.name
                                    for ea
                                    in element_attributes]
         # write ElementAttributes that don't already exist !
         for element_attribute in hierarchy.element_attributes:
             if element_attribute not in element_attribute_names:
-                self._element_service.create_element_attribute(dimension_name=hierarchy.dimension_name,
-                                                               hierarchy_name=hierarchy.name,
-                                                               element_attribute=element_attribute)
+                self.elements.create_element_attribute(dimension_name=hierarchy.dimension_name,
+                                                       hierarchy_name=hierarchy.name,
+                                                       element_attribute=element_attribute)
         # delete attributes that are determined to be removed
         for element_attribute in element_attribute_names:
             if element_attribute not in hierarchy.element_attributes:
-                self._element_service.delete_element_attribute(dimension_name=hierarchy.dimension_name,
-                                                               hierarchy_name=hierarchy.name,
-                                                               element_attribute=element_attribute)
+                self.elements.delete_element_attribute(dimension_name=hierarchy.dimension_name,
+                                                       hierarchy_name=hierarchy.name,
+                                                       element_attribute=element_attribute)
