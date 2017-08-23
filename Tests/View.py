@@ -75,10 +75,10 @@ class TestViewMethods(unittest.TestCase):
         native_view.suppress_empty_cells = True
 
         # create native view on Server
-        self.tm1.views.create(view=native_view, private=self.random_boolean)
+        self.tm1.cubes.views.create(view=native_view, private=self.random_boolean)
 
         # create instance of MDXView
-        nv_view = self.tm1.views.get_native_view(cube_name=cube_name,
+        nv_view = self.tm1.cubes.views.get_native_view(cube_name=cube_name,
                                                     view_name=self.native_view_name,
                                                     private=self.random_boolean)
         mdx = nv_view.MDX
@@ -86,22 +86,22 @@ class TestViewMethods(unittest.TestCase):
                            view_name=self.mdx_view_name,
                            MDX=mdx)
         # create mdx view on Server
-        self.tm1.views.create(view=mdx_view, private=self.random_boolean)
+        self.tm1.cubes.views.create(view=mdx_view, private=self.random_boolean)
 
     def test2_get_all_views(self):
-        views = self.tm1.views.get_all(cube_name)
+        views = self.tm1.cubes.views.get_all(cube_name)
         self.assertGreater(len(views), 0)
 
     def test3_get_view(self):
         # get native view
-        native_view = self.tm1.views.get_native_view(cube_name=cube_name,
+        native_view = self.tm1.cubes.views.get_native_view(cube_name=cube_name,
                                                         view_name=self.native_view_name,
                                                         private=self.random_boolean)
         # check if instance
         self.assertIsInstance(native_view, NativeView)
 
         # get mdx view
-        mdx_view = self.tm1.views.get_mdx_view(cube_name=cube_name,
+        mdx_view = self.tm1.cubes.views.get_mdx_view(cube_name=cube_name,
                                                   view_name=self.mdx_view_name,
                                                   private=self.random_boolean)
         # check if instance
@@ -119,7 +119,7 @@ class TestViewMethods(unittest.TestCase):
     # fails sometimes because PrivateMDXViews cant be updated in FP < 5.
     def test5_update_nativeview(self):
         # get native view
-        native_view_original = self.tm1.views.get_native_view(cube_name=cube_name,
+        native_view_original = self.tm1.cubes.views.get_native_view(cube_name=cube_name,
                                                                  view_name=self.native_view_name,
                                                                  private=self.random_boolean)
 
@@ -134,7 +134,7 @@ class TestViewMethods(unittest.TestCase):
         native_view_original.add_column(dimension_name=dimension_names[0], subset=subset)
 
         # update it on Server
-        self.tm1.views.update(native_view_original, private=self.random_boolean)
+        self.tm1.cubes.views.update(native_view_original, private=self.random_boolean)
 
         # Get it and check if its different
         data_updated = self.tm1.data.get_view_content(cube_name, self.native_view_name, private=self.random_boolean)
@@ -143,7 +143,7 @@ class TestViewMethods(unittest.TestCase):
 
     def test6_update_mdxview(self):
         # Get mdx view
-        mdx_view_original = self.tm1.views.get_mdx_view(cube_name=cube_name,
+        mdx_view_original = self.tm1.cubes.views.get_mdx_view(cube_name=cube_name,
                                                            view_name=self.mdx_view_name,
                                                            private=self.random_boolean)
         # Get data from mdx view
@@ -157,9 +157,9 @@ class TestViewMethods(unittest.TestCase):
               "WHERE ([{}].[Element172])".format(dimension_names[0], dimension_names[1], cube_name, dimension_names[2])
         mdx_view_original.MDX = mdx
         # Update mdx view on Server
-        self.tm1.views.update(mdx_view_original, private=self.random_boolean)
+        self.tm1.cubes.views.update(mdx_view_original, private=self.random_boolean)
         # Get it and check if its different
-        mdx_view_updated = self.tm1.views.get_mdx_view(cube_name=cube_name,
+        mdx_view_updated = self.tm1.cubes.views.get_mdx_view(cube_name=cube_name,
                                                           view_name=self.mdx_view_name,
                                                           private=self.random_boolean)
 
@@ -173,8 +173,8 @@ class TestViewMethods(unittest.TestCase):
         self.assertNotEqual(sum_mdx_original, sum_mdx_updated)
 
     def test7_delete_view(self):
-        self.tm1.views.delete(cube_name=cube_name, view_name=self.native_view_name, private=self.random_boolean)
-        self.tm1.views.delete(cube_name=cube_name, view_name=self.mdx_view_name, private=self.random_boolean)
+        self.tm1.cubes.views.delete(cube_name=cube_name, view_name=self.native_view_name, private=self.random_boolean)
+        self.tm1.cubes.views.delete(cube_name=cube_name, view_name=self.mdx_view_name, private=self.random_boolean)
 
     @classmethod
     def teardown_class(cls):

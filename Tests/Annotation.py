@@ -25,47 +25,47 @@ class TestAnnotationMethods(unittest.TestCase):
         annotation = Annotation(comment_value=self.random_text,
                                 object_name=cube_name,
                                 dimensional_context=self.random_intersection)
-        response = self.tm1.annotations.create(annotation)
+        response = self.tm1.cubes.annotations.create(annotation)
         annotation_id = json.loads(response)['ID']
 
         # test, if it exists
-        all_annotations = self.tm1.annotations.get_all(cube_name)
+        all_annotations = self.tm1.cubes.annotations.get_all(cube_name)
         if len(all_annotations) > 0:
-            annotation = self.tm1.annotations.get(annotation_id)
+            annotation = self.tm1.cubes.annotations.get(annotation_id)
             self.assertEqual(self.random_text, annotation.comment_value)
 
     def test2_get_all_annotations_from_cube(self):
-        annotations = self.tm1.annotations.get_all(cube_name)
+        annotations = self.tm1.cubes.annotations.get_all(cube_name)
         for a in annotations:
-            b = self.tm1.annotations.get(a.id)
+            b = self.tm1.cubes.annotations.get(a.id)
             self.assertEqual(a.body, b.body)
 
     def test3_update_annotation(self):
-        annotations = self.tm1.annotations.get_all(cube_name)
+        annotations = self.tm1.cubes.annotations.get_all(cube_name)
         for a in annotations:
             # Get the anntoation that was created in test1
             if a.dimensional_context == self.random_intersection and a.comment_value == self.random_text:
                 # Update Value and Coordinates
                 new_random_text = "".join([random.choice(string.printable) for _ in range(100)])
                 a.comment_value = new_random_text
-                response = self.tm1.annotations.update(a)
+                response = self.tm1.cubes.annotations.update(a)
                 annotation_id = json.loads(response)['ID']
-                a_updated = self.tm1.annotations.get(annotation_id)
+                a_updated = self.tm1.cubes.annotations.get(annotation_id)
                 self.assertEqual(a_updated.comment_value, new_random_text)
 
     def test4_delete_annotation(self):
         # get Annotations
-        annotations = self.tm1.annotations.get_all(cube_name)
+        annotations = self.tm1.cubes.annotations.get_all(cube_name)
         # sort Them
         annotations = sorted(annotations, key=lambda a: str(a.last_updated if a.last_updated else a.created))
         # First count
         number_annotations_at_start = len(annotations)
 
         last_annotation = annotations[-1]
-        self.tm1.annotations.delete(last_annotation._id)
+        self.tm1.cubes.annotations.delete(last_annotation._id)
 
         # get Annotations again
-        annotations = self.tm1.annotations.get_all(cube_name)
+        annotations = self.tm1.cubes.annotations.get_all(cube_name)
         # Second count
         number_annotations_at_end = len(annotations)
 

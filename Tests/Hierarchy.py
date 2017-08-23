@@ -68,7 +68,7 @@ class TestHierarchyMethods(unittest.TestCase):
         h.update_element('No Year', 'String')
         self.tm1.dimensions.update(d)
 
-        # Check if update workes
+        # Check if update works
         d = self.tm1.dimensions.get(self.dimension_name)
         h = d.default_hierarchy
         self.assertIn('2010-Jan', h.elements.keys())
