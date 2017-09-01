@@ -1,16 +1,12 @@
 import random
 import unittest
-import uuid
 
-from TM1py.Objects import AnnonymousSubset, Subset, Cube, Dimension, Element, Hierarchy, MDXView, NativeView
+from TM1py.Objects import Cube, Dimension, Element, Hierarchy
 from TM1py.Services import TM1Service
+from TM1py.Utils import Utils
 
-# Configuration for tests
-address = 'localhost'
-port = 8001
-user = 'admin'
-pwd = 'apple'
-ssl = True
+from .config import test_config
+
 
 # Hard coded stuff
 cube_name = 'TM1py_unittest_cube'
@@ -21,7 +17,7 @@ dimension_names = ['TM1py_unittest_dimension1',
 
 class TestDataMethods(unittest.TestCase):
     # Connection to TM1
-    tm1 = TM1Service(address=address, port=port, user=user, password=pwd, ssl=ssl)
+    tm1 = TM1Service(**test_config)
     # generate random coordinates
     target_coordinates = list(zip(('Element ' + str(random.randint(1, 1000)) for i in range(100)),
                                   ('Element ' + str(random.randint(1, 1000)) for j in range(100)),
@@ -37,7 +33,7 @@ class TestDataMethods(unittest.TestCase):
             cellset[(element1, element2, element3)] = value
             # update the checksum
             TestDataMethods.total_value += value
-        self.tm1.data.write_values(cube_name, cellset)
+        self.tm1.cubes.cells.write_values(cube_name, cellset)
 
     def test2_read(self):
         # Define MDX Query that gets full cube content
@@ -45,18 +41,20 @@ class TestDataMethods(unittest.TestCase):
               "NON EMPTY [" + dimension_names[0] + "].Members * [" + dimension_names[1] + "].Members ON ROWS," \
               "NON EMPTY [" + dimension_names[2] + "].MEMBERS ON COLUMNS " \
               "FROM [" + cube_name + "]"
-        data = self.tm1.data.execute_mdx(mdx)
+        data = self.tm1.cubes.cells.execute_mdx(mdx)
         # Check if total value is the same AND coordinates are the same
         check_value = 0
         for coordinates, value in data.items():
             # grid can have null values in cells as rows and columns are populated with elements
             if value['Value']:
                 # extract the element name from the element unique name
-                element_names = tuple(element_unique_name[29:-1] for element_unique_name in coordinates)
+                element_names = Utils.element_names_from_element_unqiue_names(coordinates)
                 self.assertIn(element_names, TestDataMethods.target_coordinates)
                 check_value += value['Value']
         # Check the check-sum
         self.assertEqual(check_value, TestDataMethods.total_value)
+
+    #TODO write test for get_value function in CellService
 
     # Setup Cubes, Dimensions and Subsets
     @classmethod

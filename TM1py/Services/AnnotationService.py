@@ -4,7 +4,6 @@ import collections
 import json
 
 from TM1py.Objects.Annotation import Annotation
-from TM1py.Services.CubeService import CubeService
 from TM1py.Services.ObjectService import ObjectService
 
 
@@ -14,7 +13,6 @@ class AnnotationService(ObjectService):
     """
     def __init__(self, rest):
         super().__init__(rest)
-        self._cube_service = CubeService(rest)
 
     def get_all(self, cube_name):
         """ get all annotations from given cube as a List.
@@ -41,8 +39,9 @@ class AnnotationService(ObjectService):
         payload["ApplicationContext"] = [{"Facet@odata.bind": "ApplicationContextFacets('}Cubes')",
                                           "Value": annotation.object_name}]
         payload["DimensionalContext@odata.bind"] = []
-        for dimension, element in zip(self._cube_service.get_dimension_names(annotation.object_name),
-                                      annotation.dimensional_context):
+        cube_dimensions_raw = self._rest.GET("/api/v1/Cubes('{}')/Dimensions?$select=Name".format(annotation.object_name))
+        cube_dimensions = [dimension['Name'] for dimension in json.loads(cube_dimensions_raw)['value']]
+        for dimension, element in zip(cube_dimensions, annotation.dimensional_context):
             payload["DimensionalContext@odata.bind"].append("Dimensions('{}')/Hierarchies('{}')/Members('{}')"
                                                             .format(dimension, dimension, element))
         payload['objectName'] = annotation.object_name

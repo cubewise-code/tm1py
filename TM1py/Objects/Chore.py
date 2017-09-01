@@ -8,8 +8,10 @@ from TM1py.Objects.ChoreTask import ChoreTask
 
 from TM1py.Objects.ChoreStartTime import ChoreStartTime
 
+from TM1py.Objects.TM1Object import TM1Object
 
-class Chore:
+
+class Chore(TM1Object):
     """ Abstraction of TM1 Chore
         
     

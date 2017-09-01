@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
-class Rules:
+from TM1py.Objects.TM1Object import TM1Object
+
+
+class Rules(TM1Object):
     """
         Abstraction of Rules on a cube.
 

@@ -5,16 +5,11 @@ import uuid
 from TM1py.Objects import Dimension, Hierarchy, Subset, ElementAttribute, Element
 from TM1py.Services import TM1Service
 
-# Configuration for tests
-address = 'localhost'
-port = 8001
-user = 'admin'
-pwd = 'apple'
-ssl = True
+from .config import test_config
 
 
 class TestSubsetMethods(unittest.TestCase):
-    tm1 = TM1Service(address=address, port=port, user=user, password=pwd, ssl=ssl)
+    tm1 = TM1Service(**test_config)
 
     # Do random stuff
     random_string = str(uuid.uuid4())
@@ -49,7 +44,7 @@ class TestSubsetMethods(unittest.TestCase):
 
     # 1. Create subset
     def test_1create_subset(self):
-        self.tm1.subsets.create(self.static_subset, private=self.private)
+        self.tm1.dimensions.subsets.create(self.static_subset, private=self.private)
         self.tm1.dimensions.hierarchies.subsets.create(self.dynamic_subset, private=self.private)
 
     # 2. Get subset

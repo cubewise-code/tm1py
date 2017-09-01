@@ -4,19 +4,20 @@ import json
 
 
 from TM1py.Exceptions import TM1pyException
-from TM1py.Objects import Dimension
-from TM1py.Services import ObjectService, SubsetService, HierarchyService
+from TM1py.Objects.Dimension import Dimension
+from TM1py.Services.ObjectService import ObjectService
+from TM1py.Services.SubsetService import SubsetService
+from TM1py.Services.HierarchyService import HierarchyService
 
 
 class DimensionService(ObjectService):
     """ Service to handle Object Updates for TM1 Dimensions
     
     """
-    def __init__(self, rest, name):
+    def __init__(self, rest):
         super().__init__(rest)
         self.hierarchies = HierarchyService(rest)
         self.subsets = SubsetService(rest)
-        self.name = name
 
     def create(self, dimension):
         """ create a dimension
@@ -39,7 +40,7 @@ class DimensionService(ObjectService):
         except TM1pyException as e:
             # undo everything if problem in step 1 or 2
             if self.exists(dimension.name):
-                self._rest.DELETE_dimension(dimension.name)
+                self.delete(dimension.name)
             raise e
         return response
 

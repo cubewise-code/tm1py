@@ -23,6 +23,9 @@ class ObjectService:
                 return False
             raise e
 
+    @property
+    def version(self):
+        return self._rest._version
 
 
 

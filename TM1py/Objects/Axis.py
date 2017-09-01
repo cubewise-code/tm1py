@@ -5,8 +5,10 @@ import json
 
 from TM1py.Objects.Subset import Subset, AnnonymousSubset
 
+from TM1py.Objects.TM1Object import TM1Object
 
-class ViewAxisSelection:
+
+class ViewAxisSelection(TM1Object):
     """ Describes what is selected in a dimension on an axis. Can be a Registered Subset or an Annonymous Subset
 
     """

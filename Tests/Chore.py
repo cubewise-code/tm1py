@@ -6,18 +6,15 @@ from datetime import datetime
 from TM1py.Objects import Chore, ChoreStartTime, ChoreFrequency, ChoreTask, Process
 from TM1py.Services import TM1Service
 
-# Configuration for tests
-address = 'localhost'
-port = 8001
-user = 'admin'
-pwd = 'apple'
-ssl = True
-process_name1 = 'TM1py_unittest_process1'
-process_name2 = 'TM1py_unittest_process2'
+from .config import test_config
+
+# Hard stuff for this test
+process_name1 = 'TM1py Unittest 1'
+process_name2 = 'TM1py Unittest 2'
 
 
 class TestChoreMethods(unittest.TestCase):
-    tm1 = TM1Service(address=address, port=port, user=user, password=pwd, ssl=ssl)
+    tm1 = TM1Service(**test_config)
 
     # chore properties
     chore_name = 'TM1py_unittest_chore_' + str(uuid.uuid4())
@@ -116,10 +113,11 @@ class TestChoreMethods(unittest.TestCase):
         self.assertEqual(c._dst_sensitivity, False)
         self.assertEqual(c._active, False)
         self.assertEqual(c._execution_mode, 'SingleCommit')
-        self.assertEqual(c._frequency._days, str(frequency_days))
-        self.assertEqual(c._frequency._hours, str(frequency_hours).zfill(2))
-        self.assertEqual(c._frequency._minutes, str(frequency_minutes).zfill(2))
-        self.assertEqual(c._frequency._seconds, str(frequency_seconds).zfill(2))
+        self.assertEqual(int(c._frequency._days), int(frequency_days))
+        self.assertEqual(int(c._frequency._hours), int(frequency_hours))
+        self.assertEqual(int(c._frequency._minutes), int(frequency_minutes))
+        # sometimes there is one second difference. Probably a small bug in the REST API
+        self.assertAlmostEqual(int(c._frequency._seconds), int(frequency_seconds), delta=1)
         for task1, task2 in zip(tasks, c._tasks):
             self.assertEqual(task1, task2)
 

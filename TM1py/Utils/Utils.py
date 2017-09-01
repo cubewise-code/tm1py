@@ -46,23 +46,26 @@ def read_cube_name_from_mdx(mdx):
     return cube_name
 
 
-def sort_addresstuple(dimension_order, unsorted_addresstuple):
+def sort_addresstuple(cube_dimensions, unsorted_addresstuple):
     """ Sort the given mixed up addresstuple
 
-    :param dimension_order: list of dimension names in correct order
+    :param cube_dimensions: list of dimension names in correct order
     :param unsorted_addresstuple: list of Strings - ['[dim2].[elem4]','[dim1].[elem2]',...]
 
     :return:
         Tuple: ('[dim1].[elem2]','[dim2].[elem4]',...)
     """
     sorted_addresstupple = []
-    for dimension in dimension_order:
-        address_element = [item for item in unsorted_addresstuple if item.startswith('[' + dimension + '].')]
-        sorted_addresstupple.append(address_element[0])
+    for dimension in cube_dimensions:
+        # could be more than one hierarchy!
+        address_elements = [item for item in unsorted_addresstuple if item.startswith('[' + dimension + '].')]
+        # address_elements could be ( [dim1].[hier1].[elem1], [dim1].[hier2].[elem3] )
+        for address_element in address_elements:
+            sorted_addresstupple.append(address_element)
     return tuple(sorted_addresstupple)
 
 
-def build_content_from_cellset(raw_cellset_as_dict, cell_properties, top):
+def build_content_from_cellset(raw_cellset_as_dict, cell_properties, top=None):
     """ transform raw cellset data into concise dictionary
 
     :param raw_cellset_as_dict:
@@ -85,7 +88,7 @@ def build_content_from_cellset(raw_cellset_as_dict, cell_properties, top):
     if len(raw_cellset_as_dict['Axes']) > 2:
         axe2_as_dict = raw_cellset_as_dict['Axes'][2]
         tuples_as_dict = axe2_as_dict['Tuples'][ordinal_axe2]['Members']
-        elements_on_axe2 = [data['UniqueName'] for data in tuples_as_dict]
+        elements_on_axe2 = [member['Element']['UniqueName'] for member in tuples_as_dict]
     else:
         elements_on_axe2 = []
 
@@ -93,12 +96,12 @@ def build_content_from_cellset(raw_cellset_as_dict, cell_properties, top):
     for i in range(axe1_as_dict['Cardinality']):
         # get coordinates on axe 1: Rows
         tuples_as_dict = axe1_as_dict['Tuples'][ordinal_axe1]['Members']
-        elements_on_axe1 = [data['UniqueName'] for data in tuples_as_dict]
+        elements_on_axe1 = [member['Element']['UniqueName'] for member in tuples_as_dict]
         ordinal_axe0 = 0
         for j in range(axe0_as_dict['Cardinality']):
             # get coordinates on axe 0: Columns
             tuples_as_dict = axe0_as_dict['Tuples'][ordinal_axe0]['Members']
-            elements_on_axe0 = [data['UniqueName'] for data in tuples_as_dict]
+            elements_on_axe0 = [member['Element']['UniqueName'] for member in tuples_as_dict]
             coordinates = elements_on_axe0 + elements_on_axe2 + elements_on_axe1
             coordinates_sorted = sort_addresstuple(cube_dimensions, coordinates)
             # get cell properties
@@ -117,12 +120,12 @@ def build_content_from_cellset(raw_cellset_as_dict, cell_properties, top):
 
 
 def element_names_from_element_unqiue_names(element_unique_names):
-    """ Get tuple of simple element names from the full unique element names
+    """ Get tuple of simple element names from the full element unique names
     
     :param element_unique_names: tuple of element unique names ([dim1].[hier1].[elem1], ... )
     :return: tuple of element names: (elem1, elem2, ... )
     """
-    return tuple([unique_name[unique_name.rfind('].[',) + 3:-1]
+    return tuple([unique_name[unique_name.rfind('].[') + 3:-1]
                   for unique_name
                   in element_unique_names])
 

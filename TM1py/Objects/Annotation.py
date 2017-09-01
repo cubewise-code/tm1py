@@ -3,8 +3,10 @@
 import json
 import collections
 
+from TM1py.Objects.TM1Object import TM1Object
 
-class Annotation:
+
+class Annotation(TM1Object):
     """ Abtraction of TM1 Annotation
 
         :Notes:

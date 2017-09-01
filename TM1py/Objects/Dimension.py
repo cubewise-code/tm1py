@@ -4,9 +4,10 @@ import collections
 import json
 
 from TM1py.Objects.Hierarchy import Hierarchy
+from TM1py.Objects.TM1Object import TM1Object
 
 
-class Dimension:
+class Dimension(TM1Object):
     """ Abstraction of TM1 Dimension
         
         A Dimension is a container for hierarchies.

@@ -5,17 +5,14 @@ from TM1py.Objects import MDXView
 from TM1py.Services import TM1Service
 from TM1py.Utils import Utils
 
-# Configuration for tests
-address = 'localhost'
-port = 8001
-user = 'admin'
-pwd = 'apple'
-ssl = True
+from .config import test_config
+
+
 dimension_prefix = 'TM1py_unittest_dimension_{}'
 
 
 class TestOtherMethods(unittest.TestCase):
-    tm1 = TM1Service(address=address, port=port, user=user, password=pwd, ssl=ssl)
+    tm1 = TM1Service(**test_config)
 
     def test1_execute_mdx(self):
         cube_names = self.tm1.cubes.get_all_names()

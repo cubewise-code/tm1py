@@ -4,8 +4,10 @@ import json
 import collections
 from base64 import b64encode
 
+from TM1py.Objects.TM1Object import TM1Object
 
-class User:
+
+class User(TM1Object):
     """ Abstraction of a TM1 User
     
     """

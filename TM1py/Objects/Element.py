@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import collections
+import json
+
+from TM1py.Objects.TM1Object import TM1Object
 
 
 # TODO proper handling of attributes required.
-class Element:
+class Element(TM1Object):
     """ Abstraction of TM1 Element
 
     """
@@ -56,6 +59,10 @@ class Element:
             self._element_type = value
         else:
             raise ValueError('{} not a valid Element Type'.format(value))
+
+    @property
+    def body(self):
+        return json.dumps(self._construct_body())
 
     @property
     def body_as_dict(self):

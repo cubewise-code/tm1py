@@ -51,6 +51,9 @@ Usage
             chore.reschedule(hours=-1)
             tm1.chores.update(chore)
 
+Samples:
+https://github.com/cubewise-code/TM1py-samples
+
 
 Documentation
 =======================

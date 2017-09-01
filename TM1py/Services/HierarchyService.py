@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from TM1py.Services.ElementService import ElementService
-from TM1py.Services import ObjectService
+from TM1py.Services.ObjectService import ObjectService
+from TM1py.Services.SubsetService import SubsetService
 
 
 class HierarchyService(ObjectService):
@@ -10,6 +11,7 @@ class HierarchyService(ObjectService):
     """
     def __init__(self, rest):
         super().__init__(rest)
+        self.subsets = SubsetService(rest)
         self.elements = ElementService(rest)
 
     def create(self, hierarchy):
@@ -18,7 +20,9 @@ class HierarchyService(ObjectService):
         :param hierarchy:
         :return:
         """
-        raise NotImplementedError('not supported')
+        request = '/api/v1/Dimensions(\'{}\')/Hierarchies'.format(hierarchy.dimension_name)
+        response = self._rest.POST(request, hierarchy.body)
+        return response
 
     def get(self, dimension_name, hierarchy_name):
         """ get hierarchy

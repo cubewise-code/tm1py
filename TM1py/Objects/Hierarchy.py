@@ -7,8 +7,10 @@ from TM1py.Objects.ElementAttribute import ElementAttribute
 from TM1py.Objects.Element import Element
 from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, CaseAndSpaceInsensitiveTuplesDict
 
+from TM1py.Objects.TM1Object import TM1Object
 
-class Hierarchy:
+
+class Hierarchy(TM1Object):
     """ Abstraction of TM1 Hierarchy
         Requires reference to a Dimension
 

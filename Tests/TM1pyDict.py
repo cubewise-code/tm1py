@@ -2,23 +2,18 @@ import unittest
 
 from TM1py.Services import TM1Service
 
-# Configuration for tests
-address = 'localhost'
-port = 8001
-user = 'admin'
-pwd = 'apple'
-ssl = True
+from .config import test_config
 
 
 class TestTM1pyDictMethods(unittest.TestCase):
-    tm1 = TM1Service(address=address, port=port, user=user, password=pwd, ssl=ssl)
+    tm1 = TM1Service(**test_config)
 
     def test_stuff(self):
         mdx_rows = '[}Clients].Members'
         mdx_columns = '[}Groups].Members'
         cube_name = '[}ClientGroups]'
         mdx = 'SELECT {} ON ROWS, {} ON COLUMNS FROM {}'.format(mdx_rows, mdx_columns, cube_name)
-        data = self.tm1.data.execute_mdx(mdx)
+        data = self.tm1.cubes.cells.execute_mdx(mdx)
 
         # Get
         self.assertIsNotNone(data[('[}Clients].[ad min]', '[}Groups].[ADM IN]')])

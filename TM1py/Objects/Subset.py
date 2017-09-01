@@ -3,22 +3,26 @@
 import json
 import collections
 
+from TM1py.Objects.TM1Object import TM1Object
 
-class Subset:
+
+class Subset(TM1Object):
     """ Abstraction of the TM1 Subset (dynamic and static)
 
         Done and tested. unittests available.
     """
-    def __init__(self, dimension_name, subset_name, alias=None, expression=None, elements=None):
+    def __init__(self, subset_name, dimension_name, hierarchy_name=None, alias=None, expression=None, elements=None):
         """
 
-        :param dimension_name: String
         :param subset_name: String
+        :param dimension_name: String
+        :param hierarchy_name: String
         :param alias: String, alias that is on in this subset.
         :param expression: String
         :param elements: List, element names
         """
         self._dimension_name = dimension_name
+        self._hierarchy_name = hierarchy_name if hierarchy_name else dimension_name
         self._subset_name = subset_name
         self._alias = alias
         self._expression = expression
@@ -31,6 +35,14 @@ class Subset:
     @dimension_name.setter
     def dimension_name(self, value):
         self._dimension_name = value
+
+    @property
+    def hierarchy_name(self):
+        return self._hierarchy_name
+
+    @hierarchy_name.setter
+    def hierarchy_name(self, value):
+        self._hierarchy_name = value
 
     @property
     def name(self):
@@ -82,7 +94,8 @@ class Subset:
 
     @classmethod
     def from_dict(cls, subset_as_dict):
-        return cls(dimension_name=subset_as_dict["UniqueName"][1:subset_as_dict["UniqueName"].find('].[')],
+        return cls(dimension_name= subset_as_dict["UniqueName"][1:subset_as_dict["UniqueName"].find('].[')],
+                   hierarchy_name=subset_as_dict["Hierarchy"]["Name"],
                    subset_name=subset_as_dict['Name'],
                    alias=subset_as_dict['Alias'],
                    expression=subset_as_dict['Expression'],
@@ -117,7 +130,7 @@ class Subset:
         if self.alias:
             body_as_dict['Alias'] = self._alias
         body_as_dict['Hierarchy@odata.bind'] = 'Dimensions(\'{}\')/Hierarchies(\'{}\')'\
-            .format(self._dimension_name, self._dimension_name)
+            .format(self._dimension_name, self._hierarchy_name)
         body_as_dict['Expression'] = self._expression
         return body_as_dict
 
@@ -127,10 +140,10 @@ class Subset:
         if self.alias:
             body_as_dict['Alias'] = self._alias
         body_as_dict['Hierarchy@odata.bind'] = 'Dimensions(\'{}\')/Hierarchies(\'{}\')'\
-            .format(self._dimension_name, self._dimension_name)
+            .format(self._dimension_name, self.hierarchy_name)
         if self.elements and len(self.elements) > 0:
             body_as_dict['Elements@odata.bind'] = ['Dimensions(\'{}\')/Hierarchies(\'{}\')/Elements(\'{}\')'
-                 .format(self.dimension_name, self.dimension_name, element) for element in self.elements]
+                 .format(self.dimension_name, self.hierarchy_name, element) for element in self.elements]
         return body_as_dict
 
 
@@ -138,9 +151,10 @@ class AnnonymousSubset(Subset):
     """ Abstraction of unregistered Subsets used in NativeViews (Check TM1py.ViewAxisSelection)
 
     """
-    def __init__(self, dimension_name, expression=None, elements=None):
+    def __init__(self, dimension_name, hierarchy_name=None, expression=None, elements=None):
         Subset.__init__(self,
                         dimension_name=dimension_name,
+                        hierarchy_name=hierarchy_name if hierarchy_name else dimension_name,
                         subset_name='',
                         alias='',
                         expression=expression,
@@ -169,7 +183,8 @@ class AnnonymousSubset(Subset):
                 :Returns:
                     `Subset` : an instance of this class
         """
-        return cls(dimension_name=subset_as_dict["Hierarchy"]['Dimension']['Name'],
+        return cls(dimension_name=subset_as_dict["Hierarchy"]["Dimension"]["Name"],
+                   hierarchy_name=subset_as_dict["Hierarchy"]["Name"],
                    expression=subset_as_dict['Expression'],
                    elements=[element['Name'] for element in subset_as_dict['Elements']]
                    if not subset_as_dict['Expression'] else None)
@@ -177,16 +192,16 @@ class AnnonymousSubset(Subset):
     def _construct_body_dynamic(self):
         body_as_dict = collections.OrderedDict()
         body_as_dict['Hierarchy@odata.bind'] = 'Dimensions(\'{}\')/Hierarchies(\'{}\')'\
-            .format(self._dimension_name, self._dimension_name)
+            .format(self._dimension_name, self.hierarchy_name)
         body_as_dict['Expression'] = self._expression
         return body_as_dict
 
     def _construct_body_static(self):
         body_as_dict = collections.OrderedDict()
         body_as_dict['Hierarchy@odata.bind'] = 'Dimensions(\'{}\')/Hierarchies(\'{}\')'\
-            .format(self._dimension_name, self._dimension_name)
+            .format(self._dimension_name, self.hierarchy_name)
         body_as_dict['Elements@odata.bind'] = ['Dimensions(\'{}\')/Hierarchies(\'{}\')/Elements(\'{}\')'
-                                                   .format(self.dimension_name, self.dimension_name, element)
+                                                   .format(self.dimension_name, self.hierarchy_name, element)
                                                for element
                                                in self.elements]
         return body_as_dict

@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
-class ChoreFrequency:
+from TM1py.Objects.TM1Object import TM1Object
+
+
+class ChoreFrequency(TM1Object):
     """ Utility class to handle time representation fore Chore Frequency
     
     """

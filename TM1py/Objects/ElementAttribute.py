@@ -2,8 +2,10 @@
 
 import json
 
+from TM1py.Objects.TM1Object import TM1Object
 
-class ElementAttribute:
+
+class ElementAttribute(TM1Object):
     """ Abstraction of TM1 Element Attributes
     
     """

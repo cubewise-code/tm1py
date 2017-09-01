@@ -5,17 +5,14 @@ from TM1py.Objects import Dimension
 from TM1py.Objects import Hierarchy
 from TM1py.Services import TM1Service
 
-# Configuration for tests
-address = 'localhost'
-port = 8001
-user = 'admin'
-pwd = 'apple'
-ssl = True
+from .config import test_config
+
+
 dimension_prefix = 'TM1py_unittest_dimension_{}'
 
 
 class TestHierarchyMethods(unittest.TestCase):
-    tm1 = TM1Service(address=address, port=port, user=user, password=pwd, ssl=ssl)
+    tm1 = TM1Service(**test_config)
 
     dimension_name = dimension_prefix.format(uuid.uuid4())
 

@@ -3,8 +3,10 @@
 import collections
 import json
 
+from TM1py.Objects.TM1Object import TM1Object
 
-class ChoreTask:
+
+class ChoreTask(TM1Object):
     """ Abstraction of a Chore Task
     
         A Chore task always conistst of

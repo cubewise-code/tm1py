@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import json
+from TM1py.Objects.TM1Object import TM1Object
 
-
-class Process:
+class Process(TM1Object):
     """ Abstraction of a TM1 Process.
 
         IMPORTANT. doesn't work with Processes that were generated through the Wizard
@@ -328,10 +328,21 @@ class Process:
             if (variable['Name'] == name):
                 self._variables.remove(variable)
 
-    def add_parameter(self, name, prompt, value):
+    def add_parameter(self, name, prompt, value, parameter_type=None):
+        """
+        
+        :param name: 
+        :param prompt: 
+        :param value: 
+        :param parameter_type: introduced in TM1 11 REST API, therefor optional. if Not given type is derived from value
+        :return: 
+        """
+        if not parameter_type:
+            parameter_type = 'String' if isinstance(value, str) else 'Numeric'
         parameter = {'Name': name,
                      'Prompt': prompt,
-                     'Value': value}
+                     'Value': value,
+                     'Type': parameter_type}
         self._parameters.append(parameter)
 
     def remove_parameter(self, name):

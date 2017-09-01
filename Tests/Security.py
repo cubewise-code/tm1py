@@ -4,16 +4,12 @@ import uuid
 from TM1py.Objects import User
 from TM1py.Services import TM1Service
 
-# Configuration for tests
-address = 'localhost'
-port = 8001
-user = 'admin'
-pwd = 'apple'
-ssl = True
+
+from .config import test_config
 
 
 class TestUserMethods(unittest.TestCase):
-    tm1 = TM1Service(address=address, port=port, user=user, password=pwd, ssl=ssl)
+    tm1 = TM1Service(**test_config)
 
     user_name = str(uuid.uuid4())
     group_name = str(uuid.uuid4())

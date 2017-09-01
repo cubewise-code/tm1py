@@ -1,23 +1,26 @@
 import unittest
 import uuid
+import random
 
 from TM1py.Objects import Process
 from TM1py.Objects import Subset
 from TM1py.Services import TM1Service
 
-# Configuration for tests
-address = 'localhost'
-port = 8001
-user = 'admin'
-pwd = 'apple'
-ssl = True
+from .config import test_config
+
+
 process_prefix = '}TM1py_unittest'
 
 
 class TestProcessMethods(unittest.TestCase):
-    tm1 = TM1Service(address=address, port=port, user=user, password=pwd, ssl=ssl)
+    tm1 = TM1Service(**test_config)
 
     random_string = str(uuid.uuid4())
+
+    all_dimension_names = tm1.dimensions.get_all_names()
+    random_dimension = tm1.dimensions.get(random.choice(all_dimension_names))
+    random_dimension_all_elements = random_dimension.default_hierarchy.elements
+    random_dimension_elements = [element for element in random_dimension_all_elements][0:2]
 
     # None process
     p_none = Process(name=process_prefix + '_none_' + random_string,
@@ -60,10 +63,10 @@ class TestProcessMethods(unittest.TestCase):
 
     # Subset process
     subset_name = process_prefix + '_subset_' + random_string
-    subset = Subset(dimension_name='plan_business_unit',
+    subset = Subset(dimension_name=random_dimension.name,
                     subset_name=subset_name,
-                    elements=['10110', '10120', '10200', '10210'])
-    tm1.subsets.create(subset, False)
+                    elements=random_dimension_elements)
+    tm1.dimensions.subsets.create(subset, False)
     p_subset = Process(name=process_prefix + '_subset_' + random_string,
                        datasource_type='TM1DimensionSubset',
                        datasource_data_source_name_for_server=subset.dimension_name,
@@ -113,7 +116,8 @@ class TestProcessMethods(unittest.TestCase):
         self.tm1.processes.delete(self.p_view.name)
         self.tm1.processes.delete(self.p_odbc.name)
         self.tm1.processes.delete(self.p_subset.name)
-        self.tm1.subsets.delete(self.subset.dimension_name, self.subset_name, False)
+        self.tm1.dimensions.subsets.delete(dimension_name=self.subset.dimension_name,
+                                           subset_name=self.subset_name, private=False)
 
     def test5_logout(self):
         self.tm1.logout()

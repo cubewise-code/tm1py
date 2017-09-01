@@ -5,16 +5,14 @@ from TM1py.Objects import Dimension, Hierarchy, Element
 from TM1py.Objects import ElementAttribute
 from TM1py.Services import TM1Service
 
-# Configuration for tests
-address = 'localhost'
-port = 8001
-user = 'admin'
-pwd = 'apple'
-ssl = True
+# Can be tested currently, due to Bug in TM1 11:
+# https://www.ibm.com/developerworks/community/forums/html/topic?id=75f2b99e-6961-4c71-9364-1d5e1e083eff
+
+from .config import test_config
 
 
 class TestDimensionMethods(unittest.TestCase):
-    tm1 = TM1Service(address=address, port=port, user=user, password=pwd, ssl=ssl)
+    tm1 = TM1Service(**test_config)
 
     dimension_name = 'TM1py_unittest_dimension_{}'.format(int(uuid.uuid4()))
     hierarchy_name = dimension_name
@@ -29,7 +27,6 @@ class TestDimensionMethods(unittest.TestCase):
             edges[('Root', element_name)] = i
         h = Hierarchy(name=self.dimension_name, dimension_name=self.dimension_name, elements=elements, edges=edges)
         d = Dimension(name=self.dimension_name, hierarchies=[h])
-        # create it
         self.tm1.dimensions.create(d)
 
         # Test
@@ -87,4 +84,5 @@ class TestDimensionMethods(unittest.TestCase):
         self.tm1.logout()
 
 if __name__ == '__main__':
-    unittest.main()
+    pass
+    #unittest.main()

@@ -5,12 +5,8 @@ import uuid
 from TM1py.Objects import AnnonymousSubset, Subset, Cube, Dimension, Element, Hierarchy, MDXView, NativeView
 from TM1py.Services import TM1Service
 
-# Configuration for tests
-address = 'localhost'
-port = 8001
-user = 'admin'
-pwd = 'apple'
-ssl = True
+from .config import test_config
+
 
 cube_name = 'TM1py_unittest_cube'
 dimension_names = ['TM1py_unittest_dimension1',
@@ -19,7 +15,7 @@ dimension_names = ['TM1py_unittest_dimension1',
 
 
 class TestViewMethods(unittest.TestCase):
-    tm1 = TM1Service(address=address, port=port, user=user, password=pwd, ssl=ssl)
+    tm1 = TM1Service(**test_config)
 
     random_string = str(uuid.uuid4())
     # Fails when random boolean is True. Private NativeViews cant be updated with TM1 10.2.2 FP 6
@@ -59,16 +55,19 @@ class TestViewMethods(unittest.TestCase):
                                  view_name=self.native_view_name)
 
         # Set up native view - put subsets on Rows, Columns and Titles
-        subset = Subset(dimension_names[0], str(uuid.uuid4()), expression='{{[{}].Members}}'.format(dimension_names[0]))
-        self.tm1.subsets.create(subset, private=False)
+        subset = Subset(dimension_name=dimension_names[0], hierarchy_name=dimension_names[0], subset_name=str(uuid.uuid4()),
+                        expression='{{[{}].Members}}'.format(dimension_names[0]))
+        self.tm1.dimensions.subsets.create(subset, private=False)
         native_view.add_row(dimension_name=dimension_names[0], subset=subset)
 
-        subset = AnnonymousSubset(dimension_names[1], elements=['element1', 'element123', 'element432'])
+        subset = AnnonymousSubset(dimension_name=dimension_names[1], hierarchy_name=dimension_names[1],
+                                  elements=['element1', 'element123', 'element432'])
         native_view.add_title(dimension_name=dimension_names[1], subset=subset, selection='element123')
 
         elements = ['Element{}'.format(str(i)) for i in range(1, 201)]
-        subset = Subset(dimension_names[2], str(uuid.uuid4()), elements=elements)
-        self.tm1.subsets.create(subset, private=False)
+        subset = Subset(dimension_name=dimension_names[2], hierarchy_name=dimension_names[2],
+                        subset_name=str(uuid.uuid4()), elements=elements)
+        self.tm1.dimensions.subsets.create(subset, private=False)
         native_view.add_column(dimension_name=dimension_names[2], subset=subset)
 
         # Suppress Null Values
@@ -79,8 +78,8 @@ class TestViewMethods(unittest.TestCase):
 
         # create instance of MDXView
         nv_view = self.tm1.cubes.views.get_native_view(cube_name=cube_name,
-                                                    view_name=self.native_view_name,
-                                                    private=self.random_boolean)
+                                                       view_name=self.native_view_name,
+                                                       private=self.random_boolean)
         mdx = nv_view.MDX
         mdx_view = MDXView(cube_name=cube_name,
                            view_name=self.mdx_view_name,
@@ -95,15 +94,15 @@ class TestViewMethods(unittest.TestCase):
     def test3_get_view(self):
         # get native view
         native_view = self.tm1.cubes.views.get_native_view(cube_name=cube_name,
-                                                        view_name=self.native_view_name,
-                                                        private=self.random_boolean)
+                                                           view_name=self.native_view_name,
+                                                           private=self.random_boolean)
         # check if instance
         self.assertIsInstance(native_view, NativeView)
 
         # get mdx view
         mdx_view = self.tm1.cubes.views.get_mdx_view(cube_name=cube_name,
-                                                  view_name=self.mdx_view_name,
-                                                  private=self.random_boolean)
+                                                     view_name=self.mdx_view_name,
+                                                     private=self.random_boolean)
         # check if instance
         self.assertIsInstance(mdx_view, MDXView)
 
@@ -120,8 +119,8 @@ class TestViewMethods(unittest.TestCase):
     def test5_update_nativeview(self):
         # get native view
         native_view_original = self.tm1.cubes.views.get_native_view(cube_name=cube_name,
-                                                                 view_name=self.native_view_name,
-                                                                 private=self.random_boolean)
+                                                                    view_name=self.native_view_name,
+                                                                    private=self.random_boolean)
 
         # Sum up all the values from the views
         data_original = self.tm1.data.get_view_content(cube_name, self.native_view_name, private=self.random_boolean)
@@ -144,12 +143,12 @@ class TestViewMethods(unittest.TestCase):
     def test6_update_mdxview(self):
         # Get mdx view
         mdx_view_original = self.tm1.cubes.views.get_mdx_view(cube_name=cube_name,
-                                                           view_name=self.mdx_view_name,
-                                                           private=self.random_boolean)
+                                                              view_name=self.mdx_view_name,
+                                                              private=self.random_boolean)
         # Get data from mdx view
         data_mdx_original = self.tm1.data.get_view_content(cube_name=cube_name,
-                                                               view_name=mdx_view_original.name,
-                                                               private=self.random_boolean)
+                                                           view_name=mdx_view_original.name,
+                                                           private=self.random_boolean)
         mdx = "SELECT " \
               "NON EMPTY{{ [{}].Members }} ON 0," \
               "NON EMPTY {{ [{}].Members }} ON 1 " \
@@ -160,12 +159,12 @@ class TestViewMethods(unittest.TestCase):
         self.tm1.cubes.views.update(mdx_view_original, private=self.random_boolean)
         # Get it and check if its different
         mdx_view_updated = self.tm1.cubes.views.get_mdx_view(cube_name=cube_name,
-                                                          view_name=self.mdx_view_name,
-                                                          private=self.random_boolean)
+                                                             view_name=self.mdx_view_name,
+                                                             private=self.random_boolean)
 
         data_mdx_updated = self.tm1.data.get_view_content(cube_name,
-                                                              mdx_view_updated.name,
-                                                              private=self.random_boolean)
+                                                          mdx_view_updated.name,
+                                                          private=self.random_boolean)
 
         # Sum up all the values from the views
         sum_mdx_original = sum([value['Value'] for value in data_mdx_original.values() if value['Value']])

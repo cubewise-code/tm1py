@@ -63,7 +63,7 @@ class RESTService:
         self._headers = {'Connection': 'keep-alive',
                          'User-Agent': 'TM1py',
                          'Content-Type': 'application/json; odata.streaming=true; charset=utf-8',
-                         'Accept': 'application/json,text/plain;odata.metadata=none'}
+                         'Accept': 'application/json;odata.metadata=none,text/plain'}
         # Authorization [Basic, CAM, WIA] through Headers
         if 'namespace' in kwargs:
             token = 'CAMNamespace ' + b64encode(

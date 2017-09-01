@@ -2,8 +2,10 @@
 
 import datetime
 
+from TM1py.Objects.TM1Object import TM1Object
 
-class ChoreStartTime:
+
+class ChoreStartTime(TM1Object):
     """ Utility class to handle time representation for Chore Start Time
         
     """
