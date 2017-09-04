@@ -33,10 +33,6 @@ class DimensionService(ObjectService):
             # create Dimension, Hierarchies, Elements, Edges etc.
             request = "/api/v1/Dimensions"
             response = self._rest.POST(request, dimension.body)
-            # create Hierarchies
-            self.hierarchies.update(dimension.hierarchies[0])
-            for hierarchy in dimension.hierarchies[1:]:
-                self.hierarchies.create(hierarchy)
         except TM1pyException as e:
             # undo everything if problem in step 1 or 2
             if self.exists(dimension.name):

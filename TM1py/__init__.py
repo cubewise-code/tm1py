@@ -18,6 +18,7 @@ Usage:
 
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RESTService import RESTService
+from TM1py.Services.TM1Service import TM1Service
 from TM1py.Services.AnnotationService import AnnotationService
 from TM1py.Services.ChoreService import ChoreService
 from TM1py.Services.CubeService import CubeService
