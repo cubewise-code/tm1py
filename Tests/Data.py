@@ -16,26 +16,41 @@ dimension_names = ['TM1py_unittest_dimension1',
 
 
 class TestDataMethods(unittest.TestCase):
-    # Connection to TM1
-    tm1 = TM1Service(**test_config)
-    # generate random coordinates
-    target_coordinates = list(zip(('Element ' + str(random.randint(1, 1000)) for i in range(100)),
-                                  ('Element ' + str(random.randint(1, 1000)) for j in range(100)),
-                                  ('Element ' + str(random.randint(1, 1000)) for k in range(100))))
-    # Sum of all the values that we write in the cube. serves as a checksum
-    total_value = 0
 
-    def test1_write(self):
+    # Setup Cubes, Dimensions and Subsets
+    @classmethod
+    def setup_class(cls):
+        # Connection to TM1
+        cls.tm1 = TM1Service(**test_config)
+        # generate random coordinates
+        cls.target_coordinates = list(zip(('Element ' + str(random.randint(1, 1000)) for _ in range(100)),
+                                          ('Element ' + str(random.randint(1, 1000)) for _ in range(100)),
+                                          ('Element ' + str(random.randint(1, 1000)) for _ in range(100))))
+
+        # Build Dimensions
+        for i in range(3):
+            elements = [Element('Element {}'.format(str(j)), 'Numeric') for j in range(1, 1001)]
+            hierarchy = Hierarchy(dimension_names[i], dimension_names[i], elements)
+            dimension = Dimension(dimension_names[i], [hierarchy])
+            if not cls.tm1.dimensions.exists(dimension.name):
+                cls.tm1.dimensions.create(dimension)
+        # Build Cube
+        cube = Cube(cube_name, dimension_names)
+        if not cls.tm1.cubes.exists(cube_name):
+            cls.tm1.cubes.create(cube)
+
+    def test1_write_read(self):
+        # Sum of all the values that we write in the cube. serves as a checksum
+        self.total_value = 0
         # Write data into cube
         cellset = {}
-        for element1, element2, element3 in TestDataMethods.target_coordinates:
+        for element1, element2, element3 in self.target_coordinates:
             value = random.randint(1, 1000)
             cellset[(element1, element2, element3)] = value
             # update the checksum
-            TestDataMethods.total_value += value
+            self.total_value += value
         self.tm1.cubes.cells.write_values(cube_name, cellset)
 
-    def test2_read(self):
         # Define MDX Query that gets full cube content
         mdx = "SELECT " \
               "NON EMPTY [" + dimension_names[0] + "].Members * [" + dimension_names[1] + "].Members ON ROWS," \
@@ -49,27 +64,12 @@ class TestDataMethods(unittest.TestCase):
             if value['Value']:
                 # extract the element name from the element unique name
                 element_names = Utils.element_names_from_element_unqiue_names(coordinates)
-                self.assertIn(element_names, TestDataMethods.target_coordinates)
+                self.assertIn(element_names, self.target_coordinates)
                 check_value += value['Value']
         # Check the check-sum
-        self.assertEqual(check_value, TestDataMethods.total_value)
+        self.assertEqual(check_value, self.total_value)
 
     #TODO write test for get_value function in CellService
-
-    # Setup Cubes, Dimensions and Subsets
-    @classmethod
-    def setup_class(cls):
-        # Build Dimensions
-        for i in range(3):
-            elements = [Element('Element {}'.format(str(j)), 'Numeric') for j in range(1, 1001)]
-            hierarchy = Hierarchy(dimension_names[i], dimension_names[i], elements)
-            dimension = Dimension(dimension_names[i], [hierarchy])
-            if not cls.tm1.dimensions.exists(dimension.name):
-                cls.tm1.dimensions.create(dimension)
-        # Build Cube
-        cube = Cube(cube_name, dimension_names)
-        if not cls.tm1.cubes.exists(cube_name):
-            cls.tm1.cubes.create(cube)
 
     # Delete Cube and Dimensions
     @classmethod

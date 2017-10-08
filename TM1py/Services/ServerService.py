@@ -12,11 +12,28 @@ class ServerService(ObjectService):
     def __init__(self, rest):
         super().__init__(rest)
 
-    def get_last_message_log_entries(self, reverse=True, top=None):
+    def get_message_log_entries(self, reverse=True, top=None):
         reverse = 'true' if reverse else 'false'
         request = '/api/v1/MessageLog(Reverse={})'.format(reverse)
         if top:
             request += '?$top={}'.format(top)
+        response = self._rest.GET(request, '')
+        return json.loads(response)['value']
+
+    def get_transaction_log_entries(self, reverse=True, user=None, cube=None, top=None):
+        reverse = 'true' if reverse else 'false'
+        request = '/api/v1/TransactionLog(Reverse={})'.format(reverse)
+        # filter on user and cube
+        if user or cube:
+            log_filters = []
+            if user:
+                log_filters.append("User eq '{}'".format(user))
+            if cube:
+                log_filters.append("Cube eq '{}'".format(cube))
+            request += "?$filter={}".format(" and ".join(log_filters))
+        # top limit
+        if top:
+            request += '{}$top={}'.format('&' if cube or user else '?', top)
         response = self._rest.GET(request, '')
         return json.loads(response)['value']
 

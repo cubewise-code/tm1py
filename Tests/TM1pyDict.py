@@ -2,13 +2,16 @@ import unittest
 
 from TM1py.Services import TM1Service
 
-from .config import test_config
+from Tests.config import test_config
 
 
 class TestTM1pyDictMethods(unittest.TestCase):
-    tm1 = TM1Service(**test_config)
 
-    def test_stuff(self):
+    @classmethod
+    def setUpClass(cls):
+        cls.tm1 = TM1Service(**test_config)
+
+    def test_all(self):
         mdx_rows = '[}Clients].Members'
         mdx_columns = '[}Groups].Members'
         cube_name = '[}ClientGroups]'
@@ -16,18 +19,29 @@ class TestTM1pyDictMethods(unittest.TestCase):
         data = self.tm1.cubes.cells.execute_mdx(mdx)
 
         # Get
-        self.assertIsNotNone(data[('[}Clients].[ad min]', '[}Groups].[ADM IN]')])
+        if self.tm1.version[0:2] == '10':
+            coordinates = ('[}Clients].[ad min]', '[}Groups].[ADM IN]')
+        else:
+            coordinates = ('[}Clients].[}Clients].[ad min]', '[}Groups].[}Groups].[ADM IN]')
+        self.assertIsNotNone(data[coordinates])
 
         # Delete
-        self.assertTrue(('[}clients].[admin]', '[}groups].[admin]') in data)
-        del data[('[}Clients].[ad min]', '[}Groups].[ADM IN]')]
-        self.assertFalse(('[}clients].[admin]', '[}groups].[admin]') in data)
+        if self.tm1.version[0:2] == '10':
+            coordinates = ('[}clients].[}clients].[admin]', '[}groups].[}groups].[admin]')
+        else:
+            coordinates = ('[}clients].[}clients].[admin]', '[}groups].[}groups].[admin]')
+        self.assertTrue(coordinates in data)
+        del data[coordinates]
+        self.assertFalse(coordinates in data)
 
         # Copy
         data_cloned = data.copy()
         self.assertTrue(data_cloned == data)
         self.assertFalse(data_cloned is data)
 
+    @classmethod
+    def tearDownClass(cls):
+        cls.tm1.logout()
 
 if __name__ == '__main__':
     unittest.main()

@@ -14,25 +14,24 @@ process_name2 = 'TM1py Unittest 2'
 
 
 class TestChoreMethods(unittest.TestCase):
-    tm1 = TM1Service(**test_config)
-
-    # chore properties
-    chore_name = 'TM1py_unittest_chore_' + str(uuid.uuid4())
-    start_time = datetime.now()
-    frequency_days = int(random.uniform(0, 355))
-    frequency_hours = int(random.uniform(0, 23))
-    frequency_minutes = int(random.uniform(0, 59))
-    frequency_seconds = int(random.uniform(0, 59))
-    frequency = ChoreFrequency(days=frequency_days, hours=frequency_hours,
-                               minutes=frequency_minutes, seconds=frequency_seconds)
-
-    tasks = [ChoreTask(0, process_name1, parameters=[{'Name': 'pRegion', 'Value': 'UK'}]),
-             ChoreTask(1, process_name1, parameters=[{'Name': 'pRegion', 'Value': 'FR'}]),
-             ChoreTask(2, process_name1, parameters=[{'Name': 'pRegion', 'Value': 'CH'}])]
 
     # Check if process exists. If not create it
     @classmethod
     def setup_class(cls):
+        cls.tm1 = TM1Service(**test_config)
+
+        # chore properties
+        cls.chore_name = 'TM1py_unittest_chore_' + str(uuid.uuid4())
+        cls.start_time = datetime.now()
+        cls.frequency_days = int(random.uniform(0, 355))
+        cls.frequency_hours = int(random.uniform(0, 23))
+        cls.frequency_minutes = int(random.uniform(0, 59))
+        cls.frequency_seconds = int(random.uniform(0, 59))
+        cls.frequency = ChoreFrequency(days=cls.frequency_days, hours=cls.frequency_hours,
+                                       minutes=cls.frequency_minutes, seconds=cls.frequency_seconds)
+        cls.tasks = [ChoreTask(0, process_name1, parameters=[{'Name': 'pRegion', 'Value': 'UK'}]),
+                     ChoreTask(1, process_name1, parameters=[{'Name': 'pRegion', 'Value': 'FR'}]),
+                     ChoreTask(2, process_name1, parameters=[{'Name': 'pRegion', 'Value': 'CH'}])]
         p1 = Process(name=process_name1)
         p1.add_parameter('pRegion', 'pRegion (String)', value='US')
         if cls.tm1.processes.exists(p1.name):

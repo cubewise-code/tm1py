@@ -8,16 +8,18 @@ from TM1py.Services import TM1Service
 from .config import test_config
 
 
-class TestUserMethods(unittest.TestCase):
-    tm1 = TM1Service(**test_config)
+class TestSecurityMethods(unittest.TestCase):
 
-    user_name = str(uuid.uuid4())
-    group_name = str(uuid.uuid4())
-    user = User(name=user_name, groups=[], password='TM1py')
 
-    # Create Group for unittests
+
     @classmethod
     def setup_class(cls):
+        cls.tm1 = TM1Service(**test_config)
+        cls.user_name = str(uuid.uuid4())
+        cls.user = User(name=cls.user_name, groups=[], password='TM1py')
+
+        # Create Group for unittests
+        cls.group_name = str(uuid.uuid4())
         code = "AddGroup('{}');".format(cls.group_name)
         cls.tm1.processes.execute_ti_code([code])
 

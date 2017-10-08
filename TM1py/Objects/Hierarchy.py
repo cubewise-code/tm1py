@@ -34,7 +34,7 @@ class Hierarchy(TM1Object):
     """
 
     def __init__(self, name, dimension_name, elements=None, element_attributes=None,
-                 edges=None, subsets=None, default_member=None):
+                 edges=None, subsets=None, structure=None, default_member=None):
         self._name = name
         self._dimension_name = dimension_name
         self._elements = CaseAndSpaceInsensitiveDict()
@@ -44,6 +44,8 @@ class Hierarchy(TM1Object):
         self._element_attributes = element_attributes if element_attributes else []
         self._edges = edges if edges else CaseAndSpaceInsensitiveTuplesDict()
         self._subsets = subsets if subsets else []
+        # balanced is true, false or None (in versions < TM1 11)
+        self._balanced = structure if not structure else structure == 0
         self._default_member = default_member
 
     @classmethod
@@ -59,6 +61,7 @@ class Hierarchy(TM1Object):
                                        for ea in hierarchy_as_dict['ElementAttributes']],
                    edges=edges,
                    subsets=[subset['Name'] for subset in hierarchy_as_dict['Subsets']],
+                   structure=hierarchy_as_dict['Structure'] if 'Structure' in hierarchy_as_dict else None,
                    default_member=hierarchy_as_dict['DefaultMember']['Name']
                    if hierarchy_as_dict['DefaultMember'] else None)
 
@@ -89,6 +92,10 @@ class Hierarchy(TM1Object):
     @property
     def subsets(self):
         return self._subsets
+
+    @property
+    def balanced(self):
+        return self._balanced
 
     @property
     def default_member(self):

@@ -12,10 +12,12 @@ from .config import test_config
 
 
 class TestDimensionMethods(unittest.TestCase):
-    tm1 = TM1Service(**test_config)
 
-    dimension_name = 'TM1py_unittest_dimension_{}'.format(int(uuid.uuid4()))
-    hierarchy_name = dimension_name
+    @classmethod
+    def setUpClass(cls):
+        cls.tm1 = TM1Service(**test_config)
+        cls.dimension_name = 'TM1py_unittest_dimension_{}'.format(int(uuid.uuid4()))
+        cls.hierarchy_name = cls.dimension_name
 
     def test1_create_dimension(self):
         root_element = Element(name='Root', element_type='Consolidated')
@@ -80,8 +82,11 @@ class TestDimensionMethods(unittest.TestCase):
         self.assertIn(self.dimension_name,dimensions_before)
         self.assertNotIn(self.dimension_name, dimensions_after)
 
-    def test5_logout(self):
-        self.tm1.logout()
+    @classmethod
+    def tearDownClass(cls):
+        cls.tm1.logout()
+
+
 
 if __name__ == '__main__':
     pass

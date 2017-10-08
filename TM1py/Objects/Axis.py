@@ -3,20 +3,20 @@
 import collections
 import json
 
-from TM1py.Objects.Subset import Subset, AnnonymousSubset
+from TM1py.Objects.Subset import Subset, AnonymousSubset
 
 from TM1py.Objects.TM1Object import TM1Object
 
 
 class ViewAxisSelection(TM1Object):
-    """ Describes what is selected in a dimension on an axis. Can be a Registered Subset or an Annonymous Subset
+    """ Describes what is selected in a dimension on an axis. Can be a Registered Subset or an Anonymous Subset
 
     """
     def __init__(self, dimension_name, subset):
         """
             :Parameters:
                 `dimension_name` : String
-                `subset` : Subset or AnnonymousSubset
+                `subset` : Subset or AnonymousSubset
         """
         self._subset = subset
         self._dimension_name = dimension_name
@@ -36,7 +36,7 @@ class ViewAxisSelection(TM1Object):
         :return: dictionary
         """
         body_as_dict = collections.OrderedDict()
-        if isinstance(self._subset, AnnonymousSubset):
+        if isinstance(self._subset, AnonymousSubset):
             body_as_dict['Subset'] = json.loads(self._subset.body)
         elif isinstance(self._subset, Subset):
             path = 'Dimensions(\'{}\')/Hierarchies(\'{}\')/Subsets(\'{}\')'.format(
@@ -47,7 +47,7 @@ class ViewAxisSelection(TM1Object):
 
 class ViewTitleSelection:
     """ Describes what is selected in a dimension on the view title.
-        Can be a Registered Subset or an Annonymous Subset
+        Can be a Registered Subset or an Anonymous Subset
 
     """
     def __init__(self, dimension_name, subset, selected):
@@ -66,7 +66,7 @@ class ViewTitleSelection:
         :return: string, the valid JSON
         """
         body_as_dict = collections.OrderedDict()
-        if isinstance(self._subset, AnnonymousSubset):
+        if isinstance(self._subset, AnonymousSubset):
             body_as_dict['Subset'] = json.loads(self._subset.body)
         elif isinstance(self._subset, Subset):
             path = "Dimensions('{}')/Hierarchies('{}')/Subsets('{}')".format(

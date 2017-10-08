@@ -7,10 +7,9 @@ import unittest
 from TM1py.Services import TM1Service
 from TM1py.Objects import Annotation
 
-from .config import test_config
+from Tests.config import test_config
 
 # hard stuff for this test
-
 
 
 class TestAnnotationMethods(unittest.TestCase):

@@ -91,6 +91,7 @@ class CubeService(ObjectService):
         :param cube_name:
         :return: response
         """
+        # TODO delete more than one object !
         request = "/api/v1/Cubes('{}')".format(cube_name)
         return self._rest.DELETE(request)
 

@@ -8,11 +8,11 @@ from TM1py.Utils import Utils
 from .config import test_config
 
 
-dimension_prefix = 'TM1py_unittest_dimension_{}'
-
-
 class TestOtherMethods(unittest.TestCase):
-    tm1 = TM1Service(**test_config)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tm1 = TM1Service(**test_config)
 
     def test1_execute_mdx(self):
         cube_names = self.tm1.cubes.get_all_names()
@@ -58,8 +58,11 @@ class TestOtherMethods(unittest.TestCase):
 
     def test3_get_instances_from_adminhost(self):
         servers = Utils.get_all_servers_from_adminhost('localhost')
-        print(servers)
         self.assertGreater(len(servers), 0)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tm1.logout()
 
 
 if __name__ == '__main__':

@@ -56,7 +56,7 @@ class User(TM1Object):
 
     def remove_group(self, group_name):
         try:
-            index = [group.upper() for group in self._groups].index(group_name.upper())
+            index = [group.upper().replace(" ", "") for group in self._groups].index(group_name.upper().replace(" ", ""))
             self._groups.pop(index)
         except ValueError:
             pass

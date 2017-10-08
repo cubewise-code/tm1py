@@ -29,3 +29,7 @@ class TM1Service:
 
     def __exit__(self, exception_type, exception_value, traceback):
         self.logout()
+
+    @property
+    def version(self):
+        return self._tm1_rest._version

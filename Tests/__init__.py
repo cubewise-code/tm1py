@@ -7,7 +7,11 @@ from Tests.Cube import TestCubeMethods
 from Tests.Data import TestDataMethods
 from Tests.Dimension import TestDimensionMethods
 #from Tests.Hierarchy import TestHierarchyMethods
+from Tests.TIObfuscator import TestTIObfuscatorMethods
+from Tests.Other import TestOtherMethods
 from Tests.Process import TestProcessMethods
+from Tests.Security import TestSecurityMethods
+from Tests.Server import TestServerMethods
 from Tests.Subset import TestSubsetMethods
-from Tests.Security import TestUserMethods
+
 from Tests.View import TestViewMethods

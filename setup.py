@@ -4,9 +4,9 @@ import sys
 from setuptools import setup
 
 
-SCHEDULE_VERSION = '0.1.2'
+SCHEDULE_VERSION = '0.1.3'
 SCHEDULE_DOWNLOAD_URL = (
-    'https://github.com/MariusWirtz/TM1py/tarball/' + SCHEDULE_VERSION
+    'https://github.com/Cubewise-code/TM1py/tarball/' + SCHEDULE_VERSION
 )
 
 
@@ -26,7 +26,7 @@ setup(
     license='MIT',
     author='Marius Wirtz',
     author_email='MWirtz@cubewise.com',
-    url='https://github.com/MariusWirtz/TM1py',
+    url='https://github.com/cubewise-code/TM1py',
     download_url=SCHEDULE_DOWNLOAD_URL,
     keywords=[
         'TM1', 'IBM Cognos TM1', 'Planning Analytics', 'PA', 'Cognos'

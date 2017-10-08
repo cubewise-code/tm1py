@@ -49,16 +49,22 @@ class RESTService:
     def __init__(self, **kwargs):
         """ Create an instance of RESTService
 
-        :param ip: String - address of the TM1 instance
+        :param address: String - address of the TM1 instance
         :param port: Int - HTTPPortNumber as specified in the tm1s.cfg
+        :param base_url - base url e.g. https://localhost:12354/api/v1
         :param user: String - name of the user
         :param password String - password of the user
-        :param namespace strong - optional CAM namespace
+        :param namespace String - optional CAM namespace
         :param ssl: boolean -  as specified in the tm1s.cfg
         """
-        self._address = 'localhost' if kwargs['address'] == '' else kwargs['address']
-        self._port = kwargs['port']
         self._ssl = kwargs['ssl']
+        self._address = kwargs['address'] if 'address' in kwargs else None
+        self._port = kwargs['port'] if 'port' in kwargs else None
+        self._verify = False
+        if 'base_url' in kwargs:
+            self._base_url = kwargs['base_url']
+        else:
+            self._base_url = "http{}://{}:{}".format('s' if self._ssl else '', self._address, self._port)
         self._version = None
         self._headers = {'Connection': 'keep-alive',
                          'User-Agent': 'TM1py',
@@ -75,6 +81,8 @@ class RESTService:
         self.disable_http_warnings(self)
         self._s = requests.session()
         self._get_cookies()
+        # after we have session cookie drop the authentication
+        self._headers.pop('Authorization')
         # logging
         # shttp_client.HTTPConnection.debuglevel = 1
 
@@ -92,7 +100,7 @@ class RESTService:
         :param data: String, empty
         :return: String, the response as text
         """
-        return self._s.get(url=request, headers=self._headers, data=data, verify=False)
+        return self._s.get(url=request, headers=self._headers, data=data, verify=self._verify)
 
     @httpmethod
     def POST(self, request, data):
@@ -102,7 +110,7 @@ class RESTService:
         :param data: String, the payload (json)
         :return:  String, the response as text
         """
-        return self._s.post(url=request, headers=self._headers, data=data, verify=False)
+        return self._s.post(url=request, headers=self._headers, data=data, verify=self._verify)
 
     @httpmethod
     def PATCH(self, request, data):
@@ -112,7 +120,7 @@ class RESTService:
         :param data: String, the payload (json)
         :return: String, the response as text
         """
-        return self._s.patch(url=request, headers=self._headers, data=data, verify=False)
+        return self._s.patch(url=request, headers=self._headers, data=data, verify=self._verify)
 
     @httpmethod
     def DELETE(self, request, data=''):
@@ -122,7 +130,7 @@ class RESTService:
         :param data: String, empty
         :return: String, the response in text
         """
-        return self._s.delete(url=request, headers=self._headers, data=data, verify=False)
+        return self._s.delete(url=request, headers=self._headers, data=data, verify=self._verify)
 
     def logout(self):
         """ End TM1 Session and HTTP session
@@ -141,11 +149,8 @@ class RESTService:
         """ perform a simple GET request (Ask for the TM1 Version) to start a session
 
         """
-        url = '{}://{}:{}/api/v1/Configuration/ProductVersion/$value'.format(
-            'https' if self._ssl else 'http',
-            self._address,
-            self._port)
-        response = self._s.get(url=url, headers=self._headers, data='', verify=False)
+        url = '{}/api/v1/Configuration/ProductVersion/$value'.format(self._base_url)
+        response = self._s.get(url=url, headers=self._headers, data='', verify=self._verify)
         self.verify_response(response)
         self._version = response.text
 
@@ -153,10 +158,7 @@ class RESTService:
         """ create proper url and payload
 
         """
-        if self._ssl:
-            url = 'https://' + self._address + ':' + str(self._port) + request
-        else:
-            url = 'http://' + self._address + ':' + str(self._port) + request
+        url = self._base_url + request
         url = url.replace(' ', '%20').replace('#', '%23')
         data = data.encode('utf-8')
         return url, data

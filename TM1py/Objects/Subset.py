@@ -147,7 +147,7 @@ class Subset(TM1Object):
         return body_as_dict
 
 
-class AnnonymousSubset(Subset):
+class AnonymousSubset(Subset):
     """ Abstraction of unregistered Subsets used in NativeViews (Check TM1py.ViewAxisSelection)
 
     """

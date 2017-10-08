@@ -9,28 +9,29 @@ from .config import test_config
 
 
 class TestSubsetMethods(unittest.TestCase):
-    tm1 = TM1Service(**test_config)
-
-    # Do random stuff
-    random_string = str(uuid.uuid4())
-    private = bool(random.getrandbits(1))
-
-    # Define Names
-    dimension_name = 'TM1py_unittest_dimension_' + random_string
-    subset_name_static = 'TM1py_unittest_static_subset_' + random_string
-    subset_name_dynamic = 'TM1py_unittest_dynamic_subset_' + random_string
-
-    # Instantiate Subsets
-    static_subset = Subset(dimension_name=dimension_name,
-                           subset_name=subset_name_static,
-                           elements=['USD', 'EUR', 'NZD'])
-    dynamic_subset = Subset(dimension_name=dimension_name,
-                            subset_name=subset_name_dynamic,
-                            expression='{ HIERARCHIZE( {TM1SUBSETALL( [' + dimension_name + '] )} ) }')
 
     # Check if Dimensions exists. If not create it
     @classmethod
     def setup_class(cls):
+        cls.tm1 = TM1Service(**test_config)
+
+        # Do random stuff
+        cls.random_string = str(uuid.uuid4())
+        cls.private = bool(random.getrandbits(1))
+
+        # Define Names
+        cls.dimension_name = 'TM1py_unittest_dimension_' + cls.random_string
+        cls.subset_name_static = 'TM1py_unittest_static_subset_' + cls.random_string
+        cls.subset_name_dynamic = 'TM1py_unittest_dynamic_subset_' + cls.random_string
+
+        # Instantiate Subsets
+        cls.static_subset = Subset(dimension_name=cls.dimension_name,
+                                   subset_name=cls.subset_name_static,
+                                   elements=['USD', 'EUR', 'NZD'])
+        cls.dynamic_subset = Subset(dimension_name=cls.dimension_name,
+                                    subset_name=cls.subset_name_dynamic,
+                                    expression='{ HIERARCHIZE( {TM1SUBSETALL( [' + cls.dimension_name + '] )} ) }')
+
         elements = [Element('USD', 'Numeric'),
                     Element('EUR', 'Numeric'),
                     Element('JPY', 'Numeric'),

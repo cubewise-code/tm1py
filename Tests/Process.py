@@ -13,65 +13,67 @@ process_prefix = '}TM1py_unittest'
 
 
 class TestProcessMethods(unittest.TestCase):
-    tm1 = TM1Service(**test_config)
 
-    random_string = str(uuid.uuid4())
+    @classmethod
+    def setUpClass(cls):
+        cls.tm1 = TM1Service(**test_config)
 
-    all_dimension_names = tm1.dimensions.get_all_names()
-    random_dimension = tm1.dimensions.get(random.choice(all_dimension_names))
-    random_dimension_all_elements = random_dimension.default_hierarchy.elements
-    random_dimension_elements = [element for element in random_dimension_all_elements][0:2]
+        cls.random_string = str(uuid.uuid4())
 
-    # None process
-    p_none = Process(name=process_prefix + '_none_' + random_string,
-                     datasource_type='None')
+        cls.all_dimension_names = cls.tm1.dimensions.get_all_names()
+        cls.random_dimension = cls.tm1.dimensions.get(random.choice(cls.all_dimension_names))
+        cls.random_dimension_all_elements = cls.random_dimension.default_hierarchy.elements
+        cls.random_dimension_elements = [element for element in cls.random_dimension_all_elements][0:2]
 
-    # ACII process
-    p_ascii = Process(name=process_prefix + '_ascii_' + random_string,
-                      datasource_type='ASCII',
-                      datasource_ascii_delimiter_type='Character',
-                      datasource_ascii_delimiter_char=',',
-                      datasource_ascii_header_records=2,
-                      datasource_ascii_quote_character='^',
-                      datasource_ascii_thousand_separator='~',
-                      prolog_procedure="sTestProlog = 'test prolog procedure'",
-                      metadata_procedure="sTestMeta = 'test metadata procedure'",
-                      data_procedure="sTestData =  'test data procedure'",
-                      epilog_procedure="sTestEpilog = 'test epilog procedure'",
-                      datasource_data_source_name_for_server=r'C:\Data\file.csv',
-                      datasource_data_source_name_for_client=r'C:\Data\file.csv')
-    # Variables
-    p_ascii.add_variable('v_1', 'Numeric')
-    p_ascii.add_variable('v_2', 'Numeric')
-    p_ascii.add_variable('v_3', 'Numeric')
-    p_ascii.add_variable('v_4', 'Numeric')
-    # Parameters
-    p_ascii.add_parameter('p_Year', 'year?', '2016')
+        # None process
+        cls.p_none = Process(name=process_prefix + '_none_' + cls.random_string, datasource_type='None')
 
-    # View process
-    p_view = Process(name=process_prefix + '_view_' + random_string,
-                     datasource_type='TM1CubeView',
-                     datasource_view='view1',
-                     datasource_data_source_name_for_client='Plan_BudgetPlan',
-                     datasource_data_source_name_for_server='Plan_BudgetPlan')
+        # ACII process
+        cls.p_ascii = Process(name=process_prefix + '_ascii_' + cls.random_string,
+                              datasource_type='ASCII',
+                              datasource_ascii_delimiter_type='Character',
+                              datasource_ascii_delimiter_char=',',
+                              datasource_ascii_header_records=2,
+                              datasource_ascii_quote_character='^',
+                              datasource_ascii_thousand_separator='~',
+                              prolog_procedure="sTestProlog = 'test prolog procedure'",
+                              metadata_procedure="sTestMeta = 'test metadata procedure'",
+                              data_procedure="sTestData =  'test data procedure'",
+                              epilog_procedure="sTestEpilog = 'test epilog procedure'",
+                              datasource_data_source_name_for_server=r'C:\Data\file.csv',
+                              datasource_data_source_name_for_client=r'C:\Data\file.csv')
+        # Variables
+        cls.p_ascii.add_variable('v_1', 'Numeric')
+        cls.p_ascii.add_variable('v_2', 'Numeric')
+        cls.p_ascii.add_variable('v_3', 'Numeric')
+        cls.p_ascii.add_variable('v_4', 'Numeric')
+        # Parameters
+        cls.p_ascii.add_parameter('p_Year', 'year?', '2016')
 
-    # ODBC process
-    p_odbc = Process(name=process_prefix + '_odbc_' + random_string,
-                     datasource_type='ODBC',
-                     datasource_password='password',
-                     datasource_user_name='user')
+        # View process
+        cls.p_view = Process(name=process_prefix + '_view_' + cls.random_string,
+                             datasource_type='TM1CubeView',
+                             datasource_view='view1',
+                             datasource_data_source_name_for_client='Plan_BudgetPlan',
+                             datasource_data_source_name_for_server='Plan_BudgetPlan')
 
-    # Subset process
-    subset_name = process_prefix + '_subset_' + random_string
-    subset = Subset(dimension_name=random_dimension.name,
-                    subset_name=subset_name,
-                    elements=random_dimension_elements)
-    tm1.dimensions.subsets.create(subset, False)
-    p_subset = Process(name=process_prefix + '_subset_' + random_string,
-                       datasource_type='TM1DimensionSubset',
-                       datasource_data_source_name_for_server=subset.dimension_name,
-                       datasource_subset=subset.name,
-                       metadata_procedure="sTest = 'abc';")
+        # ODBC process
+        cls.p_odbc = Process(name=process_prefix + '_odbc_' + cls.random_string,
+                             datasource_type='ODBC',
+                             datasource_password='password',
+                             datasource_user_name='user')
+
+        # Subset process
+        cls.subset_name = process_prefix + '_subset_' + cls.random_string
+        cls.subset = Subset(dimension_name=cls.random_dimension.name,
+                            subset_name=cls.subset_name,
+                            elements=cls.random_dimension_elements)
+        cls.tm1.dimensions.subsets.create(cls.subset, False)
+        cls.p_subset = Process(name=process_prefix + '_subset_' + cls.random_string,
+                               datasource_type='TM1DimensionSubset',
+                               datasource_data_source_name_for_server=cls.subset.dimension_name,
+                               datasource_subset=cls.subset.name,
+                               metadata_procedure="sTest = 'abc';")
 
     # Create Process
     def test1_create_process(self):
@@ -119,8 +121,9 @@ class TestProcessMethods(unittest.TestCase):
         self.tm1.dimensions.subsets.delete(dimension_name=self.subset.dimension_name,
                                            subset_name=self.subset_name, private=False)
 
-    def test5_logout(self):
-        self.tm1.logout()
+    @classmethod
+    def tearDownClass(cls):
+        cls.tm1.logout()
 
 
 if __name__ == '__main__':

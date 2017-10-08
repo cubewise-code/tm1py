@@ -10,9 +10,12 @@ from .config import test_config
 
 
 class TestCubeMethods(unittest.TestCase):
-    tm1 = TM1Service(**test_config)
 
-    cube_name = 'TM1py_unittest_cube_{}'.format(str(uuid.uuid4()))
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tm1 = TM1Service(**test_config)
+        cls.cube_name = 'TM1py_unittest_cube_{}'.format(str(uuid.uuid4()))
 
     def test1_create_cube(self):
         all_cubes_before = self.tm1.cubes.get_all_names()
@@ -48,9 +51,9 @@ class TestCubeMethods(unittest.TestCase):
         all_cubes_after = self.tm1.cubes.get_all_names()
         self.assertEqual(len(all_cubes_before) - 1, len(all_cubes_after))
 
-    def test5_logout(self):
-        self.tm1.logout()
-
+    @classmethod
+    def tearDownClass(cls):
+        cls.tm1.logout()
 
 if __name__ == '__main__':
     unittest.main()

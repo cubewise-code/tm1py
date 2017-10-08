@@ -2,7 +2,7 @@
 
 import json
 
-from TM1py.Objects.Subset import Subset, AnnonymousSubset
+from TM1py.Objects.Subset import Subset, AnonymousSubset
 from TM1py.Objects.View import View
 from TM1py.Objects.Axis import ViewAxisSelection, ViewTitleSelection
 
@@ -51,7 +51,7 @@ class NativeView(View):
         for i, axe in enumerate((self._rows, self._columns)):
             for j, axis_selection in enumerate(axe):
                 subset = axis_selection._subset
-                if isinstance(subset, AnnonymousSubset):
+                if isinstance(subset, AnonymousSubset):
                     if subset._expression is not None:
                         if j == 0:
                             if self.suppress_empty_rows:
@@ -209,7 +209,7 @@ class NativeView(View):
 
         for selection in view_as_dict['Titles']:
             if selection['Subset']['Name'] == '':
-                subset = AnnonymousSubset.from_dict(selection['Subset'])
+                subset = AnonymousSubset.from_dict(selection['Subset'])
             else:
                 subset = Subset.from_dict(selection['Subset'])
             selected = selection['Selected']['Name']
@@ -218,7 +218,7 @@ class NativeView(View):
         for i, axe in enumerate([view_as_dict['Columns'], view_as_dict['Rows']]):
             for selection in axe:
                 if selection['Subset']['Name'] == '':
-                    subset = AnnonymousSubset.from_dict(selection['Subset'])
+                    subset = AnonymousSubset.from_dict(selection['Subset'])
                 else:
                     subset = Subset.from_dict(selection['Subset'])
                 axis_selection = ViewAxisSelection(dimension_name=subset.dimension_name,

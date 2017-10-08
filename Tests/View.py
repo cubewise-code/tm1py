@@ -2,7 +2,7 @@ import random
 import unittest
 import uuid
 
-from TM1py.Objects import AnnonymousSubset, Subset, Cube, Dimension, Element, Hierarchy, MDXView, NativeView
+from TM1py.Objects import AnonymousSubset, Subset, Cube, Dimension, Element, Hierarchy, MDXView, NativeView
 from TM1py.Services import TM1Service
 
 from .config import test_config
@@ -60,8 +60,8 @@ class TestViewMethods(unittest.TestCase):
         self.tm1.dimensions.subsets.create(subset, private=False)
         native_view.add_row(dimension_name=dimension_names[0], subset=subset)
 
-        subset = AnnonymousSubset(dimension_name=dimension_names[1], hierarchy_name=dimension_names[1],
-                                  elements=['element1', 'element123', 'element432'])
+        subset = AnonymousSubset(dimension_name=dimension_names[1], hierarchy_name=dimension_names[1],
+                                 elements=['element1', 'element123', 'element432'])
         native_view.add_title(dimension_name=dimension_names[1], subset=subset, selection='element123')
 
         elements = ['Element{}'.format(str(i)) for i in range(1, 201)]
@@ -128,8 +128,8 @@ class TestViewMethods(unittest.TestCase):
 
         # modify it
         native_view_original.remove_row(dimension_name=dimension_names[0])
-        subset = AnnonymousSubset(dimension_name=dimension_names[0],
-                                  elements=["Element 1", "Element 2", "Element 3", "Element 4", "Element 5"])
+        subset = AnonymousSubset(dimension_name=dimension_names[0],
+                                 elements=["Element 1", "Element 2", "Element 3", "Element 4", "Element 5"])
         native_view_original.add_column(dimension_name=dimension_names[0], subset=subset)
 
         # update it on Server
