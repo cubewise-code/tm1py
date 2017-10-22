@@ -133,7 +133,7 @@ def obfuscate_code(code, variable_mapping, unique_string):
                             part = line[positions[k-1]:position]
                             # Check if %variableName% is inside the string
                             for variable_name_old, variable_name_new in variable_mapping.items():
-                                # replace %nRevenue% by b
+                                # replace %variableName% by b
                                 case_insensitive_replace = re.compile(re.escape('%{}%'.format(variable_name_old)),
                                                                       re.IGNORECASE)
                                 part = case_insensitive_replace.sub('%{}%'.format(variable_name_new), part)

@@ -100,9 +100,7 @@ class ProcessService(ObjectService):
         # Adjust process body if TM1 version is lower than 11 due to change in Process Parameters structure
         # https://www.ibm.com/developerworks/community/forums/html/topic?id=9188d139-8905-4895-9229-eaaf0e7fa683
         if int(self.version[0:2]) < 11:
-            body = json.loads(process.body)
-            for _, p in enumerate(body['Parameters']):
-                del body['Parameters'][p]['Type']
+            process.drop_parameter_types()
         response = self._rest.PATCH(request, process.body)
         return response
 
@@ -116,9 +114,7 @@ class ProcessService(ObjectService):
         # Adjust process body if TM1 version is lower than 11 due to change in Process Parameters structure
         # https://www.ibm.com/developerworks/community/forums/html/topic?id=9188d139-8905-4895-9229-eaaf0e7fa683
         if int(self.version[0:2]) < 11:
-            body = json.loads(process.body)
-            for _, p in enumerate(body['Parameters']):
-                del body['Parameters'][p]['Type']
+            process.drop_parameter_types()
         response = self._rest.POST(request, process.body)
         return response
 

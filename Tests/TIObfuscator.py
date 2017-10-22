@@ -28,7 +28,7 @@ class TestTIObfuscatorMethods(unittest.TestCase):
         cls.tm1 = TM1Service(**test_config)
 
         # create process
-        prolog = "SaveDataAll;\r\nsText='abcABC';\r\n"
+        prolog = "\r\nSaveDataAll;\r\nsText='abcABC';\r\n"
         epilog = "SaveDataAll;"
         cls.process = Process(name=cls.process_name, prolog_procedure=prolog, epilog_procedure=epilog)
         # create process with expand in TM1
@@ -37,7 +37,7 @@ class TestTIObfuscatorMethods(unittest.TestCase):
         cls.tm1.processes.create(cls.process)
 
         # create process with expand
-        prolog = "nRevenue = 20;\r\nsRevenue = EXPAND('%nrevenue%');\r\nIF(sRevenue @ <> '20.000');\r\n" \
+        prolog = "\r\nnRevenue = 20;\r\nsRevenue = EXPAND('%nrevenue%');\r\nIF(sRevenue @ <> '20.000');\r\n" \
                  "ProcessBreak;\r\nENDIF;"
         cls.expand_process = Process(name=cls.expand_process_name, prolog_procedure=prolog)
         # create process with expand in TM1

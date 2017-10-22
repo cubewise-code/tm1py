@@ -49,6 +49,7 @@ class TestProcessMethods(unittest.TestCase):
         cls.p_ascii.add_variable('v_4', 'Numeric')
         # Parameters
         cls.p_ascii.add_parameter('p_Year', 'year?', '2016')
+        cls.p_ascii.add_parameter('p_Number', 'number?', 2)
 
         # View process
         cls.p_view = Process(name=process_prefix + '_view_' + cls.random_string,

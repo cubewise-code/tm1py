@@ -64,7 +64,10 @@ class RESTService:
         if 'base_url' in kwargs:
             self._base_url = kwargs['base_url']
         else:
-            self._base_url = "http{}://{}:{}".format('s' if self._ssl else '', self._address, self._port)
+            self._base_url = "http{}://{}:{}".format(
+                's' if self._ssl else '',
+                'localhost' if len(self._address) == 0 else self._address,
+                self._port)
         self._version = None
         self._headers = {'Connection': 'keep-alive',
                          'User-Agent': 'TM1py',

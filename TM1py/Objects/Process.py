@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import re
 import json
 from TM1py.Objects.TM1Object import TM1Object
+
 
 class Process(TM1Object):
     """ Abstraction of a TM1 Process.
@@ -10,11 +12,17 @@ class Process(TM1Object):
     """
 
     """ the auto_generated_string code is required to be in all code-tabs. """
-    auto_generated_string = "#****Begin: Generated Statements***\r\n#****End: Generated Statements****\r\n"
+    begin_generated_statements = "#****Begin: Generated Statements***"
+    end_generated_statements = "#****End: Generated Statements****"
+    auto_generated_string = "{}\r\n{}\r\n".format(begin_generated_statements, end_generated_statements)
 
     @staticmethod
     def add_generated_string_to_code(code):
-        return Process.auto_generated_string + code if Process.auto_generated_string not in code else code
+        pattern = r"#\*\*\*\*Begin: Generated Statements(?s)(.*)#\*\*\*\*End: Generated Statements\*\*\*\*"
+        if re.search(pattern=pattern, string=code):
+            return code
+        else:
+            return Process.auto_generated_string + code
 
     def __init__(self,
                  name,
@@ -349,6 +357,11 @@ class Process(TM1Object):
         for parameter in self.parameters:
             if parameter['Name'] == name:
                 self._parameters.remove(parameter)
+
+    def drop_parameter_types(self):
+        for p in range(len(self.parameters)):
+            if 'Type' in self.parameters[p]:
+                del self.parameters[p]['Type']
 
     # construct self.body (json) from the class-attributes
     def _construct_body(self):

@@ -2,6 +2,9 @@
 import unittest
 import uuid
 import random
+import datetime
+import dateutil.parser
+import time
 
 from TM1py.Services import TM1Service
 from TM1py.Objects import Cube, Dimension, Hierarchy
@@ -52,16 +55,19 @@ class TestServerMethods(unittest.TestCase):
             ('2000', 'Value'): random_values[0]
         }
         self.tm1.cubes.cells.write_values(self.cube_name, cellset)
+        time.sleep(1)
         # Write value 2 to cube
         cellset = {
             ('2001', 'Value'): random_values[1]
         }
         self.tm1.cubes.cells.write_values(self.cube_name, cellset)
+        time.sleep(1)
         # Write value 3 to cube
         cellset = {
             ('2002', 'Value'): random_values[2]
         }
         self.tm1.cubes.cells.write_values(self.cube_name, cellset)
+        time.sleep(1)
         # Query transaction log
         user = test_config['user']
         cube = self.cube_name
@@ -71,10 +77,22 @@ class TestServerMethods(unittest.TestCase):
         for v1, v2 in zip(random_values, reversed(values)):
             self.assertAlmostEqual(v1, v2, delta=0.000000001)
 
+    def test_get_transaction_log_entries_from_today(self):
+        # get datetime from today at 00:00:00
+        today = datetime.datetime.combine(datetime.date.today(), datetime.time(0, 0))
+        entries = self.tm1.server.get_transaction_log_entries(reverse=True, since=today)
+        for entry in entries:
+            entry_timestamp = dateutil.parser.parse(entry['TimeStamp'])
+            # remove timezone information and compare
+            self.assertTrue(entry_timestamp.replace(tzinfo=None) > today)
+
     @classmethod
     def tearDownClass(cls):
         cls.tm1.cubes.delete(cls.cube_name)
+        cls.tm1.dimensions.delete(cls.dimension_name1)
+        cls.tm1.dimensions.delete(cls.dimension_name2)
         cls.tm1.logout()
+
 
 if __name__ == '__main__':
     unittest.main()
