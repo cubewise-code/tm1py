@@ -1,4 +1,5 @@
 from TM1py.Services import *
+from TM1py.Utils import Utils
 
 
 class TM1Service:

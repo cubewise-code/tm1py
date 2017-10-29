@@ -6,6 +6,7 @@ import requests
 from TM1py.Utils import TIObfuscator
 from TM1py.Services import TM1Service
 from TM1py.Objects import Process, Dimension, Hierarchy, Cube
+from TM1py.Utils import Utils
 
 from Tests.config import test_config
 
@@ -78,9 +79,7 @@ class TestTIObfuscatorMethods(unittest.TestCase):
         # create bedrocks if they doesn't exist
         for bedrock in ("Bedrock.Dim.Clone", "Bedrock.Cube.Clone"):
             if not cls.tm1.processes.exists(bedrock):
-                url = 'https://raw.githubusercontent.com/MariusWirtz/bedrock/master/json/{}.json'.format(bedrock)
-                process_as_json = requests.get(url).text
-                process = Process.from_json(process_as_json)
+                process = Utils.load_bedrock_from_github(bedrock)
                 cls.tm1.processes.create(process)
 
     def test_split_into_statements(self):

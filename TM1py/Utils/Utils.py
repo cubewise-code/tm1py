@@ -3,6 +3,7 @@ import json
 import sys
 
 from TM1py.Objects.Server import Server
+from TM1py.Objects.Process import Process
 
 if sys.version[0] == '2':
     import httplib as http_client
@@ -130,7 +131,7 @@ def element_names_from_element_unqiue_names(element_unique_names):
                   in element_unique_names])
 
 
-def build_pandas_dataframe_from_cellset(cellset):
+def build_pandas_dataframe_from_cellset(cellset, multiindex=True):
     import pandas as pd
 
     cellset_clean = {}
@@ -142,11 +143,42 @@ def build_pandas_dataframe_from_cellset(cellset):
 
     # create index
     keylist = list(cellset_clean.keys())
-    multiindex = pd.MultiIndex.from_tuples(keylist, names=dimension_names)
+    index = pd.MultiIndex.from_tuples(keylist, names=dimension_names)
 
     # create DataFrame
     values = list(cellset_clean.values())
-    return pd.DataFrame(values, index=multiindex)
+    df = pd.DataFrame(values, index=index, columns=["Values"])
+    if not multiindex:
+        df.reset_index(inplace=True)
+    return df
+
+
+def load_bedrock_from_github(bedrock_process_name):
+    """ Load bedrock from GitHub as TM1py.Process instance
+    
+    :param name_bedrock_process: 
+    :return: 
+    """
+    import requests
+    url = 'https://raw.githubusercontent.com/MariusWirtz/bedrock/master/json/{}.json'.format(bedrock_process_name)
+    process_as_json = requests.get(url).text
+    return Process.from_json(process_as_json)
+
+
+def load_all_bedrocks_from_github():
+    """ Load all Bedrocks from GitHub as TM1py.Process instances
+    
+    :return: 
+    """
+    import requests
+    # Connect to Bedrock github repo and load the names of all Bedrocks
+    url = "https://api.github.com/repos/MariusWirtz/bedrock/contents/json?ref=master"
+    raw_github_data = requests.get(url).json()
+    all_bedrocks = [entry['name'] for entry in raw_github_data]
+    # instantiate TM1py.Process instances from github-json content
+    url_to_bedrock = 'https://raw.githubusercontent.com/MariusWirtz/bedrock/master/json/{}'
+    return [Process.from_json(requests.get(url_to_bedrock.format(bedrock)).text) for bedrock in all_bedrocks]
+
 
 
 class CaseAndSpaceInsensitiveDict(collections.MutableMapping):

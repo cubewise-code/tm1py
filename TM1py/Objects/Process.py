@@ -307,8 +307,8 @@ class Process(TM1Object):
     def add_variable(self, name, type):
         """ add variable to the process
 
-        :param name_variable: -
-        :param type: String or Numeric
+        :param name: -
+        :param type: 'String' or 'Numeric'
         :return:
         """
         # variable consists of actual variable and UI-Information ('ignore','other', etc.)
@@ -322,7 +322,7 @@ class Process(TM1Object):
         # 2. handle UI info
         var_type = 33 if type == 'Numeric' else 32
         # '\r' !
-        variable_ui_data = 'VarType=' +  str(var_type) + '\r' + 'ColType=' + str(827)+ '\r'
+        variable_ui_data = 'VarType=' + str(var_type) + '\r' + 'ColType=' + str(827) + '\r'
         """
         mapping VariableUIData:
             VarType 33 -> Numeric
@@ -331,9 +331,9 @@ class Process(TM1Object):
         """
         self._variables_ui_data.append(variable_ui_data)
 
-    def remove_variables(self, name):
+    def remove_variable(self, name):
         for variable in self.variables:
-            if (variable['Name'] == name):
+            if variable['Name'] == name:
                 self._variables.remove(variable)
 
     def add_parameter(self, name, prompt, value, parameter_type=None):
@@ -391,6 +391,8 @@ class Process(TM1Object):
                 "dataSourceNameForClient": self._datasource_data_source_name_for_client,
                 "dataSourceNameForServer": self._datasource_data_source_name_for_server
             }
+            if self._datasource_ascii_delimiter_type == 'FixedWidth':
+                del body_as_dict['DataSource']['asciiDelimiterChar']
         elif self._datasource_type == 'None':
             body_as_dict['DataSource'] = {
                 "Type": "None"
