@@ -193,12 +193,12 @@ class Process(TM1Object):
         self._datasource_type = value
 
     @property
-    def datasource_ascii_decimal_seperator(self):
+    def datasource_ascii_decimal_separator(self):
         return self._datasource_ascii_decimal_separator
 
-    @datasource_ascii_decimal_seperator.setter
-    def datasource_ascii_decimal_seperator(self, value):
-        self._datasource_ascii_decimal_seperator = value
+    @datasource_ascii_decimal_separator.setter
+    def datasource_ascii_decimal_separator(self, value):
+        self._datasource_ascii_decimal_separator = value
 
     @property
     def datasource_ascii_delimiter_char(self):

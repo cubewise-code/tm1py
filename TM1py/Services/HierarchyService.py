@@ -65,7 +65,7 @@ class HierarchyService(ObjectService):
         return self._rest.DELETE(request)
 
     def _update_element_attributes(self, hierarchy):
-        """ Update the element sattributes of a hierarchy
+        """ Update the elementattributes of a hierarchy
 
         :param hierarchy: Instance of TM1py.Hierarchy
         :return:

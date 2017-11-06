@@ -1,12 +1,13 @@
+import pickle
+
 from TM1py.Services import *
-from TM1py.Utils import Utils
 
 
 class TM1Service:
     """ All features of TM1py are exposed through this service
     
+    Can be saved and restored from File, to avoid multiple authentication with TM1.
     """
-
     def __init__(self, **kwargs):
         self._tm1_rest = RESTService(**kwargs)
 
@@ -33,4 +34,13 @@ class TM1Service:
 
     @property
     def version(self):
-        return self._tm1_rest._version
+        return self._tm1_rest.version
+
+    def save_to_file(self, file_name):
+        with open(file_name, 'wb') as file:
+            pickle.dump(self, file)
+
+    @classmethod
+    def restore_from_file(cls, file_name):
+        with open(file_name, 'rb') as file:
+            return pickle.load(file)

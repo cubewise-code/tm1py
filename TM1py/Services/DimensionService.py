@@ -87,3 +87,24 @@ class DimensionService(ObjectService):
         dimensions = json.loads(response)['value']
         list_dimensions = list(entry['Name'] for entry in dimensions)
         return list_dimensions
+
+    def execute_mdx(self, dimension_name, mdx):
+        """ Execute MDX against Dimension. 
+        Requires }ElementAttributes_ Cube of the dimension to exist !
+ 
+        :param dimension_name: Name of the Dimension
+        :param mdx: valid Dimension-MDX Statement 
+        :return: List of Element names
+        """
+        mdx_skeleton = "SELECT " \
+                       "{} ON ROWS, " \
+                       "{{ [}}ElementAttributes_{}].DefaultMember }} ON COLUMNS  " \
+                       "FROM [}}ElementAttributes_{}]"
+        mdx_full = mdx_skeleton.format(mdx, dimension_name, dimension_name)
+        request = '/api/v1/ExecuteMDX?$expand=Axes(' \
+                  '$filter=Ordinal eq 1;' \
+                  '$expand=Tuples($expand=Members($select=Ordinal;$expand=Element($select=Name))))'
+        payload = {"MDX": mdx_full}
+        raw = self._rest.POST(request, json.dumps(payload, ensure_ascii=False))
+        raw_dict = json.loads(raw)
+        return [row_tuple['Members'][0]['Element']['Name'] for row_tuple in raw_dict['Axes'][0]['Tuples']]

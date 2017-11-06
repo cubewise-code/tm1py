@@ -178,6 +178,10 @@ class RESTService:
         except:
             return False
 
+    @property
+    def version(self):
+        return self._version
+
     @staticmethod
     def verify_response(response):
         """ check if Status Code is OK
