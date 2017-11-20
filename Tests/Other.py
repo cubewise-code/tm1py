@@ -3,7 +3,7 @@ import unittest
 
 from TM1py.Objects import MDXView
 from TM1py.Services import TM1Service
-from TM1py.Utils import Utils
+from TM1py.Utils import Utils, MDXUtils
 
 from .config import test_config
 
@@ -46,18 +46,9 @@ class TestOtherMethods(unittest.TestCase):
                     # test it !
                     self.assertEqual(sum_mdx, sum_native_view)
 
-    def test2_read_cube_name_from_mdx(self):
-        all_cube_names = self.tm1.cubes.get_all_names()
-        all_cube_names_normalized = [cube_name.upper().replace(" ", "") for cube_name in all_cube_names]
-        for cube_name in all_cube_names:
-            private_views, public_views = self.tm1.cubes.views.get_all(cube_name)
-            for view in private_views + public_views:
-                mdx = view.MDX
-                cube_name = Utils.read_cube_name_from_mdx(mdx)
-                self.assertIn(cube_name, all_cube_names_normalized)
 
     def test3_get_instances_from_adminhost(self):
-        servers = Utils.get_all_servers_from_adminhost('localhost')
+        servers = Utils.get_all_servers_from_adminhost(test_config['address'])
         self.assertGreater(len(servers), 0)
 
     @classmethod

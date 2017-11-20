@@ -6,7 +6,6 @@ import json
 from TM1py.Utils import Utils
 
 
-
 class CellService:
     """ Service to handle Read and Write operations to TM1 cubes
     

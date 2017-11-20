@@ -33,7 +33,7 @@ class ServerService(ObjectService):
         """
         reverse = 'desc' if reverse else 'asc'
         request = '/api/v1/TransactionLogEntries?$orderby=TimeStamp {} '.format(reverse)
-        # filter on user and cube
+        # filter on user, cube and time
         if user or cube or since:
             log_filters = []
             if user:

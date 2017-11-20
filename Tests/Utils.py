@@ -1,14 +1,93 @@
-
 import unittest
 import uuid
-import requests
 
 from TM1py.Utils import TIObfuscator
 from TM1py.Services import TM1Service
 from TM1py.Objects import Process, Dimension, Hierarchy, Cube
-from TM1py.Utils import Utils
+from TM1py.Utils import Utils, MDXUtils
 
 from Tests.config import test_config
+
+
+class TestMDXUtils(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        # Connect to TM1
+        cls.tm1 = TM1Service(**test_config)
+
+        # Build 4 Dimensions
+        cls.dim1_name = str(uuid.uuid4())
+        cls.dim1_element_names = [str(uuid.uuid4()) for _ in range(10)]
+        d = Dimension(cls.dim1_name)
+        h = Hierarchy(cls.dim1_name, cls.dim1_name)
+        for element_name in cls.dim1_element_names:
+            h.add_element(element_name, 'Numeric')
+        d.add_hierarchy(h)
+        cls.tm1.dimensions.create(d)
+
+        cls.dim2_name = str(uuid.uuid4())
+        cls.dim2_element_names = [str(uuid.uuid4()) for _ in range(10)]
+        d = Dimension(cls.dim2_name)
+        h = Hierarchy(cls.dim2_name, cls.dim2_name)
+        for element_name in cls.dim2_element_names:
+            h.add_element(element_name, 'Numeric')
+        d.add_hierarchy(h)
+        cls.tm1.dimensions.create(d)
+
+        cls.dim3_name = str(uuid.uuid4())
+        cls.dim3_element_names = [str(uuid.uuid4()) for _ in range(10)]
+        d = Dimension(cls.dim3_name)
+        h = Hierarchy(cls.dim3_name, cls.dim3_name)
+        for element_name in cls.dim3_element_names:
+            h.add_element(element_name, 'Numeric')
+        d.add_hierarchy(h)
+        cls.tm1.dimensions.create(d)
+
+        cls.dim4_name = str(uuid.uuid4())
+        cls.dim4_element_names = [str(uuid.uuid4()) for _ in range(10)]
+        d = Dimension(cls.dim4_name)
+        h = Hierarchy(cls.dim4_name, cls.dim4_name)
+        for element_name in cls.dim4_element_names:
+            h.add_element(element_name, 'Numeric')
+        d.add_hierarchy(h)
+        cls.tm1.dimensions.create(d)
+
+        # Build Cube with 4 Dimensions
+        cls.cube_name = str(uuid.uuid4())
+        cube = Cube(name=cls.cube_name,
+                    dimensions=[cls.dim1_name, cls.dim2_name, cls.dim3_name, cls.dim4_name])
+        cls.tm1.cubes.create(cube)
+
+    def test_construct_mdx(self):
+        rows = {self.dim1_name: None, self.dim2_name: self.dim2_element_names}
+        columns = {self.dim3_name: "{{TM1SubsetAll([{}])}}".format(self.dim3_name)}
+        contexts = {self.dim4_name: self.dim4_element_names[0]}
+        suppress = None
+
+        mdx = MDXUtils.construct_mdx(cube_name=self.cube_name, rows=rows, columns=columns,
+                                     contexts=contexts, suppress=suppress)
+        content = self.tm1.cubes.cells.execute_mdx(mdx)
+        number_cells = len(content.keys())
+        self.assertEqual(number_cells, 1000)
+
+    def test_read_cube_name_from_mdx(self):
+        all_cube_names = self.tm1.cubes.get_all_names()
+        all_cube_names_normalized = [cube_name.upper().replace(" ", "") for cube_name in all_cube_names]
+        for cube_name in all_cube_names:
+            private_views, public_views = self.tm1.cubes.views.get_all(cube_name)
+            for view in private_views + public_views:
+                mdx = view.MDX
+                cube_name = MDXUtils.read_cube_name_from_mdx(mdx)
+                self.assertIn(cube_name, all_cube_names_normalized)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tm1.cubes.delete(cls.cube_name)
+        cls.tm1.dimensions.delete(cls.dim1_name)
+        cls.tm1.dimensions.delete(cls.dim2_name)
+        cls.tm1.dimensions.delete(cls.dim3_name)
+        cls.tm1.dimensions.delete(cls.dim4_name)
 
 
 class TestTIObfuscatorMethods(unittest.TestCase):

@@ -30,23 +30,6 @@ def get_all_servers_from_adminhost(adminhost='localhost'):
     return servers
 
 
-def read_cube_name_from_mdx(mdx):
-    """ read the cubename from a valid MDX Query
-
-    :param mdx: The MDX Query as String
-    :return: String, name of a cube
-    """
-
-    mdx_trimed = ''.join(mdx.split()).upper()
-    post_start = mdx_trimed.rfind("FROM[") + len("FROM[")
-    pos_end = mdx_trimed.find("]WHERE", post_start)
-    # if MDX has no dimension on titles
-    if pos_end == 0:
-        pos_end = len(mdx_trimed)-1
-    cube_name = mdx_trimed[post_start:pos_end]
-    return cube_name
-
-
 def sort_addresstuple(cube_dimensions, unsorted_addresstuple):
     """ Sort the given mixed up addresstuple
 
@@ -131,7 +114,14 @@ def element_names_from_element_unqiue_names(element_unique_names):
                   in element_unique_names])
 
 
-def build_pandas_dataframe_from_cellset(cellset, multiindex=True):
+def build_pandas_dataframe_from_cellset(cellset, multiindex=True, sort_index=True):
+    """
+    
+    :param cellset: 
+    :param multiindex: True or False
+    :param sort_index: Boolean to control sorting in result DataFrame
+    :return: 
+    """
     import pandas as pd
 
     cellset_clean = {}
@@ -148,8 +138,11 @@ def build_pandas_dataframe_from_cellset(cellset, multiindex=True):
     # create DataFrame
     values = list(cellset_clean.values())
     df = pd.DataFrame(values, index=index, columns=["Values"])
+
     if not multiindex:
         df.reset_index(inplace=True)
+    if sort_index:
+        df.sort_index(inplace=True)
     return df
 
 
@@ -178,7 +171,6 @@ def load_all_bedrocks_from_github():
     # instantiate TM1py.Process instances from github-json content
     url_to_bedrock = 'https://raw.githubusercontent.com/MariusWirtz/bedrock/master/json/{}'
     return [Process.from_json(requests.get(url_to_bedrock.format(bedrock)).text) for bedrock in all_bedrocks]
-
 
 
 class CaseAndSpaceInsensitiveDict(collections.MutableMapping):
