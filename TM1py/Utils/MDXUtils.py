@@ -22,6 +22,8 @@ def construct_mdx_axis(dim_selections):
     """ Construct MDX for one Axis (Row or Column).
     Can have multiple dimensions stacked.
 
+    :param dim_selections: Dictionary of the Dimension Name and a selection (Dimension-MDX, List of Elementnames, 
+    Subset, or None)
     :return: a valid MDX for an Axis
     """
     mdx_selection = ''
