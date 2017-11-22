@@ -24,7 +24,7 @@ class Rules(TM1Object):
         text_without_comments = '\n'.join(
             [rule
              for rule in self._text.split('\n')
-             if len(rule) > 0 and rule.strip()[0] != '#'])
+             if len(rule.strip()) > 0 and rule.strip()[0] != '#'])
         for statement in text_without_comments.split(';'):
             if len(statement.strip()) > 0:
                 self._rules_analytics.append(statement.replace('\n', '').upper())

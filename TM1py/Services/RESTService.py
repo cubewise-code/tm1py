@@ -2,7 +2,14 @@
 
 import functools
 import requests
+import sys
 from base64 import b64encode
+# import Http-Client depending on pyhton version
+if sys.version[0] == '2':
+    import httplib as http_client
+else:
+    import http.client as http_client
+
 
 from TM1py.Exceptions import TM1pyException
 
@@ -56,6 +63,7 @@ class RESTService:
         :param password String - password of the user
         :param namespace String - optional CAM namespace
         :param ssl: boolean -  as specified in the tm1s.cfg
+        :param loggin: boolean - switch on/off verbose http logging into console
         """
         self._ssl = kwargs['ssl']
         self._address = kwargs['address'] if 'address' in kwargs else None
@@ -73,8 +81,8 @@ class RESTService:
                          'User-Agent': 'TM1py',
                          'Content-Type': 'application/json; odata.streaming=true; charset=utf-8',
                          'Accept': 'application/json;odata.metadata=none,text/plain'}
-        # Authorization [Basic, CAM, WIA] through Headers
-        if 'namespace' in kwargs:
+        # Authorization [Basic, CAM] through Headers
+        if 'namespace' in kwargs and kwargs['namespace']:
             token = 'CAMNamespace ' + b64encode(
                 str.encode("{}:{}:{}".format(kwargs['user'], kwargs['password'], kwargs['namespace']))).decode("ascii")
         else:
@@ -84,10 +92,11 @@ class RESTService:
         self.disable_http_warnings(self)
         self._s = requests.session()
         self._get_cookies()
-        # after we have session cookie drop the authentication
+        # after we have session cookie drop the Authorization Header
         self._headers.pop('Authorization')
         # logging
-        # shttp_client.HTTPConnection.debuglevel = 1
+        if 'logging' in kwargs and kwargs['logging']:
+            http_client.HTTPConnection.debuglevel = 1
 
     def __enter__(self):
         return self
