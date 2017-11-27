@@ -27,7 +27,10 @@ class TestDimensionMethods(unittest.TestCase):
             element_name = str(uuid.uuid4())
             elements.append(Element(name=element_name, element_type='Numeric'))
             edges[('Root', element_name)] = i
-        h = Hierarchy(name=self.dimension_name, dimension_name=self.dimension_name, elements=elements, edges=edges)
+        element_attributes = [ElementAttribute(name='Name Long', attribute_type='Alias'),
+                              ElementAttribute(name='Name Short', attribute_type='Alias')]
+        h = Hierarchy(name=self.dimension_name, dimension_name=self.dimension_name,
+                      elements=elements, edges=edges, element_attributes=element_attributes)
         d = Dimension(name=self.dimension_name, hierarchies=[h])
         self.tm1.dimensions.create(d)
 
@@ -35,11 +38,20 @@ class TestDimensionMethods(unittest.TestCase):
         dimensions = self.tm1.dimensions.get_all_names()
         self.assertIn(self.dimension_name, dimensions)
 
+        # Get it
+        d = self.tm1.dimensions.get(dimension_name=self.dimension_name)
+        h = d.hierarchies[0]
+        # Test
+        self.assertEqual(len(h.elements), 1001)
+        self.assertEqual(len(h.element_attributes), 2)
+
+
     def test2_get_dimension(self):
         # get it
         d = self.tm1.dimensions.get(dimension_name=self.dimension_name)
-        # Test
-        self.assertEqual(len(d.hierarchies[0].elements), 1001)
+        h = d.hierarchies[0]
+        self.assertIsInstance(h, Hierarchy)
+
 
     def test3_update_dimension(self):
         # get dimension from tm1

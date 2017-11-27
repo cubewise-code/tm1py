@@ -92,9 +92,9 @@ class RESTService:
         self.disable_http_warnings(self)
         self._s = requests.session()
         self._get_cookies()
-        # after we have session cookie drop the Authorization Header
+        # After we have session cookie drop the Authorization Header
         self._headers.pop('Authorization')
-        # logging
+        # Logging
         if 'logging' in kwargs and kwargs['logging']:
             http_client.HTTPConnection.debuglevel = 1
 

@@ -8,19 +8,22 @@ from TM1py.Objects.Dimension import Dimension
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.SubsetService import SubsetService
 from TM1py.Services.HierarchyService import HierarchyService
-
+from TM1py.Services.ProcessService import ProcessService
 
 class DimensionService(ObjectService):
     """ Service to handle Object Updates for TM1 Dimensions
     
     """
+
+    # Tuple with TM1 Versions where ElementAttributes need to be created through TI
+
     def __init__(self, rest):
         super().__init__(rest)
         self.hierarchies = HierarchyService(rest)
         self.subsets = SubsetService(rest)
 
     def create(self, dimension):
-        """ create a dimension
+        """ Create a dimension
 
         :param dimension: instance of TM1py.Dimension
         :return: response
@@ -30,9 +33,18 @@ class DimensionService(ObjectService):
             raise Exception("Dimension already exists")
         # If not all subsequent calls successfull -> undo everything that has been done in this function
         try:
-            # create Dimension, Hierarchies, Elements, Edges etc.
+            # Create Dimension, Hierarchies, Elements, Edges.
             request = "/api/v1/Dimensions"
             response = self._rest.POST(request, dimension.body)
+            # Create Attributes (Can't be done in the same step as creating the dimension!)
+            if self.version[0:8] in self.ATTRIBUTE_WORKAROUND_VERSIONS:
+                # Create ElementAttributes through TI on certain PA/TM1 versions to avoid PATCH on Hierarchy
+                # Workaround: https://www.ibm.com/developerworks/community/forums/html/topic?id=75f2b99e-6961-4c71-9364-1d5e1e083eff&ps=
+                self.create_element_attributes_through_ti(dimension)
+            else:
+                for hierarchy in dimension:
+                    if len(hierarchy.element_attributes) > 0:
+                        self.hierarchies.update(hierarchy)
         except TM1pyException as e:
             # undo everything if problem in step 1 or 2
             if self.exists(dimension.name):
@@ -108,3 +120,16 @@ class DimensionService(ObjectService):
         raw = self._rest.POST(request, json.dumps(payload, ensure_ascii=False))
         raw_dict = json.loads(raw)
         return [row_tuple['Members'][0]['Element']['Name'] for row_tuple in raw_dict['Axes'][0]['Tuples']]
+
+    def create_element_attributes_through_ti(self, dimension):
+        """ 
+        
+        :param dimension. Instance of TM1py.Objects.Dimension class
+        :return: 
+        """
+        process_service = ProcessService(self._rest)
+        for h in dimension:
+            statements = ["AttrInsert('{}', '', '{}', '{}');".format(dimension.name, ea.name, ea.attribute_type[0])
+                          for ea
+                          in h.element_attributes]
+        process_service.execute_ti_code(lines_prolog=statements)

@@ -11,9 +11,7 @@ def read_cube_name_from_mdx(mdx):
     mdx_trimed = ''.join(mdx.split()).upper()
     post_start = mdx_trimed.rfind("FROM[") + len("FROM[")
     pos_end = mdx_trimed.find("]WHERE", post_start)
-    # if MDX has no dimension on titles
-    if pos_end == 0:
-        pos_end = len(mdx_trimed)-1
+    # if pos_end is -1 it works too
     cube_name = mdx_trimed[post_start:pos_end]
     return cube_name
 
