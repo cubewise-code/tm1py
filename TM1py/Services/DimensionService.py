@@ -16,6 +16,7 @@ class DimensionService(ObjectService):
     """
 
     # Tuple with TM1 Versions where ElementAttributes need to be created through TI
+    ATTRIBUTE_WORKAROUND_VERSIONS = ('11.0.002', '11.0.003')
 
     def __init__(self, rest):
         super().__init__(rest)
