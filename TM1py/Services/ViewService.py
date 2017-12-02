@@ -123,6 +123,24 @@ class ViewService(ObjectService):
                     public_views.append(view)
         return private_views, public_views
 
+    def get_all_names(self, cube_name):
+        """
+        
+        :param cube_name: 
+        :return: 
+        """
+        private_views, public_views = [], []
+        for view_type in ('PrivateViews', 'Views'):
+            request = "/api/v1/Cubes('{}')/{}?$select=Name".format(cube_name, view_type)
+            response = self._rest.GET(request)
+            response_as_list = json.loads(response)['value']
+            for view in response_as_list:
+                if view_type == "PrivateViews":
+                    private_views.append(view['Name'])
+                else:
+                    public_views.append(view['Name'])
+        return private_views, public_views
+
     def update(self, view, private=True):
         """ Update an existing view
 

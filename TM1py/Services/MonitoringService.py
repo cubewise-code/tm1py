@@ -54,3 +54,13 @@ class MonitoringService(ObjectService):
         request = "/api/v1/Users('{}')/IsActive".format(user_name)
         response = self._rest.GET(request)
         return json.loads(response)['value']
+
+    def disconnect_user(self, user_name):
+        """ Disconnect User
+        
+        :param user_name: 
+        :return: 
+        """
+        request = "/api/v1/Users('{}')/tm1.Disconnect".format(user_name)
+        response = self._rest.POST(request)
+        return response
