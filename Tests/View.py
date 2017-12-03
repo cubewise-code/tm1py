@@ -88,8 +88,12 @@ class TestViewMethods(unittest.TestCase):
         self.tm1.cubes.views.create(view=mdx_view, private=self.random_boolean)
 
     def test2_get_all_views(self):
-        views = self.tm1.cubes.views.get_all(cube_name)
-        self.assertGreater(len(views), 0)
+        private_views, public_views = self.tm1.cubes.views.get_all(cube_name)
+        self.assertGreater(len(public_views), 0)
+
+        private_view_names, public_view_names = self.tm1.cubes.views.get_all_names(cube_name)
+        self.assertEqual(len(public_views), len(public_view_names))
+        self.assertEqual(len(private_views), len(private_view_names))
 
     def test3_get_view(self):
         # get native view
