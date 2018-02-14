@@ -1,13 +1,14 @@
-
 import unittest
 import uuid
 import random
 import datetime
 import dateutil.parser
 import time
+import re
 
 from TM1py.Services import TM1Service
-from TM1py.Objects import Cube, Dimension, Hierarchy
+from TM1py.Objects import Cube, Dimension, Hierarchy, Process
+from TM1py.Exceptions import TM1pyException
 
 from Tests.config import test_config
 
@@ -17,9 +18,12 @@ class TestServerMethods(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Namings
-        cls.dimension_name1 = str(uuid.uuid4())
-        cls.dimension_name2 = str(uuid.uuid4())
-        cls.cube_name = str(uuid.uuid4())
+        cls.prefix = "TM1py_unittest_server_"
+        cls.dimension_name1 = cls.prefix + str(uuid.uuid4())
+        cls.dimension_name2 = cls.prefix + str(uuid.uuid4())
+        cls.cube_name = cls.prefix + str(uuid.uuid4())
+        cls.process_name1 = cls.prefix + str(uuid.uuid4())
+        cls.process_name2 = cls.prefix + str(uuid.uuid4())
 
         # Connect to TM1
         cls.tm1 = TM1Service(**test_config)
@@ -47,7 +51,35 @@ class TestServerMethods(unittest.TestCase):
             cube = Cube(cls.cube_name, [cls.dimension_name1, cls.dimension_name2])
             cls.tm1.cubes.create(cube)
 
-    def test_get_last_transaction_log_entries(self):
+    def test1_get_last_process_message_from_message_log(self):
+        # inject process with ItemReject
+        p = Process(name=self.process_name1, prolog_procedure="ItemReject('TM1py Tests');")
+        self.tm1.processes.create(p)
+        try:
+            self.tm1.processes.execute(p.name)
+        except TM1pyException as e:
+            if "ProcessCompletedWithMessages" in e._response:
+                pass
+            else:
+                raise e
+        # TM1 takes one second to write to the message-log
+        time.sleep(1)
+        log_entry = self.tm1.server.get_last_process_message_from_messagelog(p.name)
+        regex = re.compile('TM1ProcessError_.*.log')
+        self.assertTrue(regex.search(log_entry))
+        # inject process that does nothing and runs successfull
+        p = Process(name=self.process_name2, prolog_procedure="sText = 'text';")
+        self.tm1.processes.create(p)
+        self.tm1.processes.execute(p.name)
+        # TM1 takes one second to write to the message-log
+        time.sleep(1)
+        log_entry = self.tm1.server.get_last_process_message_from_messagelog(p.name)
+        regex = re.compile('TM1ProcessError_.*.log')
+        self.assertFalse(regex.search(log_entry))
+
+    def test2_get_last_transaction_log_entries(self):
+        tmstp = datetime.datetime.utcnow()
+
         # Generate 3 random numbers
         random_values = [random.uniform(-10, 10) for _ in range(3)]
         # Write value 1 to cube
@@ -55,44 +87,64 @@ class TestServerMethods(unittest.TestCase):
             ('2000', 'Value'): random_values[0]
         }
         self.tm1.cubes.cells.write_values(self.cube_name, cellset)
+
+        # Digest time in TM1
         time.sleep(1)
+
         # Write value 2 to cube
         cellset = {
             ('2001', 'Value'): random_values[1]
         }
         self.tm1.cubes.cells.write_values(self.cube_name, cellset)
+
+        # Digest time in TM1
         time.sleep(1)
+
         # Write value 3 to cube
         cellset = {
             ('2002', 'Value'): random_values[2]
         }
         self.tm1.cubes.cells.write_values(self.cube_name, cellset)
+
+        # Digest time in TM1
         time.sleep(1)
-        # Query transaction log
+
         user = test_config['user']
         cube = self.cube_name
+
+        # Query transaction log with top filter
         entries = self.tm1.server.get_transaction_log_entries(reverse=True, user=user, cube=cube, top=3)
-        values = [entry['NewValue'] for entry in entries]
+        values_from_top = [entry['NewValue'] for entry in entries]
+
+        # Query transaction log with Since filter
+        entries = self.tm1.server.get_transaction_log_entries(reverse=True, cube=cube, since=tmstp, top=10)
+        values_from_since = [entry['NewValue'] for entry in entries]
+
         # Compare values written to cube vs. values retrieved from transaction log
-        for v1, v2 in zip(random_values, reversed(values)):
+        self.assertEqual(len(values_from_top), len(values_from_since))
+        for v1, v2, v3 in zip(random_values, reversed(values_from_top), reversed(values_from_since)):
             self.assertAlmostEqual(v1, v2, delta=0.000000001)
 
-    def test_get_transaction_log_entries_from_today(self):
+    def test3_get_transaction_log_entries_from_today(self):
         # get datetime from today at 00:00:00
         today = datetime.datetime.combine(datetime.date.today(), datetime.time(0, 0))
         entries = self.tm1.server.get_transaction_log_entries(reverse=True, since=today)
+        self.assertTrue(len(entries) > 0)
         for entry in entries:
             entry_timestamp = dateutil.parser.parse(entry['TimeStamp'])
-            # remove timezone information and compare
-            self.assertTrue(entry_timestamp.replace(tzinfo=None) > today)
+            # all the entries should have today's date
+            entry_date = entry_timestamp.date()
+            today_date = datetime.date.today()
+            self.assertTrue(entry_date == today_date)
 
     @classmethod
     def tearDownClass(cls):
         cls.tm1.cubes.delete(cls.cube_name)
         cls.tm1.dimensions.delete(cls.dimension_name1)
         cls.tm1.dimensions.delete(cls.dimension_name2)
+        cls.tm1.processes.delete(cls.process_name1)
+        cls.tm1.processes.delete(cls.process_name2)
         cls.tm1.logout()
-
 
 if __name__ == '__main__':
     unittest.main()

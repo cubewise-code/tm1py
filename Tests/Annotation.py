@@ -27,7 +27,7 @@ class TestAnnotationMethods(unittest.TestCase):
                                 object_name=self.cube_name,
                                 dimensional_context=self.random_intersection)
         response = self.tm1.cubes.annotations.create(annotation)
-        annotation_id = json.loads(response)['ID']
+        annotation_id = response.json()['ID']
 
         # test, if it exists
         all_annotations = self.tm1.cubes.annotations.get_all(self.cube_name)
@@ -50,7 +50,7 @@ class TestAnnotationMethods(unittest.TestCase):
                 new_random_text = "".join([random.choice(string.printable) for _ in range(100)])
                 a.comment_value = new_random_text
                 response = self.tm1.cubes.annotations.update(a)
-                annotation_id = json.loads(response)['ID']
+                annotation_id = json.loads(response.text)['ID']
                 a_updated = self.tm1.cubes.annotations.get(annotation_id)
                 self.assertEqual(a_updated.comment_value, new_random_text)
 

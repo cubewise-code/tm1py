@@ -42,7 +42,7 @@ class TestViewMethods(unittest.TestCase):
             cls.tm1.cubes.create(cube)
         # Write data into cube
         cellset = {}
-        for i in range(10000):
+        for i in range(20000):
             element1 = 'Element ' + str(random.randint(1, 1000))
             element2 = 'Element ' + str(random.randint(1, 1000))
             element3 = 'Element ' + str(random.randint(1, 1000))
@@ -127,7 +127,7 @@ class TestViewMethods(unittest.TestCase):
                                                                     private=self.random_boolean)
 
         # Sum up all the values from the views
-        data_original = self.tm1.data.get_view_content(cube_name, self.native_view_name, private=self.random_boolean)
+        data_original = self.tm1.data.execute_view(cube_name, self.native_view_name, private=self.random_boolean)
         sum_original = sum([value['Value'] for value in data_original.values() if value['Value']])
 
         # modify it
@@ -140,7 +140,7 @@ class TestViewMethods(unittest.TestCase):
         self.tm1.cubes.views.update(native_view_original, private=self.random_boolean)
 
         # Get it and check if its different
-        data_updated = self.tm1.data.get_view_content(cube_name, self.native_view_name, private=self.random_boolean)
+        data_updated = self.tm1.data.execute_view(cube_name, self.native_view_name, private=self.random_boolean)
         sum_updated = sum([value['Value'] for value in data_updated.values() if value['Value']])
         self.assertNotEqual(sum_original, sum_updated)
 

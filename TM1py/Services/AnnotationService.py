@@ -22,7 +22,7 @@ class AnnotationService(ObjectService):
         """
         request = "/api/v1/Cubes('{}')/Annotations?$expand=DimensionalContext($select=Name)".format(cube_name)
         response = self._rest.GET(request, '')
-        annotations_as_dict = json.loads(response)['value']
+        annotations_as_dict = response.json()['value']
         annotations = [Annotation.from_json(json.dumps(element)) for element in annotations_as_dict]
         return annotations
 
@@ -39,8 +39,8 @@ class AnnotationService(ObjectService):
         payload["ApplicationContext"] = [{"Facet@odata.bind": "ApplicationContextFacets('}Cubes')",
                                           "Value": annotation.object_name}]
         payload["DimensionalContext@odata.bind"] = []
-        cube_dimensions_raw = self._rest.GET("/api/v1/Cubes('{}')/Dimensions?$select=Name".format(annotation.object_name))
-        cube_dimensions = [dimension['Name'] for dimension in json.loads(cube_dimensions_raw)['value']]
+        response = self._rest.GET("/api/v1/Cubes('{}')/Dimensions?$select=Name".format(annotation.object_name))
+        cube_dimensions = [dimension['Name'] for dimension in response.json()['value']]
         for dimension, element in zip(cube_dimensions, annotation.dimensional_context):
             payload["DimensionalContext@odata.bind"].append("Dimensions('{}')/Hierarchies('{}')/Members('{}')"
                                                             .format(dimension, dimension, element))
@@ -60,8 +60,8 @@ class AnnotationService(ObjectService):
                 Annotation: an instance of TM1py.Annoation
         """
         request = "/api/v1/Annotations('{}')?$expand=DimensionalContext($select=Name)".format(annotation_id)
-        annotation_as_json = self._rest.GET(request=request)
-        return Annotation.from_json(annotation_as_json)
+        response = self._rest.GET(request=request)
+        return Annotation.from_json(response.text)
 
     def update(self, annotation):
         """ update Annotation on TM1 Server

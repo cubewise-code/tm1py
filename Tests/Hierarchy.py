@@ -1,8 +1,8 @@
 import unittest
 import uuid
+import time
 
-from TM1py.Objects import Dimension
-from TM1py.Objects import Hierarchy
+from TM1py.Objects import Dimension, Hierarchy, Subset
 from TM1py.Services import TM1Service
 
 from .config import test_config
@@ -15,6 +15,7 @@ class TestHierarchyMethods(unittest.TestCase):
     tm1 = TM1Service(**test_config)
 
     dimension_name = dimension_prefix.format(uuid.uuid4())
+    subset_name = dimension_prefix.format(uuid.uuid4())
 
     # create dimension with a default hierarchy
     def test1_create_hierarchy(self):
@@ -29,14 +30,19 @@ class TestHierarchyMethods(unittest.TestCase):
         d.add_hierarchy(h)
         self.tm1.dimensions.create(d)
 
+        time.sleep(1)
+        s = Subset(self.subset_name, self.dimension_name, self.dimension_name,
+                   expression="{{[{}].Members}}".format(self.dimension_name))
+        self.tm1.dimensions.subsets.create(s, False)
+
     def test2_get_hierarchy(self):
-        d = self.tm1.dimensions.get(dimension_name=self.dimension_name)
-        h = d.default_hierarchy
+        h = self.tm1.dimensions.hierarchies.get(self.dimension_name, self.dimension_name)
         self.assertIn('Total Years', h.elements.keys())
         self.assertIn('No Year', h.elements.keys())
         self.assertIn('1989', h.elements.keys())
         self.assertIn('Next Year', [ea.name for ea in h.element_attributes])
         self.assertIn('Previous Year', [ea.name for ea in h.element_attributes])
+        self.assertIn(self.subset_name, h.subsets)
 
     def test3_update_hierarchy(self):
         # Get dimension and hierarchy

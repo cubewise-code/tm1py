@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from TM1py.Exceptions import TM1pyException
 
 import functools
 import requests
@@ -10,16 +11,12 @@ if sys.version[0] == '2':
 else:
     import http.client as http_client
 
-
-from TM1py.Exceptions import TM1pyException
-
-
 def httpmethod(func):
-    """ Higher Order Function to wrap the GET, POST, PATCH, PUT, DELETE methods in TM1pyHTTPClient
+    """ Higher Order Function to wrap the GET, POST, PATCH, PUT, DELETE methods
 
         Takes care of:
         - encoding of url and payload
-        - verfiying response. Throws TM1pyException if StatusCode of Reponse is not OK
+        - verfiying response. Throws TM1pyException if StatusCode of Response is not OK
     """
 
     @functools.wraps(func)
@@ -30,7 +27,7 @@ def httpmethod(func):
         response = func(self, request, data)
         # Verify
         self.verify_response(response=response)
-        return response.text
+        return response
     return wrapper
 
 
@@ -210,5 +207,8 @@ class RESTService:
         # disable HTTP verification warnings from requests library
         requests.packages.urllib3.disable_warnings()
 
+    def add_http_header(self, key, value):
+        self._headers[key] = value
 
-
+    def remove_http_header(self, key):
+        del self._headers[key]

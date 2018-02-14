@@ -6,7 +6,6 @@ import json
 from TM1py.Objects.TM1Object import TM1Object
 
 
-# TODO proper handling of attributes required.
 class Element(TM1Object):
     """ Abstraction of TM1 Element
 

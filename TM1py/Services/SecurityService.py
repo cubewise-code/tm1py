@@ -30,7 +30,7 @@ class SecurityService(ObjectService):
         """
         request = '/api/v1/Users(\'{}\')?$expand=Groups'.format(user_name)
         response = self._rest.GET(request)
-        return User.from_json(response)
+        return User.from_dict(response.json())
 
     def update_user(self, user):
         """ Update user on TM1 Server
@@ -60,8 +60,17 @@ class SecurityService(ObjectService):
         """
         request = '/api/v1/Users?$expand=Groups'
         response = self._rest.GET(request)
-        response_as_dict = json.loads(response)
-        users = [User.from_dict(user) for user in response_as_dict['value']]
+        users = [User.from_dict(user) for user in response.json()['value']]
+        return users
+
+    def get_all_user_names(self):
+        """ Get all user names from TM1 Server
+
+        :return: List of TM1py.User instances
+        """
+        request = '/api/v1/Users?select=Name'
+        response = self._rest.GET(request)
+        users = [user["Name"] for user in response.json()['value']]
         return users
 
     def get_users_from_group(self, group_name):
@@ -72,8 +81,7 @@ class SecurityService(ObjectService):
         """
         request = '/api/v1/Groups(\'{}\')?$expand=Users($expand=Groups)'.format(group_name)
         response = self._rest.GET(request)
-        response_as_dict = json.loads(response)
-        users = [User.from_dict(user) for user in response_as_dict['Users']]
+        users = [User.from_dict(user) for user in response.json()['Users']]
         return users
 
     def get_groups(self, user_name):
@@ -84,8 +92,21 @@ class SecurityService(ObjectService):
         """
         request = '/api/v1/Users(\'{}\')/Groups'.format(user_name)
         response = self._rest.GET(request)
-        groups = json.loads(response)['value']
-        return [group['Name'] for group in groups]
+        return [group['Name'] for group in response.json()['value']]
+
+    def add_user_to_groups(self, user_name, groups):
+        """
+        
+        :param user_name: name of user
+        :param groups: iterable of groups
+        :return: response
+        """
+        request = "/api/v1/Users('{}')".format(user_name)
+        body = {
+            "Name": "Hodor Hodor",
+            "Groups@odata.bind": ["Groups('{}')".format(group) for group in groups]
+        }
+        self._rest.PATCH(request, json.dumps(body))
 
     def remove_user_from_group(self, group_name, user_name):
         """ Remove user from group in TM1 Server
@@ -104,6 +125,11 @@ class SecurityService(ObjectService):
         """
         request = '/api/v1/Groups?$select=Name'
         response = self._rest.GET(request)
-        response_as_dict = json.loads(response)
-        groups = [entry['Name'] for entry in response_as_dict['value']]
+        groups = [entry['Name'] for entry in response.json()['value']]
         return groups
+
+    def security_refresh(self):
+        from TM1py.Services import ProcessService
+        ti = "SecurityRefresh;"
+        process_service = ProcessService(self._rest)
+        process_service.execute_ti_code(ti)

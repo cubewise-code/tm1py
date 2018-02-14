@@ -14,7 +14,12 @@ class ObjectService:
         """
         self._rest = rest_service
 
-    def exists(self, request):
+    def _exists(self, request):
+        """ Check if ressource exists in the TM1 Server
+        
+        :param request: 
+        :return: 
+        """
         try:
             self._rest.GET(request)
             return True

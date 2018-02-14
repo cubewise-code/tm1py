@@ -1,6 +1,7 @@
 import collections
 import json
 import sys
+import pandas as pd
 
 from TM1py.Objects.Server import Server
 from TM1py.Objects.Process import Process
@@ -72,7 +73,10 @@ def build_content_from_cellset(raw_cellset_as_dict, cell_properties, top=None):
     if len(raw_cellset_as_dict['Axes']) > 2:
         axe2_as_dict = raw_cellset_as_dict['Axes'][2]
         tuples_as_dict = axe2_as_dict['Tuples'][ordinal_axe2]['Members']
-        elements_on_axe2 = [member['Element']['UniqueName'] for member in tuples_as_dict]
+        # condition for MDX Calculated Members (WITH MEMBER AS), that have no underlying Element
+        elements_on_axe2 = [member['Element']['UniqueName'] if member['Element'] else member['Name']
+                            for member
+                            in tuples_as_dict]
     else:
         elements_on_axe2 = []
 
@@ -80,12 +84,16 @@ def build_content_from_cellset(raw_cellset_as_dict, cell_properties, top=None):
     for i in range(axe1_as_dict['Cardinality']):
         # get coordinates on axe 1: Rows
         tuples_as_dict = axe1_as_dict['Tuples'][ordinal_axe1]['Members']
-        elements_on_axe1 = [member['Element']['UniqueName'] for member in tuples_as_dict]
+        elements_on_axe1 = [member['Element']['UniqueName'] if member['Element'] else member['Name']
+                            for member
+                            in tuples_as_dict]
         ordinal_axe0 = 0
         for j in range(axe0_as_dict['Cardinality']):
             # get coordinates on axe 0: Columns
             tuples_as_dict = axe0_as_dict['Tuples'][ordinal_axe0]['Members']
-            elements_on_axe0 = [member['Element']['UniqueName'] for member in tuples_as_dict]
+            elements_on_axe0 = [member['Element']['UniqueName'] if member['Element'] else member['Name']
+                                for member
+                                in tuples_as_dict]
             coordinates = elements_on_axe0 + elements_on_axe2 + elements_on_axe1
             coordinates_sorted = sort_addresstuple(cube_dimensions, coordinates)
             # get cell properties
@@ -114,7 +122,24 @@ def element_names_from_element_unqiue_names(element_unique_names):
                   in element_unique_names])
 
 
-def build_pandas_dataframe_from_cellset(cellset, multiindex=True, sort_index=True):
+def build_element_unique_names(dimension_names, element_names, hierarchy_names=None):
+    """ Create tuple of unique names from dimension, hierarchy and elements
+    
+    :param dimension_names: 
+    :param element_names: 
+    :param hierarchy_names: 
+    :return: Generator
+    """
+    if not hierarchy_names:
+        return ("[{}].[{}]".format(dim, elem)
+                for dim, elem
+                in zip(dimension_names, hierarchy_names, element_names))
+    else:
+        return ("[{}].[{}].[{}]".format(dim, hier, elem)
+                for dim, hier, elem
+                in zip(dimension_names, hierarchy_names, element_names))
+
+def build_pandas_dataframe_from_cellset(cellset, multiindex=True, sort_values=True):
     """
     
     :param cellset: 
@@ -122,8 +147,6 @@ def build_pandas_dataframe_from_cellset(cellset, multiindex=True, sort_index=Tru
     :param sort_index: Boolean to control sorting in result DataFrame
     :return: 
     """
-    import pandas as pd
-
     cellset_clean = {}
     for coordinates, cell in cellset.items():
         element_names = element_names_from_element_unqiue_names(coordinates)
@@ -141,8 +164,8 @@ def build_pandas_dataframe_from_cellset(cellset, multiindex=True, sort_index=Tru
 
     if not multiindex:
         df.reset_index(inplace=True)
-    if sort_index:
-        df.sort_index(inplace=True)
+        if sort_values:
+            df.sort_values(inplace=True, by=list(dimension_names))
     return df
 
 

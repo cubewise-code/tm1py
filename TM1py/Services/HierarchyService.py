@@ -1,14 +1,21 @@
 # -*- coding: utf-8 -*-
+import json
 
 from TM1py.Services.ElementService import ElementService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.SubsetService import SubsetService
+from TM1py.Objects import Hierarchy
 
 
 class HierarchyService(ObjectService):
     """ Service to handle Object Updates for TM1 Hierarchies
     
     """
+
+    # Tuple with TM1 Versions where Edges need to be created through TI, due to bug:
+    # https://www.ibm.com/developerworks/community/forums/html/topic?id=75f2b99e-6961-4c71-9364-1d5e1e083eff
+    EDGES_WORKAROUND_VERSIONS = ('11.0.002', '11.0.003', '11.1.000')
+
     def __init__(self, rest):
         super().__init__(rest)
         self.subsets = SubsetService(rest)
@@ -31,24 +38,50 @@ class HierarchyService(ObjectService):
         :param hierarchy_name: name of the hierarchy
         :return:
         """
-        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')'.format(dimension_name, hierarchy_name)
+        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')?$expand=Edges,Elements,ElementAttributes,Subsets,DefaultMember'\
+            .format(dimension_name, hierarchy_name)
         response = self._rest.GET(request, '')
-        return response
+        return Hierarchy.from_dict(response.json())
 
     def update(self, hierarchy):
-        """ update a hierarchy. Is a two step process.
+        """ update a hierarchy. It's a two step process: 
         1. Update Hierarchy
         2. Update Element-Attributes
 
+        Function caters for Bug with Edge Creation:
+        https://www.ibm.com/developerworks/community/forums/html/topic?id=75f2b99e-6961-4c71-9364-1d5e1e083eff
+
         :param hierarchy: instance of TM1py.Hierarchy
-        :return:
+        :return: list of responses
         """
-        # Update Hierarchy
+        # functions returns multiple responses
+        responses = list()
+        # 1. Update Hierarchy
         request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')'.format(hierarchy.dimension_name, hierarchy.name)
-        response = self._rest.PATCH(request, hierarchy.body)
-        # Update Attributes
-        self._update_element_attributes(hierarchy=hierarchy)
-        return response
+        # Workaround EDGES: Handle Issue, that Edges cant be created in one batch with the Hierarchy in certain versions
+        hierarchy_body = hierarchy.body_as_dict
+        if self.version[0:8] in self.EDGES_WORKAROUND_VERSIONS:
+            del hierarchy_body["Edges"]
+        responses.append(self._rest.PATCH(request, json.dumps(hierarchy_body)))
+
+        # 2. Update Attributes
+        responses.append(self._update_element_attributes(hierarchy=hierarchy))
+
+        # Workaround EDGES
+        if self.version[0:8] in self.EDGES_WORKAROUND_VERSIONS:
+            from TM1py.Services import ProcessService
+            process_service = ProcessService(self._rest)
+            ti_function = "HierarchyElementComponentAdd('{}', '{}', '{}', '{}', {});"
+            ti_statements = [ti_function.format(hierarchy.dimension_name, hierarchy.name,
+                                                edge[0],
+                                                edge[1],
+                                                hierarchy.edges[(edge[0], edge[1])])
+                             for edge
+                             in hierarchy.edges]
+            lines_prolog = ''.join(ti_statements)
+            responses.append(process_service.execute_ti_code(lines_prolog=lines_prolog))
+
+        return responses
 
     def exists(self, dimension_name, hierarchy_name):
         """
@@ -58,7 +91,7 @@ class HierarchyService(ObjectService):
         :return: 
         """
         request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')'.format(dimension_name, hierarchy_name)
-        return super(HierarchyService, self).exists(request)
+        return self._exists(request)
 
     def delete(self, dimension_name, hierarchy_name):
         request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')'.format(dimension_name, hierarchy_name)

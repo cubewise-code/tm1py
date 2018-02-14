@@ -55,7 +55,7 @@ class Hierarchy(TM1Object):
                                                    for edge
                                                    in hierarchy_as_dict['Edges']})
         return cls(name=hierarchy_as_dict['Name'],
-                   dimension_name=hierarchy_as_dict['Dimension']['Name'],
+                   dimension_name=hierarchy_as_dict['UniqueName'][1:hierarchy_as_dict['UniqueName'].find("].[")],
                    elements=[Element.from_dict(elem) for elem in hierarchy_as_dict['Elements']],
                    element_attributes=[ElementAttribute(ea['Name'], ea['Type'])
                                        for ea in hierarchy_as_dict['ElementAttributes']],

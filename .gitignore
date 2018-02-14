@@ -2,6 +2,8 @@ dist/**
 docs/_build/**
 .idea/misc.xml
 *.xml
+tmp*.py
+sample*.py
 .idea/TM1py.iml
 *.pyc
 __pycache__/TM1py.cpython-35.pyc
@@ -14,5 +16,6 @@ TM1py.egg-info/SOURCES.txt
 TM1py.egg-info/top_level.txt
 build/lib/TM1py/__init__.py
 dist/TM1py-0.0.2.zip
+
 
 README.html

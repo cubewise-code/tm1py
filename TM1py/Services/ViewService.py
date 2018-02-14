@@ -72,8 +72,8 @@ class ViewService(ObjectService):
                   "$expand=Dimension($select=Name)),Elements($select=Name);" \
                   "$select=Expression,UniqueName,Name,Alias), " \
                   "tm1.NativeView/Titles/Selected($select=Name)".format(cube_name, view_type, view_name)
-        view_as_json = self._rest.GET(request)
-        native_view = NativeView.from_json(view_as_json, cube_name)
+        response = self._rest.GET(request)
+        native_view = NativeView.from_json(response.text, cube_name)
         return native_view
 
     def get_mdx_view(self, cube_name, view_name, private=True):
@@ -87,8 +87,8 @@ class ViewService(ObjectService):
         """
         view_type = 'PrivateViews' if private else 'Views'
         request = "/api/v1/Cubes('{}')/{}('{}')?$expand=*".format(cube_name, view_type, view_name)
-        view_as_json = self._rest.GET(request)
-        mdx_view = MDXView.from_json(view_as_json=view_as_json)
+        response = self._rest.GET(request)
+        mdx_view = MDXView.from_json(view_as_json=response.text)
         return mdx_view
 
     def get_all(self, cube_name):
@@ -111,7 +111,7 @@ class ViewService(ObjectService):
                       "$select=Expression,UniqueName,Name,Alias), " \
                       "tm1.NativeView/Titles/Selected($select=Name)".format(cube_name, view_type)
             response = self._rest.GET(request)
-            response_as_list = json.loads(response)['value']
+            response_as_list = response.json()['value']
             for view_as_dict in response_as_list:
                 if view_as_dict['@odata.type'] == '#ibm.tm1.api.v1.MDXView':
                     view = MDXView.from_dict(view_as_dict, cube_name)
@@ -133,7 +133,7 @@ class ViewService(ObjectService):
         for view_type in ('PrivateViews', 'Views'):
             request = "/api/v1/Cubes('{}')/{}?$select=Name".format(cube_name, view_type)
             response = self._rest.GET(request)
-            response_as_list = json.loads(response)['value']
+            response_as_list = response.json()['value']
             for view in response_as_list:
                 if view_type == "PrivateViews":
                     private_views.append(view['Name'])

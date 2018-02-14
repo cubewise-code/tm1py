@@ -5,9 +5,6 @@ from TM1py.Objects import Dimension, Hierarchy, Element
 from TM1py.Objects import ElementAttribute
 from TM1py.Services import TM1Service
 
-# Can be tested currently, due to Bug in TM1 11:
-# https://www.ibm.com/developerworks/community/forums/html/topic?id=75f2b99e-6961-4c71-9364-1d5e1e083eff
-
 from .config import test_config
 
 
@@ -45,13 +42,11 @@ class TestDimensionMethods(unittest.TestCase):
         self.assertEqual(len(h.elements), 1001)
         self.assertEqual(len(h.element_attributes), 2)
 
-
     def test2_get_dimension(self):
         # get it
         d = self.tm1.dimensions.get(dimension_name=self.dimension_name)
         h = d.hierarchies[0]
         self.assertIsInstance(h, Hierarchy)
-
 
     def test3_update_dimension(self):
         # get dimension from tm1
@@ -85,13 +80,21 @@ class TestDimensionMethods(unittest.TestCase):
         dimension = self.tm1.dimensions.get(self.dimension_name)
         self.assertEqual(len(dimension.hierarchies[0].elements), len(elements))
 
-    def test4_delete_dimension(self):
+    def test4_get_all_names(self):
+        self.assertIn(self.dimension_name, self.tm1.dimensions.get_all_names())
+
+    def test5_execute_mdx(self):
+        mdx = "{TM1SubsetAll(" + self.dimension_name + ")}"
+        elements = self.tm1.dimensions.execute_mdx(self.dimension_name, mdx)
+        self.assertTrue(len(elements) > 0)
+
+    def test6_delete_dimension(self):
         dimensions_before = self.tm1.dimensions.get_all_names()
         self.tm1.dimensions.delete(self.dimension_name)
         dimensions_after = self.tm1.dimensions.get_all_names()
 
         # Test
-        self.assertIn(self.dimension_name,dimensions_before)
+        self.assertIn(self.dimension_name, dimensions_before)
         self.assertNotIn(self.dimension_name, dimensions_after)
 
     @classmethod
@@ -101,5 +104,4 @@ class TestDimensionMethods(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    pass
-    #unittest.main()
+    unittest.main()

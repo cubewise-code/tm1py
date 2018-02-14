@@ -37,7 +37,7 @@ class ProcessService(ObjectService):
                   "DataSource/usesUnicode," \
                   "DataSource/subset".format(name_process)
         response = self._rest.GET(request, "")
-        return Process.from_json(process_as_json=response)
+        return Process.from_dict(response.json())
 
     def get_all(self):
         """ Get a processes from TM1 Server
@@ -60,7 +60,7 @@ class ProcessService(ObjectService):
                   "DataSource/usesUnicode," \
                   "DataSource/subset"
         response = self._rest.GET(request, "")
-        response_as_dict = json.loads(response)
+        response_as_dict = response.json()
         return [Process.from_dict(p) for p in response_as_dict['value']]
 
     # TODO Redesign required!
@@ -75,8 +75,7 @@ class ProcessService(ObjectService):
         """
         response = self._rest.GET("/api/v1/Processes?$select=Name&$filter=DataSource/Type ne 'TM1DimensionSubset'"
                                   " and  not startswith(Name,'}')", "")
-        dict_processes = json.loads(response)['value']
-        processes = list(process['Name'] for process in dict_processes)
+        processes = list(process['Name'] for process in response.json()['value'])
         return processes
 
     def get_all_names(self):
@@ -86,8 +85,7 @@ class ProcessService(ObjectService):
             List of Strings
         """
         response = self._rest.GET('/api/v1/Processes?$select=Name', '')
-        dict_processes = json.loads(response)['value']
-        processes = list(process['Name'] for process in dict_processes)
+        processes = list(process['Name'] for process in response.json()['value'])
         return processes
 
     def update(self, process):
@@ -130,7 +128,7 @@ class ProcessService(ObjectService):
 
     def exists(self, name):
         request = "/api/v1/Processes('{}')".format(name)
-        return super(ProcessService, self).exists(request)
+        return self._exists(request)
 
     def execute(self, name_process, parameters=None):
         """ Ask TM1 Server to execute a process
@@ -169,8 +167,7 @@ class ProcessService(ObjectService):
         """
         request = "/api/v1/Processes('{}')/ErrorLogs".format(process_name)
         response = self._rest.GET(request=request)
-        processerrorlog = json.loads(response)['value']
-        return processerrorlog
+        return response.json()['value']
 
     def get_last_message_from_processerrorlog(self, process_name):
         """ Get the latest ProcessErrorLog from a process entity

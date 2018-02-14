@@ -19,6 +19,7 @@ class TM1Service:
         self.processes = ProcessService(self._tm1_rest)
         self.security = SecurityService(self._tm1_rest)
         self.server = ServerService(self._tm1_rest)
+        self.applications = ApplicationService(self._tm1_rest)
 
         # Deprecated, use cubes.cells instead!
         self.data = CellService(self._tm1_rest)

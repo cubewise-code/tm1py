@@ -5,5 +5,6 @@ test_config = {
     'password': 'apple',
     'address': 'localhost',
     'port': 12354,
-    'ssl': True
+    'ssl': True,
+    'logging': True
 }

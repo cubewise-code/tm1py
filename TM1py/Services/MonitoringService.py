@@ -21,8 +21,7 @@ class MonitoringService(ObjectService):
         """
         request = '/api/v1/Threads'
         response = self._rest.GET(request)
-        response_as_dict = json.loads(response)['value']
-        return response_as_dict
+        return response.json()['value']
 
     def cancel_thread(self, thread_id):
         """ Kill a running thread
@@ -41,8 +40,7 @@ class MonitoringService(ObjectService):
         """
         request = '/api/v1/Users?$filter=IsActive eq true&$expand=Groups'
         response = self._rest.GET(request)
-        response_as_dict = json.loads(response)
-        users = [User.from_dict(user) for user in response_as_dict['value']]
+        users = [User.from_dict(user) for user in response.json()['value']]
         return users
 
     def user_is_active(self, user_name):
@@ -53,7 +51,7 @@ class MonitoringService(ObjectService):
         """
         request = "/api/v1/Users('{}')/IsActive".format(user_name)
         response = self._rest.GET(request)
-        return json.loads(response)['value']
+        return response.json()['value']
 
     def disconnect_user(self, user_name):
         """ Disconnect User

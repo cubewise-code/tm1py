@@ -11,7 +11,6 @@ from .config import test_config
 
 class TestCubeMethods(unittest.TestCase):
 
-
     @classmethod
     def setUpClass(cls):
         cls.tm1 = TM1Service(**test_config)
@@ -22,11 +21,15 @@ class TestCubeMethods(unittest.TestCase):
 
         dimensions = self.tm1.dimensions.get_all_names()
         shuffle(dimensions)
+        dimensions = dimensions[0:10]
 
-        c = Cube(self.cube_name, dimensions=dimensions[0:10], rules=Rules(''))
+        c = Cube(self.cube_name, dimensions=dimensions, rules=Rules(''))
         self.tm1.cubes.create(c)
+
         all_cubes_after = self.tm1.cubes.get_all_names()
+
         self.assertEqual(len(all_cubes_before) + 1, len(all_cubes_after))
+        self.assertEqual(self.tm1.cubes.get_dimension_names(self.cube_name), dimensions)
 
     def test2_get_cube(self):
         c = self.tm1.cubes.get(self.cube_name)
@@ -45,7 +48,11 @@ class TestCubeMethods(unittest.TestCase):
         c = self.tm1.cubes.get(self.cube_name)
         self.assertTrue(c.skipcheck)
 
-    def test4_delete_cube(self):
+    def test4_exists(self):
+        self.assertTrue(self.tm1.cubes.exists(self.cube_name))
+        self.assertFalse(self.tm1.cubes.exists(uuid.uuid4()))
+
+    def test5_delete_cube(self):
         all_cubes_before = self.tm1.cubes.get_all_names()
         self.tm1.cubes.delete(self.cube_name)
         all_cubes_after = self.tm1.cubes.get_all_names()

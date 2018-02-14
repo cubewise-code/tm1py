@@ -52,4 +52,4 @@ class ElementAttribute(TM1Object):
                    attribute_type=element_attribute_as_dict['Type'])
 
     def __eq__(self, other):
-        return self.name == other.name
+        return self.name == other

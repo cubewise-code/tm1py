@@ -16,13 +16,13 @@ class TestSubsetMethods(unittest.TestCase):
         cls.tm1 = TM1Service(**test_config)
 
         # Do random stuff
-        cls.random_string = str(uuid.uuid4())
         cls.private = bool(random.getrandbits(1))
 
         # Define Names
-        cls.dimension_name = 'TM1py_unittest_dimension_' + cls.random_string
-        cls.subset_name_static = 'TM1py_unittest_static_subset_' + cls.random_string
-        cls.subset_name_dynamic = 'TM1py_unittest_dynamic_subset_' + cls.random_string
+        cls.prefix = 'TM1py_unittest_dimension_'
+        cls.dimension_name = cls.prefix + str(uuid.uuid4())
+        cls.subset_name_static = cls.prefix + str(uuid.uuid4())
+        cls.subset_name_dynamic = cls.prefix + str(uuid.uuid4())
 
         # Instantiate Subsets
         cls.static_subset = Subset(dimension_name=cls.dimension_name,
@@ -45,6 +45,8 @@ class TestSubsetMethods(unittest.TestCase):
 
     # 1. Create subset
     def test_1create_subset(self):
+        print(self.static_subset.name)
+        print(self.dynamic_subset.name)
         self.tm1.dimensions.subsets.create(self.static_subset, private=self.private)
         self.tm1.dimensions.hierarchies.subsets.create(self.dynamic_subset, private=self.private)
 
@@ -89,8 +91,15 @@ class TestSubsetMethods(unittest.TestCase):
         self.assertEquals(s.expression,
                           '{{ [{}].[EUR], [{}].[USD] }})'.format(self.dimension_name, self.dimension_name))
 
+    def test_4get_all_names(self):
+        subset_names = self.tm1.dimensions.subsets.get_all_names(dimension_name=self.dimension_name,
+                                                                 hierarchy_name=self.dimension_name,
+                                                                 private=self.private)
+        self.assertIn(self.subset_name_dynamic, subset_names)
+        self.assertIn(self.subset_name_static, subset_names)
+
     # 4. Delete subsets
-    def test_4delete_subset(self):
+    def test_5delete_subset(self):
         self.tm1.dimensions.hierarchies.subsets.delete(dimension_name=self.dimension_name,
                                                        subset_name=self.subset_name_static,
                                                        private=self.private)

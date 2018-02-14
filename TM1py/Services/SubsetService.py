@@ -49,7 +49,7 @@ class SubsetService(ObjectService):
                   'Hierarchy($select=Dimension,Name),' \
                   'Elements($select=Name)&$select=*,Alias'.format(dimension_name, hierarchy_name, subsets, subset_name)
         response = self._rest.GET(request=request)
-        return Subset.from_json(response)
+        return Subset.from_dict(response.json())
 
     def get_all_names(self, dimension_name, hierarchy_name=None, private=True):
         """ get names of all private or public subsets in a hierarchy
@@ -65,7 +65,7 @@ class SubsetService(ObjectService):
         request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/{}?$select=Name' \
             .format(dimension_name, hierarchy_name, subsets)
         response = self._rest.GET(request=request)
-        subsets = json.loads(response)['value']
+        subsets = response.json()['value']
         return [subset['Name'] for subset in subsets]
 
     def update(self, subset, private=True):

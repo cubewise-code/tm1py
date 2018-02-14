@@ -1,4 +1,5 @@
 from TM1py.Objects.Annotation import Annotation
+from TM1py.Objects.Application import Application
 from TM1py.Objects.Axis import ViewAxisSelection, ViewTitleSelection
 from TM1py.Objects.Chore import Chore
 from TM1py.Objects.ChoreFrequency import ChoreFrequency

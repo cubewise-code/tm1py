@@ -10,13 +10,11 @@ from TM1py.Services.SubsetService import SubsetService
 from TM1py.Services.HierarchyService import HierarchyService
 from TM1py.Services.ProcessService import ProcessService
 
+
 class DimensionService(ObjectService):
     """ Service to handle Object Updates for TM1 Dimensions
     
     """
-
-    # Tuple with TM1 Versions where ElementAttributes need to be created through TI
-    ATTRIBUTE_WORKAROUND_VERSIONS = ('11.0.002', '11.0.003')
 
     def __init__(self, rest):
         super().__init__(rest)
@@ -37,15 +35,9 @@ class DimensionService(ObjectService):
             # Create Dimension, Hierarchies, Elements, Edges.
             request = "/api/v1/Dimensions"
             response = self._rest.POST(request, dimension.body)
-            # Create Attributes (Can't be done in the same step as creating the dimension!)
-            if self.version[0:8] in self.ATTRIBUTE_WORKAROUND_VERSIONS:
-                # Create ElementAttributes through TI on certain PA/TM1 versions to avoid PATCH on Hierarchy
-                # Workaround: https://www.ibm.com/developerworks/community/forums/html/topic?id=75f2b99e-6961-4c71-9364-1d5e1e083eff&ps=
-                self.create_element_attributes_through_ti(dimension)
-            else:
-                for hierarchy in dimension:
-                    if len(hierarchy.element_attributes) > 0:
-                        self.hierarchies.update(hierarchy)
+            for hierarchy in dimension:
+                if len(hierarchy.element_attributes) > 0:
+                    self.hierarchies.update(hierarchy)
         except TM1pyException as e:
             # undo everything if problem in step 1 or 2
             if self.exists(dimension.name):
@@ -60,8 +52,8 @@ class DimensionService(ObjectService):
         :return:
         """
         request = "/api/v1/Dimensions('{}')?$expand=Hierarchies($expand=*)".format(dimension_name)
-        dimension_as_json = self._rest.GET(request)
-        return Dimension.from_json(dimension_as_json)
+        response = self._rest.GET(request)
+        return Dimension.from_json(response.text)
 
     def update(self, dimension):
         """ Update an existing dimension
@@ -88,7 +80,7 @@ class DimensionService(ObjectService):
         :return: 
         """
         request = "/api/v1/Dimensions('{}')".format(dimension_name)
-        return super(DimensionService, self).exists(request)
+        return self._exists(request)
 
     def get_all_names(self):
         """Ask TM1 Server for list with all dimension names
@@ -97,9 +89,8 @@ class DimensionService(ObjectService):
             List of Strings
         """
         response = self._rest.GET('/api/v1/Dimensions?$select=Name', '')
-        dimensions = json.loads(response)['value']
-        list_dimensions = list(entry['Name'] for entry in dimensions)
-        return list_dimensions
+        dimension_names = list(entry['Name'] for entry in response.json()['value'])
+        return dimension_names
 
     def execute_mdx(self, dimension_name, mdx):
         """ Execute MDX against Dimension. 
@@ -118,8 +109,8 @@ class DimensionService(ObjectService):
                   '$filter=Ordinal eq 1;' \
                   '$expand=Tuples($expand=Members($select=Ordinal;$expand=Element($select=Name))))'
         payload = {"MDX": mdx_full}
-        raw = self._rest.POST(request, json.dumps(payload, ensure_ascii=False))
-        raw_dict = json.loads(raw)
+        response = self._rest.POST(request, json.dumps(payload, ensure_ascii=False))
+        raw_dict = response.json()
         return [row_tuple['Members'][0]['Element']['Name'] for row_tuple in raw_dict['Axes'][0]['Tuples']]
 
     def create_element_attributes_through_ti(self, dimension):

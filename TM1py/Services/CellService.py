@@ -2,6 +2,7 @@
 
 import collections
 import json
+import warnings
 
 from TM1py.Utils import Utils
 
@@ -20,7 +21,6 @@ class CellService:
     def get_value(self, cube_name, element_string, dimensions=None):
         """ Element_String describes the Dimension-Hierarchy-Element arrangement
             
-        
         :param cube_name: Name of the cube
         :param element_string: "Hierarchy1::Element1 && Hierarchy2::Element4, Element9, Element2"
             - Dimensions are not specified! They are derived from the position.
@@ -59,7 +59,8 @@ class CellService:
         # Construct final MDX
         mdx = mdx_template.format(mdx_rows, mdx_columns, cube_name)
         # Execute MDX
-        return self.execute_mdx(mdx)
+        cellset = dict(self.execute_mdx(mdx))
+        return next(iter(cellset.values()))["Value"]
 
     def write_value(self, value, cube_name, element_tuple, dimensions=None):
         """ Write value into cube at specified coordinates
@@ -79,7 +80,7 @@ class CellService:
         body_as_dict["Cells"][0]["Tuple@odata.bind"] = \
             ["Dimensions('{}')/Hierarchies('{}')/Elements('{}')".format(dim, dim, elem)
              for dim, elem in zip(dimensions, element_tuple)]
-        body_as_dict["Value"] = str(value)
+        body_as_dict["Value"] = str(value) if value else ""
         data = json.dumps(body_as_dict, ensure_ascii=False)
         return self._rest.POST(request=request, data=data)
 
@@ -104,7 +105,7 @@ class CellService:
             body_as_dict["Cells"][0]["Tuple@odata.bind"] = \
                 ["Dimensions('{}')/Hierarchies('{}')/Elements('{}')".format(dim, dim, elem)
                  for dim, elem in zip(dimensions, element_tuple)]
-            body_as_dict["Value"] = str(value)
+            body_as_dict["Value"] = str(value) if value else ""
             updates.append(json.dumps(body_as_dict, ensure_ascii=False))
         updates = '[' + ','.join(updates) + ']'
         self._rest.POST(request=request, data=updates)
@@ -184,12 +185,12 @@ class CellService:
         data = {
             'MDX': mdx
         }
-        cellset = self._rest.POST(request=request, data=json.dumps(data, ensure_ascii=False))
-        return Utils.build_content_from_cellset(raw_cellset_as_dict=json.loads(cellset),
+        response = self._rest.POST(request=request, data=json.dumps(data, ensure_ascii=False))
+        return Utils.build_content_from_cellset(raw_cellset_as_dict=response.json(),
                                                 cell_properties=cell_properties,
                                                 top=top)
 
-    def get_view_content(self, cube_name, view_name, cell_properties=None, private=True, top=None):
+    def execute_view(self, cube_name, view_name, cell_properties=None, private=True, top=None):
         """ get view content as dictionary with sweet and concise structure.
             Works on NativeView and MDXView !
 
@@ -197,10 +198,25 @@ class CellService:
         :param view_name: String
         :param cell_properties: List, cell properties: [Values, Status, HasPicklist, etc.]
         :param private: Boolean
-        :param top: Int, number of cells
+        :param top: Int, number of cells to return (counting from top)
 
         :return: Dictionary : {([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }
         """
+        if not cell_properties:
+            cell_properties = ['Value', 'Ordinal']
+        elif 'Ordinal' not in cell_properties:
+            cell_properties.append('Ordinal')
+        cellset_as_dict = self._get_cellset_from_view(cube_name, view_name, cell_properties, private, top)
+        content_as_dict = Utils.build_content_from_cellset(cellset_as_dict, cell_properties, top)
+        return content_as_dict
+
+    def get_view_content(self, cube_name, view_name, cell_properties=None, private=True, top=None):
+        warnings.simplefilter('always', PendingDeprecationWarning)
+        warnings.warn(
+            "Function deprecated. Use execute_view instead.",
+            PendingDeprecationWarning
+        )
+        warnings.simplefilter('default', PendingDeprecationWarning)
         if not cell_properties:
             cell_properties = ['Value', 'Ordinal']
         elif 'Ordinal' not in cell_properties:
@@ -236,7 +252,7 @@ class CellService:
                       'Cells($select={})' \
                 .format(cube_name, views, view_name, ','.join(cell_properties))
         response = self._rest.POST(request, '')
-        return json.loads(response)
+        return response.json()
 
     def create_cellset(self, mdx):
         """ Execute MDX in order to create cellset at server. return the cellset-id
@@ -249,7 +265,7 @@ class CellService:
             'MDX': mdx
         }
         response = self._rest.POST(request=request, data=json.dumps(data, ensure_ascii=False))
-        cellset_id = json.loads(response)['ID']
+        cellset_id = response.json()['ID']
         return cellset_id
 
     def delete_cellset(self, cellset_id):
