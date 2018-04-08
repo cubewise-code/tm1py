@@ -1,7 +1,7 @@
 """
 A python module for TM1.
 
-https://github.com/MariusWirtz-cubewise/TM1py
+https://github.com/cubewise-code/TM1py
 
 TM1py wraps the TM1 REST API into concise Python classes and Services that simplify TM1 interactions from python.
 
@@ -20,6 +20,7 @@ from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RESTService import RESTService
 from TM1py.Services.TM1Service import TM1Service
 from TM1py.Services.AnnotationService import AnnotationService
+from TM1py.Services.ApplicationService import ApplicationService
 from TM1py.Services.ChoreService import ChoreService
 from TM1py.Services.CubeService import CubeService
 from TM1py.Services.CellService import CellService
@@ -34,6 +35,7 @@ from TM1py.Services.SecurityService import SecurityService
 from TM1py.Services.ViewService import ViewService
 
 from TM1py.Objects.Annotation import Annotation
+from TM1py.Objects.Application import Application
 from TM1py.Objects.Axis import ViewAxisSelection, ViewTitleSelection
 from TM1py.Objects.Chore import Chore
 from TM1py.Objects.ChoreFrequency import ChoreFrequency

@@ -12,10 +12,13 @@ dimension_prefix = 'TM1py_unittest_dimension_{}'
 
 
 class TestHierarchyMethods(unittest.TestCase):
-    tm1 = TM1Service(**test_config)
 
-    dimension_name = dimension_prefix.format(uuid.uuid4())
-    subset_name = dimension_prefix.format(uuid.uuid4())
+    @classmethod
+    def setup_class(cls):
+        cls.tm1 = TM1Service(**test_config)
+
+        cls.dimension_name = dimension_prefix.format(uuid.uuid4())
+        cls.subset_name = dimension_prefix.format(uuid.uuid4())
 
     # create dimension with a default hierarchy
     def test1_create_hierarchy(self):
@@ -85,9 +88,17 @@ class TestHierarchyMethods(unittest.TestCase):
         self.assertEqual(h.edges[('Total Years', '2011')], 2)
         self.assertEqual(h.elements['No Year'].element_type, 'String')
 
-    def test4_test_delete_hierarchy(self):
+    def test4_hierarchy_summary(self):
+        summary = self.tm1.dimensions.hierarchies.get_hierarchy_summary(self.dimension_name, self.dimension_name)
+        self.assertEqual(summary["Elements"], 146)
+        self.assertEqual(summary["Edges"], 143)
+        self.assertEqual(summary["Members"], 146)
+        self.assertEqual(summary["ElementAttributes"], 4)
+        self.assertEqual(summary["Levels"], 3)
+
+    def test5_test_delete_hierarchy(self):
         self.tm1.dimensions.delete(self.dimension_name)
 
-    def test5_logout(self):
-        self.tm1.logout()
-
+    @classmethod
+    def teardown_class(cls):
+        cls.tm1.logout()

@@ -97,6 +97,18 @@ class HierarchyService(ObjectService):
         request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')'.format(dimension_name, hierarchy_name)
         return self._rest.DELETE(request)
 
+    def get_hierarchy_summary(self, dimension_name, hierarchy_name):
+        hierarchy_properties = ("Elements", "Edges", "ElementAttributes", "Members", "Levels")
+        request = "/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')?$expand=Edges/$count,Elements/$count," \
+                  "ElementAttributes/$count,Members/$count,Levels/$count&$select=Cardinality"\
+            .format(dimension_name, hierarchy_name)
+        hierary_summary_raw = self._rest.GET(request).json()
+
+        return {hierarchy_property: hierary_summary_raw[hierarchy_property + "@odata.count"]
+                for hierarchy_property
+                in hierarchy_properties}
+
+
     def _update_element_attributes(self, hierarchy):
         """ Update the elementattributes of a hierarchy
 

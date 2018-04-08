@@ -42,7 +42,7 @@ class Hierarchy(TM1Object):
             for elem in elements:
                 self._elements[elem.name] = elem
         self._element_attributes = element_attributes if element_attributes else []
-        self._edges = edges if edges else CaseAndSpaceInsensitiveTuplesDict()
+        self._edges = CaseAndSpaceInsensitiveTuplesDict(edges) if edges else CaseAndSpaceInsensitiveTuplesDict()
         self._subsets = subsets if subsets else []
         # balanced is true, false or None (in versions < TM1 11)
         self._balanced = structure if not structure else structure == 0

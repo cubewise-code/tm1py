@@ -127,26 +127,17 @@ class SubsetService(ObjectService):
         response = self._rest.DELETE(request=request, data='')
         return response
 
-    def exists(self, subset_name, dimension_name, hierarchy_name=None):
-        """checks if subset exists as private and / or public
+    def exists(self, subset_name, dimension_name, hierarchy_name=None, private=True):
+        """checks if private or public subset exists
 
         :param dimension_name: 
         :param hierarchy_name:
         :param subset_name: 
-        :return: 2 booleans: (Private subset exsits, Public subset exists)
+        :param private:
+        :return: boolean
         """
         hierarchy_name = hierarchy_name if hierarchy_name else dimension_name
-
-        subset_types = collections.OrderedDict()
-        subset_types['PrivateSubsets'] = False
-        subset_types['Subsets'] = False
-
-        for subset_type in subset_types:
-            try:
-                self._rest.GET("/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')"
-                               .format(dimension_name, hierarchy_name, subset_type, subset_name))
-                subset_types[subset_type] = True
-            except TM1pyException as e:
-                if e._status_code != 404:
-                    raise e
-        return tuple(subset_types.values())
+        subset_type = 'PrivateSubsets' if private else "Subsets"
+        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')"\
+            .format(dimension_name, hierarchy_name, subset_type, subset_name)
+        return self._exists(request)

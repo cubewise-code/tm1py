@@ -27,7 +27,7 @@ class TestSubsetMethods(unittest.TestCase):
         # Instantiate Subsets
         cls.static_subset = Subset(dimension_name=cls.dimension_name,
                                    subset_name=cls.subset_name_static,
-                                   elements=['USD', 'EUR', 'NZD'])
+                                   elements=['USD', 'EUR', 'NZD', 'Dum\'my'])
         cls.dynamic_subset = Subset(dimension_name=cls.dimension_name,
                                     subset_name=cls.subset_name_dynamic,
                                     expression='{ HIERARCHIZE( {TM1SUBSETALL( [' + cls.dimension_name + '] )} ) }')
@@ -37,7 +37,8 @@ class TestSubsetMethods(unittest.TestCase):
                     Element('JPY', 'Numeric'),
                     Element('CNY', 'Numeric'),
                     Element('GBP', 'Numeric'),
-                    Element('NZD', 'Numeric')]
+                    Element('NZD', 'Numeric'),
+                    Element('Dum\'my', 'Numeric')]
         element_attributes = [ElementAttribute('Currency Name', 'String')]
         h = Hierarchy(cls.dimension_name, cls.dimension_name, elements, element_attributes)
         d = Dimension(cls.dimension_name, hierarchies=[h])
@@ -74,7 +75,7 @@ class TestSubsetMethods(unittest.TestCase):
                                                         subset_name=self.subset_name_static,
                                                         private=self.private)
         # Test it !
-        self.assertEquals(len(s.elements), 4)
+        self.assertEquals(len(s.elements), 5)
         # Get subset
         s = self.tm1.dimensions.hierarchies.subsets.get(dimension_name=self.dimension_name,
                                                         subset_name=self.subset_name_dynamic,

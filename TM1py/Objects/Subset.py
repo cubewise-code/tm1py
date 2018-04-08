@@ -143,7 +143,9 @@ class Subset(TM1Object):
             .format(self._dimension_name, self.hierarchy_name)
         if self.elements and len(self.elements) > 0:
             body_as_dict['Elements@odata.bind'] = ['Dimensions(\'{}\')/Hierarchies(\'{}\')/Elements(\'{}\')'
-                 .format(self.dimension_name, self.hierarchy_name, element) for element in self.elements]
+                 .format(self.dimension_name, self.hierarchy_name, element.replace('\'', '\'\''))
+                                                   for element
+                                                   in self.elements]
         return body_as_dict
 
 
@@ -201,7 +203,7 @@ class AnonymousSubset(Subset):
         body_as_dict['Hierarchy@odata.bind'] = 'Dimensions(\'{}\')/Hierarchies(\'{}\')'\
             .format(self._dimension_name, self.hierarchy_name)
         body_as_dict['Elements@odata.bind'] = ['Dimensions(\'{}\')/Hierarchies(\'{}\')/Elements(\'{}\')'
-                                                   .format(self.dimension_name, self.hierarchy_name, element)
+                                                   .format(self.dimension_name, self.hierarchy_name, element.replace('\'', '\'\''))
                                                for element
                                                in self.elements]
         return body_as_dict

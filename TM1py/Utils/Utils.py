@@ -139,6 +139,7 @@ def build_element_unique_names(dimension_names, element_names, hierarchy_names=N
                 for dim, hier, elem
                 in zip(dimension_names, hierarchy_names, element_names))
 
+
 def build_pandas_dataframe_from_cellset(cellset, multiindex=True, sort_values=True):
     """
     
