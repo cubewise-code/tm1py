@@ -18,7 +18,7 @@ class TestHierarchyMethods(unittest.TestCase):
         cls.tm1 = TM1Service(**test_config)
 
         cls.dimension_name = dimension_prefix.format(uuid.uuid4())
-        cls.subset_name = dimension_prefix.format(uuid.uuid4())
+        cls.subset_name = dimension_prefix.format("TM1py")
 
     # create dimension with a default hierarchy
     def test1_create_hierarchy(self):
@@ -27,6 +27,7 @@ class TestHierarchyMethods(unittest.TestCase):
         h.add_element('Total Years', 'Consolidated')
         h.add_element('No Year', 'Numeric')
         h.add_element('1989', 'Numeric')
+        h.add_element("Marius's Element", "Numeric")
         h.add_element_attribute('Previous Year', 'String')
         h.add_element_attribute('Next Year', 'String')
         h.add_edge('Total Years', '1989', 2)
@@ -90,9 +91,9 @@ class TestHierarchyMethods(unittest.TestCase):
 
     def test4_hierarchy_summary(self):
         summary = self.tm1.dimensions.hierarchies.get_hierarchy_summary(self.dimension_name, self.dimension_name)
-        self.assertEqual(summary["Elements"], 146)
+        self.assertEqual(summary["Elements"], 147)
         self.assertEqual(summary["Edges"], 143)
-        self.assertEqual(summary["Members"], 146)
+        self.assertEqual(summary["Members"], 147)
         self.assertEqual(summary["ElementAttributes"], 4)
         self.assertEqual(summary["Levels"], 3)
 

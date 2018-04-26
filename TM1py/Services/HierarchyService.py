@@ -78,8 +78,7 @@ class HierarchyService(ObjectService):
                                                 hierarchy.edges[(edge[0], edge[1])])
                              for edge
                              in hierarchy.edges]
-            lines_prolog = ''.join(ti_statements)
-            responses.append(process_service.execute_ti_code(lines_prolog=lines_prolog))
+            responses.append(process_service.execute_ti_code(lines_prolog=ti_statements))
 
         return responses
 

@@ -86,7 +86,7 @@ class CellService:
 
     def write_values(self, cube_name, cellset_as_dict, dimensions=None):
         """ Write values in cube.  
-        Easy to use but doesnt scale. Not suitable for cellsets with > 1000 cells 
+        For cellsets with > 1000 cells look into "write_values_through_cellset"
 
         :param cube_name: name of the cube
         :param cellset_as_dict: {(elem_a, elem_b, elem_c): 243, (elem_d, elem_e, elem_f) : 109}

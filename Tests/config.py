@@ -3,8 +3,8 @@
 test_config = {
     'user': 'admin',
     'password': 'apple',
-    'address': 'localhost',
-    'port': 8010,
+    'address': '10.77.19.60',
+    'port': 12354,
     'ssl': True,
     'logging': True
 }

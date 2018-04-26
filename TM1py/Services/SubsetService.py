@@ -35,9 +35,9 @@ class SubsetService(ObjectService):
     def get(self, subset_name, dimension_name, hierarchy_name=None, private=True):
         """ get a subset from the TM1 Server
 
+            :param subset_name: string, name of the subset
             :param dimension_name: string, name of the dimension
             :param hierarchy_name: string, name of the hierarchy
-            :param subset_name: string, name of the subset
             :param private: Boolean
 
             :return: instance of TM1py.Subset
@@ -114,9 +114,9 @@ class SubsetService(ObjectService):
     def delete(self, subset_name, dimension_name, hierarchy_name=None, private=True):
         """ Delete an existing subset on the TM1 Server
 
+        :param subset_name: String, name of the subset
         :param dimension_name: String, name of the dimension
         :param hierarchy_name: String, name of the hierarchy
-        :param subset_name: String, name of the subset
         :param private: Boolean
         :return:
         """
@@ -130,9 +130,9 @@ class SubsetService(ObjectService):
     def exists(self, subset_name, dimension_name, hierarchy_name=None, private=True):
         """checks if private or public subset exists
 
+        :param subset_name: 
         :param dimension_name: 
         :param hierarchy_name:
-        :param subset_name: 
         :param private:
         :return: boolean
         """
