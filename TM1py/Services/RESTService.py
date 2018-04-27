@@ -11,6 +11,7 @@ if sys.version[0] == '2':
 else:
     import http.client as http_client
 
+
 def httpmethod(func):
     """ Higher Order Function to wrap the GET, POST, PATCH, PUT, DELETE methods
 
@@ -62,7 +63,7 @@ class RESTService:
         :param ssl: boolean -  as specified in the tm1s.cfg
         :param loggin: boolean - switch on/off verbose http logging into console
         """
-        self._ssl = kwargs['ssl']
+        self._ssl = kwargs['ssl'].upper() == "TRUE" if isinstance(kwargs['ssl'], str) else kwargs['ssl']
         self._address = kwargs['address'] if 'address' in kwargs else None
         self._port = kwargs['port'] if 'port' in kwargs else None
         self._verify = False
