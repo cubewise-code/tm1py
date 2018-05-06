@@ -37,6 +37,10 @@ class TM1Service:
     def version(self):
         return self._tm1_rest.version
 
+    @property
+    def connection(self):
+        return self._tm1_rest
+
     def save_to_file(self, file_name):
         with open(file_name, 'wb') as file:
             pickle.dump(self, file)

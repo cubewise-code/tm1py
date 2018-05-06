@@ -51,6 +51,11 @@ class RESTService:
 
     """
 
+    HEADERS = {'Connection': 'keep-alive',
+               'User-Agent': 'TM1py',
+               'Content-Type': 'application/json; odata.streaming=true; charset=utf-8',
+               'Accept': 'application/json;odata.metadata=none,text/plain'}
+
     def __init__(self, **kwargs):
         """ Create an instance of RESTService
 
@@ -61,7 +66,8 @@ class RESTService:
         :param password String - password of the user
         :param namespace String - optional CAM namespace
         :param ssl: boolean -  as specified in the tm1s.cfg
-        :param loggin: boolean - switch on/off verbose http logging into console
+        :param session_id: String - TM1SessionId e.g. q7O6e1w49AixeuLVxJ1GZg
+        :param logging: boolean - switch on/off verbose http logging into sys.stdout
         """
         self._ssl = kwargs['ssl'].upper() == "TRUE" if isinstance(kwargs['ssl'], str) else kwargs['ssl']
         self._address = kwargs['address'] if 'address' in kwargs else None
@@ -75,26 +81,25 @@ class RESTService:
                 'localhost' if len(self._address) == 0 else self._address,
                 self._port)
         self._version = None
-        self._headers = {'Connection': 'keep-alive',
-                         'User-Agent': 'TM1py',
-                         'Content-Type': 'application/json; odata.streaming=true; charset=utf-8',
-                         'Accept': 'application/json;odata.metadata=none,text/plain'}
-        # Authorization [Basic, CAM] through Headers
-        if 'namespace' in kwargs and kwargs['namespace']:
-            token = 'CAMNamespace ' + b64encode(
-                str.encode("{}:{}:{}".format(kwargs['user'], kwargs['password'], kwargs['namespace']))).decode("ascii")
-        else:
-            token = 'Basic ' + b64encode(
-                str.encode("{}:{}".format(kwargs['user'], kwargs['password']))).decode("ascii")
-        self._headers['Authorization'] = token
-        self.disable_http_warnings(self)
+        self._headers = self.HEADERS.copy()
+        self.disable_http_warnings()
+        # re-use or create tm1 http session
         self._s = requests.session()
-        self._get_cookies()
-        # After we have session cookie drop the Authorization Header
-        self._headers.pop('Authorization')
+        if "session_id" in kwargs:
+            self._s.cookies.set("TM1SessionId", kwargs["session_id"])
+        else:
+            # Authorization [Basic, CAM] through Headers
+            token = self._build_authorization_token(kwargs['user'],
+                                                    kwargs['password'],
+                                                    kwargs['namespace'] if 'namespace' in kwargs else None)
+            self.add_http_header('Authorization', token)
+            self._start_session()
+            # After we have session cookie, drop the Authorization Header
+            self.remove_http_header('Authorization')
         # Logging
-        if 'logging' in kwargs and kwargs['logging']:
-            http_client.HTTPConnection.debuglevel = 1
+        if 'logging' in kwargs:
+            if kwargs['logging'].upper() == "TRUE" if isinstance(kwargs['logging'], str) else kwargs['logging']:
+                http_client.HTTPConnection.debuglevel = 1
 
     def __enter__(self):
         return self
@@ -146,6 +151,7 @@ class RESTService:
         """ End TM1 Session and HTTP session
 
         """
+        self._headers["Connection"] = "close"
         # Easier to ask for forgiveness than permission
         try:
             # ProductVersion >= TM1 10.2.2 FP 6
@@ -155,7 +161,7 @@ class RESTService:
             # ProductVersion < TM1 10.2.2 FP 6
             self.POST('/api/logout', '')
 
-    def _get_cookies(self):
+    def _start_session(self):
         """ perform a simple GET request (Ask for the TM1 Version) to start a session
 
         """
@@ -189,6 +195,10 @@ class RESTService:
     def version(self):
         return self._version
 
+    @property
+    def session_id(self):
+        return self._s.cookies["TM1SessionId"]
+
     @staticmethod
     def verify_response(response):
         """ check if Status Code is OK
@@ -204,9 +214,25 @@ class RESTService:
             raise TM1pyException(response.text, status_code=response.status_code, reason=response.reason)
 
     @staticmethod
-    def disable_http_warnings(self):
+    def _build_authorization_token(user, password, namespace=None, **kwargs):
+        """ Build the Authorization Header for CAM and Native Security
+
+        """
+        if namespace:
+            token = 'CAMNamespace ' + b64encode(
+                str.encode("{}:{}:{}".format(user, password, namespace))).decode("ascii")
+        else:
+            token = 'Basic ' + b64encode(
+                str.encode("{}:{}".format(user, password))).decode("ascii")
+        return token
+
+    @staticmethod
+    def disable_http_warnings():
         # disable HTTP verification warnings from requests library
         requests.packages.urllib3.disable_warnings()
+
+    def get_http_header(self, key):
+        return self._headers[key]
 
     def add_http_header(self, key, value):
         self._headers[key] = value

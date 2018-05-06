@@ -4,7 +4,7 @@ test_config = {
     'user': 'admin',
     'password': 'apple',
     'address': '10.77.19.60',
-    'port': 12354,
-    'ssl': True,
+    'port': 9699,
+    'ssl': False,
     'logging': True
 }

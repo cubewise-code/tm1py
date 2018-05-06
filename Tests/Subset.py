@@ -56,17 +56,21 @@ class TestSubsetMethods(unittest.TestCase):
         s = self.tm1.dimensions.hierarchies.subsets.get(dimension_name=self.dimension_name,
                                                         subset_name=self.subset_name_static,
                                                         private=self.private)
-        self.assertEqual(self.static_subset.body, s.body)
+        self.assertEqual(self.static_subset, s)
         s = self.tm1.dimensions.hierarchies.subsets.get(dimension_name=self.dimension_name,
                                                         subset_name=self.subset_name_dynamic,
                                                         private=self.private)
-        self.assertEqual(self.dynamic_subset.body, s.body)
+        self.assertEqual(self.dynamic_subset, s)
 
     # 3. Update subset
     def test_3update_subset(self):
+        # Get static subset
         s = self.tm1.dimensions.hierarchies.subsets.get(dimension_name=self.dimension_name,
                                                         subset_name=self.subset_name_static,
                                                         private=self.private)
+        # Check before update
+        self.assertEqual(self.static_subset, s)
+
         s.add_elements(['NZD'])
         # Update it
         self.tm1.dimensions.hierarchies.subsets.update(s, private=self.private)
@@ -74,12 +78,16 @@ class TestSubsetMethods(unittest.TestCase):
         s = self.tm1.dimensions.hierarchies.subsets.get(dimension_name=self.dimension_name,
                                                         subset_name=self.subset_name_static,
                                                         private=self.private)
-        # Test it !
+        # Check after update
         self.assertEquals(len(s.elements), 5)
-        # Get subset
+        self.assertNotEqual(self.static_subset, s)
+
+        # Get dynamic subset
         s = self.tm1.dimensions.hierarchies.subsets.get(dimension_name=self.dimension_name,
                                                         subset_name=self.subset_name_dynamic,
                                                         private=self.private)
+        # Check before update
+        self.assertEqual(self.dynamic_subset, s)
 
         s.expression = '{{ [{}].[EUR], [{}].[USD] }})'.format(self.dimension_name, self.dimension_name)
         # Update it
@@ -88,9 +96,11 @@ class TestSubsetMethods(unittest.TestCase):
         s = self.tm1.dimensions.hierarchies.subsets.get(dimension_name=self.dimension_name,
                                                         subset_name=self.subset_name_dynamic,
                                                         private=self.private)
-        # Test it !
+        # Check after update
         self.assertEquals(s.expression,
                           '{{ [{}].[EUR], [{}].[USD] }})'.format(self.dimension_name, self.dimension_name))
+
+        self.assertNotEqual(self.dynamic_subset, s)
 
     def test_4get_all_names(self):
         subset_names = self.tm1.dimensions.subsets.get_all_names(dimension_name=self.dimension_name,
