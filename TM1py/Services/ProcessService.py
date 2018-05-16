@@ -127,8 +127,24 @@ class ProcessService(ObjectService):
         return response
 
     def exists(self, name):
+        """ Check if Process exists.
+        
+        :param name: 
+        :return: 
+        """
         request = "/api/v1/Processes('{}')".format(name)
         return self._exists(request)
+
+    def compile(self, name):
+        """ Compile a Process. Return List of Syntax errors.
+        
+        :param name: 
+        :return: 
+        """
+        request = "/api/v1/Processes('{}')/tm1.Compile".format(name)
+        response = self._rest.POST(request, '')
+        syntax_errors = response.json()["value"]
+        return syntax_errors
 
     def execute(self, name_process, parameters=None):
         """ Ask TM1 Server to execute a process

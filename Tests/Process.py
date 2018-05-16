@@ -84,8 +84,26 @@ class TestProcessMethods(unittest.TestCase):
         self.tm1.processes.create(self.p_odbc)
         self.tm1.processes.create(self.p_subset)
 
+    def test2_compile_process(self):
+        p_good = Process(name=str(uuid.uuid4()),
+                         prolog_procedure="nPro = DimSiz('}Processes');")
+        p_bad = Process(name=str(uuid.uuid4()),
+                        prolog_procedure="nPro = DimSize('}Processes');")
+        self.tm1.processes.create(p_good)
+        self.tm1.processes.create(p_bad)
+
+        errors = self.tm1.processes.compile(p_good.name)
+        self.assertTrue(len(errors) == 0)
+
+        errors = self.tm1.processes.compile(p_bad.name)
+        self.assertTrue(len(errors) == 1)
+        self.assertIn("Variable \"dimsize\" is undefined", errors[0]["Message"])
+
+        self.tm1.processes.delete(p_good.name)
+        self.tm1.processes.delete(p_bad.name)
+
     # Get Process
-    def test2_get_process(self):
+    def test3_get_process(self):
         p1 = self.tm1.processes.get(self.p_ascii.name)
         self.assertEqual(p1.body, self.p_ascii.body)
         p2 = self.tm1.processes.get(self.p_none.name)
@@ -100,7 +118,7 @@ class TestProcessMethods(unittest.TestCase):
         self.assertEqual(p5.body, self.p_subset.body)
 
     # Update process
-    def test3_update_process(self):
+    def test4_update_process(self):
         # get
         p = self.tm1.processes.get(self.p_ascii.name)
         # modify
@@ -113,7 +131,7 @@ class TestProcessMethods(unittest.TestCase):
         self.assertNotEqual(p_ascii_updated.data_procedure, self.p_ascii.data_procedure)
 
     # Delete process
-    def test4_delete_process(self):
+    def test5_delete_process(self):
         self.tm1.processes.delete(self.p_none.name)
         self.tm1.processes.delete(self.p_ascii.name)
         self.tm1.processes.delete(self.p_view.name)

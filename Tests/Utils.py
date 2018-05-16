@@ -1,6 +1,8 @@
 import unittest
 import uuid
 
+import pandas as pd
+
 from TM1py.Utils import TIObfuscator
 from TM1py.Services import TM1Service
 from TM1py.Objects import Process, Dimension, Hierarchy, Cube
@@ -70,6 +72,31 @@ class TestMDXUtils(unittest.TestCase):
         content = self.tm1.cubes.cells.execute_mdx(mdx)
         number_cells = len(content.keys())
         self.assertEqual(number_cells, 1000)
+
+    def test_cellset_and_pandas_df(self):
+        rows = {self.dim1_name: None, self.dim2_name: self.dim2_element_names}
+        columns = {self.dim3_name: "{{TM1SubsetAll([{}])}}".format(self.dim3_name)}
+        contexts = {self.dim4_name: self.dim4_element_names[0]}
+        suppress = None
+        mdx = MDXUtils.construct_mdx(cube_name=self.cube_name, rows=rows, columns=columns,
+                                     contexts=contexts, suppress=suppress)
+
+        cellset = self.tm1.cubes.cells.execute_mdx(mdx)
+        df = Utils.build_pandas_dataframe_from_cellset(cellset, multiindex=True)
+        self.assertIsInstance(df, pd.DataFrame)
+        self.assertTrue(df.shape[0] == 1000)
+        self.assertTrue(df.shape[1] == 1)
+        cellset = Utils.build_cellset_from_pandas_dataframe(df)
+        self.assertTrue(len(cellset.keys()) == 1000)
+        self.assertIsInstance(cellset, Utils.CaseAndSpaceInsensitiveTuplesDict)
+
+        df = Utils.build_pandas_dataframe_from_cellset(cellset, multiindex=False)
+        self.assertTrue(df.shape[0] == 1000)
+        self.assertTrue(df.shape[1] == 5)
+        self.assertIsInstance(df, pd.DataFrame)
+        cellset = Utils.build_cellset_from_pandas_dataframe(df)
+        self.assertTrue(len(cellset.keys()) == 1000)
+        self.assertIsInstance(cellset, Utils.CaseAndSpaceInsensitiveTuplesDict)
 
     def test_read_cube_name_from_mdx(self):
         all_cube_names = self.tm1.cubes.get_all_names()

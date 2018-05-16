@@ -78,6 +78,8 @@ class TestServerMethods(unittest.TestCase):
         self.assertFalse(regex.search(log_entry))
 
     def test2_get_last_transaction_log_entries(self):
+        self.tm1.processes.execute_ti_code(lines_prolog="CubeSetLogChanges('{}', {});".format(self.cube_name, 1))
+
         tmstp = datetime.datetime.utcnow()
 
         # Generate 3 random numbers
