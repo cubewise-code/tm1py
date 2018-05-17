@@ -176,13 +176,12 @@ def build_cellset_from_pandas_dataframe(df):
     :param df: a Pandas Dataframe, with dimension-column mapping in correct order. As created in build_pandas_dataframe_from_cellset
     :return: a CaseAndSpaceInsensitiveTuplesDict
     """
-    cellset = CaseAndSpaceInsensitiveTuplesDict()
     if isinstance(df.index, pd.MultiIndex):
         df.reset_index(inplace=True)
-    dimensions = df.columns.values[0:-1]
-    for _, row in df.iterrows():
-        elements = [row[dim] for dim in dimensions]
-        cellset[tuple(elements)] = row[-1] if pd.notna(row[-1]) else None
+    cellset = CaseAndSpaceInsensitiveTuplesDict()
+    split = df.to_dict(orient='split')
+    for row in split['data']:
+        cellset[tuple(row[0:-1])] = row[-1]
     return cellset
 
 
