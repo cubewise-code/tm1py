@@ -30,26 +30,32 @@ class ViewService(ObjectService):
         request = "/api/v1/Cubes('{}')/{}".format(view.cube, view_type)
         return self._rest.POST(request, view.body)
 
-    def exists(self, cube_name, view_name):
-        """ Checks if view exists
+    def exists(self, cube_name, view_name, private=None):
+        """ Checks if view exists as private, public or both
 
         :param cube_name:  string, name of the cube
         :param view_name: string, name of the view
+        :param private: boolean, if None: check for private and public
 
         :return boolean tuple
         """
-        view_types = collections.OrderedDict()
-        view_types['PrivateViews'] = False
-        view_types['Views'] = False
-
-        for view_type in view_types:
-            try:
-                self._rest.GET("/api/v1/Cubes('{}')/{}('{}')".format(cube_name, view_type, view_name))
-                view_types[view_type] = True
-            except TM1pyException as e:
-                if e._status_code != 404:
-                    raise e
-        return tuple(view_types.values())
+        request_template = "/api/v1/Cubes('{}')/{}('{}')"
+        if private is None:
+            view_types = collections.OrderedDict()
+            view_types['PrivateViews'] = False
+            view_types['Views'] = False
+            for view_type in view_types:
+                try:
+                    request = request_template.format(cube_name, view_type, view_name)
+                    self._rest.GET(request)
+                    view_types[view_type] = True
+                except TM1pyException as e:
+                    if e._status_code != 404:
+                        raise e
+            return tuple(view_types.values())
+        else:
+            request = request_template.format(cube_name, "PrivateViews" if private else "Views", view_name)
+            return self._exists(request)
 
     def get_native_view(self, cube_name, view_name, private=True):
         """ Get a NativeView from TM1 Server

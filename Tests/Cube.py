@@ -1,19 +1,22 @@
 import unittest
 import uuid
+import os
 from random import shuffle
+import configparser
 
 from TM1py.Objects import Cube
 from TM1py.Objects import Rules
 from TM1py.Services import TM1Service
 
-from .config import test_config
+config = configparser.ConfigParser()
+config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
 
 
 class TestCubeMethods(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.tm1 = TM1Service(**test_config)
+        cls.tm1 = TM1Service(**config['tm1srv01'])
         cls.cube_name = 'TM1py_unittest_cube_{}'.format(str(uuid.uuid4()))
 
     def test1_create_cube(self):

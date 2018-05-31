@@ -1,12 +1,15 @@
 import random
+import os
 import unittest
 import uuid
+import configparser
 
 from TM1py.Objects import Cube, Dimension, Element, Hierarchy, NativeView, AnonymousSubset
 from TM1py.Services import TM1Service
 from TM1py.Utils import Utils
 
-from .config import test_config
+config = configparser.ConfigParser()
+config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
 
 
 # Hard coded stuff
@@ -23,7 +26,7 @@ class TestDataMethods(unittest.TestCase):
     @classmethod
     def setup_class(cls):
         # Connection to TM1
-        cls.tm1 = TM1Service(**test_config)
+        cls.tm1 = TM1Service(**config['tm1srv01'])
 
         # generate random coordinates
         cls.target_coordinates = list(zip(('Element ' + str(random.randint(1, 1000)) for _ in range(100)),
@@ -140,7 +143,6 @@ class TestDataMethods(unittest.TestCase):
             "[{}].[{}]".format(dimension_names[2], "element2"),
         )
         self.tm1.cubes.cells.write_values_through_cellset(mdx, (1,))
-
 
     # Delete Cube and Dimensions
     @classmethod

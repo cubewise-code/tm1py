@@ -1,12 +1,15 @@
 import unittest
 import uuid
 import random
+import configparser
+import os
 
 from TM1py.Objects import Process
 from TM1py.Objects import Subset
 from TM1py.Services import TM1Service
 
-from .config import test_config
+config = configparser.ConfigParser()
+config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
 
 
 process_prefix = '}TM1py_unittest'
@@ -16,7 +19,7 @@ class TestProcessMethods(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.tm1 = TM1Service(**test_config)
+        cls.tm1 = TM1Service(**config['tm1srv01'])
 
         cls.random_string = str(uuid.uuid4())
 

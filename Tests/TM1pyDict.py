@@ -1,15 +1,18 @@
 import unittest
+import configparser
+import os
 
 from TM1py.Services import TM1Service
 
-from Tests.config import test_config
+config = configparser.ConfigParser()
+config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
 
 
 class TestTM1pyDictMethods(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.tm1 = TM1Service(**test_config)
+        cls.tm1 = TM1Service(**config['tm1srv01'])
 
     def test_all(self):
         mdx_rows = '[}Clients].Members'

@@ -1,11 +1,14 @@
 import unittest
 import uuid
 import time
+import os
+import configparser
 
 from TM1py.Objects import Dimension, Hierarchy, Subset
 from TM1py.Services import TM1Service
 
-from .config import test_config
+config = configparser.ConfigParser()
+config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
 
 
 dimension_prefix = 'TM1py_unittest_dimension_{}'
@@ -15,7 +18,7 @@ class TestHierarchyMethods(unittest.TestCase):
 
     @classmethod
     def setup_class(cls):
-        cls.tm1 = TM1Service(**test_config)
+        cls.tm1 = TM1Service(**config['tm1srv01'])
 
         cls.dimension_name = dimension_prefix.format(uuid.uuid4())
         cls.subset_name = dimension_prefix.format("TM1py")
@@ -103,3 +106,7 @@ class TestHierarchyMethods(unittest.TestCase):
     @classmethod
     def teardown_class(cls):
         cls.tm1.logout()
+
+
+if __name__ == '__main__':
+    unittest.main()

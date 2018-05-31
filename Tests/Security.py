@@ -1,18 +1,20 @@
 import unittest
 import uuid
+import os
+import configparser
 
 from TM1py.Objects import User
 from TM1py.Services import TM1Service
 
-
-from .config import test_config
+config = configparser.ConfigParser()
+config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
 
 
 class TestSecurityMethods(unittest.TestCase):
 
     @classmethod
     def setup_class(cls):
-        cls.tm1 = TM1Service(**test_config)
+        cls.tm1 = TM1Service(**config['tm1srv01'])
         cls.user_name = str(uuid.uuid4())
         cls.user = User(name=cls.user_name, groups=[], password='TM1py')
 

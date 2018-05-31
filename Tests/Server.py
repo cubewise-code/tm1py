@@ -2,15 +2,18 @@ import unittest
 import uuid
 import random
 import datetime
+import os
 import dateutil.parser
 import time
 import re
+import configparser
 
 from TM1py.Services import TM1Service
 from TM1py.Objects import Cube, Dimension, Hierarchy, Process
 from TM1py.Exceptions import TM1pyException
 
-from Tests.config import test_config
+config = configparser.ConfigParser()
+config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
 
 
 class TestServerMethods(unittest.TestCase):
@@ -26,7 +29,7 @@ class TestServerMethods(unittest.TestCase):
         cls.process_name2 = cls.prefix + str(uuid.uuid4())
 
         # Connect to TM1
-        cls.tm1 = TM1Service(**test_config)
+        cls.tm1 = TM1Service(**config['tm1srv01'])
 
         # create a simple cube with dimensions to test transactionlog methods
         if not cls.tm1.dimensions.exists(cls.dimension_name1):
@@ -111,7 +114,7 @@ class TestServerMethods(unittest.TestCase):
         # Digest time in TM1
         time.sleep(1)
 
-        user = test_config['user']
+        user = config['tm1srv01']['user']
         cube = self.cube_name
 
         # Query transaction log with top filter

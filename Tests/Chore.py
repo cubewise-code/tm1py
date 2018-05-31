@@ -1,12 +1,15 @@
 import random
 import unittest
+import os
 import uuid
 from datetime import datetime
+import configparser
 
 from TM1py.Objects import Chore, ChoreStartTime, ChoreFrequency, ChoreTask, Process
 from TM1py.Services import TM1Service
 
-from .config import test_config
+config = configparser.ConfigParser()
+config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
 
 # Hard stuff for this test
 process_name1 = 'TM1py_unittest_chore_' + str(uuid.uuid4())
@@ -18,7 +21,7 @@ class TestChoreMethods(unittest.TestCase):
     # Check if process exists. If not create it
     @classmethod
     def setup_class(cls):
-        cls.tm1 = TM1Service(**test_config)
+        cls.tm1 = TM1Service(**config['tm1srv01'])
 
         # chore properties
         cls.chore_name1 = 'TM1py_unittest_chore_' + str(uuid.uuid4())

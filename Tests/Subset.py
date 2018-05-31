@@ -1,11 +1,14 @@
 import random
 import unittest
 import uuid
+import os
+import configparser
 
 from TM1py.Objects import Dimension, Hierarchy, Subset, ElementAttribute, Element
 from TM1py.Services import TM1Service
 
-from .config import test_config
+config = configparser.ConfigParser()
+config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
 
 
 class TestSubsetMethods(unittest.TestCase):
@@ -13,7 +16,7 @@ class TestSubsetMethods(unittest.TestCase):
     # Check if Dimensions exists. If not create it
     @classmethod
     def setup_class(cls):
-        cls.tm1 = TM1Service(**test_config)
+        cls.tm1 = TM1Service(**config['tm1srv01'])
 
         # Do random stuff
         cls.private = bool(random.getrandbits(1))

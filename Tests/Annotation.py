@@ -1,19 +1,19 @@
+import os
 import json
 import random
 import string
 import unittest
-
+import configparser
 
 from TM1py.Services import TM1Service
 from TM1py.Objects import Annotation
 
-from Tests.config import test_config
-
-# hard stuff for this test
+config = configparser.ConfigParser()
+config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
 
 
 class TestAnnotationMethods(unittest.TestCase):
-    tm1 = TM1Service(**test_config)
+    tm1 = TM1Service(**config['tm1srv01'])
 
     # Get Random Cube + Intersection
     all_cube_names = tm1.cubes.get_all_names()

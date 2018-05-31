@@ -1,18 +1,21 @@
 import unittest
 import uuid
+import os
+import configparser
 
 from TM1py.Objects import Dimension, Hierarchy, Element
 from TM1py.Objects import ElementAttribute
 from TM1py.Services import TM1Service
 
-from .config import test_config
+config = configparser.ConfigParser()
+config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
 
 
 class TestDimensionMethods(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.tm1 = TM1Service(**test_config)
+        cls.tm1 = TM1Service(**config['tm1srv01'])
         cls.dimension_name = 'TM1py_unittest_dimension_{}'.format(int(uuid.uuid4()))
         cls.hierarchy_name = cls.dimension_name
 
@@ -100,7 +103,6 @@ class TestDimensionMethods(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.tm1.logout()
-
 
 
 if __name__ == '__main__':

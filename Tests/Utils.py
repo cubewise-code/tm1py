@@ -1,5 +1,7 @@
 import unittest
 import uuid
+import configparser
+import os
 
 import pandas as pd
 
@@ -8,7 +10,9 @@ from TM1py.Services import TM1Service
 from TM1py.Objects import Process, Dimension, Hierarchy, Cube
 from TM1py.Utils import Utils, MDXUtils
 
-from Tests.config import test_config
+config = configparser.ConfigParser()
+config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
+
 
 
 class TestMDXUtils(unittest.TestCase):
@@ -16,7 +20,7 @@ class TestMDXUtils(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Connect to TM1
-        cls.tm1 = TM1Service(**test_config)
+        cls.tm1 = TM1Service(**config['tm1srv01'])
 
         # Build 4 Dimensions
         cls.dim1_name = str(uuid.uuid4())
@@ -132,7 +136,7 @@ class TestTIObfuscatorMethods(unittest.TestCase):
         cls.cube_name_cloned = str(uuid.uuid4())
 
         # Connect to TM1
-        cls.tm1 = TM1Service(**test_config)
+        cls.tm1 = TM1Service(**config['tm1srv01'])
 
         # create process
         prolog = "\r\nSaveDataAll;\r\nsText='abcABC';\r\n"
