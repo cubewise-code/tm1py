@@ -182,13 +182,20 @@ class CellService:
                   'Cells($select={}{})'.format(';$top=' + str(top) if top else '',
                                                ','.join(cell_properties),
                                                ';$top=' + str(top) if top else '')
-        data = {
-            'MDX': mdx
-        }
-        response = self._rest.POST(request=request, data=json.dumps(data, ensure_ascii=False))
+        response = self._rest.POST(request=request, data=json.dumps({'MDX': mdx}, ensure_ascii=False))
         return Utils.build_content_from_cellset(raw_cellset_as_dict=response.json(),
                                                 cell_properties=cell_properties,
                                                 top=top)
+
+    def execute_mdx_cell_values_only(self, mdx):
+        """ Optimized for performance. Query only raw values. Coordinates are omitted.
+
+        :param mdx: a Valid MDX Query
+        :return: Generator of cell values
+        """
+        request = '/api/v1/ExecuteMDX?$expand=Cells($select=Value)'
+        response = self._rest.POST(request=request, data=json.dumps({'MDX': mdx}, ensure_ascii=False))
+        return (cell["Value"] for cell in response.json()["Cells"])
 
     def execute_view(self, cube_name, view_name, cell_properties=None, private=True, top=None):
         """ get view content as dictionary with sweet and concise structure.

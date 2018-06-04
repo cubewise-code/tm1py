@@ -4,7 +4,7 @@ import sys
 from setuptools import setup
 
 
-SCHEDULE_VERSION = '1.0.1'
+SCHEDULE_VERSION = '1.0.2'
 SCHEDULE_DOWNLOAD_URL = (
     'https://github.com/Cubewise-code/TM1py/tarball/' + SCHEDULE_VERSION
 )

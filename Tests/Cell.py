@@ -1,5 +1,6 @@
 import random
 import os
+from functools import reduce
 import unittest
 import uuid
 import configparser
@@ -93,20 +94,12 @@ class TestDataMethods(unittest.TestCase):
               "NON EMPTY [" + dimension_names[2] + "].MEMBERS ON COLUMNS " \
               "FROM [" + cube_name + "]"
         data = self.tm1.cubes.cells.execute_mdx(mdx)
-        # Check if total value is the same AND coordinates are the same
-        check_value = 0
-        for coordinates, value in data.items():
-            # grid can have null values in cells as rows and columns are populated with elements
-            if value['Value']:
-                # extract the element name from the element unique name
-                element_names = Utils.element_names_from_element_unqiue_names(coordinates)
-                self.assertIn(element_names, self.target_coordinates)
-                check_value += value['Value']
-        # Check the check-sum
-        self.assertEqual(check_value, self.total_value)
+        # Check if total value is the same AND coordinates are the same. Handle None
+        self.assertEqual(self.total_value,
+                         sum([v["Value"] for v in data.values() if v["Value"]]))
 
         # Define MDX Query with calculated MEMBER
-        mdx = "WITH MEMBER[{}].[{}] AS 1 " \
+        mdx = "WITH MEMBER[{}].[{}] AS 2 " \
         "SELECT[{}].MEMBERS ON ROWS, " \
         "NON EMPTY {{[{}].[{}]}} ON COLUMNS " \
         "FROM[{}] " \
@@ -115,8 +108,38 @@ class TestDataMethods(unittest.TestCase):
 
         data = self.tm1.cubes.cells.execute_mdx(mdx)
         self.assertEqual(1000, len(data))
+        data = self.tm1.cubes.cells.execute_mdx(mdx)
+        self.assertEqual(2000, sum(v["Value"] for v in data.values()))
+        self.assertEqual(
+            sum(range(0, 1000)),
+            sum(v["Ordinal"] for v in data.values()))
 
-    def test5_execute_view(self):
+    def test5_execute_mdx_cell_values_only(self):
+        mdx = "SELECT " \
+              "NON EMPTY [" + dimension_names[0] + "].Members * [" + dimension_names[1] + "].Members ON ROWS," \
+              "NON EMPTY [" + dimension_names[2] + "].MEMBERS ON COLUMNS " \
+              "FROM [" + cube_name + "]"
+
+        cell_values = self.tm1.cubes.cells.execute_mdx_cell_values_only(mdx)
+
+        # Check if total value is the same AND coordinates are the same. Handle None.
+        self.assertEqual(self.total_value,
+                         sum([v for v in cell_values if v]))
+
+        # Define MDX Query with calculated MEMBER
+        mdx = "WITH MEMBER[{}].[{}] AS 2 " \
+        "SELECT[{}].MEMBERS ON ROWS, " \
+        "NON EMPTY {{[{}].[{}]}} ON COLUMNS " \
+        "FROM[{}] " \
+        "WHERE([{}].DefaultMember)".format(dimension_names[1], "Calculated Member", dimension_names[0],
+                                           dimension_names[1], "Calculated Member", cube_name, dimension_names[2])
+
+        data = self.tm1.cubes.cells.execute_mdx_cell_values_only(mdx)
+        self.assertEqual(1000, len(list(data)))
+        data = self.tm1.cubes.cells.execute_mdx_cell_values_only(mdx)
+        self.assertEqual(2000, sum(data))
+
+    def test6_execute_view(self):
         data = self.tm1.cubes.cells.execute_view(cube_name, view_name, private=False)
         # Check if total value is the same AND coordinates are the same
         check_value = 0
@@ -130,11 +153,11 @@ class TestDataMethods(unittest.TestCase):
         # Check the check-sum
         self.assertEqual(check_value, self.total_value)
 
-    def test6_execute_view(self):
+    def test7_execute_view(self):
         data = self.tm1.cubes.cells.execute_view(cube_name, view_name, private=False, top=3)
         self.assertEqual(len(data.keys()), 3)
 
-    def test7_write_values_through_cellset(self):
+    def test8_write_values_through_cellset(self):
         mdx_skeleton = "SELECT {} ON ROWS, {} ON COLUMNS FROM {} WHERE ({})"
         mdx = mdx_skeleton.format(
             "{{[{}].[{}]}}".format(dimension_names[0], "element2"),
