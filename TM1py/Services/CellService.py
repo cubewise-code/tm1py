@@ -254,6 +254,21 @@ class CellService:
         response = self._rest.POST(request, '')
         return response.json()
 
+    def get_cellset_cells_count(self, mdx):
+        """ Execute MDX in order to understand how many cells are in a cellset
+
+        :param mdx: MDX Query, as string
+        :return: Number of Cells in the CellSet
+        """
+
+        cellset_id = self.create_cellset(mdx)
+
+        request ="/api/v1/Cellsets(\'{}\')/Cells/$count".format(cellset_id)
+        response = self._rest.GET(request)
+
+        self.delete_cellset(cellset_id)
+        return float(response)
+
     def create_cellset(self, mdx):
         """ Execute MDX in order to create cellset at server. return the cellset-id
 
