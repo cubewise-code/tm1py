@@ -274,7 +274,7 @@ class CellService:
         response = self._rest.GET(request)
 
         self.delete_cellset(cellset_id)
-        return float(response)
+        return int(response.content)
 
     def create_cellset(self, mdx):
         """ Execute MDX in order to create cellset at server. return the cellset-id
