@@ -139,3 +139,37 @@ class ElementService(ObjectService):
         get_leaves(consolidation_tree)
         return leaves
 
+    def get_members_under_consolidation(self, dimension_name, hierarchy_name, consolidation, max_depth=None):
+        """ Get all members under a consolidated element
+
+        :param dimension_name: name of dimension
+        :param hierarchy_name: name of hierarchy
+        :param consolidation: name of consolidated Element
+        :param max_depth: 99 if not passed
+        :return:
+        """
+        depth = max_depth if max_depth else 99
+        # leaves to return
+        members = []
+        # Build request
+        bare_request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')?$select=Name,Type&$expand=Components("
+        request = bare_request.format(dimension_name, hierarchy_name, consolidation)
+        for _ in range(depth):
+            request += "$select=Name,Type;$expand=Components("
+        request = request[:-1] + ")" * depth
+        response = self._rest.GET(request)
+        consolidation_tree = response.json()
+
+        # recursive function to parse consolidation_tree
+        def get_members(element):
+            if element["Type"] == "Numeric":
+                members.append(element["Name"])
+            elif element["Type"] == "Consolidated":
+                if "Components" in element:
+                    for component in element["Components"]:
+                        members.append(component["Name"])
+                        get_members(component)
+        get_members(consolidation_tree)
+        return members
+
+
