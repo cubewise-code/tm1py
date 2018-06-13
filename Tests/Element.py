@@ -34,6 +34,8 @@ class TestElementMethods(unittest.TestCase):
         d = Dimension(cls.dimension_name)
         h = Hierarchy(cls.dimension_name, cls.hierarchy_name)
         h.add_element('Total Years', 'Consolidated')
+        h.add_element('All Consolidations', 'Consolidated')
+        h.add_edge("All Consolidations", "Total Years", 1)
         for year in cls.years:
             h.add_element(year, 'Numeric')
             h.add_edge('Total Years', year, 1)
@@ -111,9 +113,27 @@ class TestElementMethods(unittest.TestCase):
     def test11_get_leaves_under_consolidation(self):
         leaves = self.tm1.dimensions.hierarchies.elements.get_leaves_under_consolidation(self.dimension_name,
                                                                                          self.hierarchy_name,
-                                                                                         "Total Years")
+                                                                                         "All Consolidations")
+        self.assertNotIn("Total Years", leaves)
         for year in self.years:
             self.assertIn(year, leaves)
+
+    def test12_get_members_under_consolidation(self):
+        leaves = self.tm1.dimensions.hierarchies.elements.get_members_under_consolidation(self.dimension_name,
+                                                                                          self.hierarchy_name,
+                                                                                          "All Consolidations",
+                                                                                          leaves_only=True)
+        self.assertNotIn("Total Years", leaves)
+        for year in self.years:
+            self.assertIn(year, leaves)
+
+        members = self.tm1.dimensions.hierarchies.elements.get_members_under_consolidation(self.dimension_name,
+                                                                                           self.hierarchy_name,
+                                                                                           "All Consolidations",
+                                                                                           leaves_only=False)
+        self.assertIn("Total Years", members)
+        for year in self.years:
+            self.assertIn(year, members)
 
     @classmethod
     def teardown_class(cls):

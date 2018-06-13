@@ -116,40 +116,21 @@ class ElementService(ObjectService):
         :param max_depth: 99 if not passed
         :return: 
         """
-        depth = max_depth if max_depth else 99
-        # leaves to return
-        leaves = []
-        # Build request
-        bare_request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')?$select=Name,Type&$expand=Components("
-        request = bare_request.format(dimension_name, hierarchy_name, consolidation)
-        for _ in range(depth):
-            request += "$select=Name,Type;$expand=Components("
-        request = request[:-1] + ")" * depth
-        response = self._rest.GET(request)
-        consolidation_tree = response.json()
+        return self.get_members_under_consolidation(dimension_name, hierarchy_name, consolidation, max_depth, True)
 
-        # recursive function to parse consolidation_tree
-        def get_leaves(element):
-            if element["Type"] == "Numeric":
-                leaves.append(element["Name"])
-            elif element["Type"] == "Consolidated":
-                if "Components" in element:
-                    for component in element["Components"]:
-                        get_leaves(component)
-        get_leaves(consolidation_tree)
-        return leaves
-
-    def get_members_under_consolidation(self, dimension_name, hierarchy_name, consolidation, max_depth=None):
+    def get_members_under_consolidation(self, dimension_name, hierarchy_name, consolidation, max_depth=None,
+                                        leaves_only=False):
         """ Get all members under a consolidated element
 
         :param dimension_name: name of dimension
         :param hierarchy_name: name of hierarchy
         :param consolidation: name of consolidated Element
         :param max_depth: 99 if not passed
+        :param leaves_only: Only Leaf Elements or all Elements
         :return:
         """
         depth = max_depth if max_depth else 99
-        # leaves to return
+        # members to return
         members = []
         # Build request
         bare_request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')?$select=Name,Type&$expand=Components("
@@ -167,9 +148,8 @@ class ElementService(ObjectService):
             elif element["Type"] == "Consolidated":
                 if "Components" in element:
                     for component in element["Components"]:
-                        members.append(component["Name"])
+                        if not leaves_only:
+                            members.append(component["Name"])
                         get_members(component)
         get_members(consolidation_tree)
         return members
-
-
