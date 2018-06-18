@@ -24,8 +24,8 @@ class TestSubsetMethods(unittest.TestCase):
         # Define Names
         cls.prefix = 'TM1py_unittest_dimension_'
         cls.dimension_name = cls.prefix + str(uuid.uuid4())
-        cls.subset_name_static = cls.prefix + str(uuid.uuid4())
-        cls.subset_name_dynamic = cls.prefix + str(uuid.uuid4())
+        cls.subset_name_static = cls.prefix + "static"
+        cls.subset_name_dynamic = cls.prefix + "dynamic"
 
         # Instantiate Subsets
         cls.static_subset = Subset(dimension_name=cls.dimension_name,
@@ -105,6 +105,7 @@ class TestSubsetMethods(unittest.TestCase):
 
         self.assertNotEqual(self.dynamic_subset, s)
 
+    # 4. get all names
     def test_4get_all_names(self):
         subset_names = self.tm1.dimensions.subsets.get_all_names(dimension_name=self.dimension_name,
                                                                  hierarchy_name=self.dimension_name,
@@ -112,7 +113,6 @@ class TestSubsetMethods(unittest.TestCase):
         self.assertIn(self.subset_name_dynamic, subset_names)
         self.assertIn(self.subset_name_static, subset_names)
 
-    # 4. Delete subsets
     def test_5delete_subset(self):
         self.tm1.dimensions.hierarchies.subsets.delete(dimension_name=self.dimension_name,
                                                        subset_name=self.subset_name_static,

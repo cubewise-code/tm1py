@@ -72,10 +72,10 @@ class TestDataMethods(unittest.TestCase):
             # update the checksum
             cls.total_value += value
 
-    def test1_write_value(self):
+    def test01_write_value(self):
         self.tm1.cubes.cells.write_value(1, cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
 
-    def test2_get_value(self):
+    def test02_get_value(self):
         # clear data in cube
         self.tm1.processes.execute_ti_code(lines_prolog="CubeClearData('{}');".format(cube_name))
         self.tm1.cubes.cells.write_value(-1, cube_name, ('Element1', 'Element 2', 'Element 3'))
@@ -84,10 +84,10 @@ class TestDataMethods(unittest.TestCase):
         # clear data in cube
         self.tm1.processes.execute_ti_code(lines_prolog="CubeClearData('{}');".format(cube_name))
 
-    def test3_write_values(self):
+    def test03_write_values(self):
         self.tm1.cubes.cells.write_values(cube_name, self.cellset)
 
-    def test4_execute_mdx(self):
+    def test04_execute_mdx(self):
         # Define MDX Query that gets full cube content
         mdx = "SELECT " \
               "NON EMPTY [" + dimension_names[0] + "].Members * [" + dimension_names[1] + "].Members ON ROWS," \
@@ -114,13 +114,13 @@ class TestDataMethods(unittest.TestCase):
             sum(range(0, 1000)),
             sum(v["Ordinal"] for v in data.values()))
 
-    def test5_execute_mdx_cell_values_only(self):
+    def test05_execute_mdx_cell_values_only(self):
         mdx = "SELECT " \
               "NON EMPTY [" + dimension_names[0] + "].Members * [" + dimension_names[1] + "].Members ON ROWS," \
               "NON EMPTY [" + dimension_names[2] + "].MEMBERS ON COLUMNS " \
               "FROM [" + cube_name + "]"
 
-        cell_values = self.tm1.cubes.cells.execute_mdx_cell_values_only(mdx)
+        cell_values = self.tm1.cubes.cells.execute_mdx_get_values_only(mdx)
 
         # Check if total value is the same AND coordinates are the same. Handle None.
         self.assertEqual(self.total_value,
@@ -134,12 +134,43 @@ class TestDataMethods(unittest.TestCase):
         "WHERE([{}].DefaultMember)".format(dimension_names[1], "Calculated Member", dimension_names[0],
                                            dimension_names[1], "Calculated Member", cube_name, dimension_names[2])
 
-        data = self.tm1.cubes.cells.execute_mdx_cell_values_only(mdx)
+        data = self.tm1.cubes.cells.execute_mdx_get_values_only(mdx)
         self.assertEqual(1000, len(list(data)))
-        data = self.tm1.cubes.cells.execute_mdx_cell_values_only(mdx)
+        data = self.tm1.cubes.cells.execute_mdx_get_values_only(mdx)
         self.assertEqual(2000, sum(data))
 
-    def test6_execute_view(self):
+    def test06_execute_mdx_get_csv(self):
+        mdx = "SELECT " \
+              "NON EMPTY [" + dimension_names[0] + "].Members * [" + dimension_names[1] + "].Members ON ROWS," \
+              "NON EMPTY [" + dimension_names[2] + "].MEMBERS ON COLUMNS " \
+              "FROM [" + cube_name + "]"
+        content = self.tm1.cubes.cells.execute_mdx_get_csv(mdx)
+
+        records = content.split('\r\n')[1:]
+        coordinates = {tuple(record.split(',')[0:3]) for record in records if record != '' and records[4] != 0}
+        self.assertEqual(len(coordinates), len(self.target_coordinates))
+        self.assertTrue(coordinates.issubset(self.target_coordinates))
+
+        values = [float(record.split(',')[3]) for record in records if record != '']
+        self.assertEqual(self.total_value, sum(values))
+
+    def test07_execute_mdx_get_dataframe(self):
+        mdx = "SELECT " \
+              "NON EMPTY [" + dimension_names[0] + "].Members * [" + dimension_names[1] + "].Members ON ROWS," \
+              "NON EMPTY [" + dimension_names[2] + "].MEMBERS ON COLUMNS " \
+              "FROM [" + cube_name + "]"
+        df = self.tm1.cubes.cells.execute_mdx_get_dataframe(mdx)
+
+        coordinates = {tuple(row)
+                       for row
+                       in df[[*dimension_names]].values}
+        self.assertEqual(len(coordinates), len(self.target_coordinates))
+        self.assertTrue(coordinates.issubset(self.target_coordinates))
+
+        values = df[["Value"]].values
+        self.assertEqual(self.total_value, sum(values))
+
+    def test08_execute_view(self):
         data = self.tm1.cubes.cells.execute_view(cube_name, view_name, private=False)
         # Check if total value is the same AND coordinates are the same
         check_value = 0
@@ -153,11 +184,11 @@ class TestDataMethods(unittest.TestCase):
         # Check the check-sum
         self.assertEqual(check_value, self.total_value)
 
-    def test7_execute_view(self):
+    def test09_execute_view(self):
         data = self.tm1.cubes.cells.execute_view(cube_name, view_name, private=False, top=3)
         self.assertEqual(len(data.keys()), 3)
 
-    def test8_write_values_through_cellset(self):
+    def test10_write_values_through_cellset(self):
         mdx_skeleton = "SELECT {} ON ROWS, {} ON COLUMNS FROM {} WHERE ({})"
         mdx = mdx_skeleton.format(
             "{{[{}].[{}]}}".format(dimension_names[0], "element2"),

@@ -2,7 +2,9 @@
 
 import collections
 import json
+from io import StringIO
 import warnings
+import pandas as pd
 
 from TM1py.Utils import Utils
 
@@ -139,12 +141,12 @@ class CellService:
         """
         # execute mdx and create cellset at Server
         cellset_id = self.create_cellset(mdx)
-
-        # write data
-        self.update_cellset(cellset_id, values)
-
+        try:
+            # write data
+            self.update_cellset(cellset_id, values)
         # delete cellset (free up memory on server side)!
-        self.delete_cellset(cellset_id)
+        finally:
+            self.delete_cellset(cellset_id)
 
     def update_cellset(self, cellset_id, values):
         """ Write values into cellset
@@ -187,8 +189,9 @@ class CellService:
                                                 cell_properties=cell_properties,
                                                 top=top)
 
-    def execute_mdx_cell_values_only(self, mdx):
-        """ Optimized for performance. Query only raw values. Coordinates are omitted.
+    def execute_mdx_get_values_only(self, mdx):
+        """ Optimized for performance. Query only raw cell values. 
+        Coordinates are omitted !
 
         :param mdx: a Valid MDX Query
         :return: Generator of cell values
@@ -196,6 +199,32 @@ class CellService:
         request = '/api/v1/ExecuteMDX?$expand=Cells($select=Value)'
         response = self._rest.POST(request=request, data=json.dumps({'MDX': mdx}, ensure_ascii=False))
         return (cell["Value"] for cell in response.json()["Cells"])
+
+    def execute_mdx_get_csv(self, mdx):
+        """ Optimized for performance. Get csv string of coordinates and values. 
+        Context dimensions are omitted !
+        
+        :param mdx: Valid MDX Query 
+        :return: String
+        """
+        cellset_id = self.create_cellset(mdx)
+        try:
+            request = "/api/v1/Cellsets('{}')/Content".format(cellset_id)
+            data = self._rest.GET(request)
+            return data.text
+        finally:
+            self.delete_cellset(cellset_id)
+
+    def execute_mdx_get_dataframe(self, mdx):
+        """ Optimized for performance. Get Pandas DataFrame from MDX Query. 
+        Context dimensions are omitted in the resulting Dataframe !
+
+        :param mdx: Valid MDX Query
+        :return: Pandas Dataframe
+        """
+        raw_csv = self.execute_mdx_get_csv(mdx)
+        memory_file = StringIO(raw_csv)
+        return pd.read_csv(memory_file, sep=',')
 
     def execute_view(self, cube_name, view_name, cell_properties=None, private=True, top=None):
         """ get view content as dictionary with sweet and concise structure.
@@ -267,14 +296,13 @@ class CellService:
         :param mdx: MDX Query, as string
         :return: Number of Cells in the CellSet
         """
-
         cellset_id = self.create_cellset(mdx)
-
-        request ="/api/v1/Cellsets(\'{}\')/Cells/$count".format(cellset_id)
-        response = self._rest.GET(request)
-
-        self.delete_cellset(cellset_id)
-        return int(response.content)
+        try:
+            request = "/api/v1/Cellsets(\'{}\')/Cells/$count".format(cellset_id)
+            response = self._rest.GET(request)
+            return int(response.content)
+        finally:
+            self.delete_cellset(cellset_id)
 
     def create_cellset(self, mdx):
         """ Execute MDX in order to create cellset at server. return the cellset-id
