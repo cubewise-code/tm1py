@@ -1,6 +1,5 @@
 import random
 import os
-from functools import reduce
 import unittest
 import uuid
 import configparser
@@ -100,11 +99,11 @@ class TestDataMethods(unittest.TestCase):
 
         # Define MDX Query with calculated MEMBER
         mdx = "WITH MEMBER[{}].[{}] AS 2 " \
-        "SELECT[{}].MEMBERS ON ROWS, " \
-        "NON EMPTY {{[{}].[{}]}} ON COLUMNS " \
-        "FROM[{}] " \
-        "WHERE([{}].DefaultMember)".format(dimension_names[1], "Calculated Member", dimension_names[0],
-                                           dimension_names[1], "Calculated Member", cube_name, dimension_names[2])
+              "SELECT[{}].MEMBERS ON ROWS, " \
+              "NON EMPTY {{[{}].[{}]}} ON COLUMNS " \
+              "FROM[{}] " \
+              "WHERE([{}].DefaultMember)".format(dimension_names[1], "Calculated Member", dimension_names[0],
+                                                 dimension_names[1], "Calculated Member", cube_name, dimension_names[2])
 
         data = self.tm1.cubes.cells.execute_mdx(mdx)
         self.assertEqual(1000, len(data))
@@ -128,11 +127,11 @@ class TestDataMethods(unittest.TestCase):
 
         # Define MDX Query with calculated MEMBER
         mdx = "WITH MEMBER[{}].[{}] AS 2 " \
-        "SELECT[{}].MEMBERS ON ROWS, " \
-        "NON EMPTY {{[{}].[{}]}} ON COLUMNS " \
-        "FROM[{}] " \
-        "WHERE([{}].DefaultMember)".format(dimension_names[1], "Calculated Member", dimension_names[0],
-                                           dimension_names[1], "Calculated Member", cube_name, dimension_names[2])
+              "SELECT[{}].MEMBERS ON ROWS, " \
+              "NON EMPTY {{[{}].[{}]}} ON COLUMNS " \
+              "FROM[{}] " \
+              "WHERE([{}].DefaultMember)".format(dimension_names[1], "Calculated Member", dimension_names[0],
+                                                 dimension_names[1], "Calculated Member", cube_name, dimension_names[2])
 
         data = self.tm1.cubes.cells.execute_mdx_get_values_only(mdx)
         self.assertEqual(1000, len(list(data)))
@@ -197,6 +196,20 @@ class TestDataMethods(unittest.TestCase):
             "[{}].[{}]".format(dimension_names[2], "element2"),
         )
         self.tm1.cubes.cells.write_values_through_cellset(mdx, (1,))
+
+    def test11_deactivate_transaction_log(self):
+        self.tm1.cubes.cells.write_value(value="YES", cube_name="}CubeProperties",
+                                         element_tuple=(cube_name, "Logging"))
+        self.tm1.cubes.cells.deactivate_transactionlog(cube_name)
+        value = self.tm1.cubes.cells.get_value("}CubeProperties", "{},LOGGING".format(cube_name))
+        self.assertEqual("NO", value.upper())
+
+    def test12_activate_transaction_log(self):
+        self.tm1.cubes.cells.write_value(value="NO", cube_name="}CubeProperties",
+                                         element_tuple=(cube_name, "Logging"))
+        self.tm1.cubes.cells.activate_transactionlog(cube_name)
+        value = self.tm1.cubes.cells.get_value("}CubeProperties", "{},LOGGING".format(cube_name))
+        self.assertEqual("YES", value.upper())
 
     # Delete Cube and Dimensions
     @classmethod

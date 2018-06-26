@@ -114,30 +114,29 @@ class CellService:
 
     def write_values_through_cellset(self, mdx, values):
         """ Significantly faster than write_values function
+        Cellset gets created according to MDX Expression. For instance:
+        [[61, 29 ,13], 
+        [42, 54, 15], 
+        [17, 28, 81]]
+        
+        Each value in the cellset can be addressed through its position: The ordinal integer value. 
+        Ordinal-enumeration goes from top to bottom from left to right
+        Number 61 has Ordinal 0, 29 has Ordinal 1, etc.
 
-            Cellset gets created according to MDX Expression. For instance:
-                [  61, 29 ,13
-                   42, 54, 15,
-                   17, 28, 81  ]
-                   
-            Each value in the cellset can be addressed through its position: The ordinal integer value. 
-            Ordinal-enumeration goes from top to bottom from left to right
-            Number 61 has Ordinal 0, 29 has Ordinal 1, etc.
-    
-            The order of the iterable determines the insertion point in the cellset. 
-            For instance:
-                [91, 85, 72, 68, 51, 42, 35, 28, 11]
-    
-            would lead to:
-                [  91, 85 ,72
-                   68, 51, 42,
-                   35, 28, 11  ]
-    
-            When writing large datasets into TM1 Cubes it can be convenient to call this function asynchronously.
-    
-            :param mdx: Valid MDX Expression.
-            :param values: List of values. The Order of the List/ Iterable determines the insertion point in the cellset.
-            :return: 
+        The order of the iterable determines the insertion point in the cellset. 
+        For instance:
+        [91, 85, 72, 68, 51, 42, 35, 28, 11]
+
+        would lead to:
+        [[91, 85 ,72], 
+        [68, 51, 42], 
+        [35, 28, 11]]
+
+        When writing large datasets into TM1 Cubes it can be convenient to call this function asynchronously.
+        
+        :param mdx: Valid MDX Expression.
+        :param values: List of values. The Order of the List/ Iterable determines the insertion point in the cellset.
+        :return: 
         """
         # execute mdx and create cellset at Server
         cellset_id = self.create_cellset(mdx)
@@ -174,17 +173,33 @@ class CellService:
         :param top: integer
         :return: content in sweet consice strcuture.
         """
+        cellset_id = self.create_cellset(mdx=mdx)
+        try:
+            return self.execute_cellset(cellset_id=cellset_id, cell_properties=cell_properties, top=top)
+        finally:
+            self.delete_cellset(cellset_id=cellset_id)
+
+    def execute_cellset(self, cellset_id, cell_properties=None, top=None):
+        """ Execute Cellset and return the cells with their properties
+        
+        :param cellset_id: 
+        :param cell_properties: properties to be queried from the cell. E.g. Value, Ordinal, RuleDerived, ...
+        :param top: integer
+        :return: Content in sweet consice strcuture.
+        """
         if not cell_properties:
             cell_properties = ['Value', 'Ordinal']
         elif 'Ordinal' not in cell_properties:
             cell_properties.append('Ordinal')
-        request = '/api/v1/ExecuteMDX?$expand=' \
-                  'Cube($select=Name;$expand=Dimensions($select=Name)),' \
-                  'Axes($expand=Tuples($expand=Members($select=Name;$expand=Element($select=UniqueName)){})),' \
-                  'Cells($select={}{})'.format(';$top=' + str(top) if top else '',
-                                               ','.join(cell_properties),
-                                               ';$top=' + str(top) if top else '')
-        response = self._rest.POST(request=request, data=json.dumps({'MDX': mdx}, ensure_ascii=False))
+        request = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
+                  "Cube($select=Name;$expand=Dimensions($select=Name))," \
+                  "Axes($expand=Tuples($expand=Members($select=Name;$expand=Element($select=UniqueName)){top_rows}))," \
+                  "Cells($select={cell_properties}{top_cells})" \
+            .format(cellset_id=cellset_id,
+                    top_rows=";$top={}".format(top) if top else "",
+                    cell_properties=",".join(cell_properties),
+                    top_cells=";$top={}".format(top) if top else "")
+        response = self._rest.GET(request=request)
         return Utils.build_content_from_cellset(raw_cellset_as_dict=response.json(),
                                                 cell_properties=cell_properties,
                                                 top=top)
@@ -193,12 +208,16 @@ class CellService:
         """ Optimized for performance. Query only raw cell values. 
         Coordinates are omitted !
 
-        :param mdx: a Valid MDX Query
+        :param mdx: a valid MDX Query
         :return: Generator of cell values
         """
-        request = '/api/v1/ExecuteMDX?$expand=Cells($select=Value)'
-        response = self._rest.POST(request=request, data=json.dumps({'MDX': mdx}, ensure_ascii=False))
-        return (cell["Value"] for cell in response.json()["Cells"])
+        cellset_id = self.create_cellset(mdx=mdx)
+        try:
+            request = "/api/v1/Cellsets('{}')?$expand=Cells($select=Value)".format(cellset_id)
+            response = self._rest.GET(request=request, data='')
+            return (cell["Value"] for cell in response.json()["Cells"])
+        finally:
+            self.delete_cellset(cellset_id)
 
     def execute_mdx_get_csv(self, mdx):
         """ Optimized for performance. Get csv string of coordinates and values. 
@@ -238,13 +257,11 @@ class CellService:
 
         :return: Dictionary : {([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }
         """
-        if not cell_properties:
-            cell_properties = ['Value', 'Ordinal']
-        elif 'Ordinal' not in cell_properties:
-            cell_properties.append('Ordinal')
-        cellset_as_dict = self._get_cellset_from_view(cube_name, view_name, cell_properties, private, top)
-        content_as_dict = Utils.build_content_from_cellset(cellset_as_dict, cell_properties, top)
-        return content_as_dict
+        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
+        try:
+            return self.execute_cellset(cellset_id=cellset_id, cell_properties=cell_properties, top=top)
+        finally:
+            self.delete_cellset(cellset_id=cellset_id)
 
     def get_view_content(self, cube_name, view_name, cell_properties=None, private=True, top=None):
         warnings.simplefilter('always', PendingDeprecationWarning)
@@ -253,42 +270,7 @@ class CellService:
             PendingDeprecationWarning
         )
         warnings.simplefilter('default', PendingDeprecationWarning)
-        if not cell_properties:
-            cell_properties = ['Value', 'Ordinal']
-        elif 'Ordinal' not in cell_properties:
-            cell_properties.append('Ordinal')
-        cellset_as_dict = self._get_cellset_from_view(cube_name, view_name, cell_properties, private, top)
-        content_as_dict = Utils.build_content_from_cellset(cellset_as_dict, cell_properties, top)
-        return content_as_dict
-
-    def _get_cellset_from_view(self, cube_name, view_name, cell_properties, private=True, top=None):
-        """ get view content as dictionary in its native (cellset-) structure.
-
-        :param cube_name: String
-        :param view_name: String
-        :param cell_properties: List of cell properties
-        :param private: Boolean
-        :param top: Int, number of cells
-
-        :return:
-            `Dictionary` : {Cells : {}, 'ID' : '', 'Axes' : [{'Ordinal' : 1, Members: [], ...},
-            {'Ordinal' : 2, Members: [], ...}, {'Ordinal' : 3, Members: [], ...} ] }
-        """
-        views = 'PrivateViews' if private else 'Views'
-        if top:
-            request = '/api/v1/Cubes(\'{}\')/{}(\'{}\')/tm1.Execute?$expand=' \
-                      'Cube($select=Name;$expand=Dimensions($select=Name)),' \
-                      'Axes($expand=Tuples($expand=Members($select=Name;$expand=Element($select=UniqueName));$top={})),' \
-                      'Cells($select={};$top={})' \
-                .format(cube_name, views, view_name, str(top), ','.join(cell_properties), str(top))
-        else:
-            request = '/api/v1/Cubes(\'{}\')/{}(\'{}\')/tm1.Execute?$expand=' \
-                      'Cube($select=Name;$expand=Dimensions($select=Name)),' \
-                      'Axes($expand=Tuples($expand=Members($select=Name;$expand=Element($select=UniqueName)))),' \
-                      'Cells($select={})' \
-                .format(cube_name, views, view_name, ','.join(cell_properties))
-        response = self._rest.POST(request, '')
-        return response.json()
+        return self.execute_view(cube_name, view_name, cell_properties, private, top)
 
     def get_cellset_cells_count(self, mdx):
         """ Execute MDX in order to understand how many cells are in a cellset
@@ -318,6 +300,11 @@ class CellService:
         cellset_id = response.json()['ID']
         return cellset_id
 
+    def create_cellset_from_view(self, cube_name, view_name, private):
+        request = "/api/v1/Cubes('{cube_name}')/{views}('{view_name}')/tm1.Execute"\
+            .format(cube_name=cube_name, views='PrivateViews' if private else 'Views', view_name=view_name)
+        return self._rest.POST(request=request, data='').json()['ID']
+
     def delete_cellset(self, cellset_id):
         """ Delete a cellset
 
@@ -326,3 +313,19 @@ class CellService:
         """
         request = "/api/v1/Cellsets('{}')".format(cellset_id)
         return self._rest.DELETE(request)
+
+    def deactivate_transactionlog(self, cube_name):
+        """ Deactivate Transactionlog for this cube
+        
+        :param cube_name: 
+        :return: 
+        """
+        self.write_value(value="NO", cube_name="}CubeProperties", element_tuple=(cube_name, "Logging"))
+
+    def activate_transactionlog(self, cube_name):
+        """ ctivate Transactionlog for this cube
+        
+        :param cube_name: Name of the cube
+        :return: 
+        """
+        self.write_value(value="YES", cube_name="}CubeProperties", element_tuple=(cube_name, "Logging"))

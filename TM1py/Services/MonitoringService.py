@@ -34,7 +34,7 @@ class MonitoringService(ObjectService):
         return response
 
     def get_active_users(self):
-        """ Get the activate users in TM1 Server
+        """ Get the activate users in TM1
 
         :return: List of TM1py.User instances
         """
@@ -44,7 +44,7 @@ class MonitoringService(ObjectService):
         return users
 
     def user_is_active(self, user_name):
-        """ Check if user is currently activate in TM1
+        """ Check if user is currently active in TM1
 
         :param user_name:
         :return: Boolean

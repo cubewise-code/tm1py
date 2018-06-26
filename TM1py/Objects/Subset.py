@@ -177,13 +177,10 @@ class AnonymousSubset(Subset):
 
     @classmethod
     def from_dict(cls, subset_as_dict):
-        """ Alternative constructor
-                :Parameters:
-                    `subset_as_dict` : dictionary
-                        representation of Subset as specified in CSDL
-
-                :Returns:
-                    `Subset` : an instance of this class
+        """Alternative constructor
+        
+        :param subset_as_dict: dictionary, representation of Subset as specified in CSDL
+        :return: an instance of this class
         """
         return cls(dimension_name=subset_as_dict["Hierarchy"]["Dimension"]["Name"],
                    hierarchy_name=subset_as_dict["Hierarchy"]["Name"],
