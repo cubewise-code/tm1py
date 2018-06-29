@@ -334,6 +334,8 @@ class Process(TM1Object):
     def remove_variable(self, name):
         for variable in self.variables:
             if variable['Name'] == name:
+                vuid = self._variables_ui_data[self._variables.index(variable)]
+                self._variables_ui_data.remove(vuid)
                 self._variables.remove(variable)
 
     def add_parameter(self, name, prompt, value, parameter_type=None):
