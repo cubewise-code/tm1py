@@ -321,8 +321,8 @@ class Process(TM1Object):
         self._variables.append(variable)
         # 2. handle UI info
         var_type = 33 if type == 'Numeric' else 32
-        # '\r' !
-        variable_ui_data = 'VarType=' + str(var_type) + '\r' + 'ColType=' + str(827) + '\r'
+        # '\f' !
+        variable_ui_data = 'VarType=' + str(var_type) + '\f' + 'ColType=' + str(827) + '\f'
         """
         mapping VariableUIData:
             VarType 33 -> Numeric
