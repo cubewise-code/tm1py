@@ -179,6 +179,111 @@ class CellService:
         finally:
             self.delete_cellset(cellset_id=cellset_id)
 
+    def get_data(self, mdx, format=None, cell_properites=None, dim_properties=None, top=None):
+        """ Execute an MDX query and return the results in the format specified
+
+        :param mdx_or_view: A string that is an MDX Query or view name
+        :param format: String specifying the format to return. Supported: 'celldict' (default), 'csv', 'raw', 'dataframe' (pandas), 'array', dygraph'
+        :param cell_properties: List of properties to be queried from the cell. E.g. ['Value', 'Ordinal', 'RuleDerived', ...]
+        :param dim_properties: List of properties to be queried from the dimension. E.g. ['UniqueName','Attributes', ...]
+        :param top: Integer limiting the number of cells and the number or rows returned
+        :return: Content in format specified above.
+        """
+        cellset_id = self.create_cellset(mdx=mdx)
+        try:
+            return self.extract_cellset(cellset_id=cellset_id, format=format, cell_properties=cell_properites, dim_properties=dim_properties, top=top)
+        finally:
+            self.delete_cellset(cellset_id=cellset_id)
+
+    def extract_cellset(self, cellset_id, format=None, cell_properties=None, dim_properties=None, top=None):
+        """ Extract data from an existing cellset and return the results in the format specified
+
+        :param cellset_id: String; ID of existing cellset
+        :param format: String specifying the format to return. Supported: 'celldict' (default), 'csv', 'raw', 'dataframe' (pandas), 'array', dygraph'
+        :param cell_properties: List of properties to be queried from the cell. E.g. ['Value', 'Ordinal', 'RuleDerived', ...]
+        :param dim_properties: List of properties to be queried from the dimension. E.g. ['UniqueName','Attributes', ...]
+        :param top: Integer limiting the number of cells and the number or rows returned
+        :return: Content in format specified above.
+        """        
+        if format == 'values':
+            data =  self.extract_cellset_values(cellset_id=cellset_id)
+            return (cell["Value"] for cell in data["Cells"])
+        elif format == 'csv':
+            return self.extract_cellset_csv(cellset_id=cellset_id)
+        elif format == 'dataframe':
+            raw_csv = self.extract_cellset_csv(cellset_id=cellset_id)
+            memory_file = StringIO(raw_csv)
+            return pd.read_csv(memory_file, sep=',')
+        else:
+            if not cell_properties:
+                cell_properties = ['Value', 'Ordinal']
+            elif 'Ordinal' not in cell_properties:
+                cell_properties.append('Ordinal')
+
+            data = self.extract_cellset_full(cellset_id=cellset_id, cell_properties=cell_properties, dim_properties=dim_properties, top=top)
+
+            if format == 'raw':
+                return data
+            elif format == 'array':
+                return Utils.build_arrays_from_cellset(raw_cellset_as_dict=data)
+            elif format == 'dygraph':
+                return Utils.build_dygraph_arrays_from_cellset(raw_cellset_as_dict=data)
+            else:
+                return Utils.build_content_from_cellset(raw_cellset_as_dict=data,
+                                                        cell_properties=cell_properties,
+                                                        top=top)
+
+    def extract_cellset_full(self, cellset_id, cell_properties=None, dim_properties=None, top=None):
+        """ Extract full Cellset data and return the raw data from TM1
+        
+        :param cellset_id: String; ID of existing cellset
+        :param cell_properties: List of properties to be queried from the cell. E.g. ['Value', 'Ordinal', 'RuleDerived', ...]
+        :param dim_properties: List of properties to be queried from the dimension. E.g. ['UniqueName','Attributes', ...]
+        :param top: Integer limiting the number of cells and the number or rows returned
+        :return: Raw format from TM1.
+        """
+        if not cell_properties:
+            cell_properties = ['Value', 'Ordinal']
+        elif 'Ordinal' not in cell_properties:
+            cell_properties.append('Ordinal')
+
+        if not dim_properties:
+            dim_properties = ['UniqueName']
+        elif 'UniqueName' not in dim_properties:
+            dim_properties.append('UniqueName')
+
+        request = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
+                  "Cube($select=Name;$expand=Dimensions($select=Name))," \
+                  "Axes($expand=Tuples($expand=Members($select=Name;$expand=Element{dim_properties}){top_rows}))," \
+                  "Cells($select={cell_properties}{top_cells})" \
+            .format(cellset_id=cellset_id,
+                    top_rows=";$top={}".format(top) if top else "",
+                    cell_properties=",".join(cell_properties),
+                    dim_properties=("($select=" + ",".join(dim_properties) + ")") if len(dim_properties) > 0 else "",
+                    top_cells=";$top={}".format(top) if top else "")
+        response = self._rest.GET(request=request)
+        return response.json()
+
+    def extract_cellset_values(self, cellset_id):
+        """ Extract Cellset data and return only the cells and values
+        
+        :param cellset_id: String; ID of existing cellset
+        :return: Raw format from TM1.
+        """
+        request = "/api/v1/Cellsets('{}')?$expand=Cells($select=Value)".format(cellset_id)
+        response = self._rest.GET(request=request, data='')
+        return response.json()
+
+    def extract_cellset_csv(self, cellset_id):
+        """ Execute Cellset and return only the 'Content', in csv format
+        
+        :param cellset_id: String; ID of existing cellset
+        :return: Raw format from TM1.
+        """
+        request = "/api/v1/Cellsets('{}')/Content".format(cellset_id)
+        data = self._rest.GET(request)
+        return data.text
+
     def execute_cellset(self, cellset_id, cell_properties=None, top=None):
         """ Execute Cellset and return the cells with their properties
         

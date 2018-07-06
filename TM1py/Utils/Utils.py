@@ -111,6 +111,122 @@ def build_content_from_cellset(raw_cellset_as_dict, cell_properties, top=None):
     return content_as_dict
 
 
+def build_arrays_from_cellset(raw_cellset_as_dict):
+    """ Transform raw 1,2 or 3-dimension cellset data into concise dictionary
+
+    :param raw_cellset_as_dict: raw data from TM1
+    :return: dict : { titles: [], headers: [axis][], cells: { Page0: { Row0: { [row values], Row1: [], ...}, ...}, ...} }
+    """
+    dimensionality = len(raw_cellset_as_dict['Axes'])
+    cardinality = [raw_cellset_as_dict['Axes'][axis]['Cardinality'] for axis in range(dimensionality)]
+
+    headerMap = build_headers_from_cellset(raw_cellset_as_dict)
+    titles = headerMap['titles']
+    headers = headerMap['headers']
+
+    # Handle 1, 2 and 3-dimensional cellsets. Use dummy row/page headers when missing
+    if len(headers) == 1:
+        headers += [[{'name':'Row'}]]
+        cardinality.insert(1,1)
+    if len(headers) == 2:
+        headers += [[{'name':'Page'}]]
+        cardinality.insert(2,1)
+
+    cells = {}
+    ordinal_cells = 0
+    for z in range(cardinality[2]):
+        zHeader = headers[2][z]['name']
+        pages = {}
+        for y in range(cardinality[1]):
+            yHeader = headers[1][y]['name']
+            row = []
+            for x in range(cardinality[0]):
+                row.append(raw_cellset_as_dict['Cells'][ordinal_cells]['Value'] or 0)
+                ordinal_cells += 1
+            pages[yHeader] = row
+        cells[zHeader] = pages
+
+    return {'titles':titles, 'headers':headers, 'cells':cells}
+
+def build_dygraph_arrays_from_cellset(raw_cellset_as_dict):
+    """ Transform raw 1,2 or 3-dimension cellset data into dygraph-friendly format
+
+    :param raw_cellset_as_dict: raw data from TM1
+    :return: dict : { titles: [], headers: [axis][], cells: { Page0: [  [column name, column values], [], ... ], ...} }
+    """
+    dimensionality = len(raw_cellset_as_dict['Axes'])
+    cardinality = [raw_cellset_as_dict['Axes'][axis]['Cardinality'] for axis in range(dimensionality)]
+
+    headerMap = build_headers_from_cellset(raw_cellset_as_dict)
+    titles = headerMap['titles']
+    headers = headerMap['headers']
+
+    # Handle 1, 2 and 3-dimensional cellsets. Use dummy row/page headers when missing
+    if len(headers) == 1:
+        headers += [[{'name':'Row'}]]
+        cardinality.insert(1,1)
+    if len(headers) == 2:
+        headers += [[{'name':'Page'}]]
+        cardinality.insert(2,1)
+
+    cells = {}
+    for z in range(cardinality[2]):
+        zHeader = headers[2][z]['name']
+        page = []
+        for x in range(cardinality[0]):
+            xHeader = headers[0][x]['name']
+            row = [xHeader]
+            for y in range(cardinality[1]):
+                cell_addr = (x + cardinality[0] * y + cardinality[0] * cardinality[1] * z)
+                row.append(float("{0:.1f}".format(raw_cellset_as_dict['Cells'][cell_addr]['Value'] or 0)))
+            page.append(row)
+        cells[zHeader] = page
+
+    return {'titles':titles, 'headers':headers, 'cells':cells}
+
+def build_headers_from_cellset(raw_cellset_as_dict):
+    """ Extract dimension headers from cellset into dictionary of titles (slicers) and headers (row,column,page)
+    * Title dimensions are in a single list of dicts 
+    * Header dimensions are a 2-dimensional list of the element dicts
+
+      * The first dimension in the header list is the axis
+      * The second dimension is the list of elements on the axis
+
+    * Dict format: {'name': 'element or compound name', 'members': [ {dict of dimension properties}, ... ] }
+
+      * Stacked headers on an axis will have a compount 'name' created by joining the member's 'Name' properties with a '/'
+      * Stacked headers will each be listed in the 'memebers' list; Single-element headers will only have one element in list
+
+    :param raw_cellset_as_dict: raw data from TM1
+    :return: dict : { titles: [ { 'name': 'xx', 'members': {} } ], headers: [axis][ { 'name': 'xx', 'members': {} } ] }
+    """
+    dimensionality = len(raw_cellset_as_dict['Axes'])
+    cardinality = [raw_cellset_as_dict['Axes'][axis]['Cardinality'] for axis in range(dimensionality)]
+
+    titles = []
+    headers = []
+    for axis in range(dimensionality):
+        members = []
+        for tindex in range(cardinality[axis]):
+            tuples_as_dict = raw_cellset_as_dict['Axes'][axis]['Tuples'][tindex]['Members']
+            members_on_row = [
+                { k:v for (k,v) in zip(['Name']+list(member['Element'].keys()),[member['Name']]+list(member['Element'].values())) }
+                for member in tuples_as_dict]
+            if len(members_on_row) == 1:
+                name = members_on_row[0]['Name']
+            else:
+                name = ' / '.join(tuple(member['Name'] for member in members_on_row))
+
+            members.append({'name': name, 'members':members_on_row})
+
+        if (axis == dimensionality -1 and cardinality[axis] == 1):
+            titles = members
+        else:
+            headers.append(members)
+
+    return {'titles':titles, 'headers':headers}
+
+
 def element_names_from_element_unqiue_names(element_unique_names):
     """ Get tuple of simple element names from the full element unique names
     
