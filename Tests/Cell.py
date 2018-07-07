@@ -100,7 +100,7 @@ class TestDataMethods(unittest.TestCase):
         # Define MDX Query with calculated MEMBER
         mdx = "WITH MEMBER[{}].[{}] AS 2 " \
               "SELECT[{}].MEMBERS ON ROWS, " \
-              "NON EMPTY {{[{}].[{}]}} ON COLUMNS " \
+              "{{[{}].[{}]}} ON COLUMNS " \
               "FROM[{}] " \
               "WHERE([{}].DefaultMember)".format(dimension_names[1], "Calculated Member", dimension_names[0],
                                                  dimension_names[1], "Calculated Member", cube_name, dimension_names[2])
@@ -128,7 +128,7 @@ class TestDataMethods(unittest.TestCase):
         # Define MDX Query with calculated MEMBER
         mdx = "WITH MEMBER[{}].[{}] AS 2 " \
               "SELECT[{}].MEMBERS ON ROWS, " \
-              "NON EMPTY {{[{}].[{}]}} ON COLUMNS " \
+              "{{[{}].[{}]}} ON COLUMNS " \
               "FROM[{}] " \
               "WHERE([{}].DefaultMember)".format(dimension_names[1], "Calculated Member", dimension_names[0],
                                                  dimension_names[1], "Calculated Member", cube_name, dimension_names[2])

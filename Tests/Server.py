@@ -112,7 +112,7 @@ class TestServerMethods(unittest.TestCase):
         self.tm1.cubes.cells.write_values(self.cube_name, cellset)
 
         # Digest time in TM1
-        time.sleep(1)
+        time.sleep(8)
 
         user = config['tm1srv01']['user']
         cube = self.cube_name

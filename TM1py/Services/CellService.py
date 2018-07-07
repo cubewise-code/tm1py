@@ -93,7 +93,7 @@ class CellService:
         :param cube_name: name of the cube
         :param cellset_as_dict: {(elem_a, elem_b, elem_c): 243, (elem_d, elem_e, elem_f) : 109}
         :param dimensions: optional. Dimension names in their natural order. Will speed up the execution!
-        :return:
+        :return: Response
         """
         if not dimensions:
             from TM1py.Services import CubeService
@@ -110,7 +110,7 @@ class CellService:
             body_as_dict["Value"] = str(value) if value else ""
             updates.append(json.dumps(body_as_dict, ensure_ascii=False))
         updates = '[' + ','.join(updates) + ']'
-        self._rest.POST(request=request, data=updates)
+        return self._rest.POST(request=request, data=updates)
 
     def write_values_through_cellset(self, mdx, values):
         """ Significantly faster than write_values function
@@ -222,6 +222,7 @@ class CellService:
     def execute_mdx_get_csv(self, mdx):
         """ Optimized for performance. Get csv string of coordinates and values. 
         Context dimensions are omitted !
+        Cells with Zero/null are omitted !
         
         :param mdx: Valid MDX Query 
         :return: String
@@ -237,6 +238,7 @@ class CellService:
     def execute_mdx_get_dataframe(self, mdx):
         """ Optimized for performance. Get Pandas DataFrame from MDX Query. 
         Context dimensions are omitted in the resulting Dataframe !
+        Cells with Zero/null are omitted !
 
         :param mdx: Valid MDX Query
         :return: Pandas Dataframe
@@ -314,18 +316,24 @@ class CellService:
         request = "/api/v1/Cellsets('{}')".format(cellset_id)
         return self._rest.DELETE(request)
 
-    def deactivate_transactionlog(self, cube_name):
-        """ Deactivate Transactionlog for this cube
-        
-        :param cube_name: 
-        :return: 
-        """
-        self.write_value(value="NO", cube_name="}CubeProperties", element_tuple=(cube_name, "Logging"))
+    def deactivate_transactionlog(self, *args):
+        """ Deacctivate Transactionlog for one or many cubes
 
-    def activate_transactionlog(self, cube_name):
-        """ ctivate Transactionlog for this cube
-        
-        :param cube_name: Name of the cube
+        :param args: one or many cube names
         :return: 
         """
-        self.write_value(value="YES", cube_name="}CubeProperties", element_tuple=(cube_name, "Logging"))
+        updates = {}
+        for cube_name in args:
+            updates[(cube_name, "Logging")] = "NO"
+        return self.write_values(cube_name="}CubeProperties", cellset_as_dict=updates)
+
+    def activate_transactionlog(self, *args):
+        """ Activate Transactionlog for one or many cubes
+        
+        :param args: one or many cube names
+        :return: 
+        """
+        updates = {}
+        for cube_name in args:
+            updates[(cube_name, "Logging")] = "YES"
+        return self.write_values(cube_name="}CubeProperties", cellset_as_dict=updates)
