@@ -111,6 +111,175 @@ def build_content_from_cellset(raw_cellset_as_dict, cell_properties, top=None):
     return content_as_dict
 
 
+def build_arrays_from_cellset(raw_cellset_as_dict, value_precision=None):
+    """ Transform raw 1,2 or 3-dimension cellset data into concise dictionary
+
+    * Useful for grids or charting libraries that want an array of cell values per row
+    * Returns 3-dimensional cell structure for tabbed grids or multiple charts
+    * Rows and pages are dicts, addressable by their name. Proper order of rows can be obtained in headers[1]
+    * Example 'cells' return format:
+        'cells': { 
+            '10100': { 
+                'Net Operating Income': [ 19832724.72429739,
+                                          20365654.788303416,
+                                          20729201.329183243,
+                                          20480205.20121749],
+                'Revenue': [ 28981046.50724231,
+                             29512482.207418434,
+                             29913730.038971487,
+                             29563345.9542385]},
+            '10200': { 
+                'Net Operating Income': [ 9853293.623709997,
+                                           10277650.763958748,
+                                           10466934.096533755,
+                                           10333095.839474997],
+                'Revenue': [ 13888143.710000003,
+                             14300216.43,
+                             14502421.63,
+                             14321501.940000001]}
+        },
+
+
+    :param raw_cellset_as_dict: raw data from TM1
+    :param value_precision: Integer (optional) specifying number of decimal places to return
+    :return: dict : { titles: [], headers: [axis][], cells: { Page0: { Row0: { [row values], Row1: [], ...}, ...}, ...} }
+    """
+    header_map = build_headers_from_cellset(raw_cellset_as_dict, force_header_dimensionality=3)
+    titles = header_map['titles']
+    headers = header_map['headers']
+    cardinality = header_map['cardinality']
+
+    if value_precision:
+        value_format_string = "{{0:.{}f}}".format(value_precision)
+
+    cells = {}
+    ordinal_cells = 0
+    for z in range(cardinality[2]):
+        zHeader = headers[2][z]['name']
+        pages = {}
+        for y in range(cardinality[1]):
+            yHeader = headers[1][y]['name']
+            row = []
+            for x in range(cardinality[0]):
+                raw_value = raw_cellset_as_dict['Cells'][ordinal_cells]['Value'] or 0
+                if value_precision:
+                    row.append(float(value_format_string.format(raw_value)))
+                else:
+                    row.append(raw_value)
+                ordinal_cells += 1
+            pages[yHeader] = row
+        cells[zHeader] = pages
+
+    return {'titles':titles, 'headers':headers, 'cells':cells}
+
+def build_dygraph_arrays_from_cellset(raw_cellset_as_dict, value_precision=None):
+    """ Transform raw 1,2 or 3-dimension cellset data into dygraph-friendly format
+
+    * Useful for grids or charting libraries that want an array of cell values per column
+    * Returns 3-dimensional cell structure for tabbed grids or multiple charts
+    * Example 'cells' return format:
+        'cells': { 
+            '10100': [ 
+                ['Q1-2004', 28981046.50724231, 19832724.72429739],
+                ['Q2-2004', 29512482.207418434, 20365654.788303416],
+                ['Q3-2004', 29913730.038971487, 20729201.329183243],
+                ['Q4-2004', 29563345.9542385, 20480205.20121749]],
+            '10200': [ 
+                ['Q1-2004', 13888143.710000003, 9853293.623709997],
+                ['Q2-2004', 14300216.43, 10277650.763958748],
+                ['Q3-2004', 14502421.63, 10466934.096533755],
+                ['Q4-2004', 14321501.940000001, 10333095.839474997]]
+        },
+    
+    :param raw_cellset_as_dict: raw data from TM1
+    :param value_precision: Integer (optional) specifying number of decimal places to return
+    :return: dict : { titles: [], headers: [axis][], cells: { Page0: [  [column name, column values], [], ... ], ...} }
+    """
+    header_map = build_headers_from_cellset(raw_cellset_as_dict, force_header_dimensionality=3)
+    titles = header_map['titles']
+    headers = header_map['headers']
+    cardinality = header_map['cardinality']
+
+    if value_precision:
+        value_format_string = "{{0:.{}f}}".format(value_precision)
+
+    cells = {}
+    for z in range(cardinality[2]):
+        zHeader = headers[2][z]['name']
+        page = []
+        for x in range(cardinality[0]):
+            xHeader = headers[0][x]['name']
+            row = [xHeader]
+            for y in range(cardinality[1]):
+                cell_addr = (x + cardinality[0] * y + cardinality[0] * cardinality[1] * z)
+                raw_value = raw_cellset_as_dict['Cells'][cell_addr]['Value'] or 0
+                if value_precision:
+                    row.append(float(value_format_string.format(raw_value)))
+                else:
+                    row.append(raw_value)
+            page.append(row)
+        cells[zHeader] = page
+
+    return {'titles':titles, 'headers':headers, 'cells':cells}
+
+def build_headers_from_cellset(raw_cellset_as_dict, force_header_dimensionality=1):
+    """ Extract dimension headers from cellset into dictionary of titles (slicers) and headers (row,column,page)
+    * Title dimensions are in a single list of dicts 
+    * Header dimensions are a 2-dimensional list of the element dicts
+
+      * The first dimension in the header list is the axis
+      * The second dimension is the list of elements on the axis
+
+    * Dict format: {'name': 'element or compound name', 'members': [ {dict of dimension properties}, ... ] }
+
+      * Stacked headers on an axis will have a compount 'name' created by joining the member's 'Name' properties with a '/'
+      * Stacked headers will each be listed in the 'memebers' list; Single-element headers will only have one element in list
+
+    :param raw_cellset_as_dict: raw data from TM1
+    :param force_header_dimensionality: An optional integer (1,2 or 3) to force headers array to be at least that long
+    :return: dict : { titles: [ { 'name': 'xx', 'members': {} } ], headers: [axis][ { 'name': 'xx', 'members': {} } ] }
+    """
+    dimensionality = len(raw_cellset_as_dict['Axes'])
+    cardinality = [raw_cellset_as_dict['Axes'][axis]['Cardinality'] for axis in range(dimensionality)]
+
+    titles = []
+    headers = []
+    for axis in range(dimensionality):
+        members = []
+        for tindex in range(cardinality[axis]):
+            tuples_as_dict = raw_cellset_as_dict['Axes'][axis]['Tuples'][tindex]['Members']
+            members_on_row = [
+                { k:v for (k,v) in zip(['Name']+list(member['Element'].keys()),[member['Name']]+list(member['Element'].values())) }
+                for member in tuples_as_dict]
+            if len(members_on_row) == 1:
+                name = members_on_row[0]['Name']
+            else:
+                name = ' / '.join(tuple(member['Name'] for member in members_on_row))
+
+            members.append({'name': name, 'members':members_on_row})
+
+        if (axis == dimensionality -1 and cardinality[axis] == 1):
+            titles = members
+        else:
+            headers.append(members)
+
+
+    dimensionality = len(headers)
+    cardinality = [len(headers[axis]) for axis in range(dimensionality)]
+
+    # Handle 1, 2 and 3-dimensional cellsets. Use dummy row/page headers when missing
+    if dimensionality == 1 and force_header_dimensionality > 1:
+        headers += [[{'name':'Row'}]]
+        cardinality.insert(1,1)
+        dimensionality += 1
+    if dimensionality == 2 and force_header_dimensionality > 2:
+        headers += [[{'name':'Page'}]]
+        cardinality.insert(2,1)
+        dimensionality += 1
+
+    return {'titles':titles, 'headers':headers, 'dimensionality':dimensionality, 'cardinality':cardinality}
+
+
 def element_names_from_element_unqiue_names(element_unique_names):
     """ Get tuple of simple element names from the full element unique names
     
