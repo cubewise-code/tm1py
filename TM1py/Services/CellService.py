@@ -474,7 +474,6 @@ class CellService:
                     cell_properties=",".join(cell_properties),
                     elem_properties=("($select=" + ",".join(elem_properties) + ")") if len(elem_properties) > 0 else "",
                     top_cells=";$top={}".format(top) if top else "")
-        print(request)
         response = self._rest.GET(request=request)
         return response.json()
 

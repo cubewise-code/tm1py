@@ -169,7 +169,6 @@ def build_ui_arrays_from_cellset(raw_cellset_as_dict, value_precision):
                 ordinal_cells += 1
             pages[yHeader] = row
         cells[zHeader] = pages
-
     return {'titles': titles, 'headers': headers, 'cells': cells}
 
 
