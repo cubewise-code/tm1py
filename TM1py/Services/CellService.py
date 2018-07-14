@@ -1,12 +1,25 @@
 # -*- coding: utf-8 -*-
 
 import collections
+import functools
 import json
 from io import StringIO
 import warnings
 import pandas as pd
 
 from TM1py.Utils import Utils
+
+
+def tidy_cellset(func):
+    """ Higher Order Function to tidy up cellset after usage
+    """
+    @functools.wraps(func)
+    def wrapper(self, cellset_id, *args, **kwargs):
+        try:
+            return func(self, cellset_id, *args, **kwargs)
+        finally:
+            self.delete_cellset(cellset_id=cellset_id)
+    return wrapper
 
 
 class CellService:
@@ -140,13 +153,9 @@ class CellService:
         """
         # execute mdx and create cellset at Server
         cellset_id = self.create_cellset(mdx)
-        try:
-            # write data
-            self.update_cellset(cellset_id, values)
-        # delete cellset (free up memory on server side)!
-        finally:
-            self.delete_cellset(cellset_id)
+        self.update_cellset(cellset_id, values)
 
+    @tidy_cellset
     def update_cellset(self, cellset_id, values):
         """ Write values into cellset
 
@@ -171,72 +180,273 @@ class CellService:
         :param mdx: MDX Query, as string
         :param cell_properties: properties to be queried from the cell. E.g. Value, Ordinal, RuleDerived, ... 
         :param top: integer
-        :return: content in sweet consice strcuture.
+        :return: content in sweet concise strcuture.
         """
         cellset_id = self.create_cellset(mdx=mdx)
-        try:
-            return self.execute_cellset(cellset_id=cellset_id, cell_properties=cell_properties, top=top)
-        finally:
-            self.delete_cellset(cellset_id=cellset_id)
+        return self.extract_cellset(cellset_id=cellset_id, cell_properties=cell_properties, top=top)
 
-    def get_data(self, mdx, result_format=None, cell_properties=None, elem_properties=None, top=None, value_precision=None):
-        """ Execute an MDX query and return the results in the format specified
+    def execute_view(self, cube_name, view_name, cell_properties=None, private=True, top=None):
+        """ get view content as dictionary with sweet and concise structure.
+            Works on NativeView and MDXView !
 
-        :param mdx: A string that is an MDX Query
-        :param result_format: String specifying the format to return. Supported: 'celldict' (default), 'csv', 'raw', 'dataframe' (pandas), 'array', dygraph'
+        :param cube_name: String
+        :param view_name: String
+        :param cell_properties: List, cell properties: [Values, Status, HasPicklist, etc.]
+        :param private: Boolean
+        :param top: Int, number of cells to return (counting from top)
+
+        :return: Dictionary : {([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }
+        """
+        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
+        return self.extract_cellset(cellset_id=cellset_id, cell_properties=cell_properties, top=top)
+
+    def execute_mdx_raw(self, mdx, cell_properties=None, elem_properties=None, top=None):
+        """ Execute MDX and return the raw data from TM1
+
+        :param mdx: String, a valid MDX Query
         :param cell_properties: List of properties to be queried from the cell. E.g. ['Value', 'Ordinal', 'RuleDerived', ...]
         :param elem_properties: List of properties to be queried from the elements. E.g. ['UniqueName','Attributes', ...]
         :param top: Integer limiting the number of cells and the number or rows returned
-        :param value_precision: Integer (optional) specifying number of decimal places to return
-
-        :return: Content in format specified above.
+        :return: Raw format from TM1.
         """
         cellset_id = self.create_cellset(mdx=mdx)
-        try:
-            return self.extract_cellset(cellset_id=cellset_id, result_format=result_format, cell_properties=cell_properties, elem_properties=elem_properties, top=top, value_precision=value_precision)
-        finally:
-            self.delete_cellset(cellset_id=cellset_id)
+        return self.extract_cellset_raw(cellset_id=cellset_id,
+                                        cell_properties=cell_properties,
+                                        elem_properties=elem_properties,
+                                        top=top)
 
-    def extract_cellset(self, cellset_id, result_format=None, cell_properties=None, elem_properties=None, top=None, value_precision=None):
-        """ Extract data from an existing cellset and return the results in the format specified
+    def execute_view_raw(self, cube_name, view_name, private=True, cell_properties=None, elem_properties=None, top=None):
+        """ Execute a cube view and return the raw data from TM1
 
-        :param cellset_id: String; ID of existing cellset
-        :param result_format: String specifying the format to return. Supported: 'celldict' (default), 'csv', 'raw', 'dataframe' (pandas), 'array', dygraph'
+        :param cube_name: String, name of the cube
+        :param view_name: String, name of the view
+        :param private: True (private) or False (public)
         :param cell_properties: List of properties to be queried from the cell. E.g. ['Value', 'Ordinal', 'RuleDerived', ...]
         :param elem_properties: List of properties to be queried from the elements. E.g. ['UniqueName','Attributes', ...]
         :param top: Integer limiting the number of cells and the number or rows returned
+        :return: Raw format from TM1.
+        """
+        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
+        return self.extract_cellset_raw(cellset_id=cellset_id,
+                                        cell_properties=cell_properties,
+                                        elem_properties=elem_properties,
+                                        top=top)
+
+    def execute_mdx_values(self, mdx):
+        """ Optimized for performance. Query only raw cell values. 
+        Coordinates are omitted !
+
+        :param mdx: a valid MDX Query
+        :return: Generator of cell values
+        """
+        cellset_id = self.create_cellset(mdx=mdx)
+        return self.extract_cellset_values(cellset_id)
+
+    def execute_view_values(self, cube_name, view_name, private=True):
+        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
+        return self.extract_cellset_values(cellset_id)
+
+    def execute_mdx_csv(self, mdx):
+        """ Optimized for performance. Get csv string of coordinates and values. 
+        Context dimensions are omitted !
+        Cells with Zero/null are omitted !
+
+        :param mdx: Valid MDX Query 
+        :return: String
+        """
+        cellset_id = self.create_cellset(mdx)
+        return self.extract_cellset_csv(cellset_id=cellset_id)
+
+    def execute_view_csv(self, cube_name, view_name, private=True):
+        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
+        return self.extract_cellset_csv(cellset_id=cellset_id)
+
+    def execute_mdx_dataframe(self, mdx):
+        """ Optimized for performance. Get Pandas DataFrame from MDX Query. 
+        Context dimensions are omitted in the resulting Dataframe !
+        Cells with Zero/null are omitted !
+
+        :param mdx: Valid MDX Query
+        :return: Pandas Dataframe
+        """
+        cellset_id = self.create_cellset(mdx)
+        raw_csv = self.extract_cellset_csv(cellset_id)
+        memory_file = StringIO(raw_csv)
+        return pd.read_csv(memory_file, sep=',')
+
+    def execute_view_dataframe(self, cube_name, view_name, private=True):
+        """ Optimized for performance. Get Pandas DataFrame from an existing Cube View 
+        Context dimensions are omitted in the resulting Dataframe !
+        Cells with Zero/null are omitted !
+        
+        :param cube_name: Name of the 
+        :param view_name: 
+        :param private: 
+        :return: 
+        """
+        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
+        raw_csv = self.extract_cellset_csv(cellset_id)
+        memory_file = StringIO(raw_csv)
+        return pd.read_csv(memory_file, sep=',')
+
+    def execute_mdx_cellcount(self, mdx):
+        """ Execute MDX in order to understand how many cells are in a cellset.
+        Only return number of cells in the cellset. FAST!
+
+        :param mdx: MDX Query, as string
+        :return: Number of Cells in the CellSet
+        """
+        cellset_id = self.create_cellset(mdx)
+        return self.extract_cellset_cellcount(cellset_id)
+
+    def execute_view_cellcount(self, cube_name, view_name, private=True):
+        """ Execute cube view in order to understand how many cells are in a cellset.
+        Only return number of cells in the cellset. FAST!
+        
+        :param cube_name: cube name
+        :param view_name: view name
+        :param private: True (private) or False (public)
+        :return: 
+        """
+        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
+        return self.extract_cellset_cellcount(cellset_id)
+
+    def execute_mdx_ui_dygraph(self, mdx, value_precision=2):
+        """ Execute MDX get dygraph dictionary
+        Useful for grids or charting libraries that want an array of cell values per column
+        Returns 3-dimensional cell structure for tabbed grids or multiple charts
+        Example 'cells' return format:
+            'cells': {
+                '10100': [
+                    ['Q1-2004', 28981046.50724231, 19832724.72429739],
+                    ['Q2-2004', 29512482.207418434, 20365654.788303416],
+                    ['Q3-2004', 29913730.038971487, 20729201.329183243],
+                    ['Q4-2004', 29563345.9542385, 20480205.20121749]],
+                '10200': [
+                    ['Q1-2004', 13888143.710000003, 9853293.623709997],
+                    ['Q2-2004', 14300216.43, 10277650.763958748],
+                    ['Q3-2004', 14502421.63, 10466934.096533755],
+                    ['Q4-2004', 14321501.940000001, 10333095.839474997]]
+            },
+        :param mdx: String, valid MDX Query
         :param value_precision: Integer (optional) specifying number of decimal places to return
-        :return: Content in format specified above.
-        """        
-        if result_format == 'values':
-            data =  self.extract_cellset_values(cellset_id=cellset_id)
-            return (cell["Value"] for cell in data["Cells"])
-        elif result_format == 'csv':
-            return self.extract_cellset_csv(cellset_id=cellset_id)
-        elif result_format == 'dataframe':
-            raw_csv = self.extract_cellset_csv(cellset_id=cellset_id)
-            memory_file = StringIO(raw_csv)
-            return pd.read_csv(memory_file, sep=',')
-        else:
-            if not cell_properties:
-                cell_properties = ['Value', 'Ordinal']
-            elif 'Ordinal' not in cell_properties:
-                cell_properties.append('Ordinal')
+        :return: dict : { titles: [], headers: [axis][], cells: { Page0: [  [column name, column values], [], ... ], ...} }
+        """
+        cellset_id = self.create_cellset(mdx)
+        data = self.extract_cellset_raw(cellset_id=cellset_id)
+        return Utils.build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
 
-            data = self.extract_cellset_full(cellset_id=cellset_id, cell_properties=cell_properties, elem_properties=elem_properties, top=top)
+    def execute_view_ui_dygraph(self, cube_name, view_name, private=True, value_precision=2):
+        """ 
+        Useful for grids or charting libraries that want an array of cell values per row.
+        Returns 3-dimensional cell structure for tabbed grids or multiple charts.
+        Rows and pages are dicts, addressable by their name. Proper order of rows can be obtained in headers[1]
+        Example 'cells' return format:
+            'cells': { 
+                '10100': { 
+                    'Net Operating Income': [ 19832724.72429739,
+                                              20365654.788303416,
+                                              20729201.329183243,
+                                              20480205.20121749],
+                    'Revenue': [ 28981046.50724231,
+                                 29512482.207418434,
+                                 29913730.038971487,
+                                 29563345.9542385]},
+                '10200': { 
+                    'Net Operating Income': [ 9853293.623709997,
+                                               10277650.763958748,
+                                               10466934.096533755,
+                                               10333095.839474997],
+                    'Revenue': [ 13888143.710000003,
+                                 14300216.43,
+                                 14502421.63,
+                                 14321501.940000001]}
+            },
+        
+        :param cube_name: cube name
+        :param view_name: view name
+        :param private: True (private) or False (public)
+        :param value_precision: number decimals
+        :return: 
+        """
+        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
+        data = self.extract_cellset_raw(cellset_id=cellset_id)
+        return Utils.build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
 
-            if result_format == 'raw':
-                return data
-            elif result_format == 'array':
-                return Utils.build_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
-            elif result_format == 'dygraph':
-                return Utils.build_dygraph_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
-            else:
-                return Utils.build_content_from_cellset(raw_cellset_as_dict=data,
-                                                        cell_properties=cell_properties,
-                                                        top=top)
+    def execute_mdx_ui_array(self, mdx, value_precision=2):
+        """
+        Useful for grids or charting libraries that want an array of cell values per row.
+        Returns 3-dimensional cell structure for tabbed grids or multiple charts.
+        Rows and pages are dicts, addressable by their name. Proper order of rows can be obtained in headers[1]
+        Example 'cells' return format:
+            'cells': { 
+                '10100': { 
+                    'Net Operating Income': [ 19832724.72429739,
+                                              20365654.788303416,
+                                              20729201.329183243,
+                                              20480205.20121749],
+                    'Revenue': [ 28981046.50724231,
+                                 29512482.207418434,
+                                 29913730.038971487,
+                                 29563345.9542385]},
+                '10200': { 
+                    'Net Operating Income': [ 9853293.623709997,
+                                               10277650.763958748,
+                                               10466934.096533755,
+                                               10333095.839474997],
+                    'Revenue': [ 13888143.710000003,
+                                 14300216.43,
+                                 14502421.63,
+                                 14321501.940000001]}
+            },
 
-    def extract_cellset_full(self, cellset_id, cell_properties=None, elem_properties=None, top=None):
+        :param mdx: a valid MDX Query
+        :param value_precision: Integer (optional) specifying number of decimal places to return
+        :return: dict : { titles: [], headers: [axis][], cells: { Page0: { Row0: { [row values], Row1: [], ...}, ...}, ...} }
+        """
+        cellset_id = self.create_cellset(mdx)
+        data = self.extract_cellset_raw(cellset_id=cellset_id)
+        return Utils.build_ui_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
+
+    def execute_view_ui_array(self, cube_name, view_name, private=True, value_precision=2):
+        """
+        Useful for grids or charting libraries that want an array of cell values per row.
+        Returns 3-dimensional cell structure for tabbed grids or multiple charts.
+        Rows and pages are dicts, addressable by their name. Proper order of rows can be obtained in headers[1]
+        Example 'cells' return format:
+            'cells': { 
+                '10100': { 
+                    'Net Operating Income': [ 19832724.72429739,
+                                              20365654.788303416,
+                                              20729201.329183243,
+                                              20480205.20121749],
+                    'Revenue': [ 28981046.50724231,
+                                 29512482.207418434,
+                                 29913730.038971487,
+                                 29563345.9542385]},
+                '10200': { 
+                    'Net Operating Income': [ 9853293.623709997,
+                                               10277650.763958748,
+                                               10466934.096533755,
+                                               10333095.839474997],
+                    'Revenue': [ 13888143.710000003,
+                                 14300216.43,
+                                 14502421.63,
+                                 14321501.940000001]}
+            },
+
+        :param cube_name: cube name
+        :param view_name: view name
+        :param private: True (private) or False (public)
+        :param value_precision: Integer (optional) specifying number of decimal places to return
+        :return: dict : { titles: [], headers: [axis][], cells: { Page0: { Row0: { [row values], Row1: [], ...}, ...}, ...} }
+        """
+        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
+        data = self.extract_cellset_raw(cellset_id=cellset_id)
+        return Utils.build_ui_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
+
+    @tidy_cellset
+    def extract_cellset_raw(self, cellset_id, cell_properties=None, elem_properties=None, top=None):
         """ Extract full Cellset data and return the raw data from TM1
         
         :param cellset_id: String; ID of existing cellset
@@ -264,9 +474,11 @@ class CellService:
                     cell_properties=",".join(cell_properties),
                     elem_properties=("($select=" + ",".join(elem_properties) + ")") if len(elem_properties) > 0 else "",
                     top_cells=";$top={}".format(top) if top else "")
+        print(request)
         response = self._rest.GET(request=request)
         return response.json()
 
+    @tidy_cellset
     def extract_cellset_values(self, cellset_id):
         """ Extract Cellset data and return only the cells and values
         
@@ -275,8 +487,15 @@ class CellService:
         """
         request = "/api/v1/Cellsets('{}')?$expand=Cells($select=Value)".format(cellset_id)
         response = self._rest.GET(request=request, data='')
-        return response.json()
+        return (cell["Value"] for cell in response.json()["Cells"])
 
+    @tidy_cellset
+    def extract_cellset_cellcount(self, cellset_id):
+        request = "/api/v1/Cellsets('{}')/Cells/$count".format(cellset_id)
+        response = self._rest.GET(request)
+        return int(response.content)
+
+    @tidy_cellset
     def extract_cellset_csv(self, cellset_id):
         """ Execute Cellset and return only the 'Content', in csv format
         
@@ -287,7 +506,8 @@ class CellService:
         data = self._rest.GET(request)
         return data.text
 
-    def execute_cellset(self, cellset_id, cell_properties=None, top=None):
+    @tidy_cellset
+    def extract_cellset(self, cellset_id, cell_properties=None, top=None):
         """ Execute Cellset and return the cells with their properties
         
         :param cellset_id: 
@@ -311,90 +531,6 @@ class CellService:
         return Utils.build_content_from_cellset(raw_cellset_as_dict=response.json(),
                                                 cell_properties=cell_properties,
                                                 top=top)
-
-    def execute_mdx_get_values_only(self, mdx):
-        """ Optimized for performance. Query only raw cell values. 
-        Coordinates are omitted !
-
-        :param mdx: a valid MDX Query
-        :return: Generator of cell values
-        """
-        cellset_id = self.create_cellset(mdx=mdx)
-        try:
-            request = "/api/v1/Cellsets('{}')?$expand=Cells($select=Value)".format(cellset_id)
-            response = self._rest.GET(request=request, data='')
-            return (cell["Value"] for cell in response.json()["Cells"])
-        finally:
-            self.delete_cellset(cellset_id)
-
-    def execute_mdx_get_csv(self, mdx):
-        """ Optimized for performance. Get csv string of coordinates and values. 
-        Context dimensions are omitted !
-        Cells with Zero/null are omitted !
-        
-        :param mdx: Valid MDX Query 
-        :return: String
-        """
-        cellset_id = self.create_cellset(mdx)
-        try:
-            request = "/api/v1/Cellsets('{}')/Content".format(cellset_id)
-            data = self._rest.GET(request)
-            return data.text
-        finally:
-            self.delete_cellset(cellset_id)
-
-    def execute_mdx_get_dataframe(self, mdx):
-        """ Optimized for performance. Get Pandas DataFrame from MDX Query. 
-        Context dimensions are omitted in the resulting Dataframe !
-        Cells with Zero/null are omitted !
-
-        :param mdx: Valid MDX Query
-        :return: Pandas Dataframe
-        """
-        raw_csv = self.execute_mdx_get_csv(mdx)
-        memory_file = StringIO(raw_csv)
-        return pd.read_csv(memory_file, sep=',')
-
-    def execute_view(self, cube_name, view_name, cell_properties=None, private=True, top=None):
-        """ get view content as dictionary with sweet and concise structure.
-            Works on NativeView and MDXView !
-
-        :param cube_name: String
-        :param view_name: String
-        :param cell_properties: List, cell properties: [Values, Status, HasPicklist, etc.]
-        :param private: Boolean
-        :param top: Int, number of cells to return (counting from top)
-
-        :return: Dictionary : {([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }
-        """
-        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
-        try:
-            return self.execute_cellset(cellset_id=cellset_id, cell_properties=cell_properties, top=top)
-        finally:
-            self.delete_cellset(cellset_id=cellset_id)
-
-    def get_view_content(self, cube_name, view_name, cell_properties=None, private=True, top=None):
-        warnings.simplefilter('always', PendingDeprecationWarning)
-        warnings.warn(
-            "Function deprecated. Use execute_view instead.",
-            PendingDeprecationWarning
-        )
-        warnings.simplefilter('default', PendingDeprecationWarning)
-        return self.execute_view(cube_name, view_name, cell_properties, private, top)
-
-    def get_cellset_cells_count(self, mdx):
-        """ Execute MDX in order to understand how many cells are in a cellset
-
-        :param mdx: MDX Query, as string
-        :return: Number of Cells in the CellSet
-        """
-        cellset_id = self.create_cellset(mdx)
-        try:
-            request = "/api/v1/Cellsets(\'{}\')/Cells/$count".format(cellset_id)
-            response = self._rest.GET(request)
-            return int(response.content)
-        finally:
-            self.delete_cellset(cellset_id)
 
     def create_cellset(self, mdx):
         """ Execute MDX in order to create cellset at server. return the cellset-id
@@ -445,3 +581,26 @@ class CellService:
         for cube_name in args:
             updates[(cube_name, "Logging")] = "YES"
         return self.write_values(cube_name="}CubeProperties", cellset_as_dict=updates)
+
+    def get_cellset_cells_count(self, mdx):
+        """ Execute MDX in order to understand how many cells are in a cellset
+
+        :param mdx: MDX Query, as string
+        :return: Number of Cells in the CellSet
+        """
+        warnings.simplefilter('always', PendingDeprecationWarning)
+        warnings.warn(
+            "Function deprecated. Use execute_mdx_cellcount(self, mdx) instead.",
+            PendingDeprecationWarning
+        )
+        warnings.simplefilter('default', PendingDeprecationWarning)
+        return self.execute_mdx_cellcount(mdx)
+
+    def get_view_content(self, cube_name, view_name, cell_properties=None, private=True, top=None):
+        warnings.simplefilter('always', PendingDeprecationWarning)
+        warnings.warn(
+            "Function deprecated. Use execute_view instead.",
+            PendingDeprecationWarning
+        )
+        warnings.simplefilter('default', PendingDeprecationWarning)
+        return self.execute_view(cube_name, view_name, cell_properties, private, top)

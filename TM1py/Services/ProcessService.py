@@ -146,15 +146,26 @@ class ProcessService(ObjectService):
         syntax_errors = response.json()["value"]
         return syntax_errors
 
-    def execute(self, name_process, parameters=None):
-        """ Ask TM1 Server to execute a process
+    def execute(self, process_name, parameters=None, **kwargs):
+        """ Ask TM1 Server to execute a process. Call with parameter names as keyword arguments:
+        tm1.processes.execute("Bedrock.Server.Wait", pLegalEntity="UK01")
 
-        :param name_process:
-        :param parameters: dictionary, for instance {"Parameters": [ { "Name": "pLegalEntity", "Value": "UK01" }] }
+        :param process_name:
+        :param parameters: Deprecated! dictionary, for instance {"Parameters": [ { "Name": "pLegalEntity", "Value": "UK01" }] }
         :return:
         """
-        data = json.dumps(parameters, ensure_ascii=False) if parameters else ''
-        return self._rest.POST("/api/v1/Processes('" + name_process + "')/tm1.Execute", data=data)
+        if not parameters:
+            if kwargs:
+                parameters = {"Parameters": []}
+                for parameter_name, parameter_value in kwargs.items():
+                    print(parameter_name, parameter_value)
+                    parameters["Parameters"].append({"Name": parameter_name, "Value": parameter_value})
+            else:
+                parameters = {}
+
+        body = {"Process@odata.bind": "Processes('{}')".format(process_name),
+                **parameters}
+        return self._rest.POST("/api/v1/ExecuteProcess", data=json.dumps(body, ensure_ascii=False))
 
     def execute_ti_code(self, lines_prolog, lines_epilog=None):
         """ Execute lines of code on the TM1 Server

@@ -1,12 +1,14 @@
 import unittest
 import uuid
 import random
+import time
 import configparser
 import os
 
 from TM1py.Objects import Process
 from TM1py.Objects import Subset
 from TM1py.Services import TM1Service
+from TM1py.Utils import Utils
 
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
@@ -87,7 +89,28 @@ class TestProcessMethods(unittest.TestCase):
         self.tm1.processes.create(self.p_odbc)
         self.tm1.processes.create(self.p_subset)
 
-    def test2_compile_process(self):
+    def test2_execute_process(self):
+        process = Utils.load_bedrock_from_github("Bedrock.Server.Wait")
+        if not self.tm1.processes.exists(process.name):
+            self.tm1.processes.create(process)
+
+        # with parameters argument
+        start_time = time.time()
+        self.tm1.processes.execute("Bedrock.Server.Wait", parameters={"Parameters": [
+            {"Name": "pWaitSec", "Value": "3"}]})
+        elapsed_time = time.time() - start_time
+        self.assertGreater(elapsed_time, 3)
+
+        # with kwargs
+        start_time = time.time()
+        self.tm1.processes.execute("Bedrock.Server.Wait", pWaitSec="1")
+        elapsed_time = time.time() - start_time
+        self.assertGreater(elapsed_time, 1)
+
+        # without arguments
+        self.tm1.processes.execute("Bedrock.Server.Wait")
+
+    def test3_compile_process(self):
         p_good = Process(name=str(uuid.uuid4()),
                          prolog_procedure="nPro = DimSiz('}Processes');")
         p_bad = Process(name=str(uuid.uuid4()),
@@ -106,7 +129,7 @@ class TestProcessMethods(unittest.TestCase):
         self.tm1.processes.delete(p_bad.name)
 
     # Get Process
-    def test3_get_process(self):
+    def test4_get_process(self):
         p1 = self.tm1.processes.get(self.p_ascii.name)
         self.assertEqual(p1.body, self.p_ascii.body)
         p2 = self.tm1.processes.get(self.p_none.name)
@@ -121,7 +144,7 @@ class TestProcessMethods(unittest.TestCase):
         self.assertEqual(p5.body, self.p_subset.body)
 
     # Update process
-    def test4_update_process(self):
+    def test5_update_process(self):
         # get
         p = self.tm1.processes.get(self.p_ascii.name)
         # modify
@@ -134,7 +157,7 @@ class TestProcessMethods(unittest.TestCase):
         self.assertNotEqual(p_ascii_updated.data_procedure, self.p_ascii.data_procedure)
 
     # Delete process
-    def test5_delete_process(self):
+    def test6_delete_process(self):
         self.tm1.processes.delete(self.p_none.name)
         self.tm1.processes.delete(self.p_ascii.name)
         self.tm1.processes.delete(self.p_view.name)
