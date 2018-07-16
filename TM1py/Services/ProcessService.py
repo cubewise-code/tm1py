@@ -154,18 +154,15 @@ class ProcessService(ObjectService):
         :param parameters: Deprecated! dictionary, for instance {"Parameters": [ { "Name": "pLegalEntity", "Value": "UK01" }] }
         :return:
         """
+        request = "/api/v1/Processes('{}')/tm1.Execute".format(process_name)
         if not parameters:
             if kwargs:
                 parameters = {"Parameters": []}
                 for parameter_name, parameter_value in kwargs.items():
-                    print(parameter_name, parameter_value)
                     parameters["Parameters"].append({"Name": parameter_name, "Value": parameter_value})
             else:
                 parameters = {}
-
-        body = {"Process@odata.bind": "Processes('{}')".format(process_name),
-                **parameters}
-        return self._rest.POST("/api/v1/ExecuteProcess", data=json.dumps(body, ensure_ascii=False))
+        return self._rest.POST(request=request, data=json.dumps(parameters, ensure_ascii=False))
 
     def execute_ti_code(self, lines_prolog, lines_epilog=None):
         """ Execute lines of code on the TM1 Server
