@@ -467,7 +467,7 @@ class CellService:
 
         request = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
                   "Cube($select=Name;$expand=Dimensions($select=Name))," \
-                  "Axes($expand=Tuples($expand=Members($select=Name;$expand=Element{elem_properties}){top_rows}))," \
+                  "Axes($expand=Tuples($expand=Members($select=Name,UniqueName;$expand=Element{elem_properties}){top_rows}))," \
                   "Cells($select={cell_properties}{top_cells})" \
             .format(cellset_id=cellset_id,
                     top_rows=";$top={}".format(top) if top else "",
@@ -520,7 +520,7 @@ class CellService:
             cell_properties.append('Ordinal')
         request = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
                   "Cube($select=Name;$expand=Dimensions($select=Name))," \
-                  "Axes($expand=Tuples($expand=Members($select=Name;$expand=Element($select=UniqueName)){top_rows}))," \
+                  "Axes($expand=Tuples($expand=Members($select=Name,UniqueName;$expand=Element($select=UniqueName)){top_rows}))," \
                   "Cells($select={cell_properties}{top_cells})" \
             .format(cellset_id=cellset_id,
                     top_rows=";$top={}".format(top) if top else "",
