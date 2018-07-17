@@ -156,10 +156,10 @@ class RESTService:
         try:
             # ProductVersion >= TM1 10.2.2 FP 6
             self.POST('/api/v1/ActiveSession/tm1.Close', '')
-
         except TM1pyException:
             # ProductVersion < TM1 10.2.2 FP 6
             self.POST('/api/logout', '')
+        self._s.close()
 
     def _start_session(self):
         """ perform a simple GET request (Ask for the TM1 Version) to start a session

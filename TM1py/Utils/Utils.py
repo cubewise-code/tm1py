@@ -111,7 +111,7 @@ def build_content_from_cellset(raw_cellset_as_dict, cell_properties, top=None):
     return content_as_dict
 
 
-def build_arrays_from_cellset(raw_cellset_as_dict, value_precision=None):
+def build_ui_arrays_from_cellset(raw_cellset_as_dict, value_precision):
     """ Transform raw 1,2 or 3-dimension cellset data into concise dictionary
 
     * Useful for grids or charting libraries that want an array of cell values per row
@@ -169,10 +169,10 @@ def build_arrays_from_cellset(raw_cellset_as_dict, value_precision=None):
                 ordinal_cells += 1
             pages[yHeader] = row
         cells[zHeader] = pages
+    return {'titles': titles, 'headers': headers, 'cells': cells}
 
-    return {'titles':titles, 'headers':headers, 'cells':cells}
 
-def build_dygraph_arrays_from_cellset(raw_cellset_as_dict, value_precision=None):
+def build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict, value_precision=None):
     """ Transform raw 1,2 or 3-dimension cellset data into dygraph-friendly format
 
     * Useful for grids or charting libraries that want an array of cell values per column
