@@ -473,9 +473,7 @@ class CellService:
         :return: Raw format from TM1.
         """
         if not cell_properties:
-            cell_properties = ['Value', 'Ordinal']
-        elif 'Ordinal' not in cell_properties:
-            cell_properties.append('Ordinal')
+            cell_properties = ['Value']
 
         if not elem_properties:
             elem_properties = ['UniqueName']
@@ -537,9 +535,8 @@ class CellService:
         :return: Content in sweet consice strcuture.
         """
         if not cell_properties:
-            cell_properties = ['Value', 'Ordinal']
-        elif 'Ordinal' not in cell_properties:
-            cell_properties.append('Ordinal')
+            cell_properties = ['Value']
+
         raw_cellset = self.extract_cellset_raw(cellset_id, cell_properties=cell_properties, top=top)
         return Utils.build_content_from_cellset(raw_cellset_as_dict=raw_cellset,
                                                 cell_properties=cell_properties,

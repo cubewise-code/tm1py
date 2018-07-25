@@ -130,7 +130,7 @@ class TestDataMethods(unittest.TestCase):
               "WHERE([{}].DefaultMember)".format(dimension_names[1], "Calculated Member", dimension_names[0],
                                                  dimension_names[1], "Calculated Member", cube_name, dimension_names[2])
 
-        data = self.tm1.cubes.cells.execute_mdx(mdx)
+        data = self.tm1.cubes.cells.execute_mdx(mdx,cell_properties=["Value", "Ordinal"])
         self.assertEqual(1000, len(data))
         self.assertEqual(2000, sum(v["Value"] for v in data.values()))
         self.assertEqual(
