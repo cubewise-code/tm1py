@@ -145,7 +145,8 @@ class TestDataMethods(unittest.TestCase):
         raw = self.tm1.cubes.cells.execute_mdx_raw(
             mdx=mdx,
             cell_properties=["Value", "RuleDerived"],
-            elem_properties=["Name", "UniqueName", "Attributes/Attr1", "Attributes/Attr2"])
+            elem_properties=["Name", "UniqueName", "Attributes/Attr1", "Attributes/Attr2"],
+            member_properties=["Name", "Ordinal", "Weight"])
         cells = raw["Cells"]
         for cell in cells:
             self.assertIn("Value", cell)
@@ -159,6 +160,10 @@ class TestDataMethods(unittest.TestCase):
         for axis in axes:
             for tuple in axis["Tuples"]:
                 for member in tuple["Members"]:
+                    self.assertIn("Name", member)
+                    self.assertIn("Ordinal", member)
+                    self.assertIn("Weight", member)
+                    self.assertNotIn("Type", member)
                     element = member["Element"]
                     self.assertIn("Name", element)
                     self.assertIn("UniqueName", element)
@@ -408,7 +413,33 @@ class TestDataMethods(unittest.TestCase):
             private=False)
         self.assertGreater(cell_count, 1000)
 
-    def test16_write_values_through_cellset(self):
+    def test16_execute_mdx_ui_array(self):
+        mdx = "SELECT " \
+              "NON EMPTY [" + dimension_names[0] + "].Members * [" + dimension_names[1] + "].Members ON ROWS," \
+              "NON EMPTY [" + dimension_names[2] + "].MEMBERS ON COLUMNS " \
+              "FROM [" + cube_name + "]"
+        self.tm1.cubes.cells.execute_mdx_ui_array(mdx=mdx)
+
+    def test17_execute_view_ui_array(self):
+        self.tm1.cubes.cells.execute_view_ui_array(
+            cube_name=cube_name,
+            view_name=view_name,
+            private=False)
+
+    def test18_execute_mdx_ui_dygraph(self):
+        mdx = "SELECT " \
+              "NON EMPTY [" + dimension_names[0] + "].Members * [" + dimension_names[1] + "].Members ON ROWS," \
+              "NON EMPTY [" + dimension_names[2] + "].MEMBERS ON COLUMNS " \
+              "FROM [" + cube_name + "]"
+        self.tm1.cubes.cells.execute_mdx_ui_dygraph(mdx=mdx)
+
+    def test19_execute_view_ui_dygraph(self):
+        self.tm1.cubes.cells.execute_view_ui_dygraph(
+            cube_name=cube_name,
+            view_name=view_name,
+            private=False)
+
+    def test20_write_values_through_cellset(self):
         mdx_skeleton = "SELECT {} " \
                        "ON ROWS, {} " \
                        "ON COLUMNS " \
@@ -425,15 +456,17 @@ class TestDataMethods(unittest.TestCase):
         values = self.tm1.cubes.cells.execute_mdx_values(mdx)
         self.assertEqual(next(values), 1.5)
 
-    def test17_deactivate_transaction_log(self):
-        self.tm1.cubes.cells.write_value(value="YES", cube_name="}CubeProperties",
+    def test21_deactivate_transaction_log(self):
+        self.tm1.cubes.cells.write_value(value="YES",
+                                         cube_name="}CubeProperties",
                                          element_tuple=(cube_name, "Logging"))
         self.tm1.cubes.cells.deactivate_transactionlog(cube_name)
         value = self.tm1.cubes.cells.get_value("}CubeProperties", "{},LOGGING".format(cube_name))
         self.assertEqual("NO", value.upper())
 
-    def test18_activate_transaction_log(self):
-        self.tm1.cubes.cells.write_value(value="NO", cube_name="}CubeProperties",
+    def test22_activate_transaction_log(self):
+        self.tm1.cubes.cells.write_value(value="NO",
+                                         cube_name="}CubeProperties",
                                          element_tuple=(cube_name, "Logging"))
         self.tm1.cubes.cells.activate_transactionlog(cube_name)
         value = self.tm1.cubes.cells.get_value("}CubeProperties", "{},LOGGING".format(cube_name))

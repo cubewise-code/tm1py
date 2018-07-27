@@ -200,7 +200,7 @@ class CellService:
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
         return self.extract_cellset(cellset_id=cellset_id, cell_properties=cell_properties, top=top)
 
-    def execute_mdx_raw(self, mdx, cell_properties=None, elem_properties=None, top=None):
+    def execute_mdx_raw(self, mdx, cell_properties=None, elem_properties=None, member_properties=None, top=None):
         """ Execute MDX and return the raw data from TM1
 
         :param mdx: String, a valid MDX Query
@@ -213,9 +213,18 @@ class CellService:
         return self.extract_cellset_raw(cellset_id=cellset_id,
                                         cell_properties=cell_properties,
                                         elem_properties=elem_properties,
+                                        member_properties=member_properties,
                                         top=top)
 
-    def execute_view_raw(self, cube_name, view_name, private=True, cell_properties=None, elem_properties=None, top=None):
+    def execute_view_raw(
+            self,
+            cube_name,
+            view_name,
+            private=True,
+            cell_properties=None,
+            elem_properties=None,
+            member_properties=None,
+            top=None):
         """ Execute a cube view and return the raw data from TM1
 
         :param cube_name: String, name of the cube
@@ -230,6 +239,7 @@ class CellService:
         return self.extract_cellset_raw(cellset_id=cellset_id,
                                         cell_properties=cell_properties,
                                         elem_properties=elem_properties,
+                                        member_properties=member_properties,
                                         top=top)
 
     def execute_mdx_values(self, mdx):
@@ -333,7 +343,7 @@ class CellService:
         :return: dict : { titles: [], headers: [axis][], cells: { Page0: [  [column name, column values], [], ... ], ...} }
         """
         cellset_id = self.create_cellset(mdx)
-        data = self.extract_cellset_raw(cellset_id=cellset_id)
+        data = self.extract_cellset_raw(cellset_id=cellset_id, member_properties=["Name", "UniqueName"])
         return Utils.build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
 
     def execute_view_ui_dygraph(self, cube_name, view_name, private=True, value_precision=2):
@@ -370,7 +380,7 @@ class CellService:
         :return: 
         """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
-        data = self.extract_cellset_raw(cellset_id=cellset_id)
+        data = self.extract_cellset_raw(cellset_id=cellset_id, member_properties=["Name", "UniqueName"])
         return Utils.build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
 
     def execute_mdx_ui_array(self, mdx, value_precision=2):
@@ -405,7 +415,7 @@ class CellService:
         :return: dict : { titles: [], headers: [axis][], cells: { Page0: { Row0: { [row values], Row1: [], ...}, ...}, ...} }
         """
         cellset_id = self.create_cellset(mdx)
-        data = self.extract_cellset_raw(cellset_id=cellset_id)
+        data = self.extract_cellset_raw(cellset_id=cellset_id, member_properties=["Name", "UniqueName"])
         return Utils.build_ui_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
 
     def execute_view_ui_array(self, cube_name, view_name, private=True, value_precision=2):
@@ -442,16 +452,23 @@ class CellService:
         :return: dict : { titles: [], headers: [axis][], cells: { Page0: { Row0: { [row values], Row1: [], ...}, ...}, ...} }
         """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
-        data = self.extract_cellset_raw(cellset_id=cellset_id)
+        data = self.extract_cellset_raw(cellset_id=cellset_id, member_properties=["Name", "UniqueName"])
         return Utils.build_ui_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
 
     @tidy_cellset
-    def extract_cellset_raw(self, cellset_id, cell_properties=None, elem_properties=None, top=None):
+    def extract_cellset_raw(
+            self,
+            cellset_id,
+            cell_properties=None,
+            elem_properties=None,
+            member_properties=None,
+            top=None):
         """ Extract full Cellset data and return the raw data from TM1
         
         :param cellset_id: String; ID of existing cellset
         :param cell_properties: List of properties to be queried from the cell. E.g. ['Value', 'Ordinal', 'RuleDerived', ...]
         :param elem_properties: List of properties to be queried from the elements. E.g. ['UniqueName','Attributes', ...]
+        :param member_properties: List properties to be queried from the member. E.g. ['Name', 'UniqueName']
         :param top: Integer limiting the number of cells and the number or rows returned
         :return: Raw format from TM1.
         """
@@ -465,13 +482,19 @@ class CellService:
         elif 'UniqueName' not in elem_properties:
             elem_properties.append('UniqueName')
 
+        if not member_properties:
+            member_properties = ['UniqueName']
+        elif 'UniqueName' not in member_properties:
+            elem_properties.append('UniqueName')
+
         request = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
                   "Cube($select=Name;$expand=Dimensions($select=Name))," \
-                  "Axes($expand=Tuples($expand=Members($select=Name,UniqueName;$expand=Element{elem_properties}){top_rows}))," \
+                  "Axes($expand=Tuples($expand=Members($select={member_properties};$expand=Element{elem_properties}){top_rows}))," \
                   "Cells($select={cell_properties}{top_cells})" \
             .format(cellset_id=cellset_id,
                     top_rows=";$top={}".format(top) if top else "",
                     cell_properties=",".join(cell_properties),
+                    member_properties=",".join(member_properties),
                     elem_properties=("($select=" + ",".join(elem_properties) + ")") if len(elem_properties) > 0 else "",
                     top_cells=";$top={}".format(top) if top else "")
         response = self._rest.GET(request=request)
@@ -505,7 +528,6 @@ class CellService:
         data = self._rest.GET(request)
         return data.text
 
-    @tidy_cellset
     def extract_cellset(self, cellset_id, cell_properties=None, top=None):
         """ Execute Cellset and return the cells with their properties
         
@@ -518,16 +540,8 @@ class CellService:
             cell_properties = ['Value', 'Ordinal']
         elif 'Ordinal' not in cell_properties:
             cell_properties.append('Ordinal')
-        request = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
-                  "Cube($select=Name;$expand=Dimensions($select=Name))," \
-                  "Axes($expand=Tuples($expand=Members($select=Name,UniqueName;$expand=Element($select=UniqueName)){top_rows}))," \
-                  "Cells($select={cell_properties}{top_cells})" \
-            .format(cellset_id=cellset_id,
-                    top_rows=";$top={}".format(top) if top else "",
-                    cell_properties=",".join(cell_properties),
-                    top_cells=";$top={}".format(top) if top else "")
-        response = self._rest.GET(request=request)
-        return Utils.build_content_from_cellset(raw_cellset_as_dict=response.json(),
+        raw_cellset = self.extract_cellset_raw(cellset_id, cell_properties=cell_properties, top=top)
+        return Utils.build_content_from_cellset(raw_cellset_as_dict=raw_cellset,
                                                 cell_properties=cell_properties,
                                                 top=top)
 
