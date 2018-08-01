@@ -333,7 +333,7 @@ class CellService:
             self,
             mdx,
             elem_properties=None,
-            member_properties=["Name"],
+            member_properties=None,
             value_precision=2,
             top=None):
         """ Execute MDX get dygraph dictionary
@@ -372,7 +372,7 @@ class CellService:
             view_name,
             private=True,
             elem_properties=None,
-            member_properties=["Name"],
+            member_properties=None,
             value_precision=2,
             top=None):
         """ 
@@ -421,7 +421,7 @@ class CellService:
             self,
             mdx,
             elem_properties=None,
-            member_properties=["Name"],
+            member_properties=None,
             value_precision=2,
             top=None):
         """
@@ -470,7 +470,7 @@ class CellService:
             view_name,
             private=True,
             elem_properties=None,
-            member_properties=["Name"],
+            member_properties=None,
             value_precision=2,
             top=None):
         """
