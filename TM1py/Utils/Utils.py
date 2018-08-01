@@ -50,11 +50,10 @@ def sort_addresstuple(cube_dimensions, unsorted_addresstuple):
     return tuple(sorted_addresstupple)
 
 
-def build_content_from_cellset(raw_cellset_as_dict, cell_properties, top=None):
+def build_content_from_cellset(raw_cellset_as_dict, top=None):
     """ transform raw cellset data into concise dictionary
 
     :param raw_cellset_as_dict:
-    :param cell_properties:
     :param top: Maximum Number of cells
     :return:
     """
@@ -97,10 +96,7 @@ def build_content_from_cellset(raw_cellset_as_dict, cell_properties, top=None):
             coordinates = elements_on_axe0 + elements_on_axe2 + elements_on_axe1
             coordinates_sorted = sort_addresstuple(cube_dimensions, coordinates)
             # get cell properties
-            content_as_dict[coordinates_sorted] = {}
-            for cell_property in cell_properties:
-                value = raw_cellset_as_dict['Cells'][ordinal_cells][cell_property]
-                content_as_dict[coordinates_sorted][cell_property] = value
+            content_as_dict[coordinates_sorted] = raw_cellset_as_dict['Cells'][ordinal_cells]
             ordinal_axe0 += 1
             ordinal_cells += 1
             if top is not None and ordinal_cells >= top:
@@ -248,15 +244,8 @@ def build_headers_from_cellset(raw_cellset_as_dict, force_header_dimensionality=
         members = []
         for tindex in range(cardinality[axis]):
             tuples_as_dict = raw_cellset_as_dict['Axes'][axis]['Tuples'][tindex]['Members']
-            members_on_row = [
-                { k:v for (k,v) in zip(['Name']+list(member['Element'].keys()),[member['Name']]+list(member['Element'].values())) }
-                for member in tuples_as_dict]
-            if len(members_on_row) == 1:
-                name = members_on_row[0]['Name']
-            else:
-                name = ' / '.join(tuple(member['Name'] for member in members_on_row))
-
-            members.append({'name': name, 'members':members_on_row})
+            name = ' / '.join(tuple(member['Name'] for member in tuples_as_dict))
+            members.append({'name': name, 'members':tuples_as_dict})
 
         if (axis == dimensionality -1 and cardinality[axis] == 1):
             titles = members
