@@ -5,14 +5,15 @@ import os
 
 import pandas as pd
 
+from TM1py import Subset
 from TM1py.Utils import TIObfuscator
 from TM1py.Services import TM1Service
 from TM1py.Objects import Process, Dimension, Hierarchy, Cube
 from TM1py.Utils import Utils, MDXUtils
+from TM1py.Utils.MDXUtils import DimensionSelection
 
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
-
 
 
 class TestMDXUtils(unittest.TestCase):
@@ -59,6 +60,14 @@ class TestMDXUtils(unittest.TestCase):
         d.add_hierarchy(h)
         cls.tm1.dimensions.create(d)
 
+        # Build Subset
+        cls.dim4_subset_Name = "TM1pyTests"
+        cls.dim4_subset = cls.tm1.dimensions.subsets.create(Subset(
+            subset_name=cls.dim4_subset_Name,
+            dimension_name=cls.dim4_name,
+            hierarchy_name=cls.dim4_name,
+            expression="HEAD([{}].Members, 1)".format(cls.dim4_name)))
+
         # Build Cube with 4 Dimensions
         cls.cube_name = str(uuid.uuid4())
         cube = Cube(name=cls.cube_name,
@@ -66,25 +75,128 @@ class TestMDXUtils(unittest.TestCase):
         cls.tm1.cubes.create(cube)
 
     def test_construct_mdx(self):
-        rows = {self.dim1_name: None, self.dim2_name: self.dim2_element_names}
-        columns = {self.dim3_name: "{{TM1SubsetAll([{}])}}".format(self.dim3_name)}
+        rows = [DimensionSelection(dimension_name=self.dim1_name),
+                DimensionSelection(dimension_name=self.dim2_name, elements=self.dim2_element_names)]
+        columns = [DimensionSelection(
+            dimension_name=self.dim3_name,
+            expression="TM1SubsetAll([{}])".format(self.dim3_name))]
         contexts = {self.dim4_name: self.dim4_element_names[0]}
-        suppress = None
-
-        mdx = MDXUtils.construct_mdx(cube_name=self.cube_name, rows=rows, columns=columns,
-                                     contexts=contexts, suppress=suppress)
+        mdx = MDXUtils.construct_mdx(
+            cube_name=self.cube_name,
+            rows=rows,
+            columns=columns,
+            contexts=contexts,
+            suppress=None)
         content = self.tm1.cubes.cells.execute_mdx(mdx)
         number_cells = len(content.keys())
         self.assertEqual(number_cells, 1000)
 
-    def test_cellset_and_pandas_df(self):
-        rows = {self.dim1_name: None, self.dim2_name: self.dim2_element_names}
-        columns = {self.dim3_name: "{{TM1SubsetAll([{}])}}".format(self.dim3_name)}
-        contexts = {self.dim4_name: self.dim4_element_names[0]}
-        suppress = None
-        mdx = MDXUtils.construct_mdx(cube_name=self.cube_name, rows=rows, columns=columns,
-                                     contexts=contexts, suppress=suppress)
+    def test_construct_mdx_no_titles(self):
+        rows = [DimensionSelection(dimension_name=self.dim1_name),
+                DimensionSelection(dimension_name=self.dim2_name, elements=self.dim2_element_names)]
+        columns = [
+            DimensionSelection(
+                dimension_name=self.dim3_name,
+                expression="TM1SubsetAll([{}])".format(self.dim3_name)),
+            DimensionSelection(
+                dimension_name=self.dim4_name,
+                subset=self.dim4_subset_Name)]
+        mdx = MDXUtils.construct_mdx(
+            cube_name=self.cube_name,
+            rows=rows,
+            columns=columns,
+            suppress=None)
+        content = self.tm1.cubes.cells.execute_mdx(mdx)
+        number_cells = len(content.keys())
+        self.assertEqual(number_cells, 1000)
 
+    def test_construct_mdx_suppress_zeroes(self):
+        rows = [DimensionSelection(dimension_name=self.dim1_name),
+                DimensionSelection(dimension_name=self.dim2_name, elements=self.dim2_element_names)]
+        columns = [
+            DimensionSelection(
+                dimension_name=self.dim3_name,
+                expression="TM1SubsetAll([{}])".format(self.dim3_name)),
+            DimensionSelection(
+                dimension_name=self.dim4_name,
+                subset=self.dim4_subset_Name)]
+        mdx = MDXUtils.construct_mdx(
+            cube_name=self.cube_name,
+            rows=rows,
+            columns=columns,
+            suppress="BOTH")
+        content = self.tm1.cubes.cells.execute_mdx(mdx)
+        number_cells = len(content.keys())
+        self.assertLess(number_cells, 1000)
+
+    def test_determine_selection_type(self):
+        self.assertEqual(
+            DimensionSelection.determine_selection_type(elements=["e1", "e2"], subset=None, expression=None),
+            DimensionSelection.ITERABLE)
+        self.assertEqual(
+            DimensionSelection.determine_selection_type(["e1", "e2"]),
+            DimensionSelection.ITERABLE)
+        self.assertEqual(
+            DimensionSelection.determine_selection_type(elements=None, subset="something", expression=None),
+            DimensionSelection.SUBSET)
+        self.assertEqual(
+            DimensionSelection.determine_selection_type(None, "something", None),
+            DimensionSelection.SUBSET)
+        self.assertEqual(
+            DimensionSelection.determine_selection_type(elements=None, subset=None, expression="{[d1].[e1]}"),
+            DimensionSelection.EXPRESSION)
+        self.assertEqual(
+            DimensionSelection.determine_selection_type(None, None, "{[d1].[e1]}"),
+            DimensionSelection.EXPRESSION)
+        self.assertEqual(
+            DimensionSelection.determine_selection_type(elements=None, subset=None, expression=None),
+            None)
+        self.assertEqual(
+            DimensionSelection.determine_selection_type(None, None, None),
+            None)
+        self.assertEqual(
+            DimensionSelection.determine_selection_type(),
+            None)
+        self.assertRaises(
+            ValueError,
+            DimensionSelection.determine_selection_type, ["e2"], "subset1", "{[d1].[e1]}")
+        self.assertRaises(
+            ValueError,
+            DimensionSelection.determine_selection_type, ["e2"], "subset1")
+        self.assertRaises(
+            ValueError,
+            DimensionSelection.determine_selection_type, ["e2"], None, "subset1")
+
+    def test_curly_braces(self):
+        self.assertEqual(
+            MDXUtils.curly_braces("something"),
+            "{something}")
+        self.assertEqual(
+            MDXUtils.curly_braces("something}"),
+            "{something}")
+        self.assertEqual(
+            MDXUtils.curly_braces("{something"),
+            "{something}")
+        self.assertEqual(
+            MDXUtils.curly_braces("{something}"),
+            "{something}")
+
+    def test_cellset_and_pandas_df(self):
+        rows = [DimensionSelection(dimension_name=self.dim1_name),
+                DimensionSelection(dimension_name=self.dim2_name, elements=self.dim2_element_names)]
+        columns = [
+            DimensionSelection(
+                dimension_name=self.dim3_name,
+                expression="TM1SubsetAll([{}])".format(self.dim3_name)),
+            DimensionSelection(
+                dimension_name=self.dim4_name,
+                subset=self.dim4_subset_Name)]
+        suppress = None
+        mdx = MDXUtils.construct_mdx(
+            cube_name=self.cube_name,
+            rows=rows,
+            columns=columns,
+            suppress=suppress)
         cellset = self.tm1.cubes.cells.execute_mdx(mdx)
         df = Utils.build_pandas_dataframe_from_cellset(cellset, multiindex=True)
         self.assertIsInstance(df, pd.DataFrame)
@@ -290,6 +402,7 @@ class TestTIObfuscatorMethods(unittest.TestCase):
         cls.tm1.cubes.delete(cls.cube_name_cloned)
 
         cls.tm1.logout()
+
 
 if __name__ == '__main__':
     unittest.main()
