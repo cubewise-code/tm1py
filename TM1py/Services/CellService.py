@@ -535,15 +535,26 @@ class CellService:
         if not cell_properties:
             cell_properties = ['Value']
 
+        # select Name property if member_properties is None or empty.
+        # Necessary, as tm1 default behaviour is to return all properties if no $select is specified in the request.
+        if member_properties is None or len(member_properties) == 0:
+            member_properties = ["Name"]
+        select_member_properties = "$select={}".format(",".join(member_properties))
+
+        expand_elem_properties = ";$expand=Element($select={elem_properties})".format(
+            elem_properties=",".join(elem_properties)) \
+            if elem_properties is not None and len(elem_properties) > 0 \
+            else ""
+
         request = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
                   "Cube($select=Name;$expand=Dimensions($select=Name))," \
-                  "Axes($expand=Tuples($expand=Members($select={member_properties}{elem_properties}){top_rows}))," \
+                  "Axes($expand=Tuples($expand=Members({select_member_properties}{expand_elem_properties}){top_rows}))," \
                   "Cells($select={cell_properties}{top_cells})" \
             .format(cellset_id=cellset_id,
                     top_rows=";$top={}".format(top) if top else "",
                     cell_properties=",".join(cell_properties),
-                    member_properties=",".join(member_properties),
-                    elem_properties=(";$expand=Element($select=" + ",".join(elem_properties) + ")") if len(elem_properties or []) > 0 else "",
+                    select_member_properties=select_member_properties,
+                    expand_elem_properties=expand_elem_properties,
                     top_cells=";$top={}".format(top) if top else "")
         response = self._rest.GET(request=request)
         return response.json()
