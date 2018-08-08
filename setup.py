@@ -1,12 +1,10 @@
 import codecs
-import os
-import sys
+
 from setuptools import setup
 
-
-SCHEDULE_VERSION = '1.0.3'
+SCHEDULE_VERSION = '1.1.0'
 SCHEDULE_DOWNLOAD_URL = (
-    'https://github.com/Cubewise-code/TM1py/tarball/' + SCHEDULE_VERSION
+        'https://github.com/Cubewise-code/TM1py/tarball/' + SCHEDULE_VERSION
 )
 
 
@@ -16,6 +14,7 @@ def read_file(filename):
     """
     with codecs.open(filename, 'r', 'utf8') as f:
         return f.read()
+
 
 setup(
     name='TM1py',
