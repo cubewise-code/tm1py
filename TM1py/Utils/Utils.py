@@ -39,25 +39,6 @@ def case_and_space_insensitive_equals(item1, item2):
     return lower_and_drop_spaces(item1) == lower_and_drop_spaces(item2)
 
 
-def sort_addresstuple(cube_dimensions, unsorted_addresstuple):
-    """ Sort the given mixed up addresstuple
-
-    :param cube_dimensions: list of dimension names in correct order
-    :param unsorted_addresstuple: list of Strings - ['[dim2].[elem4]','[dim1].[elem2]',...]
-
-    :return:
-        Tuple: ('[dim1].[elem2]','[dim2].[elem4]',...)
-    """
-    sorted_addresstupple = []
-    for dimension in cube_dimensions:
-        # could be more than one hierarchy!
-        address_elements = [item for item in unsorted_addresstuple if item.startswith('[' + dimension + '].')]
-        # address_elements could be ( [dim1].[hier1].[elem1], [dim1].[hier2].[elem3] )
-        for address_element in address_elements:
-            sorted_addresstupple.append(address_element)
-    return tuple(sorted_addresstupple)
-
-
 def build_content_from_cellset(raw_cellset_as_dict, top=None):
     """ transform raw cellset data into concise dictionary
 
