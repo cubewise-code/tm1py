@@ -1,9 +1,8 @@
 import collections
 import json
-import re
 import sys
 import warnings
-from math import floor
+from re import match
 
 import pandas as pd
 
@@ -58,23 +57,22 @@ def build_content_from_cellset(raw_cellset_as_dict, top=None):
     primary_axis = axes[0]
     extra_axes = axes[1:] if len(axes) > 1 else []
 
-    def get_coordinates(members):
+    def get_coords(members):
         return [m['Element']['UniqueName'] if 'Element' in m else m['UniqueName']
                 for m in members]
 
     for cell in cells[:top or len(cells)]:
         coordinates = []
         index = cell['Ordinal'] % primary_axis['Cardinality']
-        primary_members = primary_axis['Tuples'][index]['Members']
 
-        coordinates.extend(get_coordinates(primary_members))
+        coordinates.extend(get_coords(primary_axis['Tuples'][index]['Members']))
 
         for axis in extra_axes:
-            index = floor((cell['Ordinal'] / len(cells)) * axis['Cardinality'])
-            coordinates.extend(get_coordinates(axis['Tuples'][index]['Members']))
+            index = cell['Ordinal'] // len(cells) * axis['Cardinality']
+            coordinates.extend(get_coords(axis['Tuples'][index]['Members']))
 
         coordinates = tuple(sorted(coordinates, key=lambda ele:
-        cube_dimensions[re.match(pattern, ele).group(2)]))
+        cube_dimensions[match(pattern, ele).group(2)]))
 
         content_as_dict[coordinates] = cell
 
