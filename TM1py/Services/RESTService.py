@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
-from TM1py.Exceptions import TM1pyException
-
 import functools
-import requests
 import sys
 from base64 import b64encode
+
+import requests
+
+from TM1py.Exceptions import TM1pyException
+
 # import Http-Client depending on pyhton version
 if sys.version[0] == '2':
     import httplib as http_client
@@ -17,7 +19,7 @@ def httpmethod(func):
 
         Takes care of:
         - encoding of url and payload
-        - verfiying response. Throws TM1pyException if StatusCode of Response is not OK
+        - verifying response. Throws TM1pyException if StatusCode of Response is not OK
     """
 
     @functools.wraps(func)
@@ -29,6 +31,7 @@ def httpmethod(func):
         # Verify
         self.verify_response(response=response)
         return response
+
     return wrapper
 
 
@@ -54,7 +57,8 @@ class RESTService:
     HEADERS = {'Connection': 'keep-alive',
                'User-Agent': 'TM1py',
                'Content-Type': 'application/json; odata.streaming=true; charset=utf-8',
-               'Accept': 'application/json;odata.metadata=none,text/plain'}
+               'Accept': 'application/json;odata.metadata=none,text/plain',
+               'TM1-SessionContext': 'TM1py'}
 
     def __init__(self, **kwargs):
         """ Create an instance of RESTService
@@ -67,6 +71,8 @@ class RESTService:
         :param namespace String - optional CAM namespace
         :param ssl: boolean -  as specified in the tm1s.cfg
         :param session_id: String - TM1SessionId e.g. q7O6e1w49AixeuLVxJ1GZg
+        :param session_context: String - Name of the Application. Controls "Context" column in Arc / TM1top.
+        If None, use default: TM1py
         :param logging: boolean - switch on/off verbose http logging into sys.stdout
         """
         self._ssl = kwargs['ssl'].upper() == "TRUE" if isinstance(kwargs['ssl'], str) else kwargs['ssl']
@@ -82,6 +88,8 @@ class RESTService:
                 self._port)
         self._version = None
         self._headers = self.HEADERS.copy()
+        if "session_context" in kwargs:
+            self._headers["TM1-SessionContext"] = kwargs["session_context"]
         self.disable_http_warnings()
         # re-use or create tm1 http session
         self._s = requests.session()
