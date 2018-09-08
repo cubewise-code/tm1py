@@ -155,10 +155,10 @@ def build_ui_arrays_from_cellset(raw_cellset_as_dict, value_precision):
     cells = {}
     ordinal_cells = 0
     for z in range(cardinality[2]):
-        zHeader = headers[2][z]['name']
+        z_header = headers[2][z]['name']
         pages = {}
         for y in range(cardinality[1]):
-            yHeader = headers[1][y]['name']
+            y_header = headers[1][y]['name']
             row = []
             for x in range(cardinality[0]):
                 raw_value = raw_cellset_as_dict['Cells'][ordinal_cells]['Value'] or 0
@@ -167,8 +167,8 @@ def build_ui_arrays_from_cellset(raw_cellset_as_dict, value_precision):
                 else:
                     row.append(raw_value)
                 ordinal_cells += 1
-            pages[yHeader] = row
-        cells[zHeader] = pages
+            pages[y_header] = row
+        cells[z_header] = pages
     return {'titles': titles, 'headers': headers, 'cells': cells}
 
 
@@ -220,7 +220,8 @@ def build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict, value_precision=No
             page.append(row)
         cells[zHeader] = page
 
-    return {'titles':titles, 'headers':headers, 'cells':cells}
+    return {'titles': titles, 'headers': headers, 'cells': cells}
+
 
 def build_headers_from_cellset(raw_cellset_as_dict, force_header_dimensionality=1):
     """ Extract dimension headers from cellset into dictionary of titles (slicers) and headers (row,column,page)
@@ -246,38 +247,37 @@ def build_headers_from_cellset(raw_cellset_as_dict, force_header_dimensionality=
     headers = []
     for axis in range(dimensionality):
         members = []
-        for tindex in range(cardinality[axis]):
-            tuples_as_dict = raw_cellset_as_dict['Axes'][axis]['Tuples'][tindex]['Members']
+        for t_index in range(cardinality[axis]):
+            tuples_as_dict = raw_cellset_as_dict['Axes'][axis]['Tuples'][t_index]['Members']
             members_on_row = [
-                { k:v for (k,v) in zip(['Name']+list(member['Element'].keys()),[member['Name']]+list(member['Element'].values())) }
+                {k: v for (k, v) in zip(
+                    ['Name'] + list(member['Element'].keys()),
+                    [member['Name']] + list(member['Element'].values()))}
                 for member in tuples_as_dict]
             if len(members_on_row) == 1:
                 name = members_on_row[0]['Name']
             else:
                 name = ' / '.join(tuple(member['Name'] for member in members_on_row))
-
             members.append({'name': name, 'members':members_on_row})
-
-        if (axis == dimensionality -1 and cardinality[axis] == 1):
+        if axis == dimensionality - 1 and cardinality[axis] == 1:
             titles = members
         else:
             headers.append(members)
-
 
     dimensionality = len(headers)
     cardinality = [len(headers[axis]) for axis in range(dimensionality)]
 
     # Handle 1, 2 and 3-dimensional cellsets. Use dummy row/page headers when missing
     if dimensionality == 1 and force_header_dimensionality > 1:
-        headers += [[{'name':'Row'}]]
-        cardinality.insert(1,1)
+        headers += [[{'name': 'Row'}]]
+        cardinality.insert(1, 1)
         dimensionality += 1
     if dimensionality == 2 and force_header_dimensionality > 2:
-        headers += [[{'name':'Page'}]]
-        cardinality.insert(2,1)
+        headers += [[{'name': 'Page'}]]
+        cardinality.insert(2, 1)
         dimensionality += 1
 
-    return {'titles':titles, 'headers':headers, 'dimensionality':dimensionality, 'cardinality':cardinality}
+    return {'titles': titles, 'headers': headers, 'dimensionality': dimensionality, 'cardinality': cardinality}
 
 
 def element_names_from_element_unqiue_names(element_unique_names):

@@ -1,12 +1,12 @@
-import os
+import configparser
 import json
+import os
 import random
 import string
 import unittest
-import configparser
 
-from TM1py.Services import TM1Service
 from TM1py.Objects import Annotation
+from TM1py.Services import TM1Service
 
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
@@ -44,7 +44,7 @@ class TestAnnotationMethods(unittest.TestCase):
     def test3_update_annotation(self):
         annotations = self.tm1.cubes.annotations.get_all(self.cube_name)
         for a in annotations:
-            # Get the anntoation that was created in test1
+            # Get the annotation that was created in test1
             if a.dimensional_context == self.random_intersection and a.comment_value == self.random_text:
                 # Update Value and Coordinates
                 new_random_text = "".join([random.choice(string.printable) for _ in range(100)])
@@ -72,6 +72,7 @@ class TestAnnotationMethods(unittest.TestCase):
 
         self.assertEqual(number_annotations_at_start, number_annotations_at_end + 1)
         self.tm1.logout()
+
 
 if __name__ == '__main__':
     unittest.main()

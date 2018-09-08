@@ -111,5 +111,6 @@ class TestSecurityMethods(unittest.TestCase):
         cls.tm1.processes.execute_ti_code([code])
         cls.tm1.logout()
 
+
 if __name__ == '__main__':
     unittest.main()

@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import collections
-import json
 import random
 
 from TM1py.Objects.Cube import Cube
-from TM1py.Services.ObjectService import ObjectService
-from TM1py.Utils import Utils
-from TM1py.Services.ViewService import ViewService
 from TM1py.Services.CellService import CellService
+from TM1py.Services.ObjectService import ObjectService
+from TM1py.Services.ViewService import ViewService
 
 
 class CubeService(ObjectService):

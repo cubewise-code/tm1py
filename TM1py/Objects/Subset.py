@@ -94,7 +94,7 @@ class Subset(TM1Object):
 
     @classmethod
     def from_dict(cls, subset_as_dict):
-        return cls(dimension_name= subset_as_dict["UniqueName"][1:subset_as_dict["UniqueName"].find('].[')],
+        return cls(dimension_name=subset_as_dict["UniqueName"][1:subset_as_dict["UniqueName"].find('].[')],
                    hierarchy_name=subset_as_dict["Hierarchy"]["Name"],
                    subset_name=subset_as_dict['Name'],
                    alias=subset_as_dict['Alias'],
@@ -142,10 +142,11 @@ class Subset(TM1Object):
         body_as_dict['Hierarchy@odata.bind'] = 'Dimensions(\'{}\')/Hierarchies(\'{}\')'\
             .format(self._dimension_name, self.hierarchy_name)
         if self.elements and len(self.elements) > 0:
-            body_as_dict['Elements@odata.bind'] = ['Dimensions(\'{}\')/Hierarchies(\'{}\')/Elements(\'{}\')'
-                 .format(self.dimension_name, self.hierarchy_name, element.replace('\'', '\'\''))
-                                                   for element
-                                                   in self.elements]
+            body_as_dict['Elements@odata.bind'] = \
+                ['Dimensions(\'{}\')/Hierarchies(\'{}\')/Elements(\'{}\')'.format(
+                    self.dimension_name, self.hierarchy_name, element.replace('\'', '\'\''))
+                    for element
+                    in self.elements]
         return body_as_dict
 
 
@@ -199,8 +200,8 @@ class AnonymousSubset(Subset):
         body_as_dict = collections.OrderedDict()
         body_as_dict['Hierarchy@odata.bind'] = 'Dimensions(\'{}\')/Hierarchies(\'{}\')'\
             .format(self._dimension_name, self.hierarchy_name)
-        body_as_dict['Elements@odata.bind'] = ['Dimensions(\'{}\')/Hierarchies(\'{}\')/Elements(\'{}\')'
-                                                   .format(self.dimension_name, self.hierarchy_name, element.replace('\'', '\'\''))
-                                               for element
-                                               in self.elements]
+        body_as_dict['Elements@odata.bind'] = ['Dimensions(\'{}\')/Hierarchies(\'{}\')/Elements(\'{}\')'.format(
+                self.dimension_name,
+                self.hierarchy_name,
+                element.replace('\'', '\'\'')) for element in self.elements]
         return body_as_dict

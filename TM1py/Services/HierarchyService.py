@@ -38,7 +38,8 @@ class HierarchyService(ObjectService):
         :param hierarchy_name: name of the hierarchy
         :return:
         """
-        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')?$expand=Edges,Elements,ElementAttributes,Subsets,DefaultMember'\
+        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')?$expand=" \
+                  "Edges,Elements,ElementAttributes,Subsets,DefaultMember"\
             .format(dimension_name, hierarchy_name)
         response = self._rest.GET(request, '')
         return Hierarchy.from_dict(response.json())
@@ -106,7 +107,6 @@ class HierarchyService(ObjectService):
         return {hierarchy_property: hierary_summary_raw[hierarchy_property + "@odata.count"]
                 for hierarchy_property
                 in hierarchy_properties}
-
 
     def _update_element_attributes(self, hierarchy):
         """ Update the elementattributes of a hierarchy

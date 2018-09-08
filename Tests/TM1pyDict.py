@@ -46,7 +46,6 @@ class TestTM1pyDictMethods(unittest.TestCase):
     def tearDownClass(cls):
         cls.tm1.logout()
 
+
 if __name__ == '__main__':
     unittest.main()
-
-

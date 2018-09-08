@@ -184,7 +184,8 @@ class TestViewMethods(unittest.TestCase):
                   "NON EMPTY{{ [{}].Members }} ON 0," \
                   "NON EMPTY {{ [{}].Members }} ON 1 " \
                   "FROM [{}] " \
-                  "WHERE ([{}].[Element172])".format(dimension_names[0], dimension_names[1], cube_name, dimension_names[2])
+                  "WHERE ([{}].[Element172])".format(dimension_names[0], dimension_names[1],
+                                                     cube_name, dimension_names[2])
             mdx_view_original.MDX = mdx
             # Update mdx view on Server
             self.tm1.cubes.views.update(mdx_view_original, private=private)

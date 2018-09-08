@@ -4,7 +4,6 @@ import collections
 import json
 
 from TM1py.Objects.Subset import Subset, AnonymousSubset
-
 from TM1py.Objects.TM1Object import TM1Object
 
 
@@ -12,6 +11,7 @@ class ViewAxisSelection(TM1Object):
     """ Describes what is selected in a dimension on an axis. Can be a Registered Subset or an Anonymous Subset
 
     """
+
     def __init__(self, dimension_name, subset):
         """
             :Parameters:
@@ -21,6 +21,18 @@ class ViewAxisSelection(TM1Object):
         self._subset = subset
         self._dimension_name = dimension_name
         self._hierarchy_name = dimension_name
+
+    @property
+    def subset(self):
+        return self._subset
+
+    @property
+    def dimension_name(self):
+        return self._dimension_name
+
+    @property
+    def hierarchy_name(self):
+        return self._hierarchy_name
 
     @property
     def body(self):
@@ -50,11 +62,28 @@ class ViewTitleSelection:
         Can be a Registered Subset or an Anonymous Subset
 
     """
+
     def __init__(self, dimension_name, subset, selected):
         self._dimension_name = dimension_name
         self._hierarchy_name = dimension_name
         self._subset = subset
         self._selected = selected
+
+    @property
+    def subset(self):
+        return self._subset
+
+    @property
+    def dimension_name(self):
+        return self._dimension_name
+
+    @property
+    def hierarchy_name(self):
+        return self._hierarchy_name
+
+    @property
+    def selected(self):
+        return self._selected
 
     @property
     def body(self):

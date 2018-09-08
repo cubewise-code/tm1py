@@ -1,9 +1,9 @@
-import random
+import configparser
 import os
+import random
+import types
 import unittest
 import uuid
-import types
-import configparser
 
 import pandas as pd
 
@@ -130,7 +130,7 @@ class TestDataMethods(unittest.TestCase):
               "WHERE([{}].DefaultMember)".format(dimension_names[1], "Calculated Member", dimension_names[0],
                                                  dimension_names[1], "Calculated Member", cube_name, dimension_names[2])
 
-        data = self.tm1.cubes.cells.execute_mdx(mdx,cell_properties=["Value", "Ordinal"])
+        data = self.tm1.cubes.cells.execute_mdx(mdx, cell_properties=["Value", "Ordinal"])
         self.assertEqual(1000, len(data))
         self.assertEqual(2000, sum(v["Value"] for v in data.values()))
         self.assertEqual(
@@ -236,17 +236,21 @@ class TestDataMethods(unittest.TestCase):
             sum(values))
 
         # MDX Query with calculated MEMBER
-        mdx = "WITH MEMBER[{dim1}].[{calculated_member}] AS [{attribute_cube}].({attribute}) " \
-              "SELECT[{dim0}].MEMBERS ON ROWS, " \
-              "{{[{dim1}].[{calculated_member}]}} ON COLUMNS " \
-              "FROM[{cube_name}] " \
-              "WHERE([{dim2}].DefaultMember)".format(cube_name=cube_name,
-                                                     dim0=dimension_names[0],
-                                                     dim1=dimension_names[1],
-                                                     dim2=dimension_names[2],
-                                                     calculated_member="Calculated Member",
-                                                     attribute_cube="}ElementAttributes_" + dimension_names[0],
-                                                     attribute="[}ElementAttributes_" + dimension_names[0] + "].[Attr3]")
+        mdx_template = """
+        WITH MEMBER[{dim1}].[{calculated_member}] AS [{attribute_cube}].({attribute})
+        SELECT[{dim0}].MEMBERS ON ROWS, 
+        {{[{dim1}].[{calculated_member}]}} ON COLUMNS 
+        FROM[{cube_name}] 
+        WHERE([{dim2}].DefaultMember)
+        """
+        mdx = mdx_template.format(
+            cube_name=cube_name,
+            dim0=dimension_names[0],
+            dim1=dimension_names[1],
+            dim2=dimension_names[2],
+            calculated_member="Calculated Member",
+            attribute_cube="}ElementAttributes_" + dimension_names[0],
+            attribute="[}ElementAttributes_" + dimension_names[0] + "].[Attr3]")
         csv = self.tm1.cubes.cells.execute_mdx_csv(mdx)
 
         # check type

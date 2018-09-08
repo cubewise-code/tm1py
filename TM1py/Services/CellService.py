@@ -204,8 +204,9 @@ class CellService:
         """ Execute MDX and return the raw data from TM1
 
         :param mdx: String, a valid MDX Query
-        :param cell_properties: List of properties to be queried from the cell. E.g. ['Value', 'Ordinal', 'RuleDerived', ...]
-        :param elem_properties: List of properties to be queried from the elements. E.g. ['UniqueName','Attributes', ...]
+        :param cell_properties: List of properties to be queried from cell. E.g. ['Value', 'RuleDerived', ...]
+        :param elem_properties: List of properties to be queried from elements. E.g. ['UniqueName','Attributes', ...]
+        :param member_properties: List of properties to be queried from member
         :param top: Integer limiting the number of cells and the number or rows returned
         :return: Raw format from TM1.
         """
@@ -230,8 +231,9 @@ class CellService:
         :param cube_name: String, name of the cube
         :param view_name: String, name of the view
         :param private: True (private) or False (public)
-        :param cell_properties: List of properties to be queried from the cell. E.g. ['Value', 'Ordinal', 'RuleDerived', ...]
-        :param elem_properties: List of properties to be queried from the elements. E.g. ['UniqueName','Attributes', ...]
+        :param cell_properties: List of properties to be queried from cells. E.g. ['Value', , 'RuleDerived', ...]
+        :param elem_properties: List of properties to be queried from elements. E.g. ['UniqueName','Attributes', ...]
+        :param member_properties: List of properties to be queried from the members. E.g. ['Name', 'Type', ...]
         :param top: Integer limiting the number of cells and the number or rows returned
         :return: Raw format from TM1.
         """
@@ -466,8 +468,8 @@ class CellService:
         """ Extract full Cellset data and return the raw data from TM1
         
         :param cellset_id: String; ID of existing cellset
-        :param cell_properties: List of properties to be queried from the cell. E.g. ['Value', 'Ordinal', 'RuleDerived', ...]
-        :param elem_properties: List of properties to be queried from the elements. E.g. ['UniqueName','Attributes', ...]
+        :param cell_properties: List of properties to be queried from cells. E.g. ['Value', 'RuleDerived', ...]
+        :param elem_properties: List of properties to be queried from elements. E.g. ['UniqueName','Attributes', ...]
         :param member_properties: List properties to be queried from the member. E.g. ['Name', 'UniqueName']
         :param top: Integer limiting the number of cells and the number or rows returned
         :return: Raw format from TM1.
@@ -487,7 +489,9 @@ class CellService:
 
         request = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
                   "Cube($select=Name;$expand=Dimensions($select=Name))," \
-                  "Axes($expand=Tuples($expand=Members($select={member_properties};$expand=Element{elem_properties}){top_rows}))," \
+                  "Axes($expand=Tuples($expand=Members(" \
+                  "$select={member_properties};" \
+                  "$expand=Element{elem_properties}){top_rows}))," \
                   "Cells($select={cell_properties}{top_cells})" \
             .format(cellset_id=cellset_id,
                     top_rows=";$top={}".format(top) if top else "",

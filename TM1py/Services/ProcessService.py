@@ -151,7 +151,7 @@ class ProcessService(ObjectService):
         tm1.processes.execute("Bedrock.Server.Wait", pLegalEntity="UK01")
 
         :param process_name:
-        :param parameters: Deprecated! dictionary, for instance {"Parameters": [ { "Name": "pLegalEntity", "Value": "UK01" }] }
+        :param parameters: Deprecated! dictionary, e.g. {"Parameters": [ { "Name": "pLegalEntity", "Value": "UK01" }] }
         :return:
         """
         request = "/api/v1/Processes('{}')/tm1.Execute".format(process_name)

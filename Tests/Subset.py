@@ -126,5 +126,6 @@ class TestSubsetMethods(unittest.TestCase):
         cls.tm1.dimensions.delete(cls.dimension_name)
         cls.tm1.logout()
 
+
 if __name__ == '__main__':
     unittest.main()
