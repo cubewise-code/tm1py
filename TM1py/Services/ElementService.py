@@ -37,6 +37,25 @@ class ElementService(ObjectService):
                                                                                      element_name)
         return self._rest.DELETE(request)
 
+    def get_elements(self, dimension_name, hierarchy_name):
+        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*"\
+            .format(dimension_name, hierarchy_name)
+        response = self._rest.GET(request)
+        return [Element.from_dict(element) for element in response.json()["value"]]
+
+    def get_leaf_elements(self, dimension_name, hierarchy_name):
+        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*&$filter=Type ne 3"\
+            .format(dimension_name, hierarchy_name)
+        response = self._rest.GET(request)
+        return [Element.from_dict(element) for element in response.json()["value"]]
+
+    def get_leaf_element_names(self, dimension_name, hierarchy_name):
+        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/Elements?$select=Name&$filter=Type ne 3'.format(
+            dimension_name,
+            hierarchy_name)
+        response = self._rest.GET(request, '')
+        return (e["Name"] for e in response.json()['value'])
+
     def get_element_names(self, dimension_name, hierarchy_name):
         """ Get all elementnames
         
