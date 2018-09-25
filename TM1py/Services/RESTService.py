@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+import functools
+import sys
+from base64 import b64encode, b64decode
+
+import requests
+
 from TM1py.Exceptions import TM1pyException
 
-import functools
-import requests
-import sys
-from base64 import b64encode
 # import Http-Client depending on pyhton version
 if sys.version[0] == '2':
     import httplib as http_client
@@ -29,6 +31,7 @@ def httpmethod(func):
         # Verify
         self.verify_response(response=response)
         return response
+
     return wrapper
 
 
@@ -88,14 +91,7 @@ class RESTService:
         if "session_id" in kwargs:
             self._s.cookies.set("TM1SessionId", kwargs["session_id"])
         else:
-            # Authorization [Basic, CAM] through Headers
-            token = self._build_authorization_token(kwargs['user'],
-                                                    kwargs['password'],
-                                                    kwargs['namespace'] if 'namespace' in kwargs else None)
-            self.add_http_header('Authorization', token)
-            self._start_session()
-            # After we have session cookie, drop the Authorization Header
-            self.remove_http_header('Authorization')
+            self._start_session(**kwargs)
         # Logging
         if 'logging' in kwargs:
             if kwargs['logging'].upper() == "TRUE" if isinstance(kwargs['logging'], str) else kwargs['logging']:
@@ -161,14 +157,38 @@ class RESTService:
             self.POST('/api/logout', '')
         self._s.close()
 
-    def _start_session(self):
+    def _start_session(self, retry=0, **kwargs):
         """ perform a simple GET request (Ask for the TM1 Version) to start a session
 
         """
-        url = '{}/api/v1/Configuration/ProductVersion/$value'.format(self._base_url)
-        response = self._s.get(url=url, headers=self._headers, data='', verify=self._verify)
-        self.verify_response(response)
-        self._version = response.text
+        # Authorization [Basic, CAM] through Headers
+        token = self._build_authorization_token(
+            kwargs['user'],
+            kwargs['password'],
+            kwargs['namespace'] if 'namespace' in kwargs else None)
+        self.add_http_header('Authorization', token)
+        request = '/api/v1/Configuration/ProductVersion/$value'
+        try:
+            response = self.GET(request=request)
+            self._version = response.text
+        except TM1pyException as ex:
+            # if unauthorized and first retry, retry with b64 decode pwd
+            if ex.status_code == 401 and retry == 0:
+                kwargs['password'] = self.decrypt_password(kwargs['password'])
+                self._start_session(retry=retry + 1, **kwargs)
+            else:
+                raise ex
+        finally:
+            # After we have session cookie, drop the Authorization Header
+            self.remove_http_header('Authorization')
+
+    def decrypt_password(self, encrypted_password):
+        """ b64 decoding
+
+        :param encrypted_password: encrypted password with b64
+        :return: password in plain text
+        """
+        return b64decode(encrypted_password).decode("UTF-8")
 
     def _url_and_body(self, request, data):
         """ create proper url and payload
@@ -238,4 +258,5 @@ class RESTService:
         self._headers[key] = value
 
     def remove_http_header(self, key):
-        del self._headers[key]
+        if key in self._headers:
+            self._headers.pop(key)
