@@ -137,7 +137,7 @@ class TestDataMethods(unittest.TestCase):
             sum(range(0, 1000)),
             sum(v["Ordinal"] for v in data.values()))
 
-    def test05_execute_mdx_raw(self):
+    def test05_execute_mdx_raw_with_member_properties_with_elem_properties(self):
         mdx = "SELECT " \
               "NON EMPTY [" + dimension_names[0] + "].Members * [" + dimension_names[1] + "].Members ON ROWS," \
               "NON EMPTY [" + dimension_names[2] + "].MEMBERS ON COLUMNS " \
@@ -173,6 +173,64 @@ class TestDataMethods(unittest.TestCase):
                     self.assertNotIn("Attr3", element["Attributes"])
                     self.assertEqual(element["Attributes"]["Attr1"], "TM1py")
                     self.assertEqual(element["Attributes"]["Attr2"], 2)
+
+    def test05_execute_mdx_raw_with_member_properties_without_elem_properties(self):
+        mdx = "SELECT " \
+              "NON EMPTY [" + dimension_names[0] + "].Members * [" + dimension_names[1] + "].Members ON ROWS," \
+              "NON EMPTY [" + dimension_names[2] + "].MEMBERS ON COLUMNS " \
+              "FROM [" + cube_name + "]"
+        raw = self.tm1.cubes.cells.execute_mdx_raw(
+            mdx=mdx,
+            cell_properties=["Value", "RuleDerived"],
+            member_properties=["Name", "Ordinal", "Weight"])
+        cells = raw["Cells"]
+        for cell in cells:
+            self.assertIn("Value", cell)
+            if cell["Value"]:
+                self.assertGreater(cell["Value"], 0)
+                self.assertLess(cell["Value"], 1001)
+            self.assertIn("RuleDerived", cell)
+            self.assertFalse(cell["RuleDerived"])
+            self.assertNotIn("Updateable", cell)
+        axes = raw["Axes"]
+        for axis in axes:
+            for tuple in axis["Tuples"]:
+                for member in tuple["Members"]:
+                    self.assertIn("Name", member)
+                    self.assertIn("Ordinal", member)
+                    self.assertIn("Weight", member)
+                    self.assertNotIn("Type", member)
+                    self.assertNotIn("Element", member)
+
+    def test05_execute_mdx_raw_without_member_properties_with_elem_properties(self):
+        mdx = "SELECT " \
+              "NON EMPTY [" + dimension_names[0] + "].Members * [" + dimension_names[1] + "].Members ON ROWS," \
+              "NON EMPTY [" + dimension_names[2] + "].MEMBERS ON COLUMNS " \
+              "FROM [" + cube_name + "]"
+        raw = self.tm1.cubes.cells.execute_mdx_raw(
+            mdx=mdx,
+            cell_properties=["Value", "RuleDerived"],
+            elem_properties=["Name", "Type"],
+            member_properties=None)
+        cells = raw["Cells"]
+        for cell in cells:
+            self.assertIn("Value", cell)
+            if cell["Value"]:
+                self.assertGreater(cell["Value"], 0)
+                self.assertLess(cell["Value"], 1001)
+            self.assertIn("RuleDerived", cell)
+            self.assertFalse(cell["RuleDerived"])
+            self.assertNotIn("Updateable", cell)
+        axes = raw["Axes"]
+        for axis in axes:
+            for tuple in axis["Tuples"]:
+                for member in tuple["Members"]:
+                    element = member["Element"]
+                    self.assertIn("Name", element)
+                    self.assertIn("Type", element)
+                    self.assertNotIn("UniqueName", element)
+                    self.assertNotIn("UniqueName", member)
+                    self.assertNotIn("Ordinal", member)
 
     def test06_execute_mdx_values(self):
         mdx = "SELECT " \
@@ -316,15 +374,15 @@ class TestDataMethods(unittest.TestCase):
         data = self.tm1.cubes.cells.execute_view(cube_name=cube_name, view_name=view_name, private=False, top=3)
         self.assertEqual(len(data.keys()), 3)
 
-    def test11_execute_view_raw(self):
+    def test11_execute_view_raw_with_member_properties_without_elem_properties(self):
+        # Member properties and no element properties
         raw = self.tm1.cubes.cells.execute_view_raw(
             cube_name=cube_name,
             view_name=view_name,
             private=False,
             cell_properties=["Value", "RuleDerived"],
-            elem_properties=["Name", "UniqueName", "Attributes/Attr1", "Attributes/Attr2"])
+            member_properties=["Name", "UniqueName", "Attributes/Attr1", "Attributes/Attr2"])
         cells = raw["Cells"]
-
         # check if cell_property selection works
         for cell in cells:
             self.assertIn("Value", cell)
@@ -335,7 +393,38 @@ class TestDataMethods(unittest.TestCase):
             self.assertFalse(cell["RuleDerived"])
             self.assertNotIn("Updateable", cell)
             self.assertNotIn("Consolidated", cell)
+        axes = raw["Axes"]
+        for axis in axes:
+            for tuple in axis["Tuples"]:
+                for member in tuple["Members"]:
+                    self.assertIn("Name", member)
+                    self.assertIn("UniqueName", member)
+                    self.assertNotIn("Type", member)
+                    self.assertNotIn("Element", member)
+                    self.assertIn("Attr1", member["Attributes"])
+                    self.assertIn("Attr2", member["Attributes"])
+                    self.assertNotIn("Attr3", member["Attributes"])
+                    self.assertEqual(member["Attributes"]["Attr1"], "TM1py")
+                    self.assertEqual(member["Attributes"]["Attr2"], 2)
 
+    def test12_execute_view_raw_with_elem_properties_without_member_properties(self):
+        raw = self.tm1.cubes.cells.execute_view_raw(
+            cube_name=cube_name,
+            view_name=view_name,
+            private=False,
+            cell_properties=["Value", "RuleDerived"],
+            elem_properties=["Name", "UniqueName", "Attributes/Attr1", "Attributes/Attr2"])
+        cells = raw["Cells"]
+        # check if cell_property selection works
+        for cell in cells:
+            self.assertIn("Value", cell)
+            if cell["Value"]:
+                self.assertGreater(cell["Value"], 0)
+                self.assertLess(cell["Value"], 1001)
+            self.assertIn("RuleDerived", cell)
+            self.assertFalse(cell["RuleDerived"])
+            self.assertNotIn("Updateable", cell)
+            self.assertNotIn("Consolidated", cell)
         # check if elem property selection works
         axes = raw["Axes"]
         for axis in axes:
@@ -350,7 +439,52 @@ class TestDataMethods(unittest.TestCase):
                     self.assertNotIn("Attr3", element["Attributes"])
                     self.assertEqual(element["Attributes"]["Attr1"], "TM1py")
                     self.assertEqual(element["Attributes"]["Attr2"], 2)
+                    self.assertNotIn("Type", member)
+                    self.assertNotIn("UniqueName", member)
+                    self.assertNotIn("Ordinal", member)
 
+    def test13_execute_view_with_elem_properties_with_member_properties(self):
+        raw = self.tm1.cubes.cells.execute_view_raw(
+            cube_name=cube_name,
+            view_name=view_name,
+            private=False,
+            cell_properties=["Value", "RuleDerived"],
+            elem_properties=["Name", "UniqueName", "Attributes/Attr1", "Attributes/Attr2"],
+            member_properties=["Name", "UniqueName", "Attributes/Attr1", "Attributes/Attr2"])
+        cells = raw["Cells"]
+        # check if cell_property selection works
+        for cell in cells:
+            self.assertIn("Value", cell)
+            if cell["Value"]:
+                self.assertGreater(cell["Value"], 0)
+                self.assertLess(cell["Value"], 1001)
+            self.assertIn("RuleDerived", cell)
+            self.assertFalse(cell["RuleDerived"])
+            self.assertNotIn("Updateable", cell)
+            self.assertNotIn("Consolidated", cell)
+        # check if elem property selection works
+        axes = raw["Axes"]
+        for axis in axes:
+            for tuple in axis["Tuples"]:
+                for member in tuple["Members"]:
+                    self.assertIn("Name", member)
+                    self.assertIn("UniqueName", member)
+                    self.assertNotIn("Type", member)
+                    self.assertIn("Attr1", member["Attributes"])
+                    self.assertIn("Attr2", member["Attributes"])
+                    self.assertNotIn("Attr3", member["Attributes"])
+                    self.assertEqual(member["Attributes"]["Attr1"], "TM1py")
+                    self.assertEqual(member["Attributes"]["Attr2"], 2)
+                    element = member["Element"]
+                    self.assertIn("Name", element)
+                    self.assertNotIn("Type", element)
+                    self.assertIn("Attr1", element["Attributes"])
+                    self.assertIn("Attr2", element["Attributes"])
+                    self.assertNotIn("Attr3", element["Attributes"])
+                    self.assertEqual(element["Attributes"]["Attr1"], "TM1py")
+                    self.assertEqual(element["Attributes"]["Attr2"], 2)
+
+    def test14_execute_view_raw_with_top(self):
         # check if top works
         raw = self.tm1.cubes.cells.execute_view_raw(
             cube_name=cube_name,
@@ -361,7 +495,7 @@ class TestDataMethods(unittest.TestCase):
             top=5)
         self.assertEqual(len(raw["Cells"]), 5)
 
-    def test12_execute_view_values(self):
+    def test15_execute_view_values(self):
         cell_values = self.tm1.cubes.cells.execute_view_values(cube_name=cube_name, view_name=view_name, private=False)
 
         # check type
@@ -371,7 +505,7 @@ class TestDataMethods(unittest.TestCase):
         self.assertEqual(self.total_value,
                          sum([v for v in cell_values if v]))
 
-    def test13_execute_view_csv(self):
+    def test16_execute_view_csv(self):
         csv = self.tm1.cubes.cells.execute_view_csv(cube_name=cube_name, view_name=view_name, private=False)
 
         # check type
@@ -389,7 +523,7 @@ class TestDataMethods(unittest.TestCase):
         # check if sum of retrieved values is sum of written values
         self.assertEqual(self.total_value, sum(values))
 
-    def test14_execute_view_dataframe(self):
+    def test17_execute_view_dataframe(self):
         df = self.tm1.cubes.cells.execute_view_dataframe(cube_name=cube_name, view_name=view_name, private=False)
 
         # check type
@@ -406,40 +540,40 @@ class TestDataMethods(unittest.TestCase):
         values = df[["Value"]].values
         self.assertEqual(self.total_value, sum(values))
 
-    def test15_execute_view_cellcount(self):
+    def test18_execute_view_cellcount(self):
         cell_count = self.tm1.cubes.cells.execute_view_cellcount(
             cube_name=cube_name,
             view_name=view_name,
             private=False)
         self.assertGreater(cell_count, 1000)
 
-    def test16_execute_mdx_ui_array(self):
+    def test19_execute_mdx_ui_array(self):
         mdx = "SELECT " \
               "NON EMPTY [" + dimension_names[0] + "].Members * [" + dimension_names[1] + "].Members ON ROWS," \
               "NON EMPTY [" + dimension_names[2] + "].MEMBERS ON COLUMNS " \
               "FROM [" + cube_name + "]"
         self.tm1.cubes.cells.execute_mdx_ui_array(mdx=mdx)
 
-    def test17_execute_view_ui_array(self):
+    def test20_execute_view_ui_array(self):
         self.tm1.cubes.cells.execute_view_ui_array(
             cube_name=cube_name,
             view_name=view_name,
             private=False)
 
-    def test18_execute_mdx_ui_dygraph(self):
+    def test21_execute_mdx_ui_dygraph(self):
         mdx = "SELECT " \
               "NON EMPTY [" + dimension_names[0] + "].Members * [" + dimension_names[1] + "].Members ON ROWS," \
               "NON EMPTY [" + dimension_names[2] + "].MEMBERS ON COLUMNS " \
               "FROM [" + cube_name + "]"
         self.tm1.cubes.cells.execute_mdx_ui_dygraph(mdx=mdx)
 
-    def test19_execute_view_ui_dygraph(self):
+    def test22_execute_view_ui_dygraph(self):
         self.tm1.cubes.cells.execute_view_ui_dygraph(
             cube_name=cube_name,
             view_name=view_name,
             private=False)
 
-    def test20_write_values_through_cellset(self):
+    def test23_write_values_through_cellset(self):
         mdx_skeleton = "SELECT {} " \
                        "ON ROWS, {} " \
                        "ON COLUMNS " \
@@ -456,7 +590,7 @@ class TestDataMethods(unittest.TestCase):
         values = self.tm1.cubes.cells.execute_mdx_values(mdx)
         self.assertEqual(next(values), 1.5)
 
-    def test21_deactivate_transaction_log(self):
+    def test24_deactivate_transaction_log(self):
         self.tm1.cubes.cells.write_value(value="YES",
                                          cube_name="}CubeProperties",
                                          element_tuple=(cube_name, "Logging"))
@@ -464,7 +598,7 @@ class TestDataMethods(unittest.TestCase):
         value = self.tm1.cubes.cells.get_value("}CubeProperties", "{},LOGGING".format(cube_name))
         self.assertEqual("NO", value.upper())
 
-    def test22_activate_transaction_log(self):
+    def test25_activate_transaction_log(self):
         self.tm1.cubes.cells.write_value(value="NO",
                                          cube_name="}CubeProperties",
                                          element_tuple=(cube_name, "Logging"))

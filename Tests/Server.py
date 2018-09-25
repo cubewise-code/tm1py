@@ -1,16 +1,17 @@
+import configparser
+import os
+import random
+import re
+import time
 import unittest
 import uuid
-import random
 import datetime
-import os
-import dateutil.parser
-import time
-import re
-import configparser
 
-from TM1py.Services import TM1Service
-from TM1py.Objects import Cube, Dimension, Hierarchy, Process
+import dateutil
+
 from TM1py.Exceptions import TM1pyException
+from TM1py.Objects import Cube, Dimension, Hierarchy, Process
+from TM1py.Services import TM1Service
 
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
@@ -142,6 +143,24 @@ class TestServerMethods(unittest.TestCase):
             today_date = datetime.date.today()
             self.assertTrue(entry_date == today_date)
 
+    def test4_session_context_default(self):
+        threads = self.tm1.monitoring.get_threads()
+        for thread in threads:
+            if "GET /api/v1/Threads" in thread["Function"] and thread["Name"] == config['tm1srv01']['user']:
+                self.assertTrue(thread["Context"] == "TM1py")
+                return
+        raise Exception("Did not find my own Thread")
+
+    def test5_session_context_custom(self):
+        app_name = "Some Application"
+        with TM1Service(**config['tm1srv01'], session_context=app_name) as tm1:
+            threads = tm1.monitoring.get_threads()
+            for thread in threads:
+                if "GET /api/v1/Threads" in thread["Function"] and thread["Name"] == config['tm1srv01']['user']:
+                    self.assertTrue(thread["Context"] == app_name)
+                    return
+        raise Exception("Did not find my own Thread")
+
     @classmethod
     def tearDownClass(cls):
         cls.tm1.cubes.delete(cls.cube_name)
@@ -150,6 +169,7 @@ class TestServerMethods(unittest.TestCase):
         cls.tm1.processes.delete(cls.process_name1)
         cls.tm1.processes.delete(cls.process_name2)
         cls.tm1.logout()
+
 
 if __name__ == '__main__':
     unittest.main()
