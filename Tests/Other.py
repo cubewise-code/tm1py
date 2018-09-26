@@ -1,9 +1,10 @@
-import random
-import unittest
 import configparser
 import os
+import random
+import unittest
+from base64 import b64encode
 
-from TM1py.Objects import MDXView
+from TM1py.Objects import MDXView, User
 from TM1py.Services import TM1Service
 from TM1py.Utils import Utils
 
@@ -52,6 +53,40 @@ class TestOtherMethods(unittest.TestCase):
     def test2_get_instances_from_adminhost(self):
         servers = Utils.get_all_servers_from_adminhost(config['tm1srv01']['address'])
         self.assertGreater(len(servers), 0)
+
+    def test3_tm1service_with_encrypted_password(self):
+        user_name = "TM1py user name"
+        user = User(name=user_name, groups=["ADMIN"], password="apple")
+        if user.name in self.tm1.security.get_all_user_names():
+            self.tm1.security.delete_user(user_name)
+        self.tm1.security.create_user(user)
+
+        with TM1Service(
+                user=user.name,
+                password=b64encode(str.encode(user._password)),
+                base_url=self.tm1._tm1_rest._base_url,
+                ssl=self.tm1._tm1_rest._ssl) as _:
+            # if no exception. Login was successful
+            pass
+
+        self.tm1.security.delete_user(user.name)
+
+    def test4_tm1service_with_plain_password(self):
+        user_name = "TM1py user name"
+        user = User(name=user_name, groups=["ADMIN"], password="apple")
+        if user.name in self.tm1.security.get_all_user_names():
+            self.tm1.security.delete_user(user_name)
+        self.tm1.security.create_user(user)
+
+        with TM1Service(
+                user=user.name,
+                password=user.password,
+                base_url=self.tm1._tm1_rest._base_url,
+                ssl=self.tm1._tm1_rest._ssl) as _:
+            # if no exception. Login was successful
+            pass
+
+        self.tm1.security.delete_user(user.name)
 
     @classmethod
     def tearDownClass(cls):
