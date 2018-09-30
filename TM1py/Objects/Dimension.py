@@ -53,6 +53,10 @@ class Dimension(TM1Object):
 
     @name.setter
     def name(self, value):
+        for hierarchy in self.hierarchies:
+            hierarchy._dimension_name = value
+            if hierarchy.name == self._name:
+                hierarchy.name = value
         self._name = value
 
     @property

@@ -100,6 +100,46 @@ class TestDimensionMethods(unittest.TestCase):
         self.assertIn(self.dimension_name, dimensions_before)
         self.assertNotIn(self.dimension_name, dimensions_after)
 
+    def test_rename_dimension(self):
+        original_dimension_name = "TM1py Test Original Dimension"
+        renamed_dimension_name = "TM1py Test Renamed Dimension"
+
+        # if dimensions exist in TM1.. delete them
+        for dim_name in (original_dimension_name, renamed_dimension_name):
+            if self.tm1.dimensions.exists(dim_name):
+                self.tm1.dimensions.delete(dimension_name=dim_name)
+
+        # create dimension
+        original_dimension = Dimension(original_dimension_name)
+        hierarchy = Hierarchy(name=original_dimension_name, dimension_name=original_dimension_name)
+        hierarchy.add_element(element_name="Total", element_type="Consolidated")
+        hierarchy.add_element(element_name="Elem1", element_type="Numeric")
+        hierarchy.add_element(element_name="Elem2", element_type="Numeric")
+        hierarchy.add_element(element_name="Elem3", element_type="Numeric")
+        hierarchy.add_edge(parent="Total", component="Elem1", weight=1)
+        hierarchy.add_edge(parent="Total", component="Elem2", weight=1)
+        hierarchy.add_edge(parent="Total", component="Elem3", weight=1)
+        original_dimension.add_hierarchy(hierarchy)
+        self.tm1.dimensions.create(original_dimension)
+
+        # rename
+        renamed_dimension = self.tm1.dimensions.get(original_dimension.name)
+        renamed_dimension.name = renamed_dimension_name
+        self.tm1.dimensions.create(renamed_dimension)
+
+        # challenge equality of dimensions
+        summary1 = self.tm1.dimensions.hierarchies.get_hierarchy_summary(
+            dimension_name=original_dimension_name,
+            hierarchy_name=original_dimension_name)
+        summary2 = self.tm1.dimensions.hierarchies.get_hierarchy_summary(
+            dimension_name=renamed_dimension_name,
+            hierarchy_name=renamed_dimension_name)
+        self.assertEqual(summary1, summary2)
+
+        # delete
+        for dim_name in (original_dimension_name, renamed_dimension_name):
+            self.tm1.dimensions.delete(dimension_name=dim_name)
+
     @classmethod
     def tearDownClass(cls):
         cls.tm1.logout()

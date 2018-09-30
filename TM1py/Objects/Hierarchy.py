@@ -77,6 +77,10 @@ class Hierarchy(TM1Object):
     def dimension_name(self):
         return self._dimension_name
 
+    @dimension_name.setter
+    def dimension_name(self, dimension_name):
+        self._dimension_name = dimension_name
+
     @property
     def elements(self):
         return self._elements
