@@ -97,20 +97,49 @@ class TestElementMethods(unittest.TestCase):
         self.assertIn('1992', elements)
         self.assertNotIn('1989', elements)
 
-    def test08_get_element_names(self):
-        elements = self.tm1.dimensions.hierarchies.elements.get_element_names(self.dimension_name, self.hierarchy_name)
+    def test08_get_elements(self):
+        elements = self.tm1.dimensions.hierarchies.elements.get_elements(
+            self.dimension_name,
+            self.hierarchy_name)
+        element_names = [element.name for element in elements]
         for year in self.years:
-            self.assertIn(year, elements)
+            self.assertIn(year, element_names)
+        self.assertNotIn(self.extra_year, element_names)
 
-    def test09_delete_element_attribute(self):
+    def test09_get_element_names(self):
+        element_names = self.tm1.dimensions.hierarchies.elements.get_element_names(self.dimension_name, self.hierarchy_name)
+        for year in self.years:
+            self.assertIn(year, element_names)
+
+    def test10_get_leaf_element_names(self):
+        leaf_element_names = self.tm1.dimensions.hierarchies.elements.get_leaf_element_names(
+            self.dimension_name,
+            self.hierarchy_name)
+        for leaf in leaf_element_names:
+            self.assertIn(leaf, self.years)
+        self.assertNotIn(self.extra_year, leaf_element_names)
+        self.assertNotIn("Total Year", leaf_element_names)
+
+    def test11_get_leaf_elements(self):
+        leaf_elements = self.tm1.dimensions.hierarchies.elements.get_leaf_elements(
+            self.dimension_name,
+            self.hierarchy_name)
+        for leaf in leaf_elements:
+            self.assertIn(leaf.name, self.years)
+            self.assertNotEqual(leaf.element_type, "Consolidated")
+        leaf_element_names = [element.name for element in leaf_elements]
+        self.assertNotIn(self.extra_year, leaf_element_names)
+        self.assertNotIn("Total Year", leaf_element_names)
+
+    def test12_delete_element_attribute(self):
         self.tm1.dimensions.hierarchies.elements.delete_element_attribute(self.dimension_name,
                                                                           self.hierarchy_name, "Leap Year")
 
-    def test10_element_exists(self):
+    def test13_element_exists(self):
         for year in self.years:
             self.tm1.dimensions.hierarchies.elements.exists(self.dimension_name, self.hierarchy_name, year)
 
-    def test11_get_leaves_under_consolidation(self):
+    def test14_get_leaves_under_consolidation(self):
         leaves = self.tm1.dimensions.hierarchies.elements.get_leaves_under_consolidation(self.dimension_name,
                                                                                          self.hierarchy_name,
                                                                                          "All Consolidations")
@@ -118,7 +147,7 @@ class TestElementMethods(unittest.TestCase):
         for year in self.years:
             self.assertIn(year, leaves)
 
-    def test12_get_members_under_consolidation(self):
+    def test15_get_members_under_consolidation(self):
         leaves = self.tm1.dimensions.hierarchies.elements.get_members_under_consolidation(self.dimension_name,
                                                                                           self.hierarchy_name,
                                                                                           "All Consolidations",
