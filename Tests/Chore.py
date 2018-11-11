@@ -1,9 +1,9 @@
+import configparser
+import os
 import random
 import unittest
-import os
 import uuid
 from datetime import datetime
-import configparser
 
 from TM1py.Objects import Chore, ChoreStartTime, ChoreFrequency, ChoreTask, Process
 from TM1py.Services import TM1Service
@@ -146,6 +146,7 @@ class TestChoreMethods(unittest.TestCase):
         self.assertEqual(int(c._frequency._days), int(frequency_days))
         self.assertEqual(int(c._frequency._hours), int(frequency_hours))
         self.assertEqual(int(c._frequency._minutes), int(frequency_minutes))
+        self.assertEqual(len(tasks), len(c._tasks))
         # sometimes there is one second difference. Probably a small bug in the REST API
         self.assertAlmostEqual(int(c._frequency._seconds), int(frequency_seconds), delta=1)
         for task1, task2 in zip(tasks, c._tasks):

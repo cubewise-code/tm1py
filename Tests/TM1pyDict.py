@@ -1,6 +1,6 @@
-import unittest
 import configparser
 import os
+import unittest
 
 from TM1py.Services import TM1Service
 

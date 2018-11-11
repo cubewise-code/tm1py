@@ -1,9 +1,9 @@
-import unittest
-import uuid
-import random
-import time
 import configparser
 import os
+import random
+import time
+import unittest
+import uuid
 
 from TM1py.Objects import Process
 from TM1py.Objects import Subset
@@ -12,7 +12,6 @@ from TM1py.Utils import Utils
 
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
-
 
 process_prefix = '}TM1py_unittest'
 
@@ -82,54 +81,131 @@ class TestProcessMethods(unittest.TestCase):
                                metadata_procedure="sTest = 'abc';")
 
     # Create Process
-    def test1_create_process(self):
+    def test_create_process(self):
         self.tm1.processes.create(self.p_none)
         self.tm1.processes.create(self.p_ascii)
         self.tm1.processes.create(self.p_view)
         self.tm1.processes.create(self.p_odbc)
         self.tm1.processes.create(self.p_subset)
 
-    def test2_execute_process(self):
+    def test_execute_process(self):
         process = Utils.load_bedrock_from_github("Bedrock.Server.Wait")
         if not self.tm1.processes.exists(process.name):
             self.tm1.processes.create(process)
 
         # with parameters argument
         start_time = time.time()
-        self.tm1.processes.execute("Bedrock.Server.Wait", parameters={"Parameters": [
+        self.tm1.processes.execute(process.name, parameters={"Parameters": [
             {"Name": "pWaitSec", "Value": "3"}]})
         elapsed_time = time.time() - start_time
         self.assertGreater(elapsed_time, 3)
 
         # with kwargs
         start_time = time.time()
-        self.tm1.processes.execute("Bedrock.Server.Wait", pWaitSec="1")
+        self.tm1.processes.execute(process.name, pWaitSec="1")
         elapsed_time = time.time() - start_time
         self.assertGreater(elapsed_time, 1)
 
         # without arguments
-        self.tm1.processes.execute("Bedrock.Server.Wait")
+        self.tm1.processes.execute(process.name)
 
-    def test3_compile_process(self):
-        p_good = Process(name=str(uuid.uuid4()),
-                         prolog_procedure="nPro = DimSiz('}Processes');")
-        p_bad = Process(name=str(uuid.uuid4()),
-                        prolog_procedure="nPro = DimSize('}Processes');")
+    def test_execute_with_return_success(self):
+        process = Utils.load_bedrock_from_github("Bedrock.Server.Wait")
+        if not self.tm1.processes.exists(process.name):
+            self.tm1.processes.create(process)
+        # with parameters
+        success, status, error_log_file = self.tm1.processes.execute_with_return(
+            process_name=process.name,
+            pWaitSec=2)
+        self.assertTrue(success)
+        self.assertEqual(status, "CompletedSuccessfully")
+        self.assertIsNone(error_log_file)
+        # without parameters
+        success, status, error_log_file = self.tm1.processes.execute_with_return(
+            process_name=process.name)
+        self.assertTrue(success)
+        self.assertEqual(status, "CompletedSuccessfully")
+        self.assertIsNone(error_log_file)
+
+    def test_execute_with_return_compile_error(self):
+        process = Process(name=str(uuid.uuid4()))
+        process.prolog_procedure = "sText = 'text';sText = 2;"
+
+        if not self.tm1.processes.exists(process.name):
+            self.tm1.processes.create(process)
+        # with parameters
+        success, status, error_log_file = self.tm1.processes.execute_with_return(process_name=process.name)
+        self.assertFalse(success)
+        self.assertEqual(status, "Aborted")
+        self.assertIsNotNone(error_log_file)
+
+        self.tm1.processes.delete(process.name)
+
+    def test_execute_with_return_with_item_reject(self):
+        process = Process(name=str(uuid.uuid4()))
+        process.epilog_procedure = "ItemReject('Not Relevant');"
+
+        if not self.tm1.processes.exists(process.name):
+            self.tm1.processes.create(process)
+        # with parameters
+        success, status, error_log_file = self.tm1.processes.execute_with_return(process_name=process.name)
+        self.assertFalse(success)
+        self.assertEqual(status, "CompletedWithMessages")
+        self.assertIsNotNone(error_log_file)
+
+        self.tm1.processes.delete(process.name)
+
+    def test_execute_with_return_with_process_break(self):
+        process = Process(name=str(uuid.uuid4()))
+        process.prolog_procedure = "sText = 'Something'; ProcessBreak;"
+
+        if not self.tm1.processes.exists(process.name):
+            self.tm1.processes.create(process)
+        # with parameters
+        success, status, error_log_file = self.tm1.processes.execute_with_return(
+            process_name=process.name)
+        self.assertTrue(success)
+        self.assertEqual(status, "CompletedSuccessfully")
+        self.assertIsNone(error_log_file)
+
+        self.tm1.processes.delete(process.name)
+
+    def test_execute_with_return_with_process_quit(self):
+        process = Process(name=str(uuid.uuid4()))
+        process.prolog_procedure = "sText = 'Something'; ProcessQuit;"
+
+        if not self.tm1.processes.exists(process.name):
+            self.tm1.processes.create(process)
+        # with parameters
+        success, status, error_log_file = self.tm1.processes.execute_with_return(
+            process_name=process.name)
+        self.assertFalse(success)
+        self.assertEqual(status, "QuitCalled")
+        self.assertIsNone(error_log_file)
+
+        self.tm1.processes.delete(process.name)
+
+    def test_compile_process_success(self):
+        p_good = Process(
+            name=str(uuid.uuid4()),
+            prolog_procedure="nPro = DimSiz('}Processes');")
         self.tm1.processes.create(p_good)
-        self.tm1.processes.create(p_bad)
-
         errors = self.tm1.processes.compile(p_good.name)
         self.assertTrue(len(errors) == 0)
+        self.tm1.processes.delete(p_good.name)
 
+    def test_compile_process_with_errors(self):
+        p_bad = Process(
+            name=str(uuid.uuid4()),
+            prolog_procedure="nPro = DimSize('}Processes');")
+        self.tm1.processes.create(p_bad)
         errors = self.tm1.processes.compile(p_bad.name)
         self.assertTrue(len(errors) == 1)
         self.assertIn("Variable \"dimsize\" is undefined", errors[0]["Message"])
-
-        self.tm1.processes.delete(p_good.name)
         self.tm1.processes.delete(p_bad.name)
 
     # Get Process
-    def test4_get_process(self):
+    def test_get_process(self):
         p1 = self.tm1.processes.get(self.p_ascii.name)
         self.assertEqual(p1.body, self.p_ascii.body)
         p2 = self.tm1.processes.get(self.p_none.name)
@@ -144,7 +220,7 @@ class TestProcessMethods(unittest.TestCase):
         self.assertEqual(p5.body, self.p_subset.body)
 
     # Update process
-    def test5_update_process(self):
+    def test_update_process(self):
         # get
         p = self.tm1.processes.get(self.p_ascii.name)
         # modify
@@ -156,18 +232,42 @@ class TestProcessMethods(unittest.TestCase):
         # assert
         self.assertNotEqual(p_ascii_updated.data_procedure, self.p_ascii.data_procedure)
 
+    def test_get_error_log_file_content(self):
+        process = Process(name=str(uuid.uuid4()))
+        process.epilog_procedure = "ItemReject('Not Relevant');"
+
+        if not self.tm1.processes.exists(process.name):
+            self.tm1.processes.create(process)
+        # with parameters
+        success, status, error_log_file = self.tm1.processes.execute_with_return(process_name=process.name)
+        self.assertFalse(success)
+        self.assertEqual(status, "CompletedWithMessages")
+        self.assertIsNotNone(error_log_file)
+
+        content = self.tm1.processes.get_error_log_file_content(file_name=error_log_file)
+        self.assertIn("Not Relevant", content)
+
+        self.tm1.processes.delete(process.name)
+
     # Delete process
-    def test6_delete_process(self):
-        self.tm1.processes.delete(self.p_none.name)
-        self.tm1.processes.delete(self.p_ascii.name)
-        self.tm1.processes.delete(self.p_view.name)
-        self.tm1.processes.delete(self.p_odbc.name)
-        self.tm1.processes.delete(self.p_subset.name)
-        self.tm1.dimensions.subsets.delete(dimension_name=self.subset.dimension_name,
-                                           subset_name=self.subset_name, private=False)
+    def test_delete_process(self):
+        process = Utils.load_bedrock_from_github("Bedrock.Server.Wait")
+        process.name = str(uuid.uuid4())
+        if not self.tm1.processes.exists(process.name):
+            self.tm1.processes.create(process)
+        self.tm1.processes.delete(process.name)
 
     @classmethod
     def tearDownClass(cls):
+        cls.tm1.processes.delete(cls.p_none.name)
+        cls.tm1.processes.delete(cls.p_ascii.name)
+        cls.tm1.processes.delete(cls.p_view.name)
+        cls.tm1.processes.delete(cls.p_odbc.name)
+        cls.tm1.processes.delete(cls.p_subset.name)
+        cls.tm1.dimensions.subsets.delete(
+            dimension_name=cls.subset.dimension_name,
+            subset_name=cls.subset_name,
+            private=False)
         cls.tm1.logout()
 
 

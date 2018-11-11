@@ -1,14 +1,14 @@
-import unittest
-import uuid
 import configparser
 import os
+import unittest
+import uuid
 
 import pandas as pd
 
 from TM1py import Subset
-from TM1py.Utils import TIObfuscator
-from TM1py.Services import TM1Service
 from TM1py.Objects import Process, Dimension, Hierarchy, Cube
+from TM1py.Services import TM1Service
+from TM1py.Utils import TIObfuscator
 from TM1py.Utils import Utils, MDXUtils
 from TM1py.Utils.MDXUtils import DimensionSelection
 
@@ -181,7 +181,7 @@ class TestMDXUtils(unittest.TestCase):
             MDXUtils.curly_braces("{something}"),
             "{something}")
 
-    def test_cellset_and_pandas_df(self):
+    def test_build_pandas_dataframe_from_cellset(self):
         rows = [DimensionSelection(dimension_name=self.dim1_name),
                 DimensionSelection(dimension_name=self.dim2_name, elements=self.dim2_element_names)]
         columns = [
@@ -213,6 +213,27 @@ class TestMDXUtils(unittest.TestCase):
         cellset = Utils.build_cellset_from_pandas_dataframe(df)
         self.assertTrue(len(cellset.keys()) == 1000)
         self.assertIsInstance(cellset, Utils.CaseAndSpaceInsensitiveTuplesDict)
+
+    def test_build_pandas_dataframe_empty_cellset(self):
+        self.tm1.cubes.cells.write_value(
+            value=0,
+            cube_name=self.cube_name,
+            element_tuple=(self.dim1_element_names[0], self.dim2_element_names[0],
+                           self.dim3_element_names[0], self.dim4_element_names[0]),
+            dimensions=(self.dim1_name, self.dim2_name, self.dim3_name, self.dim4_name))
+        rows = [DimensionSelection(dimension_name=self.dim1_name, elements=(self.dim1_element_names[0],)),
+                DimensionSelection(dimension_name=self.dim2_name, elements=(self.dim2_element_names[0],))]
+        columns = [DimensionSelection(dimension_name=self.dim3_name, elements=(self.dim3_element_names[0],)),
+                   DimensionSelection(dimension_name=self.dim4_name, elements=(self.dim4_element_names[0],))]
+        suppress = "Both"
+        mdx = MDXUtils.construct_mdx(
+            cube_name=self.cube_name,
+            rows=rows,
+            columns=columns,
+            suppress=suppress)
+        empty_cellset = self.tm1.cubes.cells.execute_mdx(mdx)
+        self.assertRaises(ValueError, Utils.build_pandas_dataframe_from_cellset, empty_cellset, True)
+        self.assertRaises(ValueError, Utils.build_pandas_dataframe_from_cellset, empty_cellset, False)
 
     def test_read_cube_name_from_mdx(self):
         all_cube_names = self.tm1.cubes.get_all_names()
@@ -289,7 +310,7 @@ class TestTIObfuscatorMethods(unittest.TestCase):
         # create }ElementAttribute values
         cellset = {}
         for year in range(1989, 2040, 1):
-            cellset[(str(year), 'Previous Year')] = year-1
+            cellset[(str(year), 'Previous Year')] = year - 1
             cellset[(str(year), 'Next Year')] = year + 1
         cls.tm1.cubes.cells.write_values("}ElementAttributes_" + cls.dimension_name, cellset)
 
@@ -307,9 +328,9 @@ class TestTIObfuscatorMethods(unittest.TestCase):
     def test_split_into_statements(self):
         code = "sText1 = 'abcdefgh';\r\n" \
                " nElem = 2;\r\n" \
-               " # dasjd; dasjdas '' qdawdas\r\n"\
-               "# daskldlaskjdla aksdlas;das \r\n"\
-               "    # dasdwad\r\n"\
+               " # dasjd; dasjdas '' qdawdas\r\n" \
+               "# daskldlaskjdla aksdlas;das \r\n" \
+               "    # dasdwad\r\n" \
                "sText2 = 'dasjnd;jkas''dasdas'';dasdas';\r\n" \
                "SaveDataAll;"
         code = TIObfuscator.remove_comment_lines(code)
@@ -325,13 +346,13 @@ class TestTIObfuscatorMethods(unittest.TestCase):
         self.tm1.processes.execute(process_obf.name, {})
 
     def test_remove_generated_code(self):
-        code = "#****Begin: Generated Statements***\r\n"\
-               "DIMENSIONELEMENTINSERT('Employee','',V1,'s');\r\n"\
-               "DIMENSIONELEMENTINSERT('Employee','',V2,'s');\r\n"\
-               "DIMENSIONELEMENTINSERT('Employee','',V3,'s');\r\n"\
-               "DIMENSIONELEMENTINSERT('Employee','',V4,'s');\r\n"\
-               "#****End: Generated Statements****\r\n"\
-               "\r\n"\
+        code = "#****Begin: Generated Statements***\r\n" \
+               "DIMENSIONELEMENTINSERT('Employee','',V1,'s');\r\n" \
+               "DIMENSIONELEMENTINSERT('Employee','',V2,'s');\r\n" \
+               "DIMENSIONELEMENTINSERT('Employee','',V3,'s');\r\n" \
+               "DIMENSIONELEMENTINSERT('Employee','',V4,'s');\r\n" \
+               "#****End: Generated Statements****\r\n" \
+               "\r\n" \
                "sText = 'test';"
 
         code = TIObfuscator.remove_generated_code(code)

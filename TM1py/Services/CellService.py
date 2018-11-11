@@ -200,13 +200,19 @@ class CellService:
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
         return self.extract_cellset(cellset_id=cellset_id, cell_properties=cell_properties, top=top)
 
-    def execute_mdx_raw(self, mdx, cell_properties=None, elem_properties=None, member_properties=None, top=None):
+    def execute_mdx_raw(
+            self,
+            mdx,
+            cell_properties=None,
+            elem_properties=None,
+            member_properties=None,
+            top=None):
         """ Execute MDX and return the raw data from TM1
 
         :param mdx: String, a valid MDX Query
-        :param cell_properties: List of properties to be queried from cell. E.g. ['Value', 'RuleDerived', ...]
-        :param elem_properties: List of properties to be queried from elements. E.g. ['UniqueName','Attributes', ...]
-        :param member_properties: List of properties to be queried from member
+        :param cell_properties: List of properties to be queried from the cell. E.g. ['Value', 'Ordinal', 'RuleDerived', ...]
+        :param elem_properties: List of properties to be queried from the elements. E.g. ['UniqueName','Attributes', ...]
+        :param member_properties: List of properties to be queried from the members. E.g. ['UniqueName','Attributes', ...]
         :param top: Integer limiting the number of cells and the number or rows returned
         :return: Raw format from TM1.
         """
@@ -231,9 +237,9 @@ class CellService:
         :param cube_name: String, name of the cube
         :param view_name: String, name of the view
         :param private: True (private) or False (public)
-        :param cell_properties: List of properties to be queried from cells. E.g. ['Value', , 'RuleDerived', ...]
-        :param elem_properties: List of properties to be queried from elements. E.g. ['UniqueName','Attributes', ...]
-        :param member_properties: List of properties to be queried from the members. E.g. ['Name', 'Type', ...]
+        :param cell_properties: List of properties to be queried from the cell. E.g. ['Value', 'Ordinal', 'RuleDerived', ...]
+        :param elem_properties: List of properties to be queried from the elements. E.g. ['UniqueName','Attributes', ...]
+        :param member_properties: List of properties to be queried from the members. E.g. ['UniqueName','Attributes', ...]
         :param top: Integer limiting the number of cells and the number or rows returned
         :return: Raw format from TM1.
         """
@@ -323,7 +329,13 @@ class CellService:
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
         return self.extract_cellset_cellcount(cellset_id)
 
-    def execute_mdx_ui_dygraph(self, mdx, value_precision=2):
+    def execute_mdx_ui_dygraph(
+            self,
+            mdx,
+            elem_properties=None,
+            member_properties=None,
+            value_precision=2,
+            top=None):
         """ Execute MDX get dygraph dictionary
         Useful for grids or charting libraries that want an array of cell values per column
         Returns 3-dimensional cell structure for tabbed grids or multiple charts
@@ -341,14 +353,28 @@ class CellService:
                     ['Q4-2004', 14321501.940000001, 10333095.839474997]]
             },
         :param mdx: String, valid MDX Query
+        :param elem_properties: List of properties to be queried from the elements. E.g. ['UniqueName','Attributes', ...]
+        :param member_properties: List of properties to be queried from the members. E.g. ['UniqueName','Attributes', ...]
         :param value_precision: Integer (optional) specifying number of decimal places to return
         :return: dict : { titles: [], headers: [axis][], cells: { Page0: [  [column name, column values], [], ... ], ...} }
         """
         cellset_id = self.create_cellset(mdx)
-        data = self.extract_cellset_raw(cellset_id=cellset_id, member_properties=["Name", "UniqueName"])
+        data = self.extract_cellset_raw(cellset_id=cellset_id,
+                                        cell_properties=["Value"],
+                                        elem_properties=elem_properties,
+                                        member_properties=list(set(member_properties or []) | {"Name"}),
+                                        top=top)
         return Utils.build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
 
-    def execute_view_ui_dygraph(self, cube_name, view_name, private=True, value_precision=2):
+    def execute_view_ui_dygraph(
+            self,
+            cube_name,
+            view_name,
+            private=True,
+            elem_properties=None,
+            member_properties=None,
+            value_precision=2,
+            top=None):
         """ 
         Useful for grids or charting libraries that want an array of cell values per row.
         Returns 3-dimensional cell structure for tabbed grids or multiple charts.
@@ -378,14 +404,26 @@ class CellService:
         :param cube_name: cube name
         :param view_name: view name
         :param private: True (private) or False (public)
+        :param elem_properties: List of properties to be queried from the elements. E.g. ['UniqueName','Attributes', ...]
+        :param member_properties: List of properties to be queried from the members. E.g. ['UniqueName','Attributes', ...]
         :param value_precision: number decimals
         :return: 
         """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
-        data = self.extract_cellset_raw(cellset_id=cellset_id, member_properties=["Name", "UniqueName"])
+        data = self.extract_cellset_raw(cellset_id=cellset_id,
+                                        cell_properties=["Value"],
+                                        elem_properties=elem_properties,
+                                        member_properties=list(set(member_properties or []) | {"Name"}),
+                                        top=top)
         return Utils.build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
 
-    def execute_mdx_ui_array(self, mdx, value_precision=2):
+    def execute_mdx_ui_array(
+            self,
+            mdx,
+            elem_properties=None,
+            member_properties=None,
+            value_precision=2,
+            top=None):
         """
         Useful for grids or charting libraries that want an array of cell values per row.
         Returns 3-dimensional cell structure for tabbed grids or multiple charts.
@@ -413,14 +451,28 @@ class CellService:
             },
 
         :param mdx: a valid MDX Query
+        :param elem_properties: List of properties to be queried from the elements. E.g. ['UniqueName','Attributes', ...]
+        :param member_properties: List of properties to be queried from the members. E.g. ['UniqueName','Attributes', ...]
         :param value_precision: Integer (optional) specifying number of decimal places to return
         :return: dict : { titles: [], headers: [axis][], cells: { Page0: { Row0: { [row values], Row1: [], ...}, ...}, ...} }
         """
         cellset_id = self.create_cellset(mdx)
-        data = self.extract_cellset_raw(cellset_id=cellset_id, member_properties=["Name", "UniqueName"])
+        data = self.extract_cellset_raw(cellset_id=cellset_id,
+                                        cell_properties=["Value"],
+                                        elem_properties=elem_properties,
+                                        member_properties=list(set(member_properties or []) | {"Name"}),
+                                        top=top)
         return Utils.build_ui_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
 
-    def execute_view_ui_array(self, cube_name, view_name, private=True, value_precision=2):
+    def execute_view_ui_array(
+            self,
+            cube_name,
+            view_name,
+            private=True,
+            elem_properties=None,
+            member_properties=None,
+            value_precision=2,
+            top=None):
         """
         Useful for grids or charting libraries that want an array of cell values per row.
         Returns 3-dimensional cell structure for tabbed grids or multiple charts.
@@ -450,11 +502,17 @@ class CellService:
         :param cube_name: cube name
         :param view_name: view name
         :param private: True (private) or False (public)
+        :param elem_properties: List of properties to be queried from the elements. E.g. ['UniqueName','Attributes', ...]
+        :param member_properties: List properties to be queried from the member. E.g. ['Name', 'UniqueName']
         :param value_precision: Integer (optional) specifying number of decimal places to return
         :return: dict : { titles: [], headers: [axis][], cells: { Page0: { Row0: { [row values], Row1: [], ...}, ...}, ...} }
         """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
-        data = self.extract_cellset_raw(cellset_id=cellset_id, member_properties=["Name", "UniqueName"])
+        data = self.extract_cellset_raw(cellset_id=cellset_id,
+                                        cell_properties=["Value"],
+                                        elem_properties=elem_properties,
+                                        member_properties=list(set(member_properties or []) | {"Name"}),
+                                        top=top)
         return Utils.build_ui_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
 
     @tidy_cellset
@@ -477,27 +535,26 @@ class CellService:
         if not cell_properties:
             cell_properties = ['Value']
 
-        if not elem_properties:
-            elem_properties = ['UniqueName']
-        elif 'UniqueName' not in elem_properties:
-            elem_properties.append('UniqueName')
+        # select Name property if member_properties is None or empty.
+        # Necessary, as tm1 default behaviour is to return all properties if no $select is specified in the request.
+        if member_properties is None or len(member_properties) == 0:
+            member_properties = ["Name"]
+        select_member_properties = "$select={}".format(",".join(member_properties))
 
-        if not member_properties:
-            member_properties = ['UniqueName']
-        elif 'UniqueName' not in member_properties:
-            elem_properties.append('UniqueName')
+        expand_elem_properties = ";$expand=Element($select={elem_properties})".format(
+            elem_properties=",".join(elem_properties)) \
+            if elem_properties is not None and len(elem_properties) > 0 \
+            else ""
 
         request = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
                   "Cube($select=Name;$expand=Dimensions($select=Name))," \
-                  "Axes($expand=Tuples($expand=Members(" \
-                  "$select={member_properties};" \
-                  "$expand=Element{elem_properties}){top_rows}))," \
+                  "Axes($expand=Tuples($expand=Members({select_member_properties}{expand_elem_properties}){top_rows}))," \
                   "Cells($select={cell_properties}{top_cells})" \
             .format(cellset_id=cellset_id,
                     top_rows=";$top={}".format(top) if top else "",
                     cell_properties=",".join(cell_properties),
-                    member_properties=",".join(member_properties),
-                    elem_properties=("($select=" + ",".join(elem_properties) + ")") if len(elem_properties) > 0 else "",
+                    select_member_properties=select_member_properties,
+                    expand_elem_properties=expand_elem_properties,
                     top_cells=";$top={}".format(top) if top else "")
         response = self._rest.GET(request=request)
         return response.json()
@@ -541,10 +598,13 @@ class CellService:
         if not cell_properties:
             cell_properties = ['Value']
 
-        raw_cellset = self.extract_cellset_raw(cellset_id, cell_properties=cell_properties, top=top)
-        return Utils.build_content_from_cellset(raw_cellset_as_dict=raw_cellset,
-                                                cell_properties=cell_properties,
-                                                top=top)
+        raw_cellset = self.extract_cellset_raw(
+                cellset_id,
+                cell_properties=cell_properties,
+                elem_properties=['UniqueName'],
+                member_properties=['UniqueName'],
+                top=top)
+        return Utils.build_content_from_cellset(raw_cellset_as_dict=raw_cellset, top=top)
 
     def create_cellset(self, mdx):
         """ Execute MDX in order to create cellset at server. return the cellset-id

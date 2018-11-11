@@ -164,6 +164,33 @@ class ProcessService(ObjectService):
                 parameters = {}
         return self._rest.POST(request=request, data=json.dumps(parameters, ensure_ascii=False))
 
+    def execute_with_return(self, process_name, **kwargs):
+        """ Ask TM1 Server to execute a process.
+        pass process parameters as keyword arguments to this function. E.g:
+
+        self.tm1.processes.execute_with_return(
+            process_name="Bedrock.Server.Wait",
+            pWaitSec=2)
+
+        :param process_name: name of the TI process
+        :param kwargs: names of process parameters
+        :return: success (boolean), status (String), error_log_file (String)
+        """
+        request = "/api/v1/Processes('{}')/tm1.ExecuteWithReturn?$expand=*".format(process_name)
+        parameters = dict()
+        if kwargs:
+            parameters = {"Parameters": []}
+            for parameter_name, parameter_value in kwargs.items():
+                parameters["Parameters"].append({"Name": parameter_name, "Value": parameter_value})
+        response = self._rest.POST(
+            request=request,
+            data=json.dumps(parameters, ensure_ascii=False))
+        execution_summary = response.json()
+        success = execution_summary["ProcessExecuteStatusCode"] == "CompletedSuccessfully"
+        status = execution_summary["ProcessExecuteStatusCode"]
+        error_log_file = None if execution_summary["ErrorLogFile"] is None else execution_summary["ErrorLogFile"]["Filename"]
+        return success, status, error_log_file
+
     def execute_ti_code(self, lines_prolog, lines_epilog=None):
         """ Execute lines of code on the TM1 Server
 
@@ -182,6 +209,16 @@ class ProcessService(ObjectService):
             raise e
         finally:
             self.delete(process_name)
+
+    def get_error_log_file_content(self, file_name):
+        """ Get content of error log file (e.g. TM1ProcessError_20180926213819_65708356_979b248b-232e622c6.log)
+
+        :param file_name: name of the error log file in the TM1 log directory
+        :return: String, content of the file
+        """
+        request = "/api/v1/ErrorLogFiles('{file_name}')/Content".format(file_name=file_name)
+        response = self._rest.GET(request=request)
+        return response.text
 
     def get_processerrorlogs(self, process_name):
         """ Get all ProcessErrorLog entries for a process

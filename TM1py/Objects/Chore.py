@@ -106,6 +106,10 @@ class Chore(TM1Object):
     def body(self):
         return self.construct_body()
 
+    @property
+    def body_as_dict(self):
+        return json.loads(self.body)
+
     def add_task(self, task):
         self._tasks.append(task)
 

@@ -28,7 +28,7 @@ class User(TM1Object):
     @property
     def password(self):
         if self._password:
-            return b64encode(str.encode(self._password))
+            return self._password
 
     @property
     def is_admin(self):

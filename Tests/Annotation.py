@@ -18,7 +18,7 @@ class TestAnnotationMethods(unittest.TestCase):
     # Get Random Cube + Intersection
     all_cube_names = tm1.cubes.get_all_names()
     cube_name = random.choice(all_cube_names)
-    
+
     random_intersection = tm1.cubes.get_random_intersection(cube_name, False)
     random_text = "".join([random.choice(string.printable) for i in range(100)])
 

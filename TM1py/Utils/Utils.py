@@ -1,6 +1,8 @@
 import collections
 import json
 import sys
+import warnings
+
 import pandas as pd
 
 from TM1py.Objects.Server import Server
@@ -50,11 +52,10 @@ def sort_addresstuple(cube_dimensions, unsorted_addresstuple):
     return tuple(sorted_addresstupple)
 
 
-def build_content_from_cellset(raw_cellset_as_dict, cell_properties, top=None):
+def build_content_from_cellset(raw_cellset_as_dict, top=None):
     """ transform raw cellset data into concise dictionary
 
     :param raw_cellset_as_dict:
-    :param cell_properties:
     :param top: Maximum Number of cells
     :return:
     """
@@ -97,10 +98,7 @@ def build_content_from_cellset(raw_cellset_as_dict, cell_properties, top=None):
             coordinates = elements_on_axe0 + elements_on_axe2 + elements_on_axe1
             coordinates_sorted = sort_addresstuple(cube_dimensions, coordinates)
             # get cell properties
-            content_as_dict[coordinates_sorted] = {}
-            for cell_property in cell_properties:
-                value = raw_cellset_as_dict['Cells'][ordinal_cells][cell_property]
-                content_as_dict[coordinates_sorted][cell_property] = value
+            content_as_dict[coordinates_sorted] = raw_cellset_as_dict['Cells'][ordinal_cells]
             ordinal_axe0 += 1
             ordinal_cells += 1
             if top is not None and ordinal_cells >= top:
@@ -205,11 +203,11 @@ def build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict, value_precision=No
 
     cells = {}
     for z in range(cardinality[2]):
-        zHeader = headers[2][z]['name']
+        z_header = headers[2][z]['name']
         page = []
         for x in range(cardinality[0]):
-            xHeader = headers[0][x]['name']
-            row = [xHeader]
+            x_header = headers[0][x]['name']
+            row = [x_header]
             for y in range(cardinality[1]):
                 cell_addr = (x + cardinality[0] * y + cardinality[0] * cardinality[1] * z)
                 raw_value = raw_cellset_as_dict['Cells'][cell_addr]['Value'] or 0
@@ -218,7 +216,7 @@ def build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict, value_precision=No
                 else:
                     row.append(raw_value)
             page.append(row)
-        cells[zHeader] = page
+        cells[z_header] = page
 
     return {'titles': titles, 'headers': headers, 'cells': cells}
 
@@ -247,18 +245,11 @@ def build_headers_from_cellset(raw_cellset_as_dict, force_header_dimensionality=
     headers = []
     for axis in range(dimensionality):
         members = []
-        for t_index in range(cardinality[axis]):
-            tuples_as_dict = raw_cellset_as_dict['Axes'][axis]['Tuples'][t_index]['Members']
-            members_on_row = [
-                {k: v for (k, v) in zip(
-                    ['Name'] + list(member['Element'].keys()),
-                    [member['Name']] + list(member['Element'].values()))}
-                for member in tuples_as_dict]
-            if len(members_on_row) == 1:
-                name = members_on_row[0]['Name']
-            else:
-                name = ' / '.join(tuple(member['Name'] for member in members_on_row))
-            members.append({'name': name, 'members':members_on_row})
+        for tindex in range(cardinality[axis]):
+            tuples_as_dict = raw_cellset_as_dict['Axes'][axis]['Tuples'][tindex]['Members']
+            name = ' / '.join(tuple(member['Name'] for member in tuples_as_dict))
+            members.append({'name': name, 'members': tuples_as_dict})
+
         if axis == dimensionality - 1 and cardinality[axis] == 1:
             titles = members
         else:
@@ -283,6 +274,21 @@ def build_headers_from_cellset(raw_cellset_as_dict, force_header_dimensionality=
 def element_names_from_element_unqiue_names(element_unique_names):
     """ Get tuple of simple element names from the full element unique names
     
+    :param element_unique_names: tuple of element unique names ([dim1].[hier1].[elem1], ... )
+    :return: tuple of element names: (elem1, elem2, ... )
+    """
+    warnings.simplefilter('always', PendingDeprecationWarning)
+    warnings.warn(
+        "Function deprecated and will be removed. Use element_names_from_element_unique_names instead.",
+        PendingDeprecationWarning
+    )
+    warnings.simplefilter('default', PendingDeprecationWarning)
+    return element_names_from_element_unique_names(element_unique_names)
+
+
+def element_names_from_element_unique_names(element_unique_names):
+    """ Get tuple of simple element names from the full element unique names
+
     :param element_unique_names: tuple of element unique names ([dim1].[hier1].[elem1], ... )
     :return: tuple of element names: (elem1, elem2, ... )
     """
@@ -317,26 +323,30 @@ def build_pandas_dataframe_from_cellset(cellset, multiindex=True, sort_values=Tr
     :param sort_values: Boolean to control sorting in result DataFrame
     :return: 
     """
-    cellset_clean = {}
-    for coordinates, cell in cellset.items():
-        element_names = element_names_from_element_unqiue_names(coordinates)
-        cellset_clean[element_names] = cell['Value'] if cell else None
+    try:
+        cellset_clean = {}
+        for coordinates, cell in cellset.items():
+            element_names = element_names_from_element_unique_names(coordinates)
+            cellset_clean[element_names] = cell['Value'] if cell else None
+        dimension_names = tuple(unique_name[1:unique_name.find('].[')] for unique_name in coordinates)
 
-    dimension_names = tuple([unique_name[1:unique_name.find('].[')] for unique_name in coordinates])
+        # create index
+        keylist = list(cellset_clean.keys())
+        index = pd.MultiIndex.from_tuples(keylist, names=dimension_names)
 
-    # create index
-    keylist = list(cellset_clean.keys())
-    index = pd.MultiIndex.from_tuples(keylist, names=dimension_names)
+        # create DataFrame
+        values = list(cellset_clean.values())
+        df = pd.DataFrame(values, index=index, columns=["Values"])
 
-    # create DataFrame
-    values = list(cellset_clean.values())
-    df = pd.DataFrame(values, index=index, columns=["Values"])
-
-    if not multiindex:
-        df.reset_index(inplace=True)
-        if sort_values:
-            df.sort_values(inplace=True, by=list(dimension_names))
-    return df
+        if not multiindex:
+            df.reset_index(inplace=True)
+            if sort_values:
+                df.sort_values(inplace=True, by=list(dimension_names))
+        return df
+    except UnboundLocalError:
+        message = "Can't build Dataframe from empty cellset. " \
+                  "Make sure the underlying MDX / View is not fully zero suppressed."
+        raise ValueError(message)
 
 
 def build_cellset_from_pandas_dataframe(df):

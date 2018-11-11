@@ -29,6 +29,3 @@ class ApplicationService:
         content = response.content
 
         return Application(path, content)
-
-
-

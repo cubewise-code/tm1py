@@ -1,7 +1,7 @@
+import configparser
+import os
 import unittest
 import uuid
-import os
-import configparser
 
 from TM1py.Objects import User
 from TM1py.Services import TM1Service

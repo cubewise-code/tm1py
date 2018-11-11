@@ -1,15 +1,13 @@
+import configparser
+import os
 import unittest
 import uuid
-import time
-import os
-import configparser
 
 from TM1py.Objects import Dimension, Hierarchy, Subset
 from TM1py.Services import TM1Service
 
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
-
 
 dimension_prefix = 'TM1py_unittest_dimension_{}'
 
@@ -23,10 +21,23 @@ class TestHierarchyMethods(unittest.TestCase):
         cls.dimension_name = dimension_prefix.format(uuid.uuid4())
         cls.subset_name = dimension_prefix.format("TM1py")
 
-    # create dimension with a default hierarchy
-    def test1_create_hierarchy(self):
-        d = Dimension(self.dimension_name)
-        h = Hierarchy(self.dimension_name, self.dimension_name)
+    @classmethod
+    def teardown_class(cls):
+        cls.tm1.logout()
+
+    @classmethod
+    def setUp(cls):
+        cls.create_dimension()
+        cls.create_subset()
+
+    @classmethod
+    def tearDown(cls):
+        cls.delete_dimension()
+
+    @classmethod
+    def create_dimension(cls):
+        d = Dimension(cls.dimension_name)
+        h = Hierarchy(cls.dimension_name, cls.dimension_name)
         h.add_element('Total Years', 'Consolidated')
         h.add_element('No Year', 'Numeric')
         h.add_element('1989', 'Numeric')
@@ -35,14 +46,19 @@ class TestHierarchyMethods(unittest.TestCase):
         h.add_element_attribute('Next Year', 'String')
         h.add_edge('Total Years', '1989', 2)
         d.add_hierarchy(h)
-        self.tm1.dimensions.create(d)
+        cls.tm1.dimensions.create(d)
 
-        time.sleep(1)
-        s = Subset(self.subset_name, self.dimension_name, self.dimension_name,
-                   expression="{{[{}].Members}}".format(self.dimension_name))
-        self.tm1.dimensions.subsets.create(s, False)
+    @classmethod
+    def delete_dimension(cls):
+        cls.tm1.dimensions.delete(cls.dimension_name)
 
-    def test2_get_hierarchy(self):
+    @classmethod
+    def create_subset(cls):
+        s = Subset(cls.subset_name, cls.dimension_name, cls.dimension_name,
+                   expression="{{[{}].Members}}".format(cls.dimension_name))
+        cls.tm1.dimensions.subsets.create(s, False)
+
+    def test_get_hierarchy(self):
         h = self.tm1.dimensions.hierarchies.get(self.dimension_name, self.dimension_name)
         self.assertIn('Total Years', h.elements.keys())
         self.assertIn('No Year', h.elements.keys())
@@ -51,7 +67,7 @@ class TestHierarchyMethods(unittest.TestCase):
         self.assertIn('Previous Year', [ea.name for ea in h.element_attributes])
         self.assertIn(self.subset_name, h.subsets)
 
-    def test3_update_hierarchy(self):
+    def test_update_hierarchy(self):
         # Get dimension and hierarchy
         d = self.tm1.dimensions.get(dimension_name=self.dimension_name)
         h = d.default_hierarchy
@@ -92,7 +108,6 @@ class TestHierarchyMethods(unittest.TestCase):
         self.assertEqual(h.edges[('Total Years', '2011')], 2)
         self.assertEqual(h.elements['No Year'].element_type, 'String')
 
-    def test4_hierarchy_summary(self):
         summary = self.tm1.dimensions.hierarchies.get_hierarchy_summary(self.dimension_name, self.dimension_name)
         self.assertEqual(summary["Elements"], 147)
         self.assertEqual(summary["Edges"], 143)
@@ -100,12 +115,13 @@ class TestHierarchyMethods(unittest.TestCase):
         self.assertEqual(summary["ElementAttributes"], 4)
         self.assertEqual(summary["Levels"], 3)
 
-    def test5_test_delete_hierarchy(self):
-        self.tm1.dimensions.delete(self.dimension_name)
-
-    @classmethod
-    def teardown_class(cls):
-        cls.tm1.logout()
+    def test_hierarchy_summary(self):
+        summary = self.tm1.dimensions.hierarchies.get_hierarchy_summary(self.dimension_name, self.dimension_name)
+        self.assertEqual(summary["Elements"], 4)
+        self.assertEqual(summary["Edges"], 1)
+        self.assertEqual(summary["Members"], 4)
+        self.assertEqual(summary["ElementAttributes"], 2)
+        self.assertEqual(summary["Levels"], 2)
 
 
 if __name__ == '__main__':

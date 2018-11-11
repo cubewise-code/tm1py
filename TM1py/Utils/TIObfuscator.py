@@ -72,8 +72,8 @@ def split_into_statements(code):
     :param code: 
     :return: 
     """
-    PATTERN = re.compile(r'''((?:[^;']|'[^']*')+)''')
-    return PATTERN.split(code)[1::2]
+    pattern = re.compile(r'''((?:[^;']|'[^']*')+)''')
+    return pattern.split(code)[1::2]
 
 
 def remove_generated_code(code):
