@@ -237,13 +237,13 @@ class TestMDXUtils(unittest.TestCase):
 
     def test_read_cube_name_from_mdx(self):
         all_cube_names = self.tm1.cubes.get_all_names()
-        all_cube_names_normalized = [cube_name.upper().replace(" ", "") for cube_name in all_cube_names]
         for cube_name in all_cube_names:
             private_views, public_views = self.tm1.cubes.views.get_all(cube_name)
             for view in private_views + public_views:
                 mdx = view.MDX
-                cube_name = MDXUtils.read_cube_name_from_mdx(mdx)
-                self.assertIn(cube_name, all_cube_names_normalized)
+                self.assertEquals(
+                    cube_name.upper().replace(" ", ""),
+                    MDXUtils.read_cube_name_from_mdx(mdx))
 
     @classmethod
     def tearDownClass(cls):
@@ -274,7 +274,10 @@ class TestTIObfuscatorMethods(unittest.TestCase):
         # create process
         prolog = "\r\nSaveDataAll;\r\nsText='abcABC';\r\n"
         epilog = "SaveDataAll;"
-        cls.process = Process(name=cls.process_name, prolog_procedure=prolog, epilog_procedure=epilog)
+        cls.process = Process(
+            name=cls.process_name,
+            prolog_procedure=prolog,
+            epilog_procedure=epilog)
         # create process with expand in TM1
         if cls.tm1.processes.exists(cls.process.name):
             cls.tm1.processes.delete(cls.process.name)
@@ -283,7 +286,9 @@ class TestTIObfuscatorMethods(unittest.TestCase):
         # create process with expand
         prolog = "\r\nnRevenue = 20;\r\nsRevenue = EXPAND('%nrevenue%');\r\nIF(sRevenue @ <> '20.000');\r\n" \
                  "ProcessBreak;\r\nENDIF;"
-        cls.expand_process = Process(name=cls.expand_process_name, prolog_procedure=prolog)
+        cls.expand_process = Process(
+            name=cls.expand_process_name,
+            prolog_procedure=prolog)
         # create process with expand in TM1
         if cls.tm1.processes.exists(cls.expand_process.name):
             cls.tm1.processes.delete(cls.expand_process.name)
@@ -322,8 +327,9 @@ class TestTIObfuscatorMethods(unittest.TestCase):
         # create bedrocks if they doesn't exist
         for bedrock in ("Bedrock.Dim.Clone", "Bedrock.Cube.Clone"):
             if not cls.tm1.processes.exists(bedrock):
-                process = Utils.load_bedrock_from_github(bedrock)
-                cls.tm1.processes.create(process)
+                with open(r"resources\\" + bedrock + ".json", "r") as file:
+                    process = Process.from_json(file.read())
+                    cls.tm1.processes.create(process)
 
     def test_split_into_statements(self):
         code = "sText1 = 'abcdefgh';\r\n" \
@@ -359,6 +365,7 @@ class TestTIObfuscatorMethods(unittest.TestCase):
         self.assertNotIn("#****Begin", code)
         self.assertNotIn("DIMENSIONELEMENTINSERT", code)
         self.assertNotIn("#****End", code)
+        self.assertIn("sText = 'test';", code)
 
     def test_obfuscate_code(self):
         if self.tm1.processes.exists(self.process_name_obf):
@@ -371,7 +378,9 @@ class TestTIObfuscatorMethods(unittest.TestCase):
             self.tm1.processes.delete("Bedrock.Dim.Clone.Obf")
 
         p = self.tm1.processes.get("Bedrock.Dim.Clone")
-        p_obf = TIObfuscator.obfuscate_process(process=p, new_name='Bedrock.Dim.Clone.Obf')
+        p_obf = TIObfuscator.obfuscate_process(
+            process=p,
+            new_name='Bedrock.Dim.Clone.Obf')
         self.tm1.processes.create(p_obf)
         # call obfuscated process
         parameters = {

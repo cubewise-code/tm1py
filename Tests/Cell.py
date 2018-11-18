@@ -47,7 +47,9 @@ class TestDataMethods(unittest.TestCase):
                                   elements=elements,
                                   element_attributes=element_attributes)
             dimension = Dimension(dimension_name, [hierarchy])
-            if not cls.tm1.dimensions.exists(dimension.name):
+            if cls.tm1.dimensions.exists(dimension.name):
+                cls.tm1.dimensions.update(dimension)
+            else:
                 cls.tm1.dimensions.create(dimension)
             attribute_cube = "}ElementAttributes_" + dimension_name
             attribute_values = dict()

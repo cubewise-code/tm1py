@@ -203,7 +203,7 @@ class ProcessService(ObjectService):
                     epilog_procedure=Process.auto_generated_string + '\r\n'.join(lines_epilog) if lines_epilog else '')
         self.create(p)
         try:
-            self.execute(process_name)
+            return self.execute(process_name)
             pass
         except TM1pyException as e:
             raise e

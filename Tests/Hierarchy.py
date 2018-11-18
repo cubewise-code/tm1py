@@ -1,7 +1,6 @@
 import configparser
 import os
 import unittest
-import uuid
 
 from TM1py.Objects import Dimension, Hierarchy, Subset
 from TM1py.Services import TM1Service
@@ -9,7 +8,9 @@ from TM1py.Services import TM1Service
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
 
-dimension_prefix = 'TM1py_unittest_dimension_{}'
+DIMENSION_PREFIX = 'TM1py_Tests_Hierarchy_'
+DIMENSION_NAME = DIMENSION_PREFIX + "Some_Name"
+SUBSET_NAME = DIMENSION_PREFIX + "Some_Subset"
 
 
 class TestHierarchyMethods(unittest.TestCase):
@@ -17,9 +18,6 @@ class TestHierarchyMethods(unittest.TestCase):
     @classmethod
     def setup_class(cls):
         cls.tm1 = TM1Service(**config['tm1srv01'])
-
-        cls.dimension_name = dimension_prefix.format(uuid.uuid4())
-        cls.subset_name = dimension_prefix.format("TM1py")
 
     @classmethod
     def teardown_class(cls):
@@ -36,8 +34,8 @@ class TestHierarchyMethods(unittest.TestCase):
 
     @classmethod
     def create_dimension(cls):
-        d = Dimension(cls.dimension_name)
-        h = Hierarchy(cls.dimension_name, cls.dimension_name)
+        d = Dimension(DIMENSION_NAME)
+        h = Hierarchy(DIMENSION_NAME, DIMENSION_NAME)
         h.add_element('Total Years', 'Consolidated')
         h.add_element('No Year', 'Numeric')
         h.add_element('1989', 'Numeric')
@@ -50,26 +48,26 @@ class TestHierarchyMethods(unittest.TestCase):
 
     @classmethod
     def delete_dimension(cls):
-        cls.tm1.dimensions.delete(cls.dimension_name)
+        cls.tm1.dimensions.delete(DIMENSION_NAME)
 
     @classmethod
     def create_subset(cls):
-        s = Subset(cls.subset_name, cls.dimension_name, cls.dimension_name,
-                   expression="{{[{}].Members}}".format(cls.dimension_name))
+        s = Subset(SUBSET_NAME, DIMENSION_NAME, DIMENSION_NAME,
+                   expression="{{[{}].Members}}".format(DIMENSION_NAME))
         cls.tm1.dimensions.subsets.create(s, False)
 
     def test_get_hierarchy(self):
-        h = self.tm1.dimensions.hierarchies.get(self.dimension_name, self.dimension_name)
+        h = self.tm1.dimensions.hierarchies.get(DIMENSION_NAME, DIMENSION_NAME)
         self.assertIn('Total Years', h.elements.keys())
         self.assertIn('No Year', h.elements.keys())
         self.assertIn('1989', h.elements.keys())
         self.assertIn('Next Year', [ea.name for ea in h.element_attributes])
         self.assertIn('Previous Year', [ea.name for ea in h.element_attributes])
-        self.assertIn(self.subset_name, h.subsets)
+        self.assertIn(SUBSET_NAME, h.subsets)
 
     def test_update_hierarchy(self):
         # Get dimension and hierarchy
-        d = self.tm1.dimensions.get(dimension_name=self.dimension_name)
+        d = self.tm1.dimensions.get(dimension_name=DIMENSION_NAME)
         h = d.default_hierarchy
         # Edit Elements and Edges
         for year in range(2010, 2021, 1):
@@ -95,7 +93,7 @@ class TestHierarchyMethods(unittest.TestCase):
         self.tm1.dimensions.update(d)
 
         # Check if update works
-        d = self.tm1.dimensions.get(self.dimension_name)
+        d = self.tm1.dimensions.get(DIMENSION_NAME)
         h = d.default_hierarchy
         self.assertIn('2010-Jan', h.elements.keys())
         self.assertIn('2020-Dec', h.elements.keys())
@@ -108,7 +106,7 @@ class TestHierarchyMethods(unittest.TestCase):
         self.assertEqual(h.edges[('Total Years', '2011')], 2)
         self.assertEqual(h.elements['No Year'].element_type, 'String')
 
-        summary = self.tm1.dimensions.hierarchies.get_hierarchy_summary(self.dimension_name, self.dimension_name)
+        summary = self.tm1.dimensions.hierarchies.get_hierarchy_summary(DIMENSION_NAME, DIMENSION_NAME)
         self.assertEqual(summary["Elements"], 147)
         self.assertEqual(summary["Edges"], 143)
         self.assertEqual(summary["Members"], 147)
@@ -116,7 +114,7 @@ class TestHierarchyMethods(unittest.TestCase):
         self.assertEqual(summary["Levels"], 3)
 
     def test_hierarchy_summary(self):
-        summary = self.tm1.dimensions.hierarchies.get_hierarchy_summary(self.dimension_name, self.dimension_name)
+        summary = self.tm1.dimensions.hierarchies.get_hierarchy_summary(DIMENSION_NAME, DIMENSION_NAME)
         self.assertEqual(summary["Elements"], 4)
         self.assertEqual(summary["Edges"], 1)
         self.assertEqual(summary["Members"], 4)

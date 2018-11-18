@@ -14,6 +14,15 @@ class ObjectService:
         """
         self._rest = rest_service
 
+    def determine_actual_object_name(self, object_class, object_name):
+        request = "/api/v1/{}?$filter=tolower(replace(Name, ' ', '')) eq '{}'".format(
+            object_class,
+            object_name.replace(" ", "").lower())
+        response = self._rest.GET(request)
+        if len(response.json()["value"]) == 0:
+            raise ValueError("Object '{}' of type '{}' doesn't exist".format(object_name, object_class))
+        return response.json()["value"][0]["Name"]
+
     def _exists(self, request):
         """ Check if ressource exists in the TM1 Server
         

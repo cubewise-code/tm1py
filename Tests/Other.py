@@ -2,8 +2,10 @@ import configparser
 import os
 import random
 import unittest
+import uuid
 from base64 import b64encode
 
+from TM1py.Exceptions import TM1pyException
 from TM1py.Objects import MDXView, User
 from TM1py.Services import TM1Service
 from TM1py.Utils import Utils
@@ -71,6 +73,21 @@ class TestOtherMethods(unittest.TestCase):
 
         self.tm1.security.delete_user(user.name)
 
+    def test_tm1service_with_encrypted_password_fail(self):
+        user_name = "TM1py user name"
+        user = User(name=user_name, groups=["ADMIN"], password="apple")
+        if user.name in self.tm1.security.get_all_user_names():
+            self.tm1.security.delete_user(user_name)
+        self.tm1.security.create_user(user)
+
+        self.assertRaises(Exception, TM1Service,
+                          user=user.name,
+                          password=b64encode(str.encode("banana")),
+                          base_url=self.tm1._tm1_rest._base_url,
+                          ssl=self.tm1._tm1_rest._ssl)
+
+        self.tm1.security.delete_user(user.name)
+
     def test_tm1service_with_plain_password(self):
         user_name = "TM1py user name"
         user = User(name=user_name, groups=["ADMIN"], password="apple")
@@ -85,6 +102,20 @@ class TestOtherMethods(unittest.TestCase):
                 ssl=self.tm1._tm1_rest._ssl) as _:
             # if no exception. Login was successful
             pass
+        self.tm1.security.delete_user(user.name)
+
+    def test_tm1service_with_plain_password_fail(self):
+        user_name = "TM1py user name"
+        user = User(name=user_name, groups=["ADMIN"], password="apple")
+        if user.name in self.tm1.security.get_all_user_names():
+            self.tm1.security.delete_user(user_name)
+        self.tm1.security.create_user(user)
+        # test with random (wrong) password
+        self.assertRaises(Exception, TM1Service,
+                          user=user.name,
+                          password="banana",
+                          base_url=self.tm1._tm1_rest._base_url,
+                          ssl=self.tm1._tm1_rest._ssl)
 
         self.tm1.security.delete_user(user.name)
 

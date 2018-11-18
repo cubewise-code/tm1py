@@ -5,8 +5,8 @@ import warnings
 
 import pandas as pd
 
-from TM1py.Objects.Server import Server
 from TM1py.Objects.Process import Process
+from TM1py.Objects.Server import Server
 
 if sys.version[0] == '2':
     import httplib as http_client
@@ -540,3 +540,46 @@ class CaseAndSpaceInsensitiveTuplesDict(collections.MutableMapping):
 
     def __repr__(self):
         return str(dict(self.items()))
+
+
+class CaseAndSpaceInsensitiveSet(collections.MutableSet):
+    def __init__(self, *values):
+        self._store = {}
+        for v in values:
+            self.add(v)
+
+    def __contains__(self, value):
+        return value.lower().replace(" ", "") in self._store
+
+    def __delitem__(self, key):
+        del self._store[key.lower().replace(" ", "")]
+
+    def __iter__(self):
+        return iter(self._store.values())
+
+    def __len__(self):
+        return len(self._store)
+
+    def add(self, value):
+        self._store[value.lower().replace(" ", "")] = value
+
+    def discard(self, value):
+        try:
+            del self._store[value.lower().replace(" ", "")]
+        except KeyError:
+            pass
+
+    def copy(self):
+        return CaseAndSpaceInsensitiveSet(*self._store.values())
+
+    def __repr__(self):
+        return str(self._store)
+
+    def __eq__(self, other):
+        if isinstance(other, collections.MutableSet):
+            other = CaseAndSpaceInsensitiveSet(*other)
+        else:
+            return NotImplemented
+        # Compare insensitively
+        return set(self._store.keys()) == set(other._store.keys())
+
