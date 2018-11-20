@@ -72,8 +72,8 @@ def split_into_statements(code):
     :param code: 
     :return: 
     """
-    PATTERN = re.compile(r'''((?:[^;']|'[^']*')+)''')
-    return PATTERN.split(code)[1::2]
+    pattern = re.compile(r'''((?:[^;']|'[^']*')+)''')
+    return pattern.split(code)[1::2]
 
 
 def remove_generated_code(code):
@@ -179,8 +179,11 @@ def obfuscate_process(process, new_name=None):
     variable_mapping = OrderedDict()
 
     # iterate through all code sections - find variables and add them to the mapping
-    for code in (process.prolog_procedure, process.metadata_procedure, process.data_procedure, process.epilog_procedure):
-        old_variables = [variable for variable in get_all_defined_variables(code) if variable.lower() not in hard_variables]
+    for code in (process.prolog_procedure, process.metadata_procedure,
+                 process.data_procedure, process.epilog_procedure):
+        old_variables = [variable
+                         for variable
+                         in get_all_defined_variables(code) if variable.lower() not in hard_variables]
         for variable in old_variables:
             if variable not in variable_mapping.keys():
                 variable_mapping[variable] = new_variables[len(variable_mapping.keys())]

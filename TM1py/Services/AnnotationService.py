@@ -30,7 +30,7 @@ class AnnotationService(ObjectService):
         """ create an Annotation
     
             :param annotation: instance of TM1py.Annotation
-            :return string: the response
+            :return response
         """
         request = "/api/v1/Annotations"
 
@@ -42,8 +42,8 @@ class AnnotationService(ObjectService):
         response = self._rest.GET("/api/v1/Cubes('{}')/Dimensions?$select=Name".format(annotation.object_name))
         cube_dimensions = [dimension['Name'] for dimension in response.json()['value']]
         for dimension, element in zip(cube_dimensions, annotation.dimensional_context):
-            payload["DimensionalContext@odata.bind"].append("Dimensions('{}')/Hierarchies('{}')/Members('{}')"
-                                                            .format(dimension, dimension, element))
+            coordinates = "Dimensions('{}')/Hierarchies('{}')/Members('{}')".format(dimension, dimension, element)
+            payload["DimensionalContext@odata.bind"].append(coordinates)
         payload['objectName'] = annotation.object_name
         payload['commentValue'] = annotation.comment_value
         payload['commentType'] = 'ANNOTATION'

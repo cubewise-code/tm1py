@@ -1,11 +1,10 @@
 import configparser
+import datetime
 import os
 import random
 import re
 import time
 import unittest
-import uuid
-import datetime
 
 import dateutil
 
@@ -16,18 +15,19 @@ from TM1py.Services import TM1Service
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
 
+PREFIX = "TM1py_Tests_Server_"
+
 
 class TestServerMethods(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         # Namings
-        cls.prefix = "TM1py_unittest_server_"
-        cls.dimension_name1 = cls.prefix + str(uuid.uuid4())
-        cls.dimension_name2 = cls.prefix + str(uuid.uuid4())
-        cls.cube_name = cls.prefix + str(uuid.uuid4())
-        cls.process_name1 = cls.prefix + str(uuid.uuid4())
-        cls.process_name2 = cls.prefix + str(uuid.uuid4())
+        cls.dimension_name1 = PREFIX + "Dimension1"
+        cls.dimension_name2 = PREFIX + "Dimension2"
+        cls.cube_name = PREFIX + "Cube1"
+        cls.process_name1 = PREFIX + "Process1"
+        cls.process_name2 = PREFIX + "Process2"
 
         # Connect to TM1
         cls.tm1 = TM1Service(**config['tm1srv01'])
@@ -55,7 +55,7 @@ class TestServerMethods(unittest.TestCase):
             cube = Cube(cls.cube_name, [cls.dimension_name1, cls.dimension_name2])
             cls.tm1.cubes.create(cube)
 
-    def test1_get_last_process_message_from_message_log(self):
+    def test_get_last_process_message_from_message_log(self):
         # inject process with ItemReject
         p = Process(name=self.process_name1, prolog_procedure="ItemReject('TM1py Tests');")
         self.tm1.processes.create(p)
@@ -81,7 +81,8 @@ class TestServerMethods(unittest.TestCase):
         regex = re.compile('TM1ProcessError_.*.log')
         self.assertFalse(regex.search(log_entry))
 
-    def test2_get_last_transaction_log_entries(self):
+    @unittest.skip("Doesn't work in TM1 11")
+    def test_get_last_transaction_log_entries(self):
         self.tm1.processes.execute_ti_code(lines_prolog="CubeSetLogChanges('{}', {});".format(self.cube_name, 1))
 
         tmstp = datetime.datetime.utcnow()
@@ -119,19 +120,30 @@ class TestServerMethods(unittest.TestCase):
         cube = self.cube_name
 
         # Query transaction log with top filter
-        entries = self.tm1.server.get_transaction_log_entries(reverse=True, user=user, cube=cube, top=3)
+        entries = self.tm1.server.get_transaction_log_entries(
+            reverse=True,
+            user=user,
+            cube=cube,
+            top=3)
         values_from_top = [entry['NewValue'] for entry in entries]
+        self.assertGreaterEqual(len(values_from_top), 3)
 
         # Query transaction log with Since filter
-        entries = self.tm1.server.get_transaction_log_entries(reverse=True, cube=cube, since=tmstp, top=10)
+        entries = self.tm1.server.get_transaction_log_entries(
+            reverse=True,
+            cube=cube,
+            since=tmstp,
+            top=10)
         values_from_since = [entry['NewValue'] for entry in entries]
+        self.assertGreaterEqual(len(values_from_since), 3)
 
         # Compare values written to cube vs. values retrieved from transaction log
         self.assertEqual(len(values_from_top), len(values_from_since))
         for v1, v2, v3 in zip(random_values, reversed(values_from_top), reversed(values_from_since)):
             self.assertAlmostEqual(v1, v2, delta=0.000000001)
 
-    def test3_get_transaction_log_entries_from_today(self):
+    @unittest.skip("Doesn't work in TM1 11")
+    def test_get_transaction_log_entries_from_today(self):
         # get datetime from today at 00:00:00
         today = datetime.datetime.combine(datetime.date.today(), datetime.time(0, 0))
         entries = self.tm1.server.get_transaction_log_entries(reverse=True, since=today)
@@ -143,7 +155,7 @@ class TestServerMethods(unittest.TestCase):
             today_date = datetime.date.today()
             self.assertTrue(entry_date == today_date)
 
-    def test4_session_context_default(self):
+    def test_session_context_default(self):
         threads = self.tm1.monitoring.get_threads()
         for thread in threads:
             if "GET /api/v1/Threads" in thread["Function"] and thread["Name"] == config['tm1srv01']['user']:
@@ -151,7 +163,7 @@ class TestServerMethods(unittest.TestCase):
                 return
         raise Exception("Did not find my own Thread")
 
-    def test5_session_context_custom(self):
+    def test_session_context_custom(self):
         app_name = "Some Application"
         with TM1Service(**config['tm1srv01'], session_context=app_name) as tm1:
             threads = tm1.monitoring.get_threads()

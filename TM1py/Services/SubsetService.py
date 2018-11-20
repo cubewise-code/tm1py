@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import collections
-import json
-
-from TM1py.Exceptions import TM1pyException
 from TM1py.Objects import Subset
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.ProcessService import ProcessService
@@ -13,6 +9,7 @@ class SubsetService(ObjectService):
     """ Service to handle Object Updates for TM1 Subsets (dynamic and static)
     
     """
+
     def __init__(self, rest):
         super().__init__(rest)
         self._process_service = ProcessService(rest)
@@ -138,6 +135,6 @@ class SubsetService(ObjectService):
         """
         hierarchy_name = hierarchy_name if hierarchy_name else dimension_name
         subset_type = 'PrivateSubsets' if private else "Subsets"
-        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')"\
+        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')" \
             .format(dimension_name, hierarchy_name, subset_type, subset_name)
         return self._exists(request)

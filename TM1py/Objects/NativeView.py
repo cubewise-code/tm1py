@@ -19,9 +19,9 @@ class NativeView(View):
                  suppress_empty_columns=False,
                  suppress_empty_rows=False,
                  format_string="0.#########\fG|0|",
-                 titles = None,
-                 columns = None,
-                 rows = None):
+                 titles=None,
+                 columns=None,
+                 rows=None):
         super().__init__(cube_name, view_name)
         self._suppress_empty_columns = suppress_empty_columns
         self._suppress_empty_rows = suppress_empty_rows
@@ -50,18 +50,19 @@ class NativeView(View):
         mdx = 'SELECT '
         for i, axe in enumerate((self._rows, self._columns)):
             for j, axis_selection in enumerate(axe):
-                subset = axis_selection._subset
+                subset = axis_selection.subset
                 if isinstance(subset, AnonymousSubset):
-                    if subset._expression is not None:
+                    if subset.expression is not None:
                         if j == 0:
                             if self.suppress_empty_rows:
                                 mdx += 'NON EMPTY '
-                            mdx += subset._expression
+                            mdx += subset.expression
                         else:
-                            mdx += '*' + subset._expression
+                            mdx += '*' + subset.expression
                     else:
-                        elements_as_unique_names = ['[' + axis_selection._dimension_name + '].[' + elem + ']' for elem in
-                                                    subset._elements]
+                        elements_as_unique_names = ['[' + axis_selection.dimension_name + '].[' + elem + ']'
+                                                    for elem
+                                                    in subset.elements]
                         mdx_set = '{' + ','.join(elements_as_unique_names) + '}'
                         if j == 0:
                             if self.suppress_empty_columns:
@@ -70,7 +71,7 @@ class NativeView(View):
                         else:
                             mdx += '*' + mdx_set
                 else:
-                    mdx_set = 'TM1SubsetToSet([{}],"{}")'.format(axis_selection._dimension_name, subset.name)
+                    mdx_set = 'TM1SubsetToSet([{}],"{}")'.format(axis_selection.dimension_name, subset.name)
                     if j == 0:
                         if self.suppress_empty_columns:
                             mdx += 'NON EMPTY '
@@ -91,8 +92,8 @@ class NativeView(View):
         if len(self._titles) > 0:
             unique_names = []
             for title_selection in self._titles:
-                dimension_name = title_selection._dimension_name
-                selection = title_selection._selected
+                dimension_name = title_selection.dimension_name
+                selection = title_selection.selected
                 unique_names.append('[' + dimension_name + '].[' + selection + ']')
             mdx += 'WHERE (' + ','.join(unique_names) + ') '
         return mdx
@@ -147,7 +148,7 @@ class NativeView(View):
         :return:
         """
         for column in self._columns:
-            if column._dimension_name == dimension_name:
+            if column.dimension_name == dimension_name:
                 self._columns.remove(column)
 
     def add_row(self, dimension_name, subset=None):
@@ -167,7 +168,7 @@ class NativeView(View):
         :return:
         """
         for row in self._rows:
-            if row._dimension_name == dimension_name:
+            if row.dimension_name == dimension_name:
                 self._rows.remove(row)
 
     def add_title(self, dimension_name, selection, subset=None):
@@ -188,7 +189,7 @@ class NativeView(View):
         :return:
         """
         for title in self._titles:
-            if title._dimension_name == dimension_name:
+            if title.dimension_name == dimension_name:
                 self._titles.remove(title)
 
     @classmethod
@@ -225,15 +226,16 @@ class NativeView(View):
                                                    subset=subset)
                 columns.append(axis_selection) if i == 0 else rows.append(axis_selection)
 
-        return cls(cube_name = view_as_dict["@odata.context"]
-                             [20:view_as_dict["@odata.context"].find("')/")] if not cube_name else cube_name,
-                   view_name = view_as_dict['Name'],
-                   suppress_empty_columns = view_as_dict['SuppressEmptyColumns'],
-                   suppress_empty_rows = view_as_dict['SuppressEmptyRows'],
-                   format_string = view_as_dict['FormatString'],
-                   titles = titles,
-                   columns = columns,
-                   rows = rows)
+        return cls(
+            cube_name=view_as_dict["@odata.context"][20:view_as_dict["@odata.context"].find("')/")]
+            if not cube_name else cube_name,
+            view_name=view_as_dict['Name'],
+            suppress_empty_columns=view_as_dict['SuppressEmptyColumns'],
+            suppress_empty_rows=view_as_dict['SuppressEmptyRows'],
+            format_string=view_as_dict['FormatString'],
+            titles=titles,
+            columns=columns,
+            rows=rows)
 
     def _construct_body(self):
         """ construct the ODATA conform JSON represenation for the NativeView entity.
@@ -247,5 +249,13 @@ class NativeView(View):
         bottom_json = "\"SuppressEmptyColumns\": " + str(self._suppress_empty_columns).lower() + \
                       ",\"SuppressEmptyRows\":" + str(self._suppress_empty_rows).lower() + \
                       ",\"FormatString\": \"" + self._format_string + "\"}"
-        return top_json + '\"Columns\":[' + columns_json + '],\"Rows\":[' + rows_json + \
-               '],\"Titles\":[' + titles_json + '],' + bottom_json
+        return "".join([
+            top_json,
+            '\"Columns\":[',
+            columns_json,
+            '],\"Rows\":[',
+            rows_json,
+            '],\"Titles\":[',
+            titles_json,
+            '],',
+            bottom_json])

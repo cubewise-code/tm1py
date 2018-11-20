@@ -1,10 +1,12 @@
 import collections
 import json
 import sys
+import warnings
+
 import pandas as pd
 
-from TM1py.Objects.Server import Server
 from TM1py.Objects.Process import Process
+from TM1py.Objects.Server import Server
 
 if sys.version[0] == '2':
     import httplib as http_client
@@ -151,10 +153,10 @@ def build_ui_arrays_from_cellset(raw_cellset_as_dict, value_precision):
     cells = {}
     ordinal_cells = 0
     for z in range(cardinality[2]):
-        zHeader = headers[2][z]['name']
+        z_header = headers[2][z]['name']
         pages = {}
         for y in range(cardinality[1]):
-            yHeader = headers[1][y]['name']
+            y_header = headers[1][y]['name']
             row = []
             for x in range(cardinality[0]):
                 raw_value = raw_cellset_as_dict['Cells'][ordinal_cells]['Value'] or 0
@@ -163,8 +165,8 @@ def build_ui_arrays_from_cellset(raw_cellset_as_dict, value_precision):
                 else:
                     row.append(raw_value)
                 ordinal_cells += 1
-            pages[yHeader] = row
-        cells[zHeader] = pages
+            pages[y_header] = row
+        cells[z_header] = pages
     return {'titles': titles, 'headers': headers, 'cells': cells}
 
 
@@ -201,11 +203,11 @@ def build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict, value_precision=No
 
     cells = {}
     for z in range(cardinality[2]):
-        zHeader = headers[2][z]['name']
+        z_header = headers[2][z]['name']
         page = []
         for x in range(cardinality[0]):
-            xHeader = headers[0][x]['name']
-            row = [xHeader]
+            x_header = headers[0][x]['name']
+            row = [x_header]
             for y in range(cardinality[1]):
                 cell_addr = (x + cardinality[0] * y + cardinality[0] * cardinality[1] * z)
                 raw_value = raw_cellset_as_dict['Cells'][cell_addr]['Value'] or 0
@@ -214,9 +216,10 @@ def build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict, value_precision=No
                 else:
                     row.append(raw_value)
             page.append(row)
-        cells[zHeader] = page
+        cells[z_header] = page
 
-    return {'titles':titles, 'headers':headers, 'cells':cells}
+    return {'titles': titles, 'headers': headers, 'cells': cells}
+
 
 def build_headers_from_cellset(raw_cellset_as_dict, force_header_dimensionality=1):
     """ Extract dimension headers from cellset into dictionary of titles (slicers) and headers (row,column,page)
@@ -245,33 +248,47 @@ def build_headers_from_cellset(raw_cellset_as_dict, force_header_dimensionality=
         for tindex in range(cardinality[axis]):
             tuples_as_dict = raw_cellset_as_dict['Axes'][axis]['Tuples'][tindex]['Members']
             name = ' / '.join(tuple(member['Name'] for member in tuples_as_dict))
-            members.append({'name': name, 'members':tuples_as_dict})
+            members.append({'name': name, 'members': tuples_as_dict})
 
-        if (axis == dimensionality -1 and cardinality[axis] == 1):
+        if axis == dimensionality - 1 and cardinality[axis] == 1:
             titles = members
         else:
             headers.append(members)
-
 
     dimensionality = len(headers)
     cardinality = [len(headers[axis]) for axis in range(dimensionality)]
 
     # Handle 1, 2 and 3-dimensional cellsets. Use dummy row/page headers when missing
     if dimensionality == 1 and force_header_dimensionality > 1:
-        headers += [[{'name':'Row'}]]
-        cardinality.insert(1,1)
+        headers += [[{'name': 'Row'}]]
+        cardinality.insert(1, 1)
         dimensionality += 1
     if dimensionality == 2 and force_header_dimensionality > 2:
-        headers += [[{'name':'Page'}]]
-        cardinality.insert(2,1)
+        headers += [[{'name': 'Page'}]]
+        cardinality.insert(2, 1)
         dimensionality += 1
 
-    return {'titles':titles, 'headers':headers, 'dimensionality':dimensionality, 'cardinality':cardinality}
+    return {'titles': titles, 'headers': headers, 'dimensionality': dimensionality, 'cardinality': cardinality}
 
 
 def element_names_from_element_unqiue_names(element_unique_names):
     """ Get tuple of simple element names from the full element unique names
     
+    :param element_unique_names: tuple of element unique names ([dim1].[hier1].[elem1], ... )
+    :return: tuple of element names: (elem1, elem2, ... )
+    """
+    warnings.simplefilter('always', PendingDeprecationWarning)
+    warnings.warn(
+        "Function deprecated and will be removed. Use element_names_from_element_unique_names instead.",
+        PendingDeprecationWarning
+    )
+    warnings.simplefilter('default', PendingDeprecationWarning)
+    return element_names_from_element_unique_names(element_unique_names)
+
+
+def element_names_from_element_unique_names(element_unique_names):
+    """ Get tuple of simple element names from the full element unique names
+
     :param element_unique_names: tuple of element unique names ([dim1].[hier1].[elem1], ... )
     :return: tuple of element names: (elem1, elem2, ... )
     """
@@ -306,26 +323,30 @@ def build_pandas_dataframe_from_cellset(cellset, multiindex=True, sort_values=Tr
     :param sort_values: Boolean to control sorting in result DataFrame
     :return: 
     """
-    cellset_clean = {}
-    for coordinates, cell in cellset.items():
-        element_names = element_names_from_element_unqiue_names(coordinates)
-        cellset_clean[element_names] = cell['Value'] if cell else None
+    try:
+        cellset_clean = {}
+        for coordinates, cell in cellset.items():
+            element_names = element_names_from_element_unique_names(coordinates)
+            cellset_clean[element_names] = cell['Value'] if cell else None
+        dimension_names = tuple(unique_name[1:unique_name.find('].[')] for unique_name in coordinates)
 
-    dimension_names = tuple([unique_name[1:unique_name.find('].[')] for unique_name in coordinates])
+        # create index
+        keylist = list(cellset_clean.keys())
+        index = pd.MultiIndex.from_tuples(keylist, names=dimension_names)
 
-    # create index
-    keylist = list(cellset_clean.keys())
-    index = pd.MultiIndex.from_tuples(keylist, names=dimension_names)
+        # create DataFrame
+        values = list(cellset_clean.values())
+        df = pd.DataFrame(values, index=index, columns=["Values"])
 
-    # create DataFrame
-    values = list(cellset_clean.values())
-    df = pd.DataFrame(values, index=index, columns=["Values"])
-
-    if not multiindex:
-        df.reset_index(inplace=True)
-        if sort_values:
-            df.sort_values(inplace=True, by=list(dimension_names))
-    return df
+        if not multiindex:
+            df.reset_index(inplace=True)
+            if sort_values:
+                df.sort_values(inplace=True, by=list(dimension_names))
+        return df
+    except UnboundLocalError:
+        message = "Can't build Dataframe from empty cellset. " \
+                  "Make sure the underlying MDX / View is not fully zero suppressed."
+        raise ValueError(message)
 
 
 def build_cellset_from_pandas_dataframe(df):
@@ -519,3 +540,46 @@ class CaseAndSpaceInsensitiveTuplesDict(collections.MutableMapping):
 
     def __repr__(self):
         return str(dict(self.items()))
+
+
+class CaseAndSpaceInsensitiveSet(collections.MutableSet):
+    def __init__(self, *values):
+        self._store = {}
+        for v in values:
+            self.add(v)
+
+    def __contains__(self, value):
+        return value.lower().replace(" ", "") in self._store
+
+    def __delitem__(self, key):
+        del self._store[key.lower().replace(" ", "")]
+
+    def __iter__(self):
+        return iter(self._store.values())
+
+    def __len__(self):
+        return len(self._store)
+
+    def add(self, value):
+        self._store[value.lower().replace(" ", "")] = value
+
+    def discard(self, value):
+        try:
+            del self._store[value.lower().replace(" ", "")]
+        except KeyError:
+            pass
+
+    def copy(self):
+        return CaseAndSpaceInsensitiveSet(*self._store.values())
+
+    def __repr__(self):
+        return str(self._store)
+
+    def __eq__(self, other):
+        if isinstance(other, collections.MutableSet):
+            other = CaseAndSpaceInsensitiveSet(*other)
+        else:
+            return NotImplemented
+        # Compare insensitively
+        return set(self._store.keys()) == set(other._store.keys())
+

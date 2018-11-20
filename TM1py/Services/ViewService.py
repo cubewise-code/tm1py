@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import collections
-import json
 
 from TM1py.Exceptions.Exceptions import TM1pyException
-
-from TM1py.Objects.NativeView import NativeView
 from TM1py.Objects.MDXView import MDXView
-
+from TM1py.Objects.NativeView import NativeView
 from TM1py.Services.ObjectService import ObjectService
 
 
@@ -15,6 +12,7 @@ class ViewService(ObjectService):
     """ Service to handle Object Updates for cube views (NativeViews and MDXViews)
     
     """
+
     def __init__(self, rest):
         super().__init__(rest)
 
@@ -50,7 +48,7 @@ class ViewService(ObjectService):
                     self._rest.GET(request)
                     view_types[view_type] = True
                 except TM1pyException as e:
-                    if e._status_code != 404:
+                    if e.status_code != 404:
                         raise e
             return tuple(view_types.values())
         else:
@@ -172,5 +170,3 @@ class ViewService(ObjectService):
         request = "/api/v1/Cubes('{}')/{}('{}')".format(cube_name, view_type, view_name)
         response = self._rest.DELETE(request)
         return response
-
-

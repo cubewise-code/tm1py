@@ -526,8 +526,8 @@ class CellService:
         """ Extract full Cellset data and return the raw data from TM1
         
         :param cellset_id: String; ID of existing cellset
-        :param cell_properties: List of properties to be queried from the cell. E.g. ['Value', 'Ordinal', 'RuleDerived', ...]
-        :param elem_properties: List of properties to be queried from the elements. E.g. ['UniqueName','Attributes', ...]
+        :param cell_properties: List of properties to be queried from cells. E.g. ['Value', 'RuleDerived', ...]
+        :param elem_properties: List of properties to be queried from elements. E.g. ['UniqueName','Attributes', ...]
         :param member_properties: List properties to be queried from the member. E.g. ['Name', 'UniqueName']
         :param top: Integer limiting the number of cells and the number or rows returned
         :return: Raw format from TM1.

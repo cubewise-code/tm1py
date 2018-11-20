@@ -1,14 +1,14 @@
-import unittest
-import uuid
 import configparser
 import os
+import unittest
+import uuid
 
 import pandas as pd
 
 from TM1py import Subset
-from TM1py.Utils import TIObfuscator
-from TM1py.Services import TM1Service
 from TM1py.Objects import Process, Dimension, Hierarchy, Cube
+from TM1py.Services import TM1Service
+from TM1py.Utils import TIObfuscator
 from TM1py.Utils import Utils, MDXUtils
 from TM1py.Utils.MDXUtils import DimensionSelection
 
@@ -181,7 +181,7 @@ class TestMDXUtils(unittest.TestCase):
             MDXUtils.curly_braces("{something}"),
             "{something}")
 
-    def test_cellset_and_pandas_df(self):
+    def test_build_pandas_dataframe_from_cellset(self):
         rows = [DimensionSelection(dimension_name=self.dim1_name),
                 DimensionSelection(dimension_name=self.dim2_name, elements=self.dim2_element_names)]
         columns = [
@@ -214,15 +214,36 @@ class TestMDXUtils(unittest.TestCase):
         self.assertTrue(len(cellset.keys()) == 1000)
         self.assertIsInstance(cellset, Utils.CaseAndSpaceInsensitiveTuplesDict)
 
+    def test_build_pandas_dataframe_empty_cellset(self):
+        self.tm1.cubes.cells.write_value(
+            value=0,
+            cube_name=self.cube_name,
+            element_tuple=(self.dim1_element_names[0], self.dim2_element_names[0],
+                           self.dim3_element_names[0], self.dim4_element_names[0]),
+            dimensions=(self.dim1_name, self.dim2_name, self.dim3_name, self.dim4_name))
+        rows = [DimensionSelection(dimension_name=self.dim1_name, elements=(self.dim1_element_names[0],)),
+                DimensionSelection(dimension_name=self.dim2_name, elements=(self.dim2_element_names[0],))]
+        columns = [DimensionSelection(dimension_name=self.dim3_name, elements=(self.dim3_element_names[0],)),
+                   DimensionSelection(dimension_name=self.dim4_name, elements=(self.dim4_element_names[0],))]
+        suppress = "Both"
+        mdx = MDXUtils.construct_mdx(
+            cube_name=self.cube_name,
+            rows=rows,
+            columns=columns,
+            suppress=suppress)
+        empty_cellset = self.tm1.cubes.cells.execute_mdx(mdx)
+        self.assertRaises(ValueError, Utils.build_pandas_dataframe_from_cellset, empty_cellset, True)
+        self.assertRaises(ValueError, Utils.build_pandas_dataframe_from_cellset, empty_cellset, False)
+
     def test_read_cube_name_from_mdx(self):
         all_cube_names = self.tm1.cubes.get_all_names()
-        all_cube_names_normalized = [cube_name.upper().replace(" ", "") for cube_name in all_cube_names]
         for cube_name in all_cube_names:
             private_views, public_views = self.tm1.cubes.views.get_all(cube_name)
             for view in private_views + public_views:
                 mdx = view.MDX
-                cube_name = MDXUtils.read_cube_name_from_mdx(mdx)
-                self.assertIn(cube_name, all_cube_names_normalized)
+                self.assertEquals(
+                    cube_name.upper().replace(" ", ""),
+                    MDXUtils.read_cube_name_from_mdx(mdx))
 
     @classmethod
     def tearDownClass(cls):
@@ -253,7 +274,10 @@ class TestTIObfuscatorMethods(unittest.TestCase):
         # create process
         prolog = "\r\nSaveDataAll;\r\nsText='abcABC';\r\n"
         epilog = "SaveDataAll;"
-        cls.process = Process(name=cls.process_name, prolog_procedure=prolog, epilog_procedure=epilog)
+        cls.process = Process(
+            name=cls.process_name,
+            prolog_procedure=prolog,
+            epilog_procedure=epilog)
         # create process with expand in TM1
         if cls.tm1.processes.exists(cls.process.name):
             cls.tm1.processes.delete(cls.process.name)
@@ -262,7 +286,9 @@ class TestTIObfuscatorMethods(unittest.TestCase):
         # create process with expand
         prolog = "\r\nnRevenue = 20;\r\nsRevenue = EXPAND('%nrevenue%');\r\nIF(sRevenue @ <> '20.000');\r\n" \
                  "ProcessBreak;\r\nENDIF;"
-        cls.expand_process = Process(name=cls.expand_process_name, prolog_procedure=prolog)
+        cls.expand_process = Process(
+            name=cls.expand_process_name,
+            prolog_procedure=prolog)
         # create process with expand in TM1
         if cls.tm1.processes.exists(cls.expand_process.name):
             cls.tm1.processes.delete(cls.expand_process.name)
@@ -289,7 +315,7 @@ class TestTIObfuscatorMethods(unittest.TestCase):
         # create }ElementAttribute values
         cellset = {}
         for year in range(1989, 2040, 1):
-            cellset[(str(year), 'Previous Year')] = year-1
+            cellset[(str(year), 'Previous Year')] = year - 1
             cellset[(str(year), 'Next Year')] = year + 1
         cls.tm1.cubes.cells.write_values("}ElementAttributes_" + cls.dimension_name, cellset)
 
@@ -301,15 +327,16 @@ class TestTIObfuscatorMethods(unittest.TestCase):
         # create bedrocks if they doesn't exist
         for bedrock in ("Bedrock.Dim.Clone", "Bedrock.Cube.Clone"):
             if not cls.tm1.processes.exists(bedrock):
-                process = Utils.load_bedrock_from_github(bedrock)
-                cls.tm1.processes.create(process)
+                with open(r"resources\\" + bedrock + ".json", "r") as file:
+                    process = Process.from_json(file.read())
+                    cls.tm1.processes.create(process)
 
     def test_split_into_statements(self):
         code = "sText1 = 'abcdefgh';\r\n" \
                " nElem = 2;\r\n" \
-               " # dasjd; dasjdas '' qdawdas\r\n"\
-               "# daskldlaskjdla aksdlas;das \r\n"\
-               "    # dasdwad\r\n"\
+               " # dasjd; dasjdas '' qdawdas\r\n" \
+               "# daskldlaskjdla aksdlas;das \r\n" \
+               "    # dasdwad\r\n" \
                "sText2 = 'dasjnd;jkas''dasdas'';dasdas';\r\n" \
                "SaveDataAll;"
         code = TIObfuscator.remove_comment_lines(code)
@@ -325,19 +352,20 @@ class TestTIObfuscatorMethods(unittest.TestCase):
         self.tm1.processes.execute(process_obf.name, {})
 
     def test_remove_generated_code(self):
-        code = "#****Begin: Generated Statements***\r\n"\
-               "DIMENSIONELEMENTINSERT('Employee','',V1,'s');\r\n"\
-               "DIMENSIONELEMENTINSERT('Employee','',V2,'s');\r\n"\
-               "DIMENSIONELEMENTINSERT('Employee','',V3,'s');\r\n"\
-               "DIMENSIONELEMENTINSERT('Employee','',V4,'s');\r\n"\
-               "#****End: Generated Statements****\r\n"\
-               "\r\n"\
+        code = "#****Begin: Generated Statements***\r\n" \
+               "DIMENSIONELEMENTINSERT('Employee','',V1,'s');\r\n" \
+               "DIMENSIONELEMENTINSERT('Employee','',V2,'s');\r\n" \
+               "DIMENSIONELEMENTINSERT('Employee','',V3,'s');\r\n" \
+               "DIMENSIONELEMENTINSERT('Employee','',V4,'s');\r\n" \
+               "#****End: Generated Statements****\r\n" \
+               "\r\n" \
                "sText = 'test';"
 
         code = TIObfuscator.remove_generated_code(code)
         self.assertNotIn("#****Begin", code)
         self.assertNotIn("DIMENSIONELEMENTINSERT", code)
         self.assertNotIn("#****End", code)
+        self.assertIn("sText = 'test';", code)
 
     def test_obfuscate_code(self):
         if self.tm1.processes.exists(self.process_name_obf):
@@ -350,7 +378,9 @@ class TestTIObfuscatorMethods(unittest.TestCase):
             self.tm1.processes.delete("Bedrock.Dim.Clone.Obf")
 
         p = self.tm1.processes.get("Bedrock.Dim.Clone")
-        p_obf = TIObfuscator.obfuscate_process(process=p, new_name='Bedrock.Dim.Clone.Obf')
+        p_obf = TIObfuscator.obfuscate_process(
+            process=p,
+            new_name='Bedrock.Dim.Clone.Obf')
         self.tm1.processes.create(p_obf)
         # call obfuscated process
         parameters = {

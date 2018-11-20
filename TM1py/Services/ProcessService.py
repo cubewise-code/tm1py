@@ -151,7 +151,7 @@ class ProcessService(ObjectService):
         tm1.processes.execute("Bedrock.Server.Wait", pLegalEntity="UK01")
 
         :param process_name:
-        :param parameters: Deprecated! dictionary, for instance {"Parameters": [ { "Name": "pLegalEntity", "Value": "UK01" }] }
+        :param parameters: Deprecated! dictionary, e.g. {"Parameters": [ { "Name": "pLegalEntity", "Value": "UK01" }] }
         :return:
         """
         request = "/api/v1/Processes('{}')/tm1.Execute".format(process_name)
@@ -203,7 +203,7 @@ class ProcessService(ObjectService):
                     epilog_procedure=Process.auto_generated_string + '\r\n'.join(lines_epilog) if lines_epilog else '')
         self.create(p)
         try:
-            self.execute(process_name)
+            return self.execute(process_name)
             pass
         except TM1pyException as e:
             raise e

@@ -124,4 +124,4 @@ class DimensionService(ObjectService):
             statements = ["AttrInsert('{}', '', '{}', '{}');".format(dimension.name, ea.name, ea.attribute_type[0])
                           for ea
                           in h.element_attributes]
-        process_service.execute_ti_code(lines_prolog=statements)
+            process_service.execute_ti_code(lines_prolog=statements)

@@ -7,7 +7,6 @@ from TM1py.Objects.Rules import Rules
 from TM1py.Objects.TM1Object import TM1Object
 
 
-
 class Cube(TM1Object):
     """ Abstraction of a TM1 Cube
         

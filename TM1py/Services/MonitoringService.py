@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import json
-
-from TM1py.Services.ObjectService import ObjectService
 from TM1py.Objects.User import User
+from TM1py.Services.ObjectService import ObjectService
 
 
 class MonitoringService(ObjectService):
