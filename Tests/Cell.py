@@ -3,11 +3,10 @@ import os
 import random
 import types
 import unittest
-import uuid
 
 import pandas as pd
 
-from TM1py.Objects import Cube, Dimension, Element, Hierarchy, NativeView, AnonymousSubset, ElementAttribute
+from TM1py.Objects import MDXView, Cube, Dimension, Element, Hierarchy, NativeView, AnonymousSubset, ElementAttribute
 from TM1py.Services import TM1Service
 from TM1py.Utils import Utils
 
@@ -15,12 +14,28 @@ config = configparser.ConfigParser()
 config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
 
 # Hard coded stuff
-CUBE_NAME = 'TM1py_unittest_cube'
-VIEW_NAME = str(uuid.uuid4())
+PREFIX = 'TM1py_Tests_Cell_'
+CUBE_NAME = PREFIX + "Cube"
+VIEW_NAME = PREFIX + "View"
 DIMENSION_NAMES = [
-    'TM1py_unittest_dimension1',
-    'TM1py_unittest_dimension2',
-    'TM1py_unittest_dimension3']
+    PREFIX + 'Dimension1',
+    PREFIX + 'Dimension2',
+    PREFIX + 'Dimension3']
+
+MDX_TEMPLATE = """
+SELECT 
+{rows} ON ROWS,
+{columns} ON COLUMNS
+FROM {cube}
+WHERE {where}
+"""
+
+MDX_TEMPLATE_SHORT = """
+SELECT 
+{rows} ON ROWS,
+{columns} ON COLUMNS
+FROM {cube}
+"""
 
 
 class TestDataMethods(unittest.TestCase):
@@ -65,20 +80,31 @@ class TestDataMethods(unittest.TestCase):
             cls.tm1.cubes.create(cube)
 
         # Build cube view
-        view = NativeView(cube_name=CUBE_NAME, view_name=VIEW_NAME,
-                          suppress_empty_columns=True, suppress_empty_rows=True)
-        subset = AnonymousSubset(dimension_name=DIMENSION_NAMES[0],
-                                 expression='{[' + DIMENSION_NAMES[0] + '].Members}')
-        view.add_row(dimension_name=DIMENSION_NAMES[0], subset=subset)
-        subset = AnonymousSubset(dimension_name=DIMENSION_NAMES[1],
-                                 expression='{[' + DIMENSION_NAMES[1] + '].Members}')
-        view.add_row(dimension_name=DIMENSION_NAMES[1], subset=subset)
-        subset = AnonymousSubset(dimension_name=DIMENSION_NAMES[2],
-                                 expression='{[' + DIMENSION_NAMES[2] + '].Members}')
-        view.add_column(dimension_name=DIMENSION_NAMES[2], subset=subset)
-        cls.tm1.cubes.views.create(view, private=False)
+        view = NativeView(
+            cube_name=CUBE_NAME,
+            view_name=VIEW_NAME,
+            suppress_empty_columns=True,
+            suppress_empty_rows=True)
+        view.add_row(
+            dimension_name=DIMENSION_NAMES[0],
+            subset=AnonymousSubset(
+                dimension_name=DIMENSION_NAMES[0],
+                expression='{[' + DIMENSION_NAMES[0] + '].Members}'))
+        view.add_row(
+            dimension_name=DIMENSION_NAMES[1],
+            subset=AnonymousSubset(
+                dimension_name=DIMENSION_NAMES[1],
+                expression='{[' + DIMENSION_NAMES[1] + '].Members}'))
+        view.add_column(
+            dimension_name=DIMENSION_NAMES[2],
+            subset=AnonymousSubset(
+                dimension_name=DIMENSION_NAMES[2],
+                expression='{[' + DIMENSION_NAMES[2] + '].Members}'))
+        cls.tm1.cubes.views.create(
+            view=view,
+            private=False)
 
-        # Sum of all the values that we write in the cube. serves as a checksum
+        # Sum of all the values that we write in the cube. serves as a checksum.
         cls.total_value = 0
 
         # cellset of data that shall be written
@@ -360,6 +386,26 @@ class TestDataMethods(unittest.TestCase):
         self.assertEqual(self.total_value,
                          sum(values))
 
+    def test_execute_mdx_dataframe_pivot(self):
+        mdx = MDX_TEMPLATE.format(
+            rows="{{ HEAD ( {{ [{}].MEMBERS }}, 7 ) }}".format(DIMENSION_NAMES[0]),
+            columns="{{ HEAD ( {{ [{}].MEMBERS }}, 8 ) }}".format(DIMENSION_NAMES[1]),
+            cube="[{}]".format(CUBE_NAME),
+            where="( [{}].[{}] )".format(DIMENSION_NAMES[2], "Element1")
+        )
+        pivot = self.tm1.cubes.cells.execute_mdx_dataframe_pivot(mdx=mdx)
+        self.assertEqual(pivot.shape, (7, 8))
+
+    def test_execute_mdx_dataframe_pivot_no_titles(self):
+        mdx = MDX_TEMPLATE_SHORT.format(
+            rows="{{ HEAD ( {{ [{}].MEMBERS }}, 7 ) }}".format(DIMENSION_NAMES[0]),
+            columns="{{ HEAD ( {{ [{}].MEMBERS }}, 5 ) }} * {{ HEAD ( {{ [{}].MEMBERS }}, 5 ) }}".format(
+                DIMENSION_NAMES[1], DIMENSION_NAMES[2]),
+            cube="[{}]".format(CUBE_NAME)
+        )
+        pivot = self.tm1.cubes.cells.execute_mdx_dataframe_pivot(mdx=mdx)
+        self.assertEqual(pivot.shape, (7, 5 * 5))
+
     def test_execute_mdx_cellcount(self):
         mdx = "SELECT " \
               "NON EMPTY [" + DIMENSION_NAMES[0] + "].Members * [" + DIMENSION_NAMES[1] + "].Members ON ROWS," \
@@ -553,6 +599,118 @@ class TestDataMethods(unittest.TestCase):
         # check values
         values = df[["Value"]].values
         self.assertEqual(self.total_value, sum(values))
+
+    def test_execute_view_dataframe_pivot_two_row_one_column_dimensions(self):
+        view_name = PREFIX + "Pivot_two_row_one_column_dimensions"
+        view = NativeView(
+            cube_name=CUBE_NAME,
+            view_name=view_name,
+            suppress_empty_columns=False,
+            suppress_empty_rows=False)
+        view.add_row(
+            dimension_name=DIMENSION_NAMES[0],
+            subset=AnonymousSubset(
+                dimension_name=DIMENSION_NAMES[0],
+                expression='{ HEAD ( {[' + DIMENSION_NAMES[0] + '].Members}, 10) } }'))
+        view.add_row(
+            dimension_name=DIMENSION_NAMES[1],
+            subset=AnonymousSubset(
+                dimension_name=DIMENSION_NAMES[1],
+                expression='{ HEAD ( { [' + DIMENSION_NAMES[1] + '].Members}, 10 ) }'))
+        view.add_column(
+            dimension_name=DIMENSION_NAMES[2],
+            subset=AnonymousSubset(
+                dimension_name=DIMENSION_NAMES[2],
+                expression='{ HEAD ( {[' + DIMENSION_NAMES[2] + '].Members}, 10 ) }'))
+        self.tm1.cubes.views.create(view, private=False)
+
+        pivot = self.tm1.cubes.cells.execute_view_dataframe_pivot(
+            cube_name=CUBE_NAME,
+            view_name=view_name)
+        self.assertEqual((100, 10), pivot.shape)
+
+    def test_execute_view_dataframe_pivot_one_row_two_column_dimensions(self):
+        view_name = PREFIX + "Pivot_one_row_two_column_dimensions"
+        view = NativeView(
+            cube_name=CUBE_NAME,
+            view_name=view_name,
+            suppress_empty_columns=False,
+            suppress_empty_rows=False)
+        view.add_row(
+            dimension_name=DIMENSION_NAMES[0],
+            subset=AnonymousSubset(
+                dimension_name=DIMENSION_NAMES[0],
+                expression='{ HEAD ( {[' + DIMENSION_NAMES[0] + '].Members}, 10) } }'))
+        view.add_column(
+            dimension_name=DIMENSION_NAMES[1],
+            subset=AnonymousSubset(
+                dimension_name=DIMENSION_NAMES[1],
+                expression='{ HEAD ( { [' + DIMENSION_NAMES[1] + '].Members}, 10 ) }'))
+        view.add_column(
+            dimension_name=DIMENSION_NAMES[2],
+            subset=AnonymousSubset(
+                dimension_name=DIMENSION_NAMES[2],
+                expression='{ HEAD ( {[' + DIMENSION_NAMES[2] + '].Members}, 10 ) }'))
+        self.tm1.cubes.views.create(
+            view=view,
+            private=False)
+
+        pivot = self.tm1.cubes.cells.execute_view_dataframe_pivot(
+            cube_name=CUBE_NAME,
+            view_name=view_name)
+        self.assertEqual((10, 100), pivot.shape)
+
+    def test_execute_view_dataframe_pivot_one_row_one_column_dimensions(self):
+        view_name = PREFIX + "Pivot_one_row_one_column_dimensions"
+        view = NativeView(
+            cube_name=CUBE_NAME,
+            view_name=view_name,
+            suppress_empty_columns=False,
+            suppress_empty_rows=False)
+        view.add_row(
+            dimension_name=DIMENSION_NAMES[0],
+            subset=AnonymousSubset(
+                dimension_name=DIMENSION_NAMES[0],
+                expression='{ HEAD ( {[' + DIMENSION_NAMES[0] + '].Members}, 10) } }'))
+        view.add_column(
+            dimension_name=DIMENSION_NAMES[1],
+            subset=AnonymousSubset(
+                dimension_name=DIMENSION_NAMES[1],
+                expression='{ HEAD ( { [' + DIMENSION_NAMES[1] + '].Members}, 10 ) }'))
+        view.add_title(
+            dimension_name=DIMENSION_NAMES[2],
+            selection="Element 1",
+            subset=AnonymousSubset(
+                dimension_name=DIMENSION_NAMES[2],
+                elements=("Element 1",)))
+        self.tm1.cubes.views.create(view, private=False)
+        pivot = self.tm1.cubes.cells.execute_view_dataframe_pivot(
+            cube_name=CUBE_NAME,
+            view_name=view_name)
+        self.assertEqual((10, 10), pivot.shape)
+
+    def test_execute_mdxview_dataframe_pivot(self):
+        mdx = MDX_TEMPLATE.format(
+            rows="{{ [{}].DefaultMember }}".format(DIMENSION_NAMES[0]),
+            columns="{{ [{}].DefaultMember }}".format(DIMENSION_NAMES[1]),
+            cube="[{}]".format(CUBE_NAME),
+            where="( [{}].[{}] )".format(DIMENSION_NAMES[2], "Element1")
+        )
+        view = MDXView(CUBE_NAME, PREFIX + "MDX_VIEW", mdx)
+        self.tm1.cubes.views.create(
+            view=view,
+            private=False)
+
+        pivot = self.tm1.cubes.cells.execute_view_dataframe_pivot(
+            cube_name=CUBE_NAME,
+            view_name=view.name,
+            private=False)
+        self.assertEqual((1, 1), pivot.shape)
+
+        self.tm1.cubes.views.delete(
+            cube_name=CUBE_NAME,
+            view_name=view.name,
+            private=False)
 
     def test_execute_view_cellcount(self):
         cell_count = self.tm1.cubes.cells.execute_view_cellcount(

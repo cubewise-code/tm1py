@@ -3,7 +3,6 @@ import functools
 import sys
 from base64 import b64encode, b64decode
 
-
 import requests
 
 from TM1py.Exceptions import TM1pyException

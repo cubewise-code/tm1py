@@ -97,9 +97,102 @@ def read_cube_name_from_mdx(mdx):
     :param mdx: The MDX Query as String
     :return: String, name of a cube
     """
-    mdx_trimmed = ''.join(mdx.split()).upper()
-    post_start = mdx_trimmed.rfind("FROM[") + len("FROM[")
-    pos_end = mdx_trimmed.find("]WHERE", post_start)
-    # if pos_end is -1 it works too
-    cube_name = mdx_trimmed[post_start:pos_end]
-    return cube_name
+    cube, _, _, _ = read_dimension_composition_from_mdx(mdx)
+    return cube
+
+
+def read_dimension_composition_from_mdx(mdx):
+    """ Parse a valid MDX Query and return the name of the cube and a list of dimensions for each axis
+
+    :param mdx:
+    :return:
+    """
+    mdx_rows, mdx_columns, mdx_from, mdx_where = split_mdx(mdx)
+
+    cube = mdx_from[1:-1]
+    rows = read_dimension_composition_from_mdx_set_or_tuple(mdx_rows)
+    columns = read_dimension_composition_from_mdx_set_or_tuple(mdx_columns)
+    titles = read_dimension_composition_from_mdx_set_or_tuple(mdx_where)
+
+    return cube, rows, columns, titles
+
+
+def read_dimension_composition_from_mdx_set_or_tuple(mdx):
+    mdx_without_spaces = ''.join(mdx.split())
+    # case for mdx statement no where statement
+    if len(mdx_without_spaces) == 0:
+        return []
+    # case for tuples mdx statement on rows or columns
+    if mdx_without_spaces[1] == '(' and mdx_without_spaces[-2] == ')':
+        return read_dimension_composition_from_mdx_tuple(mdx)
+    # case for where mdx statement
+    elif mdx_without_spaces[0] == '(' and mdx_without_spaces[-1] == ')':
+        return read_dimension_composition_from_mdx_tuple(mdx)
+    # case for set mdx statement on rows or columns
+    else:
+        return read_dimension_composition_from_mdx_set(mdx)
+
+
+def read_dimension_composition_from_mdx_set(mdx):
+    dimensions = []
+    mdx_without_spaces = ''.join(mdx.split())
+    for sub_mdx in mdx_without_spaces.split("}*{"):
+        pos_start, pos_end = sub_mdx.find("["), sub_mdx.find("]")
+        dimension_name = sub_mdx[pos_start + 1:pos_end]
+        dimensions.append(dimension_name)
+    return dimensions
+
+
+def read_dimension_composition_from_mdx_tuple(mdx):
+    dimensions = []
+    for unique_member_name in mdx.split(","):
+        pos_start, pos_end = unique_member_name.find("["), unique_member_name.find("]")
+        dimension_name = unique_member_name[pos_start + 1:pos_end]
+        # only parse through first tuple of potentially many tuples
+        if dimension_name in dimensions:
+            return dimensions
+        dimensions.append(dimension_name)
+    return dimensions
+
+
+def split_mdx(mdx):
+    try:
+        mdx_rows, mdx_rest = _find_case_and_space_insensitive_first_occurrence(
+            text=mdx,
+            pattern_start="{",
+            pattern_end="}ONROWS"
+        )
+        mdx_columns, mdx_rest = _find_case_and_space_insensitive_first_occurrence(
+            text=mdx_rest,
+            pattern_start="{",
+            pattern_end="}ONCOLUMNSFROM"
+        )
+        mdx_from, mdx_where = _find_case_and_space_insensitive_first_occurrence(
+            text=mdx_rest,
+            pattern_end="]WHERE"
+        )
+        return mdx_rows, mdx_columns, mdx_from, mdx_where
+    except ValueError:
+        ValueError("Can't parse mdx: {}".format(mdx))
+
+
+def _find_case_and_space_insensitive_first_occurrence(text, pattern_start=None, pattern_end=None):
+    text_without_spaces = ''.join(text.split())
+    text_without_spaces_and_uppercase = text_without_spaces.upper()
+
+    if pattern_start:
+        pattern_start = ''.join(pattern_start.split()).upper()
+    if pattern_end:
+        pattern_end = ''.join(pattern_end.split()).upper()
+
+    if text_without_spaces_and_uppercase.count(pattern_end) > 1:
+        raise ValueError("Invalid state. {} has more than 1 occurrences in text: {}".format(pattern_end, text))
+    pos_start = text_without_spaces_and_uppercase.find(pattern_start) if pattern_start else 0
+    pos_end = text_without_spaces_and_uppercase.find(pattern_end) if pattern_end else -1
+
+    # case of mdx statement without where clause
+    if pos_start == 0 and pos_end == -1:
+        return text, ""
+    selection = text_without_spaces[pos_start:pos_end + 1]
+    text = text_without_spaces[pos_end + len(pattern_end):]
+    return selection, text

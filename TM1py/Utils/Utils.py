@@ -286,15 +286,23 @@ def element_names_from_element_unqiue_names(element_unique_names):
     return element_names_from_element_unique_names(element_unique_names)
 
 
+def dimension_name_from_element_unique_name(element_unique_name):
+    return element_unique_name[1:element_unique_name.find('].[')]
+
+
+def element_name_from_element_unique_name(element_unique_name):
+    return element_unique_name[element_unique_name.rfind('].[') + 3:-1]
+
+
 def element_names_from_element_unique_names(element_unique_names):
     """ Get tuple of simple element names from the full element unique names
 
     :param element_unique_names: tuple of element unique names ([dim1].[hier1].[elem1], ... )
     :return: tuple of element names: (elem1, elem2, ... )
     """
-    return tuple([unique_name[unique_name.rfind('].[') + 3:-1]
-                  for unique_name
-                  in element_unique_names])
+    return tuple(element_name_from_element_unique_name(unique_name)
+                 for unique_name
+                 in element_unique_names)
 
 
 def build_element_unique_names(dimension_names, element_names, hierarchy_names=None):
@@ -344,8 +352,10 @@ def build_pandas_dataframe_from_cellset(cellset, multiindex=True, sort_values=Tr
                 df.sort_values(inplace=True, by=list(dimension_names))
         return df
     except UnboundLocalError:
-        message = "Can't build Dataframe from empty cellset. " \
-                  "Make sure the underlying MDX / View is not fully zero suppressed."
+        message = """
+            Can't build DataFrame from empty cellset. 
+            Make sure the underlying MDX / View is not fully zero suppressed.
+        """
         raise ValueError(message)
 
 
@@ -367,7 +377,7 @@ def build_cellset_from_pandas_dataframe(df):
 def load_bedrock_from_github(bedrock_process_name):
     """ Load bedrock from GitHub as TM1py.Process instance
     
-    :param name_bedrock_process: 
+    :param bedrock_process_name:
     :return: 
     """
     import requests
@@ -582,4 +592,3 @@ class CaseAndSpaceInsensitiveSet(collections.MutableSet):
             return NotImplemented
         # Compare insensitively
         return set(self._store.keys()) == set(other._store.keys())
-
