@@ -38,6 +38,6 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Natural Language :: English',
     ],
-    install_requires=['requests', 'pandas', 'dateutil'],
+    install_requires=['requests', 'pandas', 'dateutil', 'pytz'],
     python_requires='>=3.5',
 )
