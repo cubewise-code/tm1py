@@ -3,22 +3,27 @@
 import collections
 import functools
 import json
-from io import StringIO
 import warnings
+from io import StringIO
+
 import pandas as pd
 
 from TM1py.Utils import Utils
+from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name
 
 
 def tidy_cellset(func):
     """ Higher Order Function to tidy up cellset after usage
     """
+
     @functools.wraps(func)
     def wrapper(self, cellset_id, *args, **kwargs):
         try:
             return func(self, cellset_id, *args, **kwargs)
         finally:
-            self.delete_cellset(cellset_id=cellset_id)
+            if kwargs.get("delete_cellset", True):
+                self.delete_cellset(cellset_id=cellset_id)
+
     return wrapper
 
 
@@ -26,6 +31,7 @@ class CellService:
     """ Service to handle Read and Write operations to TM1 cubes
     
     """
+
     def __init__(self, tm1_rest):
         """
         
@@ -153,7 +159,7 @@ class CellService:
         """
         # execute mdx and create cellset at Server
         cellset_id = self.create_cellset(mdx)
-        self.update_cellset(cellset_id, values)
+        self.update_cellset(cellset_id=cellset_id, values=values)
 
     @tidy_cellset
     def update_cellset(self, cellset_id, values):
@@ -183,7 +189,11 @@ class CellService:
         :return: content in sweet concise strcuture.
         """
         cellset_id = self.create_cellset(mdx=mdx)
-        return self.extract_cellset(cellset_id=cellset_id, cell_properties=cell_properties, top=top)
+        return self.extract_cellset(
+            cellset_id=cellset_id,
+            cell_properties=cell_properties,
+            top=top,
+            delete_cellset=True)
 
     def execute_view(self, cube_name, view_name, cell_properties=None, private=True, top=None):
         """ get view content as dictionary with sweet and concise structure.
@@ -198,7 +208,11 @@ class CellService:
         :return: Dictionary : {([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }
         """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
-        return self.extract_cellset(cellset_id=cellset_id, cell_properties=cell_properties, top=top)
+        return self.extract_cellset(
+            cellset_id=cellset_id,
+            cell_properties=cell_properties,
+            top=top,
+            delete_cellset=True)
 
     def execute_mdx_raw(
             self,
@@ -217,11 +231,13 @@ class CellService:
         :return: Raw format from TM1.
         """
         cellset_id = self.create_cellset(mdx=mdx)
-        return self.extract_cellset_raw(cellset_id=cellset_id,
-                                        cell_properties=cell_properties,
-                                        elem_properties=elem_properties,
-                                        member_properties=member_properties,
-                                        top=top)
+        return self.extract_cellset_raw(
+            cellset_id=cellset_id,
+            cell_properties=cell_properties,
+            elem_properties=elem_properties,
+            member_properties=member_properties,
+            top=top,
+            delete_cellset=True)
 
     def execute_view_raw(
             self,
@@ -244,11 +260,13 @@ class CellService:
         :return: Raw format from TM1.
         """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
-        return self.extract_cellset_raw(cellset_id=cellset_id,
-                                        cell_properties=cell_properties,
-                                        elem_properties=elem_properties,
-                                        member_properties=member_properties,
-                                        top=top)
+        return self.extract_cellset_raw(
+            cellset_id=cellset_id,
+            cell_properties=cell_properties,
+            elem_properties=elem_properties,
+            member_properties=member_properties,
+            top=top,
+            delete_cellset=True)
 
     def execute_mdx_values(self, mdx):
         """ Optimized for performance. Query only raw cell values. 
@@ -258,11 +276,11 @@ class CellService:
         :return: Generator of cell values
         """
         cellset_id = self.create_cellset(mdx=mdx)
-        return self.extract_cellset_values(cellset_id)
+        return self.extract_cellset_values(cellset_id, delete_cellset=True)
 
     def execute_view_values(self, cube_name, view_name, private=True):
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
-        return self.extract_cellset_values(cellset_id)
+        return self.extract_cellset_values(cellset_id, delete_cellset=True)
 
     def execute_mdx_csv(self, mdx):
         """ Optimized for performance. Get csv string of coordinates and values. 
@@ -273,11 +291,11 @@ class CellService:
         :return: String
         """
         cellset_id = self.create_cellset(mdx)
-        return self.extract_cellset_csv(cellset_id=cellset_id)
+        return self.extract_cellset_csv(cellset_id=cellset_id, delete_cellset=True)
 
     def execute_view_csv(self, cube_name, view_name, private=True):
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
-        return self.extract_cellset_csv(cellset_id=cellset_id)
+        return self.extract_cellset_csv(cellset_id=cellset_id, delete_cellset=True)
 
     def execute_mdx_dataframe(self, mdx):
         """ Optimized for performance. Get Pandas DataFrame from MDX Query. 
@@ -288,9 +306,39 @@ class CellService:
         :return: Pandas Dataframe
         """
         cellset_id = self.create_cellset(mdx)
-        raw_csv = self.extract_cellset_csv(cellset_id)
+        raw_csv = self.extract_cellset_csv(cellset_id=cellset_id, delete_cellset=True)
         memory_file = StringIO(raw_csv)
         return pd.read_csv(memory_file, sep=',')
+
+    def execute_view_dataframe_pivot(self, cube_name, view_name, private=False, dropna=False, fill_value=None):
+        """ Execute a cube view to get a pandas pivot dataframe, in the shape of the cube view
+
+        :param cube_name:
+        :param view_name:
+        :param private:
+        :param dropna:
+        :param fill_value:
+        :return:
+        """
+        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
+        return self.extract_cellset_dataframe_pivot(
+            cellset_id=cellset_id,
+            dropna=dropna,
+            fill_value=fill_value)
+
+    def execute_mdx_dataframe_pivot(self, mdx, dropna=False, fill_value=None):
+        """ Execute MDX Query to get a pandas pivot dataframe in the shape as specified in the Query
+
+        :param mdx:
+        :param dropna:
+        :param fill_value:
+        :return:
+        """
+        cellset_id = self.create_cellset(mdx=mdx)
+        return self.extract_cellset_dataframe_pivot(
+            cellset_id=cellset_id,
+            dropna=dropna,
+            fill_value=fill_value)
 
     def execute_view_dataframe(self, cube_name, view_name, private=True):
         """ Optimized for performance. Get Pandas DataFrame from an existing Cube View 
@@ -315,7 +363,7 @@ class CellService:
         :return: Number of Cells in the CellSet
         """
         cellset_id = self.create_cellset(mdx)
-        return self.extract_cellset_cellcount(cellset_id)
+        return self.extract_cellset_cellcount(cellset_id, delete_cellset=True)
 
     def execute_view_cellcount(self, cube_name, view_name, private=True):
         """ Execute cube view in order to understand how many cells are in a cellset.
@@ -327,7 +375,7 @@ class CellService:
         :return: 
         """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
-        return self.extract_cellset_cellcount(cellset_id)
+        return self.extract_cellset_cellcount(cellset_id, delete_cellset=True)
 
     def execute_mdx_ui_dygraph(
             self,
@@ -352,6 +400,7 @@ class CellService:
                     ['Q3-2004', 14502421.63, 10466934.096533755],
                     ['Q4-2004', 14321501.940000001, 10333095.839474997]]
             },
+        :param top:
         :param mdx: String, valid MDX Query
         :param elem_properties: List of properties to be queried from the elements. E.g. ['UniqueName','Attributes', ...]
         :param member_properties: List of properties to be queried from the members. E.g. ['UniqueName','Attributes', ...]
@@ -363,7 +412,8 @@ class CellService:
                                         cell_properties=["Value"],
                                         elem_properties=elem_properties,
                                         member_properties=list(set(member_properties or []) | {"Name"}),
-                                        top=top)
+                                        top=top,
+                                        delete_cellset=True)
         return Utils.build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
 
     def execute_view_ui_dygraph(
@@ -401,6 +451,7 @@ class CellService:
                                  14321501.940000001]}
             },
         
+        :param top:
         :param cube_name: cube name
         :param view_name: view name
         :param private: True (private) or False (public)
@@ -414,7 +465,8 @@ class CellService:
                                         cell_properties=["Value"],
                                         elem_properties=elem_properties,
                                         member_properties=list(set(member_properties or []) | {"Name"}),
-                                        top=top)
+                                        top=top,
+                                        delete_cellset=True)
         return Utils.build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
 
     def execute_mdx_ui_array(
@@ -450,6 +502,7 @@ class CellService:
                                  14321501.940000001]}
             },
 
+        :param top:
         :param mdx: a valid MDX Query
         :param elem_properties: List of properties to be queried from the elements. E.g. ['UniqueName','Attributes', ...]
         :param member_properties: List of properties to be queried from the members. E.g. ['UniqueName','Attributes', ...]
@@ -461,7 +514,8 @@ class CellService:
                                         cell_properties=["Value"],
                                         elem_properties=elem_properties,
                                         member_properties=list(set(member_properties or []) | {"Name"}),
-                                        top=top)
+                                        top=top,
+                                        delete_cellset=True)
         return Utils.build_ui_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
 
     def execute_view_ui_array(
@@ -499,6 +553,7 @@ class CellService:
                                  14321501.940000001]}
             },
 
+        :param top:
         :param cube_name: cube name
         :param view_name: view name
         :param private: True (private) or False (public)
@@ -512,7 +567,8 @@ class CellService:
                                         cell_properties=["Value"],
                                         elem_properties=elem_properties,
                                         member_properties=list(set(member_properties or []) | {"Name"}),
-                                        top=top)
+                                        top=top,
+                                        delete_cellset=True)
         return Utils.build_ui_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
 
     @tidy_cellset
@@ -522,7 +578,8 @@ class CellService:
             cell_properties=None,
             elem_properties=None,
             member_properties=None,
-            top=None):
+            top=None,
+            **kwargs):
         """ Extract full Cellset data and return the raw data from TM1
         
         :param cellset_id: String; ID of existing cellset
@@ -560,7 +617,7 @@ class CellService:
         return response.json()
 
     @tidy_cellset
-    def extract_cellset_values(self, cellset_id):
+    def extract_cellset_values(self, cellset_id, **kwargs):
         """ Extract Cellset data and return only the cells and values
         
         :param cellset_id: String; ID of existing cellset
@@ -571,13 +628,32 @@ class CellService:
         return (cell["Value"] for cell in response.json()["Cells"])
 
     @tidy_cellset
-    def extract_cellset_cellcount(self, cellset_id):
+    def extract_cellset_composition(self, cellset_id, **kwargs):
+        request = "/api/v1/Cellsets('{}')?$expand=Cube($select=Name),Axes($expand=Hierarchies($select=UniqueName))".format(
+            cellset_id)
+        response = self._rest.GET(
+            request=request,
+            data='')
+        response_json = response.json()
+        cube = response_json["Cube"]["Name"]
+
+        rows, titles, columns = [], [], []
+        if response_json["Axes"][0]["Hierarchies"]:
+            columns = [hierarchy["UniqueName"] for hierarchy in response_json["Axes"][0]["Hierarchies"]]
+        if response_json["Axes"][1]["Hierarchies"]:
+            rows = [hierarchy["UniqueName"] for hierarchy in response_json["Axes"][1]["Hierarchies"]]
+        if len(response_json["Axes"]) > 2:
+            titles = [hierarchy["UniqueName"] for hierarchy in response_json["Axes"][2]["Hierarchies"]]
+        return cube, titles, rows, columns
+
+    @tidy_cellset
+    def extract_cellset_cellcount(self, cellset_id, **kwargs):
         request = "/api/v1/Cellsets('{}')/Cells/$count".format(cellset_id)
         response = self._rest.GET(request)
         return int(response.content)
 
     @tidy_cellset
-    def extract_cellset_csv(self, cellset_id):
+    def extract_cellset_csv(self, cellset_id, **kwargs):
         """ Execute Cellset and return only the 'Content', in csv format
         
         :param cellset_id: String; ID of existing cellset
@@ -587,10 +663,38 @@ class CellService:
         data = self._rest.GET(request)
         return data.text
 
-    def extract_cellset(self, cellset_id, cell_properties=None, top=None):
+    def extract_cellset_dataframe_pivot(self, cellset_id, dropna=False, fill_value=False, **kwargs):
+        """ Extract a pivot table (pandas dataframe) from a cellset in TM1
+
+        :param cellset_id:
+        :param dropna:
+        :param fill_value:
+        :param kwargs:
+        :return:
+        """
+        data = self.extract_cellset(
+            cellset_id=cellset_id,
+            delete_cellset=False)
+
+        cube, titles, rows, columns = self.extract_cellset_composition(
+            cellset_id=cellset_id,
+            delete_cellset=True)
+
+        df = build_pandas_dataframe_from_cellset(data, multiindex=False)
+        return pd.pivot_table(
+            data=df,
+            index=[dimension_name_from_element_unique_name(hierarchy_unique_name) for hierarchy_unique_name in rows],
+            columns=[dimension_name_from_element_unique_name(hierarchy_unique_name) for hierarchy_unique_name in columns],
+            values=["Values"],
+            dropna=dropna,
+            fill_value=fill_value,
+            aggfunc='sum')
+
+    def extract_cellset(self, cellset_id, cell_properties=None, top=None, delete_cellset=True):
         """ Execute Cellset and return the cells with their properties
         
-        :param cellset_id: 
+        :param delete_cellset:
+        :param cellset_id:
         :param cell_properties: properties to be queried from the cell. E.g. Value, Ordinal, RuleDerived, ...
         :param top: integer
         :return: Content in sweet consice strcuture.
@@ -599,12 +703,15 @@ class CellService:
             cell_properties = ['Value']
 
         raw_cellset = self.extract_cellset_raw(
-                cellset_id,
-                cell_properties=cell_properties,
-                elem_properties=['UniqueName'],
-                member_properties=['UniqueName'],
-                top=top)
-        return Utils.build_content_from_cellset(raw_cellset_as_dict=raw_cellset, top=top)
+            cellset_id,
+            cell_properties=cell_properties,
+            elem_properties=['UniqueName'],
+            member_properties=['UniqueName'],
+            top=top,
+            delete_cellset=delete_cellset)
+        return Utils.build_content_from_cellset(
+            raw_cellset_as_dict=raw_cellset,
+            top=top)
 
     def create_cellset(self, mdx):
         """ Execute MDX in order to create cellset at server. return the cellset-id
@@ -621,8 +728,9 @@ class CellService:
         return cellset_id
 
     def create_cellset_from_view(self, cube_name, view_name, private):
-        request = "/api/v1/Cubes('{cube_name}')/{views}('{view_name}')/tm1.Execute"\
-            .format(cube_name=cube_name, views='PrivateViews' if private else 'Views', view_name=view_name)
+        request = "/api/v1/Cubes('{cube_name}')/{views}('{view_name}')/tm1.Execute".format(
+            cube_name=cube_name,
+            views='PrivateViews' if private else 'Views', view_name=view_name)
         return self._rest.POST(request=request, data='').json()['ID']
 
     def delete_cellset(self, cellset_id):

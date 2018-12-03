@@ -2,9 +2,9 @@
 
 import json
 
+from TM1py.Objects.Axis import ViewAxisSelection, ViewTitleSelection
 from TM1py.Objects.Subset import Subset, AnonymousSubset
 from TM1py.Objects.View import View
-from TM1py.Objects.Axis import ViewAxisSelection, ViewTitleSelection
 
 
 class NativeView(View):
@@ -13,6 +13,7 @@ class NativeView(View):
         :Notes:
             Complete, functional and tested
     """
+
     def __init__(self,
                  cube_name,
                  view_name,
@@ -33,6 +34,14 @@ class NativeView(View):
     @property
     def body(self):
         return self._construct_body()
+
+    @property
+    def rows(self):
+        return self._rows
+
+    @property
+    def columns(self):
+        return self._columns
 
     @property
     def MDX(self):

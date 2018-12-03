@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import pytz
 import functools
+import json
+
+import pytz
 
 from TM1py.Services.ObjectService import ObjectService
 
@@ -12,6 +14,7 @@ def odata_track_changes_header(func):
     :param func: 
     :return: 
     """
+
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
         # Add header
@@ -21,6 +24,7 @@ def odata_track_changes_header(func):
         # Remove Header
         self._rest.remove_http_header("Prefer")
         return response
+
     return wrapper
 
 
@@ -28,6 +32,7 @@ class ServerService(ObjectService):
     """ Service to query common information from the TM1 Server
     
     """
+
     def __init__(self, rest):
         super().__init__(rest)
         self.tlog_last_delta_request = None
@@ -135,6 +140,49 @@ class ServerService(ObjectService):
         """
         request = '/api/v1/Configuration/ProductVersion/$value'
         return self._rest.GET(request, '').text
+
+    def get_admin_host(self):
+        request = '/api/v1/Configuration/AdminHost/$value'
+        return self._rest.GET(request, '').text
+
+    def get_data_directory(self):
+        request = '/api/v1/Configuration/DataBaseDirectory/$value'
+        return self._rest.GET(request, '').text
+
+    def get_configuration(self):
+        request = '/api/v1/Configuration'
+        config = self._rest.GET(request, '').json()
+        del config["@odata.context"]
+        return config
+
+    def get_static_configuration(self):
+        """ Read current applied (!) TM1 config settings as dictionary from TM1 Server
+
+        :return: config as dictionary
+        """
+        request = '/api/v1/StaticConfiguration'
+        config = self._rest.GET(request, '').json()
+        del config["@odata.context"]
+        return config
+
+    def get_active_configuration(self):
+        """ Read current effective(!) TM1 config settings as dictionary from TM1 Server
+
+        :return: config as dictionary
+        """
+        request = '/api/v1/ActiveConfiguration'
+        config = self._rest.GET(request, '').json()
+        del config["@odata.context"]
+        return config
+
+    def update_static_configuration(self, configuration):
+        """ Update the .cfg file and triggers TM1 to re-read the file.
+
+        :param configuration:
+        :return: Response
+        """
+        request = '/api/v1/StaticConfiguration'
+        return self._rest.PATCH(request, json.dumps(configuration))
 
     def save_data(self):
         from TM1py.Services import ProcessService
