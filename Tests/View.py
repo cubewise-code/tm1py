@@ -2,7 +2,6 @@ import configparser
 import os
 import random
 import unittest
-import uuid
 
 from TM1py.Objects import AnonymousSubset, Subset, Cube, Dimension, Element, Hierarchy, MDXView, NativeView
 from TM1py.Services import TM1Service
@@ -10,17 +9,19 @@ from TM1py.Services import TM1Service
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
 
-CUBE_NAME = 'TM1py_Tests_Cube'
-DIMENSION_NAMES = ['TM1py_tests_dimension1',
-                   'TM1py_tests_dimension2',
-                   'TM1py_tests_dimension3']
+CUBE_NAME = 'TM1py_Tests_View_Cube'
+DIMENSION_NAMES = [
+    'TM1py_Tests_View_Dimension1',
+    'TM1py_Tests_View_Dimension2',
+    'TM1py_Tests_View_Dimension3']
+SUBSET_NAME = 'TM1py_Tests_View_Subset'
 
 
 class TestViewMethods(unittest.TestCase):
     tm1 = TM1Service(**config['tm1srv01'])
 
-    native_view_name = 'TM1py_tests_native_view'
-    mdx_view_name = 'TM1py_tests_mdx_view'
+    native_view_name = 'TM1py_Tests_Native_View'
+    mdx_view_name = 'TM1py_Tests_Mdx_View'
 
     # Setup Cubes, Dimensions and Subsets
     @classmethod
@@ -60,7 +61,7 @@ class TestViewMethods(unittest.TestCase):
             subset = Subset(
                 dimension_name=DIMENSION_NAMES[0],
                 hierarchy_name=DIMENSION_NAMES[0],
-                subset_name=str(uuid.uuid4()),
+                subset_name=SUBSET_NAME,
                 expression='{{[{}].Members}}'.format(DIMENSION_NAMES[0]))
             self.tm1.dimensions.subsets.create(subset, private=False)
             native_view.add_row(
@@ -78,7 +79,7 @@ class TestViewMethods(unittest.TestCase):
             subset = Subset(
                 dimension_name=DIMENSION_NAMES[2],
                 hierarchy_name=DIMENSION_NAMES[2],
-                subset_name=str(uuid.uuid4()),
+                subset_name=SUBSET_NAME,
                 elements=elements)
             self.tm1.dimensions.subsets.create(subset, private=False)
             native_view.add_column(
@@ -134,22 +135,43 @@ class TestViewMethods(unittest.TestCase):
         self.assertEqual(len(public_views), len(public_view_names))
         self.assertEqual(len(private_views), len(private_view_names))
 
-    def test_get_view(self):
+    def test_get_native_view(self):
         for private in (True, False):
+            # generic get
+            view = self.tm1.cubes.views.get(
+                cube_name=CUBE_NAME,
+                view_name=self.native_view_name,
+                private=private)
+
             # get native view
             native_view = self.tm1.cubes.views.get_native_view(
                 cube_name=CUBE_NAME,
                 view_name=self.native_view_name,
                 private=private)
-            # check if instance
+
+            self.assertIsInstance(view, NativeView)
+            self.assertEqual(view.name, self.native_view_name)
             self.assertIsInstance(native_view, NativeView)
+            self.assertEqual(view, native_view)
+
+    def test_get_mdx_view(self):
+        for private in (True, False):
+            # generic get
+            view = self.tm1.cubes.views.get(
+                cube_name=CUBE_NAME,
+                view_name=self.mdx_view_name,
+                private=private)
+
             # get mdx view
             mdx_view = self.tm1.cubes.views.get_mdx_view(
                 cube_name=CUBE_NAME,
                 view_name=self.mdx_view_name,
                 private=private)
-            # check if instance
+
+            self.assertIsInstance(view, MDXView)
+            self.assertEqual(view.name, self.mdx_view_name)
             self.assertIsInstance(mdx_view, MDXView)
+            self.assertEqual(view, mdx_view)
 
     def test_execute_view(self):
         for private in (True, False):
