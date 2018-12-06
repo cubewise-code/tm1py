@@ -19,7 +19,7 @@ class NativeView(View):
                  view_name,
                  suppress_empty_columns=False,
                  suppress_empty_rows=False,
-                 format_string="0.#########\fG|0|",
+                 format_string="0.#########",
                  titles=None,
                  columns=None,
                  rows=None):
