@@ -61,9 +61,13 @@ class DimensionService(ObjectService):
         :param dimension: instance of TM1py.Dimension
         :return: None
         """
-        # update Hierarchies
+        # update all Hierarchies except for the implicitly maintained 'Leaves' Hierarchy
         for hierarchy in dimension:
-            self.hierarchies.update(hierarchy)
+            if hierarchy.name != "Leaves":
+                if self.hierarchies.exists(dimension_name=hierarchy.dimension_name, hierarchy_name=hierarchy.name):
+                    self.hierarchies.update(hierarchy)
+                else:
+                    self.hierarchies.create(hierarchy)
 
     def delete(self, dimension_name):
         """ Delete a dimension
