@@ -1,6 +1,6 @@
 
 
-.. image:: Images/TM1pyText.png
+.. image:: https://s3-ap-southeast-2.amazonaws.com/downloads.cubewise.com/web_assets/CubewiseLogos/TM1py-logo.png
     :align: center
 
 By wrapping the IBM Planning Analytics (TM1) REST API in a concise Python framework, TM1py facilitates Python developments for TM1.
