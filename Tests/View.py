@@ -63,7 +63,11 @@ class TestViewMethods(unittest.TestCase):
                 hierarchy_name=DIMENSION_NAMES[0],
                 subset_name=SUBSET_NAME,
                 expression='{{[{}].Members}}'.format(DIMENSION_NAMES[0]))
-            self.tm1.dimensions.subsets.create(subset, private=False)
+            if not self.tm1.dimensions.subsets.exists(
+                    subset_name=subset.name,
+                    dimension_name=subset.dimension_name,
+                    private=False):
+                self.tm1.dimensions.subsets.create(subset, private=False)
             native_view.add_row(
                 dimension_name=DIMENSION_NAMES[0],
                 subset=subset)
@@ -81,7 +85,11 @@ class TestViewMethods(unittest.TestCase):
                 hierarchy_name=DIMENSION_NAMES[2],
                 subset_name=SUBSET_NAME,
                 elements=elements)
-            self.tm1.dimensions.subsets.create(subset, private=False)
+            if not self.tm1.dimensions.subsets.exists(
+                    subset_name=subset.name,
+                    dimension_name=subset.dimension_name,
+                    private=False):
+                self.tm1.dimensions.subsets.create(subset, private=False)
             native_view.add_column(
                 dimension_name=DIMENSION_NAMES[2],
                 subset=subset)

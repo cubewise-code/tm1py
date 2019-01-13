@@ -3,11 +3,10 @@
 import collections
 import json
 
-from TM1py.Objects.ElementAttribute import ElementAttribute
 from TM1py.Objects.Element import Element
-from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, CaseAndSpaceInsensitiveTuplesDict
-
+from TM1py.Objects.ElementAttribute import ElementAttribute
 from TM1py.Objects.TM1Object import TM1Object
+from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, CaseAndSpaceInsensitiveTuplesDict
 
 
 class Hierarchy(TM1Object):
@@ -115,7 +114,7 @@ class Hierarchy(TM1Object):
 
     def add_element(self, element_name, element_type):
         if element_name in self._elements:
-            raise Exception("Elementname has to be unqiue")
+            raise Exception("Elementname has to be unique")
         e = Element(name=element_name, element_type=element_type)
         self._elements[element_name] = e
 

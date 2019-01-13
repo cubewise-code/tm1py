@@ -9,7 +9,8 @@ from io import StringIO
 import pandas as pd
 
 from TM1py.Utils import Utils
-from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name
+from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
+    CaseAndSpaceInsensitiveTuplesDict
 
 
 def tidy_cellset(func):
@@ -180,22 +181,24 @@ class CellService:
             })
         self._rest.PATCH(request, json.dumps(data, ensure_ascii=False))
 
-    def execute_mdx(self, mdx, cell_properties=None, top=None):
+    def execute_mdx(self, mdx, cell_properties=None, top=None, skip_contexts=False):
         """ Execute MDX and return the cells with their properties
 
         :param mdx: MDX Query, as string
         :param cell_properties: properties to be queried from the cell. E.g. Value, Ordinal, RuleDerived, ... 
         :param top: integer
-        :return: content in sweet concise strcuture.
+        :param skip_contexts: skip elements from titles / contexts in response
+        :return: content in sweet concise structure.
         """
         cellset_id = self.create_cellset(mdx=mdx)
         return self.extract_cellset(
             cellset_id=cellset_id,
             cell_properties=cell_properties,
             top=top,
+            skip_contexts=skip_contexts,
             delete_cellset=True)
 
-    def execute_view(self, cube_name, view_name, cell_properties=None, private=True, top=None):
+    def execute_view(self, cube_name, view_name, cell_properties=None, private=True, top=None, skip_contexts=False):
         """ get view content as dictionary with sweet and concise structure.
             Works on NativeView and MDXView !
 
@@ -204,6 +207,7 @@ class CellService:
         :param cell_properties: List, cell properties: [Values, Status, HasPicklist, etc.]
         :param private: Boolean
         :param top: Int, number of cells to return (counting from top)
+        :param skip_contexts: skip elements from titles / contexts in response
 
         :return: Dictionary : {([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }
         """
@@ -212,6 +216,7 @@ class CellService:
             cellset_id=cellset_id,
             cell_properties=cell_properties,
             top=top,
+            skip_contexts=skip_contexts,
             delete_cellset=True)
 
     def execute_mdx_raw(
@@ -220,7 +225,8 @@ class CellService:
             cell_properties=None,
             elem_properties=None,
             member_properties=None,
-            top=None):
+            top=None,
+            skip_contexts=False):
         """ Execute MDX and return the raw data from TM1
 
         :param mdx: String, a valid MDX Query
@@ -228,6 +234,7 @@ class CellService:
         :param elem_properties: List of properties to be queried from the elements. E.g. ['UniqueName','Attributes', ...]
         :param member_properties: List of properties to be queried from the members. E.g. ['UniqueName','Attributes', ...]
         :param top: Integer limiting the number of cells and the number or rows returned
+        :param skip_contexts: skip elements from titles / contexts in response
         :return: Raw format from TM1.
         """
         cellset_id = self.create_cellset(mdx=mdx)
@@ -237,7 +244,8 @@ class CellService:
             elem_properties=elem_properties,
             member_properties=member_properties,
             top=top,
-            delete_cellset=True)
+            delete_cellset=True,
+            skip_contexts=skip_contexts)
 
     def execute_view_raw(
             self,
@@ -247,7 +255,8 @@ class CellService:
             cell_properties=None,
             elem_properties=None,
             member_properties=None,
-            top=None):
+            top=None,
+            skip_contexts=False):
         """ Execute a cube view and return the raw data from TM1
 
         :param cube_name: String, name of the cube
@@ -257,6 +266,7 @@ class CellService:
         :param elem_properties: List of properties to be queried from the elements. E.g. ['UniqueName','Attributes', ...]
         :param member_properties: List of properties to be queried from the members. E.g. ['UniqueName','Attributes', ...]
         :param top: Integer limiting the number of cells and the number or rows returned
+        :param skip_contexts: skip elements from titles / contexts in response
         :return: Raw format from TM1.
         """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
@@ -266,6 +276,7 @@ class CellService:
             elem_properties=elem_properties,
             member_properties=member_properties,
             top=top,
+            skip_contexts=skip_contexts,
             delete_cellset=True)
 
     def execute_mdx_values(self, mdx):
@@ -281,6 +292,14 @@ class CellService:
     def execute_view_values(self, cube_name, view_name, private=True):
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
         return self.extract_cellset_values(cellset_id, delete_cellset=True)
+
+    def execute_mdx_rows_and_cells(self, mdx):
+        cellset_id = self.create_cellset(mdx=mdx)
+        return self.extract_cellset_rows_and_cells(cellset_id, delete_cellset=True)
+
+    def execute_view_rows_and_cells(self, cube_name, view_name, private=True):
+        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
+        return self.extract_cellset_rows_and_cells(cellset_id, delete_cellset=True)
 
     def execute_mdx_csv(self, mdx):
         """ Optimized for performance. Get csv string of coordinates and values. 
@@ -579,9 +598,11 @@ class CellService:
             elem_properties=None,
             member_properties=None,
             top=None,
+            skip_contexts=False,
             **kwargs):
         """ Extract full Cellset data and return the raw data from TM1
-        
+
+        :param skip_contexts:
         :param cellset_id: String; ID of existing cellset
         :param cell_properties: List of properties to be queried from cells. E.g. ['Value', 'RuleDerived', ...]
         :param elem_properties: List of properties to be queried from elements. E.g. ['UniqueName','Attributes', ...]
@@ -603,13 +624,16 @@ class CellService:
             if elem_properties is not None and len(elem_properties) > 0 \
             else ""
 
+        filter_axis = "$filter=Ordinal ne 2;" if skip_contexts else ""
+
         request = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
                   "Cube($select=Name;$expand=Dimensions($select=Name))," \
-                  "Axes($expand=Tuples($expand=Members({select_member_properties}{expand_elem_properties}){top_rows}))," \
+                  "Axes({filter_axis}$expand=Tuples($expand=Members({select_member_properties}{expand_elem_properties}){top_rows}))," \
                   "Cells($select={cell_properties}{top_cells})" \
             .format(cellset_id=cellset_id,
                     top_rows=";$top={}".format(top) if top else "",
                     cell_properties=",".join(cell_properties),
+                    filter_axis=filter_axis,
                     select_member_properties=select_member_properties,
                     expand_elem_properties=expand_elem_properties,
                     top_cells=";$top={}".format(top) if top else "")
@@ -626,6 +650,31 @@ class CellService:
         request = "/api/v1/Cellsets('{}')?$expand=Cells($select=Value)".format(cellset_id)
         response = self._rest.GET(request=request, data='')
         return (cell["Value"] for cell in response.json()["Cells"])
+
+    @tidy_cellset
+    def extract_cellset_rows_and_cells(self, cellset_id, **kwargs):
+        request = "/api/v1/Cellsets('{}')?$expand=" \
+                  "Axes($filter=Ordinal eq 1;$expand=Tuples($expand=Members($select=Element;$expand=Element($select=UniqueName))))," \
+                  "Cells($select=Value)".format(cellset_id)
+        response = self._rest.GET(request=request, data='')
+        response_json = response.json()
+        rows = response_json["Axes"][0]["Tuples"]
+        cell_values = [cell["Value"] for cell in response_json["Cells"]]
+
+        number_rows = len(rows)
+        number_cells = len(cell_values)
+        number_cells_in_row = int(number_cells / number_rows)
+
+        cells_by_row = [cell_values[start:end]
+                        for start, end in
+                        zip(range(0, number_rows), range(number_cells_in_row, number_cells))]
+        unique_element_names_by_row = [tuple(member["Element"]["UniqueName"] for member in tupl["Members"])
+                                       for tupl
+                                       in rows]
+        result = CaseAndSpaceInsensitiveTuplesDict()
+        for unique_element_names, cells in zip(unique_element_names_by_row, cells_by_row):
+            result[unique_element_names] = cells
+        return result
 
     @tidy_cellset
     def extract_cellset_composition(self, cellset_id, **kwargs):
@@ -684,15 +733,23 @@ class CellService:
         return pd.pivot_table(
             data=df,
             index=[dimension_name_from_element_unique_name(hierarchy_unique_name) for hierarchy_unique_name in rows],
-            columns=[dimension_name_from_element_unique_name(hierarchy_unique_name) for hierarchy_unique_name in columns],
+            columns=[dimension_name_from_element_unique_name(hierarchy_unique_name) for hierarchy_unique_name in
+                     columns],
             values=["Values"],
             dropna=dropna,
             fill_value=fill_value,
             aggfunc='sum')
 
-    def extract_cellset(self, cellset_id, cell_properties=None, top=None, delete_cellset=True):
+    def extract_cellset(
+            self,
+            cellset_id,
+            cell_properties=None,
+            top=None,
+            delete_cellset=True,
+            skip_contexts=False):
         """ Execute Cellset and return the cells with their properties
-        
+
+        :param skip_contexts:
         :param delete_cellset:
         :param cellset_id:
         :param cell_properties: properties to be queried from the cell. E.g. Value, Ordinal, RuleDerived, ...
@@ -708,7 +765,9 @@ class CellService:
             elem_properties=['UniqueName'],
             member_properties=['UniqueName'],
             top=top,
+            skip_contexts=skip_contexts,
             delete_cellset=delete_cellset)
+
         return Utils.build_content_from_cellset(
             raw_cellset_as_dict=raw_cellset,
             top=top)
