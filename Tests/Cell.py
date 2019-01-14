@@ -173,6 +173,88 @@ class TestDataMethods(unittest.TestCase):
             sum(range(0, 1000)),
             sum(v["Ordinal"] for v in data.values()))
 
+    def test_execute_mdx_skip_contexts(self):
+        mdx = MDX_TEMPLATE.format(
+            rows="{[" + DIMENSION_NAMES[0] + "].[Element1]}",
+            columns="{[" + DIMENSION_NAMES[1] + "].[Element1]}",
+            cube=CUBE_NAME,
+            where="[" + DIMENSION_NAMES[2] + "].[Element1]")
+        data = self.tm1.cubes.cells.execute_mdx(mdx, skip_contexts=True)
+
+        self.assertEqual(len(data), 1)
+        for coordinates, cell in data.items():
+            self.assertEqual(len(coordinates), 2)
+            self.assertEqual(
+                Utils.dimension_name_from_element_unique_name(coordinates[0]),
+                DIMENSION_NAMES[0])
+            self.assertEqual(
+                Utils.dimension_name_from_element_unique_name(coordinates[1]),
+                DIMENSION_NAMES[1])
+
+    def test_execute_mdx_raw_skip_contexts(self):
+        mdx = MDX_TEMPLATE.format(
+            rows="{[" + DIMENSION_NAMES[0] + "].[Element1]}",
+            columns="{[" + DIMENSION_NAMES[1] + "].[Element1]}",
+            cube=CUBE_NAME,
+            where="[" + DIMENSION_NAMES[2] + "].[Element1]")
+
+        raw_response = self.tm1.cubes.cells.execute_mdx_raw(
+            mdx,
+            skip_contexts=True,
+            member_properties=["UniqueName"])
+
+        self.assertEqual(len(raw_response["Axes"]), 2)
+        for axis in raw_response["Axes"]:
+            dimension_on_axis = Utils.dimension_name_from_element_unique_name(
+                axis["Tuples"][0]["Members"][0]["UniqueName"])
+            self.assertNotEqual(dimension_on_axis, DIMENSION_NAMES[2])
+
+    def test_execute_mdx_rows_and_cells_one_dimension_on_rows(self):
+        rows = """
+         {{ [{dim0}].[Element1], [{dim0}].[Element2] }}
+        """.format(dim0=DIMENSION_NAMES[0])
+
+        columns = """
+         {{ [{dim1}].[Element1], [{dim1}].[Element2], [{dim1}].[Element3] }}
+        """.format(dim1=DIMENSION_NAMES[1])
+
+        mdx = MDX_TEMPLATE.format(
+            rows=rows,
+            columns=columns,
+            cube=CUBE_NAME,
+            where="[" + DIMENSION_NAMES[2] + "].[Element1]")
+        data = self.tm1.cubes.cells.execute_mdx_rows_and_cells(mdx)
+
+        self.assertEqual(len(data), 2)
+        for row, cells in data.items():
+            dimension = Utils.dimension_name_from_element_unique_name(row[0])
+            self.assertEqual(dimension, DIMENSION_NAMES[0])
+            self.assertEqual(len(cells), 3)
+
+    def test_execute_mdx_rows_and_cells_two_dimensions_on_rows(self):
+        rows = """
+        {{ [{dim0}].[Element1], [{dim0}].[Element2]}} * {{ [{dim1}].[Element1], [{dim1}].[Element2] }}
+        """.format(dim0=DIMENSION_NAMES[0], dim1=DIMENSION_NAMES[1])
+
+        columns = """
+         {{ [{dim2}].[Element1], [{dim2}].[Element2], [{dim2}].[Element3] }}
+        """.format(dim2=DIMENSION_NAMES[2])
+
+        mdx = MDX_TEMPLATE_SHORT.format(
+            rows=rows,
+            columns=columns,
+            cube=CUBE_NAME)
+        data = self.tm1.cubes.cells.execute_mdx_rows_and_cells(mdx)
+
+        self.assertEqual(len(data), 4)
+        for row, cells in data.items():
+            self.assertEqual(len(row), 2)
+            dimension = Utils.dimension_name_from_element_unique_name(row[0])
+            self.assertEqual(dimension, DIMENSION_NAMES[0])
+            dimension = Utils.dimension_name_from_element_unique_name(row[1])
+            self.assertEqual(dimension, DIMENSION_NAMES[1])
+            self.assertEqual(len(cells), 3)
+
     def test_execute_mdx_raw_with_member_properties_with_elem_properties(self):
         mdx = "SELECT " \
               "NON EMPTY [" + DIMENSION_NAMES[0] + "].Members * [" + DIMENSION_NAMES[1] + "].Members ON ROWS," \
@@ -433,6 +515,154 @@ class TestDataMethods(unittest.TestCase):
         # execute view with top
         data = self.tm1.cubes.cells.execute_view(cube_name=CUBE_NAME, view_name=VIEW_NAME, private=False, top=3)
         self.assertEqual(len(data.keys()), 3)
+
+    def test_execute_view_skip_contexts(self):
+        view_name = PREFIX + "View_With_Titles"
+        if not self.tm1.cubes.views.exists(cube_name=CUBE_NAME, view_name=view_name, private=False):
+            view = NativeView(
+                cube_name=CUBE_NAME,
+                view_name=view_name,
+                suppress_empty_columns=False,
+                suppress_empty_rows=False)
+            view.add_row(
+                dimension_name=DIMENSION_NAMES[0],
+                subset=AnonymousSubset(
+                    dimension_name=DIMENSION_NAMES[0],
+                    expression='{[' + DIMENSION_NAMES[0] + '].[Element 1]}'))
+            view.add_column(
+                dimension_name=DIMENSION_NAMES[1],
+                subset=AnonymousSubset(
+                    dimension_name=DIMENSION_NAMES[1],
+                    expression='{[' + DIMENSION_NAMES[1] + '].[Element 1]}'))
+            view.add_title(
+                dimension_name=DIMENSION_NAMES[2],
+                subset=AnonymousSubset(
+                    dimension_name=DIMENSION_NAMES[2],
+                    expression='{[' + DIMENSION_NAMES[2] + '].Members}'),
+                selection="Element 1")
+            self.tm1.cubes.views.create(
+                view=view,
+                private=False)
+
+        data = self.tm1.cubes.cells.execute_view(
+            cube_name=CUBE_NAME,
+            view_name=view_name,
+            private=False,
+            skip_contexts=True)
+
+        self.assertEqual(len(data), 1)
+        for coordinates, cell in data.items():
+            self.assertEqual(len(coordinates), 2)
+            self.assertEqual(
+                Utils.dimension_name_from_element_unique_name(coordinates[0]),
+                DIMENSION_NAMES[0])
+            self.assertEqual(
+                Utils.dimension_name_from_element_unique_name(coordinates[1]),
+                DIMENSION_NAMES[1])
+
+    def test_execute_view_rows_and_cells_one_dimension_on_rows(self):
+        view_name = PREFIX + "MDX_View_With_One_Dim_On_Rows"
+        if not self.tm1.cubes.views.exists(cube_name=CUBE_NAME, view_name=view_name, private=False):
+            rows = """
+             {{ [{dim0}].[Element1], [{dim0}].[Element2] }}
+            """.format(dim0=DIMENSION_NAMES[0])
+
+            columns = """
+             {{ [{dim1}].[Element1], [{dim1}].[Element2], [{dim1}].[Element3] }}
+            """.format(dim1=DIMENSION_NAMES[1])
+
+            mdx = MDX_TEMPLATE.format(
+                rows=rows,
+                columns=columns,
+                cube=CUBE_NAME,
+                where="[" + DIMENSION_NAMES[2] + "].[Element1]")
+            view = MDXView(cube_name=CUBE_NAME, view_name=view_name, MDX=mdx)
+            self.tm1.cubes.views.create(view, False)
+
+        data = self.tm1.cubes.cells.execute_view_rows_and_cells(
+            cube_name=CUBE_NAME,
+            view_name=view_name,
+            private=False)
+
+        self.assertEqual(len(data), 2)
+        for row, cells in data.items():
+            dimension = Utils.dimension_name_from_element_unique_name(row[0])
+            self.assertEqual(dimension, DIMENSION_NAMES[0])
+            self.assertEqual(len(cells), 3)
+
+    def test_execute_view_rows_and_cells_two_dimensions_on_rows(self):
+        view_name = PREFIX + "MDX_View_With_Two_Dim_On_Rows"
+        if not self.tm1.cubes.views.exists(cube_name=CUBE_NAME, view_name=view_name, private=False):
+            rows = """
+            {{ [{dim0}].[Element1], [{dim0}].[Element2]}} * {{ [{dim1}].[Element1], [{dim1}].[Element2] }}
+            """.format(dim0=DIMENSION_NAMES[0], dim1=DIMENSION_NAMES[1])
+
+            columns = """
+             {{ [{dim2}].[Element1], [{dim2}].[Element2], [{dim2}].[Element3] }}
+            """.format(dim2=DIMENSION_NAMES[2])
+
+            mdx = MDX_TEMPLATE.format(
+                rows=rows,
+                columns=columns,
+                cube=CUBE_NAME,
+                where="[" + DIMENSION_NAMES[2] + "].[Element1]")
+            view = MDXView(cube_name=CUBE_NAME, view_name=view_name, MDX=mdx)
+            self.tm1.cubes.views.create(view, False)
+
+        data = self.tm1.cubes.cells.execute_view_rows_and_cells(
+            cube_name=CUBE_NAME,
+            view_name=view_name,
+            private=False)
+
+        self.assertEqual(len(data), 4)
+        for row, cells in data.items():
+            self.assertEqual(len(row), 2)
+            dimension = Utils.dimension_name_from_element_unique_name(row[0])
+            self.assertEqual(dimension, DIMENSION_NAMES[0])
+            dimension = Utils.dimension_name_from_element_unique_name(row[1])
+            self.assertEqual(dimension, DIMENSION_NAMES[1])
+            self.assertEqual(len(cells), 3)
+
+    def test_execute_view_raw_skip_contexts(self):
+        view_name = PREFIX + "View_With_Titles"
+        if not self.tm1.cubes.views.exists(cube_name=CUBE_NAME, view_name=view_name, private=False):
+            view = NativeView(
+                cube_name=CUBE_NAME,
+                view_name=view_name,
+                suppress_empty_columns=False,
+                suppress_empty_rows=False)
+            view.add_row(
+                dimension_name=DIMENSION_NAMES[0],
+                subset=AnonymousSubset(
+                    dimension_name=DIMENSION_NAMES[0],
+                    expression='{[' + DIMENSION_NAMES[0] + '].[Element 1]}'))
+            view.add_column(
+                dimension_name=DIMENSION_NAMES[1],
+                subset=AnonymousSubset(
+                    dimension_name=DIMENSION_NAMES[1],
+                    expression='{[' + DIMENSION_NAMES[1] + '].[Element 1]}'))
+            view.add_title(
+                dimension_name=DIMENSION_NAMES[2],
+                subset=AnonymousSubset(
+                    dimension_name=DIMENSION_NAMES[2],
+                    expression='{[' + DIMENSION_NAMES[2] + '].Members}'),
+                selection="Element 1")
+            self.tm1.cubes.views.create(
+                view=view,
+                private=False)
+
+        raw_response = self.tm1.cubes.cells.execute_view_raw(
+            cube_name=CUBE_NAME,
+            view_name=view_name,
+            private=False,
+            skip_contexts=True,
+            member_properties=["UniqueName"])
+
+        self.assertEqual(len(raw_response["Axes"]), 2)
+        for axis in raw_response["Axes"]:
+            dimension_on_axis = Utils.dimension_name_from_element_unique_name(
+                axis["Tuples"][0]["Members"][0]["UniqueName"])
+            self.assertNotEqual(dimension_on_axis, DIMENSION_NAMES[2])
 
     def test_execute_view_raw_with_member_properties_without_elem_properties(self):
         # Member properties and no element properties
