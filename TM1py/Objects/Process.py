@@ -34,7 +34,7 @@ class Process(TM1Object):
                  prolog_procedure='',
                  metadata_procedure='',
                  data_procedure='',
-                 epilog_procedure= '',
+                 epilog_procedure='',
                  datasource_type='None',
                  datasource_ascii_decimal_separator='.',
                  datasource_ascii_delimiter_char=';',
@@ -53,8 +53,30 @@ class Process(TM1Object):
         """ Default construcor
 
         :param name: name of the process - mandatory
-        :param others: all other parameters optional
-        :return:
+        :param has_security_access:
+        :param ui_data:
+        :param parameters:
+        :param variables:
+        :param variables_ui_data:
+        :param prolog_procedure:
+        :param metadata_procedure:
+        :param data_procedure:
+        :param epilog_procedure:
+        :param datasource_type:
+        :param datasource_ascii_decimal_separator:
+        :param datasource_ascii_delimiter_char:
+        :param datasource_ascii_delimiter_type:
+        :param datasource_ascii_header_records:
+        :param datasource_ascii_quote_character:
+        :param datasource_ascii_thousand_separator:
+        :param datasource_data_source_name_for_client:
+        :param datasource_data_source_name_for_server:
+        :param datasource_password:
+        :param datasource_user_name:
+        :param datasource_query:
+        :param datasource_uses_unicode:
+        :param datasource_view:
+        :param datasource_subset:
         """
         self._name = name
         self._has_security_access = has_security_access
@@ -94,16 +116,16 @@ class Process(TM1Object):
     @classmethod
     def from_dict(cls, process_as_dict):
         """
-        :param process_as_json: Dictionary, process as dictionary
+        :param process_as_dict: Dictionary, process as dictionary
         :return: an instance of this class
         """
-        f = lambda dict, key : dict[key] if key in dict else ''
+        f = lambda dic, k: dic[k] if k in dic else ''
         return cls(name=process_as_dict['Name'],
                    has_security_access=process_as_dict['HasSecurityAccess'],
                    ui_data=process_as_dict['UIData'],
                    parameters=process_as_dict['Parameters'],
                    variables=process_as_dict['Variables'],
-                   variables_ui_data = process_as_dict['VariablesUIData'],
+                   variables_ui_data=process_as_dict['VariablesUIData'],
                    prolog_procedure=process_as_dict['PrologProcedure'],
                    metadata_procedure=process_as_dict['MetadataProcedure'],
                    data_procedure=process_as_dict['DataProcedure'],
@@ -368,17 +390,18 @@ class Process(TM1Object):
     # construct self.body (json) from the class-attributes
     def _construct_body(self):
         # general parameters
-        body_as_dict = {'Name': self._name,
-                'PrologProcedure': self._prolog_procedure,
-                'MetadataProcedure': self._metadata_procedure,
-                'DataProcedure': self._data_procedure,
-                'EpilogProcedure': self._epilog_procedure,
-                'HasSecurityAccess': self._has_security_access,
-                'UIData':self._ui_data,
-                'DataSource': {},
-                'Parameters': self._parameters,
-                'Variables': self._variables,
-                'VariablesUIData':self._variables_ui_data}
+        body_as_dict = {
+            'Name': self._name,
+            'PrologProcedure': self._prolog_procedure,
+            'MetadataProcedure': self._metadata_procedure,
+            'DataProcedure': self._data_procedure,
+            'EpilogProcedure': self._epilog_procedure,
+            'HasSecurityAccess': self._has_security_access,
+            'UIData': self._ui_data,
+            'DataSource': {},
+            'Parameters': self._parameters,
+            'Variables': self._variables,
+            'VariablesUIData': self._variables_ui_data}
 
         # specific parameters (depending on datasource type)
         if self._datasource_type == 'ASCII':

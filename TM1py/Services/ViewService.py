@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import collections
-import json
 
 from TM1py.Exceptions.Exceptions import TM1pyException
-
-from TM1py.Objects.NativeView import NativeView
 from TM1py.Objects.MDXView import MDXView
-
+from TM1py.Objects.NativeView import NativeView
 from TM1py.Services.ObjectService import ObjectService
 
 
@@ -15,6 +12,7 @@ class ViewService(ObjectService):
     """ Service to handle Object Updates for cube views (NativeViews and MDXViews)
     
     """
+
     def __init__(self, rest):
         super().__init__(rest)
 
@@ -50,12 +48,22 @@ class ViewService(ObjectService):
                     self._rest.GET(request)
                     view_types[view_type] = True
                 except TM1pyException as e:
-                    if e._status_code != 404:
+                    if e.status_code != 404:
                         raise e
             return tuple(view_types.values())
         else:
             request = request_template.format(cube_name, "PrivateViews" if private else "Views", view_name)
             return self._exists(request)
+
+    def get(self, cube_name, view_name, private=True):
+        view_type = "PrivateViews" if private else "Views"
+        request = "/api/v1/Cubes('{}')/{}('{}')?$expand=*".format(cube_name, view_type, view_name)
+        response = self._rest.GET(request)
+        view_as_dict = response.json()
+        if "MDX" in view_as_dict:
+            return MDXView(cube_name=cube_name, view_name=view_name, MDX=view_as_dict["MDX"])
+        else:
+            return self.get_native_view(cube_name=cube_name, view_name=view_name, private=private)
 
     def get_native_view(self, cube_name, view_name, private=True):
         """ Get a NativeView from TM1 Server
@@ -172,5 +180,3 @@ class ViewService(ObjectService):
         request = "/api/v1/Cubes('{}')/{}('{}')".format(cube_name, view_type, view_name)
         response = self._rest.DELETE(request)
         return response
-
-

@@ -5,6 +5,7 @@ import collections
 from base64 import b64encode
 
 from TM1py.Objects.TM1Object import TM1Object
+from TM1py.Utils.Utils import CaseAndSpaceInsensitiveSet
 
 
 class User(TM1Object):
@@ -13,7 +14,7 @@ class User(TM1Object):
     """
     def __init__(self, name, groups, friendly_name=None, password=None):
         self._name = name
-        self._groups = list(groups)
+        self._groups = CaseAndSpaceInsensitiveSet(*groups)
         self._friendly_name = friendly_name
         self._password = password
 
@@ -51,15 +52,10 @@ class User(TM1Object):
         self._password = value
 
     def add_group(self, group_name):
-        if group_name.upper() not in [group.upper() for group in self._groups]:
-            self._groups.append(group_name)
+        self._groups.add(group_name)
 
     def remove_group(self, group_name):
-        try:
-            index = [group.upper().replace(" ", "") for group in self._groups].index(group_name.upper().replace(" ", ""))
-            self._groups.pop(index)
-        except ValueError:
-            pass
+        self._groups.discard(group_name)
 
     @classmethod
     def from_json(cls, user_as_json):
@@ -80,7 +76,7 @@ class User(TM1Object):
         """
         return cls(name=user_as_dict['Name'],
                    friendly_name=user_as_dict['FriendlyName'],
-                   groups=[group['Name'].upper() for group in user_as_dict['Groups']])
+                   groups=[group["Name"] for group in user_as_dict['Groups']])
 
     @property
     def body(self):

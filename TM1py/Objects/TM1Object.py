@@ -4,6 +4,11 @@ class TM1Object:
     """ Parent Class for all TM1 Objects e.g. Cube, Process, Dimension.
     
     """
+
+    @property
+    def body(self):
+        pass
+
     def __str__(self):
         return self.body
 

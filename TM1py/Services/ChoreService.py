@@ -112,9 +112,9 @@ class ChoreService(ObjectService):
         # Update StartTime, ExecutionMode, Frequency
         request = "/api/v1/Chores('{}')".format(chore.name)
         # Remove Tasks from Body. Tasks to be managed individually
-        chore_dict_without_with_tasks = chore.body_as_dict
-        chore_dict_without_with_tasks.pop("Tasks")
-        self._rest.PATCH(request, json.dumps(chore_dict_without_with_tasks))
+        chore_dict_without_tasks = chore.body_as_dict
+        chore_dict_without_tasks.pop("Tasks")
+        self._rest.PATCH(request, json.dumps(chore_dict_without_tasks))
         # Update Tasks individually
         for i, task_new in enumerate(chore.tasks):
             task_old = self._get_task(chore.name, i)

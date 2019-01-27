@@ -1,20 +1,19 @@
-import unittest
-import uuid
+import configparser
+import copy
+import os
 import random
 import time
-import configparser
-import os
+import unittest
+import uuid
 
 from TM1py.Objects import Process
 from TM1py.Objects import Subset
 from TM1py.Services import TM1Service
-from TM1py.Utils import Utils
 
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
 
-
-process_prefix = '}TM1py_unittest'
+PROCESS_PREFIX = 'TM1py_Tests_'
 
 
 class TestProcessMethods(unittest.TestCase):
@@ -23,7 +22,7 @@ class TestProcessMethods(unittest.TestCase):
     def setUpClass(cls):
         cls.tm1 = TM1Service(**config['tm1srv01'])
 
-        cls.random_string = str(uuid.uuid4())
+        cls.some_name = "some_name"
 
         cls.all_dimension_names = cls.tm1.dimensions.get_all_names()
         cls.random_dimension = cls.tm1.dimensions.get(random.choice(cls.all_dimension_names))
@@ -31,10 +30,10 @@ class TestProcessMethods(unittest.TestCase):
         cls.random_dimension_elements = [element for element in cls.random_dimension_all_elements][0:2]
 
         # None process
-        cls.p_none = Process(name=process_prefix + '_none_' + cls.random_string, datasource_type='None')
+        cls.p_none = Process(name=PROCESS_PREFIX + '_none_' + cls.some_name, datasource_type='None')
 
         # ACII process
-        cls.p_ascii = Process(name=process_prefix + '_ascii_' + cls.random_string,
+        cls.p_ascii = Process(name=PROCESS_PREFIX + '_ascii_' + cls.some_name,
                               datasource_type='ASCII',
                               datasource_ascii_delimiter_type='Character',
                               datasource_ascii_delimiter_char=',',
@@ -57,61 +56,70 @@ class TestProcessMethods(unittest.TestCase):
         cls.p_ascii.add_parameter('p_Number', 'number?', 2)
 
         # View process
-        cls.p_view = Process(name=process_prefix + '_view_' + cls.random_string,
+        cls.p_view = Process(name=PROCESS_PREFIX + '_view_' + cls.some_name,
                              datasource_type='TM1CubeView',
                              datasource_view='view1',
                              datasource_data_source_name_for_client='Plan_BudgetPlan',
                              datasource_data_source_name_for_server='Plan_BudgetPlan')
 
         # ODBC process
-        cls.p_odbc = Process(name=process_prefix + '_odbc_' + cls.random_string,
+        cls.p_odbc = Process(name=PROCESS_PREFIX + '_odbc_' + cls.some_name,
                              datasource_type='ODBC',
                              datasource_password='password',
                              datasource_user_name='user')
 
         # Subset process
-        cls.subset_name = process_prefix + '_subset_' + cls.random_string
+        cls.subset_name = PROCESS_PREFIX + '_subset_' + cls.some_name
         cls.subset = Subset(dimension_name=cls.random_dimension.name,
                             subset_name=cls.subset_name,
                             elements=cls.random_dimension_elements)
         cls.tm1.dimensions.subsets.create(cls.subset, False)
-        cls.p_subset = Process(name=process_prefix + '_subset_' + cls.random_string,
+        cls.p_subset = Process(name=PROCESS_PREFIX + '_subset_' + cls.some_name,
                                datasource_type='TM1DimensionSubset',
                                datasource_data_source_name_for_server=cls.subset.dimension_name,
                                datasource_subset=cls.subset.name,
                                metadata_procedure="sTest = 'abc';")
+        with open(r"resources\Bedrock.Server.Wait.json", "r") as file:
+            cls.p_bedrock_server_wait = Process.from_json(file.read())
 
-    # Create Process
-    def test_create_process(self):
-        self.tm1.processes.create(self.p_none)
-        self.tm1.processes.create(self.p_ascii)
-        self.tm1.processes.create(self.p_view)
-        self.tm1.processes.create(self.p_odbc)
-        self.tm1.processes.create(self.p_subset)
+    @classmethod
+    def setUp(cls):
+        cls.tm1.processes.create(cls.p_none)
+        cls.tm1.processes.create(cls.p_ascii)
+        cls.tm1.processes.create(cls.p_view)
+        cls.tm1.processes.create(cls.p_odbc)
+        cls.tm1.processes.create(cls.p_subset)
+
+    @classmethod
+    def tearDown(cls):
+        cls.tm1.processes.delete(cls.p_none.name)
+        cls.tm1.processes.delete(cls.p_ascii.name)
+        cls.tm1.processes.delete(cls.p_view.name)
+        cls.tm1.processes.delete(cls.p_odbc.name)
+        cls.tm1.processes.delete(cls.p_subset.name)
 
     def test_execute_process(self):
-        process = Utils.load_bedrock_from_github("Bedrock.Server.Wait")
-        if not self.tm1.processes.exists(process.name):
-            self.tm1.processes.create(process)
+        if not self.tm1.processes.exists(self.p_bedrock_server_wait.name):
+            self.tm1.processes.create(self.p_bedrock_server_wait)
 
         # with parameters argument
         start_time = time.time()
-        self.tm1.processes.execute(process.name, parameters={"Parameters": [
+        self.tm1.processes.execute(self.p_bedrock_server_wait.name, parameters={"Parameters": [
             {"Name": "pWaitSec", "Value": "3"}]})
         elapsed_time = time.time() - start_time
         self.assertGreater(elapsed_time, 3)
 
         # with kwargs
         start_time = time.time()
-        self.tm1.processes.execute(process.name, pWaitSec="1")
+        self.tm1.processes.execute(self.p_bedrock_server_wait.name, pWaitSec="1")
         elapsed_time = time.time() - start_time
         self.assertGreater(elapsed_time, 1)
 
         # without arguments
-        self.tm1.processes.execute(process.name)
+        self.tm1.processes.execute(self.p_bedrock_server_wait.name)
 
     def test_execute_with_return_success(self):
-        process = Utils.load_bedrock_from_github("Bedrock.Server.Wait")
+        process = self.p_bedrock_server_wait
         if not self.tm1.processes.exists(process.name):
             self.tm1.processes.create(process)
         # with parameters
@@ -207,18 +215,24 @@ class TestProcessMethods(unittest.TestCase):
 
     # Get Process
     def test_get_process(self):
-        p1 = self.tm1.processes.get(self.p_ascii.name)
-        self.assertEqual(p1.body, self.p_ascii.body)
-        p2 = self.tm1.processes.get(self.p_none.name)
-        self.assertEqual(p2.body, self.p_none.body)
-        p3 = self.tm1.processes.get(self.p_view.name)
-        self.assertEqual(p3.body, self.p_view.body)
-        p4 = self.tm1.processes.get(self.p_odbc.name)
+        p_ascii_orig = copy.deepcopy(self.p_ascii)
+        p_none_orig = copy.deepcopy(self.p_none)
+        p_view_orig = copy.deepcopy(self.p_view)
+        p_subset_orig = copy.deepcopy(self.p_subset)
+        p_odbc_orig = copy.deepcopy(self.p_odbc)
+
+        p1 = self.tm1.processes.get(p_ascii_orig.name)
+        self.assertEqual(p1.body, p_ascii_orig.body)
+        p2 = self.tm1.processes.get(p_none_orig.name)
+        self.assertEqual(p2.body, p_none_orig.body)
+        p3 = self.tm1.processes.get(p_view_orig.name)
+        self.assertEqual(p3.body, p_view_orig.body)
+        p4 = self.tm1.processes.get(p_odbc_orig.name)
         p4.datasource_password = None
-        self.p_odbc.datasource_password = None
-        self.assertEqual(p4.body, self.p_odbc.body)
-        p5 = self.tm1.processes.get(self.p_subset.name)
-        self.assertEqual(p5.body, self.p_subset.body)
+        p_odbc_orig.datasource_password = None
+        self.assertEqual(p4.body, p_odbc_orig.body)
+        p5 = self.tm1.processes.get(p_subset_orig.name)
+        self.assertEqual(p5.body, p_subset_orig.body)
 
     # Update process
     def test_update_process(self):
@@ -252,7 +266,7 @@ class TestProcessMethods(unittest.TestCase):
 
     # Delete process
     def test_delete_process(self):
-        process = Utils.load_bedrock_from_github("Bedrock.Server.Wait")
+        process = self.p_bedrock_server_wait
         process.name = str(uuid.uuid4())
         if not self.tm1.processes.exists(process.name):
             self.tm1.processes.create(process)
@@ -260,11 +274,6 @@ class TestProcessMethods(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.tm1.processes.delete(cls.p_none.name)
-        cls.tm1.processes.delete(cls.p_ascii.name)
-        cls.tm1.processes.delete(cls.p_view.name)
-        cls.tm1.processes.delete(cls.p_odbc.name)
-        cls.tm1.processes.delete(cls.p_subset.name)
         cls.tm1.dimensions.subsets.delete(
             dimension_name=cls.subset.dimension_name,
             subset_name=cls.subset_name,

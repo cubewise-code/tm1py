@@ -3,12 +3,11 @@ import functools
 import sys
 from base64 import b64encode, b64decode
 
-
 import requests
 
 from TM1py.Exceptions import TM1pyException
 
-# import Http-Client depending on pyhton version
+# import Http-Client depending on python version
 if sys.version[0] == '2':
     import httplib as http_client
 else:

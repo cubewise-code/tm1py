@@ -3,11 +3,10 @@
 import collections
 import json
 
-from TM1py.Objects.ElementAttribute import ElementAttribute
 from TM1py.Objects.Element import Element
-from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, CaseAndSpaceInsensitiveTuplesDict
-
+from TM1py.Objects.ElementAttribute import ElementAttribute
 from TM1py.Objects.TM1Object import TM1Object
+from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, CaseAndSpaceInsensitiveTuplesDict
 
 
 class Hierarchy(TM1Object):
@@ -77,6 +76,10 @@ class Hierarchy(TM1Object):
     def dimension_name(self):
         return self._dimension_name
 
+    @dimension_name.setter
+    def dimension_name(self, dimension_name):
+        self._dimension_name = dimension_name
+
     @property
     def elements(self):
         return self._elements
@@ -111,12 +114,18 @@ class Hierarchy(TM1Object):
 
     def add_element(self, element_name, element_type):
         if element_name in self._elements:
-            raise Exception("Elementname has to be unqiue")
+            raise Exception("Elementname must be unique")
         e = Element(name=element_name, element_type=element_type)
         self._elements[element_name] = e
 
     def update_element(self, element_name, element_type=None):
         self._elements[element_name].element_type = element_type
+
+    def remove_element(self, element_name):
+        if element_name not in self._elements:
+            return
+        del self._elements[element_name]
+        self.remove_edges_related_to_element(element_name=element_name)
 
     def add_edge(self, parent, component, weight):
         self._edges[(parent, component)] = weight
@@ -127,6 +136,18 @@ class Hierarchy(TM1Object):
     def remove_edge(self, parent, component):
         if (parent, component) in self.edges:
             del self.edges[(parent, component)]
+
+    def remove_edges(self, edges):
+        for edge in edges:
+            self.remove_edge(*edge)
+
+    def remove_edges_related_to_element(self, element_name):
+        element_name_adjusted = element_name.lower().replace(' ', '')
+        edges_to_remove = set()
+        for edge in self._edges.adjusted_keys():
+            if element_name_adjusted in edge:
+                edges_to_remove.add(edge)
+        self.remove_edges(edges=edges_to_remove)
 
     def add_element_attribute(self, name, attribute_type):
         if name not in self.element_attributes:
