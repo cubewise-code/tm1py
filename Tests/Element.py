@@ -82,7 +82,7 @@ class TestElementMethods(unittest.TestCase):
             self.assertEqual(element.name, element_name)
 
     def test_update_element(self):
-        element = Element(self.extra_year, "String")
+        element = Element(self.extra_year, "S T R I N G")
         self.tm1.dimensions.hierarchies.elements.create(
             DIMENSION_NAME,
             HIERARCHY_NAME,

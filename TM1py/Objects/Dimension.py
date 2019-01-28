@@ -5,6 +5,7 @@ import json
 
 from TM1py.Objects.Hierarchy import Hierarchy
 from TM1py.Objects.TM1Object import TM1Object
+from TM1py.Utils.Utils import case_and_space_insensitive_equals
 
 
 class Dimension(TM1Object):
@@ -48,6 +49,10 @@ class Dimension(TM1Object):
         return self._hierarchies
 
     @property
+    def hierarchy_names(self):
+        return [hierarchy.name for hierarchy in self._hierarchies]
+
+    @property
     def default_hierarchy(self):
         return self._hierarchies[0]
 
@@ -73,15 +78,39 @@ class Dimension(TM1Object):
     def __len__(self):
         return len(self.hierarchies)
 
+    def __contains__(self, item):
+        return self.contains_hierarchy(item)
+
+    def __getitem__(self, item):
+        return self.get_hierarchy(item)
+
+    def contains_hierarchy(self, hierarchy_name):
+        for hierarchy in self._hierarchies:
+            if case_and_space_insensitive_equals(hierarchy.name, hierarchy_name):
+                return True
+        return False
+
+    def get_hierarchy(self, hierarchy_name):
+        for hierarchy in self._hierarchies:
+            if case_and_space_insensitive_equals(hierarchy.name, hierarchy_name):
+                return hierarchy
+        raise ValueError("Hierarchy: {} not found in dimension: {}".format(hierarchy_name, self.name))
+
     def add_hierarchy(self, hierarchy):
+        if self.contains_hierarchy(hierarchy.name):
+            raise ValueError("Hierarchy: {} already exists in dimension: {}".format(hierarchy.name, self.name))
         self._hierarchies.append(hierarchy)
 
-    def remove_hierarchy(self, name):
-        self._hierarchies = list(filter(lambda h: h.name != name, self._hierarchies))
+    def remove_hierarchy(self, hierarchy_name):
+        if case_and_space_insensitive_equals(hierarchy_name, "leaves"):
+            raise ValueError("Leaves hierarchy can't be removed from dimension")
+        for num, hierarchy in enumerate(self._hierarchies):
+            if case_and_space_insensitive_equals(hierarchy.name, hierarchy_name):
+                del self._hierarchies[num]
+                return
 
     def _construct_body(self):
         body_as_dict = collections.OrderedDict()
-        # self.body_as_dict["@odata.type"] = "ibm.tm1.api.v1.Dimension"
         body_as_dict["Name"] = self._name
         body_as_dict["UniqueName"] = self.unique_name
         body_as_dict["Attributes"] = self._attributes

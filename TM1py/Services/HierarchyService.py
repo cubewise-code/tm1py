@@ -44,6 +44,16 @@ class HierarchyService(ObjectService):
         response = self._rest.GET(request, '')
         return Hierarchy.from_dict(response.json())
 
+    def get_all_names(self, dimension_name):
+        """ get all names of existing Hierarchies in a dimension
+
+        :param dimension_name:
+        :return:
+        """
+        request = "/api/v1/Dimensions('{}')/Hierarchies?$select=Name".format(dimension_name)
+        response = self._rest.GET(request, '')
+        return [hierarchy["Name"] for hierarchy in response.json()["value"]]
+
     def update(self, hierarchy):
         """ update a hierarchy. It's a two step process: 
         1. Update Hierarchy
