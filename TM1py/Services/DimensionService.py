@@ -2,13 +2,13 @@
 
 import json
 
-
 from TM1py.Exceptions import TM1pyException
 from TM1py.Objects.Dimension import Dimension
-from TM1py.Services.ObjectService import ObjectService
-from TM1py.Services.SubsetService import SubsetService
 from TM1py.Services.HierarchyService import HierarchyService
+from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.ProcessService import ProcessService
+from TM1py.Services.SubsetService import SubsetService
+from TM1py.Utils.Utils import case_and_space_insensitive_equals
 
 
 class DimensionService(ObjectService):
@@ -61,9 +61,14 @@ class DimensionService(ObjectService):
         :param dimension: instance of TM1py.Dimension
         :return: None
         """
+        # delete hierarchies that have been removed from the dimension object
+        hierarchies_to_be_removed = set(self.hierarchies.get_all_names(dimension.name)) - set(dimension.hierarchy_names)
+        for hierarchy_name in hierarchies_to_be_removed:
+            self.hierarchies.delete(dimension_name=dimension.name, hierarchy_name=hierarchy_name)
+
         # update all Hierarchies except for the implicitly maintained 'Leaves' Hierarchy
         for hierarchy in dimension:
-            if hierarchy.name != "Leaves":
+            if not case_and_space_insensitive_equals(hierarchy.name, "Leaves"):
                 if self.hierarchies.exists(dimension_name=hierarchy.dimension_name, hierarchy_name=hierarchy.name):
                     self.hierarchies.update(hierarchy)
                 else:

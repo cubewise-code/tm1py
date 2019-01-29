@@ -6,7 +6,7 @@ import json
 from TM1py.Objects.Element import Element
 from TM1py.Objects.ElementAttribute import ElementAttribute
 from TM1py.Objects.TM1Object import TM1Object
-from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, CaseAndSpaceInsensitiveTuplesDict
+from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, CaseAndSpaceInsensitiveTuplesDict, lower_and_drop_spaces
 
 
 class Hierarchy(TM1Object):
@@ -112,6 +112,15 @@ class Hierarchy(TM1Object):
     def body_as_dict(self):
         return self._construct_body()
 
+    def contains_element(self, element_name):
+        return element_name in self._elements
+
+    def get_element(self, element_name):
+        if element_name in self._elements:
+            return self._elements[element_name]
+        else:
+            raise ValueError("Element: {} not found in Hierarchy: {}".format(element_name, self.name))
+
     def add_element(self, element_name, element_type):
         if element_name in self._elements:
             raise Exception("Elementname must be unique")
@@ -142,7 +151,7 @@ class Hierarchy(TM1Object):
             self.remove_edge(*edge)
 
     def remove_edges_related_to_element(self, element_name):
-        element_name_adjusted = element_name.lower().replace(' ', '')
+        element_name_adjusted = lower_and_drop_spaces(element_name)
         edges_to_remove = set()
         for edge in self._edges.adjusted_keys():
             if element_name_adjusted in edge:
@@ -190,4 +199,10 @@ class Hierarchy(TM1Object):
         return iter(self._elements.values())
 
     def __len__(self):
-        return len(self._elements.values())
+        return len(self._elements)
+
+    def __contains__(self, item):
+        return self.contains_element(item)
+
+    def __getitem__(self, item):
+        return self.get_element(item)

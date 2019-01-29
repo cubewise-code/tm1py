@@ -4,13 +4,14 @@ import collections
 import json
 
 from TM1py.Objects.TM1Object import TM1Object
+from TM1py.Utils.Utils import lower_and_drop_spaces
 
 
 class Element(TM1Object):
     """ Abstraction of TM1 Element
 
     """
-    valid_types = ['NUMERIC', 'STRING', 'CONSOLIDATED']
+    valid_types = ['Numeric', 'String', 'Consolidated']
 
     def __init__(self, name, element_type, attributes=None, unique_name=None, index=None):
         self._name = name
@@ -54,10 +55,11 @@ class Element(TM1Object):
 
     @element_type.setter
     def element_type(self, value):
-        if value.upper() in self.valid_types:
-            self._element_type = value
+        element_type = lower_and_drop_spaces(value).capitalize()
+        if element_type in self.valid_types:
+            self._element_type = element_type
         else:
-            raise ValueError('{} not a valid Element Type'.format(value))
+            raise ValueError('{} is not a valid Element Type'.format(value))
 
     @property
     def body(self):

@@ -33,6 +33,10 @@ def get_all_servers_from_adminhost(adminhost='localhost'):
     return servers
 
 
+def case_and_space_insensitive_equals(item1, item2):
+    return lower_and_drop_spaces(item1) == lower_and_drop_spaces(item2)
+
+
 def sort_addresstuple(cube_dimensions, unsorted_addresstuple):
     """ Sort the given mixed up addresstuple
 
@@ -401,6 +405,10 @@ def load_all_bedrocks_from_github():
     return [Process.from_json(requests.get(url_to_bedrock.format(bedrock)).text) for bedrock in all_bedrocks]
 
 
+def lower_and_drop_spaces(item):
+    return item.replace(" ", "").lower()
+
+
 class CaseAndSpaceInsensitiveDict(collections.MutableMapping):
     """A case-and-space-insensitive dict-like object with String keys.
 
@@ -430,13 +438,13 @@ class CaseAndSpaceInsensitiveDict(collections.MutableMapping):
     def __setitem__(self, key, value):
         # Use the adjusted cased key for lookups, but store the actual
         # key alongside the value.
-        self._store[key.lower().replace(' ', '')] = (key, value)
+        self._store[lower_and_drop_spaces(key)] = (key, value)
 
     def __getitem__(self, key):
-        return self._store[key.lower().replace(' ', '')][1]
+        return self._store[lower_and_drop_spaces(key)][1]
 
     def __delitem__(self, key):
-        del self._store[key.lower().replace(' ', '')]
+        del self._store[lower_and_drop_spaces(key)]
 
     def __iter__(self):
         return (casedkey for casedkey, mappedvalue in self._store.values())
@@ -506,13 +514,13 @@ class CaseAndSpaceInsensitiveTuplesDict(collections.MutableMapping):
     def __setitem__(self, key, value):
         # Use the adjusted cased key for lookups, but store the actual
         # key alongside the value.
-        self._store[tuple([item.lower().replace(' ', '') for item in key])] = (key, value)
+        self._store[tuple([lower_and_drop_spaces(item) for item in key])] = (key, value)
 
     def __getitem__(self, key):
-        return self._store[tuple([item.lower().replace(' ', '') for item in key])][1]
+        return self._store[tuple([lower_and_drop_spaces(item) for item in key])][1]
 
     def __delitem__(self, key):
-        del self._store[tuple([item.lower().replace(' ', '') for item in key])]
+        del self._store[tuple([lower_and_drop_spaces(item) for item in key])]
 
     def __iter__(self):
         return (casedkey for casedkey, mappedvalue in self._store.values())
