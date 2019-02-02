@@ -11,7 +11,7 @@ class Element(TM1Object):
     """ Abstraction of TM1 Element
 
     """
-    valid_types = ['Numeric', 'String', 'Consolidated']
+    valid_types = ('Numeric', 'String', 'Consolidated')
 
     def __init__(self, name, element_type, attributes=None, unique_name=None, index=None):
         self._name = name

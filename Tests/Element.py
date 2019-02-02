@@ -15,6 +15,7 @@ HIERARCHY_NAME = DIMENSION_NAME
 
 
 class TestElementMethods(unittest.TestCase):
+    tm1 = None
 
     @classmethod
     def setup_class(cls):
