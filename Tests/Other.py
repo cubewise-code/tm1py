@@ -2,7 +2,6 @@ import configparser
 import os
 import random
 import unittest
-import uuid
 from base64 import b64encode
 
 from TM1py.Exceptions import TM1pyException
@@ -15,11 +14,13 @@ config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini
 
 
 class TestOtherMethods(unittest.TestCase):
+    tm1 = None
 
     @classmethod
     def setUpClass(cls):
         cls.tm1 = TM1Service(**config['tm1srv01'])
 
+    @unittest.skip("Not deterministic. Needs improvement.")
     def test_mdx_from_cubeview(self):
         cube_names = self.tm1.cubes.get_all_names()
         cube_name = cube_names[random.randrange(0, len(cube_names))]
@@ -56,6 +57,42 @@ class TestOtherMethods(unittest.TestCase):
         servers = Utils.get_all_servers_from_adminhost(config['tm1srv01']['address'])
         self.assertGreater(len(servers), 0)
 
+    def test_tm1service_with_encrypted_password_decode_b64_as_string(self):
+        user_name = "TM1py user name"
+        user = User(name=user_name, groups=["ADMIN"], password="apple")
+        if user.name in self.tm1.security.get_all_user_names():
+            self.tm1.security.delete_user(user_name)
+        self.tm1.security.create_user(user)
+
+        with TM1Service(
+                user=user.name,
+                password=b64encode(str.encode(user._password)),
+                decode_b64="True",
+                base_url=self.tm1._tm1_rest._base_url,
+                ssl=self.tm1._tm1_rest._ssl) as _:
+            # if no exception. Login was successful
+            pass
+
+        self.tm1.security.delete_user(user.name)
+
+    def test_tm1service_without_encrypted_password(self):
+        user_name = "TM1py user name"
+        user = User(name=user_name, groups=["ADMIN"], password="apple")
+        if user.name in self.tm1.security.get_all_user_names():
+            self.tm1.security.delete_user(user_name)
+        self.tm1.security.create_user(user)
+
+        with TM1Service(
+                user=user.name,
+                password=user._password,
+                decode_b64=False,
+                base_url=self.tm1._tm1_rest._base_url,
+                ssl=self.tm1._tm1_rest._ssl) as _:
+            # if no exception. Login was successful
+            pass
+
+        self.tm1.security.delete_user(user.name)
+
     def test_tm1service_with_encrypted_password(self):
         user_name = "TM1py user name"
         user = User(name=user_name, groups=["ADMIN"], password="apple")
@@ -66,6 +103,7 @@ class TestOtherMethods(unittest.TestCase):
         with TM1Service(
                 user=user.name,
                 password=b64encode(str.encode(user._password)),
+                decode_b64=True,
                 base_url=self.tm1._tm1_rest._base_url,
                 ssl=self.tm1._tm1_rest._ssl) as _:
             # if no exception. Login was successful
@@ -80,9 +118,10 @@ class TestOtherMethods(unittest.TestCase):
             self.tm1.security.delete_user(user_name)
         self.tm1.security.create_user(user)
 
-        self.assertRaises(Exception, TM1Service,
+        self.assertRaises(TM1pyException, TM1Service,
                           user=user.name,
                           password=b64encode(str.encode("banana")),
+                          decode_b64=True,
                           base_url=self.tm1._tm1_rest._base_url,
                           ssl=self.tm1._tm1_rest._ssl)
 
@@ -111,7 +150,7 @@ class TestOtherMethods(unittest.TestCase):
             self.tm1.security.delete_user(user_name)
         self.tm1.security.create_user(user)
         # test with random (wrong) password
-        self.assertRaises(Exception, TM1Service,
+        self.assertRaises(TM1pyException, TM1Service,
                           user=user.name,
                           password="banana",
                           base_url=self.tm1._tm1_rest._base_url,

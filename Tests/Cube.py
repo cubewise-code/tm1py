@@ -15,15 +15,16 @@ PREFIX = "TM1py_Tests_Cube_"
 
 
 class TestCubeMethods(unittest.TestCase):
+    tm1 = None
+    cube_name = PREFIX + "some_name"
+    dimension_names = [
+        PREFIX + "dimension1",
+        PREFIX + "dimension2",
+        PREFIX + "dimension3"]
 
     @classmethod
     def setUpClass(cls):
         cls.tm1 = TM1Service(**config['tm1srv01'])
-        cls.cube_name = PREFIX + "some_name"
-        cls.dimension_names = [
-            PREFIX + "dimension1",
-            PREFIX + "dimension2",
-            PREFIX + "dimension3"]
 
         # Build Dimensions
         for dimension_name in cls.dimension_names:

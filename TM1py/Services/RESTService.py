@@ -68,6 +68,7 @@ class RESTService:
         :param base_url - base url e.g. https://localhost:12354/api/v1
         :param user: String - name of the user
         :param password String - password of the user
+        :param decode_b64 - whether password argument is b64 encoded
         :param namespace String - optional CAM namespace
         :param ssl: boolean -  as specified in the tm1s.cfg
         :param session_id: String - TM1SessionId e.g. q7O6e1w49AixeuLVxJ1GZg
@@ -75,7 +76,7 @@ class RESTService:
         If None, use default: TM1py
         :param logging: boolean - switch on/off verbose http logging into sys.stdout
         """
-        self._ssl = kwargs['ssl'].upper() == "TRUE" if isinstance(kwargs['ssl'], str) else kwargs['ssl']
+        self._ssl = self.translate_to_boolean(kwargs['ssl'])
         self._address = kwargs['address'] if 'address' in kwargs else None
         self._port = kwargs['port'] if 'port' in kwargs else None
         self._verify = False
@@ -95,11 +96,16 @@ class RESTService:
         self._s = requests.session()
         if "session_id" in kwargs:
             self._s.cookies.set("TM1SessionId", kwargs["session_id"])
+            self.set_version()
         else:
-            self._start_session(**kwargs)
+            self._start_session(
+                user=kwargs["user"],
+                password=kwargs["password"],
+                namespace=kwargs.get("namespace", None),
+                decode_b64=self.translate_to_boolean(kwargs.get("decode_b64", False)))
         # Logging
         if 'logging' in kwargs:
-            if kwargs['logging'].upper() == "TRUE" if isinstance(kwargs['logging'], str) else kwargs['logging']:
+            if self.translate_to_boolean(value=kwargs['logging']):
                 http_client.HTTPConnection.debuglevel = 1
 
     def __enter__(self):
@@ -162,38 +168,23 @@ class RESTService:
             self.POST('/api/logout', '')
         self._s.close()
 
-    def _start_session(self, retry=0, **kwargs):
+    def _start_session(self, user, password, decode_b64=False, namespace=None):
         """ perform a simple GET request (Ask for the TM1 Version) to start a session
 
         """
         # Authorization [Basic, CAM] through Headers
         token = self._build_authorization_token(
-            kwargs['user'],
-            kwargs['password'],
-            kwargs['namespace'] if 'namespace' in kwargs else None)
+            user,
+            self.b64_decode_password(password) if decode_b64 else password,
+            namespace)
         self.add_http_header('Authorization', token)
         request = '/api/v1/Configuration/ProductVersion/$value'
         try:
             response = self.GET(request=request)
             self._version = response.text
-        except TM1pyException as ex:
-            # if unauthorized and first retry, retry with b64 decode pwd
-            if ex.status_code == 401 and retry == 0:
-                kwargs['password'] = self.decrypt_password(kwargs['password'])
-                self._start_session(retry=retry + 1, **kwargs)
-            else:
-                raise ex
         finally:
             # After we have session cookie, drop the Authorization Header
             self.remove_http_header('Authorization')
-
-    def decrypt_password(self, encrypted_password):
-        """ b64 decoding
-
-        :param encrypted_password: encrypted password with b64
-        :return: password in plain text
-        """
-        return b64decode(encrypted_password).decode("UTF-8")
 
     def _url_and_body(self, request, data):
         """ create proper url and payload
@@ -216,6 +207,11 @@ class RESTService:
         except:
             return False
 
+    def set_version(self):
+        request = '/api/v1/Configuration/ProductVersion/$value'
+        response = self.GET(request=request)
+        self._version = response.text
+
     @property
     def version(self):
         return self._version
@@ -223,6 +219,29 @@ class RESTService:
     @property
     def session_id(self):
         return self._s.cookies["TM1SessionId"]
+
+    @staticmethod
+    def translate_to_boolean(value):
+        """ Takes a boolean or string (eg. true, True, FALSE, etc.) value and returns (boolean) True or False
+
+        :param value: True, 'true', 'false' or 'False' ...
+        :return:
+        """
+        if isinstance(value, bool):
+            return value
+        elif isinstance(value, str):
+            return value.lower() == 'true'
+        else:
+            raise ValueError("Invalid argument: " + value + ". Needs to be of type boolean or string")
+
+    @staticmethod
+    def b64_decode_password(encrypted_password):
+        """ b64 decoding
+
+        :param encrypted_password: encrypted password with b64
+        :return: password in plain text
+        """
+        return b64decode(encrypted_password).decode("UTF-8")
 
     @staticmethod
     def verify_response(response):
