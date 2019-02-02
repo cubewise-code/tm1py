@@ -13,6 +13,7 @@ PREFIX = "TM1py_Tests_"
 
 
 class TestSecurityMethods(unittest.TestCase):
+    tm1 = None
 
     @classmethod
     def setup_class(cls):
