@@ -2,6 +2,7 @@ import configparser
 import os
 import unittest
 
+from TM1py import Element
 from TM1py.Objects import Dimension, Hierarchy, Subset
 from TM1py.Services import TM1Service
 
@@ -90,6 +91,55 @@ class TestHierarchyMethods(unittest.TestCase):
         self.assertIn('Next Year', [ea.name for ea in h.element_attributes])
         self.assertIn('Previous Year', [ea.name for ea in h.element_attributes])
         self.assertIn(SUBSET_NAME, h.subsets)
+
+    def test_hierarchy___get__(self):
+        h = self.tm1.dimensions.hierarchies.get(DIMENSION_NAME, DIMENSION_NAME)
+
+        element = h["Total Years"]
+        self.assertIsInstance(element, Element)
+        self.assertEqual(element.name, "Total Years")
+        self.assertEqual(element.element_type, "Consolidated")
+        element = h["Total Years".replace(" ", "").lower()]
+        self.assertIsInstance(element, Element)
+        self.assertEqual(element.name, "Total Years")
+        self.assertEqual(element.element_type, "Consolidated")
+
+        element = h["1989"]
+        self.assertIsInstance(element, Element)
+        self.assertEqual(element.name, "1989")
+        self.assertEqual(element.element_type, "Numeric")
+        self.assertNotEqual(element.element_type, "String")
+
+    def test_hierarchy___get__exception(self):
+        h = self.tm1.dimensions.hierarchies.get(DIMENSION_NAME, DIMENSION_NAME)
+
+        try:
+            _ = h["Im not a valid year"]
+            raise Exception("did not throw Exception when expected to do so")
+        except ValueError:
+            pass
+
+    def test_hierarchy___contains__(self):
+        h = self.tm1.dimensions.hierarchies.get(DIMENSION_NAME, DIMENSION_NAME)
+
+        self.assertIn("1989", h)
+        self.assertIn("Total Years", h)
+        self.assertIn("Total Years".replace(" ", "").lower(), h)
+        self.assertIn("1 9 8 9 ", h)
+        self.assertNotIn("3001", h)
+
+    def test_hierarchy___iter__(self):
+        h = self.tm1.dimensions.hierarchies.get(DIMENSION_NAME, DIMENSION_NAME)
+        elements_cloned_through_iter = [element for element in h]
+
+        self.assertEqual(len(h._elements), len(elements_cloned_through_iter))
+        for element in elements_cloned_through_iter:
+            self.assertIn(element.name, h.elements)
+
+    def test_hierarchy___len__(self):
+        h = self.tm1.dimensions.hierarchies.get(DIMENSION_NAME, DIMENSION_NAME)
+        self.assertGreater(len(h), 0)
+        self.assertEqual(len(h), len(h._elements))
 
     def test_update_hierarchy(self):
         self.update_hierarchy()
