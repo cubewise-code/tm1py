@@ -98,7 +98,11 @@ class RESTService:
             self._s.cookies.set("TM1SessionId", kwargs["session_id"])
             self.set_version()
         else:
-            self._start_session(**kwargs)
+            self._start_session(
+                user=kwargs["user"],
+                password=kwargs["password"],
+                namespace=kwargs.get("namespace", None),
+                decode_b64=self.translate_to_boolean(kwargs.get("decode_b64", False)))
         # Logging
         if 'logging' in kwargs:
             if self.translate_to_boolean(value=kwargs['logging']):
@@ -164,15 +168,15 @@ class RESTService:
             self.POST('/api/logout', '')
         self._s.close()
 
-    def _start_session(self, **kwargs):
+    def _start_session(self, user, password, decode_b64=False, namespace=None):
         """ perform a simple GET request (Ask for the TM1 Version) to start a session
 
         """
         # Authorization [Basic, CAM] through Headers
         token = self._build_authorization_token(
-            kwargs['user'],
-            self.b64_decode_password(kwargs['password']) if kwargs.get('decode_b64', False) else kwargs["password"],
-            kwargs['namespace'] if 'namespace' in kwargs else None)
+            user,
+            self.b64_decode_password(password) if decode_b64 else password,
+            namespace)
         self.add_http_header('Authorization', token)
         request = '/api/v1/Configuration/ProductVersion/$value'
         try:
