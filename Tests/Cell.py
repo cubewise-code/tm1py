@@ -173,6 +173,54 @@ class TestDataMethods(unittest.TestCase):
             sum(range(0, 1000)),
             sum(v["Ordinal"] for v in data.values()))
 
+    def test_execute_mdx_without_rows(self):
+        # write cube content
+        self.tm1.cubes.cells.write_values(CUBE_NAME, self.cellset)
+
+        # MDX Query that gets full cube content with zero suppression
+        mdx = """
+        SELECT
+        NON EMPTY {rows} ON ROWS,
+        NON EMPTY {columns} ON COLUMNS
+        FROM
+        [{cube}]
+        """.format(
+            rows="{}",
+            columns="{[" + DIMENSION_NAMES[0] + "].Members * [" + DIMENSION_NAMES[1] + "].Members * [" + DIMENSION_NAMES[2] + "].MEMBERS}",
+            cube=CUBE_NAME)
+        data = self.tm1.cubes.cells.execute_mdx(mdx)
+        # Check if total value is the same AND coordinates are the same. Handle None
+        self.assertEqual(self.total_value, sum([v["Value"] for v in data.values() if v["Value"]]))
+        for coordinates in data.keys():
+            self.assertEqual(len(coordinates), 3)
+            self.assertIn("[TM1py_Tests_Cell_Dimension1].", coordinates[0])
+            self.assertIn("[TM1py_Tests_Cell_Dimension2].", coordinates[1])
+            self.assertIn("[TM1py_Tests_Cell_Dimension3].", coordinates[2])
+
+    def test_execute_mdx_without_columns(self):
+        # write cube content
+        self.tm1.cubes.cells.write_values(CUBE_NAME, self.cellset)
+
+        # MDX Query that gets full cube content with zero suppression
+        mdx = """
+        SELECT
+        NON EMPTY {rows} ON ROWS,
+        NON EMPTY {columns} ON COLUMNS
+        FROM
+        [{cube}]
+        """.format(
+            rows="{[" + DIMENSION_NAMES[0] + "].Members * [" + DIMENSION_NAMES[1] + "].Members * [" + DIMENSION_NAMES[2] + "].MEMBERS}",
+            columns="{}",
+            cube=CUBE_NAME)
+        data = self.tm1.cubes.cells.execute_mdx(mdx)
+        # Check if total value is the same AND coordinates are the same. Handle None
+        self.assertEqual(self.total_value, sum([v["Value"] for v in data.values() if v["Value"]]))
+        for coordinates in data.keys():
+            self.assertEqual(len(coordinates), 3)
+            self.assertIn("[TM1py_Tests_Cell_Dimension1].", coordinates[0])
+            self.assertIn("[TM1py_Tests_Cell_Dimension2].", coordinates[1])
+            self.assertIn("[TM1py_Tests_Cell_Dimension3].", coordinates[2])
+
     def test_execute_mdx_skip_contexts(self):
         mdx = MDX_TEMPLATE.format(
             rows="{[" + DIMENSION_NAMES[0] + "].[Element1]}",

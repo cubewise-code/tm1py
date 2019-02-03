@@ -2,7 +2,6 @@ import collections
 import json
 import sys
 import warnings
-from re import match
 
 import pandas as pd
 
@@ -38,6 +37,41 @@ def case_and_space_insensitive_equals(item1, item2):
     return lower_and_drop_spaces(item1) == lower_and_drop_spaces(item2)
 
 
+def extract_axes_from_cellset(raw_cellset_as_dict):
+    axes = raw_cellset_as_dict['Axes']
+    row_axis = axes[0] if axes[0] and "Tuples" in axes[0] and len(axes[0]["Tuples"]) > 0 else None
+    column_axis = axes[1] if axes[1] and "Tuples" in axes[1] and len(axes[1]["Tuples"]) > 0 else None
+    title_axis = axes[2] if len(axes) > 2 and axes[2] and "Tuples" in axes[2] and len(axes[2]["Tuples"]) > 0 else None
+    return row_axis, column_axis, title_axis
+
+
+def extract_unique_names_from_members(members):
+    """ Extract list of unique names from part of the cellset response
+    in:
+    [{'UniqueName': '[dim1].[dim1].[elem1]', 'Element': {'UniqueName': '[dim1].[dim1].[elem1]'}},
+    {'UniqueName': '[dim2].[dim2].[elem3]', 'Element': {'UniqueName': '[dim2].[dim2].[elem3]'}}]
+    out:
+    ["[dim1].[dim1].[elem1]", "[dim2].[dim2].[elem3]"]
+
+    :param members: dictionary
+    :return: list of unique names
+    """
+    return [m['Element']['UniqueName'] if 'Element' in m and m['Element'] else m['UniqueName']
+            for m
+            in members]
+
+
+def sort_coordinates(cube_dimensions, unsorted_coordinates):
+    sorted_coordinates = []
+    for dimension in cube_dimensions:
+        # could be more than one hierarchy!
+        address_elements = [item for item in unsorted_coordinates if item.startswith('[' + dimension + '].')]
+        # address_elements could be ( [dim1].[hier1].[elem1], [dim1].[hier2].[elem3] )
+        for address_element in address_elements:
+            sorted_coordinates.append(address_element)
+    return tuple(sorted_coordinates)
+
+
 def build_content_from_cellset(raw_cellset_as_dict, top=None):
     """ transform raw cellset data into concise dictionary
 
@@ -45,37 +79,24 @@ def build_content_from_cellset(raw_cellset_as_dict, top=None):
     :param top: Maximum Number of cells
     :return:
     """
-    content_as_dict = CaseAndSpaceInsensitiveTuplesDict()
-
-    cube_dimensions = {val['Name']: i + 1 for i, val in
-                       enumerate(raw_cellset_as_dict['Cube']['Dimensions'])}
-
-    pattern = r'^(\[)(.*?)(\]\.\[)(.*?)(\]\.\[)(.*)(\])$'
+    cube_dimensions = [dim['Name'] for dim in raw_cellset_as_dict['Cube']['Dimensions']]
 
     cells = raw_cellset_as_dict['Cells']
-    axes = raw_cellset_as_dict['Axes']
-    primary_axis = axes[0]
-    extra_axes = axes[1:] if len(axes) > 1 else []
+    row_axis, column_axis, title_axis = extract_axes_from_cellset(raw_cellset_as_dict=raw_cellset_as_dict)
 
-    def get_coords(members):
-        return [m['Element']['UniqueName'] if 'Element' in m else m['UniqueName']
-                for m in members]
-
-    for cell in cells[:top or len(cells)]:
+    content_as_dict = CaseAndSpaceInsensitiveTuplesDict()
+    for ordinal, cell in enumerate(cells[:top or len(cells)]):
         coordinates = []
-        index = cell['Ordinal'] % primary_axis['Cardinality']
-
-        coordinates.extend(get_coords(primary_axis['Tuples'][index]['Members']))
-
-        for axis in extra_axes:
-            index = cell['Ordinal'] // len(cells) * axis['Cardinality']
-            coordinates.extend(get_coords(axis['Tuples'][index]['Members']))
-
-        coordinates = tuple(sorted(coordinates, key=lambda ele:
-        cube_dimensions[match(pattern, ele).group(2)]))
-
+        if row_axis:
+            index_rows = ordinal // row_axis['Cardinality'] % column_axis['Cardinality']
+            coordinates.extend(extract_unique_names_from_members(column_axis['Tuples'][index_rows]['Members']))
+        if title_axis:
+            coordinates.extend(extract_unique_names_from_members(title_axis['Tuples'][0]['Members']))
+        if column_axis:
+            index_columns = ordinal % row_axis['Cardinality']
+            coordinates.extend(extract_unique_names_from_members(row_axis['Tuples'][index_columns]['Members']))
+        coordinates = sort_coordinates(cube_dimensions, coordinates)
         content_as_dict[coordinates] = cell
-
     return content_as_dict
 
 

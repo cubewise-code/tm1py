@@ -1,0 +1,94 @@
+{
+	"@odata.context": "Irrelevant",
+	"ID": "5l1vFa8FAIB7AAAg",
+	"Cube": {
+		"Name": "BikeShares",
+		"Dimensions": [{
+			"Name": "Version"
+		},
+		{
+			"Name": "Date"
+		},
+		{
+			"Name": "City"
+		},
+		{
+			"Name": "BikeSharesMeasure"
+		}]
+	},
+	"Axes": [{
+		"Ordinal": 0,
+		"Cardinality": 2,
+		"Tuples": [{
+			"Ordinal": 0,
+			"Members": [{
+				"UniqueName": "[City].[City].[NYC]",
+				"Element": {
+					"UniqueName": "[City].[City].[NYC]"
+				}
+			}]
+		},
+		{
+			"Ordinal": 1,
+			"Members": [{
+				"UniqueName": "[City].[City].[Chicago]",
+				"Element": {
+					"UniqueName": "[City].[City].[Chicago]"
+				}
+			}]
+		}]
+	},
+	{
+		"Ordinal": 1,
+		"Cardinality": 2,
+		"Tuples": [{
+			"Ordinal": 0,
+			"Members": [{
+				"UniqueName": "[Date].[Date].[2017-11-26]",
+				"Element": {
+					"UniqueName": "[Date].[Date].[2017-11-26]"
+				}
+			}]
+		},
+		{
+			"Ordinal": 1,
+			"Members": [{
+				"UniqueName": "[Date].[Date].[2017-11-27]",
+				"Element": {
+					"UniqueName": "[Date].[Date].[2017-11-27]"
+				}
+			}]
+		}]
+	},
+	{
+		"Ordinal": 2,
+		"Cardinality": 1,
+		"Tuples": [{
+			"Ordinal": 0,
+			"Members": [{
+				"UniqueName": "[Version].[Version].[Actual]",
+				"Element": {
+					"UniqueName": "[Version].[Version].[Actual]"
+				}
+			},
+			{
+				"UniqueName": "[BikeSharesMeasure].[BikeSharesMeasure].[Count]",
+				"Element": {
+					"UniqueName": "[BikeSharesMeasure].[BikeSharesMeasure].[Count]"
+				}
+			}]
+		}]
+	}],
+	"Cells": [{
+		"Value": 27181
+	},
+	{
+		"Value": 3606
+	},
+	{
+		"Value": 46733
+	},
+	{
+		"Value": 9146
+	}]
+}
