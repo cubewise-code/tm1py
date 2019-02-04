@@ -37,23 +37,39 @@ def case_and_space_insensitive_equals(item1, item2):
     return lower_and_drop_spaces(item1) == lower_and_drop_spaces(item2)
 
 
-def sort_addresstuple(cube_dimensions, unsorted_addresstuple):
-    """ Sort the given mixed up addresstuple
+def extract_axes_from_cellset(raw_cellset_as_dict):
+    axes = raw_cellset_as_dict['Axes']
+    row_axis = axes[0] if axes[0] and "Tuples" in axes[0] and len(axes[0]["Tuples"]) > 0 else None
+    column_axis = axes[1] if axes[1] and "Tuples" in axes[1] and len(axes[1]["Tuples"]) > 0 else None
+    title_axis = axes[2] if len(axes) > 2 and axes[2] and "Tuples" in axes[2] and len(axes[2]["Tuples"]) > 0 else None
+    return row_axis, column_axis, title_axis
 
-    :param cube_dimensions: list of dimension names in correct order
-    :param unsorted_addresstuple: list of Strings - ['[dim2].[elem4]','[dim1].[elem2]',...]
 
-    :return:
-        Tuple: ('[dim1].[elem2]','[dim2].[elem4]',...)
+def extract_unique_names_from_members(members):
+    """ Extract list of unique names from part of the cellset response
+    in:
+    [{'UniqueName': '[dim1].[dim1].[elem1]', 'Element': {'UniqueName': '[dim1].[dim1].[elem1]'}},
+    {'UniqueName': '[dim2].[dim2].[elem3]', 'Element': {'UniqueName': '[dim2].[dim2].[elem3]'}}]
+    out:
+    ["[dim1].[dim1].[elem1]", "[dim2].[dim2].[elem3]"]
+
+    :param members: dictionary
+    :return: list of unique names
     """
-    sorted_addresstupple = []
+    return [m['Element']['UniqueName'] if 'Element' in m and m['Element'] else m['UniqueName']
+            for m
+            in members]
+
+
+def sort_coordinates(cube_dimensions, unsorted_coordinates):
+    sorted_coordinates = []
     for dimension in cube_dimensions:
         # could be more than one hierarchy!
-        address_elements = [item for item in unsorted_addresstuple if item.startswith('[' + dimension + '].')]
+        address_elements = [item for item in unsorted_coordinates if item.startswith('[' + dimension + '].')]
         # address_elements could be ( [dim1].[hier1].[elem1], [dim1].[hier2].[elem3] )
         for address_element in address_elements:
-            sorted_addresstupple.append(address_element)
-    return tuple(sorted_addresstupple)
+            sorted_coordinates.append(address_element)
+    return tuple(sorted_coordinates)
 
 
 def build_content_from_cellset(raw_cellset_as_dict, top=None):
@@ -63,53 +79,24 @@ def build_content_from_cellset(raw_cellset_as_dict, top=None):
     :param top: Maximum Number of cells
     :return:
     """
-    content_as_dict = CaseAndSpaceInsensitiveTuplesDict()
-
     cube_dimensions = [dim['Name'] for dim in raw_cellset_as_dict['Cube']['Dimensions']]
 
-    axe0_as_dict = raw_cellset_as_dict['Axes'][0]
-    axe1_as_dict = raw_cellset_as_dict['Axes'][1]
+    cells = raw_cellset_as_dict['Cells']
+    row_axis, column_axis, title_axis = extract_axes_from_cellset(raw_cellset_as_dict=raw_cellset_as_dict)
 
-    ordinal_cells = 0
-
-    ordinal_axe2 = 0
-    # get coordinates on axe 2: Title
-    # if there are no elements on axe 2 assign empty list to elements_on_axe2
-    if len(raw_cellset_as_dict['Axes']) > 2:
-        axe2_as_dict = raw_cellset_as_dict['Axes'][2]
-        tuples_as_dict = axe2_as_dict['Tuples'][ordinal_axe2]['Members']
-        # condition for MDX Calculated Members (WITH MEMBER AS), that have no underlying Element
-        elements_on_axe2 = [member['Element']['UniqueName'] if member['Element'] else member['UniqueName']
-                            for member
-                            in tuples_as_dict]
-    else:
-        elements_on_axe2 = []
-
-    ordinal_axe1 = 0
-    for i in range(axe1_as_dict['Cardinality']):
-        # get coordinates on axe 1: Rows
-        tuples_as_dict = axe1_as_dict['Tuples'][ordinal_axe1]['Members']
-        elements_on_axe1 = [member['Element']['UniqueName'] if member['Element'] else member['UniqueName']
-                            for member
-                            in tuples_as_dict]
-        ordinal_axe0 = 0
-        for j in range(axe0_as_dict['Cardinality']):
-            # get coordinates on axe 0: Columns
-            tuples_as_dict = axe0_as_dict['Tuples'][ordinal_axe0]['Members']
-            elements_on_axe0 = [member['Element']['UniqueName'] if member['Element'] else member['UniqueName']
-                                for member
-                                in tuples_as_dict]
-            coordinates = elements_on_axe0 + elements_on_axe2 + elements_on_axe1
-            coordinates_sorted = sort_addresstuple(cube_dimensions, coordinates)
-            # get cell properties
-            content_as_dict[coordinates_sorted] = raw_cellset_as_dict['Cells'][ordinal_cells]
-            ordinal_axe0 += 1
-            ordinal_cells += 1
-            if top is not None and ordinal_cells >= top:
-                break
-        if top is not None and ordinal_cells >= top:
-            break
-        ordinal_axe1 += 1
+    content_as_dict = CaseAndSpaceInsensitiveTuplesDict()
+    for ordinal, cell in enumerate(cells[:top or len(cells)]):
+        coordinates = []
+        if row_axis:
+            index_rows = ordinal // row_axis['Cardinality'] % column_axis['Cardinality']
+            coordinates.extend(extract_unique_names_from_members(column_axis['Tuples'][index_rows]['Members']))
+        if title_axis:
+            coordinates.extend(extract_unique_names_from_members(title_axis['Tuples'][0]['Members']))
+        if column_axis:
+            index_columns = ordinal % row_axis['Cardinality']
+            coordinates.extend(extract_unique_names_from_members(row_axis['Tuples'][index_columns]['Members']))
+        coordinates = sort_coordinates(cube_dimensions, coordinates)
+        content_as_dict[coordinates] = cell
     return content_as_dict
 
 
