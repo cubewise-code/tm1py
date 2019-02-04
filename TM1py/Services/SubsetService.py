@@ -72,40 +72,15 @@ class SubsetService(ObjectService):
         :param private: Boolean
         :return: response
         """
-
-        if private:
-            # Just delete it and rebuild it, since there are no dependencies
-            return self._update_private(subset)
-        else:
-            # Update it. Clear Elements with evil workaround
-            return self._update_public(subset)
-
-    def _update_private(self, subset):
-        """ update a private subset on the TM1 Server
-
-        :param subset: instance of TM1py.Subset
-        :return: response
-        """
-        # Delete it
-        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/PrivateSubsets(\'{}\')' \
-            .format(subset.dimension_name, subset.hierarchy_name, subset.name)
-        self._rest.DELETE(request, '')
-        # Rebuild it
-        return self.create(subset, True)
-
-    def _update_public(self, subset):
-        """ Update a public subset on the TM1 Server
-
-        :param subset: instance of TM1py.Subset
-        :return: response
-        """
-        # clear elements of subset. evil workaround! Should be done through delete on the Elements Collection
-        # (which is currently not supported 10.2.2 FP6)
-        ti = "SubsetDeleteAllElements(\'{}\', \'{}\');".format(subset.dimension_name, subset.name)
-        self._process_service.execute_ti_code(lines_prolog=ti, lines_epilog='')
-        # update subset
-        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/Subsets(\'{}\')' \
-            .format(subset.dimension_name, subset.hierarchy_name, subset.name)
+        if subset.is_static:
+            self.delete_elements_from_static_subset(
+                dimension_name=subset.dimension_name,
+                hierarchy_name=subset.hierarchy_name,
+                subset_name=subset.name,
+                private=private)
+        subsets = "PrivateSubsets" if private else "Subsets"
+        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')".format(
+            subset.dimension_name, subset.hierarchy_name, subsets, subset.name)
         return self._rest.PATCH(request=request, data=subset.body)
 
     def delete(self, subset_name, dimension_name, hierarchy_name=None, private=True):
@@ -138,3 +113,9 @@ class SubsetService(ObjectService):
         request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')" \
             .format(dimension_name, hierarchy_name, subset_type, subset_name)
         return self._exists(request)
+
+    def delete_elements_from_static_subset(self, dimension_name, hierarchy_name, subset_name, private):
+        subsets = "PrivateSubsets" if private else "Subsets"
+        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')/Elements/$ref".format(
+            dimension_name, hierarchy_name, subsets, subset_name)
+        return self._rest.DELETE(request=request)
