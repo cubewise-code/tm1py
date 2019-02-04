@@ -78,6 +78,14 @@ class Subset(TM1Object):
             return 'dynamic'
         return 'static'
 
+    @property
+    def is_dynamic(self):
+        return self.expression
+
+    @property
+    def is_static(self):
+        return not self.is_dynamic
+
     @classmethod
     def from_json(cls, subset_as_json):
         """ Alternative constructor
