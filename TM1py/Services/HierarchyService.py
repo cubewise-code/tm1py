@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import json
 
+from TM1py.Objects import Hierarchy
 from TM1py.Services.ElementService import ElementService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.SubsetService import SubsetService
-from TM1py.Objects import Hierarchy
+from TM1py.Utils.Utils import case_and_space_insensitive_equals
 
 
 class HierarchyService(ObjectService):
@@ -39,7 +40,7 @@ class HierarchyService(ObjectService):
         :return:
         """
         request = "/api/v1/Dimensions('{}')/Hierarchies('{}')?$expand=" \
-                  "Edges,Elements,ElementAttributes,Subsets,DefaultMember"\
+                  "Edges,Elements,ElementAttributes,Subsets,DefaultMember" \
             .format(dimension_name, hierarchy_name)
         response = self._rest.GET(request, '')
         return Hierarchy.from_dict(response.json())
@@ -110,7 +111,7 @@ class HierarchyService(ObjectService):
     def get_hierarchy_summary(self, dimension_name, hierarchy_name):
         hierarchy_properties = ("Elements", "Edges", "ElementAttributes", "Members", "Levels")
         request = "/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')?$expand=Edges/$count,Elements/$count," \
-                  "ElementAttributes/$count,Members/$count,Levels/$count&$select=Cardinality"\
+                  "ElementAttributes/$count,Members/$count,Levels/$count&$select=Cardinality" \
             .format(dimension_name, hierarchy_name)
         hierary_summary_raw = self._rest.GET(request).json()
 
@@ -142,3 +143,41 @@ class HierarchyService(ObjectService):
                 self.elements.delete_element_attribute(dimension_name=hierarchy.dimension_name,
                                                        hierarchy_name=hierarchy.name,
                                                        element_attribute=element_attribute)
+
+    def get_default_member(self, dimension_name, hierarchy_name=None):
+        """ Get the defined default_member for a Hierarchy.
+        Will return the element with index 1, if default member is not specified explicitly in }HierarchyProperty Cube
+
+        :param dimension_name:
+        :param hierarchy_name:
+        :return: String, name of Member
+        """
+        request = "/api/v1/Dimensions('{dimension}')/Hierarchies('{hierarchy}')/DefaultMember/Name/$value".format(
+            dimension=dimension_name,
+            hierarchy=hierarchy_name if hierarchy_name else dimension_name)
+        response = self._rest.GET(request=request)
+        return response.text
+
+    def update_default_member(self, dimension_name, hierarchy_name=None, member_name=""):
+        """ Update the default member of a hierarchy.
+        Currently implemented through TI, since TM1 API does not supports default member updates yet.
+
+        :param dimension_name:
+        :param hierarchy_name:
+        :param member_name:
+        :return:
+        """
+        from TM1py import ProcessService, CellService
+        if hierarchy_name and not case_and_space_insensitive_equals(dimension_name, hierarchy_name):
+            dimension = "{}:{}".format(dimension_name, hierarchy_name)
+        else:
+            dimension = dimension_name
+        cells = {(dimension, 'hierarchy0', 'defaultMember'): member_name}
+
+        CellService(self._rest).write_values(
+            cube_name="}HierarchyProperties",
+            cellset_as_dict=cells,
+            dimensions=('}Dimensions', '}Hierarchies', '}HierarchyProperties'))
+
+        return ProcessService(self._rest).execute_ti_code(
+            lines_prolog="RefreshMdxHierarchy('{}');".format(dimension_name))
