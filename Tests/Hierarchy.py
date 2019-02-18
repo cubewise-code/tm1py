@@ -15,6 +15,7 @@ SUBSET_NAME = DIMENSION_PREFIX + "Some_Subset"
 
 
 class TestHierarchyMethods(unittest.TestCase):
+    tm1 = None
 
     @classmethod
     def setup_class(cls):
@@ -35,17 +36,17 @@ class TestHierarchyMethods(unittest.TestCase):
 
     @classmethod
     def create_dimension(cls):
-        d = Dimension(DIMENSION_NAME)
-        h = Hierarchy(DIMENSION_NAME, DIMENSION_NAME)
-        h.add_element('Total Years', 'Consolidated')
-        h.add_element('No Year', 'Numeric')
-        h.add_element('1989', 'Numeric')
-        h.add_element("Marius's Element", "Numeric")
-        h.add_element_attribute('Previous Year', 'String')
-        h.add_element_attribute('Next Year', 'String')
-        h.add_edge('Total Years', '1989', 2)
-        d.add_hierarchy(h)
-        cls.tm1.dimensions.create(d)
+        dimension = Dimension(DIMENSION_NAME)
+        hierarchy = Hierarchy(name=DIMENSION_NAME, dimension_name=DIMENSION_NAME)
+        hierarchy.add_element('Total Years', 'Consolidated')
+        hierarchy.add_element('No Year', 'Numeric')
+        hierarchy.add_element('1989', 'Numeric')
+        hierarchy.add_element("My Element", "Numeric")
+        hierarchy.add_element_attribute('Previous Year', 'String')
+        hierarchy.add_element_attribute('Next Year', 'String')
+        hierarchy.add_edge('Total Years', '1989', 2)
+        dimension.add_hierarchy(hierarchy)
+        cls.tm1.dimensions.create(dimension)
 
     @classmethod
     def delete_dimension(cls):
@@ -56,6 +57,20 @@ class TestHierarchyMethods(unittest.TestCase):
         s = Subset(SUBSET_NAME, DIMENSION_NAME, DIMENSION_NAME,
                    expression="{{[{}].Members}}".format(DIMENSION_NAME))
         cls.tm1.dimensions.subsets.create(s, False)
+
+    def add_other_hierarchy(self):
+        dimension = self.tm1.dimensions.get(DIMENSION_NAME)
+        # other hierarchy
+        hierarchy = Hierarchy(name="Other Hierarchy", dimension_name=DIMENSION_NAME)
+        hierarchy.add_element('Other Total Years', 'Consolidated')
+        hierarchy.add_element('No Year', 'Numeric')
+        hierarchy.add_element('1989', 'Numeric')
+        hierarchy.add_element("Element With ' in the name", "Numeric")
+        hierarchy.add_element_attribute('Previous Year', 'String')
+        hierarchy.add_element_attribute('Next Year', 'String')
+        hierarchy.add_edge('Other Total Years', '1989', 2)
+        dimension.add_hierarchy(hierarchy)
+        self.tm1.dimensions.update(dimension)
 
     def update_hierarchy(self):
         d = self.tm1.dimensions.get(dimension_name=DIMENSION_NAME)
@@ -265,6 +280,57 @@ class TestHierarchyMethods(unittest.TestCase):
         self.assertEqual(summary["Members"], 4)
         self.assertEqual(summary["ElementAttributes"], 2)
         self.assertEqual(summary["Levels"], 2)
+
+    def test_get_default_member(self):
+        default_member = self.tm1.dimensions.hierarchies.get_default_member(DIMENSION_NAME, DIMENSION_NAME)
+        self.assertEqual(default_member, "Total Years")
+
+    def test_get_default_member_for_leaves_hierarchy(self):
+        self.add_other_hierarchy()
+        default_member = self.tm1.dimensions.hierarchies.get_default_member(
+            dimension_name=DIMENSION_NAME,
+            hierarchy_name="Leaves")
+        self.assertEqual(default_member, "No Year")
+
+    def test_update_default_member(self):
+        default_member = self.tm1.dimensions.hierarchies.get_default_member(DIMENSION_NAME, DIMENSION_NAME)
+        self.assertEqual(default_member, "Total Years")
+        self.tm1.dimensions.hierarchies.update_default_member(DIMENSION_NAME, DIMENSION_NAME, member_name="1989")
+        default_member = self.tm1.dimensions.hierarchies.get_default_member(DIMENSION_NAME, DIMENSION_NAME)
+        self.assertEqual(default_member, "1989")
+
+    def test_update_default_member_skip_hierarchy_name_argument(self):
+        default_member = self.tm1.dimensions.hierarchies.get_default_member(DIMENSION_NAME)
+        self.assertEqual(default_member, "Total Years")
+        self.tm1.dimensions.hierarchies.update_default_member(dimension_name=DIMENSION_NAME, member_name="1989")
+        default_member = self.tm1.dimensions.hierarchies.get_default_member(DIMENSION_NAME)
+        self.assertEqual(default_member, "1989")
+
+    def test_update_default_member_for_alternate_hierarchy(self):
+        self.add_other_hierarchy()
+        default_member = self.tm1.dimensions.hierarchies.get_default_member(DIMENSION_NAME, "Other Hierarchy")
+        self.assertEqual(default_member, "Other Total Years")
+        self.tm1.dimensions.hierarchies.update_default_member(DIMENSION_NAME, DIMENSION_NAME, member_name="1989")
+        default_member = self.tm1.dimensions.hierarchies.get_default_member(DIMENSION_NAME, DIMENSION_NAME)
+        self.assertEqual(default_member, "1989")
+
+    def test_update_default_member_for_leaves_hierarchy(self):
+        self.add_other_hierarchy()
+        default_member = self.tm1.dimensions.hierarchies.get_default_member(DIMENSION_NAME, "Leaves")
+        self.assertEqual(default_member, "No Year")
+        self.tm1.dimensions.hierarchies.update_default_member(DIMENSION_NAME, DIMENSION_NAME, member_name="1989")
+        default_member = self.tm1.dimensions.hierarchies.get_default_member(DIMENSION_NAME, DIMENSION_NAME)
+        self.assertEqual(default_member, "1989")
+
+    def test_update_default_member_with_invalid_value(self):
+        default_member = self.tm1.dimensions.hierarchies.get_default_member(DIMENSION_NAME, DIMENSION_NAME)
+        self.assertEqual(default_member, "Total Years")
+        self.tm1.dimensions.hierarchies.update_default_member(
+            DIMENSION_NAME,
+            DIMENSION_NAME,
+            member_name="I am not a valid Member")
+        default_member = self.tm1.dimensions.hierarchies.get_default_member(DIMENSION_NAME, DIMENSION_NAME)
+        self.assertEqual(default_member, "Total Years")
 
 
 if __name__ == '__main__':
