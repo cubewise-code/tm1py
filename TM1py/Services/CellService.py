@@ -293,13 +293,13 @@ class CellService:
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
         return self.extract_cellset_values(cellset_id, delete_cellset=True)
 
-    def execute_mdx_rows_and_cells(self, mdx):
+    def execute_mdx_rows_and_values(self, mdx, element_unique_names=True):
         cellset_id = self.create_cellset(mdx=mdx)
-        return self.extract_cellset_rows_and_cells(cellset_id, delete_cellset=True)
+        return self.extract_cellset_rows_and_values(cellset_id, element_unique_names, delete_cellset=True)
 
-    def execute_view_rows_and_cells(self, cube_name, view_name, private=True):
+    def execute_view_rows_and_values(self, cube_name, view_name, private=True, element_unique_names=True):
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
-        return self.extract_cellset_rows_and_cells(cellset_id, delete_cellset=True)
+        return self.extract_cellset_rows_and_values(cellset_id, element_unique_names, delete_cellset=True)
 
     def execute_mdx_csv(self, mdx):
         """ Optimized for performance. Get csv string of coordinates and values. 
@@ -652,10 +652,11 @@ class CellService:
         return (cell["Value"] for cell in response.json()["Cells"])
 
     @tidy_cellset
-    def extract_cellset_rows_and_cells(self, cellset_id, **kwargs):
+    def extract_cellset_rows_and_values(self, cellset_id, element_unique_names=True, **kwargs):
         request = "/api/v1/Cellsets('{}')?$expand=" \
-                  "Axes($filter=Ordinal eq 1;$expand=Tuples($expand=Members($select=Element;$expand=Element($select=UniqueName))))," \
-                  "Cells($select=Value)".format(cellset_id)
+                  "Axes($filter=Ordinal eq 1;$expand=Tuples(" \
+                  "$expand=Members($select=Element;$expand=Element($select={}))))," \
+                  "Cells($select=Value)".format(cellset_id, "UniqueName" if element_unique_names else "Name")
         response = self._rest.GET(request=request, data='')
         response_json = response.json()
         rows = response_json["Axes"][0]["Tuples"]
@@ -663,17 +664,19 @@ class CellService:
 
         number_rows = len(rows)
         number_cells = len(cell_values)
-        number_cells_in_row = int(number_cells / number_rows)
+        number_columns = int(number_cells / number_rows)
 
-        cells_by_row = [cell_values[start:end]
-                        for start, end in
-                        zip(range(0, number_rows), range(number_cells_in_row, number_cells))]
-        unique_element_names_by_row = [tuple(member["Element"]["UniqueName"] for member in tupl["Members"])
-                                       for tupl
-                                       in rows]
+        cell_values_by_row = [cell_values[cell_counter:cell_counter + number_columns]
+                              for cell_counter
+                              in range(0, number_cells, number_columns)]
+        element_names_by_row = [tuple(member["Element"]["UniqueName" if element_unique_names else "Name"]
+                                      for member
+                                      in tupl["Members"])
+                                for tupl
+                                in rows]
         result = CaseAndSpaceInsensitiveTuplesDict()
-        for unique_element_names, cells in zip(unique_element_names_by_row, cells_by_row):
-            result[unique_element_names] = cells
+        for element_tuple, cells in zip(element_names_by_row, cell_values_by_row):
+            result[element_tuple] = cells
         return result
 
     @tidy_cellset

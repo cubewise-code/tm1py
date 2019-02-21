@@ -257,7 +257,52 @@ class TestDataMethods(unittest.TestCase):
                 axis["Tuples"][0]["Members"][0]["UniqueName"])
             self.assertNotEqual(dimension_on_axis, DIMENSION_NAMES[2])
 
-    def test_execute_mdx_rows_and_cells_one_dimension_on_rows(self):
+    def test_execute_mdx_rows_and_values_one_cell(self):
+        rows = """
+         {{ [{dim0}].[Element1]}}
+        """.format(dim0=DIMENSION_NAMES[0])
+
+        columns = """
+         {{ [{dim1}].[Element1]}}
+        """.format(dim1=DIMENSION_NAMES[1])
+
+        mdx = MDX_TEMPLATE.format(
+            rows=rows,
+            columns=columns,
+            cube=CUBE_NAME,
+            where="[" + DIMENSION_NAMES[2] + "].[Element1]")
+
+        data = self.tm1.cubes.cells.execute_mdx_rows_and_values(mdx, element_unique_names=True)
+
+        self.assertEqual(len(data), 1)
+        for row, cells in data.items():
+            dimension = Utils.dimension_name_from_element_unique_name(row[0])
+            self.assertEqual(dimension, DIMENSION_NAMES[0])
+            self.assertEqual(len(cells), 1)
+
+    def test_execute_mdx_rows_and_values_member_names(self):
+        rows = """
+         {{ [{dim0}].[Element1]}}
+        """.format(dim0=DIMENSION_NAMES[0])
+
+        columns = """
+         {{ [{dim1}].[Element1]}}
+        """.format(dim1=DIMENSION_NAMES[1])
+
+        mdx = MDX_TEMPLATE.format(
+            rows=rows,
+            columns=columns,
+            cube=CUBE_NAME,
+            where="[" + DIMENSION_NAMES[2] + "].[Element1]")
+
+        data = self.tm1.cubes.cells.execute_mdx_rows_and_values(mdx, element_unique_names=False)
+
+        self.assertEqual(len(data), 1)
+        for row, cells in data.items():
+            member_name = row[0]
+            self.assertEqual(member_name, "Element 1")
+
+    def test_execute_mdx_rows_and_values_one_dimension_on_rows(self):
         rows = """
          {{ [{dim0}].[Element1], [{dim0}].[Element2] }}
         """.format(dim0=DIMENSION_NAMES[0])
@@ -271,7 +316,7 @@ class TestDataMethods(unittest.TestCase):
             columns=columns,
             cube=CUBE_NAME,
             where="[" + DIMENSION_NAMES[2] + "].[Element1]")
-        data = self.tm1.cubes.cells.execute_mdx_rows_and_cells(mdx)
+        data = self.tm1.cubes.cells.execute_mdx_rows_and_values(mdx)
 
         self.assertEqual(len(data), 2)
         for row, cells in data.items():
@@ -279,7 +324,7 @@ class TestDataMethods(unittest.TestCase):
             self.assertEqual(dimension, DIMENSION_NAMES[0])
             self.assertEqual(len(cells), 3)
 
-    def test_execute_mdx_rows_and_cells_two_dimensions_on_rows(self):
+    def test_execute_mdx_rows_and_values_two_dimensions_on_rows(self):
         rows = """
         {{ [{dim0}].[Element1], [{dim0}].[Element2]}} * {{ [{dim1}].[Element1], [{dim1}].[Element2] }}
         """.format(dim0=DIMENSION_NAMES[0], dim1=DIMENSION_NAMES[1])
@@ -292,7 +337,7 @@ class TestDataMethods(unittest.TestCase):
             rows=rows,
             columns=columns,
             cube=CUBE_NAME)
-        data = self.tm1.cubes.cells.execute_mdx_rows_and_cells(mdx)
+        data = self.tm1.cubes.cells.execute_mdx_rows_and_values(mdx)
 
         self.assertEqual(len(data), 4)
         for row, cells in data.items():
@@ -608,7 +653,7 @@ class TestDataMethods(unittest.TestCase):
                 Utils.dimension_name_from_element_unique_name(coordinates[1]),
                 DIMENSION_NAMES[1])
 
-    def test_execute_view_rows_and_cells_one_dimension_on_rows(self):
+    def test_execute_view_rows_and_values_one_dimension_on_rows(self):
         view_name = PREFIX + "MDX_View_With_One_Dim_On_Rows"
         if not self.tm1.cubes.views.exists(cube_name=CUBE_NAME, view_name=view_name, private=False):
             rows = """
@@ -627,7 +672,7 @@ class TestDataMethods(unittest.TestCase):
             view = MDXView(cube_name=CUBE_NAME, view_name=view_name, MDX=mdx)
             self.tm1.cubes.views.create(view, False)
 
-        data = self.tm1.cubes.cells.execute_view_rows_and_cells(
+        data = self.tm1.cubes.cells.execute_view_rows_and_values(
             cube_name=CUBE_NAME,
             view_name=view_name,
             private=False)
@@ -638,7 +683,40 @@ class TestDataMethods(unittest.TestCase):
             self.assertEqual(dimension, DIMENSION_NAMES[0])
             self.assertEqual(len(cells), 3)
 
-    def test_execute_view_rows_and_cells_two_dimensions_on_rows(self):
+    def test_execute_view_rows_and_values_with_member_names(self):
+        view_name = PREFIX + "MDX_View_With_Member_Names"
+        if not self.tm1.cubes.views.exists(cube_name=CUBE_NAME, view_name=view_name, private=False):
+            rows = """
+             {{ [{dim0}].[Element1], [{dim0}].[Element2] }} * {{ [{dim2}].[Element1], [{dim2}].[Element2] }}
+            """.format(dim0=DIMENSION_NAMES[0], dim2=DIMENSION_NAMES[2])
+
+            columns = """
+             {{ [{dim1}].[Element1], [{dim1}].[Element2], [{dim1}].[Element3] }}
+            """.format(dim1=DIMENSION_NAMES[1])
+
+            mdx = MDX_TEMPLATE.format(
+                rows=rows,
+                columns=columns,
+                cube=CUBE_NAME,
+                where="[" + DIMENSION_NAMES[2] + "].[Element1]")
+            view = MDXView(cube_name=CUBE_NAME, view_name=view_name, MDX=mdx)
+            self.tm1.cubes.views.create(view, False)
+
+        data = self.tm1.cubes.cells.execute_view_rows_and_values(
+            cube_name=CUBE_NAME,
+            view_name=view_name,
+            private=False,
+            element_unique_names=False)
+
+        self.assertEqual(len(data), 4)
+        self.assertIn(("Element1", "Element1"), data)
+        self.assertIn(("Element1", "Element2"), data)
+        self.assertIn(("Element2", "Element1"), data)
+        self.assertIn(("Element2", "Element2"), data)
+        for _, cells in data.items():
+            self.assertEqual(len(cells), 3)
+
+    def test_execute_view_rows_and_values_two_dimensions_on_rows(self):
         view_name = PREFIX + "MDX_View_With_Two_Dim_On_Rows"
         if not self.tm1.cubes.views.exists(cube_name=CUBE_NAME, view_name=view_name, private=False):
             rows = """
@@ -657,7 +735,7 @@ class TestDataMethods(unittest.TestCase):
             view = MDXView(cube_name=CUBE_NAME, view_name=view_name, MDX=mdx)
             self.tm1.cubes.views.create(view, False)
 
-        data = self.tm1.cubes.cells.execute_view_rows_and_cells(
+        data = self.tm1.cubes.cells.execute_view_rows_and_values(
             cube_name=CUBE_NAME,
             view_name=view_name,
             private=False)
