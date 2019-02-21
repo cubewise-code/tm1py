@@ -204,7 +204,6 @@ class ProcessService(ObjectService):
         self.create(p)
         try:
             return self.execute(process_name)
-            pass
         except TM1pyException as e:
             raise e
         finally:
