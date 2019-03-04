@@ -34,6 +34,10 @@ class TM1Service:
         self.logout()
 
     @property
+    def whoami(self):
+        return self.security.get_current_user()
+
+    @property
     def version(self):
         return self._tm1_rest.version
 
