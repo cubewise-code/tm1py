@@ -48,6 +48,13 @@ class TestSecurityMethods(unittest.TestCase):
         u.friendly_name = None
         self.assertEqual(u.body, self.user.body)
 
+    def test_get_current_user(self):
+        me = self.tm1.security.get_current_user()
+        self.assertEqual(me.name, config['tm1srv01']['User'])
+
+        user = self.tm1.security.get_user(config['tm1srv01']['User'])
+        self.assertEqual(me, user)
+
     def test_update_user(self):
         # get user
         u = self.tm1.security.get_user(self.user_name)

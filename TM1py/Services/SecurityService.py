@@ -49,6 +49,15 @@ class SecurityService(ObjectService):
         response = self._rest.GET(request)
         return User.from_dict(response.json())
 
+    def get_current_user(self):
+        """ Get user and group assignments of this session
+
+        :return: instance of TM1py.User
+        """
+        request = "/api/v1/ActiveUser?$expand=Groups"
+        response = self._rest.GET(request)
+        return User.from_dict(response.json())
+
     def update_user(self, user):
         """ Update user on TM1 Server
 
