@@ -112,6 +112,19 @@ class TestCubeMethods(unittest.TestCase):
         all_cubes_after = self.tm1.cubes.get_all_names()
         self.assertEqual(len(all_cubes_before) - 1, len(all_cubes_after))
 
+    def test_get_storage_dimension_order(self):
+        dimensions = self.tm1.cubes.get_storage_dimension_order(cube_name=self.cube_name)
+        self.assertEqual(dimensions, self.dimension_names)
+
+    def test_update_storage_dimension_order(self):
+        self.tm1.cubes.update_storage_dimension_order(
+            cube_name=self.cube_name,
+            dimension_names=reversed(self.dimension_names))
+        dimensions = self.tm1.cubes.get_storage_dimension_order(self.cube_name)
+        self.assertEqual(
+            list(reversed(dimensions)),
+            self.dimension_names)
+
     @classmethod
     def tearDownClass(cls):
         cls.tm1.cubes.delete(cls.cube_name)
