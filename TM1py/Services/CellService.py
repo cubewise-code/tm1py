@@ -84,6 +84,47 @@ class CellService:
         cellset = dict(self.execute_mdx(mdx))
         return next(iter(cellset.values()))["Value"]
 
+    def relative_proportional_spread(
+            self,
+            value,
+            cube,
+            unique_element_names,
+            reference_unique_element_names,
+            reference_cube=None):
+        """ Execute relative proportional spread
+
+        :param value: value to be spread
+        :param cube: name of the cube
+        :param unique_element_names: target cell coordinates as unique element names (e.g. ["[d1].[c1]","[d2].[e3]"])
+        :param reference_cube: name of the reference cube. Can be None
+        :param reference_unique_element_names: reference cell coordinates as unique element names
+        :return:
+        """
+        mdx = """
+        SELECT
+        {{ {rows} }} ON 0
+        FROM [{cube}]
+        """.format(rows="}*{".join(unique_element_names), cube=cube)
+        cellset_id = self.create_cellset(mdx=mdx)
+
+        payload = {
+            "BeginOrdinal": 0,
+            "Value": "RP" + str(value),
+            "ReferenceCell@odata.bind": list(),
+            "ReferenceCube@odata.bind": "Cubes('{}')".format(reference_cube if reference_cube else cube)}
+        reference_element_template = "Dimensions('{}')/Hierarchies('{}')/Elements('{}')"
+        for unique_element_name in reference_unique_element_names:
+            payload["ReferenceCell@odata.bind"].append(
+                reference_element_template.format(
+                    *Utils.dimension_hierarchy_element_tuple_from_unique_name(unique_element_name)))
+
+        self._post_against_cellset(cellset_id=cellset_id, payload=payload, delete_cellset=True)
+
+    @tidy_cellset
+    def _post_against_cellset(self, cellset_id, payload, **kwargs):
+        request = "/api/v1/Cellsets('{}')/tm1.Update".format(cellset_id)
+        return self._rest.POST(request=request, data=json.dumps(payload))
+
     def write_value(self, value, cube_name, element_tuple, dimensions=None):
         """ Write value into cube at specified coordinates
 

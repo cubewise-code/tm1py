@@ -277,8 +277,27 @@ def element_names_from_element_unqiue_names(element_unique_names):
     return element_names_from_element_unique_names(element_unique_names)
 
 
+def dimension_hierarchy_element_tuple_from_unique_name(element_unique_name):
+    """ Extract dimension name, hierarchy name and element name from element unique name.
+    Works with explicit and implicit hierarchy references.
+
+    :param element_unique_name: e.g. [d1].[e1] or [d1].[leaves].[e1]
+    :return: tuple of dimension name, hierarchy name, element name
+    """
+    dimension = dimension_name_from_element_unique_name(element_unique_name)
+    element = element_name_from_element_unique_name(element_unique_name)
+    if element_unique_name.count("].[") == 1:
+        return dimension, dimension, element
+    hierarchy = hierarchy_name_from_element_unique_name(element_unique_name)
+    return dimension, hierarchy, element
+
+
 def dimension_name_from_element_unique_name(element_unique_name):
     return element_unique_name[1:element_unique_name.find('].[')]
+
+
+def hierarchy_name_from_element_unique_name(element_unique_name):
+    return element_unique_name[element_unique_name.find('].[') + 3:element_unique_name.rfind('].[')]
 
 
 def element_name_from_element_unique_name(element_unique_name):
