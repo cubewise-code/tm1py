@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import json
 import random
 
 from TM1py.Objects.Cube import Cube
@@ -116,6 +116,30 @@ class CubeService(ObjectService):
         response = self._rest.GET(request, '')
         dimension_names = [element['Name'] for element in response.json()['value']]
         return dimension_names
+
+    def get_storage_dimension_order(self, cube_name):
+        """ Get the storage dimension order of a cube
+
+        :param cube_name:
+        :return: List of dimension names
+        """
+        url = "/api/v1/Cubes('{}')/tm1.DimensionsStorageOrder()?$select=Name".format(cube_name)
+        response = self._rest.GET(url)
+        return [dimension["Name"] for dimension in response.json()["value"]]
+
+    def update_storage_dimension_order(self, cube_name, dimension_names):
+        """ Update the storage dimension order of a cube
+
+        :param cube_name:
+        :param dimension_names:
+        :return:
+        """
+        url = "/api/v1/Cubes('{}')/tm1.ReorderDimensions".format(cube_name)
+        payload = dict()
+        payload['Dimensions@odata.bind'] = ["Dimensions('{}')".format(dimension)
+                                            for dimension
+                                            in dimension_names]
+        return self._rest.POST(request=url, data=json.dumps(payload))
 
     def get_random_intersection(self, cube_name, unique_names=False):
         """ Get a random Intersection in a cube
