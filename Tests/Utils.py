@@ -14,6 +14,7 @@ from TM1py.Utils import Utils, MDXUtils
 from TM1py.Utils.MDXUtils import DimensionSelection, read_dimension_composition_from_mdx, \
     read_dimension_composition_from_mdx_set_or_tuple, read_dimension_composition_from_mdx_set, \
     read_dimension_composition_from_mdx_tuple, split_mdx, _find_case_and_space_insensitive_first_occurrence
+from TM1py.Utils.Utils import dimension_hierarchy_element_tuple_from_unique_name
 
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
@@ -294,6 +295,25 @@ class TestMDXUtils(unittest.TestCase):
                 self.assertEquals(
                     cube_name.upper().replace(" ", ""),
                     MDXUtils.read_cube_name_from_mdx(mdx))
+
+    def test_dimension_hierarchy_element_tuple_from_unique_name(self):
+        unique_element_name = "[d1].[e1]"
+        dimension, hierarchy, element = dimension_hierarchy_element_tuple_from_unique_name(unique_element_name)
+        self.assertEqual(dimension, "d1")
+        self.assertEqual(hierarchy, "d1")
+        self.assertEqual(element, "e1")
+
+        unique_element_name = "[d1].[d1].[e1]"
+        dimension, hierarchy, element = dimension_hierarchy_element_tuple_from_unique_name(unique_element_name)
+        self.assertEqual(dimension, "d1")
+        self.assertEqual(hierarchy, "d1")
+        self.assertEqual(element, "e1")
+
+        unique_element_name = "[d1].[leaves].[e1]"
+        dimension, hierarchy, element = dimension_hierarchy_element_tuple_from_unique_name(unique_element_name)
+        self.assertEqual(dimension, "d1")
+        self.assertEqual(hierarchy, "leaves")
+        self.assertEqual(element, "e1")
 
     def test_read_dimension_composition_from_mdx_simple1(self):
         mdx = MDX_TEMPLATE.format(

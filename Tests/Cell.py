@@ -22,6 +22,11 @@ DIMENSION_NAMES = [
     PREFIX + 'Dimension2',
     PREFIX + 'Dimension3']
 
+CUBE_NAME_RPS1 = PREFIX + "Cube" + "_RPS1"
+CUBE_NAME_RPS2 = PREFIX + "Cube" + "_RPS2"
+DIMENSION_NAME_RPS1 = PREFIX + "Dimension" + "_RPS1"
+DIMENSION_NAME_RPS2 = PREFIX + "Dimension" + "_RPS2"
+
 MDX_TEMPLATE = """
 SELECT 
 {rows} ON ROWS,
@@ -39,6 +44,7 @@ FROM {cube}
 
 
 class TestDataMethods(unittest.TestCase):
+    tm1 = None
 
     # Setup Cubes, Dimensions and Subsets
     @classmethod
@@ -118,6 +124,34 @@ class TestDataMethods(unittest.TestCase):
         # Fill cube with values
         cls.tm1.cubes.cells.write_values(CUBE_NAME, cls.cellset)
 
+    @classmethod
+    def build_assets_for_relative_proportional_spread_tests(cls):
+        for dimension_name in (DIMENSION_NAME_RPS1, DIMENSION_NAME_RPS2):
+            dimension = Dimension(dimension_name)
+            hierarchy = Hierarchy(dimension_name, dimension_name)
+            hierarchy.add_element(element_name="c1", element_type="Consolidated")
+            for i in range(1, 5, 1):
+                element_name = "e" + str(i)
+                hierarchy.add_element(element_name=element_name, element_type="Numeric")
+                hierarchy.add_edge(parent="c1", component=element_name, weight=1)
+            dimension.add_hierarchy(hierarchy)
+            if not cls.tm1.dimensions.exists(dimension.name):
+                cls.tm1.dimensions.create(dimension)
+
+        for cube_name in (CUBE_NAME_RPS1, CUBE_NAME_RPS2):
+            cube = Cube(name=cube_name, dimensions=(DIMENSION_NAME_RPS1, DIMENSION_NAME_RPS2))
+            if not cls.tm1.cubes.exists(cube.name):
+                cls.tm1.cubes.create(cube)
+            # zero out cube
+            cls.tm1.processes.execute_ti_code("CubeClearData('" + cube_name + "');")
+
+    @classmethod
+    def remove_assets_for_relative_proportional_spread_tests(cls):
+        for cube_name in (CUBE_NAME_RPS1, CUBE_NAME_RPS2):
+            cls.tm1.cubes.delete(cube_name=cube_name)
+        for dimension_name in (DIMENSION_NAME_RPS1, DIMENSION_NAME_RPS2):
+            cls.tm1.dimensions.delete(dimension_name=dimension_name)
+
     def test_write_and_get_value(self):
         original_value = self.tm1.cubes.cells.get_value(CUBE_NAME, 'Element1,EleMent2,ELEMENT  3')
         response = self.tm1.cubes.cells.write_value(1, CUBE_NAME, ('element1', 'ELEMENT 2', 'EleMent  3'))
@@ -133,6 +167,139 @@ class TestDataMethods(unittest.TestCase):
     def test_write_values(self):
         response = self.tm1.cubes.cells.write_values(CUBE_NAME, self.cellset)
         self.assertTrue(response.ok)
+
+    def test_relative_proportional_spread_happy_case(self):
+        self.build_assets_for_relative_proportional_spread_tests()
+
+        cells = {
+            ('e1', 'e1'): 1,
+            ('e1', 'e2'): 2,
+            ('e1', 'e3'): 3,
+        }
+        self.tm1.cubes.cells.write_values(CUBE_NAME_RPS1, cells)
+
+        self.tm1.cubes.cells.relative_proportional_spread(
+            value=12,
+            cube=CUBE_NAME_RPS1,
+            unique_element_names=("[" + DIMENSION_NAME_RPS1 + "].[e2]", "[" + DIMENSION_NAME_RPS2 + "].[c1]"),
+            reference_cube=CUBE_NAME_RPS1,
+            reference_unique_element_names=("[" + DIMENSION_NAME_RPS1 + "].[c1]", "[" + DIMENSION_NAME_RPS2 + "].[c1]"))
+
+        rows = "[" + DIMENSION_NAME_RPS1 + "].[e2]"
+        columns = ",".join("[" + DIMENSION_NAME_RPS2 + "].[" + elem + "]" for elem in ("e1", "e2", "e3"))
+        mdx = """
+        SELECT 
+        {{ {rows} }} ON 0,
+        {{ {columns} }} ON 1
+        FROM {cube}
+        """.format(
+            rows=rows,
+            columns=columns,
+            cube=CUBE_NAME_RPS1)
+        values = self.tm1.cubes.cells.execute_mdx_values(mdx)
+        self.assertEqual(next(values), 2)
+        self.assertEqual(next(values), 4)
+        self.assertEqual(next(values), 6)
+
+    def test_relative_proportional_with_explicit_hierarchies(self):
+        self.build_assets_for_relative_proportional_spread_tests()
+
+        cells = {
+            ('e1', 'e1'): 1,
+            ('e1', 'e2'): 2,
+            ('e1', 'e3'): 3,
+        }
+        self.tm1.cubes.cells.write_values(CUBE_NAME_RPS1, cells)
+
+        self.tm1.cubes.cells.relative_proportional_spread(
+            value=12,
+            cube=CUBE_NAME_RPS1,
+            unique_element_names=("[" + DIMENSION_NAME_RPS1 + "].[" + DIMENSION_NAME_RPS1 + "].[e2]",
+                                  "[" + DIMENSION_NAME_RPS2 + "].[" + DIMENSION_NAME_RPS2 + "].[c1]"),
+            reference_cube=CUBE_NAME_RPS1,
+            reference_unique_element_names=("[" + DIMENSION_NAME_RPS1 + "].[" + DIMENSION_NAME_RPS1 + "].[c1]",
+                                            "[" + DIMENSION_NAME_RPS2 + "].[" + DIMENSION_NAME_RPS2 + "].[c1]"))
+
+        rows = "[" + DIMENSION_NAME_RPS1 + "].[e2]"
+        columns = ",".join("[" + DIMENSION_NAME_RPS2 + "].[" + elem + "]" for elem in ("e1", "e2", "e3"))
+        mdx = """
+        SELECT 
+        {{ {rows} }} ON 0,
+        {{ {columns} }} ON 1
+        FROM {cube}
+        """.format(
+            rows=rows,
+            columns=columns,
+            cube=CUBE_NAME_RPS1)
+        values = self.tm1.cubes.cells.execute_mdx_values(mdx)
+        self.assertEqual(next(values), 2)
+        self.assertEqual(next(values), 4)
+        self.assertEqual(next(values), 6)
+
+    def test_relative_proportional_spread_without_reference_cube(self):
+        self.build_assets_for_relative_proportional_spread_tests()
+
+        cells = {
+            ('e1', 'e1'): 1,
+            ('e1', 'e2'): 2,
+            ('e1', 'e3'): 3,
+        }
+        self.tm1.cubes.cells.write_values(CUBE_NAME_RPS1, cells)
+
+        self.tm1.cubes.cells.relative_proportional_spread(
+            value=12,
+            cube=CUBE_NAME_RPS1,
+            unique_element_names=("[" + DIMENSION_NAME_RPS1 + "].[e2]", "[" + DIMENSION_NAME_RPS2 + "].[c1]"),
+            reference_unique_element_names=("[" + DIMENSION_NAME_RPS1 + "].[c1]", "[" + DIMENSION_NAME_RPS2 + "].[c1]"))
+
+        rows = "[" + DIMENSION_NAME_RPS1 + "].[e2]"
+        columns = ",".join("[" + DIMENSION_NAME_RPS2 + "].[" + elem + "]" for elem in ("e1", "e2", "e3"))
+        mdx = """
+        SELECT 
+        {{ {rows} }} ON 0,
+        {{ {columns} }} ON 1
+        FROM {cube}
+        """.format(
+            rows=rows,
+            columns=columns,
+            cube=CUBE_NAME_RPS1)
+        values = self.tm1.cubes.cells.execute_mdx_values(mdx)
+        self.assertEqual(next(values), 2)
+        self.assertEqual(next(values), 4)
+        self.assertEqual(next(values), 6)
+
+    def test_relative_proportional_spread_with_different_reference_cube(self):
+        self.build_assets_for_relative_proportional_spread_tests()
+
+        cells = {
+            ('e1', 'e1'): 1,
+            ('e1', 'e2'): 2,
+            ('e1', 'e3'): 3,
+        }
+        self.tm1.cubes.cells.write_values(CUBE_NAME_RPS2, cells)
+
+        self.tm1.cubes.cells.relative_proportional_spread(
+            value=12,
+            cube=CUBE_NAME_RPS1,
+            unique_element_names=("[" + DIMENSION_NAME_RPS1 + "].[e2]", "[" + DIMENSION_NAME_RPS2 + "].[c1]"),
+            reference_cube=CUBE_NAME_RPS2,
+            reference_unique_element_names=("[" + DIMENSION_NAME_RPS1 + "].[c1]", "[" + DIMENSION_NAME_RPS2 + "].[c1]"))
+
+        rows = "[" + DIMENSION_NAME_RPS1 + "].[e2]"
+        columns = ",".join("[" + DIMENSION_NAME_RPS2 + "].[" + elem + "]" for elem in ("e1", "e2", "e3"))
+        mdx = """
+        SELECT 
+        {{ {rows} }} ON 0,
+        {{ {columns} }} ON 1
+        FROM {cube}
+        """.format(
+            rows=rows,
+            columns=columns,
+            cube=CUBE_NAME_RPS1)
+        values = self.tm1.cubes.cells.execute_mdx_values(mdx)
+        self.assertEqual(next(values), 2)
+        self.assertEqual(next(values), 4)
+        self.assertEqual(next(values), 6)
 
     def test_execute_mdx(self):
         # write cube content
@@ -1145,6 +1312,7 @@ class TestDataMethods(unittest.TestCase):
         cls.tm1.cubes.delete(CUBE_NAME)
         for dimension_name in DIMENSION_NAMES:
             cls.tm1.dimensions.delete(dimension_name)
+        cls.remove_assets_for_relative_proportional_spread_tests()
         cls.tm1.logout()
 
 
