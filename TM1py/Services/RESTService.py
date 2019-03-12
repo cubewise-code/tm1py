@@ -74,12 +74,17 @@ class RESTService:
         :param session_id: String - TM1SessionId e.g. q7O6e1w49AixeuLVxJ1GZg
         :param session_context: String - Name of the Application. Controls "Context" column in Arc / TM1top.
         If None, use default: TM1py
+        :param verify: path to .cer file or 'False' / False (if no ssl verification is required)
         :param logging: boolean - switch on/off verbose http logging into sys.stdout
         """
         self._ssl = self.translate_to_boolean(kwargs['ssl'])
-        self._address = kwargs['address'] if 'address' in kwargs else None
-        self._port = kwargs['port'] if 'port' in kwargs else None
+        self._address = kwargs.get('address', None)
+        self._port = kwargs.get('port', None)
         self._verify = False
+        if 'verify' in kwargs:
+            if isinstance(kwargs['verify'], str):
+                if kwargs['verify'].upper() != 'FALSE':
+                    self._verify = kwargs.get('verify')
         if 'base_url' in kwargs:
             self._base_url = kwargs['base_url']
         else:
