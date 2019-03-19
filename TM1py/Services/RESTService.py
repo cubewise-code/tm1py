@@ -43,7 +43,7 @@ class RESTService:
             - PATCH
             - DELETE
 
-        Takes Care of 
+        Takes Care of
             - Encodings
             - TM1 User-Login
             - HTTP Headers
@@ -76,11 +76,13 @@ class RESTService:
         If None, use default: TM1py
         :param verify: path to .cer file or 'False' / False (if no ssl verification is required)
         :param logging: boolean - switch on/off verbose http logging into sys.stdout
+        :param timeout: Float - Number of seconds that the client will wait to receive the first byte.
         """
         self._ssl = self.translate_to_boolean(kwargs['ssl'])
         self._address = kwargs.get('address', None)
         self._port = kwargs.get('port', None)
         self._verify = False
+        self._timeout = kwargs.get('timeout', None)
         if 'verify' in kwargs:
             if isinstance(kwargs['verify'], str):
                 if kwargs['verify'].upper() != 'FALSE':
@@ -108,10 +110,13 @@ class RESTService:
                 password=kwargs["password"],
                 namespace=kwargs.get("namespace", None),
                 decode_b64=self.translate_to_boolean(kwargs.get("decode_b64", False)))
+
         # Logging
         if 'logging' in kwargs:
             if self.translate_to_boolean(value=kwargs['logging']):
                 http_client.HTTPConnection.debuglevel = 1
+
+
 
     def __enter__(self):
         return self
@@ -127,7 +132,7 @@ class RESTService:
         :param data: String, empty
         :return: String, the response as text
         """
-        return self._s.get(url=request, headers=self._headers, data=data, verify=self._verify)
+        return self._s.get(url=request, headers=self._headers, data=data, verify=self._verify, timeout=self._timeout)
 
     @httpmethod
     def POST(self, request, data):
@@ -137,7 +142,7 @@ class RESTService:
         :param data: String, the payload (json)
         :return:  String, the response as text
         """
-        return self._s.post(url=request, headers=self._headers, data=data, verify=self._verify)
+        return self._s.post(url=request, headers=self._headers, data=data, verify=self._verify, timeout=self._timeout)
 
     @httpmethod
     def PATCH(self, request, data):
@@ -147,7 +152,7 @@ class RESTService:
         :param data: String, the payload (json)
         :return: String, the response as text
         """
-        return self._s.patch(url=request, headers=self._headers, data=data, verify=self._verify)
+        return self._s.patch(url=request, headers=self._headers, data=data, verify=self._verify, timeout=self._timeout)
 
     @httpmethod
     def DELETE(self, request, data=''):
@@ -157,7 +162,7 @@ class RESTService:
         :param data: String, empty
         :return: String, the response in text
         """
-        return self._s.delete(url=request, headers=self._headers, data=data, verify=self._verify)
+        return self._s.delete(url=request, headers=self._headers, data=data, verify=self._verify, timeout=self._timeout)
 
     def logout(self):
         """ End TM1 Session and HTTP session
