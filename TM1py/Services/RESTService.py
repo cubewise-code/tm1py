@@ -4,6 +4,7 @@ import sys
 from base64 import b64encode, b64decode
 
 import requests
+from requests.adapters import HTTPAdapter
 
 from TM1py.Exceptions import TM1pyException
 
@@ -77,16 +78,20 @@ class RESTService:
         :param verify: path to .cer file or 'False' / False (if no ssl verification is required)
         :param logging: boolean - switch on/off verbose http logging into sys.stdout
         :param timeout: Float - Number of seconds that the client will wait to receive the first byte.
+        :param connection_pool_size - In a multithreaded environment, you should set this value to a
+        higher number, such as the number of threads
         """
         self._ssl = self.translate_to_boolean(kwargs['ssl'])
         self._address = kwargs.get('address', None)
         self._port = kwargs.get('port', None)
         self._verify = False
         self._timeout = kwargs.get('timeout', None)
+
         if 'verify' in kwargs:
             if isinstance(kwargs['verify'], str):
                 if kwargs['verify'].upper() != 'FALSE':
                     self._verify = kwargs.get('verify')
+
         if 'base_url' in kwargs:
             self._base_url = kwargs['base_url']
         else:
@@ -94,10 +99,12 @@ class RESTService:
                 's' if self._ssl else '',
                 'localhost' if len(self._address) == 0 else self._address,
                 self._port)
+
         self._version = None
         self._headers = self.HEADERS.copy()
         if "session_context" in kwargs:
             self._headers["TM1-SessionContext"] = kwargs["session_context"]
+
         self.disable_http_warnings()
         # re-use or create tm1 http session
         self._s = requests.session()
@@ -111,12 +118,21 @@ class RESTService:
                 namespace=kwargs.get("namespace", None),
                 decode_b64=self.translate_to_boolean(kwargs.get("decode_b64", False)))
 
+        # manage connection pool
+        if "connection_pool_size" in kwargs:
+            self._manage_http_connection_pool(kwargs.get("connection_pool_size"))
+
         # Logging
         if 'logging' in kwargs:
             if self.translate_to_boolean(value=kwargs['logging']):
                 http_client.HTTPConnection.debuglevel = 1
 
-
+    def _manage_http_connection_pool(self, connection_pool_size):
+        self._s.mount(
+            self._base_url,
+            HTTPAdapter(
+                pool_connections=int(connection_pool_size),
+                pool_maxsize=int(connection_pool_size)))
 
     def __enter__(self):
         return self
