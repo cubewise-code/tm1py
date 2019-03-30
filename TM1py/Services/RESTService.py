@@ -193,8 +193,8 @@ class RESTService:
         token = self._build_authorization_token(
             user,
             self.b64_decode_password(password) if decode_b64 else password,
-            namespace
-            , gateway)
+            namespace,
+            gateway)
         self.add_http_header('Authorization', token)
         request = '/api/v1/Configuration/ProductVersion/$value'
         try:
@@ -275,12 +275,16 @@ class RESTService:
         """
         if namespace:
             if gateway:
-                vResp1 = requests.get(gateway, auth=HttpNegotiateAuth())
-                if vResp1.status_code == 200:
-                    token = 'CAMPassport ' + vResp1.cookies['cam_passport']
+                response = requests.get(gateway, auth=HttpNegotiateAuth())
+                if not response.status_code == 200:
+                    raise RuntimeError(
+                        "Failed to authenticate through CAM. Expected status_code 200, received status_code: "
+                        + str(response.status_code))
+                elif 'cam_passport' not in response.cookies:
+                    raise RuntimeError(
+                        "Failed to authenticate through CAM. HTTP response does not contain 'cam_passport' cookie")
                 else:
-                    token = 'CAMNamespace ' + b64encode(
-                        str.encode("{}:{}:{}".format(user, password, namespace))).decode("ascii")
+                    token = 'CAMPassport ' + response.cookies['cam_passport']
             else:
                 token = 'CAMNamespace ' + b64encode(
                     str.encode("{}:{}:{}".format(user, password, namespace))).decode("ascii")
