@@ -242,7 +242,7 @@ class RESTService:
         :param value: True, 'true', 'false' or 'False' ...
         :return:
         """
-        if isinstance(value, bool):
+        if isinstance(value, bool) or isinstance(value, int):
             return value
         elif isinstance(value, str):
             return value.lower() == 'true'
