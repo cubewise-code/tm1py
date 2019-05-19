@@ -8,12 +8,8 @@ SCHEDULE_DOWNLOAD_URL = (
 )
 
 
-def read_file(filename):
-    """
-    Read a utf8 encoded text file and return its contents.
-    """
-    with codecs.open(filename, 'r', 'utf8') as f:
-        return f.read()
+with open('README.md', 'r', encoding='utf-8') as f:
+    long_description = f.read()
 
 
 setup(
@@ -21,7 +17,8 @@ setup(
     packages=['TM1py', 'TM1py/Exceptions', 'TM1py/Objects', 'TM1py/Services', 'TM1py/Utils'],
     version=SCHEDULE_VERSION,
     description='A python module for TM1.',
-    long_description=read_file('README.rst'),
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     license='MIT',
     author='Marius Wirtz',
     author_email='MWirtz@cubewise.com',
