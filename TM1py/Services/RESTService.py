@@ -4,6 +4,8 @@ import sys
 from base64 import b64encode, b64decode
 
 import requests
+from requests.adapters import HTTPAdapter
+from requests_negotiate_sspi import HttpNegotiateAuth
 
 from TM1py.Exceptions import TM1pyException
 
@@ -16,7 +18,6 @@ else:
 
 def httpmethod(func):
     """ Higher Order Function to wrap the GET, POST, PATCH, PUT, DELETE methods
-
         Takes care of:
         - encoding of url and payload
         - verifying response. Throws TM1pyException if StatusCode of Response is not OK
@@ -42,16 +43,13 @@ class RESTService:
             - POST
             - PATCH
             - DELETE
-
         Takes Care of
             - Encodings
             - TM1 User-Login
             - HTTP Headers
             - HTTP Session Management
             - Response Handling
-
         Based on requests module
-
     """
 
     HEADERS = {'Connection': 'keep-alive',
@@ -62,7 +60,6 @@ class RESTService:
 
     def __init__(self, **kwargs):
         """ Create an instance of RESTService
-
         :param address: String - address of the TM1 instance
         :param port: Int - HTTPPortNumber as specified in the tm1s.cfg
         :param base_url - base url e.g. https://localhost:12354/api/v1
@@ -77,16 +74,20 @@ class RESTService:
         :param verify: path to .cer file or 'False' / False (if no ssl verification is required)
         :param logging: boolean - switch on/off verbose http logging into sys.stdout
         :param timeout: Float - Number of seconds that the client will wait to receive the first byte.
+        :param connection_pool_size - In a multithreaded environment, you should set this value to a
+        higher number, such as the number of threads
         """
         self._ssl = self.translate_to_boolean(kwargs['ssl'])
         self._address = kwargs.get('address', None)
         self._port = kwargs.get('port', None)
         self._verify = False
         self._timeout = kwargs.get('timeout', None)
+
         if 'verify' in kwargs:
             if isinstance(kwargs['verify'], str):
                 if kwargs['verify'].upper() != 'FALSE':
                     self._verify = kwargs.get('verify')
+
         if 'base_url' in kwargs:
             self._base_url = kwargs['base_url']
         else:
@@ -94,10 +95,12 @@ class RESTService:
                 's' if self._ssl else '',
                 'localhost' if len(self._address) == 0 else self._address,
                 self._port)
+
         self._version = None
         self._headers = self.HEADERS.copy()
         if "session_context" in kwargs:
             self._headers["TM1-SessionContext"] = kwargs["session_context"]
+
         self.disable_http_warnings()
         # re-use or create tm1 http session
         self._s = requests.session()
@@ -109,14 +112,24 @@ class RESTService:
                 user=kwargs["user"],
                 password=kwargs["password"],
                 namespace=kwargs.get("namespace", None),
+                gateway=kwargs.get("gateway", None),
                 decode_b64=self.translate_to_boolean(kwargs.get("decode_b64", False)))
+
+        # manage connection pool
+        if "connection_pool_size" in kwargs:
+            self._manage_http_connection_pool(kwargs.get("connection_pool_size"))
 
         # Logging
         if 'logging' in kwargs:
             if self.translate_to_boolean(value=kwargs['logging']):
                 http_client.HTTPConnection.debuglevel = 1
 
-
+    def _manage_http_connection_pool(self, connection_pool_size):
+        self._s.mount(
+            self._base_url,
+            HTTPAdapter(
+                pool_connections=int(connection_pool_size),
+                pool_maxsize=int(connection_pool_size)))
 
     def __enter__(self):
         return self
@@ -127,7 +140,6 @@ class RESTService:
     @httpmethod
     def GET(self, request, data=''):
         """ Perform a GET request against TM1 instance
-
         :param request: String, for instance : /api/v1/Cubes?$top=1
         :param data: String, empty
         :return: String, the response as text
@@ -137,7 +149,6 @@ class RESTService:
     @httpmethod
     def POST(self, request, data):
         """ POST request against the TM1 instance
-
         :param request: String, /api/v1/Cubes
         :param data: String, the payload (json)
         :return:  String, the response as text
@@ -147,7 +158,6 @@ class RESTService:
     @httpmethod
     def PATCH(self, request, data):
         """ PATCH request against the TM1 instance
-
         :param request: String, for instance : /api/v1/Dimensions('plan_business_unit')
         :param data: String, the payload (json)
         :return: String, the response as text
@@ -157,7 +167,6 @@ class RESTService:
     @httpmethod
     def DELETE(self, request, data=''):
         """ Delete request against TM1 instance
-
         :param request:  String, for instance : /api/v1/Dimensions('plan_business_unit')
         :param data: String, empty
         :return: String, the response in text
@@ -166,7 +175,6 @@ class RESTService:
 
     def logout(self):
         """ End TM1 Session and HTTP session
-
         """
         self._headers["Connection"] = "close"
         # Easier to ask for forgiveness than permission
@@ -178,15 +186,15 @@ class RESTService:
             self.POST('/api/logout', '')
         self._s.close()
 
-    def _start_session(self, user, password, decode_b64=False, namespace=None):
+    def _start_session(self, user, password, decode_b64=False, namespace=None, gateway=None):
         """ perform a simple GET request (Ask for the TM1 Version) to start a session
-
         """
         # Authorization [Basic, CAM] through Headers
         token = self._build_authorization_token(
             user,
             self.b64_decode_password(password) if decode_b64 else password,
-            namespace)
+            namespace,
+            gateway)
         self.add_http_header('Authorization', token)
         request = '/api/v1/Configuration/ProductVersion/$value'
         try:
@@ -198,7 +206,6 @@ class RESTService:
 
     def _url_and_body(self, request, data):
         """ create proper url and payload
-
         """
         url = self._base_url + request
         url = url.replace(' ', '%20').replace('#', '%23')
@@ -207,7 +214,6 @@ class RESTService:
 
     def is_connected(self):
         """ Check if Connection to TM1 Server is established.
-
         :Returns:
             Boolean
         """
@@ -233,11 +239,10 @@ class RESTService:
     @staticmethod
     def translate_to_boolean(value):
         """ Takes a boolean or string (eg. true, True, FALSE, etc.) value and returns (boolean) True or False
-
         :param value: True, 'true', 'false' or 'False' ...
         :return:
         """
-        if isinstance(value, bool):
+        if isinstance(value, bool) or isinstance(value, int):
             return value
         elif isinstance(value, str):
             return value.lower() == 'true'
@@ -247,7 +252,6 @@ class RESTService:
     @staticmethod
     def b64_decode_password(encrypted_password):
         """ b64 decoding
-
         :param encrypted_password: encrypted password with b64
         :return: password in plain text
         """
@@ -256,11 +260,9 @@ class RESTService:
     @staticmethod
     def verify_response(response):
         """ check if Status Code is OK
-
         :Parameters:
             `response`: String
                 the response that is returned from a method call
-
         :Exceptions:
             TM1pyException, raises TM1pyException when Code is not 200, 204 etc.
         """
@@ -268,13 +270,24 @@ class RESTService:
             raise TM1pyException(response.text, status_code=response.status_code, reason=response.reason)
 
     @staticmethod
-    def _build_authorization_token(user, password, namespace=None, **kwargs):
+    def _build_authorization_token(user, password, namespace=None, gateway=None, **kwargs):
         """ Build the Authorization Header for CAM and Native Security
-
         """
         if namespace:
-            token = 'CAMNamespace ' + b64encode(
-                str.encode("{}:{}:{}".format(user, password, namespace))).decode("ascii")
+            if gateway:
+                response = requests.get(gateway, auth=HttpNegotiateAuth())
+                if not response.status_code == 200:
+                    raise RuntimeError(
+                        "Failed to authenticate through CAM. Expected status_code 200, received status_code: "
+                        + str(response.status_code))
+                elif 'cam_passport' not in response.cookies:
+                    raise RuntimeError(
+                        "Failed to authenticate through CAM. HTTP response does not contain 'cam_passport' cookie")
+                else:
+                    token = 'CAMPassport ' + response.cookies['cam_passport']
+            else:
+                token = 'CAMNamespace ' + b64encode(
+                    str.encode("{}:{}:{}".format(user, password, namespace))).decode("ascii")
         else:
             token = 'Basic ' + b64encode(
                 str.encode("{}:{}".format(user, password))).decode("ascii")

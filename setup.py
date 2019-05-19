@@ -2,7 +2,7 @@ import codecs
 
 from setuptools import setup
 
-SCHEDULE_VERSION = '1.2.2'
+SCHEDULE_VERSION = '1.3.0'
 SCHEDULE_DOWNLOAD_URL = (
         'https://github.com/Cubewise-code/TM1py/tarball/' + SCHEDULE_VERSION
 )
@@ -25,7 +25,7 @@ setup(
     license='MIT',
     author='Marius Wirtz',
     author_email='MWirtz@cubewise.com',
-    url='https://github.com/cubewise-code/TM1py',
+    url='https://github.com/cubewise-code/tm1py',
     download_url=SCHEDULE_DOWNLOAD_URL,
     keywords=[
         'TM1', 'IBM Cognos TM1', 'Planning Analytics', 'PA', 'Cognos'
@@ -38,6 +38,6 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Natural Language :: English',
     ],
-    install_requires=['requests', 'pandas', 'pytz'],
+    install_requires=['requests', 'pandas', 'pytz', 'requests_negotiate_sspi'],
     python_requires='>=3.5',
 )
