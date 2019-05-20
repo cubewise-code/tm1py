@@ -1,11 +1,17 @@
 # -*- coding: utf-8 -*-
 import functools
 import sys
+import warnings
 from base64 import b64encode, b64decode
 
 import requests
 from requests.adapters import HTTPAdapter
-from requests_negotiate_sspi import HttpNegotiateAuth
+
+# SSO not supported for Linux
+try:
+    from requests_negotiate_sspi import HttpNegotiateAuth
+except ImportError:
+    warnings.warn("requests_negotiate_sspi failed to import. SSO will not work", ImportWarning)
 
 from TM1py.Exceptions import TM1pyException
 
@@ -274,24 +280,33 @@ class RESTService:
         """ Build the Authorization Header for CAM and Native Security
         """
         if namespace:
-            if gateway:
-                response = requests.get(gateway, auth=HttpNegotiateAuth())
-                if not response.status_code == 200:
-                    raise RuntimeError(
-                        "Failed to authenticate through CAM. Expected status_code 200, received status_code: "
-                        + str(response.status_code))
-                elif 'cam_passport' not in response.cookies:
-                    raise RuntimeError(
-                        "Failed to authenticate through CAM. HTTP response does not contain 'cam_passport' cookie")
-                else:
-                    token = 'CAMPassport ' + response.cookies['cam_passport']
-            else:
-                token = 'CAMNamespace ' + b64encode(
-                    str.encode("{}:{}:{}".format(user, password, namespace))).decode("ascii")
+            return RESTService._build_authorization_token_cam(user, password, namespace, gateway)
         else:
-            token = 'Basic ' + b64encode(
-                str.encode("{}:{}".format(user, password))).decode("ascii")
-        return token
+            return RESTService._build_authorization_token_basic(user, password)
+
+    @staticmethod
+    def _build_authorization_token_cam(user=None, password=None, namespace=None, gateway=None):
+        if gateway:
+            if not HttpNegotiateAuth:
+                raise RuntimeError(
+                    "SSO failed due to missing dependency requests_negotiate_sspi.HttpNegotiateAuth. "
+                    "SSO only supported for Windows")
+            response = requests.get(gateway, auth=HttpNegotiateAuth())
+            if not response.status_code == 200:
+                raise RuntimeError(
+                    "Failed to authenticate through CAM. Expected status_code 200, received status_code: "
+                    + str(response.status_code))
+            elif 'cam_passport' not in response.cookies:
+                raise RuntimeError(
+                    "Failed to authenticate through CAM. HTTP response does not contain 'cam_passport' cookie")
+            else:
+                return 'CAMPassport ' + response.cookies['cam_passport']
+        else:
+            return 'CAMNamespace ' + b64encode(str.encode("{}:{}:{}".format(user, password, namespace))).decode("ascii")
+
+    @staticmethod
+    def _build_authorization_token_basic(user, password):
+        return 'Basic ' + b64encode(str.encode("{}:{}".format(user, password))).decode("ascii")
 
     @staticmethod
     def disable_http_warnings():
