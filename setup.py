@@ -2,7 +2,7 @@ import codecs
 
 from setuptools import setup
 
-SCHEDULE_VERSION = '1.3.0'
+SCHEDULE_VERSION = '1.3.1'
 SCHEDULE_DOWNLOAD_URL = (
         'https://github.com/Cubewise-code/TM1py/tarball/' + SCHEDULE_VERSION
 )
@@ -35,6 +35,10 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Natural Language :: English',
     ],
-    install_requires=['requests', 'pandas', 'pytz', 'requests_negotiate_sspi'],
+    install_requires=[
+        'requests',
+        'pandas',
+        'pytz',
+        'requests_negotiate_sspi;platform_system=="Windows"'],
     python_requires='>=3.5',
 )
