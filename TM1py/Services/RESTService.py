@@ -200,7 +200,8 @@ class RESTService:
             user,
             self.b64_decode_password(password) if decode_b64 else password,
             namespace,
-            gateway)
+            gateway,
+            self._verify)
         self.add_http_header('Authorization', token)
         request = '/api/v1/Configuration/ProductVersion/$value'
         try:
@@ -276,22 +277,22 @@ class RESTService:
             raise TM1pyException(response.text, status_code=response.status_code, reason=response.reason)
 
     @staticmethod
-    def _build_authorization_token(user, password, namespace=None, gateway=None, **kwargs):
+    def _build_authorization_token(user, password, namespace=None, gateway=None, verify=False, **kwargs):
         """ Build the Authorization Header for CAM and Native Security
         """
         if namespace:
-            return RESTService._build_authorization_token_cam(user, password, namespace, gateway)
+            return RESTService._build_authorization_token_cam(user, password, namespace, gateway, verify)
         else:
             return RESTService._build_authorization_token_basic(user, password)
 
     @staticmethod
-    def _build_authorization_token_cam(user=None, password=None, namespace=None, gateway=None):
+    def _build_authorization_token_cam(user=None, password=None, namespace=None, gateway=None, verify=False):
         if gateway:
             if not HttpNegotiateAuth:
                 raise RuntimeError(
                     "SSO failed due to missing dependency requests_negotiate_sspi.HttpNegotiateAuth. "
                     "SSO only supported for Windows")
-            response = requests.get(gateway, auth=HttpNegotiateAuth())
+            response = requests.get(gateway, auth=HttpNegotiateAuth(), verify=verify)
             if not response.status_code == 200:
                 raise RuntimeError(
                     "Failed to authenticate through CAM. Expected status_code 200, received status_code: "
