@@ -116,13 +116,17 @@ class ChoreService(ObjectService):
         chore_dict_without_tasks.pop("Tasks")
         self._rest.PATCH(request, json.dumps(chore_dict_without_tasks))
         # Update Tasks individually
+        task_old_count = self._get_tasks_count(chore.name)
         for i, task_new in enumerate(chore.tasks):
-            task_old = self._get_task(chore.name, i)
-            if task_old is None:
+            if i >= task_old_count:
                 self._add_task(chore.name, task_new)
-            elif task_new != task_old:
-                self._update_task(chore.name, task_new)
-
+            else:
+                task_old = self._get_task(chore.name, i)
+                if task_new != task_old:
+                    self._update_task(chore.name, task_new)
+        for j in range(i + 1, task_old_count):
+            response = self._delete_task(chore.name, i + 1)
+	
     def activate(self, chore_name):
         """ activate chore on TM1 Server
 
@@ -166,6 +170,17 @@ class ChoreService(ObjectService):
         """
         return self._rest.POST("/api/v1/Chores('" + chore_name + "')/tm1.Execute", '')
 
+    def _get_tasks_count(self, chore_name):
+        """ Query Chore tasks count on TM1 Server
+
+        :param chore_name: name of Chore to count tasks
+        :return: int
+        """
+        chore = self.get(chore_name)
+        request = "/api/v1/Chores('{}')/Tasks/$count".format(chore_name)
+        response = self._rest.GET(request)
+        return int(response.text)
+
     def _get_task(self, chore_name, step):
         """ Get task from chore
 
@@ -177,6 +192,17 @@ class ChoreService(ObjectService):
             .format(chore_name, step)
         response = self._rest.GET(request)
         return ChoreTask.from_dict(response.json())
+
+    def _delete_task(self, chore_name, step):
+        """ Delete task from chore
+
+        :param chore_name: name of the chore
+        :param step: integer
+        :return: response
+        """
+        request = "/api/v1/Chores('{}')/Tasks({})".format(chore_name, step)
+        response = self._rest.DELETE(request)
+        return response
 
     def _add_task(self, chore_name, chore_task):
         """ Create Chore task on TM1 Server
