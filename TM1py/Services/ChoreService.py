@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import json
 import functools
+import json
 
 from TM1py.Objects import Chore, ChoreTask
 from TM1py.Services.ObjectService import ObjectService
@@ -9,10 +9,11 @@ from TM1py.Services.ObjectService import ObjectService
 
 def deactivate_activate(func):
     """ Higher Order function to handle activation and deactivation of chores before updating them
-    
-    :param func: 
-    :return: 
+
+    :param func:
+    :return:
     """
+
     @functools.wraps(func)
     def wrapper(self, chore):
         # Get Chore
@@ -30,19 +31,20 @@ def deactivate_activate(func):
             if chore.active:
                 self.activate(chore.name)
         return response
+
     return wrapper
 
 
 class ChoreService(ObjectService):
     """ Service to handle Object Updates for TM1 Chores
-    
+
     """
+
     def __init__(self, rest):
         super().__init__(rest)
 
     def get(self, chore_name):
         """ Get a chore from the TM1 Server
-
         :param chore_name:
         :return: instance of TM1py.Chore
         """
@@ -53,7 +55,6 @@ class ChoreService(ObjectService):
 
     def get_all(self):
         """ get a List of all Chores
-
         :return: List of TM1py.Chore
         """
         request = "/api/v1/Chores?$expand=Tasks($expand=*,Process($select=Name),Chore($select=Name))"
@@ -62,7 +63,6 @@ class ChoreService(ObjectService):
 
     def get_all_names(self):
         """ get a List of all Chores
-
         :return: List of TM1py.Chore
         """
         request = "/api/v1/Chores?$select=Name"
@@ -71,7 +71,6 @@ class ChoreService(ObjectService):
 
     def create(self, chore):
         """ create chore in TM1
-
         :param chore: instance of TM1py.Chore
         :return:
         """
@@ -83,7 +82,6 @@ class ChoreService(ObjectService):
 
     def delete(self, chore_name):
         """ delete chore in TM1
-
         :param chore_name:
         :return: response
         """
@@ -94,9 +92,9 @@ class ChoreService(ObjectService):
 
     def exists(self, chore_name):
         """ Check if Chore exists
-        
-        :param chore_name: 
-        :return: 
+
+        :param chore_name:
+        :return:
         """
         request = "/api/v1/Chores('{}')".format(chore_name)
         return self._exists(request)
@@ -104,7 +102,6 @@ class ChoreService(ObjectService):
     @deactivate_activate
     def update(self, chore):
         """ update chore on TM1 Server
-
         does not update: DST Sensitivity!
         :param chore:
         :return: response
@@ -125,11 +122,10 @@ class ChoreService(ObjectService):
                 if task_new != task_old:
                     self._update_task(chore.name, task_new)
         for j in range(i + 1, task_old_count):
-            response = self._delete_task(chore.name, i + 1)
-	
+            self._delete_task(chore.name, i + 1)
+
     def activate(self, chore_name):
         """ activate chore on TM1 Server
-
         :param chore_name:
         :return: response
         """
@@ -138,7 +134,6 @@ class ChoreService(ObjectService):
 
     def deactivate(self, chore_name):
         """ deactivate chore on TM1 Server
-
         :param chore_name:
         :return: response
         """
@@ -148,7 +143,6 @@ class ChoreService(ObjectService):
 
     def set_local_start_time(self, chore_name, date_time):
         """ Makes Server crash if chore is activate (10.2.2 FP6) :)
-
         :param chore_name:
         :param date_time:
         :return:
@@ -164,7 +158,6 @@ class ChoreService(ObjectService):
 
     def execute_chore(self, chore_name):
         """ Ask TM1 Server to execute a chore
-
             :param chore_name: String, name of the chore to be executed
             :return: the response
         """
@@ -172,18 +165,15 @@ class ChoreService(ObjectService):
 
     def _get_tasks_count(self, chore_name):
         """ Query Chore tasks count on TM1 Server
-
         :param chore_name: name of Chore to count tasks
         :return: int
         """
-        chore = self.get(chore_name)
         request = "/api/v1/Chores('{}')/Tasks/$count".format(chore_name)
         response = self._rest.GET(request)
         return int(response.text)
 
     def _get_task(self, chore_name, step):
         """ Get task from chore
-
         :param chore_name: name of the chore
         :param step: integer
         :return: instance of TM1py.ChoreTask
@@ -195,7 +185,6 @@ class ChoreService(ObjectService):
 
     def _delete_task(self, chore_name, step):
         """ Delete task from chore
-
         :param chore_name: name of the chore
         :param step: integer
         :return: response
@@ -206,7 +195,6 @@ class ChoreService(ObjectService):
 
     def _add_task(self, chore_name, chore_task):
         """ Create Chore task on TM1 Server
-
         :param chore_name: name of Chore to update
         :param chore_task: instance of TM1py.ChoreTask
         :return: response
@@ -226,7 +214,6 @@ class ChoreService(ObjectService):
 
     def _update_task(self, chore_name, chore_task):
         """ update a chore task
-
         :param chore_name: name of the Chore
         :param chore_task: instance TM1py.ChoreTask
         :return: response
