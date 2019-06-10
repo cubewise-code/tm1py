@@ -4,18 +4,18 @@ import collections
 import json
 
 from TM1py.Objects.ChoreFrequency import ChoreFrequency
-from TM1py.Objects.ChoreTask import ChoreTask
-
 from TM1py.Objects.ChoreStartTime import ChoreStartTime
-
+from TM1py.Objects.ChoreTask import ChoreTask
 from TM1py.Objects.TM1Object import TM1Object
 
 
 class Chore(TM1Object):
     """ Abstraction of TM1 Chore
-        
-    
+
     """
+    SINGLE_COMMIT = 'SingleCommit'
+    MULTIPLE_COMMIT = 'MultipleCommit'
+
     def __init__(self, name, start_time, dst_sensitivity, active, execution_mode, frequency, tasks):
         self._name = name
         self._start_time = start_time
@@ -136,4 +136,3 @@ class Chore(TM1Object):
         body_as_dict['Frequency'] = self._frequency.frequency_string
         body_as_dict['Tasks'] = [task.body_as_dict for task in self._tasks]
         return json.dumps(body_as_dict, ensure_ascii=False)
-
