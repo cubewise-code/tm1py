@@ -35,6 +35,14 @@ FROM {cube}
 WHERE {where}
 """
 
+MDX_TEMPLATE_NON_EMPTY = """
+SELECT 
+NON EMPTY {rows} ON ROWS,
+NON EMPTY {columns} ON COLUMNS
+FROM {cube}
+WHERE {where}
+"""
+
 MDX_TEMPLATE_SHORT = """
 SELECT 
 {rows} ON ROWS,
@@ -446,6 +454,28 @@ class TestDataMethods(unittest.TestCase):
             dimension = Utils.dimension_name_from_element_unique_name(row[0])
             self.assertEqual(dimension, DIMENSION_NAMES[0])
             self.assertEqual(len(cells), 1)
+
+    def test_execute_mdx_rows_and_values_empty_cellset(self):
+
+        # make sure it's empty
+        self.tm1.cubes.cells.write_values(CUBE_NAME, {("Element1", "Element1", "Element1"): 0})
+
+        rows = """
+         {{ [{dim0}].[Element1]}}
+        """.format(dim0=DIMENSION_NAMES[0])
+
+        columns = """
+         {{ [{dim1}].[Element1]}}
+        """.format(dim1=DIMENSION_NAMES[1])
+
+        mdx = MDX_TEMPLATE_NON_EMPTY.format(
+            rows=rows,
+            columns=columns,
+            cube=CUBE_NAME,
+            where="[" + DIMENSION_NAMES[2] + "].[Element1]")
+
+        data = self.tm1.cubes.cells.execute_mdx_rows_and_values(mdx, element_unique_names=True)
+        self.assertEqual(len(data), 0)
 
     def test_execute_mdx_rows_and_values_member_names(self):
         rows = """

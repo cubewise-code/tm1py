@@ -703,7 +703,12 @@ class CellService:
         rows = response_json["Axes"][0]["Tuples"]
         cell_values = [cell["Value"] for cell in response_json["Cells"]]
 
+        result = CaseAndSpaceInsensitiveTuplesDict()
+
         number_rows = len(rows)
+        # avoid division by zero
+        if not number_rows:
+            return result
         number_cells = len(cell_values)
         number_columns = int(number_cells / number_rows)
 
@@ -715,7 +720,6 @@ class CellService:
                                       in tupl["Members"])
                                 for tupl
                                 in rows]
-        result = CaseAndSpaceInsensitiveTuplesDict()
         for element_tuple, cells in zip(element_names_by_row, cell_values_by_row):
             result[element_tuple] = cells
         return result
