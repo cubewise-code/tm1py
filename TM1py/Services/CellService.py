@@ -10,7 +10,7 @@ import pandas as pd
 
 from TM1py.Utils import Utils
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
-    CaseAndSpaceInsensitiveTuplesDict
+    CaseAndSpaceInsensitiveTuplesDict, case_and_space_insensitive_equals
 
 
 def tidy_cellset(func):
@@ -32,6 +32,8 @@ class CellService:
     """ Service to handle Read and Write operations to TM1 cubes
     
     """
+
+    SANDBOX_DIMENSION = "Sandboxes"
 
     def __init__(self, tm1_rest):
         """
@@ -125,6 +127,15 @@ class CellService:
         request = "/api/v1/Cellsets('{}')/tm1.Update".format(cellset_id)
         return self._rest.POST(request=request, data=json.dumps(payload))
 
+    def get_dimension_names_for_writing(self, cube_name):
+        from TM1py.Services import CubeService
+        cube_service = CubeService(self._rest)
+        dimensions = cube_service.get_dimension_names(cube_name)
+        # do not return sandbox dimension as first dimension, as it can't be used in address tuple for writing
+        if case_and_space_insensitive_equals(dimensions[0], self.SANDBOX_DIMENSION):
+            return dimensions[1:]
+        return dimensions
+
     def write_value(self, value, cube_name, element_tuple, dimensions=None):
         """ Write value into cube at specified coordinates
 
@@ -134,15 +145,15 @@ class CellService:
         :param dimensions: optional. Dimension names in their natural order. Will speed up the execution!
         :return: response
         """
-        from TM1py.Services.CubeService import CubeService
         if not dimensions:
-            dimensions = CubeService(self._rest).get(cube_name).dimensions
+            dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
         request = "/api/v1/Cubes('{}')/tm1.Update".format(cube_name)
         body_as_dict = collections.OrderedDict()
         body_as_dict["Cells"] = [{}]
         body_as_dict["Cells"][0]["Tuple@odata.bind"] = \
             ["Dimensions('{}')/Hierarchies('{}')/Elements('{}')".format(dim, dim, elem)
-             for dim, elem in zip(dimensions, element_tuple)]
+             for dim, elem
+             in zip(dimensions, element_tuple)]
         body_as_dict["Value"] = str(value) if value else ""
         data = json.dumps(body_as_dict, ensure_ascii=False)
         return self._rest.POST(request=request, data=data)
@@ -157,9 +168,7 @@ class CellService:
         :return: Response
         """
         if not dimensions:
-            from TM1py.Services import CubeService
-            cube_service = CubeService(self._rest)
-            dimensions = cube_service.get_dimension_names(cube_name)
+            dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
         request = "/api/v1/Cubes('{}')/tm1.Update".format(cube_name)
         updates = []
         for element_tuple, value in cellset_as_dict.items():
