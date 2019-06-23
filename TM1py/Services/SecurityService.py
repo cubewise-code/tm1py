@@ -4,6 +4,7 @@ import json
 
 from TM1py.Objects.User import User
 from TM1py.Services.ObjectService import ObjectService
+from TM1py.Utils.Utils import odata_escape_single_quotes_in_object_names
 
 
 class SecurityService(ObjectService):
@@ -117,7 +118,7 @@ class SecurityService(ObjectService):
         :param group_name:
         :return: List of TM1py.User instances
         """
-        request = '/api/v1/Groups(\'{}\')?$expand=Users($expand=Groups)'.format(group_name)
+        request = "/api/v1/Groups('{}')?$expand=Users($expand=Groups)".format(group_name)
         response = self._rest.GET(request)
         users = [User.from_dict(user) for user in response.json()['Users']]
         return users
@@ -128,7 +129,7 @@ class SecurityService(ObjectService):
         :param group_name:
         :return: List of strings
         """
-        request = '/api/v1/Groups(\'{}\')?$expand=Users($expand=Groups)'.format(group_name)
+        request = "/api/v1/Groups('{}')?$expand=Users($expand=Groups)".format(group_name)
         response = self._rest.GET(request)
         users = [user["Name"] for user in response.json()['Users']]
         return users
@@ -155,9 +156,11 @@ class SecurityService(ObjectService):
         request = "/api/v1/Users('{}')".format(user_name)
         body = {
             "Name": user_name,
-            "Groups@odata.bind": ["Groups('{}')".format(self.determine_actual_group_name(group))
-                                  for group
-                                  in groups]
+            "Groups@odata.bind": [
+                odata_escape_single_quotes_in_object_names("Groups('{}')".format(
+                    self.determine_actual_group_name(group)))
+                for group
+                in groups]
         }
         return self._rest.PATCH(request, json.dumps(body))
 
@@ -170,7 +173,7 @@ class SecurityService(ObjectService):
         """
         user_name = self.determine_actual_user_name(user_name)
         group_name = self.determine_actual_group_name(group_name)
-        request = '/api/v1/Users(\'{}\')/Groups?$id=Groups(\'{}\')'.format(user_name, group_name)
+        request = "/api/v1/Users('{}')/Groups?$id=Groups('{}')".format(user_name, group_name)
         return self._rest.DELETE(request)
 
     def get_all_groups(self):

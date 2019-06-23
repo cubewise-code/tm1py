@@ -17,8 +17,8 @@ class ObjectService:
     def determine_actual_object_name(self, object_class, object_name):
         request = "/api/v1/{}?$filter=tolower(replace(Name, ' ', '')) eq '{}'".format(
             object_class,
-            object_name.replace(" ", "").lower())
-        response = self._rest.GET(request)
+            object_name.replace(" ", "").lower().replace("'", "''"))
+        response = self._rest.GET(request, odata_escape_single_quotes_in_object_names=False)
         if len(response.json()["value"]) == 0:
             raise ValueError("Object '{}' of type '{}' doesn't exist".format(object_name, object_class))
         return response.json()["value"][0]["Name"]

@@ -4,6 +4,7 @@ import random
 import types
 import unittest
 
+import numpy as np
 import pandas as pd
 
 from TM1py.Objects import MDXView, Cube, Dimension, Element, Hierarchy, NativeView, AnonymousSubset, ElementAttribute
@@ -740,7 +741,7 @@ class TestDataMethods(unittest.TestCase):
               "NON EMPTY [" + DIMENSION_NAMES[0] + "].Members * [" + DIMENSION_NAMES[1] + "].Members ON ROWS," \
               "NON EMPTY [" + DIMENSION_NAMES[2] + "].MEMBERS ON COLUMNS " \
               "FROM [" + CUBE_NAME + "]"
-        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx)
+        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, dtype={'Value': float})
 
         # check type
         self.assertIsInstance(df, pd.DataFrame)
@@ -1137,7 +1138,11 @@ class TestDataMethods(unittest.TestCase):
         self.assertEqual(self.total_value, sum(values))
 
     def test_execute_view_dataframe(self):
-        df = self.tm1.cubes.cells.execute_view_dataframe(cube_name=CUBE_NAME, view_name=VIEW_NAME, private=False)
+        df = self.tm1.cubes.cells.execute_view_dataframe(
+            cube_name=CUBE_NAME,
+            view_name=VIEW_NAME,
+            private=False,
+            dtype={'Value': float})
 
         # check type
         self.assertIsInstance(df, pd.DataFrame)

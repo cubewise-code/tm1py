@@ -14,6 +14,7 @@ except ImportError:
     warnings.warn("requests_negotiate_sspi failed to import. SSO will not work", ImportWarning)
 
 from TM1py.Exceptions import TM1pyException
+from TM1py.Utils import Utils
 
 # import Http-Client depending on python version
 if sys.version[0] == '2':
@@ -30,9 +31,12 @@ def httpmethod(func):
     """
 
     @functools.wraps(func)
-    def wrapper(self, request, data=''):
+    def wrapper(self, request, data='', odata_escape_single_quotes_in_object_names=True):
         # Encoding
-        request, data = self._url_and_body(request=request, data=data)
+        request, data = self._url_and_body(
+            request=request,
+            data=data,
+            odata_escape_single_quotes_in_object_names=odata_escape_single_quotes_in_object_names)
         # Do Request
         response = func(self, request, data)
         # Verify
@@ -211,11 +215,13 @@ class RESTService:
             # After we have session cookie, drop the Authorization Header
             self.remove_http_header('Authorization')
 
-    def _url_and_body(self, request, data):
+    def _url_and_body(self, request, data, odata_escape_single_quotes_in_object_names=True):
         """ create proper url and payload
         """
         url = self._base_url + request
         url = url.replace(' ', '%20').replace('#', '%23')
+        if odata_escape_single_quotes_in_object_names:
+            url = Utils.odata_escape_single_quotes_in_object_names(url)
         data = data.encode('utf-8')
         return url, data
 

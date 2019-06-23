@@ -18,9 +18,9 @@ class TestSecurityMethods(unittest.TestCase):
     @classmethod
     def setup_class(cls):
         cls.tm1 = TM1Service(**config['tm1srv01'])
-        cls.user_name = PREFIX + "User1"
+        cls.user_name = PREFIX + "Us'er1"
         cls.user = User(name=cls.user_name, groups=[], password='TM1py')
-        cls.group_name1 = PREFIX + "Group1"
+        cls.group_name1 = PREFIX + "Gro'up1"
         cls.group_name2 = PREFIX + "Group2"
         cls.user.add_group(cls.group_name1)
 
@@ -105,7 +105,8 @@ class TestSecurityMethods(unittest.TestCase):
 
     def test_get_user_names_from_group(self):
         users = self.tm1.security.get_user_names_from_group(self.group_name1)
-        mdx = "{ FILTER ( { [}Clients].Members } , [}ClientGroups].([}Groups].[" + self.group_name1 + "]) = '" + self.group_name1 + "' ) }"
+        mdx = "{ FILTER ( { [}Clients].Members } , [}ClientGroups].([}Groups].[" + self.group_name1 + "]) = '" + \
+              self.group_name1.replace("'", "''") + "' ) }"
         clients = self.tm1.dimensions.execute_mdx("}Clients", mdx)
         self.assertGreater(len(users), 0)
         self.assertGreater(len(clients), 0)
