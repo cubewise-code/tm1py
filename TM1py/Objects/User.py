@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 
-import json
 import collections
-from base64 import b64encode
+import json
 
 from TM1py.Objects.TM1Object import TM1Object
-from TM1py.Utils.Utils import CaseAndSpaceInsensitiveSet
+from TM1py.Utils.Utils import CaseAndSpaceInsensitiveSet, odata_escape_single_quotes_in_object_names
 
 
 class User(TM1Object):
     """ Abstraction of a TM1 User
     
     """
+
     def __init__(self, name, groups, friendly_name=None, password=None):
         self._name = name
         self._groups = CaseAndSpaceInsensitiveSet(*groups)
@@ -92,5 +92,8 @@ class User(TM1Object):
         body_as_dict['FriendlyName'] = self.friendly_name or self.name
         if self.password:
             body_as_dict['Password'] = self._password
-        body_as_dict['Groups@odata.bind'] = ['Groups(\'{}\')'.format(group) for group in self.groups]
+        body_as_dict['Groups@odata.bind'] = [
+            odata_escape_single_quotes_in_object_names("Groups('{}')".format(group))
+            for group
+            in self.groups]
         return json.dumps(body_as_dict, ensure_ascii=False)

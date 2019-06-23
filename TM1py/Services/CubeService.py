@@ -12,6 +12,7 @@ class CubeService(ObjectService):
     """ Service to handle Object Updates for TM1 Cubes
 
     """
+
     def __init__(self, rest):
         # to avoid Circular dependency of modules
         from TM1py.Services.AnnotationService import AnnotationService

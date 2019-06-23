@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
-import json
 import collections
+import json
 
 from TM1py.Objects.TM1Object import TM1Object
+from TM1py.Utils.Utils import odata_escape_single_quotes_in_object_names
 
 
 class Subset(TM1Object):
@@ -11,6 +12,7 @@ class Subset(TM1Object):
 
         Done and tested. unittests available.
     """
+
     def __init__(self, subset_name, dimension_name, hierarchy_name=None, alias=None, expression=None, elements=None):
         """
 
@@ -137,8 +139,9 @@ class Subset(TM1Object):
         body_as_dict['Name'] = self._subset_name
         if self.alias:
             body_as_dict['Alias'] = self._alias
-        body_as_dict['Hierarchy@odata.bind'] = 'Dimensions(\'{}\')/Hierarchies(\'{}\')'\
-            .format(self._dimension_name, self._hierarchy_name)
+        body_as_dict['Hierarchy@odata.bind'] = "Dimensions('{}')/Hierarchies('{}')".format(
+            self._dimension_name,
+            self._hierarchy_name)
         body_as_dict['Expression'] = self._expression
         return body_as_dict
 
@@ -147,14 +150,16 @@ class Subset(TM1Object):
         body_as_dict['Name'] = self._subset_name
         if self.alias:
             body_as_dict['Alias'] = self._alias
-        body_as_dict['Hierarchy@odata.bind'] = 'Dimensions(\'{}\')/Hierarchies(\'{}\')'\
-            .format(self._dimension_name, self.hierarchy_name)
+        body_as_dict['Hierarchy@odata.bind'] = "Dimensions('{}')/Hierarchies('{}')".format(
+            self._dimension_name,
+            self.hierarchy_name)
         if self.elements and len(self.elements) > 0:
-            body_as_dict['Elements@odata.bind'] = \
-                ['Dimensions(\'{}\')/Hierarchies(\'{}\')/Elements(\'{}\')'.format(
-                    self.dimension_name, self.hierarchy_name, element.replace('\'', '\'\''))
-                    for element
-                    in self.elements]
+            body_as_dict['Elements@odata.bind'] = [
+                odata_escape_single_quotes_in_object_names(
+                    "Dimensions('{}')/Hierarchies('{}')/Elements('{}')".format(
+                        self.dimension_name, self.hierarchy_name, element))
+                for element
+                in self.elements]
         return body_as_dict
 
 
@@ -162,6 +167,7 @@ class AnonymousSubset(Subset):
     """ Abstraction of unregistered Subsets used in NativeViews (Check TM1py.ViewAxisSelection)
 
     """
+
     def __init__(self, dimension_name, hierarchy_name=None, expression=None, elements=None):
         Subset.__init__(self,
                         dimension_name=dimension_name,
@@ -199,17 +205,19 @@ class AnonymousSubset(Subset):
 
     def _construct_body_dynamic(self):
         body_as_dict = collections.OrderedDict()
-        body_as_dict['Hierarchy@odata.bind'] = 'Dimensions(\'{}\')/Hierarchies(\'{}\')'\
+        body_as_dict['Hierarchy@odata.bind'] = "Dimensions('{}')/Hierarchies('{}')" \
             .format(self._dimension_name, self.hierarchy_name)
         body_as_dict['Expression'] = self._expression
         return body_as_dict
 
     def _construct_body_static(self):
         body_as_dict = collections.OrderedDict()
-        body_as_dict['Hierarchy@odata.bind'] = 'Dimensions(\'{}\')/Hierarchies(\'{}\')'\
-            .format(self._dimension_name, self.hierarchy_name)
-        body_as_dict['Elements@odata.bind'] = ['Dimensions(\'{}\')/Hierarchies(\'{}\')/Elements(\'{}\')'.format(
+        body_as_dict['Hierarchy@odata.bind'] = "Dimensions('{}')/Hierarchies('{}')".format(
+            self._dimension_name,
+            self.hierarchy_name)
+        body_as_dict['Elements@odata.bind'] = [
+            odata_escape_single_quotes_in_object_names("Dimensions('{}')/Hierarchies('{}')/Elements('{}')".format(
                 self.dimension_name,
                 self.hierarchy_name,
-                element.replace('\'', '\'\'')) for element in self.elements]
+                element)) for element in self.elements]
         return body_as_dict

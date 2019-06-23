@@ -1,20 +1,21 @@
 import collections
 import json
+import re
 import sys
 import warnings
 
 import pandas as pd
-
-from TM1py.Objects.Process import Process
-from TM1py.Objects.Server import Server
 
 if sys.version[0] == '2':
     import httplib as http_client
 else:
     import http.client as http_client
 
+REGEX_SINGLE_QUOTES_IN_OBJECT_NAMES = re.compile(r"(?<!\()'(?!\))")
+
 
 def get_all_servers_from_adminhost(adminhost='localhost'):
+    from TM1py.Objects import Server
     """ Ask Adminhost for TM1 Servers
 
     :param adminhost: IP or DNS Alias of the adminhost
@@ -31,6 +32,19 @@ def get_all_servers_from_adminhost(adminhost='localhost'):
         server = Server(server_as_dict)
         servers.append(server)
     return servers
+
+
+def odata_escape_single_quotes_in_object_names(url):
+    """ escape characters that need to be escaped in odata references like:
+    `Dimensions('dimension')/Hierarchies('hierarchy')/Elements('elem'ent')`
+    to
+    `Dimensions('dimension')/Hierarchies('hierarchy')/Elements('elem''ent')`
+
+    :param url:
+    :return:
+    """
+    # escape ' as '' inside single-quoted string
+    return REGEX_SINGLE_QUOTES_IN_OBJECT_NAMES.sub(string=url, repl="''")
 
 
 def case_and_space_insensitive_equals(item1, item2):
@@ -391,6 +405,7 @@ def load_bedrock_from_github(bedrock_process_name):
     :return: 
     """
     import requests
+    from TM1py.Objects import Process
     url = 'https://raw.githubusercontent.com/MariusWirtz/bedrock/master/json/{}.json'.format(bedrock_process_name)
     process_as_json = requests.get(url).text
     return Process.from_json(process_as_json)
@@ -402,6 +417,7 @@ def load_all_bedrocks_from_github():
     :return: 
     """
     import requests
+    from TM1py.Objects import Process
     # Connect to Bedrock github repo and load the names of all Bedrocks
     url = "https://api.github.com/repos/MariusWirtz/bedrock/contents/json?ref=master"
     raw_github_data = requests.get(url).json()

@@ -19,22 +19,30 @@ class ElementService(ObjectService):
         return Element.from_dict(response.json())
 
     def create(self, dimension_name, hierarchy_name, element):
-        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements".format(dimension_name, hierarchy_name)
+        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements".format(
+            dimension_name,
+            hierarchy_name)
         return self._rest.POST(request, element.body)
 
     def update(self, dimension_name, hierarchy_name, element):
-        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')".format(dimension_name, hierarchy_name,
-                                                                                     element.name)
+        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')".format(
+            dimension_name,
+            hierarchy_name,
+            element.name)
         return self._rest.PATCH(request, element.body)
 
     def exists(self, dimension_name, hierarchy_name, element_name):
-        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')".format(dimension_name, hierarchy_name,
-                                                                                     element_name)
+        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')".format(
+            dimension_name,
+            hierarchy_name,
+            element_name)
         return self._exists(request)
 
     def delete(self, dimension_name, hierarchy_name, element_name):
-        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')".format(dimension_name, hierarchy_name,
-                                                                                     element_name)
+        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')".format(
+            dimension_name,
+            hierarchy_name,
+            element_name)
         return self._rest.DELETE(request)
 
     def get_elements(self, dimension_name, hierarchy_name):
@@ -63,8 +71,9 @@ class ElementService(ObjectService):
         :param hierarchy_name: 
         :return: Generator of element-names
         """
-        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/Elements?$select=Name'.format(dimension_name,
-                                                                                                hierarchy_name)
+        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/Elements?$select=Name'.format(
+            dimension_name,
+            hierarchy_name)
         response = self._rest.GET(request, '')
         return (e["Name"] for e in response.json()['value'])
 
@@ -75,8 +84,9 @@ class ElementService(ObjectService):
         :param hierarchy_name:
         :return:
         """
-        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/ElementAttributes'.format(dimension_name,
-                                                                                            hierarchy_name)
+        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/ElementAttributes'.format(
+            dimension_name,
+            hierarchy_name)
         response = self._rest.GET(request, '')
         element_attributes = [ElementAttribute.from_dict(ea) for ea in response.json()['value']]
         return element_attributes
@@ -99,7 +109,7 @@ class ElementService(ObjectService):
             request = "/api/v1/Dimensions('{}')/Hierarchies('{}')" \
                       "?$expand=Elements($filter = Attributes/{} eq {};$select=Name)" \
                 .format(dimension_name, hierarchy_name, attribute_name, attribute_value)
-        response = self._rest.GET(request)
+        response = self._rest.GET(request, odata_escape_single_quotes_in_object_names=False)
         return [elem['Name'] for elem in response.json()['Elements']]
 
     def create_element_attribute(self, dimension_name, hierarchy_name, element_attribute):

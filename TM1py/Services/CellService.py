@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 
-from collections import defaultdict, OrderedDict
 import functools
 import json
 import warnings
+from collections import OrderedDict
 from io import StringIO
 
 import pandas as pd
 
 from TM1py.Utils import Utils
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
-    CaseAndSpaceInsensitiveTuplesDict, case_and_space_insensitive_equals
+    CaseAndSpaceInsensitiveTuplesDict, case_and_space_insensitive_equals, odata_escape_single_quotes_in_object_names
 
 
 def tidy_cellset(func):
@@ -113,12 +113,13 @@ class CellService:
             "BeginOrdinal": 0,
             "Value": "RP" + str(value),
             "ReferenceCell@odata.bind": list(),
-            "ReferenceCube@odata.bind": "Cubes('{}')".format(reference_cube if reference_cube else cube)}
-        reference_element_template = "Dimensions('{}')/Hierarchies('{}')/Elements('{}')"
+            "ReferenceCube@odata.bind":
+                odata_escape_single_quotes_in_object_names("Cubes('{}')".format(
+                    reference_cube if reference_cube else cube))}
         for unique_element_name in reference_unique_element_names:
             payload["ReferenceCell@odata.bind"].append(
-                reference_element_template.format(
-                    *Utils.dimension_hierarchy_element_tuple_from_unique_name(unique_element_name)))
+                odata_escape_single_quotes_in_object_names("Dimensions('{}')/Hierarchies('{}')/Elements('{}')".format(
+                    *Utils.dimension_hierarchy_element_tuple_from_unique_name(unique_element_name))))
 
         self._post_against_cellset(cellset_id=cellset_id, payload=payload, delete_cellset=True)
 
@@ -150,10 +151,11 @@ class CellService:
         request = "/api/v1/Cubes('{}')/tm1.Update".format(cube_name)
         body_as_dict = OrderedDict()
         body_as_dict["Cells"] = [{}]
-        body_as_dict["Cells"][0]["Tuple@odata.bind"] = \
-            ["Dimensions('{}')/Hierarchies('{}')/Elements('{}')".format(dim, dim, elem)
-             for dim, elem
-             in zip(dimensions, element_tuple)]
+        body_as_dict["Cells"][0]["Tuple@odata.bind"] = [
+            odata_escape_single_quotes_in_object_names("Dimensions('{}')/Hierarchies('{}')/Elements('{}')".format(
+                dim, dim, elem))
+            for dim, elem
+            in zip(dimensions, element_tuple)]
         body_as_dict["Value"] = str(value) if value else ""
         data = json.dumps(body_as_dict, ensure_ascii=False)
         return self._rest.POST(request=request, data=data)
@@ -174,9 +176,11 @@ class CellService:
         for element_tuple, value in cellset_as_dict.items():
             body_as_dict = OrderedDict()
             body_as_dict["Cells"] = [{}]
-            body_as_dict["Cells"][0]["Tuple@odata.bind"] = \
-                ["Dimensions('{}')/Hierarchies('{}')/Elements('{}')".format(dim, dim, elem)
-                 for dim, elem in zip(dimensions, element_tuple)]
+            body_as_dict["Cells"][0]["Tuple@odata.bind"] = [
+                odata_escape_single_quotes_in_object_names("Dimensions('{}')/Hierarchies('{}')/Elements('{}')".format(
+                    dim, dim, elem))
+                for dim, elem
+                in zip(dimensions, element_tuple)]
             body_as_dict["Value"] = str(value) if value else ""
             updates.append(json.dumps(body_as_dict, ensure_ascii=False))
         updates = '[' + ','.join(updates) + ']'
