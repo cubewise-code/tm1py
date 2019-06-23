@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import collections
+from collections import defaultdict, OrderedDict
 import functools
 import json
 import warnings
@@ -148,7 +148,7 @@ class CellService:
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
         request = "/api/v1/Cubes('{}')/tm1.Update".format(cube_name)
-        body_as_dict = collections.OrderedDict()
+        body_as_dict = OrderedDict()
         body_as_dict["Cells"] = [{}]
         body_as_dict["Cells"][0]["Tuple@odata.bind"] = \
             ["Dimensions('{}')/Hierarchies('{}')/Elements('{}')".format(dim, dim, elem)
@@ -172,7 +172,7 @@ class CellService:
         request = "/api/v1/Cubes('{}')/tm1.Update".format(cube_name)
         updates = []
         for element_tuple, value in cellset_as_dict.items():
-            body_as_dict = collections.OrderedDict()
+            body_as_dict = OrderedDict()
             body_as_dict["Cells"] = [{}]
             body_as_dict["Cells"][0]["Tuple@odata.bind"] = \
                 ["Dimensions('{}')/Hierarchies('{}')/Elements('{}')".format(dim, dim, elem)
@@ -366,18 +366,20 @@ class CellService:
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
         return self.extract_cellset_csv(cellset_id=cellset_id, delete_cellset=True)
 
-    def execute_mdx_dataframe(self, mdx):
-        """ Optimized for performance. Get Pandas DataFrame from MDX Query. 
+    def execute_mdx_dataframe(self, mdx, **kwargs):
+        """ Optimized for performance. Get Pandas DataFrame from MDX Query.
+
         Context dimensions are omitted in the resulting Dataframe !
         Cells with Zero/null are omitted !
+
+        Takes all arguments from the pandas.read_csv method:
+        https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html
 
         :param mdx: Valid MDX Query
         :return: Pandas Dataframe
         """
         cellset_id = self.create_cellset(mdx)
-        raw_csv = self.extract_cellset_csv(cellset_id=cellset_id, delete_cellset=True)
-        memory_file = StringIO(raw_csv)
-        return pd.read_csv(memory_file, sep=',')
+        return self.extract_cellset_dataframe(cellset_id, **kwargs)
 
     def execute_view_dataframe_pivot(self, cube_name, view_name, private=False, dropna=False, fill_value=None):
         """ Execute a cube view to get a pandas pivot dataframe, in the shape of the cube view
@@ -409,20 +411,21 @@ class CellService:
             dropna=dropna,
             fill_value=fill_value)
 
-    def execute_view_dataframe(self, cube_name, view_name, private=True):
+    def execute_view_dataframe(self, cube_name, view_name, private=True, **kwargs):
         """ Optimized for performance. Get Pandas DataFrame from an existing Cube View 
         Context dimensions are omitted in the resulting Dataframe !
         Cells with Zero/null are omitted !
-        
+
+        Takes all arguments from the pandas.read_csv method:
+        https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html
+
         :param cube_name: Name of the 
         :param view_name: 
         :param private: 
-        :return: 
+        :return: Pandas Dataframe
         """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
-        raw_csv = self.extract_cellset_csv(cellset_id)
-        memory_file = StringIO(raw_csv)
-        return pd.read_csv(memory_file, sep=',')
+        return self.extract_cellset_dataframe(cellset_id, **kwargs)
 
     def execute_mdx_cellcount(self, mdx):
         """ Execute MDX in order to understand how many cells are in a cellset.
@@ -768,6 +771,20 @@ class CellService:
         request = "/api/v1/Cellsets('{}')/Content".format(cellset_id)
         data = self._rest.GET(request)
         return data.text
+
+    def extract_cellset_dataframe(self, cellset_id, **kwargs):
+        """ Build pandas dataframe from cellset_id
+
+        :param cellset_id:
+        :param kwargs:
+        :return:
+        """
+        raw_csv = self.extract_cellset_csv(cellset_id=cellset_id, delete_cellset=True)
+        memory_file = StringIO(raw_csv)
+        # make sure all element names are strings and values are objects
+        if 'dtype' not in kwargs:
+            kwargs['dtype'] = {'Value': object, **{col: str for col in range(999)}}
+        return pd.read_csv(memory_file, sep=',', **kwargs)
 
     def extract_cellset_dataframe_pivot(self, cellset_id, dropna=False, fill_value=False, **kwargs):
         """ Extract a pivot table (pandas dataframe) from a cellset in TM1
