@@ -785,9 +785,9 @@ class CellService:
         """
         raw_csv = self.extract_cellset_csv(cellset_id=cellset_id, delete_cellset=True)
         memory_file = StringIO(raw_csv)
-        # make sure all element names are strings and values are objects
+        # make sure all element names are strings and values column is derived from data
         if 'dtype' not in kwargs:
-            kwargs['dtype'] = {'Value': object, **{col: str for col in range(999)}}
+            kwargs['dtype'] = {'Value': None, **{col: str for col in range(999)}}
         return pd.read_csv(memory_file, sep=',', **kwargs)
 
     def extract_cellset_dataframe_pivot(self, cellset_id, dropna=False, fill_value=False, **kwargs):

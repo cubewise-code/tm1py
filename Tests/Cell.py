@@ -741,23 +741,26 @@ class TestDataMethods(unittest.TestCase):
               "NON EMPTY [" + DIMENSION_NAMES[0] + "].Members * [" + DIMENSION_NAMES[1] + "].Members ON ROWS," \
               "NON EMPTY [" + DIMENSION_NAMES[2] + "].MEMBERS ON COLUMNS " \
               "FROM [" + CUBE_NAME + "]"
-        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, dtype={'Value': float})
+        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx)
 
         # check type
         self.assertIsInstance(df, pd.DataFrame)
 
         # check coordinates in df are equal to target coordinates
-        coordinates = {tuple(row)
-                       for row
-                       in df[[*DIMENSION_NAMES]].values}
-        self.assertEqual(len(coordinates),
-                         len(self.target_coordinates))
+        coordinates = {
+            tuple(row)
+            for row
+            in df[[*DIMENSION_NAMES]].values}
+        self.assertEqual(
+            len(coordinates),
+            len(self.target_coordinates))
         self.assertTrue(coordinates.issubset(self.target_coordinates))
 
         # check if total values are equal
         values = df[["Value"]].values
-        self.assertEqual(self.total_value,
-                         sum(values))
+        self.assertEqual(
+            self.total_value,
+            sum(values))
 
     def test_execute_mdx_dataframe_pivot(self):
         mdx = MDX_TEMPLATE.format(
@@ -1141,8 +1144,7 @@ class TestDataMethods(unittest.TestCase):
         df = self.tm1.cubes.cells.execute_view_dataframe(
             cube_name=CUBE_NAME,
             view_name=VIEW_NAME,
-            private=False,
-            dtype={'Value': float})
+            private=False)
 
         # check type
         self.assertIsInstance(df, pd.DataFrame)
