@@ -30,7 +30,7 @@ class TM1pyException(Exception):
         return self._headers
 
     def __str__(self):
-        return "Text: {} Status Code: {} Reason: {} Headers {}".format(self._response,
+        return "Text: {} Status Code: {} Reason: {} Headers: {}".format(self._response,
                                                                 self._status_code,
                                                                 self._reason,
                                                                 self._headers)
