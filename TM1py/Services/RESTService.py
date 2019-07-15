@@ -280,7 +280,10 @@ class RESTService:
             TM1pyException, raises TM1pyException when Code is not 200, 204 etc.
         """
         if not response.ok:
-            raise TM1pyException(response.text, status_code=response.status_code, reason=response.reason)
+            raise TM1pyException(response.text,
+                                 status_code=response.status_code,
+                                 reason=response.reason,
+                                 headers=response.headers)
 
     @staticmethod
     def _build_authorization_token(user, password, namespace=None, gateway=None, verify=False, **kwargs):
