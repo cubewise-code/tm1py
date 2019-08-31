@@ -332,6 +332,13 @@ class TestHierarchyMethods(unittest.TestCase):
         default_member = self.tm1.dimensions.hierarchies.get_default_member(DIMENSION_NAME, DIMENSION_NAME)
         self.assertEqual(default_member, "Total Years")
 
+    def test_remove_all_edges(self):
+        hierarchy = self.tm1.dimensions.hierarchies.get(DIMENSION_NAME, DIMENSION_NAME)
+        self.assertGreater(len(hierarchy.edges), 0)
+        self.tm1.dimensions.hierarchies.remove_all_edges(DIMENSION_NAME, DIMENSION_NAME)
+        hierarchy = self.tm1.dimensions.hierarchies.get(DIMENSION_NAME, DIMENSION_NAME)
+        self.assertEqual(len(hierarchy.edges), 0)
+
 
 if __name__ == '__main__':
     unittest.main()
