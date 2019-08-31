@@ -181,3 +181,12 @@ class HierarchyService(ObjectService):
 
         return ProcessService(self._rest).execute_ti_code(
             lines_prolog="RefreshMdxHierarchy('{}');".format(dimension_name))
+
+    def remove_all_edges(self, dimension_name, hierarchy_name=None):
+        if not hierarchy_name:
+            hierarchy_name = dimension_name
+        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')".format(dimension_name, hierarchy_name)
+        body = {
+            "Edges": []
+        }
+        return self._rest.PATCH(request=request, data=json.dumps(body))
