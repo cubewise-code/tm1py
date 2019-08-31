@@ -119,8 +119,8 @@ class RESTService:
             self.set_version()
         else:
             self._start_session(
-                user=kwargs["user"],
-                password=kwargs["password"],
+                user=kwargs.get("user", None),
+                password=kwargs.get("password", None),
                 namespace=kwargs.get("namespace", None),
                 gateway=kwargs.get("gateway", None),
                 decode_b64=self.translate_to_boolean(kwargs.get("decode_b64", False)))
