@@ -297,7 +297,9 @@ class RESTService:
     @staticmethod
     def _build_authorization_token_cam(user=None, password=None, namespace=None, gateway=None, verify=False):
         if gateway:
-            if not HttpNegotiateAuth:
+            try:
+                HttpNegotiateAuth
+            except NameError:
                 raise RuntimeError(
                     "SSO failed due to missing dependency requests_negotiate_sspi.HttpNegotiateAuth. "
                     "SSO only supported for Windows")
