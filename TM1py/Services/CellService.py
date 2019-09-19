@@ -8,7 +8,7 @@ from io import StringIO
 
 import pandas as pd
 
-from TM1py.Utils import Utils
+from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
     CaseAndSpaceInsensitiveTuplesDict, case_and_space_insensitive_equals, odata_escape_single_quotes_in_object_names
 
@@ -453,6 +453,28 @@ class CellService:
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
         return self.extract_cellset_cellcount(cellset_id, delete_cellset=True)
 
+    def execute_mdx_rows_and_values_string_set(self, mdx, exclude_empty_cells=True):
+        """ Retrieve row element names and **string** cell values in a case and space insensitive set
+
+        :param exclude_empty_cells:
+        :param mdx:
+        :return:
+        """
+        rows_and_values = self.execute_mdx_rows_and_values(mdx, element_unique_names=False)
+        return self._extract_string_set_from_rows_and_values(rows_and_values, exclude_empty_cells)
+
+    def execute_view_rows_and_values_string_set(self, cube_name, view_name, private=True, exclude_empty_cells=True):
+        """ Retrieve row element names and **string** cell values in a case and space insensitive set
+
+        :param cube_name:
+        :param view_name:
+        :param private:
+        :param exclude_empty_cells:
+        :return:
+        """
+        rows_and_values = self.execute_view_rows_and_values(cube_name, view_name, private, element_unique_names=False)
+        return self._extract_string_set_from_rows_and_values(rows_and_values, exclude_empty_cells)
+
     def execute_mdx_ui_dygraph(
             self,
             mdx,
@@ -501,13 +523,13 @@ class CellService:
             member_properties=None,
             value_precision=2,
             top=None):
-        """ 
+        """
         Useful for grids or charting libraries that want an array of cell values per row.
         Returns 3-dimensional cell structure for tabbed grids or multiple charts.
         Rows and pages are dicts, addressable by their name. Proper order of rows can be obtained in headers[1]
         Example 'cells' return format:
-            'cells': { 
-                '10100': { 
+            'cells': {
+                '10100': {
                     'Net Operating Income': [ 19832724.72429739,
                                               20365654.788303416,
                                               20729201.329183243,
@@ -516,7 +538,7 @@ class CellService:
                                  29512482.207418434,
                                  29913730.038971487,
                                  29563345.9542385]},
-                '10200': { 
+                '10200': {
                     'Net Operating Income': [ 9853293.623709997,
                                                10277650.763958748,
                                                10466934.096533755,
@@ -526,7 +548,7 @@ class CellService:
                                  14502421.63,
                                  14321501.940000001]}
             },
-        
+
         :param top:
         :param cube_name: cube name
         :param view_name: view name
@@ -534,7 +556,7 @@ class CellService:
         :param elem_properties: List of properties to be queried from the elements. E.g. ['UniqueName','Attributes', ...]
         :param member_properties: List of properties to be queried from the members. E.g. ['UniqueName','Attributes', ...]
         :param value_precision: number decimals
-        :return: 
+        :return:
         """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
         data = self.extract_cellset_raw(cellset_id=cellset_id,
@@ -557,8 +579,8 @@ class CellService:
         Returns 3-dimensional cell structure for tabbed grids or multiple charts.
         Rows and pages are dicts, addressable by their name. Proper order of rows can be obtained in headers[1]
         Example 'cells' return format:
-            'cells': { 
-                '10100': { 
+            'cells': {
+                '10100': {
                     'Net Operating Income': [ 19832724.72429739,
                                               20365654.788303416,
                                               20729201.329183243,
@@ -567,7 +589,7 @@ class CellService:
                                  29512482.207418434,
                                  29913730.038971487,
                                  29563345.9542385]},
-                '10200': { 
+                '10200': {
                     'Net Operating Income': [ 9853293.623709997,
                                                10277650.763958748,
                                                10466934.096533755,
@@ -608,8 +630,8 @@ class CellService:
         Returns 3-dimensional cell structure for tabbed grids or multiple charts.
         Rows and pages are dicts, addressable by their name. Proper order of rows can be obtained in headers[1]
         Example 'cells' return format:
-            'cells': { 
-                '10100': { 
+            'cells': {
+                '10100': {
                     'Net Operating Income': [ 19832724.72429739,
                                               20365654.788303416,
                                               20729201.329183243,
@@ -618,7 +640,7 @@ class CellService:
                                  29512482.207418434,
                                  29913730.038971487,
                                  29563345.9542385]},
-                '10200': { 
+                '10200': {
                     'Net Operating Income': [ 9853293.623709997,
                                                10277650.763958748,
                                                10466934.096533755,
@@ -700,7 +722,7 @@ class CellService:
     @tidy_cellset
     def extract_cellset_values(self, cellset_id, **kwargs):
         """ Extract Cellset data and return only the cells and values
-        
+
         :param cellset_id: String; ID of existing cellset
         :return: Raw format from TM1.
         """
@@ -768,7 +790,7 @@ class CellService:
     @tidy_cellset
     def extract_cellset_csv(self, cellset_id, **kwargs):
         """ Execute Cellset and return only the 'Content', in csv format
-        
+
         :param cellset_id: String; ID of existing cellset
         :return: Raw format from TM1.
         """
@@ -854,7 +876,7 @@ class CellService:
         """ Execute MDX in order to create cellset at server. return the cellset-id
 
         :param mdx: MDX Query, as string
-        :return: 
+        :return:
         """
         request = '/api/v1/ExecuteMDX'
         data = {
@@ -873,8 +895,8 @@ class CellService:
     def delete_cellset(self, cellset_id):
         """ Delete a cellset
 
-        :param cellset_id: 
-        :return: 
+        :param cellset_id:
+        :return:
         """
         request = "/api/v1/Cellsets('{}')".format(cellset_id)
         return self._rest.DELETE(request)
@@ -883,7 +905,7 @@ class CellService:
         """ Deacctivate Transactionlog for one or many cubes
 
         :param args: one or many cube names
-        :return: 
+        :return:
         """
         updates = {}
         for cube_name in args:
@@ -892,9 +914,9 @@ class CellService:
 
     def activate_transactionlog(self, *args):
         """ Activate Transactionlog for one or many cubes
-        
+
         :param args: one or many cube names
-        :return: 
+        :return:
         """
         updates = {}
         for cube_name in args:
@@ -923,3 +945,21 @@ class CellService:
         )
         warnings.simplefilter('default', PendingDeprecationWarning)
         return self.execute_view(cube_name, view_name, cell_properties, private, top)
+
+    @staticmethod
+    def _extract_string_set_from_rows_and_values(rows_and_values, exclude_empty_cells):
+        """ Helper function for execute_..._string_set methods
+
+        :param rows_and_values:
+        :param exclude_empty_cells:
+        :return:
+        """
+        result_set = CaseAndSpaceInsensitiveSet()
+        for row_elements, cell_values in rows_and_values.items():
+            for row_element in row_elements:
+                result_set.add(row_element)
+            for cell_value in cell_values:
+                if isinstance(cell_value, str):
+                    if cell_value or not exclude_empty_cells:
+                        result_set.add(cell_value)
+        return result_set

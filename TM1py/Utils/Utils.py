@@ -340,7 +340,7 @@ def build_element_unique_names(dimension_names, element_names, hierarchy_names=N
     if not hierarchy_names:
         return ("[{}].[{}]".format(dim, elem)
                 for dim, elem
-                in zip(dimension_names, hierarchy_names, element_names))
+                in zip(dimension_names, element_names))
     else:
         return ("[{}].[{}].[{}]".format(dim, hier, elem)
                 for dim, hier, elem
