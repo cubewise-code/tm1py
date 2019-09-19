@@ -214,6 +214,27 @@ class TestMDXUtils(unittest.TestCase):
             MDXUtils.curly_braces("{something}"),
             "{something}")
 
+    def test_build_element_unique_names_without_hierarchies(self):
+        dimension_names = ["dim1", "dim1"]
+        element_names = ["elem1", "elem2"]
+        gen = Utils.build_element_unique_names(dimension_names=dimension_names, element_names=element_names)
+        element_unique_names = list(gen)
+        self.assertEqual(len(element_unique_names), 2)
+        self.assertTrue("[dim1].[elem1]" in element_unique_names)
+        self.assertTrue("[dim1].[elem2]" in element_unique_names)
+
+    def test_build_element_unique_names_with_hierarchies(self):
+        dimension_names = ["dim1", "dim1", "dim1"]
+        hierarchy_names = ["hier1", "hier2", "hier3"]
+        element_names = ["elem1", "elem2", "elem3"]
+        gen = Utils.build_element_unique_names(
+            dimension_names=dimension_names, hierarchy_names=hierarchy_names, element_names=element_names)
+        element_unique_names = list(gen)
+        self.assertEqual(len(element_unique_names), 3)
+        self.assertTrue("[dim1].[hier1].[elem1]" in element_unique_names)
+        self.assertTrue("[dim1].[hier2].[elem2]" in element_unique_names)
+        self.assertTrue("[dim1].[hier3].[elem3]" in element_unique_names)
+
     def test_build_pandas_multiindex_dataframe_from_cellset(self):
         rows = [DimensionSelection(dimension_name=self.dim1_name),
                 DimensionSelection(dimension_name=self.dim2_name, elements=self.dim2_element_names)]

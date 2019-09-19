@@ -4,7 +4,6 @@ import random
 import types
 import unittest
 
-import numpy as np
 import pandas as pd
 
 from TM1py.Objects import MDXView, Cube, Dimension, Element, Hierarchy, NativeView, AnonymousSubset, ElementAttribute
@@ -22,6 +21,15 @@ DIMENSION_NAMES = [
     PREFIX + 'Dimension1',
     PREFIX + 'Dimension2',
     PREFIX + 'Dimension3']
+STRING_CUBE_NAME = PREFIX + "StringCube"
+STRING_DIMENSION_NAMES = [
+    PREFIX + 'StringDimension1',
+    PREFIX + 'StringDimension2',
+    PREFIX + 'StringDimension3']
+CELLS_IN_STRING_CUBE = {
+    ('d1e1', 'd2e1', 'd3e1'): 'String1',
+    ('d1e2', 'd2e2', 'd3e2'): 'String2',
+    ('d1e3', 'd2e3', 'd3e3'): 'String3'}
 
 CUBE_NAME_RPS1 = PREFIX + "Cube" + "_RPS1"
 CUBE_NAME_RPS2 = PREFIX + "Cube" + "_RPS2"
@@ -115,9 +123,10 @@ class TestDataMethods(unittest.TestCase):
             subset=AnonymousSubset(
                 dimension_name=DIMENSION_NAMES[2],
                 expression='{[' + DIMENSION_NAMES[2] + '].Members}'))
-        cls.tm1.cubes.views.create(
-            view=view,
-            private=False)
+        if not cls.tm1.cubes.views.exists(CUBE_NAME, view.name, private=False):
+            cls.tm1.cubes.views.create(
+                view=view,
+                private=False)
 
         # Sum of all the values that we write in the cube. serves as a checksum.
         cls.total_value = 0
@@ -132,6 +141,37 @@ class TestDataMethods(unittest.TestCase):
 
         # Fill cube with values
         cls.tm1.cubes.cells.write_values(CUBE_NAME, cls.cellset)
+
+        # For tests on string related methods
+        cls.build_string_cube()
+
+    @classmethod
+    def build_string_cube(cls):
+        for d, dimension_name in enumerate(STRING_DIMENSION_NAMES, start=1):
+            dimension = Dimension(dimension_name)
+            hierarchy = Hierarchy(dimension_name, dimension_name)
+            for i in range(1, 5, 1):
+                element_name = "d" + str(d) + "e" + str(i)
+                hierarchy.add_element(element_name=element_name, element_type="String")
+            dimension.add_hierarchy(hierarchy)
+            if not cls.tm1.dimensions.exists(dimension.name):
+                cls.tm1.dimensions.create(dimension)
+
+        cube = Cube(name=STRING_CUBE_NAME, dimensions=STRING_DIMENSION_NAMES)
+        if not cls.tm1.cubes.exists(cube.name):
+            cls.tm1.cubes.create(cube)
+        # zero out cube
+        cls.tm1.processes.execute_ti_code("CubeClearData('" + STRING_CUBE_NAME + "');")
+
+        cls.tm1.cubes.cells.write_values(STRING_CUBE_NAME, CELLS_IN_STRING_CUBE)
+
+    @classmethod
+    def remove_string_cube(cls):
+        if cls.tm1.cubes.exists(cube_name=STRING_CUBE_NAME):
+            cls.tm1.cubes.delete(cube_name=STRING_CUBE_NAME)
+        for dimension_name in STRING_DIMENSION_NAMES:
+            if cls.tm1.dimensions.exists(dimension_name=dimension_name):
+                cls.tm1.dimensions.delete(dimension_name=dimension_name)
 
     @classmethod
     def build_assets_for_relative_proportional_spread_tests(cls):
@@ -157,9 +197,11 @@ class TestDataMethods(unittest.TestCase):
     @classmethod
     def remove_assets_for_relative_proportional_spread_tests(cls):
         for cube_name in (CUBE_NAME_RPS1, CUBE_NAME_RPS2):
-            cls.tm1.cubes.delete(cube_name=cube_name)
+            if cls.tm1.cubes.exists(cube_name):
+                cls.tm1.cubes.delete(cube_name=cube_name)
         for dimension_name in (DIMENSION_NAME_RPS1, DIMENSION_NAME_RPS2):
-            cls.tm1.dimensions.delete(dimension_name=dimension_name)
+            if cls.tm1.dimensions.exists(dimension_name):
+                cls.tm1.dimensions.delete(dimension_name=dimension_name)
 
     def test_write_and_get_value(self):
         original_value = self.tm1.cubes.cells.get_value(CUBE_NAME, 'Element1,EleMent2,ELEMENT  3')
@@ -335,12 +377,14 @@ class TestDataMethods(unittest.TestCase):
         self.assertEqual(len(data), 5)
 
         # MDX Query with calculated MEMBER
-        mdx = "WITH MEMBER[{}].[{}] AS 2 " \
-              "SELECT[{}].MEMBERS ON ROWS, " \
-              "{{[{}].[{}]}} ON COLUMNS " \
-              "FROM[{}] " \
-              "WHERE([{}].DefaultMember)".format(DIMENSION_NAMES[1], "Calculated Member", DIMENSION_NAMES[0],
-                                                 DIMENSION_NAMES[1], "Calculated Member", CUBE_NAME, DIMENSION_NAMES[2])
+        mdx = """
+        WITH MEMBER[{}].[{}] AS 2 
+        SELECT[{}].MEMBERS ON ROWS, 
+        {{[{}].[{}]}} ON COLUMNS 
+        FROM[{}] 
+        WHERE([{}].DefaultMember)""".format(
+            DIMENSION_NAMES[1], "Calculated Member", DIMENSION_NAMES[0],
+            DIMENSION_NAMES[1], "Calculated Member", CUBE_NAME, DIMENSION_NAMES[2])
 
         data = self.tm1.cubes.cells.execute_mdx(mdx, cell_properties=["Value", "Ordinal"])
         self.assertEqual(1000, len(data))
@@ -353,16 +397,19 @@ class TestDataMethods(unittest.TestCase):
         # write cube content
         self.tm1.cubes.cells.write_values(CUBE_NAME, self.cellset)
 
+        rows = "{}"
+        columns = "{{ [{}].Members * [{}].Members * [{}].MEMBERS }}".format(*DIMENSION_NAMES)
+
         # MDX Query that gets full cube content with zero suppression
         mdx = """
-        SELECT
-        NON EMPTY {rows} ON ROWS,
-        NON EMPTY {columns} ON COLUMNS
-        FROM
-        [{cube}]
-        """.format(
-            rows="{}",
-            columns="{[" + DIMENSION_NAMES[0] + "].Members * [" + DIMENSION_NAMES[1] + "].Members * [" + DIMENSION_NAMES[2] + "].MEMBERS}",
+            SELECT
+            NON EMPTY {rows} ON ROWS,
+            NON EMPTY {columns} ON COLUMNS
+            FROM
+            [{cube}]
+            """.format(
+            rows=rows,
+            columns=columns,
             cube=CUBE_NAME)
         data = self.tm1.cubes.cells.execute_mdx(mdx)
         # Check if total value is the same AND coordinates are the same. Handle None
@@ -379,13 +426,13 @@ class TestDataMethods(unittest.TestCase):
 
         # MDX Query that gets full cube content with zero suppression
         mdx = """
-        SELECT
-        NON EMPTY {rows} ON ROWS,
-        NON EMPTY {columns} ON COLUMNS
-        FROM
-        [{cube}]
-        """.format(
-            rows="{[" + DIMENSION_NAMES[0] + "].Members * [" + DIMENSION_NAMES[1] + "].Members * [" + DIMENSION_NAMES[2] + "].MEMBERS}",
+            SELECT
+            NON EMPTY {rows} ON ROWS,
+            NON EMPTY {columns} ON COLUMNS
+            FROM
+            [{cube}]
+            """.format(
+            rows="{{ [{}].Members * [{}].Members * [{}].MEMBERS }}".format(*DIMENSION_NAMES),
             columns="{}",
             cube=CUBE_NAME)
         data = self.tm1.cubes.cells.execute_mdx(mdx)
@@ -435,12 +482,12 @@ class TestDataMethods(unittest.TestCase):
 
     def test_execute_mdx_rows_and_values_one_cell(self):
         rows = """
-         {{ [{dim0}].[Element1]}}
-        """.format(dim0=DIMENSION_NAMES[0])
+             {{ [{dim0}].[Element1] }}
+            """.format(dim0=DIMENSION_NAMES[0])
 
         columns = """
-         {{ [{dim1}].[Element1]}}
-        """.format(dim1=DIMENSION_NAMES[1])
+             {{ [{dim1}].[Element1] }}
+            """.format(dim1=DIMENSION_NAMES[1])
 
         mdx = MDX_TEMPLATE.format(
             rows=rows,
@@ -457,17 +504,16 @@ class TestDataMethods(unittest.TestCase):
             self.assertEqual(len(cells), 1)
 
     def test_execute_mdx_rows_and_values_empty_cellset(self):
-
         # make sure it's empty
         self.tm1.cubes.cells.write_values(CUBE_NAME, {("Element1", "Element1", "Element1"): 0})
 
         rows = """
-         {{ [{dim0}].[Element1]}}
-        """.format(dim0=DIMENSION_NAMES[0])
+             {{ [{dim0}].[Element1] }}
+            """.format(dim0=DIMENSION_NAMES[0])
 
         columns = """
-         {{ [{dim1}].[Element1]}}
-        """.format(dim1=DIMENSION_NAMES[1])
+             {{ [{dim1}].[Element1] }}
+            """.format(dim1=DIMENSION_NAMES[1])
 
         mdx = MDX_TEMPLATE_NON_EMPTY.format(
             rows=rows,
@@ -480,12 +526,12 @@ class TestDataMethods(unittest.TestCase):
 
     def test_execute_mdx_rows_and_values_member_names(self):
         rows = """
-         {{ [{dim0}].[Element1]}}
-        """.format(dim0=DIMENSION_NAMES[0])
+             {{ [{dim0}].[Element1] }}
+            """.format(dim0=DIMENSION_NAMES[0])
 
         columns = """
-         {{ [{dim1}].[Element1]}}
-        """.format(dim1=DIMENSION_NAMES[1])
+             {{ [{dim1}].[Element1] }}
+            """.format(dim1=DIMENSION_NAMES[1])
 
         mdx = MDX_TEMPLATE.format(
             rows=rows,
@@ -502,12 +548,12 @@ class TestDataMethods(unittest.TestCase):
 
     def test_execute_mdx_rows_and_values_one_dimension_on_rows(self):
         rows = """
-         {{ [{dim0}].[Element1], [{dim0}].[Element2] }}
-        """.format(dim0=DIMENSION_NAMES[0])
+             {{ [{dim0}].[Element1], [{dim0}].[Element2] }}
+            """.format(dim0=DIMENSION_NAMES[0])
 
         columns = """
-         {{ [{dim1}].[Element1], [{dim1}].[Element2], [{dim1}].[Element3] }}
-        """.format(dim1=DIMENSION_NAMES[1])
+             {{ [{dim1}].[Element1], [{dim1}].[Element2], [{dim1}].[Element3] }}
+            """.format(dim1=DIMENSION_NAMES[1])
 
         mdx = MDX_TEMPLATE.format(
             rows=rows,
@@ -524,12 +570,12 @@ class TestDataMethods(unittest.TestCase):
 
     def test_execute_mdx_rows_and_values_two_dimensions_on_rows(self):
         rows = """
-        {{ [{dim0}].[Element1], [{dim0}].[Element2]}} * {{ [{dim1}].[Element1], [{dim1}].[Element2] }}
-        """.format(dim0=DIMENSION_NAMES[0], dim1=DIMENSION_NAMES[1])
+            {{ [{dim0}].[Element1], [{dim0}].[Element2] }} * {{ [{dim1}].[Element1], [{dim1}].[Element2] }}
+            """.format(dim0=DIMENSION_NAMES[0], dim1=DIMENSION_NAMES[1])
 
         columns = """
-         {{ [{dim2}].[Element1], [{dim2}].[Element2], [{dim2}].[Element3] }}
-        """.format(dim2=DIMENSION_NAMES[2])
+             {{ [{dim2}].[Element1], [{dim2}].[Element2], [{dim2}].[Element3] }}
+            """.format(dim2=DIMENSION_NAMES[2])
 
         mdx = MDX_TEMPLATE_SHORT.format(
             rows=rows,
@@ -547,10 +593,12 @@ class TestDataMethods(unittest.TestCase):
             self.assertEqual(len(cells), 3)
 
     def test_execute_mdx_raw_with_member_properties_with_elem_properties(self):
-        mdx = "SELECT " \
-              "NON EMPTY [" + DIMENSION_NAMES[0] + "].Members * [" + DIMENSION_NAMES[1] + "].Members ON ROWS," \
-              "NON EMPTY [" + DIMENSION_NAMES[2] + "].MEMBERS ON COLUMNS " \
-              "FROM [" + CUBE_NAME + "]"
+        mdx = """
+        SELECT
+        NON EMPTY [{}].MEMBERS * [{}].MEMBERS ON ROWS,
+        NON EMPTY [{}].MEMBERS ON COLUMNS
+        FROM [{}]
+        """.format(*DIMENSION_NAMES, CUBE_NAME)
         raw = self.tm1.cubes.cells.execute_mdx_raw(
             mdx=mdx,
             cell_properties=["Value", "RuleDerived"],
@@ -584,10 +632,12 @@ class TestDataMethods(unittest.TestCase):
                     self.assertEqual(element["Attributes"]["Attr2"], 2)
 
     def test_execute_mdx_raw_with_member_properties_without_elem_properties(self):
-        mdx = "SELECT " \
-              "NON EMPTY [" + DIMENSION_NAMES[0] + "].Members * [" + DIMENSION_NAMES[1] + "].Members ON ROWS," \
-              "NON EMPTY [" + DIMENSION_NAMES[2] + "].MEMBERS ON COLUMNS " \
-              "FROM [" + CUBE_NAME + "]"
+        mdx = """
+        SELECT
+        NON EMPTY [{}].MEMBERS * [{}].MEMBERS ON ROWS,
+        NON EMPTY [{}].MEMBERS ON COLUMNS
+        FROM [{}]
+        """.format(*DIMENSION_NAMES, CUBE_NAME)
         raw = self.tm1.cubes.cells.execute_mdx_raw(
             mdx=mdx,
             cell_properties=["Value", "RuleDerived"],
@@ -612,10 +662,12 @@ class TestDataMethods(unittest.TestCase):
                     self.assertNotIn("Element", member)
 
     def test_execute_mdx_raw_without_member_properties_with_elem_properties(self):
-        mdx = "SELECT " \
-              "NON EMPTY [" + DIMENSION_NAMES[0] + "].Members * [" + DIMENSION_NAMES[1] + "].Members ON ROWS," \
-              "NON EMPTY [" + DIMENSION_NAMES[2] + "].MEMBERS ON COLUMNS " \
-              "FROM [" + CUBE_NAME + "]"
+        mdx = """
+        SELECT
+        NON EMPTY [{}].MEMBERS * [{}].MEMBERS ON ROWS,
+        NON EMPTY [{}].MEMBERS ON COLUMNS
+        FROM [{}]
+        """.format(*DIMENSION_NAMES, CUBE_NAME)
         raw = self.tm1.cubes.cells.execute_mdx_raw(
             mdx=mdx,
             cell_properties=["Value", "RuleDerived"],
@@ -642,10 +694,12 @@ class TestDataMethods(unittest.TestCase):
                     self.assertNotIn("Ordinal", member)
 
     def test_execute_mdx_values(self):
-        mdx = "SELECT " \
-              "NON EMPTY [" + DIMENSION_NAMES[0] + "].Members * [" + DIMENSION_NAMES[1] + "].Members ON ROWS," \
-              "NON EMPTY [" + DIMENSION_NAMES[2] + "].MEMBERS ON COLUMNS " \
-              "FROM [" + CUBE_NAME + "]"
+        mdx = """
+        SELECT
+        NON EMPTY [{}].MEMBERS * [{}].MEMBERS ON ROWS,
+        NON EMPTY [{}].MEMBERS ON COLUMNS
+        FROM [{}]
+        """.format(*DIMENSION_NAMES, CUBE_NAME)
         cell_values = self.tm1.cubes.cells.execute_mdx_values(mdx)
         self.assertIsInstance(
             cell_values,
@@ -673,10 +727,12 @@ class TestDataMethods(unittest.TestCase):
 
     def test_execute_mdx_csv(self):
         # Simple MDX
-        mdx = "SELECT " \
-              "NON EMPTY [" + DIMENSION_NAMES[0] + "].Members * [" + DIMENSION_NAMES[1] + "].Members ON ROWS," \
-              "NON EMPTY [" + DIMENSION_NAMES[2] + "].MEMBERS ON COLUMNS " \
-              "FROM [" + CUBE_NAME + "]"
+        mdx = """
+        SELECT
+        NON EMPTY [{}].MEMBERS * [{}].MEMBERS ON ROWS,
+        NON EMPTY [{}].MEMBERS ON COLUMNS
+        FROM [{}]
+        """.format(*DIMENSION_NAMES, CUBE_NAME)
         csv = self.tm1.cubes.cells.execute_mdx_csv(mdx)
 
         # check type
@@ -704,12 +760,12 @@ class TestDataMethods(unittest.TestCase):
 
         # MDX Query with calculated MEMBER
         mdx_template = """
-            WITH MEMBER[{dim1}].[{calculated_member}] AS [{attribute_cube}].({attribute})
-            SELECT[{dim0}].MEMBERS ON ROWS, 
-            {{[{dim1}].[{calculated_member}]}} ON COLUMNS 
-            FROM[{cube_name}] 
-            WHERE([{dim2}].DefaultMember)
-        """
+                WITH MEMBER[{dim1}].[{calculated_member}] AS [{attribute_cube}].({attribute})
+                SELECT[{dim0}].MEMBERS ON ROWS, 
+                {{[{dim1}].[{calculated_member}]}} ON COLUMNS 
+                FROM[{cube_name}] 
+                WHERE([{dim2}].DefaultMember)
+            """
         mdx = mdx_template.format(
             cube_name=CUBE_NAME,
             dim0=DIMENSION_NAMES[0],
@@ -737,10 +793,12 @@ class TestDataMethods(unittest.TestCase):
             self.assertEqual(value, 3)
 
     def test_execute_mdx_dataframe(self):
-        mdx = "SELECT " \
-              "NON EMPTY [" + DIMENSION_NAMES[0] + "].Members * [" + DIMENSION_NAMES[1] + "].Members ON ROWS," \
-              "NON EMPTY [" + DIMENSION_NAMES[2] + "].MEMBERS ON COLUMNS " \
-              "FROM [" + CUBE_NAME + "]"
+        mdx = """
+        SELECT
+        NON EMPTY [{}].MEMBERS * [{}].MEMBERS ON ROWS,
+        NON EMPTY [{}].MEMBERS ON COLUMNS
+        FROM [{}]
+        """.format(*DIMENSION_NAMES, CUBE_NAME)
         df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx)
 
         # check type
@@ -783,12 +841,95 @@ class TestDataMethods(unittest.TestCase):
         self.assertEqual(pivot.shape, (7, 5 * 5))
 
     def test_execute_mdx_cellcount(self):
-        mdx = "SELECT " \
-              "NON EMPTY [" + DIMENSION_NAMES[0] + "].Members * [" + DIMENSION_NAMES[1] + "].Members ON ROWS," \
-              "NON EMPTY [" + DIMENSION_NAMES[2] + "].MEMBERS ON COLUMNS " \
-              "FROM [" + CUBE_NAME + "]"
+        mdx = """
+        SELECT
+        NON EMPTY [{}].MEMBERS * [{}].MEMBERS ON ROWS,
+        NON EMPTY [{}].MEMBERS ON COLUMNS
+        FROM [{}]
+        """.format(*DIMENSION_NAMES, CUBE_NAME)
         cell_count = self.tm1.cubes.cells.execute_mdx_cellcount(mdx)
         self.assertGreater(cell_count, 1000)
+
+    def test_execute_mdx_rows_and_values_string_set_one_row_dimension(self):
+        mdx = MDX_TEMPLATE_SHORT.format(
+            rows="{Tm1SubsetAll(" + STRING_DIMENSION_NAMES[0] + ")}",
+            columns="{Tm1SubsetAll(" + STRING_DIMENSION_NAMES[2] + ")}*{Tm1SubsetAll(" + STRING_DIMENSION_NAMES[
+                1] + ")}",
+            cube=STRING_CUBE_NAME)
+        elements_and_string_values = self.tm1.cubes.cells.execute_mdx_rows_and_values_string_set(mdx)
+
+        self.assertEqual(
+            set(elements_and_string_values),
+            {"d1e1", "d1e2", "d1e3", "d1e4", "String1", "String2", "String3"})
+
+    def test_execute_mdx_rows_and_values_string_set_two_row_dimensions(self):
+        mdx = MDX_TEMPLATE_SHORT.format(
+            rows="{Tm1SubsetAll(" + STRING_DIMENSION_NAMES[0] + ")}*{Tm1SubsetAll(" + STRING_DIMENSION_NAMES[1] + ")}",
+            columns="{Tm1SubsetAll(" + STRING_DIMENSION_NAMES[2] + ")}",
+            cube=STRING_CUBE_NAME)
+        elements_and_string_values = self.tm1.cubes.cells.execute_mdx_rows_and_values_string_set(mdx)
+
+        self.assertEqual(
+            set(elements_and_string_values),
+            {"d1e1", "d1e2", "d1e3", "d1e4", "d2e1", "d2e2", "d2e3", "d2e4", "String1", "String2", "String3"})
+
+    def test_execute_mdx_rows_and_values_string_set_include_empty(self):
+        mdx = MDX_TEMPLATE_SHORT.format(
+            rows="{Tm1SubsetAll(" + STRING_DIMENSION_NAMES[0] + ")}*{Tm1SubsetAll(" + STRING_DIMENSION_NAMES[1] + ")}",
+            columns="{Tm1SubsetAll(" + STRING_DIMENSION_NAMES[2] + ")}",
+            cube=STRING_CUBE_NAME)
+        elements_and_string_values = self.tm1.cubes.cells.execute_mdx_rows_and_values_string_set(
+            mdx=mdx,
+            exclude_empty_cells=False)
+
+        self.assertEqual(
+            set(elements_and_string_values),
+            {"d1e1", "d1e2", "d1e3", "d1e4", "d2e1", "d2e2", "d2e3", "d2e4", "String1", "String2", "String3", ""})
+
+    def test_execute_mdx_rows_and_values_string_set_against_numeric_cells(self):
+        rows = "{{ HEAD( {{ Tm1SubsetAll( {} ) }},10) }} * {{ HEAD( {{ Tm1SubsetAll( {} ) }} ,10) }}".format(
+            DIMENSION_NAMES[0],
+            DIMENSION_NAMES[1])
+        columns = "{HEAD({Tm1SubsetAll(" + DIMENSION_NAMES[2] + ")},10)}"
+        mdx = MDX_TEMPLATE_SHORT.format(
+            rows=rows,
+            columns=columns,
+            cube=CUBE_NAME)
+        elements_and_string_values = self.tm1.cubes.cells.execute_mdx_rows_and_values_string_set(
+            mdx=mdx,
+            exclude_empty_cells=False)
+
+        self.assertEqual(
+            set(elements_and_string_values),
+            {'Element 1',
+             'Element 2',
+             'Element 3',
+             'Element 4',
+             'Element 5',
+             'Element 6',
+             'Element 7',
+             'Element 8',
+             'Element 9',
+             'Element 10'})
+
+    def test_execute_view_rows_and_values_string_set(self):
+        mdx = MDX_TEMPLATE_SHORT.format(
+            rows="{Tm1SubsetAll(" + STRING_DIMENSION_NAMES[0] + ")}",
+            columns="{Tm1SubsetAll(" + STRING_DIMENSION_NAMES[2] + ")}*{Tm1SubsetAll(" + STRING_DIMENSION_NAMES[
+                1] + ")}",
+            cube=STRING_CUBE_NAME)
+        view_name = "some view"
+        view = MDXView(cube_name=STRING_CUBE_NAME, view_name=view_name, MDX=mdx)
+        self.tm1.cubes.views.create(view, private=False)
+
+        elements_and_string_values = self.tm1.cubes.cells.execute_view_rows_and_values_string_set(
+            cube_name=STRING_CUBE_NAME,
+            view_name=view_name,
+            private=False)
+
+        self.assertEqual(
+            set(elements_and_string_values),
+            {"d1e1", "d1e2", "d1e3", "d1e4", "String1", "String2", "String3"})
 
     def test_execute_view(self):
         data = self.tm1.cubes.cells.execute_view(cube_name=CUBE_NAME, view_name=VIEW_NAME, private=False)
@@ -858,12 +999,12 @@ class TestDataMethods(unittest.TestCase):
         view_name = PREFIX + "MDX_View_With_One_Dim_On_Rows"
         if not self.tm1.cubes.views.exists(cube_name=CUBE_NAME, view_name=view_name, private=False):
             rows = """
-             {{ [{dim0}].[Element1], [{dim0}].[Element2] }}
-            """.format(dim0=DIMENSION_NAMES[0])
+                 {{ [{dim0}].[Element1], [{dim0}].[Element2] }}
+                """.format(dim0=DIMENSION_NAMES[0])
 
             columns = """
-             {{ [{dim1}].[Element1], [{dim1}].[Element2], [{dim1}].[Element3] }}
-            """.format(dim1=DIMENSION_NAMES[1])
+                 {{ [{dim1}].[Element1], [{dim1}].[Element2], [{dim1}].[Element3] }}
+                """.format(dim1=DIMENSION_NAMES[1])
 
             mdx = MDX_TEMPLATE.format(
                 rows=rows,
@@ -888,12 +1029,12 @@ class TestDataMethods(unittest.TestCase):
         view_name = PREFIX + "MDX_View_With_Member_Names"
         if not self.tm1.cubes.views.exists(cube_name=CUBE_NAME, view_name=view_name, private=False):
             rows = """
-             {{ [{dim0}].[Element1], [{dim0}].[Element2] }} * {{ [{dim2}].[Element1], [{dim2}].[Element2] }}
-            """.format(dim0=DIMENSION_NAMES[0], dim2=DIMENSION_NAMES[2])
+                 {{ [{dim0}].[Element1], [{dim0}].[Element2] }} * {{ [{dim2}].[Element1], [{dim2}].[Element2] }}
+                """.format(dim0=DIMENSION_NAMES[0], dim2=DIMENSION_NAMES[2])
 
             columns = """
-             {{ [{dim1}].[Element1], [{dim1}].[Element2], [{dim1}].[Element3] }}
-            """.format(dim1=DIMENSION_NAMES[1])
+                 {{ [{dim1}].[Element1], [{dim1}].[Element2], [{dim1}].[Element3] }}
+                """.format(dim1=DIMENSION_NAMES[1])
 
             mdx = MDX_TEMPLATE.format(
                 rows=rows,
@@ -921,12 +1062,12 @@ class TestDataMethods(unittest.TestCase):
         view_name = PREFIX + "MDX_View_With_Two_Dim_On_Rows"
         if not self.tm1.cubes.views.exists(cube_name=CUBE_NAME, view_name=view_name, private=False):
             rows = """
-            {{ [{dim0}].[Element1], [{dim0}].[Element2]}} * {{ [{dim1}].[Element1], [{dim1}].[Element2] }}
-            """.format(dim0=DIMENSION_NAMES[0], dim1=DIMENSION_NAMES[1])
+                {{ [{dim0}].[Element1], [{dim0}].[Element2]}} * {{ [{dim1}].[Element1], [{dim1}].[Element2] }}
+                """.format(dim0=DIMENSION_NAMES[0], dim1=DIMENSION_NAMES[1])
 
             columns = """
-             {{ [{dim2}].[Element1], [{dim2}].[Element2], [{dim2}].[Element3] }}
-            """.format(dim2=DIMENSION_NAMES[2])
+                 {{ [{dim2}].[Element1], [{dim2}].[Element2], [{dim2}].[Element3] }}
+                """.format(dim2=DIMENSION_NAMES[2])
 
             mdx = MDX_TEMPLATE.format(
                 rows=rows,
@@ -1280,10 +1421,12 @@ class TestDataMethods(unittest.TestCase):
         self.assertGreater(cell_count, 1000)
 
     def test_execute_mdx_ui_array(self):
-        mdx = "SELECT " \
-              "NON EMPTY [" + DIMENSION_NAMES[0] + "].Members * [" + DIMENSION_NAMES[1] + "].Members ON ROWS," \
-              "NON EMPTY [" + DIMENSION_NAMES[2] + "].MEMBERS ON COLUMNS " \
-              "FROM [" + CUBE_NAME + "]"
+        mdx = """
+        SELECT
+        NON EMPTY [{}].MEMBERS * [{}].MEMBERS ON ROWS,
+        NON EMPTY [{}].MEMBERS ON COLUMNS
+        FROM [{}]
+        """.format(*DIMENSION_NAMES, CUBE_NAME)
         self.tm1.cubes.cells.execute_mdx_ui_array(mdx=mdx)
 
     def test_execute_view_ui_array(self):
@@ -1293,10 +1436,12 @@ class TestDataMethods(unittest.TestCase):
             private=False)
 
     def test_execute_mdx_ui_dygraph(self):
-        mdx = "SELECT " \
-              "NON EMPTY [" + DIMENSION_NAMES[0] + "].Members * [" + DIMENSION_NAMES[1] + "].Members ON ROWS," \
-              "NON EMPTY [" + DIMENSION_NAMES[2] + "].MEMBERS ON COLUMNS " \
-              "FROM [" + CUBE_NAME + "]"
+        mdx = """
+        SELECT
+        NON EMPTY [{}].MEMBERS * [{}].MEMBERS ON ROWS,
+        NON EMPTY [{}].MEMBERS ON COLUMNS
+        FROM [{}]
+        """.format(*DIMENSION_NAMES, CUBE_NAME)
         self.tm1.cubes.cells.execute_mdx_ui_dygraph(mdx=mdx)
 
     def test_execute_view_ui_dygraph(self):
@@ -1350,6 +1495,7 @@ class TestDataMethods(unittest.TestCase):
         for dimension_name in DIMENSION_NAMES:
             cls.tm1.dimensions.delete(dimension_name)
         cls.remove_assets_for_relative_proportional_spread_tests()
+        cls.remove_string_cube()
         cls.tm1.logout()
 
 

@@ -1,19 +1,19 @@
 # -*- coding: utf-8 -*-
-
-
 from TM1py.Objects import ElementAttribute, Element
 from TM1py.Services.ObjectService import ObjectService
+from TM1py.Utils import build_element_unique_names
 
 
 class ElementService(ObjectService):
     """ Service to handle Object Updates for TM1 Dimension (resp. Hierarchy) Elements
     
     """
+
     def __init__(self, rest):
         super().__init__(rest)
 
     def get(self, dimension_name, hierarchy_name, element_name):
-        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')?$expand=*"\
+        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')?$expand=*" \
             .format(dimension_name, hierarchy_name, element_name)
         response = self._rest.GET(request)
         return Element.from_dict(response.json())
@@ -46,13 +46,13 @@ class ElementService(ObjectService):
         return self._rest.DELETE(request)
 
     def get_elements(self, dimension_name, hierarchy_name):
-        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*"\
+        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*" \
             .format(dimension_name, hierarchy_name)
         response = self._rest.GET(request)
         return [Element.from_dict(element) for element in response.json()["value"]]
 
     def get_leaf_elements(self, dimension_name, hierarchy_name):
-        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*&$filter=Type ne 3"\
+        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*&$filter=Type ne 3" \
             .format(dimension_name, hierarchy_name)
         response = self._rest.GET(request)
         return [Element.from_dict(element) for element in response.json()["value"]]
@@ -76,6 +76,77 @@ class ElementService(ObjectService):
             hierarchy_name)
         response = self._rest.GET(request, '')
         return (e["Name"] for e in response.json()['value'])
+
+    def get_all_leaf_element_identifiers(self, dimension_name, hierarchy_name):
+        """ Get all element names and alias values for leaf elements in a hierarchy
+
+        :param dimension_name:
+        :param hierarchy_name:
+        :return:
+        """
+        mdx_elements = "{{ Tm1FilterByLevel ( {{ Tm1SubsetAll ([{dim}].[{hier}]) }} , 0 ) }}".format(
+            dim=dimension_name,
+            hier=hierarchy_name)
+        return self.get_element_identifiers(dimension_name, hierarchy_name, mdx_elements)
+
+    def get_all_element_identifiers(self, dimension_name, hierarchy_name):
+        """ Get all element names and alias values in a hierarchy
+
+        :param dimension_name:
+        :param hierarchy_name:
+        :return:
+        """
+
+        mdx_elements = "{{ Tm1SubsetAll ([{dim}].[{hier}]) }}".format(
+            dim=dimension_name,
+            hier=hierarchy_name)
+        return self.get_element_identifiers(dimension_name, hierarchy_name, mdx_elements)
+
+    def get_element_identifiers(self, dimension_name, hierarchy_name, elements):
+        """ Get all element names and alias values for a set of elements in a hierarchy
+
+        :param dimension_name:
+        :param hierarchy_name:
+        :param elements: MDX (Set) expression or iterable of elements
+        :return:
+        """
+        alias_attributes = self.get_alias_element_attributes(dimension_name, hierarchy_name)
+
+        if isinstance(elements, str):
+            mdx_element_selection = elements
+        else:
+            mdx_element_selection = ",".join(build_element_unique_names(
+                [dimension_name] * len(elements),
+                elements,
+                [hierarchy_name] * len(elements)))
+        mdx = """
+         SELECT
+         {{ {elem_mdx} }} ON ROWS, 
+         {{ {attr_mdx} }} ON COLUMNS
+         FROM [}}ElementAttributes_{dim}]
+         """.format(
+            elem_mdx=mdx_element_selection,
+            attr_mdx=",".join(build_element_unique_names(
+                ["}ElementAttributes_" + dimension_name] * len(alias_attributes),
+                alias_attributes)),
+            dim=dimension_name)
+        return self._retrieve_mdx_rows_and_cell_values_as_string_set(mdx)
+
+    def _retrieve_mdx_rows_and_cell_values_as_string_set(self, mdx):
+        from TM1py import CellService
+        return CellService(self._rest).execute_mdx_rows_and_values_string_set(mdx)
+
+    def get_alias_element_attributes(self, dimension_name, hierarchy_name):
+        """
+
+        :param dimension_name:
+        :param hierarchy_name:
+        :return:
+        """
+        attributes = self.get_element_attributes(dimension_name, hierarchy_name)
+        return [attr.name
+                for attr
+                in attributes if attr.attribute_type == 'Alias']
 
     def get_element_attributes(self, dimension_name, hierarchy_name):
         """ Get element attributes from hierarchy
@@ -180,5 +251,6 @@ class ElementService(ObjectService):
                         if not leaves_only:
                             members.append(component["Name"])
                         get_members(component)
+
         get_members(consolidation_tree)
         return members

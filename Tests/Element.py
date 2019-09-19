@@ -30,6 +30,7 @@ class TestElementMethods(unittest.TestCase):
         cls.extra_year = "4321"
         # Element Attributes
         cls.attributes = ('Previous Year', 'Next Year')
+        cls.alias_attributes = ("Financial Year",)
 
         # create dimension with a default hierarchy
         d = Dimension(DIMENSION_NAME)
@@ -42,11 +43,21 @@ class TestElementMethods(unittest.TestCase):
             h.add_edge('Total Years', year, 1)
         for attribute in cls.attributes:
             h.add_element_attribute(attribute, "String")
+        for attribute in cls.alias_attributes:
+            h.add_element_attribute(attribute, "Alias")
         d.add_hierarchy(h)
         cls.tm1.dimensions.create(d)
 
-        # write one element attribute value
+        # write attribute values
         cls.tm1.cubes.cells.write_value('1988', '}ElementAttributes_' + DIMENSION_NAME, ('1989', 'Previous Year'))
+        cls.tm1.cubes.cells.write_value('1989', '}ElementAttributes_' + DIMENSION_NAME, ('1990', 'Previous Year'))
+        cls.tm1.cubes.cells.write_value('1990', '}ElementAttributes_' + DIMENSION_NAME, ('1991', 'Previous Year'))
+        cls.tm1.cubes.cells.write_value('1991', '}ElementAttributes_' + DIMENSION_NAME, ('1992', 'Previous Year'))
+
+        cls.tm1.cubes.cells.write_value('1988/89', '}ElementAttributes_' + DIMENSION_NAME, ('1989', 'Financial Year'))
+        cls.tm1.cubes.cells.write_value('1989/90', '}ElementAttributes_' + DIMENSION_NAME, ('1990', 'Financial Year'))
+        cls.tm1.cubes.cells.write_value('1990/91', '}ElementAttributes_' + DIMENSION_NAME, ('1991', 'Financial Year'))
+        cls.tm1.cubes.cells.write_value('1991/92', '}ElementAttributes_' + DIMENSION_NAME, ('1992', 'Financial Year'))
 
     @classmethod
     def tearDown(cls):
@@ -209,6 +220,39 @@ class TestElementMethods(unittest.TestCase):
         self.assertIn("Total Years", members)
         for year in self.years:
             self.assertIn(year, members)
+
+    def test_get_element_identifiers_with_iterable(self):
+        expected_identifiers = {'1988/89', '1989/90', '1990/91', '1991/92', *self.years}
+        elements = self.years
+        identifiers = self.tm1.dimensions.hierarchies.elements.get_element_identifiers(
+            dimension_name=DIMENSION_NAME,
+            hierarchy_name=HIERARCHY_NAME,
+            elements=elements)
+        self.assertEqual(expected_identifiers, set(identifiers))
+
+    def test_get_element_identifiers_with_string(self):
+        exepected_identifiers = {'1988/89', '1989/90', '1990/91', '1991/92', *self.years}
+        elements = "{" + ",".join(["[" + DIMENSION_NAME + "].[" + year + "]" for year in self.years]) + "}"
+        identifiers = self.tm1.dimensions.hierarchies.elements.get_element_identifiers(
+            dimension_name=DIMENSION_NAME,
+            hierarchy_name=HIERARCHY_NAME,
+            elements=elements)
+        self.assertEqual(exepected_identifiers, set(identifiers))
+
+    def test_get_all_element_identifiers(self):
+        exepected_identifiers = {'1988/89', '1989/90', '1990/91', '1991/92', 'Total Years', 'All Consolidations',
+                                 *self.years}
+        identifiers = self.tm1.dimensions.hierarchies.elements.get_all_element_identifiers(
+            DIMENSION_NAME,
+            HIERARCHY_NAME)
+        self.assertEqual(exepected_identifiers, set(identifiers))
+
+    def test_get_all_leaf_element_identifiers(self):
+        exepected_identifiers = {'1988/89', '1989/90', '1990/91', '1991/92', *self.years}
+        identifiers = self.tm1.dimensions.hierarchies.elements.get_all_leaf_element_identifiers(
+            DIMENSION_NAME,
+            HIERARCHY_NAME)
+        self.assertEqual(exepected_identifiers, set(identifiers))
 
 
 if __name__ == '__main__':
