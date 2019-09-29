@@ -41,6 +41,10 @@ class CubeService(ObjectService):
         cube = Cube.from_json(response.text)
         return cube
 
+    def get_last_data_update(self, cube_name):
+        request = "/api/v1/Cubes('{}')/LastDataUpdate/$value".format(cube_name)
+        return self._rest.GET(request)
+
     def get_all(self):
         """ get all cubes from TM1 Server as TM1py.Cube instances
 
