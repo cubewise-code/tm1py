@@ -84,6 +84,17 @@ class CubeService(ObjectService):
         request = "/api/v1/Cubes('{}')".format(cube.name)
         return self._rest.PATCH(request, cube.body)
 
+    def update_or_create(self, cube):
+        """ update if exists else create
+
+        :param cube:
+        :return:
+        """
+        if self.exists(cube_name=cube.name):
+            return self.update(cube=cube)
+        else:
+            return self.create(cube=cube)
+
     def check_rules(self, cube_name):
         """ Check rules syntax for existing cube on TM1 Server
 
@@ -120,15 +131,18 @@ class CubeService(ObjectService):
         list_cubes = list(entry['Name'] for entry in response.json()['value'])
         return list_cubes
 
-    def get_dimension_names(self, cube_name):
+    def get_dimension_names(self, cube_name, skip_sandbox_dimension=True):
         """ get name of the dimensions of a cube in their correct order
 
-        :param cube_name: String
+        :param cube_name:
+        :param skip_sandbox_dimension:
         :return:  List : [dim1, dim2, dim3, etc.]
         """
         request = "/api/v1/Cubes('{}')/Dimensions?$select=Name".format(cube_name)
         response = self._rest.GET(request, '')
         dimension_names = [element['Name'] for element in response.json()['value']]
+        if skip_sandbox_dimension and dimension_names[0] == CellService.SANDBOX_DIMENSION:
+            return dimension_names[1:]
         return dimension_names
 
     def get_storage_dimension_order(self, cube_name):

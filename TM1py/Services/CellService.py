@@ -8,6 +8,7 @@ from io import StringIO
 
 import pandas as pd
 
+from TM1py.Services import ObjectService
 from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
     CaseAndSpaceInsensitiveTuplesDict, case_and_space_insensitive_equals, odata_escape_single_quotes_in_object_names
@@ -28,19 +29,17 @@ def tidy_cellset(func):
     return wrapper
 
 
-class CellService:
+class CellService(ObjectService):
     """ Service to handle Read and Write operations to TM1 cubes
     
     """
 
-    SANDBOX_DIMENSION = "Sandboxes"
-
     def __init__(self, tm1_rest):
         """
         
-        :param tm1_rest: 
+        :param tm1_rest: instance of RestService
         """
-        self._rest = tm1_rest
+        super().__init__(tm1_rest)
 
     def get_value(self, cube_name, element_string, dimensions=None):
         """ Element_String describes the Dimension-Hierarchy-Element arrangement
@@ -122,7 +121,7 @@ class CellService:
                     *Utils.dimension_hierarchy_element_tuple_from_unique_name(unique_element_name))))
 
         self._post_against_cellset(cellset_id=cellset_id, payload=payload, delete_cellset=True)
-        
+
     def clear_spread(
             self,
             cube,
@@ -838,6 +837,42 @@ class CellService:
         if 'dtype' not in kwargs:
             kwargs['dtype'] = {'Value': None, **{col: str for col in range(999)}}
         return pd.read_csv(memory_file, sep=',', **kwargs)
+
+    @tidy_cellset
+    def extract_cellset_power_bi(self, cellset_id, **kwargs):
+        request = "/api/v1/Cellsets('{}')?$expand=" \
+                  "Axes($filter=Ordinal eq 0 or Ordinal eq 1;$expand=Tuples(" \
+                  "$expand=Members($select=Name)),Hierarchies($select=Name))," \
+                  "Cells($select=Value)".format(cellset_id)
+        response = self._rest.GET(request=request, data='')
+        response_json = response.json()
+        rows = response_json["Axes"][1]["Tuples"]
+        column_headers = [tupl["Members"][0]["Name"] for tupl in response_json["Axes"][0]["Tuples"]]
+        row_headers = [hierarchy["Name"] for hierarchy in response_json["Axes"][1]["Hierarchies"]]
+        cell_values = [cell["Value"] for cell in response_json["Cells"]]
+
+        headers = row_headers + column_headers
+        body = []
+
+        number_rows = len(rows)
+        # avoid division by zero
+        if not number_rows:
+            return pd.DataFrame(body, columns=headers)
+        number_cells = len(cell_values)
+        number_columns = int(number_cells / number_rows)
+
+        cell_values_by_row = [cell_values[cell_counter:cell_counter + number_columns]
+                              for cell_counter
+                              in range(0, number_cells, number_columns)]
+        element_names_by_row = [tuple(member["Name"]
+                                      for member
+                                      in tupl["Members"])
+                                for tupl
+                                in rows]
+
+        for element_tuple, cells in zip(element_names_by_row, cell_values_by_row):
+            body.append(list(element_tuple) + cells)
+        return pd.DataFrame(body, columns=headers, dtype=str)
 
     def extract_cellset_dataframe_pivot(self, cellset_id, dropna=False, fill_value=False, **kwargs):
         """ Extract a pivot table (pandas dataframe) from a cellset in TM1

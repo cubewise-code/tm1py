@@ -19,8 +19,8 @@ class Cube(TM1Object):
         :param rules: instance of TM1py.Objects.Rules
         """
         self._name = name
-        self._dimensions = dimensions
-        self._rules = rules
+        self.dimensions = dimensions
+        self.rules = rules
 
     @property
     def name(self):

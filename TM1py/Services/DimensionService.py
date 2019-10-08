@@ -75,6 +75,17 @@ class DimensionService(ObjectService):
                 else:
                     self.hierarchies.create(hierarchy)
 
+    def update_or_create(self, dimension):
+        """ update if exists else create
+
+        :param dimension:
+        :return:
+        """
+        if self.exists(dimension_name=dimension.name):
+            return self.update(dimension=dimension)
+        else:
+            return self.create(dimension=dimension)
+
     def delete(self, dimension_name):
         """ Delete a dimension
 

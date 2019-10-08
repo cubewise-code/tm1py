@@ -280,7 +280,13 @@ class TestMDXUtils(unittest.TestCase):
         cellset = self.tm1.cubes.cells.execute_mdx(mdx)
         df = Utils.build_pandas_dataframe_from_cellset(cellset, multiindex=False)
         self.assertTrue(df.shape[0] == 1000)
-        self.assertTrue(df.shape[1] == 5)
+
+        # cater for potential Sandboxes dimension on first position
+        if df.columns[0] == "Sandboxes":
+            self.assertTrue(df.shape[1] == 6)
+        else:
+            self.assertTrue(df.shape[1] == 5)
+
         self.assertIsInstance(df, pd.DataFrame)
         cellset = Utils.build_cellset_from_pandas_dataframe(df)
         self.assertTrue(len(cellset.keys()) == 1000)

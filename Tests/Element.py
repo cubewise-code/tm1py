@@ -59,6 +59,21 @@ class TestElementMethods(unittest.TestCase):
         cls.tm1.cubes.cells.write_value('1990/91', '}ElementAttributes_' + DIMENSION_NAME, ('1991', 'Financial Year'))
         cls.tm1.cubes.cells.write_value('1991/92', '}ElementAttributes_' + DIMENSION_NAME, ('1992', 'Financial Year'))
 
+    def add_unbalanced_hierarchy(self, hierarchy_name):
+        dimension = self.tm1.dimensions.get(DIMENSION_NAME)
+        # other hierarchy
+        hierarchy = Hierarchy(name=hierarchy_name, dimension_name=DIMENSION_NAME)
+
+        hierarchy.add_element("Total Years Unbalanced", "Consolidated")
+        hierarchy.add_element('1989', 'Numeric')
+        hierarchy.add_element('1990', 'Numeric')
+        hierarchy.add_element('1991', 'Numeric')
+        hierarchy.add_edge("Total Years Unbalanced", "1989", 1)
+        hierarchy.add_edge("Total Years Unbalanced", "1990", 1)
+        dimension.add_hierarchy(hierarchy)
+
+        self.tm1.dimensions.update(dimension)
+
     @classmethod
     def tearDown(cls):
         cls.tm1.dimensions.delete(DIMENSION_NAME)
@@ -94,7 +109,7 @@ class TestElementMethods(unittest.TestCase):
             self.assertEqual(element.name, element_name)
 
     def test_update_element(self):
-        element = Element(self.extra_year, "S T R I N G")
+        element = Element(self.extra_year, Element.Types("S T R I N G"))
         self.tm1.dimensions.hierarchies.elements.create(
             DIMENSION_NAME,
             HIERARCHY_NAME,
@@ -106,7 +121,7 @@ class TestElementMethods(unittest.TestCase):
         self.tm1.dimensions.hierarchies.elements.update(DIMENSION_NAME, HIERARCHY_NAME, element)
 
         element = self.tm1.dimensions.hierarchies.elements.get(DIMENSION_NAME, HIERARCHY_NAME, element_name)
-        self.assertTrue(element.element_type == "Numeric")
+        self.assertTrue(element.element_type == Element.Types.NUMERIC)
 
         self.tm1.dimensions.hierarchies.elements.delete(
             DIMENSION_NAME,

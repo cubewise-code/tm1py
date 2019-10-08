@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+import json
+
 from TM1py.Objects import ElementAttribute, Element
 from TM1py.Services.ObjectService import ObjectService
+from TM1py.Utils import CaseAndSpaceInsensitiveDict
 from TM1py.Utils import build_element_unique_names
-import json
 
 
 class ElementService(ObjectService):
@@ -154,6 +156,33 @@ class ElementService(ObjectService):
             dim=dimension_name)
         return self._retrieve_mdx_rows_and_cell_values_as_string_set(mdx)
 
+    def get_level_names(self, dimension_name, hierarchy_name, descending=True):
+        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Levels?$select=Name".format(
+            dimension_name, hierarchy_name)
+        response = self._rest.GET(request)
+        if descending:
+            return [level["Name"] for level in reversed(response.json()["value"])]
+        else:
+            return [level["Name"] for level in response.json()["value"]]
+
+    def get_levels_count(self, dimension_name, hierarchy_name):
+        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Levels/$count".format(dimension_name, hierarchy_name)
+        response = self._rest.GET(request)
+        return int(response.text)
+
+    def get_element_types(self, dimension_name, hierarchy_name, skip_consolidations=False):
+        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name,Type{}".format(
+            dimension_name, hierarchy_name, "&$filter=Type ne 3" if skip_consolidations else "")
+        response = self._rest.GET(request)
+
+        result = CaseAndSpaceInsensitiveDict()
+        for element in response.json()["value"]:
+            result[element['Name']] = element["Type"]
+        return result
+
+    def attribute_cube_exists(self, dimension_name):
+        return self._exists("/api/v1/Cubes('" + self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name + "')")
+
     def _retrieve_mdx_rows_and_cell_values_as_string_set(self, mdx):
         from TM1py import CellService
         return CellService(self._rest).execute_mdx_rows_and_values_string_set(mdx)
@@ -279,10 +308,10 @@ class ElementService(ObjectService):
 
     def execute_set_mdx(self, mdx,
                         top_records=None,
-                        member_properties = ('Name', 'Weight'),
-                        parent_properties = ('Name', 'UniqueName'),
-                        element_properties = ('Type', 'Level')):
-        '''
+                        member_properties=('Name', 'Weight'),
+                        parent_properties=('Name', 'UniqueName'),
+                        element_properties=('Type', 'Level')):
+        """
         :method to execute an MDX statement against a dimension
         :param mdx: valid dimension mdx statement
         :param top_records: number of records to return, default: all elements no limit
@@ -290,7 +319,7 @@ class ElementService(ObjectService):
         :param parent_properties: list of parent properties to return, can be empty
         :param element_properties: list of element properties to return, can be empty
         :return: dictionary of members, unique names, weights, types, and parents
-        '''
+        """
 
         top = f"$top={top_records};" if top_records else ""
 
@@ -317,11 +346,10 @@ class ElementService(ObjectService):
             expand_properties = ""
 
         request = f'/api/v1/ExecuteMDXSetExpression?$expand=Tuples({top}' \
-                  f'$expand=Members({select_member_properties}'\
-                  f'{expand_properties}))'
+            f'$expand=Members({select_member_properties}' \
+            f'{expand_properties}))'
 
         payload = {"MDX": mdx}
         response = self._rest.POST(request, json.dumps(payload, ensure_ascii=False))
         raw_dict = response.json()
         return [tuples['Members'] for tuples in raw_dict['Tuples']]
-

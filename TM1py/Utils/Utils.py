@@ -451,7 +451,7 @@ class CaseAndSpaceInsensitiveDict(collections.MutableMapping):
 
     However, querying and contains testing is case insensitive:
         elements = TM1pyElementsDictionary()
-        elements['Travel Expesnses'] = 100
+        elements['Travel Expenses'] = 100
         elements['travelexpenses'] == 100 # True
 
     Entries are ordered

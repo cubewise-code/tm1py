@@ -72,6 +72,22 @@ class TestHierarchyMethods(unittest.TestCase):
         dimension.add_hierarchy(hierarchy)
         self.tm1.dimensions.update(dimension)
 
+    def add_balanced_hierarchy(self, hierarchy_name):
+        dimension = self.tm1.dimensions.get(DIMENSION_NAME)
+        # other hierarchy
+        hierarchy = Hierarchy(name=hierarchy_name, dimension_name=DIMENSION_NAME)
+
+        hierarchy.add_element("Total Years Balanced", "Consolidated")
+        hierarchy.add_element('1989', 'Numeric')
+        hierarchy.add_element('1990', 'Numeric')
+        hierarchy.add_element('1991', 'Numeric')
+        hierarchy.add_edge("Total Years Balanced", "1989", 1)
+        hierarchy.add_edge("Total Years Balanced", "1990", 1)
+        hierarchy.add_edge("Total Years Balanced", "1991", 1)
+        dimension.add_hierarchy(hierarchy)
+
+        self.tm1.dimensions.update(dimension)
+
     def update_hierarchy(self):
         d = self.tm1.dimensions.get(dimension_name=DIMENSION_NAME)
         h = d.default_hierarchy
@@ -113,17 +129,17 @@ class TestHierarchyMethods(unittest.TestCase):
         element = h["Total Years"]
         self.assertIsInstance(element, Element)
         self.assertEqual(element.name, "Total Years")
-        self.assertEqual(element.element_type, "Consolidated")
+        self.assertEqual(element.element_type, Element.Types.CONSOLIDATED)
         element = h["Total Years".replace(" ", "").lower()]
         self.assertIsInstance(element, Element)
         self.assertEqual(element.name, "Total Years")
-        self.assertEqual(element.element_type, "Consolidated")
+        self.assertEqual(element.element_type, Element.Types.CONSOLIDATED)
 
         element = h["1989"]
         self.assertIsInstance(element, Element)
         self.assertEqual(element.name, "1989")
-        self.assertEqual(element.element_type, "Numeric")
-        self.assertNotEqual(element.element_type, "String")
+        self.assertEqual(element.element_type, Element.Types.NUMERIC)
+        self.assertNotEqual(element.element_type, Element.Types.STRING)
 
     def test_hierarchy___get__exception(self):
         h = self.tm1.dimensions.hierarchies.get(DIMENSION_NAME, DIMENSION_NAME)
@@ -171,7 +187,7 @@ class TestHierarchyMethods(unittest.TestCase):
         self.assertIn('Name Long', [ea.name for ea in h.element_attributes])
 
         self.assertEqual(h.edges[('Total Years', '2011')], 2)
-        self.assertEqual(h.elements['No Year'].element_type, 'String')
+        self.assertEqual(h.elements['No Year'].element_type, Element.Types.STRING)
 
         summary = self.tm1.dimensions.hierarchies.get_hierarchy_summary(DIMENSION_NAME, DIMENSION_NAME)
         self.assertEqual(summary["Elements"], 147)
@@ -338,6 +354,17 @@ class TestHierarchyMethods(unittest.TestCase):
         self.tm1.dimensions.hierarchies.remove_all_edges(DIMENSION_NAME, DIMENSION_NAME)
         hierarchy = self.tm1.dimensions.hierarchies.get(DIMENSION_NAME, DIMENSION_NAME)
         self.assertEqual(len(hierarchy.edges), 0)
+
+    def test_is_balanced_false(self):
+        is_balanced = self.tm1.dimensions.hierarchies.is_balanced(DIMENSION_NAME, DIMENSION_NAME)
+        self.assertFalse(is_balanced)
+
+    def test_is_balanced_true(self):
+        balanced_hierarchy_name = "Balanced Hierarchy"
+        self.add_balanced_hierarchy(balanced_hierarchy_name)
+
+        is_balanced = self.tm1.dimensions.hierarchies.is_balanced(DIMENSION_NAME, balanced_hierarchy_name)
+        self.assertTrue(is_balanced)
 
 
 if __name__ == '__main__':
