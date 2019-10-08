@@ -94,7 +94,8 @@ class TestCubeMethods(unittest.TestCase):
 
     def test_create_delete_cube(self):
         cube_name = PREFIX + "Some_Other_Name"
-        dimension_names = self.tm1.dimensions.get_all_names()[0:2]
+        # element with index 0 is Sandboxes
+        dimension_names = self.tm1.dimensions.get_all_names()[1:3]
         cube = Cube(cube_name, dimension_names)
 
         all_cubes_before = self.tm1.cubes.get_all_names()

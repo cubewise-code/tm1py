@@ -39,8 +39,10 @@ class AnnotationService(ObjectService):
         payload["ApplicationContext"] = [{"Facet@odata.bind": "ApplicationContextFacets('}Cubes')",
                                           "Value": annotation.object_name}]
         payload["DimensionalContext@odata.bind"] = []
-        response = self._rest.GET("/api/v1/Cubes('{}')/Dimensions?$select=Name".format(annotation.object_name))
-        cube_dimensions = [dimension['Name'] for dimension in response.json()['value']]
+        from TM1py import CubeService
+        cube_dimensions = CubeService(self._rest).get_dimension_names(
+            cube_name=annotation.object_name,
+            skip_sandbox_dimension=True)
         for dimension, element in zip(cube_dimensions, annotation.dimensional_context):
             coordinates = "Dimensions('{}')/Hierarchies('{}')/Members('{}')".format(dimension, dimension, element)
             payload["DimensionalContext@odata.bind"].append(coordinates)

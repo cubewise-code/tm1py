@@ -2,16 +2,32 @@
 
 import collections
 import json
+from enum import Enum
 
 from TM1py.Objects.TM1Object import TM1Object
-from TM1py.Utils.Utils import lower_and_drop_spaces
 
 
 class Element(TM1Object):
     """ Abstraction of TM1 Element
 
     """
-    valid_types = ('Numeric', 'String', 'Consolidated')
+    ELEMENT_ATTRIBUTES_PREFIX = "}ElementAttributes_"
+
+    class Types(Enum):
+        NUMERIC = 1
+        STRING = 2
+        CONSOLIDATED = 3
+
+        def __str__(self):
+            return self.name.capitalize()
+
+        @classmethod
+        def _missing_(cls, value):
+            for member in cls:
+                if member.name.lower() == value.replace(" ", "").lower():
+                    return member
+            # default
+            raise ValueError("Invalid element type=" + value)
 
     def __init__(self, name, element_type, attributes=None, unique_name=None, index=None):
         self._name = name
@@ -55,11 +71,7 @@ class Element(TM1Object):
 
     @element_type.setter
     def element_type(self, value):
-        element_type = lower_and_drop_spaces(value).capitalize()
-        if element_type in self.valid_types:
-            self._element_type = element_type
-        else:
-            raise ValueError('{} is not a valid Element Type'.format(value))
+        self._element_type = Element.Types(value)
 
     @property
     def body(self):
@@ -72,5 +84,5 @@ class Element(TM1Object):
     def _construct_body(self):
         body_as_dict = collections.OrderedDict()
         body_as_dict['Name'] = self._name
-        body_as_dict['Type'] = self._element_type
+        body_as_dict['Type'] = str(self._element_type)
         return body_as_dict

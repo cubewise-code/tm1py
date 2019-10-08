@@ -16,6 +16,7 @@ class TM1Service:
         self.cubes = CubeService(self._tm1_rest)
         self.dimensions = DimensionService(self._tm1_rest)
         self.monitoring = MonitoringService(self._tm1_rest)
+        self.power_bi = PowerBiService(self._tm1_rest)
         self.processes = ProcessService(self._tm1_rest)
         self.security = SecurityService(self._tm1_rest)
         self.server = ServerService(self._tm1_rest)
