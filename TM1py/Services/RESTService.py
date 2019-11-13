@@ -68,6 +68,11 @@ class RESTService:
                'Accept': 'application/json;odata.metadata=none,text/plain',
                'TM1-SessionContext': 'TM1py'}
 
+    HEADERS_BINARY = {'Connection': 'keep-alive',
+               'User-Agent': 'TM1py',
+               'Content-Type': 'application/octet-stream; odata.streaming=true',
+               'TM1-SessionContext': 'TM1py'}
+
     def __init__(self, **kwargs):
         """ Create an instance of RESTService
         :param address: String - address of the TM1 instance
@@ -108,6 +113,7 @@ class RESTService:
 
         self._version = None
         self._headers = self.HEADERS.copy()
+        self._headers_binary = self.HEADERS_BINARY.copy()
         if "session_context" in kwargs:
             self._headers["TM1-SessionContext"] = kwargs["session_context"]
 
@@ -175,6 +181,15 @@ class RESTService:
         return self._s.patch(url=request, headers=self._headers, data=data, verify=self._verify, timeout=self._timeout)
 
     @httpmethod
+    def PUT(self, request, data):
+        """ PUT request against the TM1 instance
+        :param request: String, for instance : /api/v1/Dimensions('plan_business_unit')
+        :param data: Binary, the payload (binary)
+        :return: String, the response as text
+        """
+        return self._s.put(url=request, headers=self._headers_binary, data=data, verify=self._verify, timeout=self._timeout)
+
+    @httpmethod
     def DELETE(self, request, data=''):
         """ Delete request against TM1 instance
         :param request:  String, for instance : /api/v1/Dimensions('plan_business_unit')
@@ -222,7 +237,8 @@ class RESTService:
         url = url.replace(' ', '%20').replace('#', '%23')
         if odata_escape_single_quotes_in_object_names:
             url = Utils.odata_escape_single_quotes_in_object_names(url)
-        data = data.encode('utf-8')
+        if type(data) is not bytes:
+            data = data.encode('utf-8')
         return url, data
 
     def is_connected(self):
