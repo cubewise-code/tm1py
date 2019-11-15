@@ -31,7 +31,8 @@ class TM1Service:
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
-        self.logout()
+        if not self._tm1_rest.retain_connection:
+            self.logout()
 
     @property
     def whoami(self):

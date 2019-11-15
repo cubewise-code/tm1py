@@ -86,12 +86,14 @@ class RESTService:
         :param timeout: Float - Number of seconds that the client will wait to receive the first byte.
         :param connection_pool_size - In a multithreaded environment, you should set this value to a
         higher number, such as the number of threads
+        :param retain_connection: boolean - don't cleanup connection after object is destroyed by garbage collector
         """
         self._ssl = self.translate_to_boolean(kwargs['ssl'])
         self._address = kwargs.get('address', None)
         self._port = kwargs.get('port', None)
         self._verify = False
         self._timeout = kwargs.get('timeout', None)
+        self._retain_connection = self.translate_to_boolean(kwargs.get('retain_connection', False))
 
         if 'verify' in kwargs:
             if isinstance(kwargs['verify'], str):
@@ -145,7 +147,8 @@ class RESTService:
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
-        self.logout()
+        if not self._retain_connection:
+            self.logout()
 
     @httpmethod
     def GET(self, request, data=''):
@@ -240,6 +243,14 @@ class RESTService:
         request = '/api/v1/Configuration/ProductVersion/$value'
         response = self.GET(request=request)
         self._version = response.text
+
+    @property
+    def retain_connection(self):
+        return self._retain_connection
+
+    @retain_connection.setter
+    def retain_connection(self, value):
+        self._retain_connection = value
 
     @property
     def version(self):
