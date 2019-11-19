@@ -84,6 +84,15 @@ class CubeService(ObjectService):
         request = "/api/v1/Cubes('{}')".format(cube.name)
         return self._rest.PATCH(request, cube.body)
 
+    def check_rules(self, cube_name):
+        """ Check rules syntax for existing cube on TM1 Server
+
+        :param cube_name: name of a cube
+        :return: response
+        """
+        request = "/api/v1/Cubes('{}')/tm1.CheckRules".format(cube_name)
+        return self._rest.POST(request)
+
     def delete(self, cube_name):
         """ Delete a cube in TM1
 
