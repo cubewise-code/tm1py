@@ -14,7 +14,7 @@ class SubsetService(ObjectService):
         super().__init__(rest)
         self._process_service = ProcessService(rest)
 
-    def create(self, subset, private=True):
+    def create(self, subset, private=False):
         """ create subset on the TM1 Server
 
             :param subset: TM1py.Subset, the subset that shall be created
@@ -29,7 +29,7 @@ class SubsetService(ObjectService):
         response = self._rest.POST(request, subset.body)
         return response
 
-    def get(self, subset_name, dimension_name, hierarchy_name=None, private=True):
+    def get(self, subset_name, dimension_name, hierarchy_name=None, private=False):
         """ get a subset from the TM1 Server
 
             :param subset_name: string, name of the subset
@@ -48,7 +48,7 @@ class SubsetService(ObjectService):
         response = self._rest.GET(request=request)
         return Subset.from_dict(response.json())
 
-    def get_all_names(self, dimension_name, hierarchy_name=None, private=True):
+    def get_all_names(self, dimension_name, hierarchy_name=None, private=False):
         """ get names of all private or public subsets in a hierarchy
 
         :param dimension_name:
@@ -65,7 +65,7 @@ class SubsetService(ObjectService):
         subsets = response.json()['value']
         return [subset['Name'] for subset in subsets]
 
-    def update(self, subset, private=True):
+    def update(self, subset, private=False):
         """ update a subset on the TM1 Server
 
         :param subset: instance of TM1py.Subset.
@@ -83,7 +83,7 @@ class SubsetService(ObjectService):
             subset.dimension_name, subset.hierarchy_name, subsets, subset.name)
         return self._rest.PATCH(request=request, data=subset.body)
 
-    def delete(self, subset_name, dimension_name, hierarchy_name=None, private=True):
+    def delete(self, subset_name, dimension_name, hierarchy_name=None, private=False):
         """ Delete an existing subset on the TM1 Server
 
         :param subset_name: String, name of the subset
@@ -99,7 +99,7 @@ class SubsetService(ObjectService):
         response = self._rest.DELETE(request=request, data='')
         return response
 
-    def exists(self, subset_name, dimension_name, hierarchy_name=None, private=True):
+    def exists(self, subset_name, dimension_name, hierarchy_name=None, private=False):
         """checks if private or public subset exists
 
         :param subset_name: 

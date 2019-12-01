@@ -68,11 +68,6 @@ class RESTService:
                'Accept': 'application/json;odata.metadata=none,text/plain',
                'TM1-SessionContext': 'TM1py'}
 
-    HEADERS_BINARY = {'Connection': 'keep-alive',
-               'User-Agent': 'TM1py',
-               'Content-Type': 'application/octet-stream; odata.streaming=true',
-               'TM1-SessionContext': 'TM1py'}
-
     def __init__(self, **kwargs):
         """ Create an instance of RESTService
         :param address: String - address of the TM1 instance
@@ -113,7 +108,6 @@ class RESTService:
 
         self._version = None
         self._headers = self.HEADERS.copy()
-        self._headers_binary = self.HEADERS_BINARY.copy()
         if "session_context" in kwargs:
             self._headers["TM1-SessionContext"] = kwargs["session_context"]
 
@@ -154,49 +148,82 @@ class RESTService:
         self.logout()
 
     @httpmethod
-    def GET(self, request, data=''):
+    def GET(self, request, data='', headers=None, timeout=None):
         """ Perform a GET request against TM1 instance
-        :param request: String, for instance : /api/v1/Cubes?$top=1
-        :param data: String, empty
-        :return: String, the response as text
+        :param data: the payload
+        :param headers: custom headers
+        :param timeout: Number of seconds that the client will wait to receive the first byte.
+        :return: response object
         """
-        return self._s.get(url=request, headers=self._headers, data=data, verify=self._verify, timeout=self._timeout)
+        return self._s.get(
+            url=request,
+            headers={**self._headers, **headers} if headers else self._headers,
+            data=data,
+            verify=self._verify,
+            timeout=timeout if timeout else self._timeout)
 
     @httpmethod
-    def POST(self, request, data):
+    def POST(self, request, data, headers=None, timeout=None):
         """ POST request against the TM1 instance
-        :param request: String, /api/v1/Cubes
-        :param data: String, the payload (json)
-        :return:  String, the response as text
+        :param data: the payload
+        :param headers: custom headers
+        :param timeout: Number of seconds that the client will wait to receive the first byte.
+        :return: response object
         """
-        return self._s.post(url=request, headers=self._headers, data=data, verify=self._verify, timeout=self._timeout)
+        return self._s.post(
+            url=request,
+            headers={**self._headers, **headers} if headers else self._headers,
+            data=data,
+            verify=self._verify,
+            timeout=timeout if timeout else self._timeout)
 
     @httpmethod
-    def PATCH(self, request, data):
+    def PATCH(self, request, data, headers=None, timeout=None):
         """ PATCH request against the TM1 instance
         :param request: String, for instance : /api/v1/Dimensions('plan_business_unit')
-        :param data: String, the payload (json)
-        :return: String, the response as text
+        :param data: the payload
+        :param headers: custom headers
+        :param timeout: Number of seconds that the client will wait to receive the first byte.
+        :return: response object
         """
-        return self._s.patch(url=request, headers=self._headers, data=data, verify=self._verify, timeout=self._timeout)
+        return self._s.patch(
+            url=request,
+            headers={**self._headers, **headers} if headers else self._headers,
+            data=data,
+            verify=self._verify,
+            timeout=timeout if timeout else self._timeout)
 
     @httpmethod
-    def PUT(self, request, data):
+    def PUT(self, request, data, headers=None, timeout=None):
         """ PUT request against the TM1 instance
         :param request: String, for instance : /api/v1/Dimensions('plan_business_unit')
-        :param data: Binary, the payload (binary)
-        :return: String, the response as text
+        :param data: the payload
+        :param headers: custom headers
+        :param timeout: Number of seconds that the client will wait to receive the first byte.
+        :return: response object
         """
-        return self._s.put(url=request, headers=self._headers_binary, data=data, verify=self._verify, timeout=self._timeout)
+        return self._s.put(
+            url=request,
+            headers={**self._headers, **headers} if headers else self._headers,
+            data=data,
+            verify=self._verify,
+            timeout=timeout if timeout else self._timeout)
 
     @httpmethod
-    def DELETE(self, request, data=''):
+    def DELETE(self, request, data='', headers=None, timeout=None):
         """ Delete request against TM1 instance
         :param request:  String, for instance : /api/v1/Dimensions('plan_business_unit')
-        :param data: String, empty
-        :return: String, the response in text
+        :param data: the payload
+        :param headers: custom headers
+        :param timeout: Number of seconds that the client will wait to receive the first byte.
+        :return: response object
         """
-        return self._s.delete(url=request, headers=self._headers, data=data, verify=self._verify, timeout=self._timeout)
+        return self._s.delete(
+            url=request,
+            headers={**self._headers, **headers} if headers else self._headers,
+            data=data,
+            verify=self._verify,
+            timeout=timeout if timeout else self._timeout)
 
     def logout(self):
         """ End TM1 Session and HTTP session

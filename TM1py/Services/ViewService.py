@@ -16,7 +16,7 @@ class ViewService(ObjectService):
     def __init__(self, rest):
         super().__init__(rest)
 
-    def create(self, view, private=True):
+    def create(self, view, private=False):
         """ create a new view on TM1 Server
 
         :param view: instance of subclass of TM1py.View (TM1py.NativeView or TM1py.MDXView)
@@ -55,7 +55,7 @@ class ViewService(ObjectService):
             request = request_template.format(cube_name, "PrivateViews" if private else "Views", view_name)
             return self._exists(request)
 
-    def get(self, cube_name, view_name, private=True):
+    def get(self, cube_name, view_name, private=False):
         view_type = "PrivateViews" if private else "Views"
         request = "/api/v1/Cubes('{}')/{}('{}')?$expand=*".format(cube_name, view_type, view_name)
         response = self._rest.GET(request)
@@ -65,7 +65,7 @@ class ViewService(ObjectService):
         else:
             return self.get_native_view(cube_name=cube_name, view_name=view_name, private=private)
 
-    def get_native_view(self, cube_name, view_name, private=True):
+    def get_native_view(self, cube_name, view_name, private=False):
         """ Get a NativeView from TM1 Server
 
         :param cube_name:  string, name of the cube
@@ -90,7 +90,7 @@ class ViewService(ObjectService):
         native_view = NativeView.from_json(response.text, cube_name)
         return native_view
 
-    def get_mdx_view(self, cube_name, view_name, private=True):
+    def get_mdx_view(self, cube_name, view_name, private=False):
         """ Get an MDXView from TM1 Server
 
         :param cube_name: String, name of the cube
@@ -155,7 +155,7 @@ class ViewService(ObjectService):
                     public_views.append(view['Name'])
         return private_views, public_views
 
-    def update(self, view, private=True):
+    def update(self, view, private=False):
         """ Update an existing view
 
         :param view: instance of TM1py.NativeView or TM1py.MDXView
@@ -167,7 +167,7 @@ class ViewService(ObjectService):
         response = self._rest.PATCH(request, view.body)
         return response
 
-    def delete(self, cube_name, view_name, private=True):
+    def delete(self, cube_name, view_name, private=False):
         """ Delete an existing view (MDXView or NativeView) on the TM1 Server
 
         :param cube_name: String, name of the cube
