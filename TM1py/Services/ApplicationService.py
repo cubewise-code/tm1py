@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
+from TM1py.Objects.Application import DocumentApplication, ApplicationTypes, CubeApplication, ChoreApplication, \
+    FolderApplication, LinkApplication, ProcessApplication, DimensionApplication, SubsetApplication, ViewApplication
 
-from TM1py.Objects import Application
-from TM1py.Exceptions import TM1pyException
+from TM1py.Services.ObjectService import ObjectService
+
+BINARY_HTTP_HEADER = {'Content-Type': 'application/octet-stream; odata.streaming=true'}
 
 
-class ApplicationService:
+class ApplicationService(ObjectService):
     """ Service to Read and Write TM1 Applications
     """
 
@@ -15,143 +18,161 @@ class ApplicationService:
         """
         self._rest = tm1_rest
 
-    def get(self, path):
+    def get(self, path, application_type, name, private=False):
+        """ Retrieve Planning Analytics Application
+
+        :param path:
+        :param application_type:
+        :param name:
+        :param private:
+        :return:
+        """
+        # raise ValueError if not a valid ApplicationType
+        application_type = ApplicationTypes(application_type)
+
+        # documents require special treatment
+        if application_type == ApplicationTypes.DOCUMENT:
+            return self.get_document(path=path, name=name)
+
+        if not application_type == ApplicationTypes.FOLDER:
+            name += application_type.suffix
+
+        contents = 'PrivateContents' if private else 'Contents'
+        mid = "".join(["/Contents('{}')".format(element) for element in path.split('/')])
+        base_url = "/api/v1/Contents('Applications'){dynamic_mid}/{contents}('{application_name}')".format(
+            dynamic_mid=mid,
+            contents=contents,
+            application_name=name)
+
+        if application_type == ApplicationTypes.CUBE:
+            response = self._rest.GET(base_url + "?$expand=Cube($select=Name)")
+            return CubeApplication(path=path, name=name, cube_name=response.json()["Cube"]["Name"])
+
+        elif application_type == ApplicationTypes.CHORE:
+            response = self._rest.GET(base_url + "?$expand=Chore($select=Name)")
+            return ChoreApplication(path=path, name=name, chore_name=response.json()["Chore"]["Name"])
+
+        elif application_type == ApplicationTypes.DIMENSION:
+            response = self._rest.GET(base_url + "?$expand=Dimension($select=Name)")
+            return DimensionApplication(path=path, name=name, dimension_name=response.json()["Dimension"]["Name"])
+
+        elif application_type == ApplicationTypes.FOLDER:
+            # implicit TM1pyException if doesn't exist
+            self._rest.GET(base_url)
+            return FolderApplication(path=path, name=name)
+
+        elif application_type == ApplicationTypes.LINK:
+            # implicit TM1pyException if doesn't exist
+            self._rest.GET(base_url)
+            response = self._rest.GET(base_url + "?$expand=*")
+            return LinkApplication(path=path, name=name, url=response.json()["URL"])
+
+        elif application_type == ApplicationTypes.PROCESS:
+            response = self._rest.GET(base_url + "?$expand=Process($select=Name)")
+            return ProcessApplication(path=path, name=name, process_name=response.json()["Process"]["Name"])
+
+        elif application_type == ApplicationTypes.SUBSET:
+            response = self._rest.GET(
+                base_url +
+                "?$expand=Subset($select=Name;$expand=Hierarchy($select=Name;$expand=Dimension($select=Name)))")
+            return SubsetApplication(
+                path=path,
+                name=name,
+                dimension_name=response.json()["Subset"]["Hierarchy"]["Dimension"]["Name"],
+                hierarchy_name=response.json()["Subset"]["Hierarchy"]["Name"],
+                subset_name=response.json()["Subset"]["Name"])
+
+        elif application_type == ApplicationTypes.VIEW:
+            response = self._rest.GET(base_url + "?$expand=View($select=Name;$expand=Cube($select=Name))")
+            return ViewApplication(
+                path=path,
+                name=name,
+                cube_name=response.json()["View"]["Cube"]["Name"],
+                view_name=response.json()["View"]["Name"])
+
+    def get_document(self, path, name, private=False):
         """ Get Excel Application from TM1 Server in binary format. Can be dumped to file.
 
-        :param path: path through folder structur to application. For instance: "Finance/P&L.xlsx"
-        :return: Return application as binary. Can be dumped to file:
-            with open("out.xlsx", "wb") as out:
-                out.write(content)
+        :param path: path through folder structure to application. For instance: "Finance/P&L.xlsx"
+        :param name: name of the application
+        :param private: boolean
+        :return: Return DocumentApplication
         """
-        mid = "".join(['/Contents(\'{}\')'.format(element) for element in path.split('/')])
-        request = "/api/v1/Contents('Applications')" + mid[:-2] + ".blob')/Document/Content"
+        if not name.endswith(ApplicationTypes.DOCUMENT.suffix):
+            name += ApplicationTypes.DOCUMENT.suffix
+
+        contents = 'PrivateContents' if private else 'Contents'
+        mid = "".join(["/Contents('{}')".format(element) for element in path.split('/')])
+        request = "/api/v1/Contents('Applications'){dynamic_mid}/{contents}('{name}')/Document/Content".format(
+            dynamic_mid=mid,
+            contents=contents,
+            name=name)
         response = self._rest.GET(request)
-        content = response.content
+        return DocumentApplication(path, name, response.content)
 
-        return Application(path, content)
-
-    def delete(self, path, application_type, application_name, access='public'):
+    def delete(self, path, application_type, application_name, private=False):
         """ Create Planning Analytics application process reference
 
-        Parameters
-        ----------
-        path : str
-            path through folder structur to delete the applications entry. For instance: "Finance/Reports"
-        application_type: str
-            type of the to be deleted application entry. Can be 'Process', 'Cube', 'View', 'Dimension', 'Subset', 'Chore', 'Extr', 'Blob','Document'
-        application_name: str
-            name of the to be deleted application entry
-        access_type: string, optional
-            Access level of the to be deleted object. Default = 'public'. Allowed values: 'private' or 'public'
-
-        Returns
-        -------
-        response
+        :param path: path through folder structure to delete the applications entry. For instance: "Finance/Reports"
+        :param application_type: type of the to be deleted application entry
+        :param application_name: name of the to be deleted application entry
+        :param private: Access level of the to be deleted object
+        :return:
         """
 
-        # Check if application_type supported
-        if application_type.lower() not in ['process', 'cube', 'view', 'dimension', 'subset', 'chore', 'extr', 'blob', 'document', 'folder']:
-            raise ValueError("The application type {} doesn't exists in the ApplicationTypeCollection.".format(application_type))
+        # raise ValueError if not a valid ApplicationType
+        application_type = ApplicationTypes(application_type)
 
-        contents = 'PrivateContents' if access == 'private' else 'Contents'
+        if not application_type == ApplicationTypes.FOLDER:
+            application_name += application_type.suffix
 
-        if application_type == 'Folder':
-            mid = "".join(['/Contents(\'{}\')'.format(element) for element in path.split('/')])
-            request = "/api/v1/Contents('Applications')" + mid[:-2] + "')/" + contents + "('" + application_name + "')"
-        else:
-            mid = "".join(['/Contents(\'{}\')'.format(element) for element in path.split('/')])
-            request = "/api/v1/Contents('Applications')" + mid[:-2] + "')/" + contents + "('" + application_name + "." + application_type.lower() + "')"
+        contents = 'PrivateContents' if private else 'Contents'
+        mid = "".join(["/Contents('{}')".format(element) for element in path.split('/')])
+        request = "/api/v1/Contents('Applications'){dynamic_mid}/{contents}('{application_name}')".format(
+            dynamic_mid=mid,
+            contents=contents,
+            application_name=application_name)
 
-        response = self._rest.DELETE(request)
-        return response   
+        return self._rest.DELETE(request)
 
-    def create(self, path, application_type, application_name, object_reference_list='None', access_type='public'):
-        """ Create Planning Analytics application process reference
+    def create(self, application, private=False):
+        """ Create Planning Analytics application
 
-        Parameters
-        ----------
-        path : str
-            path through folder structur to create the applications entry. For instance: "Finance/Reports"
-        application_type: str
-            type of the created application entry. Can be 'Process', 'Cube', 'View', 'Dimension', 'Subset', 'Chore', 'Link', 'Folder','Document'
-        application_name: str
-            name of the created application entry
-        object_reference_list: list, optional
-            Names of the referenced elements in list format. ['Load_actuals'] or ['GL Actuals','My View']
-            app type: 'Folder' -> no value required
-            app type: 'Process', 'Cube', 'Dimension', 'Chore' -> 1 elem list e.g. ['Process name']
-            app type: 'Link' -> 1 elem list e.g. ['http://ibm.com']
-            app type: 'Document' -> 1 elem list e.g. ['C:\\MyDocs\\Report.xlsx']
-            app type: 'View' -> 2 elem list e.g. ['Cube name','View name']
-            app type: 'Subset' -> 3 elem list e.g. ['Dim name','Hier name','Sub name']
-        access_type: string, optional
-            Access level of created object. Default = 'public'. Allowed values: 'private' or 'public'
-
-        Returns
-        -------
-        response
+        :param application: instance of Application
+        :param private: boolean
+        :return:
         """
-        contents = 'PrivateContents' if access_type.lower() == 'private' else 'Contents'
-        application_type = application_type.lower().capitalize()
 
-        # Check if application_type supported
-        if application_type not in ['Process', 'Cube', 'View', 'Dimension', 'Subset', 'Chore', 'Link', 'Folder', 'Document']:
-            raise ValueError("The application type {} doesn't exists in the ApplicationTypeCollection.".format(application_type))
-
-        # Check object_reference_list
-        if not object_reference_list and application_type != 'Folder':
-            raise ValueError("Object_reference_list cannot be empty if {} application type used.".format(application_type.lower()), 404)
-
-        # Check if object_parent_reference provided
-        if (len(object_reference_list) < 2 and application_type == 'View') or (len(object_reference_list) < 3 and application_type == 'Subset'):
-            raise ValueError("Object_reference_list required additional values if {} application type used.".format(application_type.lower()))
-
-        object_reference = object_reference_list[0]
-        # Create odataType and odataBind
-        if application_type in ['Dimension', 'Chore', 'Cube']:
-            odataType = '"@odata.type":"tm1.{}Reference"'.format(application_type)
-            odataBind = '"{}@odata.bind": "{}s(\'{}\')"'.format(application_type, application_type, object_reference_list[0])
-        elif application_type == 'View':
-            application_parent_type = 'Cube'
-            odataType = '"@odata.type": "tm1.{}Reference"'.format(application_type)
-            odataBind = '"{}@odata.bind": "{}s(\'{}\')/{}s(\'{}\')"'.format(application_type, application_parent_type, object_reference_list[0], application_type, object_reference_list[1])
-        elif application_type == 'Subset':
-            application_parent_type = 'Dimension'
-            odataType = '"@odata.type": "tm1.{}Reference"'.format(application_type)
-            odataBind = '"{}@odata.bind": "{}s(\'{}\')/Hierarchies(\'{}\')/{}s(\'{}\')"'.format(application_type, application_parent_type, object_reference_list[0], object_reference_list[1], application_type, object_reference_list[2])
-        elif application_type == 'Process':
-            odataType = '"@odata.type": "tm1.{}Reference"'.format(application_type)
-            odataBind = '"{}@odata.bind": "{}es(\'{}\')"'.format(application_type, application_type, object_reference_list[0])
-        elif application_type == 'Link':
-            odataType = '"@odata.type": "#ibm.tm1.api.v1.Link"'
-            odataBind = '"URL": "{}"'.format(object_reference_list[0])
-        elif application_type in ['Folder','Document']:
-            odataType = '"@odata.type": "#ibm.tm1.api.v1.{}"'.format(application_type)
-
-        mid = "".join(['/Contents(\'{}\')'.format(element) for element in path.split('/')])
-
+        contents = 'PrivateContents' if private else 'Contents'
+        mid = "".join(['/Contents(\'{}\')'.format(element) for element in application.path.split('/')])
         request = "/api/v1/Contents('Applications')" + mid[:-2] + "')/" + contents
+        response = self._rest.POST(request, application.body)
 
-        if application_type in ['Document', 'Folder']:
-            body = '{ \
-            ' + odataType + ', \
-            "Name": "' + application_name + '" \
-            }'
-        else:
-            body = '{ \
-            ' + odataType + ', \
-            "Name":"' + application_name + '", \
-            ' + odataBind + ' \
-            }'
-
-        response = self._rest.POST(request, body)
-
-        if application_type == 'Document':
-            request = "/api/v1/Contents('Applications')" + mid[:-2] + "')\
-            /" + contents + "('" + application_name + ".blob')/Document/Content"
-            data = open(object_reference_list[0], 'rb').read()
-            response = self._rest.PUT(request, data)
+        if application.application_type == ApplicationTypes.DOCUMENT:
+            request = "/api/v1/Contents('Applications'){}')/{}('{}.blob')/Document/Content".format(
+                mid[:-2],
+                contents,
+                application.name)
+            response = self._rest.PUT(request, application.content, BINARY_HTTP_HEADER)
 
         return response
 
+    def exists(self, path, application_type, name, private=False):
+        # raise ValueError if not a valid ApplicationType
+        application_type = ApplicationTypes(application_type)
 
+        if not application_type == ApplicationTypes.FOLDER:
+            name += application_type.suffix
+
+        contents = 'PrivateContents' if private else 'Contents'
+        mid = "".join(["/Contents('{}')".format(element) for element in path.split('/')])
+        base_url = "/api/v1/Contents('Applications'){dynamic_mid}/{contents}('{application_name}')".format(
+            dynamic_mid=mid,
+            contents=contents,
+            application_name=name)
+        return self._exists(base_url)
+
+    def create_document_from_file(self, path_to_file, path, name, private=False):
+        with open(path_to_file, 'rb') as file:
+            app = DocumentApplication(path=path, name=name, content=file.read())
+            return self.create(application=app, private=private)

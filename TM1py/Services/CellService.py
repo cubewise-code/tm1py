@@ -252,7 +252,7 @@ class CellService:
             skip_contexts=skip_contexts,
             delete_cellset=True)
 
-    def execute_view(self, cube_name, view_name, cell_properties=None, private=True, top=None, skip_contexts=False):
+    def execute_view(self, cube_name, view_name, cell_properties=None, private=False, top=None, skip_contexts=False):
         """ get view content as dictionary with sweet and concise structure.
             Works on NativeView and MDXView !
 
@@ -305,7 +305,7 @@ class CellService:
             self,
             cube_name,
             view_name,
-            private=True,
+            private=False,
             cell_properties=None,
             elem_properties=None,
             member_properties=None,
@@ -343,7 +343,7 @@ class CellService:
         cellset_id = self.create_cellset(mdx=mdx)
         return self.extract_cellset_values(cellset_id, delete_cellset=True)
 
-    def execute_view_values(self, cube_name, view_name, private=True):
+    def execute_view_values(self, cube_name, view_name, private=False):
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
         return self.extract_cellset_values(cellset_id, delete_cellset=True)
 
@@ -351,7 +351,7 @@ class CellService:
         cellset_id = self.create_cellset(mdx=mdx)
         return self.extract_cellset_rows_and_values(cellset_id, element_unique_names, delete_cellset=True)
 
-    def execute_view_rows_and_values(self, cube_name, view_name, private=True, element_unique_names=True):
+    def execute_view_rows_and_values(self, cube_name, view_name, private=False, element_unique_names=True):
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
         return self.extract_cellset_rows_and_values(cellset_id, element_unique_names, delete_cellset=True)
 
@@ -366,7 +366,7 @@ class CellService:
         cellset_id = self.create_cellset(mdx)
         return self.extract_cellset_csv(cellset_id=cellset_id, delete_cellset=True)
 
-    def execute_view_csv(self, cube_name, view_name, private=True):
+    def execute_view_csv(self, cube_name, view_name, private=False):
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
         return self.extract_cellset_csv(cellset_id=cellset_id, delete_cellset=True)
 
@@ -415,7 +415,7 @@ class CellService:
             dropna=dropna,
             fill_value=fill_value)
 
-    def execute_view_dataframe(self, cube_name, view_name, private=True, **kwargs):
+    def execute_view_dataframe(self, cube_name, view_name, private=False, **kwargs):
         """ Optimized for performance. Get Pandas DataFrame from an existing Cube View 
         Context dimensions are omitted in the resulting Dataframe !
         Cells with Zero/null are omitted !
@@ -441,7 +441,7 @@ class CellService:
         cellset_id = self.create_cellset(mdx)
         return self.extract_cellset_cellcount(cellset_id, delete_cellset=True)
 
-    def execute_view_cellcount(self, cube_name, view_name, private=True):
+    def execute_view_cellcount(self, cube_name, view_name, private=False):
         """ Execute cube view in order to understand how many cells are in a cellset.
         Only return number of cells in the cellset. FAST!
         
@@ -463,7 +463,7 @@ class CellService:
         rows_and_values = self.execute_mdx_rows_and_values(mdx, element_unique_names=False)
         return self._extract_string_set_from_rows_and_values(rows_and_values, exclude_empty_cells)
 
-    def execute_view_rows_and_values_string_set(self, cube_name, view_name, private=True, exclude_empty_cells=True):
+    def execute_view_rows_and_values_string_set(self, cube_name, view_name, private=False, exclude_empty_cells=True):
         """ Retrieve row element names and **string** cell values in a case and space insensitive set
 
         :param cube_name:
@@ -518,7 +518,7 @@ class CellService:
             self,
             cube_name,
             view_name,
-            private=True,
+            private=False,
             elem_properties=None,
             member_properties=None,
             value_precision=2,
@@ -620,7 +620,7 @@ class CellService:
             self,
             cube_name,
             view_name,
-            private=True,
+            private=False,
             elem_properties=None,
             member_properties=None,
             value_precision=2,
@@ -937,7 +937,7 @@ class CellService:
         warnings.simplefilter('default', PendingDeprecationWarning)
         return self.execute_mdx_cellcount(mdx)
 
-    def get_view_content(self, cube_name, view_name, cell_properties=None, private=True, top=None):
+    def get_view_content(self, cube_name, view_name, cell_properties=None, private=False, top=None):
         warnings.simplefilter('always', PendingDeprecationWarning)
         warnings.warn(
             "Function deprecated. Use execute_view instead.",
