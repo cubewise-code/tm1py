@@ -38,7 +38,9 @@ class ApplicationService(ObjectService):
             name += application_type.suffix
 
         contents = 'PrivateContents' if private else 'Contents'
-        mid = "".join(["/Contents('{}')".format(element) for element in path.split('/')])
+        mid = ""
+        if path.strip() != '':
+            mid = mid.join(["/Contents('{}')".format(element) for element in path.split('/')])
         base_url = "/api/v1/Contents('Applications'){dynamic_mid}/{contents}('{application_name}')".format(
             dynamic_mid=mid,
             contents=contents,
@@ -127,7 +129,9 @@ class ApplicationService(ObjectService):
             application_name += application_type.suffix
 
         contents = 'PrivateContents' if private else 'Contents'
-        mid = "".join(["/Contents('{}')".format(element) for element in path.split('/')])
+        mid = ""
+        if path.strip() != '':
+            mid = mid.join(["/Contents('{}')".format(element) for element in path.split('/')])
         request = "/api/v1/Contents('Applications'){dynamic_mid}/{contents}('{application_name}')".format(
             dynamic_mid=mid,
             contents=contents,
@@ -144,15 +148,17 @@ class ApplicationService(ObjectService):
         """
 
         contents = 'PrivateContents' if private else 'Contents'
-        mid = "".join(['/Contents(\'{}\')'.format(element) for element in application.path.split('/')])
-        request = "/api/v1/Contents('Applications')" + mid[:-2] + "')/" + contents
+        mid = ""
+        if application.path.strip() != '':
+            mid = mid.join(['/Contents(\'{}\')'.format(element) for element in application.path.split('/')])
+        request = "/api/v1/Contents('Applications')" + mid + "/" + contents
         response = self._rest.POST(request, application.body)
 
         if application.application_type == ApplicationTypes.DOCUMENT:
-            request = "/api/v1/Contents('Applications'){}')/{}('{}.blob')/Document/Content".format(
-                mid[:-2],
-                contents,
-                application.name)
+            request = "/api/v1/Contents('Applications'){dynamic_mid}/{contents}('{application_name}.blob')/Document/Content".format(
+                dynamic_mid=mid,
+                contents=contents,
+                application_name=application.name)
             response = self._rest.PUT(request, application.content, BINARY_HTTP_HEADER)
 
         return response
@@ -165,7 +171,9 @@ class ApplicationService(ObjectService):
             name += application_type.suffix
 
         contents = 'PrivateContents' if private else 'Contents'
-        mid = "".join(["/Contents('{}')".format(element) for element in path.split('/')])
+        mid = ""
+        if path.strip() != '':
+            mid = mid.join(["/Contents('{}')".format(element) for element in path.split('/')])
         base_url = "/api/v1/Contents('Applications'){dynamic_mid}/{contents}('{application_name}')".format(
             dynamic_mid=mid,
             contents=contents,
