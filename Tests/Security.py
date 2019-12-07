@@ -19,6 +19,7 @@ class TestSecurityMethods(unittest.TestCase):
     def setup_class(cls):
         cls.tm1 = TM1Service(**config['tm1srv01'])
         cls.user_name = PREFIX + "Us'er1"
+        cls.user_name_exotic_password = "UserWithExoticPassword"
         cls.user = User(name=cls.user_name, groups=[], password='TM1py')
         cls.group_name1 = PREFIX + "Gro'up1"
         cls.group_name2 = PREFIX + "Group2"
@@ -40,6 +41,8 @@ class TestSecurityMethods(unittest.TestCase):
         self.tm1.security.delete_user(self.user_name)
         self.tm1.security.delete_group(self.group_name1)
         self.tm1.security.delete_group(self.group_name2)
+        if self.user_name_exotic_password in self.tm1.security.get_all_user_names():
+            self.tm1.security.delete_user(self.user_name_exotic_password)
 
     def test_get_user(self):
         u = self.tm1.security.get_user(self.user_name)
@@ -124,12 +127,29 @@ class TestSecurityMethods(unittest.TestCase):
         self.assertGreater(len(groups), 0)
         self.assertEqual(
             sorted(groups),
-            sorted(self.tm1.dimensions.hierarchies.elements.get_element_names("}Groups", "}Groups"))
-        )
+            sorted(self.tm1.dimensions.hierarchies.elements.get_element_names("}Groups", "}Groups")))
 
     def test_security_refresh(self):
         response = self.tm1.security.security_refresh()
         self.assertTrue(response.ok)
+
+    def test_auth_with_exotic_characters_in_password(self):
+        exotic_password = "d'8!?:Y4"
+
+        # create user
+        user = User(
+            name=self.user_name_exotic_password,
+            groups=("ADMIN",),
+            password=exotic_password)
+        self.tm1.security.create_user(user)
+
+        # login as user with exotic password
+        kwargs = dict(config["tm1srv01"])
+        kwargs["user"] = user.name
+        kwargs["password"] = exotic_password
+        # raises TM1pyException if login fails
+        with TM1Service(**kwargs) as tm1_second_conn:
+            self.assertEqual(tm1_second_conn.whoami.name, user.name)
 
     def test_create_and_delete_user(self):
         u = User(name=PREFIX + "User2", groups=())

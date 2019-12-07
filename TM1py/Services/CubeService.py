@@ -148,7 +148,7 @@ class CubeService(ObjectService):
 
     def get_random_intersection(self, cube_name, unique_names=False):
         """ Get a random Intersection in a cube
-        used mostly for regressiontesting. 
+        used mostly for regression testing.
         Not optimized, in terms of performance. Function Loads ALL elements for EACH dim...
 
         :param cube_name: 
