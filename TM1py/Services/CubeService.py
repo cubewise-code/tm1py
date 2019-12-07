@@ -146,6 +146,24 @@ class CubeService(ObjectService):
                                             in dimension_names]
         return self._rest.POST(request=url, data=json.dumps(payload))
 
+    def load(self, cube_name):
+        """ Load the cube into memory on the server
+
+        :param cube_name:
+        :return:
+        """
+        url = "/api/v1/Cubes('{}')/tm1.Load".format(cube_name)
+        return self._rest.POST(request=url)
+
+    def unload(self, cube_name):
+        """ Unload the cube from memory
+
+        :param cube_name:
+        :return:
+        """
+        url = "/api/v1/Cubes('{}')/tm1.Unload".format(cube_name)
+        return self._rest.POST(request=url)
+
     def get_random_intersection(self, cube_name, unique_names=False):
         """ Get a random Intersection in a cube
         used mostly for regression testing.

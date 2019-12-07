@@ -125,6 +125,14 @@ class TestCubeMethods(unittest.TestCase):
             list(reversed(dimensions)),
             self.dimension_names)
 
+    def test_load(self):
+        response = self.tm1.cubes.load(cube_name=self.cube_name)
+        self.assertTrue(response.ok)
+
+    def test_unload(self):
+        response = self.tm1.cubes.unload(cube_name=self.cube_name)
+        self.assertTrue(response.ok)
+
     @classmethod
     def tearDownClass(cls):
         cls.tm1.cubes.delete(cls.cube_name)
