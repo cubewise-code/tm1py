@@ -15,8 +15,7 @@ config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini
 
 # Hard coded stuff
 PREFIX = 'TM1py_Tests_Applications_'
-# ToDo: currently needs to be created manually
-TM1PY_APP_FOLDER = "Planning Sample"
+TM1PY_APP_FOLDER = PREFIX + "RootFolder"
 APPLICATION_NAME = PREFIX + "Application"
 CUBE_NAME = PREFIX + "Cube"
 VIEW_NAME = PREFIX + "View"
@@ -128,6 +127,8 @@ class TestDataMethods(unittest.TestCase):
         cls.tm1.chores.create(c1)
 
         # create Folder
+        app = FolderApplication("", TM1PY_APP_FOLDER)
+        cls.tm1.applications.create(application=app, private=False)
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -142,6 +143,12 @@ class TestDataMethods(unittest.TestCase):
         cls.tm1.chores.delete(CHORE_NAME)
         # delete process
         cls.tm1.processes.delete(PROCESS_NAME)
+        # delete folder
+        cls.tm1.applications.delete(
+            path="",
+            application_type=ApplicationTypes.FOLDER,
+            application_name=TM1PY_APP_FOLDER,
+            private=False)
 
     def test_cube_application(self):
         app = CubeApplication(TM1PY_APP_FOLDER, APPLICATION_NAME, CUBE_NAME)

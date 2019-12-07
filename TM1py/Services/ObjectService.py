@@ -7,6 +7,9 @@ class ObjectService:
     """ Parentclass for all Object Services
     
     """
+
+    BINARY_HTTP_HEADER = {'Content-Type': 'application/octet-stream; odata.streaming=true'}
+
     def __init__(self, rest_service):
         """ Constructor, Create an instance of ObjectService
         
@@ -40,41 +43,3 @@ class ObjectService:
     @property
     def version(self):
         return self._rest._version
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
