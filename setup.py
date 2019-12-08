@@ -1,16 +1,12 @@
-import codecs
-
 from setuptools import setup
 
-SCHEDULE_VERSION = '1.3.1'
+SCHEDULE_VERSION = '1.4.0'
 SCHEDULE_DOWNLOAD_URL = (
         'https://github.com/Cubewise-code/TM1py/tarball/' + SCHEDULE_VERSION
 )
 
-
 with open('README.md', 'r', encoding='utf-8') as f:
     long_description = f.read()
-
 
 setup(
     name='TM1py',
@@ -33,6 +29,7 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Natural Language :: English',
     ],
     install_requires=[
