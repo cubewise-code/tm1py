@@ -11,7 +11,7 @@ if sys.version[0] == '2':
 else:
     import http.client as http_client
 
-REGEX_SINGLE_QUOTES_IN_OBJECT_NAMES = re.compile(r"(?<!\()'(?!\))")
+REGEX_OBJECT_NAMES = re.compile(r"(?<=\(').*?(?='\))")
 
 
 def get_all_servers_from_adminhost(adminhost='localhost'):
@@ -44,7 +44,13 @@ def odata_escape_single_quotes_in_object_names(url):
     :return:
     """
     # escape ' as '' inside single-quoted string
-    return REGEX_SINGLE_QUOTES_IN_OBJECT_NAMES.sub(string=url, repl="''")
+    index = 0
+    escaped_url = ""
+    for m in REGEX_OBJECT_NAMES.finditer(string=url):
+        escaped_url += url[index:m.start()] + m.group(0).replace("'", "''")
+        index = m.end()
+    escaped_url += url[index:]
+    return escaped_url
 
 
 def case_and_space_insensitive_equals(item1, item2):
