@@ -254,6 +254,23 @@ class TestElementMethods(unittest.TestCase):
             HIERARCHY_NAME)
         self.assertEqual(exepected_identifiers, set(identifiers))
 
+    def test_get_number_of_elements(self):
+        number_of_elements = self.tm1.dimensions.hierarchies.elements.get_number_of_elements(
+            DIMENSION_NAME, HIERARCHY_NAME)
+        self.assertEqual(number_of_elements, 7)
+
+    def test_get_number_of_leaf_elements(self):
+        number_of_elements = self.tm1.dimensions.hierarchies.elements.get_number_of_leaf_elements(
+            DIMENSION_NAME, HIERARCHY_NAME)
+
+        self.assertEqual(number_of_elements, 5)
+
+    def test_get_number_of_consolidated_elements(self):
+        number_of_elements = self.tm1.dimensions.hierarchies.elements.get_number_of_consolidated_elements(
+            DIMENSION_NAME, HIERARCHY_NAME)
+
+        self.assertEqual(number_of_elements, 2)
+
 
 if __name__ == '__main__':
     unittest.main()
