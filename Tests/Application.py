@@ -8,7 +8,7 @@ from _datetime import datetime
 from TM1py import TM1Service, Element, ElementAttribute, Hierarchy, Dimension, Cube, NativeView, AnonymousSubset, \
     Subset, Process, Chore, ChoreStartTime, ChoreFrequency, ChoreTask
 from TM1py.Objects.Application import CubeApplication, ApplicationTypes, ChoreApplication, DimensionApplication, \
-    FolderApplication, LinkApplication, ProcessApplication, SubsetApplication, ViewApplication
+    FolderApplication, LinkApplication, ProcessApplication, SubsetApplication, ViewApplication, DocumentApplication
 
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
@@ -150,114 +150,190 @@ class TestDataMethods(unittest.TestCase):
             application_name=TM1PY_APP_FOLDER,
             private=False)
 
-    def test_cube_application(self):
+    def run_test_cube_application(self, private):
         app = CubeApplication(TM1PY_APP_FOLDER, APPLICATION_NAME, CUBE_NAME)
-        self.tm1.applications.create(application=app, private=False)
-        app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=False)
+        self.tm1.applications.create(application=app, private=private)
+        app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=private)
         self.assertEqual(app, app_retrieved)
         exists = self.tm1.applications.exists(
-            app.path, name=app.name, application_type=ApplicationTypes.CUBE, private=False)
+            app.path, name=app.name, application_type=ApplicationTypes.CUBE, private=private)
         self.assertTrue(exists)
 
-        self.tm1.applications.delete(app.path, app.application_type, app.name, private=False)
+        self.tm1.applications.delete(app.path, app.application_type, app.name, private=private)
         exists = self.tm1.applications.exists(
-            app.path, name=app.name, application_type=ApplicationTypes.CUBE, private=False)
+            app.path, name=app.name, application_type=ApplicationTypes.CUBE, private=private)
         self.assertFalse(exists)
 
-    def test_chore_application(self):
+    @unittest.skip
+    def test_cube_application_private(self):
+        self.run_test_cube_application(private=True)
+
+    def test_cube_application_public(self):
+        self.run_test_cube_application(private=False)
+
+    def run_test_chore_application(self, private):
         app = ChoreApplication(TM1PY_APP_FOLDER, APPLICATION_NAME, CHORE_NAME)
-        self.tm1.applications.create(application=app, private=False)
-        app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=False)
+        self.tm1.applications.create(application=app, private=private)
+        app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=private)
         self.assertEqual(app, app_retrieved)
         exists = self.tm1.applications.exists(
-            app.path, name=app.name, application_type=ApplicationTypes.CHORE, private=False)
+            app.path, name=app.name, application_type=ApplicationTypes.CHORE, private=private)
         self.assertTrue(exists)
 
-        self.tm1.applications.delete(app.path, app.application_type, app.name, private=False)
+        self.tm1.applications.delete(app.path, app.application_type, app.name, private=private)
         exists = self.tm1.applications.exists(
-            app.path, name=app.name, application_type=ApplicationTypes.CHORE, private=False)
+            app.path, name=app.name, application_type=ApplicationTypes.CHORE, private=private)
         self.assertFalse(exists)
 
-    def test_dimension_application(self):
+    @unittest.skip
+    def test_chore_application_private(self):
+        self.run_test_chore_application(True)
+
+    def test_chore_application_public(self):
+        self.run_test_chore_application(False)
+
+    def run_test_dimension_application(self, private=False):
         app = DimensionApplication(TM1PY_APP_FOLDER, APPLICATION_NAME, DIMENSION_NAMES[0])
-        self.tm1.applications.create(application=app, private=False)
-        app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=False)
+        self.tm1.applications.create(application=app, private=private)
+        app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=private)
         self.assertEqual(app, app_retrieved)
         exists = self.tm1.applications.exists(
-            app.path, name=app.name, application_type=ApplicationTypes.DIMENSION, private=False)
+            app.path, name=app.name, application_type=ApplicationTypes.DIMENSION, private=private)
         self.assertTrue(exists)
 
-        self.tm1.applications.delete(app.path, app.application_type, app.name, private=False)
+        self.tm1.applications.delete(app.path, app.application_type, app.name, private=private)
         exists = self.tm1.applications.exists(
-            app.path, name=app.name, application_type=ApplicationTypes.DIMENSION, private=False)
+            app.path, name=app.name, application_type=ApplicationTypes.DIMENSION, private=private)
         self.assertFalse(exists)
 
-    def test_folder_application(self):
+    @unittest.skip
+    def test_dimension_application_private(self):
+        self.run_test_dimension_application(private=True)
+
+    def test_dimension_application_public(self):
+        self.run_test_dimension_application(private=False)
+
+    def run_test_document_application(self, private):
+        with open(r"resources\document.xlsx", "rb") as file:
+            app = DocumentApplication(path=TM1PY_APP_FOLDER, name=DOCUMENT_NAME, content=file.read())
+            self.tm1.applications.create(application=app, private=private)
+
+        app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=private)
+        self.assertEqual(app, app_retrieved)
+        exists = self.tm1.applications.exists(
+            app.path, name=app.name, application_type=ApplicationTypes.DOCUMENT, private=private)
+        self.assertTrue(exists)
+
+        self.tm1.applications.delete(app.path, app.application_type, app.name, private=private)
+        exists = self.tm1.applications.exists(
+            app.path, name=app.name, application_type=ApplicationTypes.DOCUMENT, private=private)
+        self.assertFalse(exists)
+
+    def test_document_application_private(self):
+        self.run_test_document_application(private=True)
+
+    def test_document_application_public(self):
+        self.run_test_document_application(private=False)
+
+    def run_test_folder_application(self, private):
         app = FolderApplication(TM1PY_APP_FOLDER, "not_relevant")
-        self.tm1.applications.create(application=app, private=False)
-        app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=False)
+        self.tm1.applications.create(application=app, private=private)
+        app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=private)
         self.assertEqual(app, app_retrieved)
         exists = self.tm1.applications.exists(
-            app.path, name=app.name, application_type=ApplicationTypes.FOLDER, private=False)
+            app.path, name=app.name, application_type=ApplicationTypes.FOLDER, private=private)
         self.assertTrue(exists)
 
-        self.tm1.applications.delete(app.path, app.application_type, app.name, private=False)
+        self.tm1.applications.delete(app.path, app.application_type, app.name, private=private)
         exists = self.tm1.applications.exists(
-            app.path, name=app.name, application_type=ApplicationTypes.FOLDER, private=False)
+            app.path, name=app.name, application_type=ApplicationTypes.FOLDER, private=private)
         self.assertFalse(exists)
 
-    def test_link_application(self):
+    def test_run_folder_application_private(self):
+        self.run_test_folder_application(private=True)
+
+    def test_run_folder_application_public(self):
+        self.run_test_folder_application(private=False)
+
+    def run_test_link_application(self, private):
         app = LinkApplication(TM1PY_APP_FOLDER, APPLICATION_NAME, LINK_NAME)
-        self.tm1.applications.create(application=app, private=False)
-        app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=False)
+        self.tm1.applications.create(application=app, private=private)
+        app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=private)
         self.assertEqual(app, app_retrieved)
         exists = self.tm1.applications.exists(
-            app.path, name=app.name, application_type=ApplicationTypes.LINK, private=False)
+            app.path, name=app.name, application_type=ApplicationTypes.LINK, private=private)
         self.assertTrue(exists)
 
-        self.tm1.applications.delete(app.path, app.application_type, app.name, private=False)
+        self.tm1.applications.delete(app.path, app.application_type, app.name, private=private)
         exists = self.tm1.applications.exists(
-            app.path, name=app.name, application_type=ApplicationTypes.LINK, private=False)
+            app.path, name=app.name, application_type=ApplicationTypes.LINK, private=private)
         self.assertFalse(exists)
 
-    def test_process_application(self):
+    def test_run_link_application_private(self):
+        self.run_test_link_application(True)
+
+    def test_run_link_application_public(self):
+        self.run_test_link_application(False)
+
+    def run_test_process_application(self, private):
         app = ProcessApplication(TM1PY_APP_FOLDER, APPLICATION_NAME, PROCESS_NAME)
-        self.tm1.applications.create(application=app, private=False)
-        app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=False)
+        self.tm1.applications.create(application=app, private=private)
+        app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=private)
         self.assertEqual(app, app_retrieved)
         exists = self.tm1.applications.exists(
-            app.path, name=app.name, application_type=ApplicationTypes.PROCESS, private=False)
+            app.path, name=app.name, application_type=ApplicationTypes.PROCESS, private=private)
         self.assertTrue(exists)
 
-        self.tm1.applications.delete(app.path, app.application_type, app.name, private=False)
+        self.tm1.applications.delete(app.path, app.application_type, app.name, private=private)
         exists = self.tm1.applications.exists(
-            app.path, name=app.name, application_type=ApplicationTypes.PROCESS, private=False)
+            app.path, name=app.name, application_type=ApplicationTypes.PROCESS, private=private)
         self.assertFalse(exists)
 
-    def test_subset_application(self):
+    @unittest.skip
+    def test_process_application_private(self):
+        self.run_test_process_application(True)
+
+    def test_process_application_public(self):
+        self.run_test_process_application(False)
+
+    def run_test_subset_application(self, private):
         app = SubsetApplication(TM1PY_APP_FOLDER, APPLICATION_NAME, DIMENSION_NAMES[0], DIMENSION_NAMES[0], SUBSET_NAME)
-        self.tm1.applications.create(application=app, private=False)
-        app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=False)
+        self.tm1.applications.create(application=app, private=private)
+        app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=private)
         self.assertEqual(app, app_retrieved)
         exists = self.tm1.applications.exists(
-            app.path, name=app.name, application_type=ApplicationTypes.SUBSET, private=False)
+            app.path, name=app.name, application_type=ApplicationTypes.SUBSET, private=private)
         self.assertTrue(exists)
 
-        self.tm1.applications.delete(app.path, app.application_type, app.name, private=False)
+        self.tm1.applications.delete(app.path, app.application_type, app.name, private=private)
         exists = self.tm1.applications.exists(
-            app.path, name=app.name, application_type=ApplicationTypes.SUBSET, private=False)
+            app.path, name=app.name, application_type=ApplicationTypes.SUBSET, private=private)
         self.assertFalse(exists)
 
-    def test_view_application(self):
+    @unittest.skip
+    def test_subset_application_private(self):
+        self.run_test_subset_application(True)
+
+    def test_subset_application_public(self):
+        self.run_test_subset_application(False)
+
+    def run_test_view_application(self, private):
         app = ViewApplication(TM1PY_APP_FOLDER, APPLICATION_NAME, CUBE_NAME, VIEW_NAME)
-        self.tm1.applications.create(application=app, private=False)
-        app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=False)
+        self.tm1.applications.create(application=app, private=private)
+        app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=private)
         self.assertEqual(app, app_retrieved)
         exists = self.tm1.applications.exists(
-            app.path, name=app.name, application_type=ApplicationTypes.VIEW, private=False)
+            app.path, name=app.name, application_type=ApplicationTypes.VIEW, private=private)
         self.assertTrue(exists)
 
-        self.tm1.applications.delete(app.path, app.application_type, app.name, private=False)
+        self.tm1.applications.delete(app.path, app.application_type, app.name, private=private)
         exists = self.tm1.applications.exists(
-            app.path, name=app.name, application_type=ApplicationTypes.VIEW, private=False)
+            app.path, name=app.name, application_type=ApplicationTypes.VIEW, private=private)
         self.assertFalse(exists)
+
+    @unittest.skip
+    def test_view_application_private(self):
+        self.run_test_view_application(True)
+
+    def test_view_application_public(self):
+        self.run_test_view_application(False)
