@@ -77,6 +77,27 @@ class ElementService(ObjectService):
         response = self._rest.GET(request, '')
         return (e["Name"] for e in response.json()['value'])
 
+    def get_number_of_elements(self, dimension_name, hierarchy_name):
+        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/Elements?&$count&$top=0'.format(
+            dimension_name,
+            hierarchy_name)
+        response = self._rest.GET(request, '')
+        return int(response.json()["@odata.count"])
+
+    def get_number_of_consolidated_elements(self, dimension_name, hierarchy_name):
+        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/Elements?$filter=Type eq 3&$count&$top=0'.format(
+            dimension_name,
+            hierarchy_name)
+        response = self._rest.GET(request, '')
+        return int(response.json()["@odata.count"])
+
+    def get_number_of_leaf_elements(self, dimension_name, hierarchy_name):
+        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/Elements?$filter=Type ne 3&$count&$top=0'.format(
+            dimension_name,
+            hierarchy_name)
+        response = self._rest.GET(request, '')
+        return int(response.json()["@odata.count"])
+
     def get_all_leaf_element_identifiers(self, dimension_name, hierarchy_name):
         """ Get all element names and alias values for leaf elements in a hierarchy
 
