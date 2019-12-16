@@ -38,6 +38,7 @@ FROM {cube}
 
 
 class TestMDXUtils(unittest.TestCase):
+    tm1 = None
 
     @classmethod
     def setUpClass(cls):
@@ -657,12 +658,49 @@ class TestMDXUtils(unittest.TestCase):
             self.assertIn("[Date].[Date].[2017-11-27]", json.dumps(column_axis))
             self.assertIn("[Version].[Version].[Actual]", json.dumps(title_axis))
 
+    def test_odata_escape_single_quotes_in_object_names(self):
+        url = "https://localhost:8099/api/v1/Dimensions('dime'nsion')/Hierarchies('hier'archy')/Elements('elem'ent')"
+        escaped_url = Utils.odata_escape_single_quotes_in_object_names(url)
+        self.assertEqual(
+            escaped_url,
+            "https://localhost:8099/api/v1/Dimensions('dime''nsion')/Hierarchies('hier''archy')/Elements('elem''ent')")
+
+    def test_odata_escape_single_quotes_in_object_names_group(self):
+        url = "https://localhost:8099/api/v1/Groups('Gro'up')"
+        escaped_url = Utils.odata_escape_single_quotes_in_object_names(url)
+        self.assertEqual(
+            escaped_url,
+            "https://localhost:8099/api/v1/Groups('Gro''up')")
+
+    def test_odata_escape_single_quotes_in_object_names_user(self):
+        url = "https://localhost:8099/api/v1/Users('Us'er')"
+        escaped_url = Utils.odata_escape_single_quotes_in_object_names(url)
+        self.assertEqual(
+            escaped_url,
+            "https://localhost:8099/api/v1/Users('Us''er')")
+
+    def test_odata_escape_single_quotes_in_object_names_element(self):
+        url = "https://localhost:8099/api/v1/Dimensions('dimen'sion')/Hierarchies('hier'archy')/Elements('elem'ent')"
+        escaped_url = Utils.odata_escape_single_quotes_in_object_names(url)
+        self.assertEqual(
+            escaped_url,
+            "https://localhost:8099/api/v1/Dimensions('dimen''sion')/Hierarchies('hier''archy')/Elements('elem''ent')")
+
+    def test_odata_escape_single_quotes_in_object_names_custom_request_threads(self):
+        url = "https://localhost:8099/api/v1/Threads?$top=0&$filter=ObjectType eq 'Process' and " \
+              "ObjectName ne 'Process - Get Params REST'&$count=true"
+        escaped_url = Utils.odata_escape_single_quotes_in_object_names(url)
+        self.assertEqual(
+            escaped_url,
+            url)
+
     @classmethod
     def tearDownClass(cls):
         cls.tm1.logout()
 
 
 class TestTIObfuscatorMethods(unittest.TestCase):
+    tm1 = None
 
     @classmethod
     def setUpClass(cls):

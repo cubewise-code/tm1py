@@ -31,7 +31,7 @@ class ApplicationService(ObjectService):
 
         # documents require special treatment
         if application_type == ApplicationTypes.DOCUMENT:
-            return self.get_document(path=path, name=name)
+            return self.get_document(path=path, name=name, private=private)
 
         if not application_type == ApplicationTypes.FOLDER:
             name += application_type.suffix
