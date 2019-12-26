@@ -346,7 +346,8 @@ class RESTService:
                 raise RuntimeError(
                     "SSO failed due to missing dependency requests_negotiate_sspi.HttpNegotiateAuth. "
                     "SSO only supported for Windows")
-            response = requests.get(gateway, auth=HttpNegotiateAuth(), verify=verify)
+            response = requests.get(gateway, auth=HttpNegotiateAuth(), verify=verify,
+                                    params={"CAMNamespace": namespace})
             if not response.status_code == 200:
                 raise RuntimeError(
                     "Failed to authenticate through CAM. Expected status_code 200, received status_code: "
