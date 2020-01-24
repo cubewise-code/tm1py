@@ -2,6 +2,7 @@
 from TM1py.Objects import ElementAttribute, Element
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Utils import build_element_unique_names
+import json
 
 
 class ElementService(ObjectService):
@@ -275,3 +276,16 @@ class ElementService(ObjectService):
 
         get_members(consolidation_tree)
         return members
+
+    def execute_set_mdx(self, mdx, top=10000):
+
+        request = f'/api/v1/ExecuteMDXSetExpression?$expand=Tuples($top={top};' \
+                  '$expand=Members($select=Name,Ordinal,Weight;' \
+                  '$expand=Parent($select=Name,UniqueName),' \
+                  'Element($select=Type,Level)))'
+
+        payload = {"MDX": mdx}
+        response = self._rest.POST(request, json.dumps(payload, ensure_ascii=False))
+        raw_dict = response.json()
+        return [tuples['Members'][0] for tuples in raw_dict['Tuples']]
+
