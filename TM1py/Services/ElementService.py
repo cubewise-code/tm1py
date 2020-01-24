@@ -278,6 +278,11 @@ class ElementService(ObjectService):
         return members
 
     def execute_set_mdx(self, mdx, top=10000):
+        '''
+        :param mdx: valid dimension mdx statement
+        :param top: number of records to return
+        :return: dictionary of members, unique names, weights, types, ordinals, and parents
+        '''
 
         request = f'/api/v1/ExecuteMDXSetExpression?$expand=Tuples($top={top};' \
                   '$expand=Members($select=Name,Ordinal,Weight;' \
