@@ -122,6 +122,33 @@ class CellService:
                     *Utils.dimension_hierarchy_element_tuple_from_unique_name(unique_element_name))))
 
         self._post_against_cellset(cellset_id=cellset_id, payload=payload, delete_cellset=True)
+        
+    def clear_spread(
+            self,
+            cube,
+            unique_element_names):
+        """ Execute clear spread
+        :param cube: name of the cube
+        :param unique_element_names: target cell coordinates as unique element names (e.g. ["[d1].[c1]","[d2].[e3]"])
+        :return:
+        """
+        mdx = """
+        SELECT
+        {{ {rows} }} ON 0
+        FROM [{cube}]
+        """.format(rows="}*{".join(unique_element_names), cube=cube)
+        cellset_id = self.create_cellset(mdx=mdx)
+
+        payload = {
+            "BeginOrdinal": 0,
+            "Value": "C",
+            "ReferenceCell@odata.bind": list()}
+        for unique_element_name in unique_element_names:
+            payload["ReferenceCell@odata.bind"].append(
+                odata_escape_single_quotes_in_object_names("Dimensions('{}')/Hierarchies('{}')/Elements('{}')".format(
+                    *Utils.dimension_hierarchy_element_tuple_from_unique_name(unique_element_name))))
+
+        self._post_against_cellset(cellset_id=cellset_id, payload=payload, delete_cellset=True)
 
     @tidy_cellset
     def _post_against_cellset(self, cellset_id, payload, **kwargs):
