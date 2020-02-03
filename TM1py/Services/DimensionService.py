@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import json
+import warnings
 
 from TM1py.Exceptions import TM1pyException
 from TM1py.Objects.Dimension import Dimension
@@ -109,6 +110,9 @@ class DimensionService(ObjectService):
         :param mdx: valid Dimension-MDX Statement 
         :return: List of Element names
         """
+
+        warnings.warn("execute_mdx() will be deprecated; use ElementService execute_set_mdx.", DeprecationWarning, stacklevel=2)
+
         mdx_skeleton = "SELECT " \
                        "{} ON ROWS, " \
                        "{{ [}}ElementAttributes_{}].DefaultMember }} ON COLUMNS  " \

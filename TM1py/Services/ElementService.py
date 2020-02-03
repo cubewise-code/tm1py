@@ -277,20 +277,49 @@ class ElementService(ObjectService):
         get_members(consolidation_tree)
         return members
 
-    def execute_set_mdx(self, mdx, top=10000):
+    def execute_set_mdx(self, mdx,
+                        top_records=None,
+                        member_properties = ['Name', 'Weight'],
+                        parent_properties = ['Name', 'UniqueName'],
+                        element_properties = ['Type', 'Level']):
         '''
         :param mdx: valid dimension mdx statement
-        :param top: number of records to return
-        :return: dictionary of members, unique names, weights, types, ordinals, and parents
+        :param top: number of records to return, default: all elements no limit
+        :return: dictionary of members, unique names, weights, types, and parents
         '''
+        top = f"$top={top_records};" if top_records else ""
 
-        request = f'/api/v1/ExecuteMDXSetExpression?$expand=Tuples($top={top};' \
-                  '$expand=Members($select=Name,Ordinal,Weight;' \
-                  '$expand=Parent($select=Name,UniqueName),' \
-                  'Element($select=Type,Level)))'
+        if not member_properties:
+            member_properties = ['Name']
+
+        member_properties = ",".join(member_properties)
+        select_member_properties = f'$select={member_properties}'
+
+        properties_to_expand = []
+        if parent_properties:
+            parent_properties = ",".join(parent_properties)
+            select_parent_properties = f'$select={parent_properties}'
+            expand_parent_properties = f'Parent({select_parent_properties})'
+            properties_to_expand.append(expand_parent_properties)
+
+        if element_properties:
+            element_properties = ",".join(element_properties)
+            select_element_properties = f'$select={element_properties}'
+            expand_element_properties = f'Element({select_element_properties})'
+            properties_to_expand.append(expand_element_properties)
+
+        if properties_to_expand:
+            expand_properties = f';$expand={",".join(properties_to_expand)}'
+        else:
+            expand_properties = ""
+
+
+        request = f'/api/v1/ExecuteMDXSetExpression?$expand=Tuples({top}' \
+                  f'$expand=Members({select_member_properties}'\
+                  f'{expand_properties}))'
 
         payload = {"MDX": mdx}
         response = self._rest.POST(request, json.dumps(payload, ensure_ascii=False))
         raw_dict = response.json()
-        return [tuples['Members'][0] for tuples in raw_dict['Tuples']]
+        return [tuples['Members'] for tuples in raw_dict['Tuples']]
 
