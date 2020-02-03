@@ -283,10 +283,16 @@ class ElementService(ObjectService):
                         parent_properties = ['Name', 'UniqueName'],
                         element_properties = ['Type', 'Level']):
         '''
+        :method to execute an MDX statment against a dimension
         :param mdx: valid dimension mdx statement
-        :param top: number of records to return, default: all elements no limit
+        :param top_records: number of records to return, default: all elements no limit
+        :param member_properties: list of member properties to return, will always return name
+        :param parent_properties: list of parent properties to return, can be empty
+        :param element_properties: list of element properties to return, can be empty
         :return: dictionary of members, unique names, weights, types, and parents
         '''
+
+
         top = f"$top={top_records};" if top_records else ""
 
         if not member_properties:
@@ -312,7 +318,6 @@ class ElementService(ObjectService):
             expand_properties = f';$expand={",".join(properties_to_expand)}'
         else:
             expand_properties = ""
-
 
         request = f'/api/v1/ExecuteMDXSetExpression?$expand=Tuples({top}' \
                   f'$expand=Members({select_member_properties}'\
