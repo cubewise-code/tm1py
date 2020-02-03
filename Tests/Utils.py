@@ -660,10 +660,35 @@ class TestMDXUtils(unittest.TestCase):
 
     def test_odata_escape_single_quotes_in_object_names(self):
         url = "https://localhost:8099/api/v1/Dimensions('dime'nsion')/Hierarchies('hier'archy')/Elements('elem'ent')"
+        url1 = "https://localhost:915/api/v1/TransactionLogEntries?$orderby=TimeStamp desc &$filter=Cube eq 'Test C'ase cube'"
+        url2 = "https://localhost:915/api/v1/TransactionLogEntries?$orderby=TimeStamp desc &$filter=Cube eq 'TestC_'ase cube'"
+        ulr3 = "https://localhost:915/api/v1/TransactionLogEntries?$orderby=TimeStamp desc &$filter=Cube eq 'Test C9'ase cube'"
+        ulr4 = "https://localhost:915/api/v1/TransactionLogEntries?$orderby=TimeStamp desc &$filter=Cube eq 'Test C9'_ase cube'"
+        ulr5 = "https://localhost:915/api/v1/TransactionLogEntries?$orderby=TimeStamp desc &$filter=Cube eq 'Test Case cube'"
         escaped_url = Utils.odata_escape_single_quotes_in_object_names(url)
+        escaped_url1 = Utils.odata_escape_single_quotes_in_object_names(url1)
+        escaped_url2 = Utils.odata_escape_single_quotes_in_object_names(url2)
+        escaped_url3 = Utils.odata_escape_single_quotes_in_object_names(ulr3)
+        escaped_url4 = Utils.odata_escape_single_quotes_in_object_names(ulr4)
+        escaped_url5 = Utils.odata_escape_single_quotes_in_object_names(ulr5)
         self.assertEqual(
             escaped_url,
             "https://localhost:8099/api/v1/Dimensions('dime''nsion')/Hierarchies('hier''archy')/Elements('elem''ent')")
+        self.assertEqual(
+            escaped_url1,
+            "https://localhost:915/api/v1/TransactionLogEntries?$orderby=TimeStamp desc &$filter=Cube eq 'Test C''ase cube'")
+        self.assertEqual(
+            escaped_url2,
+            "https://localhost:915/api/v1/TransactionLogEntries?$orderby=TimeStamp desc &$filter=Cube eq 'TestC_''ase cube'")
+        self.assertEqual(
+            escaped_url3,
+            "https://localhost:915/api/v1/TransactionLogEntries?$orderby=TimeStamp desc &$filter=Cube eq 'Test C9''ase cube'")
+        self.assertEqual(
+            escaped_url4,
+            "https://localhost:915/api/v1/TransactionLogEntries?$orderby=TimeStamp desc &$filter=Cube eq 'Test C9''_ase cube'")
+        self.assertEqual(
+            escaped_url5,
+            "https://localhost:915/api/v1/TransactionLogEntries?$orderby=TimeStamp desc &$filter=Cube eq 'Test Case cube'")
 
     def test_odata_escape_single_quotes_in_object_names_group(self):
         url = "https://localhost:8099/api/v1/Groups('Gro'up')"
