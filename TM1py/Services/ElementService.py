@@ -304,15 +304,13 @@ class ElementService(ObjectService):
         properties_to_expand = []
         if parent_properties:
             parent_properties = ",".join(parent_properties)
-            select_parent_properties = f'$select={parent_properties}'
-            expand_parent_properties = f'Parent({select_parent_properties})'
-            properties_to_expand.append(expand_parent_properties)
+            select_parent_properties = f'Parent($select={parent_properties})'
+            properties_to_expand.append(select_parent_properties)
 
         if element_properties:
             element_properties = ",".join(element_properties)
-            select_element_properties = f'$select={element_properties}'
-            expand_element_properties = f'Element({select_element_properties})'
-            properties_to_expand.append(expand_element_properties)
+            select_element_properties = f'Element($select={element_properties})'
+            properties_to_expand.append(select_element_properties)
 
         if properties_to_expand:
             expand_properties = f';$expand={",".join(properties_to_expand)}'
