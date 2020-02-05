@@ -279,11 +279,11 @@ class ElementService(ObjectService):
 
     def execute_set_mdx(self, mdx,
                         top_records=None,
-                        member_properties = ['Name', 'Weight'],
-                        parent_properties = ['Name', 'UniqueName'],
-                        element_properties = ['Type', 'Level']):
+                        member_properties = ('Name', 'Weight'),
+                        parent_properties = ('Name', 'UniqueName'),
+                        element_properties = ('Type', 'Level')):
         '''
-        :method to execute an MDX statment against a dimension
+        :method to execute an MDX statement against a dimension
         :param mdx: valid dimension mdx statement
         :param top_records: number of records to return, default: all elements no limit
         :param member_properties: list of member properties to return, will always return name
@@ -291,7 +291,6 @@ class ElementService(ObjectService):
         :param element_properties: list of element properties to return, can be empty
         :return: dictionary of members, unique names, weights, types, and parents
         '''
-
 
         top = f"$top={top_records};" if top_records else ""
 
