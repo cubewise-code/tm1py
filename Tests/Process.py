@@ -79,7 +79,8 @@ class TestProcessMethods(unittest.TestCase):
                                datasource_data_source_name_for_server=cls.subset.dimension_name,
                                datasource_subset=cls.subset.name,
                                metadata_procedure="sTest = 'abc';")
-        with open(r"resources\Bedrock.Server.Wait.json", "r") as file:
+
+        with open(os.path.join(os.path.dirname(__file__), 'resources', 'Bedrock.Server.Wait.json'), 'r') as file:
             cls.p_bedrock_server_wait = Process.from_json(file.read())
 
     @classmethod
