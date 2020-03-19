@@ -11,7 +11,7 @@ if sys.version[0] == '2':
 else:
     import http.client as http_client
 
-REGEX_OBJECT_NAMES = re.compile(r"(?<=[a-zA-Z0-9_])'(?=[a-zA-Z0-9_])")
+REGEX_OBJECT_NAMES = re.compile(r"(?<!\()(?<!eq )'(?!\)|\Z)")
 
 
 def get_all_servers_from_adminhost(adminhost='localhost'):
