@@ -649,7 +649,7 @@ class TestMDXUtils(unittest.TestCase):
             ["[Dimension1].[Dimension1].[Element 790]", "[Dimension2].[Dimension2].[Element 541]"])
 
     def test_extract_axes_from_cellset(self):
-        with open(os.path.join("resources", "raw_cellset.json")) as file:
+        with open(os.path.join(os.path.dirname(__file__), "resources", "raw_cellset.json")) as file:
             raw_cellset_as_dict = json.load(file)
             row_axis, column_axis, title_axis = Utils.extract_axes_from_cellset(raw_cellset_as_dict=raw_cellset_as_dict)
             self.assertIn("[City].[City].[NYC]", json.dumps(row_axis))
@@ -773,7 +773,7 @@ class TestTIObfuscatorMethods(unittest.TestCase):
         # create bedrocks if they doesn't exist
         for bedrock in ("Bedrock.Dim.Clone", "Bedrock.Cube.Clone"):
             if not cls.tm1.processes.exists(bedrock):
-                with open(os.path.join("resources", bedrock + ".json"), "r") as file:
+                with open(os.path.join(os.path.dirname(__file__), "resources", bedrock + ".json"), "r") as file:
                     process = Process.from_json(file.read())
                     cls.tm1.processes.create(process)
 
