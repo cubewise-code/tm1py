@@ -1,5 +1,5 @@
 import configparser
-import os
+from pathlib import Path
 import unittest
 
 from TM1py.Objects import Dimension, Hierarchy, Element
@@ -7,7 +7,7 @@ from TM1py.Objects import ElementAttribute
 from TM1py.Services import TM1Service
 
 config = configparser.ConfigParser()
-config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
+config.read(Path(__file__).parent.joinpath('config.ini'))
 
 PREFIX = "TM1py_Tests_Dimension_"
 DIMENSION_NAME = PREFIX + "Some_Dimension"

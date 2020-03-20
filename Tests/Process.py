@@ -1,6 +1,6 @@
 import configparser
 import copy
-import os
+from pathlib import Path
 import random
 import time
 import unittest
@@ -11,7 +11,7 @@ from TM1py.Objects import Subset
 from TM1py.Services import TM1Service
 
 config = configparser.ConfigParser()
-config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
+config.read(Path(__file__).parent.joinpath('config.ini'))
 
 PROCESS_PREFIX = 'TM1py_Tests_'
 
@@ -80,7 +80,7 @@ class TestProcessMethods(unittest.TestCase):
                                datasource_subset=cls.subset.name,
                                metadata_procedure="sTest = 'abc';")
 
-        with open(os.path.join(os.path.dirname(__file__), 'resources', 'Bedrock.Server.Wait.json'), 'r') as file:
+        with open(Path(__file__).parent.joinpath('resources', 'Bedrock.Server.Wait.json'), 'r') as file:
             cls.p_bedrock_server_wait = Process.from_json(file.read())
 
     @classmethod
