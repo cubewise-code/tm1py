@@ -1,5 +1,5 @@
 import configparser
-import os
+from pathlib import Path
 import unittest
 import uuid
 
@@ -9,7 +9,7 @@ from TM1py.Objects import Rules
 from TM1py.Services import TM1Service
 
 config = configparser.ConfigParser()
-config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
+config.read(Path(__file__).parent.joinpath('config.ini'))
 
 PREFIX = "TM1py_Tests_Cube_"
 

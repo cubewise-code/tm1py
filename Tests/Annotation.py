@@ -1,6 +1,6 @@
 import configparser
 import json
-import os
+from pathlib import Path
 import random
 import string
 import unittest
@@ -10,8 +10,7 @@ from TM1py.Objects import Annotation
 from TM1py.Services import TM1Service
 
 config = configparser.ConfigParser()
-config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
-
+config.read(Path(__file__).parent.joinpath('config.ini'))
 
 class TestAnnotationMethods(unittest.TestCase):
     tm1 = TM1Service(**config['tm1srv01'])

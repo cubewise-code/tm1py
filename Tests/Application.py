@@ -1,5 +1,5 @@
 import configparser
-import os
+from pathlib import Path
 import random
 import unittest
 
@@ -11,7 +11,7 @@ from TM1py.Objects.Application import CubeApplication, ApplicationTypes, ChoreAp
     FolderApplication, LinkApplication, ProcessApplication, SubsetApplication, ViewApplication, DocumentApplication
 
 config = configparser.ConfigParser()
-config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
+config.read(Path(__file__).parent.joinpath('config.ini'))
 
 # Hard coded stuff
 PREFIX = 'TM1py_Tests_Applications_'
@@ -214,7 +214,7 @@ class TestDataMethods(unittest.TestCase):
         self.run_test_dimension_application(private=False)
 
     def run_test_document_application(self, private):
-        with open(os.path.join(os.path.dirname(__file__), "resources", "document.xlsx"), "rb") as file:
+        with open(Path(__file__).parent.joinpath('resources','document.xlsx'), "rb") as file:
             app = DocumentApplication(path=TM1PY_APP_FOLDER, name=DOCUMENT_NAME, content=file.read())
             self.tm1.applications.create(application=app, private=private)
 

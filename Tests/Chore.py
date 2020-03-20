@@ -1,6 +1,6 @@
 import configparser
 import copy
-import os
+from pathlib import Path
 import random
 import unittest
 import uuid
@@ -10,7 +10,7 @@ from TM1py.Objects import Chore, ChoreStartTime, ChoreFrequency, ChoreTask, Proc
 from TM1py.Services import TM1Service
 
 config = configparser.ConfigParser()
-config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
+config.read(Path(__file__).parent.joinpath('config.ini'))
 
 # Hard stuff for this test
 PREFIX = "TM1py_Tests_Chore_"

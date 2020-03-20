@@ -1,5 +1,5 @@
 import configparser
-import os
+from pathlib import Path
 import random
 import unittest
 
@@ -7,7 +7,7 @@ from TM1py.Objects import AnonymousSubset, Subset, Cube, Dimension, Element, Hie
 from TM1py.Services import TM1Service
 
 config = configparser.ConfigParser()
-config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
+config.read(Path(__file__).parent.joinpath('config.ini'))
 
 CUBE_NAME = 'TM1py_Tests_View_Cube'
 DIMENSION_NAMES = [
