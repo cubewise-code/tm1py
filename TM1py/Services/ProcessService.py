@@ -2,147 +2,139 @@
 
 import json
 import uuid
+from typing import List, Dict, Tuple, Iterable
+
+from requests import Response
 
 from TM1py.Exceptions import TM1pyException
-from TM1py.Objects import Process
-from TM1py.Services import ObjectService
+from TM1py.Objects.Process import Process
+from TM1py.Services.ObjectService import ObjectService
+from TM1py.Services.RestService import RestService
+from TM1py.Utils import format_url
 
 
 class ProcessService(ObjectService):
     """ Service to handle Object Updates for TI Processes
     
     """
-    def __init__(self, rest):
+
+    def __init__(self, rest: RestService):
         super().__init__(rest)
 
-    def get(self, name_process):
+    def get(self, name_process: str, **kwargs) -> Process:
         """ Get a process from TM1 Server
     
         :param name_process:
         :return: Instance of the TM1py.Process
         """
-        request = "/api/v1/Processes('{}')?$select=*,UIData,VariablesUIData," \
-                  "DataSource/dataSourceNameForServer," \
-                  "DataSource/dataSourceNameForClient," \
-                  "DataSource/asciiDecimalSeparator," \
-                  "DataSource/asciiDelimiterChar," \
-                  "DataSource/asciiDelimiterType," \
-                  "DataSource/asciiHeaderRecords," \
-                  "DataSource/asciiQuoteCharacter," \
-                  "DataSource/asciiThousandSeparator," \
-                  "DataSource/view," \
-                  "DataSource/query," \
-                  "DataSource/userName," \
-                  "DataSource/password," \
-                  "DataSource/usesUnicode," \
-                  "DataSource/subset".format(name_process)
-        response = self._rest.GET(request, "")
+        url = format_url(
+            "/api/v1/Processes('{}')?$select=*,UIData,VariablesUIData,"
+            "DataSource/dataSourceNameForServer,"
+            "DataSource/dataSourceNameForClient,"
+            "DataSource/asciiDecimalSeparator,"
+            "DataSource/asciiDelimiterChar,"
+            "DataSource/asciiDelimiterType,"
+            "DataSource/asciiHeaderRecords,"
+            "DataSource/asciiQuoteCharacter,"
+            "DataSource/asciiThousandSeparator,"
+            "DataSource/view,"
+            "DataSource/query,"
+            "DataSource/userName,"
+            "DataSource/password,"
+            "DataSource/usesUnicode,"
+            "DataSource/subset", name_process)
+        response = self._rest.GET(url, **kwargs)
         return Process.from_dict(response.json())
 
-    def get_all(self):
+    def get_all(self, **kwargs) -> List[Process]:
         """ Get a processes from TM1 Server
     
         :return: List, instances of the TM1py.Process
         """
-        request = "/api/v1/Processes?$select=*,UIData,VariablesUIData," \
-                  "DataSource/dataSourceNameForServer," \
-                  "DataSource/dataSourceNameForClient," \
-                  "DataSource/asciiDecimalSeparator," \
-                  "DataSource/asciiDelimiterChar," \
-                  "DataSource/asciiDelimiterType," \
-                  "DataSource/asciiHeaderRecords," \
-                  "DataSource/asciiQuoteCharacter," \
-                  "DataSource/asciiThousandSeparator," \
-                  "DataSource/view," \
-                  "DataSource/query," \
-                  "DataSource/userName," \
-                  "DataSource/password," \
-                  "DataSource/usesUnicode," \
-                  "DataSource/subset"
-        response = self._rest.GET(request, "")
+        url = "/api/v1/Processes?$select=*,UIData,VariablesUIData," \
+              "DataSource/dataSourceNameForServer," \
+              "DataSource/dataSourceNameForClient," \
+              "DataSource/asciiDecimalSeparator," \
+              "DataSource/asciiDelimiterChar," \
+              "DataSource/asciiDelimiterType," \
+              "DataSource/asciiHeaderRecords," \
+              "DataSource/asciiQuoteCharacter," \
+              "DataSource/asciiThousandSeparator," \
+              "DataSource/view," \
+              "DataSource/query," \
+              "DataSource/userName," \
+              "DataSource/password," \
+              "DataSource/usesUnicode," \
+              "DataSource/subset"
+        response = self._rest.GET(url, **kwargs)
         response_as_dict = response.json()
         return [Process.from_dict(p) for p in response_as_dict['value']]
 
-    # TODO Redesign required!
-    def get_all_process_names_filtered(self):
-        """ Get List with all process names from TM1 Server.
-            Does not return:
-                - system process
-                - Processes that have Subset as Datasource
-
-        :Returns:
-            List of Strings
-        """
-        response = self._rest.GET("/api/v1/Processes?$select=Name&$filter=DataSource/Type ne 'TM1DimensionSubset'"
-                                  " and  not startswith(Name,'}')", "")
-        processes = list(process['Name'] for process in response.json()['value'])
-        return processes
-
-    def get_all_names(self):
+    def get_all_names(self, **kwargs) -> List[str]:
         """ Get List with all process names from TM1 Server
 
         :Returns:
             List of Strings
         """
-        response = self._rest.GET('/api/v1/Processes?$select=Name', '')
+        response = self._rest.GET('/api/v1/Processes?$select=Name', **kwargs)
         processes = list(process['Name'] for process in response.json()['value'])
         return processes
 
-    def update(self, process):
+    def update(self, process: Process, **kwargs) -> Response:
         """ Update an existing Process on TM1 Server
     
         :param process: Instance of TM1py.Process class
         :return: Response
         """
-        request = "/api/v1/Processes('" + process.name + "')"
+        url = format_url("/api/v1/Processes('{}')", process.name)
         # Adjust process body if TM1 version is lower than 11 due to change in Process Parameters structure
         # https://www.ibm.com/developerworks/community/forums/html/topic?id=9188d139-8905-4895-9229-eaaf0e7fa683
         if int(self.version[0:2]) < 11:
             process.drop_parameter_types()
-        response = self._rest.PATCH(request, process.body)
+        response = self._rest.PATCH(url, process.body)
         return response
 
-    def create(self, process):
+    def create(self, process: Process, **kwargs) -> Response:
         """ Create a new process on TM1 Server
     
         :param process: Instance of TM1py.Process class
         :return: Response
         """
-        request = "/api/v1/Processes"
+        url = "/api/v1/Processes"
         # Adjust process body if TM1 version is lower than 11 due to change in Process Parameters structure
         # https://www.ibm.com/developerworks/community/forums/html/topic?id=9188d139-8905-4895-9229-eaaf0e7fa683
         if int(self.version[0:2]) < 11:
             process.drop_parameter_types()
-        response = self._rest.POST(request, process.body)
+        response = self._rest.POST(url, process.body, **kwargs)
         return response
 
-    def delete(self, name):
+    def delete(self, name: str, **kwargs) -> Response:
         """ Delete a process in TM1
         
         :param name: 
         :return: Response
         """
-        request = "/api/v1/Processes('{}')".format(name)
-        response = self._rest.DELETE(request)
+        url = format_url("/api/v1/Processes('{}')", name)
+        response = self._rest.DELETE(url, **kwargs)
         return response
 
-    def exists(self, name):
+    def exists(self, name: str, **kwargs) -> bool:
         """ Check if Process exists.
         
         :param name: 
         :return: 
         """
-        request = "/api/v1/Processes('{}')".format(name)
-        return self._exists(request)
+        url = format_url("/api/v1/Processes('{}')", name)
+        return self._exists(url, **kwargs)
 
-    def compile(self, name):
+    def compile(self, name: str, **kwargs) -> List:
         """ Compile a Process. Return List of Syntax errors.
         
         :param name: 
         :return: 
         """
-        request = "/api/v1/Processes('{}')/tm1.Compile".format(name)
-        response = self._rest.POST(request, '')
+        url = format_url("/api/v1/Processes('{}')/tm1.Compile", name)
+        response = self._rest.POST(url, **kwargs)
         syntax_errors = response.json()["value"]
         return syntax_errors
 
@@ -163,15 +155,17 @@ class ProcessService(ObjectService):
         syntax_errors = response.json()["value"]
         return syntax_errors
 
-    def execute(self, process_name, parameters=None, **kwargs):
+    def execute(self, process_name: str, parameters: Dict = None, timeout: float = None,
+                **kwargs) -> Response:
         """ Ask TM1 Server to execute a process. Call with parameter names as keyword arguments:
         tm1.processes.execute("Bedrock.Server.Wait", pLegalEntity="UK01")
 
         :param process_name:
         :param parameters: Deprecated! dictionary, e.g. {"Parameters": [ { "Name": "pLegalEntity", "Value": "UK01" }] }
+        :param timeout: Number of seconds that the client will wait to receive the first byte.
         :return:
         """
-        request = "/api/v1/Processes('{}')/tm1.Execute".format(process_name)
+        url = format_url("/api/v1/Processes('{}')/tm1.Execute", process_name)
         if not parameters:
             if kwargs:
                 parameters = {"Parameters": []}
@@ -179,7 +173,7 @@ class ProcessService(ObjectService):
                     parameters["Parameters"].append({"Name": parameter_name, "Value": parameter_value})
             else:
                 parameters = {}
-        return self._rest.POST(request=request, data=json.dumps(parameters, ensure_ascii=False))
+        return self._rest.POST(url=url, data=json.dumps(parameters, ensure_ascii=False), timeout=timeout, **kwargs)
 
     def execute_process_with_return(self, process):
         '''
@@ -202,7 +196,7 @@ class ProcessService(ObjectService):
         error_log_file = None if execution_summary["ErrorLogFile"] is None else execution_summary["ErrorLogFile"]["Filename"]
         return success, status, error_log_file
 
-    def execute_with_return(self, process_name, **kwargs):
+    def execute_with_return(self, process_name: str, timeout: float = None, **kwargs) -> Tuple[bool, str, str]:
         """ Ask TM1 Server to execute a process.
         pass process parameters as keyword arguments to this function. E.g:
 
@@ -211,73 +205,78 @@ class ProcessService(ObjectService):
             pWaitSec=2)
 
         :param process_name: name of the TI process
-        :param kwargs: names of process parameters
+        :param timeout: Number of seconds that the client will wait to receive the first byte.
+        :param kwargs: dictionary of process parameters and values
         :return: success (boolean), status (String), error_log_file (String)
         """
-        request = "/api/v1/Processes('{}')/tm1.ExecuteWithReturn?$expand=*".format(process_name)
+        url = format_url("/api/v1/Processes('{}')/tm1.ExecuteWithReturn?$expand=*", process_name)
         parameters = dict()
         if kwargs:
             parameters = {"Parameters": []}
             for parameter_name, parameter_value in kwargs.items():
                 parameters["Parameters"].append({"Name": parameter_name, "Value": parameter_value})
+
         response = self._rest.POST(
-            request=request,
-            data=json.dumps(parameters, ensure_ascii=False))
+            url=url,
+            data=json.dumps(parameters, ensure_ascii=False),
+            timeout=timeout,
+            **kwargs)
         execution_summary = response.json()
         success = execution_summary["ProcessExecuteStatusCode"] == "CompletedSuccessfully"
         status = execution_summary["ProcessExecuteStatusCode"]
-        error_log_file = None if execution_summary["ErrorLogFile"] is None else execution_summary["ErrorLogFile"]["Filename"]
+        error_log_file = None if execution_summary["ErrorLogFile"] is None else execution_summary["ErrorLogFile"][
+            "Filename"]
         return success, status, error_log_file
 
-    def execute_ti_code(self, lines_prolog, lines_epilog=None):
+    def execute_ti_code(self, lines_prolog: Iterable[str], lines_epilog: Iterable[str] = None, **kwargs) -> Response:
         """ Execute lines of code on the TM1 Server
 
             :param lines_prolog: list - where each element is a valid statement of TI code.
             :param lines_epilog: list - where each element is a valid statement of TI code.
         """
-        process_name = '}' + 'TM1py' + str(uuid.uuid4())
+        process_name = "".join(['}TM1py', str(uuid.uuid4())])
         p = Process(name=process_name,
                     prolog_procedure=Process.auto_generated_string + '\r\n'.join(lines_prolog),
                     epilog_procedure=Process.auto_generated_string + '\r\n'.join(lines_epilog) if lines_epilog else '')
-        self.create(p)
+        self.create(p, **kwargs)
         try:
-            return self.execute(process_name)
+            return self.execute(process_name, **kwargs)
         except TM1pyException as e:
             raise e
         finally:
-            self.delete(process_name)
+            self.delete(process_name, **kwargs)
 
-    def get_error_log_file_content(self, file_name):
+    def get_error_log_file_content(self, file_name: str, **kwargs) -> str:
         """ Get content of error log file (e.g. TM1ProcessError_20180926213819_65708356_979b248b-232e622c6.log)
 
         :param file_name: name of the error log file in the TM1 log directory
         :return: String, content of the file
         """
-        request = "/api/v1/ErrorLogFiles('{file_name}')/Content".format(file_name=file_name)
-        response = self._rest.GET(request=request)
+        url = format_url("/api/v1/ErrorLogFiles('{}')/Content", file_name)
+        response = self._rest.GET(url=url, **kwargs)
         return response.text
 
-    def get_processerrorlogs(self, process_name):
+    def get_processerrorlogs(self, process_name: str, **kwargs) -> List:
         """ Get all ProcessErrorLog entries for a process
 
         :param process_name: name of the process
         :return: list - Collection of ProcessErrorLogs
         """
-        request = "/api/v1/Processes('{}')/ErrorLogs".format(process_name)
-        response = self._rest.GET(request=request)
+        url = format_url("/api/v1/Processes('{}')/ErrorLogs", process_name)
+        response = self._rest.GET(url=url, **kwargs)
         return response.json()['value']
 
-    def get_last_message_from_processerrorlog(self, process_name):
+    def get_last_message_from_processerrorlog(self, process_name: str, **kwargs) -> str:
         """ Get the latest ProcessErrorLog from a process entity
 
             :param process_name: name of the process
             :return: String - the errorlog, e.g.: "Fehler: Prolog Prozedurzeile (9): Zeichenfolge "US772131
             kann nicht in eine reelle Zahl umgewandelt werden."
         """
-        logs_as_list = self.get_processerrorlogs(process_name)
+        logs_as_list = self.get_processerrorlogs(process_name, **kwargs)
         if len(logs_as_list) > 0:
             timestamp = logs_as_list[-1]['Timestamp']
-            request = "/api/v1/Processes('{}')/ErrorLogs('{}')/Content".format(process_name, timestamp)
+            url = format_url("/api/v1/Processes('{}')/ErrorLogs('{}')/Content", process_name, timestamp)
             # response is plain text - due to entity type Edm.Stream
-            response = self._rest.GET(request=request)
+            response = self._rest.GET(url=url, **kwargs)
             return response

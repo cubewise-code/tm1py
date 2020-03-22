@@ -1,4 +1,3 @@
-from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.AnnotationService import AnnotationService
 from TM1py.Services.ApplicationService import ApplicationService
 from TM1py.Services.CellService import CellService
@@ -10,7 +9,7 @@ from TM1py.Services.HierarchyService import HierarchyService
 from TM1py.Services.MonitoringService import MonitoringService
 from TM1py.Services.PowerBiService import PowerBiService
 from TM1py.Services.ProcessService import ProcessService
-from TM1py.Services.RESTService import RESTService
+from TM1py.Services.RestService import RestService
 from TM1py.Services.SecurityService import SecurityService
 from TM1py.Services.ServerService import ServerService
 from TM1py.Services.SubsetService import SubsetService
