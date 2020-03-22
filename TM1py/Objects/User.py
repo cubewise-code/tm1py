@@ -4,7 +4,7 @@ import collections
 import json
 
 from TM1py.Objects.TM1Object import TM1Object
-from TM1py.Utils.Utils import CaseAndSpaceInsensitiveSet, odata_escape_single_quotes_in_object_names
+from TM1py.Utils.Utils import CaseAndSpaceInsensitiveSet, format_url
 
 
 class User(TM1Object):
@@ -92,8 +92,7 @@ class User(TM1Object):
         body_as_dict['FriendlyName'] = self.friendly_name or self.name
         if self.password:
             body_as_dict['Password'] = self._password
-        body_as_dict['Groups@odata.bind'] = [
-            odata_escape_single_quotes_in_object_names("Groups('{}')".format(group))
-            for group
-            in self.groups]
+        body_as_dict['Groups@odata.bind'] = [format_url("Groups('{}')", group)
+                                             for group
+                                             in self.groups]
         return json.dumps(body_as_dict, ensure_ascii=False)

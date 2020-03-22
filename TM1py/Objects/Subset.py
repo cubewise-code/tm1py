@@ -4,7 +4,7 @@ import collections
 import json
 
 from TM1py.Objects.TM1Object import TM1Object
-from TM1py.Utils.Utils import odata_escape_single_quotes_in_object_names
+from TM1py.Utils import format_url
 
 
 class Subset(TM1Object):
@@ -155,9 +155,8 @@ class Subset(TM1Object):
             self.hierarchy_name)
         if self.elements and len(self.elements) > 0:
             body_as_dict['Elements@odata.bind'] = [
-                odata_escape_single_quotes_in_object_names(
-                    "Dimensions('{}')/Hierarchies('{}')/Elements('{}')".format(
-                        self.dimension_name, self.hierarchy_name, element))
+                format_url("Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
+                           self.dimension_name, self.hierarchy_name, element)
                 for element
                 in self.elements]
         return body_as_dict
@@ -216,8 +215,7 @@ class AnonymousSubset(Subset):
             self._dimension_name,
             self.hierarchy_name)
         body_as_dict['Elements@odata.bind'] = [
-            odata_escape_single_quotes_in_object_names("Dimensions('{}')/Hierarchies('{}')/Elements('{}')".format(
-                self.dimension_name,
-                self.hierarchy_name,
-                element)) for element in self.elements]
+            format_url("Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
+                       self.dimension_name, self.hierarchy_name, element)
+            for element in self.elements]
         return body_as_dict

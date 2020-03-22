@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
+from typing import List
+
+from requests import Response
 
 from TM1py.Objects import Subset
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.ProcessService import ProcessService
+from TM1py.Services.RestService import RestService
+from TM1py.Utils import format_url
 
 
 class SubsetService(ObjectService):
@@ -10,11 +15,11 @@ class SubsetService(ObjectService):
     
     """
 
-    def __init__(self, rest):
+    def __init__(self, rest: RestService):
         super().__init__(rest)
         self._process_service = ProcessService(rest)
 
-    def create(self, subset, private=False):
+    def create(self, subset: Subset, private: bool = False, **kwargs) -> Response:
         """ create subset on the TM1 Server
 
             :param subset: TM1py.Subset, the subset that shall be created
@@ -24,12 +29,16 @@ class SubsetService(ObjectService):
                 string: the response
         """
         subsets = "PrivateSubsets" if private else "Subsets"
-        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/{}' \
-            .format(subset.dimension_name, subset.hierarchy_name, subsets)
-        response = self._rest.POST(request, subset.body)
+        url = format_url(
+            "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}",
+            subset.dimension_name,
+            subset.hierarchy_name,
+            subsets)
+        response = self._rest.POST(url, subset.body, **kwargs)
         return response
 
-    def get(self, subset_name, dimension_name, hierarchy_name=None, private=False):
+    def get(self, subset_name: str, dimension_name: str, hierarchy_name: str = None, private: bool = False,
+            **kwargs) -> Subset:
         """ get a subset from the TM1 Server
 
             :param subset_name: string, name of the subset
@@ -42,13 +51,14 @@ class SubsetService(ObjectService):
         if not hierarchy_name:
             hierarchy_name = dimension_name
         subsets = "PrivateSubsets" if private else "Subsets"
-        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/{}(\'{}\')?$expand=' \
-                  'Hierarchy($select=Dimension,Name),' \
-                  'Elements($select=Name)&$select=*,Alias'.format(dimension_name, hierarchy_name, subsets, subset_name)
-        response = self._rest.GET(request=request)
+        url = format_url(
+            "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')?$expand=Hierarchy($select=Dimension,Name),"
+            "Elements($select=Name)&$select=*,Alias", dimension_name, hierarchy_name, subsets, subset_name)
+        response = self._rest.GET(url=url, **kwargs)
         return Subset.from_dict(response.json())
 
-    def get_all_names(self, dimension_name, hierarchy_name=None, private=False):
+    def get_all_names(self, dimension_name: str, hierarchy_name: str = None, private: bool = False,
+                      **kwargs) -> List[str]:
         """ get names of all private or public subsets in a hierarchy
 
         :param dimension_name:
@@ -59,13 +69,14 @@ class SubsetService(ObjectService):
         hierarchy_name = hierarchy_name if hierarchy_name else dimension_name
 
         subsets = "PrivateSubsets" if private else "Subsets"
-        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/{}?$select=Name' \
-            .format(dimension_name, hierarchy_name, subsets)
-        response = self._rest.GET(request=request)
+        url = format_url(
+            "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}?$select=Name",
+            dimension_name, hierarchy_name, subsets)
+        response = self._rest.GET(url=url, **kwargs)
         subsets = response.json()['value']
         return [subset['Name'] for subset in subsets]
 
-    def update(self, subset, private=False):
+    def update(self, subset: Subset, private: bool = False, **kwargs) -> Response:
         """ update a subset on the TM1 Server
 
         :param subset: instance of TM1py.Subset.
@@ -77,13 +88,16 @@ class SubsetService(ObjectService):
                 dimension_name=subset.dimension_name,
                 hierarchy_name=subset.hierarchy_name,
                 subset_name=subset.name,
-                private=private)
+                private=private,
+                **kwargs)
         subsets = "PrivateSubsets" if private else "Subsets"
-        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')".format(
+        url = format_url(
+            "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')",
             subset.dimension_name, subset.hierarchy_name, subsets, subset.name)
-        return self._rest.PATCH(request=request, data=subset.body)
+        return self._rest.PATCH(url=url, data=subset.body, **kwargs)
 
-    def delete(self, subset_name, dimension_name, hierarchy_name=None, private=False):
+    def delete(self, subset_name: str, dimension_name: str, hierarchy_name: str = None,
+               private: bool = False, **kwargs) -> Response:
         """ Delete an existing subset on the TM1 Server
 
         :param subset_name: String, name of the subset
@@ -94,12 +108,14 @@ class SubsetService(ObjectService):
         """
         hierarchy_name = hierarchy_name if hierarchy_name else dimension_name
         subsets = "PrivateSubsets" if private else "Subsets"
-        request = '/api/v1/Dimensions(\'{}\')/Hierarchies(\'{}\')/{}(\'{}\')' \
-            .format(dimension_name, hierarchy_name, subsets, subset_name)
-        response = self._rest.DELETE(request=request, data='')
+        url = format_url(
+            "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')",
+            dimension_name, hierarchy_name, subsets, subset_name)
+        response = self._rest.DELETE(url=url, **kwargs)
         return response
 
-    def exists(self, subset_name, dimension_name, hierarchy_name=None, private=False):
+    def exists(self, subset_name: str, dimension_name: str, hierarchy_name: str = None, private: bool = False,
+               **kwargs) -> bool:
         """checks if private or public subset exists
 
         :param subset_name: 
@@ -110,12 +126,15 @@ class SubsetService(ObjectService):
         """
         hierarchy_name = hierarchy_name if hierarchy_name else dimension_name
         subset_type = 'PrivateSubsets' if private else "Subsets"
-        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')" \
-            .format(dimension_name, hierarchy_name, subset_type, subset_name)
-        return self._exists(request)
+        url = format_url(
+            "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')",
+            dimension_name, hierarchy_name, subset_type, subset_name)
+        return self._exists(url, **kwargs)
 
-    def delete_elements_from_static_subset(self, dimension_name, hierarchy_name, subset_name, private):
+    def delete_elements_from_static_subset(self, dimension_name: str, hierarchy_name: str, subset_name: str,
+                                           private: bool, **kwargs) -> Response:
         subsets = "PrivateSubsets" if private else "Subsets"
-        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')/Elements/$ref".format(
+        url = format_url(
+            "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')/Elements/$ref",
             dimension_name, hierarchy_name, subsets, subset_name)
-        return self._rest.DELETE(request=request)
+        return self._rest.DELETE(url=url, **kwargs)

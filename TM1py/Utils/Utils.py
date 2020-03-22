@@ -1,17 +1,16 @@
 import collections
 import json
-import re
 import sys
 import warnings
+from typing import Dict
 
 import pandas as pd
+
 
 if sys.version[0] == '2':
     import httplib as http_client
 else:
     import http.client as http_client
-
-REGEX_OBJECT_NAMES = re.compile(r"(?<!\()(?<!eq )'(?!\)|\Z)")
 
 
 def get_all_servers_from_adminhost(adminhost='localhost'):
@@ -34,23 +33,22 @@ def get_all_servers_from_adminhost(adminhost='localhost'):
     return servers
 
 
-def odata_escape_single_quotes_in_object_names(url):
-    """ escape characters that need to be escaped in odata references like:
-    `Dimensions('dimension')/Hierarchies('hierarchy')/Elements('elem'ent')`
-    to
-    `Dimensions('dimension')/Hierarchies('hierarchy')/Elements('elem''ent')`
+def format_url(url, *args, **kwargs):
+    """ build url and escape single quotes in args and kwargs
 
-    :param url:
+    :param url: url with {} placeholders
+    :param args: arguments to placeholders
     :return:
     """
-    # escape ' as '' inside single-quoted string
-    index = 0
-    escaped_url = ""
-    for m in REGEX_OBJECT_NAMES.finditer(string=url):
-        escaped_url += url[index:m.start()] + m.group(0).replace("'", "''")
-        index = m.end()
-    escaped_url += url[index:]
-    return escaped_url
+    args = [arg.replace("'", "''") if isinstance(arg, str) else arg
+            for arg
+            in args]
+
+    kwargs = {key: value.replace("'", "''") if isinstance(value, str) else value
+              for key, value
+              in kwargs.items()}
+
+    return url.format(*args, **kwargs)
 
 
 def case_and_space_insensitive_equals(item1, item2):
@@ -92,7 +90,7 @@ def sort_coordinates(cube_dimensions, unsorted_coordinates):
     return tuple(sorted_coordinates)
 
 
-def build_content_from_cellset(raw_cellset_as_dict, top=None):
+def build_content_from_cellset(raw_cellset_as_dict: Dict, top=None) -> 'CaseAndSpaceInsensitiveTuplesDict':
     """ transform raw cellset data into concise dictionary
 
     :param raw_cellset_as_dict:

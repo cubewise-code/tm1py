@@ -1,11 +1,16 @@
 # -*- coding: utf-8 -*-
 import json
 import random
+from typing import List, Iterable
+
+from requests import Response
 
 from TM1py.Objects.Cube import Cube
 from TM1py.Services.CellService import CellService
 from TM1py.Services.ObjectService import ObjectService
+from TM1py.Services.RestService import RestService
 from TM1py.Services.ViewService import ViewService
+from TM1py.Utils import format_url
 
 
 class CubeService(ObjectService):
@@ -13,7 +18,7 @@ class CubeService(ObjectService):
 
     """
 
-    def __init__(self, rest):
+    def __init__(self, rest: RestService):
         # to avoid Circular dependency of modules
         from TM1py.Services.AnnotationService import AnnotationService
         super().__init__(rest)
@@ -21,173 +26,173 @@ class CubeService(ObjectService):
         self.views = ViewService(rest)
         self.annotations = AnnotationService(rest)
 
-    def create(self, cube):
+    def create(self, cube: Cube, **kwargs) -> Response:
         """ create new cube on TM1 Server
 
         :param cube: instance of TM1py.Cube
         :return: response
         """
-        request = "/api/v1/Cubes"
-        return self._rest.POST(request, cube.body)
+        url = "/api/v1/Cubes"
+        return self._rest.POST(url=url, data=cube.body, **kwargs)
 
-    def get(self, cube_name):
+    def get(self, cube_name: str, **kwargs) -> Cube:
         """ get cube from TM1 Server
 
         :param cube_name:
         :return: instance of TM1py.Cube
         """
-        request = "/api/v1/Cubes('{}')?$expand=Dimensions($select=Name)".format(cube_name)
-        response = self._rest.GET(request)
+        url = format_url("/api/v1/Cubes('{}')?$expand=Dimensions($select=Name)", cube_name)
+        response = self._rest.GET(url=url, **kwargs)
         cube = Cube.from_json(response.text)
         return cube
 
-    def get_last_data_update(self, cube_name):
-        request = "/api/v1/Cubes('{}')/LastDataUpdate/$value".format(cube_name)
-        return self._rest.GET(request)
+    def get_last_data_update(self, cube_name: str, **kwargs) -> str:
+        url = format_url("/api/v1/Cubes('{}')/LastDataUpdate/$value", cube_name)
+        return self._rest.GET(url, **kwargs)
 
-    def get_all(self):
+    def get_all(self, **kwargs) -> List[Cube]:
         """ get all cubes from TM1 Server as TM1py.Cube instances
 
         :return: List of TM1py.Cube instances
         """
-        request = "/api/v1/Cubes?$expand=Dimensions($select=Name)"
-        response = self._rest.GET(request)
+        url = "/api/v1/Cubes?$expand=Dimensions($select=Name)"
+        response = self._rest.GET(url, **kwargs)
         cubes = [Cube.from_dict(cube_as_dict=cube) for cube in response.json()['value']]
         return cubes
 
-    def get_model_cubes(self):
+    def get_model_cubes(self, **kwargs) -> List[Cube]:
         """ Get all Cubes without } prefix from TM1 Server as TM1py.Cube instances
 
         :return: List of TM1py.Cube instances
         """
-        request = "/api/v1/ModelCubes()?$expand=Dimensions($select=Name)"
-        response = self._rest.GET(request)
+        url = "/api/v1/ModelCubes()?$expand=Dimensions($select=Name)"
+        response = self._rest.GET(url, **kwargs)
         cubes = [Cube.from_dict(cube_as_dict=cube) for cube in response.json()['value']]
         return cubes
 
-    def get_control_cubes(self):
+    def get_control_cubes(self, **kwargs) -> List[Cube]:
         """ Get all Cubes with } prefix from TM1 Server as TM1py.Cube instances
 
         :return: List of TM1py.Cube instances
         """
-        request = "/api/v1/ControlCubes()?$expand=Dimensions($select=Name)"
-        response = self._rest.GET(request)
+        url = "/api/v1/ControlCubes()?$expand=Dimensions($select=Name)"
+        response = self._rest.GET(url, **kwargs)
         cubes = [Cube.from_dict(cube_as_dict=cube) for cube in response.json()['value']]
         return cubes
 
-    def update(self, cube):
+    def update(self, cube: Cube, **kwargs) -> Response:
         """ Update existing cube on TM1 Server
 
         :param cube: instance of TM1py.Cube
         :return: response
         """
-        request = "/api/v1/Cubes('{}')".format(cube.name)
-        return self._rest.PATCH(request, cube.body)
+        url = format_url("/api/v1/Cubes('{}')", cube.name)
+        return self._rest.PATCH(url, cube.body, **kwargs)
 
-    def update_or_create(self, cube):
+    def update_or_create(self, cube: Cube, **kwargs) -> Response:
         """ update if exists else create
 
         :param cube:
         :return:
         """
         if self.exists(cube_name=cube.name):
-            return self.update(cube=cube)
-        else:
-            return self.create(cube=cube)
+            return self.update(cube=cube, **kwargs)
 
-    def check_rules(self, cube_name):
+        return self.create(cube=cube, **kwargs)
+
+    def check_rules(self, cube_name: str, **kwargs) -> Response:
         """ Check rules syntax for existing cube on TM1 Server
 
         :param cube_name: name of a cube
         :return: response
         """
-        request = "/api/v1/Cubes('{}')/tm1.CheckRules".format(cube_name)
-        return self._rest.POST(request)
+        url = format_url("/api/v1/Cubes('{}')/tm1.CheckRules", cube_name)
+        return self._rest.POST(url, **kwargs)
 
-    def delete(self, cube_name):
+    def delete(self, cube_name: str, **kwargs) -> Response:
         """ Delete a cube in TM1
 
         :param cube_name:
         :return: response
         """
-        request = "/api/v1/Cubes('{}')".format(cube_name)
-        return self._rest.DELETE(request)
+        url = format_url("/api/v1/Cubes('{}')", cube_name)
+        return self._rest.DELETE(url, **kwargs)
 
-    def exists(self, cube_name):
+    def exists(self, cube_name: str) -> bool:
         """ Check if a cube exists. Return boolean.
 
         :param cube_name: 
         :return: Boolean 
         """
-        request = "/api/v1/Cubes('{}')".format(cube_name)
-        return self._exists(request)
+        url = format_url("/api/v1/Cubes('{}')", cube_name)
+        return self._exists(url)
 
-    def get_all_names(self):
+    def get_all_names(self, **kwargs) -> List[str]:
         """ Ask TM1 Server for list of all cube names
 
         :return: List of Strings
         """
-        response = self._rest.GET('/api/v1/Cubes?$select=Name', '')
-        list_cubes = list(entry['Name'] for entry in response.json()['value'])
-        return list_cubes
+        response = self._rest.GET(url='/api/v1/Cubes?$select=Name', **kwargs)
+        cubes = list(entry['Name'] for entry in response.json()['value'])
+        return cubes
 
-    def get_dimension_names(self, cube_name, skip_sandbox_dimension=True):
+    def get_dimension_names(self, cube_name: str, skip_sandbox_dimension: bool = True, **kwargs) -> List[str]:
         """ get name of the dimensions of a cube in their correct order
 
         :param cube_name:
         :param skip_sandbox_dimension:
         :return:  List : [dim1, dim2, dim3, etc.]
         """
-        request = "/api/v1/Cubes('{}')/Dimensions?$select=Name".format(cube_name)
-        response = self._rest.GET(request, '')
+        url = format_url("/api/v1/Cubes('{}')/Dimensions?$select=Name", cube_name)
+        response = self._rest.GET(url, **kwargs)
         dimension_names = [element['Name'] for element in response.json()['value']]
         if skip_sandbox_dimension and dimension_names[0] == CellService.SANDBOX_DIMENSION:
             return dimension_names[1:]
         return dimension_names
 
-    def get_storage_dimension_order(self, cube_name):
+    def get_storage_dimension_order(self, cube_name: str, **kwargs) -> List[str]:
         """ Get the storage dimension order of a cube
 
         :param cube_name:
         :return: List of dimension names
         """
-        url = "/api/v1/Cubes('{}')/tm1.DimensionsStorageOrder()?$select=Name".format(cube_name)
-        response = self._rest.GET(url)
+        url = format_url("/api/v1/Cubes('{}')/tm1.DimensionsStorageOrder()?$select=Name", cube_name)
+        response = self._rest.GET(url, **kwargs)
         return [dimension["Name"] for dimension in response.json()["value"]]
 
-    def update_storage_dimension_order(self, cube_name, dimension_names):
+    def update_storage_dimension_order(self, cube_name: str, dimension_names: Iterable[str]) -> Response:
         """ Update the storage dimension order of a cube
 
         :param cube_name:
         :param dimension_names:
         :return:
         """
-        url = "/api/v1/Cubes('{}')/tm1.ReorderDimensions".format(cube_name)
+        url = format_url("/api/v1/Cubes('{}')/tm1.ReorderDimensions", cube_name)
         payload = dict()
-        payload['Dimensions@odata.bind'] = ["Dimensions('{}')".format(dimension)
+        payload['Dimensions@odata.bind'] = [format_url("Dimensions('{}')", dimension)
                                             for dimension
                                             in dimension_names]
-        return self._rest.POST(request=url, data=json.dumps(payload))
+        return self._rest.POST(url=url, data=json.dumps(payload))
 
-    def load(self, cube_name):
+    def load(self, cube_name: str, **kwargs) -> Response:
         """ Load the cube into memory on the server
 
         :param cube_name:
         :return:
         """
-        url = "/api/v1/Cubes('{}')/tm1.Load".format(cube_name)
-        return self._rest.POST(request=url)
+        url = format_url("/api/v1/Cubes('{}')/tm1.Load", cube_name)
+        return self._rest.POST(url=url, **kwargs)
 
-    def unload(self, cube_name):
+    def unload(self, cube_name: str, **kwargs) -> Response:
         """ Unload the cube from memory
 
         :param cube_name:
         :return:
         """
-        url = "/api/v1/Cubes('{}')/tm1.Unload".format(cube_name)
-        return self._rest.POST(request=url)
+        url = format_url("/api/v1/Cubes('{}')/tm1.Unload", cube_name)
+        return self._rest.POST(url=url, **kwargs)
 
-    def get_random_intersection(self, cube_name, unique_names=False):
+    def get_random_intersection(self, cube_name: str, unique_names: bool = False) -> List[str]:
         """ Get a random Intersection in a cube
         used mostly for regression testing.
         Not optimized, in terms of performance. Function Loads ALL elements for EACH dim...

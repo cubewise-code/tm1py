@@ -3,6 +3,16 @@
 # TM1py Exceptions are defined here
 
 
+class TM1pyTimeout(Exception):
+    def __init__(self, method, url, timeout):
+        self.method = method
+        self.url = url
+        self.timeout = timeout
+
+    def __str__(self):
+        return f"Timeout after {self.timeout} seconds for '{self.method}' request with url :'{self.url}'"
+
+
 class TM1pyException(Exception):
     """ The default exception for TM1py
 
@@ -30,7 +40,8 @@ class TM1pyException(Exception):
         return self._headers
 
     def __str__(self):
-        return "Text: {} Status Code: {} Reason: {} Headers: {}".format(self._response,
-                                                                self._status_code,
-                                                                self._reason,
-                                                                self._headers)
+        return "Text: {} Status Code: {} Reason: {} Headers: {}".format(
+            self._response,
+            self._status_code,
+            self._reason,
+            self._headers)

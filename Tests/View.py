@@ -49,7 +49,7 @@ class TestViewMethods(unittest.TestCase):
             element2 = 'Element ' + str(random.randint(1, 1000))
             element3 = 'Element ' + str(random.randint(1, 1000))
             cellset[(element1, element2, element3)] = random.randint(1, 1000)
-        cls.tm1.data.write_values(CUBE_NAME, cellset)
+        cls.tm1.cells.write_values(CUBE_NAME, cellset)
 
     def setUp(self):
         for private in (True, False):
@@ -206,7 +206,7 @@ class TestViewMethods(unittest.TestCase):
                 view_name=self.native_view_name,
                 private=private)
             # Sum up all the values from the views
-            data_original = self.tm1.data.execute_view(
+            data_original = self.tm1.cells.execute_view(
                 cube_name=CUBE_NAME,
                 view_name=self.native_view_name,
                 private=private)

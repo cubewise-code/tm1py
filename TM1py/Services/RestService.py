@@ -3,18 +3,21 @@ import functools
 import sys
 import warnings
 from base64 import b64encode, b64decode
+from typing import Union, Dict, Tuple
 
 import requests
+from requests import Timeout, Response
 from requests.adapters import HTTPAdapter
 
 # SSO not supported for Linux
+from TM1py.Exceptions.Exceptions import TM1pyTimeout
+
 try:
     from requests_negotiate_sspi import HttpNegotiateAuth
 except ImportError:
     warnings.warn("requests_negotiate_sspi failed to import. SSO will not work", ImportWarning)
 
 from TM1py.Exceptions import TM1pyException
-from TM1py.Utils import Utils
 
 # import Http-Client depending on python version
 if sys.version[0] == '2':
@@ -31,25 +34,27 @@ def httpmethod(func):
     """
 
     @functools.wraps(func)
-    def wrapper(self, request, data='', odata_escape_single_quotes_in_object_names=True, encoding='utf-8', **kwargs):
-        # request encoding
-        request, data = self._url_and_body(
-            request=request,
+    def wrapper(self, url: str, data: str = '', encoding='utf-8', **kwargs):
+        # url encoding
+        url, data = self._url_and_body(
+            url=url,
             data=data,
-            odata_escape_single_quotes_in_object_names=odata_escape_single_quotes_in_object_names,
             encoding=encoding)
-        # Do Request
-        response = func(self, request, data)
-        # Verify
-        self.verify_response(response=response)
-        # response encoding
-        response.encoding = encoding
-        return response
+        # execute request
+        try:
+            response = func(self, url, data, **kwargs)
+            # verify
+            self.verify_response(response=response)
+            # response encoding
+            response.encoding = encoding
+            return response
+        except Timeout:
+            raise TM1pyTimeout(method=func.__name__, url=url, timeout=kwargs['timeout'])
 
     return wrapper
 
 
-class RESTService:
+class RestService:
     """ Low level communication with TM1 instance through HTTP.
         Allows to execute HTTP Methods
             - GET
@@ -94,7 +99,7 @@ class RESTService:
         self._address = kwargs.get('address', None)
         self._port = kwargs.get('port', None)
         self._verify = False
-        self._timeout = None if kwargs.get('timeout', None) is None else int( kwargs.get('timeout'))
+        self._timeout = None if kwargs.get('timeout', None) is None else float(kwargs.get('timeout'))
 
         if 'verify' in kwargs:
             if isinstance(kwargs['verify'], str):
@@ -137,7 +142,7 @@ class RESTService:
             if self.translate_to_boolean(value=kwargs['logging']):
                 http_client.HTTPConnection.debuglevel = 1
 
-    def _manage_http_connection_pool(self, connection_pool_size):
+    def _manage_http_connection_pool(self, connection_pool_size: Union[str, int]):
         self._s.mount(
             self._base_url,
             HTTPAdapter(
@@ -151,97 +156,100 @@ class RESTService:
         self.logout()
 
     @httpmethod
-    def GET(self, request, data='', headers=None, timeout=None, **kwargs):
+    def GET(self, url: str, data: Union[str, bytes] = '', headers: Dict = None, timeout: float = None, **kwargs):
         """ Perform a GET request against TM1 instance
+        :param url:
         :param data: the payload
         :param headers: custom headers
         :param timeout: Number of seconds that the client will wait to receive the first byte.
         :return: response object
         """
         return self._s.get(
-            url=request,
+            url=url,
             headers={**self._headers, **headers} if headers else self._headers,
             data=data,
             verify=self._verify,
             timeout=timeout if timeout else self._timeout)
 
     @httpmethod
-    def POST(self, request, data, headers=None, timeout=None, **kwargs):
+    def POST(self, url: str, data: Union[str, bytes], headers: Dict = None, timeout: float = None, **kwargs):
         """ POST request against the TM1 instance
+        :param url:
         :param data: the payload
         :param headers: custom headers
         :param timeout: Number of seconds that the client will wait to receive the first byte.
         :return: response object
         """
         return self._s.post(
-            url=request,
+            url=url,
             headers={**self._headers, **headers} if headers else self._headers,
             data=data,
             verify=self._verify,
             timeout=timeout if timeout else self._timeout)
 
     @httpmethod
-    def PATCH(self, request, data, headers=None, timeout=None, **kwargs):
+    def PATCH(self, url: str, data: Union[str, bytes], headers: Dict = None, timeout: float = None, **kwargs):
         """ PATCH request against the TM1 instance
-        :param request: String, for instance : /api/v1/Dimensions('plan_business_unit')
+        :param url: String, for instance : /api/v1/Dimensions('plan_business_unit')
         :param data: the payload
         :param headers: custom headers
         :param timeout: Number of seconds that the client will wait to receive the first byte.
         :return: response object
         """
         return self._s.patch(
-            url=request,
+            url=url,
             headers={**self._headers, **headers} if headers else self._headers,
             data=data,
             verify=self._verify,
             timeout=timeout if timeout else self._timeout)
 
     @httpmethod
-    def PUT(self, request, data, headers=None, timeout=None, **kwargs):
+    def PUT(self, url: str, data: Union[str, bytes], headers: Dict = None, timeout: float = None, **kwargs):
         """ PUT request against the TM1 instance
-        :param request: String, for instance : /api/v1/Dimensions('plan_business_unit')
+        :param url: String, for instance : /api/v1/Dimensions('plan_business_unit')
         :param data: the payload
         :param headers: custom headers
         :param timeout: Number of seconds that the client will wait to receive the first byte.
         :return: response object
         """
         return self._s.put(
-            url=request,
+            url=url,
             headers={**self._headers, **headers} if headers else self._headers,
             data=data,
             verify=self._verify,
             timeout=timeout if timeout else self._timeout)
 
     @httpmethod
-    def DELETE(self, request, data='', headers=None, timeout=None, **kwargs):
+    def DELETE(self, url: str, data: Union[str, bytes], headers: Dict = None, timeout: float = None, **kwargs):
         """ Delete request against TM1 instance
-        :param request:  String, for instance : /api/v1/Dimensions('plan_business_unit')
+        :param url:  String, for instance : /api/v1/Dimensions('plan_business_unit')
         :param data: the payload
         :param headers: custom headers
         :param timeout: Number of seconds that the client will wait to receive the first byte.
         :return: response object
         """
         return self._s.delete(
-            url=request,
+            url=url,
             headers={**self._headers, **headers} if headers else self._headers,
             data=data,
             verify=self._verify,
             timeout=timeout if timeout else self._timeout)
 
-    def logout(self):
+    def logout(self, timeout: float = None, **kwargs):
         """ End TM1 Session and HTTP session
         """
-        self._headers["Connection"] = "close"
         # Easier to ask for forgiveness than permission
         try:
             # ProductVersion >= TM1 10.2.2 FP 6
-            self.POST('/api/v1/ActiveSession/tm1.Close', '')
+            self.POST('/api/v1/ActiveSession/tm1.Close', '', headers={"Connection": "close"}, timeout=timeout, **kwargs)
         except TM1pyException:
             # ProductVersion < TM1 10.2.2 FP 6
-            self.POST('/api/logout', '')
-        self._s.close()
+            self.POST('/api/logout', '', headers={"Connection": "close"}, timeout=timeout, **kwargs)
+        finally:
+            self._s.close()
 
-    def _start_session(self, user, password, decode_b64=False, namespace=None, gateway=None):
+    def _start_session(self, user: str, password: str, decode_b64: bool = False, namespace: str = None,
+                       gateway: str = None):
         """ perform a simple GET request (Ask for the TM1 Version) to start a session
         """
         # Authorization [Basic, CAM] through Headers
@@ -252,64 +260,62 @@ class RESTService:
             gateway,
             self._verify)
         self.add_http_header('Authorization', token)
-        request = '/api/v1/Configuration/ProductVersion/$value'
+        url = '/api/v1/Configuration/ProductVersion/$value'
         try:
-            response = self.GET(request=request)
+            response = self.GET(url=url)
             self._version = response.text
         finally:
             # After we have session cookie, drop the Authorization Header
             self.remove_http_header('Authorization')
 
-    def _url_and_body(self, request, data, odata_escape_single_quotes_in_object_names=True, encoding='utf-8'):
+    def _url_and_body(self, url: str, data: str, encoding: str = 'utf-8') -> Tuple[str, bytes]:
         """ create proper url and payload
         """
-        url = self._base_url + request
+        url = self._base_url + url
         url = url.replace(' ', '%20').replace('#', '%23')
-        if odata_escape_single_quotes_in_object_names:
-            url = Utils.odata_escape_single_quotes_in_object_names(url)
         if isinstance(data, str):
             data = data.encode(encoding)
         return url, data
 
-    def is_connected(self):
+    def is_connected(self) -> bool:
         """ Check if Connection to TM1 Server is established.
         :Returns:
             Boolean
         """
         try:
-            self.GET('/api/v1/Configuration/ServerName/$value', '')
+            self.GET('/api/v1/Configuration/ServerName/$value')
             return True
         except:
             return False
 
     def set_version(self):
-        request = '/api/v1/Configuration/ProductVersion/$value'
-        response = self.GET(request=request)
+        url = '/api/v1/Configuration/ProductVersion/$value'
+        response = self.GET(url=url)
         self._version = response.text
 
     @property
-    def version(self):
+    def version(self) -> str:
         return self._version
 
     @property
-    def session_id(self):
+    def session_id(self) -> str:
         return self._s.cookies["TM1SessionId"]
 
     @staticmethod
-    def translate_to_boolean(value):
+    def translate_to_boolean(value) -> bool:
         """ Takes a boolean or string (eg. true, True, FALSE, etc.) value and returns (boolean) True or False
         :param value: True, 'true', 'false' or 'False' ...
         :return:
         """
         if isinstance(value, bool) or isinstance(value, int):
-            return value
+            return bool(value)
         elif isinstance(value, str):
             return value.lower() == 'true'
         else:
             raise ValueError("Invalid argument: " + value + ". Needs to be of type boolean or string")
 
     @staticmethod
-    def b64_decode_password(encrypted_password):
+    def b64_decode_password(encrypted_password: str) -> str:
         """ b64 decoding
         :param encrypted_password: encrypted password with b64
         :return: password in plain text
@@ -317,7 +323,7 @@ class RESTService:
         return b64decode(encrypted_password).decode("UTF-8")
 
     @staticmethod
-    def verify_response(response):
+    def verify_response(response: Response):
         """ check if Status Code is OK
         :Parameters:
             `response`: String
@@ -332,16 +338,18 @@ class RESTService:
                                  headers=response.headers)
 
     @staticmethod
-    def _build_authorization_token(user, password, namespace=None, gateway=None, verify=False, **kwargs):
+    def _build_authorization_token(user: str, password: str, namespace: str = None, gateway: str = None,
+                                   verify: bool = False) -> str:
         """ Build the Authorization Header for CAM and Native Security
         """
         if namespace:
-            return RESTService._build_authorization_token_cam(user, password, namespace, gateway, verify)
+            return RestService._build_authorization_token_cam(user, password, namespace, gateway, verify)
         else:
-            return RESTService._build_authorization_token_basic(user, password)
+            return RestService._build_authorization_token_basic(user, password)
 
     @staticmethod
-    def _build_authorization_token_cam(user=None, password=None, namespace=None, gateway=None, verify=False):
+    def _build_authorization_token_cam(user: str = None, password: str = None, namespace: str = None,
+                                       gateway: str = None, verify: bool = False) -> str:
         if gateway:
             try:
                 HttpNegotiateAuth
@@ -364,7 +372,7 @@ class RESTService:
             return 'CAMNamespace ' + b64encode(str.encode("{}:{}:{}".format(user, password, namespace))).decode("ascii")
 
     @staticmethod
-    def _build_authorization_token_basic(user, password):
+    def _build_authorization_token_basic(user: str, password: str) -> str:
         return 'Basic ' + b64encode(str.encode("{}:{}".format(user, password))).decode("ascii")
 
     @staticmethod
@@ -372,12 +380,12 @@ class RESTService:
         # disable HTTP verification warnings from requests library
         requests.packages.urllib3.disable_warnings()
 
-    def get_http_header(self, key):
+    def get_http_header(self, key: str) -> str:
         return self._headers[key]
 
-    def add_http_header(self, key, value):
+    def add_http_header(self, key: str, value: str) -> str:
         self._headers[key] = value
 
-    def remove_http_header(self, key):
+    def remove_http_header(self, key: str) -> str:
         if key in self._headers:
             self._headers.pop(key)

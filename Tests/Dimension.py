@@ -143,6 +143,9 @@ class TestDimensionMethods(unittest.TestCase):
         dimension = self.tm1.dimensions.get(DIMENSION_NAME)
         self.assertEqual(len(dimension.hierarchies[0].elements), len(elements))
 
+    def test_update_dimension_remove_hierarchy(self):
+        pass
+
     def test_get_all_names(self):
         self.assertIn(DIMENSION_NAME, self.tm1.dimensions.get_all_names())
 

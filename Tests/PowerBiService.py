@@ -137,7 +137,7 @@ class TestPowerBiService(unittest.TestCase):
         for attribute in cls.alias_attributes:
             h.add_element_attribute(attribute, "Alias")
         d.add_hierarchy(h)
-        cls.tm1.dimensions.create(d)
+        cls.tm1.dimensions.update_or_create(d)
 
         # write attribute values
         cls.tm1.cubes.cells.write_value('1988', '}ElementAttributes_' + DIMENSION_NAME, ('1989', 'Previous Year'))

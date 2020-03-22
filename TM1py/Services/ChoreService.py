@@ -2,9 +2,15 @@
 
 import functools
 import json
+from datetime import datetime
+from typing import List
+
+from requests import Response
 
 from TM1py.Objects import Chore, ChoreTask
 from TM1py.Services.ObjectService import ObjectService
+from TM1py.Services.RestService import RestService
+from TM1py.Utils import format_url
 
 
 def deactivate_activate(func):
@@ -15,7 +21,7 @@ def deactivate_activate(func):
     """
 
     @functools.wraps(func)
-    def wrapper(self, chore):
+    def wrapper(self, chore: Chore):
         # Get Chore
         chore_old = self.get(chore.name)
         # Deactivate
@@ -40,183 +46,192 @@ class ChoreService(ObjectService):
 
     """
 
-    def __init__(self, rest):
+    def __init__(self, rest: RestService):
         super().__init__(rest)
 
-    def get(self, chore_name):
+    def get(self, chore_name: str, **kwargs) -> Chore:
         """ Get a chore from the TM1 Server
         :param chore_name:
         :return: instance of TM1py.Chore
         """
-        request = "/api/v1/Chores('{}')?$expand=Tasks($expand=*,Process($select=Name),Chore($select=Name))" \
-            .format(chore_name)
-        response = self._rest.GET(request)
+        url = format_url(
+            "/api/v1/Chores('{}')?$expand=Tasks($expand=*,Process($select=Name),Chore($select=Name))",
+            chore_name)
+        response = self._rest.GET(url, **kwargs)
         return Chore.from_dict(response.json())
 
-    def get_all(self):
+    def get_all(self, **kwargs) -> List[Chore]:
         """ get a List of all Chores
         :return: List of TM1py.Chore
         """
-        request = "/api/v1/Chores?$expand=Tasks($expand=*,Process($select=Name),Chore($select=Name))"
-        response = self._rest.GET(request)
+        url = "/api/v1/Chores?$expand=Tasks($expand=*,Process($select=Name),Chore($select=Name))"
+        response = self._rest.GET(url, **kwargs)
         return [Chore.from_dict(chore_as_dict) for chore_as_dict in response.json()['value']]
 
-    def get_all_names(self):
+    def get_all_names(self, **kwargs) -> List[str]:
         """ get a List of all Chores
         :return: List of TM1py.Chore
         """
-        request = "/api/v1/Chores?$select=Name"
-        response = self._rest.GET(request)
+        url = "/api/v1/Chores?$select=Name"
+        response = self._rest.GET(url, **kwargs)
         return [chore['Name'] for chore in response.json()['value']]
 
-    def create(self, chore):
-        """ create chore in TM1
+    def create(self, chore: Chore, **kwargs) -> Response:
+        """ create a chore
         :param chore: instance of TM1py.Chore
         :return:
         """
-        request = "/api/v1/Chores"
-        response = self._rest.POST(request, chore.body)
+        url = "/api/v1/Chores"
+        response = self._rest.POST(url=url, data=chore.body, **kwargs)
         if chore.active:
             self.activate(chore.name)
         return response
 
-    def delete(self, chore_name):
+    def delete(self, chore_name: str) -> Response:
         """ delete chore in TM1
         :param chore_name:
         :return: response
         """
-
-        request = "/api/v1/Chores('{}')".format(chore_name)
-        response = self._rest.DELETE(request)
+        url = format_url("/api/v1/Chores('{}')", chore_name)
+        response = self._rest.DELETE(url)
         return response
 
-    def exists(self, chore_name):
+    def exists(self, chore_name: str) -> bool:
         """ Check if Chore exists
 
         :param chore_name:
         :return:
         """
-        request = "/api/v1/Chores('{}')".format(chore_name)
-        return self._exists(request)
+        url = format_url("/api/v1/Chores('{}')", chore_name)
+        return self._exists(url)
 
     @deactivate_activate
-    def update(self, chore):
+    def update(self, chore: Chore, **kwargs):
         """ update chore on TM1 Server
         does not update: DST Sensitivity!
         :param chore:
-        :return: response
+        :return:
         """
         # Update StartTime, ExecutionMode, Frequency
-        request = "/api/v1/Chores('{}')".format(chore.name)
+        url = format_url("/api/v1/Chores('{}')", chore.name)
         # Remove Tasks from Body. Tasks to be managed individually
         chore_dict_without_tasks = chore.body_as_dict
         chore_dict_without_tasks.pop("Tasks")
-        self._rest.PATCH(request, json.dumps(chore_dict_without_tasks))
+        self._rest.PATCH(url, json.dumps(chore_dict_without_tasks), **kwargs)
+
         # Update Tasks individually
         task_old_count = self._get_tasks_count(chore.name)
         for i, task_new in enumerate(chore.tasks):
             if i >= task_old_count:
-                self._add_task(chore.name, task_new)
+                self._add_task(chore.name, task_new, **kwargs)
             else:
                 task_old = self._get_task(chore.name, i)
                 if task_new != task_old:
-                    self._update_task(chore.name, task_new)
+                    self._update_task(chore.name, task_new, **kwargs)
         for j in range(i + 1, task_old_count):
-            self._delete_task(chore.name, i + 1)
+            self._delete_task(chore.name, i + 1, **kwargs)
 
-    def activate(self, chore_name):
+    def activate(self, chore_name: str, **kwargs) -> Response:
         """ activate chore on TM1 Server
         :param chore_name:
         :return: response
         """
-        request = "/api/v1/Chores('{}')/tm1.Activate".format(chore_name)
-        return self._rest.POST(request, '')
+        url = format_url("/api/v1/Chores('{}')/tm1.Activate", chore_name)
+        return self._rest.POST(url, '', **kwargs)
 
-    def deactivate(self, chore_name):
+    def deactivate(self, chore_name: str, **kwargs) -> Response:
         """ deactivate chore on TM1 Server
         :param chore_name:
         :return: response
         """
+        url = format_url("/api/v1/Chores('{}')/tm1.Deactivate", chore_name)
+        return self._rest.POST(url, '', **kwargs)
 
-        request = "/api/v1/Chores('{}')/tm1.Deactivate".format(chore_name)
-        return self._rest.POST(request, '')
-
-    def set_local_start_time(self, chore_name, date_time):
-        """ Makes Server crash if chore is activate (10.2.2 FP6) :)
+    def set_local_start_time(self, chore_name: str, date_time: datetime, **kwargs) -> Response:
+        """ Makes Server crash if chore is activated (10.2.2 FP6) :)
         :param chore_name:
         :param date_time:
         :return:
         """
-        request = "/api/v1/Chores('{}')/tm1.SetServerLocalStartTime".format(chore_name)
-        # function for 3 to '03'
-        fill = lambda t: str(t).zfill(2)
+        url = format_url("/api/v1/Chores('{}')/tm1.SetServerLocalStartTime", chore_name)
         data = {
-            "StartDate": "{}-{}-{}".format(date_time.year, date_time.month, date_time.day),
-            "StartTime": "{}:{}:{}".format(fill(date_time.hour), fill(date_time.minute), fill(date_time.second))
+            "StartDate": "{}-{}-{}".format(
+                date_time.year, date_time.month, date_time.day),
+            "StartTime": "{}:{}:{}".format(
+                self.zfill_two(date_time.hour), self.zfill_two(date_time.minute), self.zfill_two(date_time.second))
         }
-        return self._rest.POST(request, json.dumps(data))
+        return self._rest.POST(url, json.dumps(data), **kwargs)
 
-    def execute_chore(self, chore_name):
+    def execute_chore(self, chore_name: str, **kwargs) -> Response:
         """ Ask TM1 Server to execute a chore
             :param chore_name: String, name of the chore to be executed
             :return: the response
         """
-        return self._rest.POST("/api/v1/Chores('" + chore_name + "')/tm1.Execute", '')
+        return self._rest.POST(format_url("/api/v1/Chores('{}')/tm1.Execute", chore_name), '', **kwargs)
 
-    def _get_tasks_count(self, chore_name):
+    def _get_tasks_count(self, chore_name: str, **kwargs) -> int:
         """ Query Chore tasks count on TM1 Server
         :param chore_name: name of Chore to count tasks
         :return: int
         """
-        request = "/api/v1/Chores('{}')/Tasks/$count".format(chore_name)
-        response = self._rest.GET(request)
+        url = format_url("/api/v1/Chores('{}')/Tasks/$count", chore_name)
+        response = self._rest.GET(url, **kwargs)
         return int(response.text)
 
-    def _get_task(self, chore_name, step):
+    def _get_task(self, chore_name: str, step: int, **kwargs) -> ChoreTask:
         """ Get task from chore
         :param chore_name: name of the chore
-        :param step: integer
+        :param step:
         :return: instance of TM1py.ChoreTask
         """
-        request = "/api/v1/Chores('{}')/Tasks({})?$expand=*,Process($select=Name),Chore($select=Name)" \
-            .format(chore_name, step)
-        response = self._rest.GET(request)
+        url = format_url(
+            "/api/v1/Chores('{}')/Tasks({})?$expand=*,Process($select=Name),Chore($select=Name)", chore_name, str(step))
+        response = self._rest.GET(url, **kwargs)
         return ChoreTask.from_dict(response.json())
 
-    def _delete_task(self, chore_name, step):
+    def _delete_task(self, chore_name: str, step: int, **kwargs) -> Response:
         """ Delete task from chore
         :param chore_name: name of the chore
         :param step: integer
         :return: response
         """
-        request = "/api/v1/Chores('{}')/Tasks({})".format(chore_name, step)
-        response = self._rest.DELETE(request)
+        url = format_url("/api/v1/Chores('{}')/Tasks({})", chore_name, str(step))
+        response = self._rest.DELETE(url, **kwargs)
         return response
 
-    def _add_task(self, chore_name, chore_task):
+    def _add_task(self, chore_name: str, chore_task: ChoreTask, **kwargs) -> Response:
         """ Create Chore task on TM1 Server
         :param chore_name: name of Chore to update
         :param chore_task: instance of TM1py.ChoreTask
         :return: response
         """
-        chore = self.get(chore_name)
+        chore = self.get(chore_name, **kwargs)
         if chore.active:
-            self.deactivate(chore_name)
+            self.deactivate(chore_name, **kwargs)
         try:
-            request = "/api/v1/Chores('{}')/Tasks".format(chore_name)
-            response = self._rest.POST(request, chore_task.body)
+            url = format_url("/api/v1/Chores('{}')/Tasks", chore_name)
+            response = self._rest.POST(url, chore_task.body, **kwargs)
         except Exception as e:
             raise e
         finally:
             if chore.active:
-                self.activate(chore_name)
+                self.activate(chore_name, **kwargs)
         return response
 
-    def _update_task(self, chore_name, chore_task):
+    def _update_task(self, chore_name, chore_task, **kwargs):
         """ update a chore task
         :param chore_name: name of the Chore
         :param chore_task: instance TM1py.ChoreTask
         :return: response
         """
-        request = "/api/v1/Chores('{}')/Tasks({})".format(chore_name, chore_task.step)
-        return self._rest.PATCH(request, chore_task.body)
+        url = format_url("/api/v1/Chores('{}')/Tasks({})", chore_name, chore_task.step)
+        return self._rest.PATCH(url, chore_task.body, **kwargs)
+
+    @staticmethod
+    def zfill_two(number: int) -> str:
+        """ Pad an int with zeros on the left two create two digit string
+
+        :param number:
+        :return:
+        """
+        return str(number).zfill(2)
