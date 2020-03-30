@@ -1,17 +1,14 @@
 import configparser
-from pathlib import Path
 import random
 import types
 import unittest
+from pathlib import Path
 
 import pandas as pd
 
 from TM1py.Objects import MDXView, Cube, Dimension, Element, Hierarchy, NativeView, AnonymousSubset, ElementAttribute
 from TM1py.Services import TM1Service
 from TM1py.Utils import Utils
-
-config = configparser.ConfigParser()
-config.read(Path(__file__).parent.joinpath('config.ini'))
 
 # Hard coded stuff
 PREFIX = 'TM1py_Tests_Cell_'
@@ -30,6 +27,8 @@ CELLS_IN_STRING_CUBE = {
     ('d1e1', 'd2e1', 'd3e1'): 'String1',
     ('d1e2', 'd2e2', 'd3e2'): 'String2',
     ('d1e3', 'd2e3', 'd3e3'): 'String3'}
+
+LATIN_1_ENCODED_TEXT = "Èd5áÂè"
 
 CUBE_NAME_RPS1 = PREFIX + "Cube" + "_RPS1"
 CUBE_NAME_RPS2 = PREFIX + "Cube" + "_RPS2"
@@ -58,6 +57,9 @@ SELECT
 {columns} ON COLUMNS
 FROM {cube}
 """
+
+config = configparser.ConfigParser()
+config.read(Path(__file__).parent.joinpath('config.ini'))
 
 
 class TestDataMethods(unittest.TestCase):
@@ -1487,6 +1489,56 @@ class TestDataMethods(unittest.TestCase):
         self.tm1.cubes.cells.activate_transactionlog(CUBE_NAME)
         value = self.tm1.cubes.cells.get_value("}CubeProperties", "{},LOGGING".format(CUBE_NAME))
         self.assertEqual("YES", value.upper())
+
+    def test_read_write_with_custom_encoding(self):
+        coordinates = ("d1e1", "d2e2", "d3e3")
+        self.tm1.cubes.cells.write_values(STRING_CUBE_NAME, {coordinates: LATIN_1_ENCODED_TEXT}, encoding="latin-1")
+
+        mdx = f"""
+        SELECT
+        {"*".join(
+            "{[" + dimension + "].[" + element + "]}"
+            for dimension, element
+            in zip(STRING_DIMENSION_NAMES, coordinates))} ON 0
+        FROM
+        [{STRING_CUBE_NAME}]
+        """
+
+        values = self.tm1.cubes.cells.execute_mdx_values(mdx=mdx, encoding="latin-1")
+        self.assertEqual(LATIN_1_ENCODED_TEXT, next(values))
+
+    def test_read_write_with_custom_encoding_fail_response_encoding(self):
+        coordinates = ("d1e1", "d2e2", "d3e3")
+        self.tm1.cubes.cells.write_values(STRING_CUBE_NAME, {coordinates: LATIN_1_ENCODED_TEXT}, encoding="latin-1")
+
+        mdx = f"""
+        SELECT
+        {"*".join(
+            "{[" + dimension + "].[" + element + "]}"
+            for dimension, element
+            in zip(STRING_DIMENSION_NAMES, coordinates))} ON 0
+        FROM
+        [{STRING_CUBE_NAME}]
+        """
+        values = self.tm1.cubes.cells.execute_mdx_values(mdx=mdx)
+
+        self.assertNotEqual(LATIN_1_ENCODED_TEXT, next(values))
+
+    def test_read_write_with_custom_encoding_fail_request_encoding(self):
+        coordinates = ("d1e1", "d2e2", "d3e3")
+        self.tm1.cubes.cells.write_values(STRING_CUBE_NAME, {coordinates: LATIN_1_ENCODED_TEXT})
+
+        mdx = f"""
+        SELECT
+        {"*".join(
+            "{[" + dimension + "].[" + element + "]}"
+            for dimension, element
+            in zip(STRING_DIMENSION_NAMES, coordinates))} ON 0
+        FROM
+        [{STRING_CUBE_NAME}]
+        """
+        values = self.tm1.cubes.cells.execute_mdx_values(mdx=mdx, encoding="latin-1")
+        self.assertNotEqual(LATIN_1_ENCODED_TEXT, next(values))
 
     # Delete Cube and Dimensions
     @classmethod
