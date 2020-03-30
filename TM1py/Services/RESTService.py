@@ -31,16 +31,19 @@ def httpmethod(func):
     """
 
     @functools.wraps(func)
-    def wrapper(self, request, data='', odata_escape_single_quotes_in_object_names=True):
-        # Encoding
+    def wrapper(self, request, data='', odata_escape_single_quotes_in_object_names=True, encoding='utf-8', **kwargs):
+        # request encoding
         request, data = self._url_and_body(
             request=request,
             data=data,
-            odata_escape_single_quotes_in_object_names=odata_escape_single_quotes_in_object_names)
+            odata_escape_single_quotes_in_object_names=odata_escape_single_quotes_in_object_names,
+            encoding=encoding)
         # Do Request
         response = func(self, request, data)
         # Verify
         self.verify_response(response=response)
+        # response encoding
+        response.encoding = encoding
         return response
 
     return wrapper
@@ -148,7 +151,7 @@ class RESTService:
         self.logout()
 
     @httpmethod
-    def GET(self, request, data='', headers=None, timeout=None):
+    def GET(self, request, data='', headers=None, timeout=None, **kwargs):
         """ Perform a GET request against TM1 instance
         :param data: the payload
         :param headers: custom headers
@@ -163,7 +166,7 @@ class RESTService:
             timeout=timeout if timeout else self._timeout)
 
     @httpmethod
-    def POST(self, request, data, headers=None, timeout=None):
+    def POST(self, request, data, headers=None, timeout=None, **kwargs):
         """ POST request against the TM1 instance
         :param data: the payload
         :param headers: custom headers
@@ -178,7 +181,7 @@ class RESTService:
             timeout=timeout if timeout else self._timeout)
 
     @httpmethod
-    def PATCH(self, request, data, headers=None, timeout=None):
+    def PATCH(self, request, data, headers=None, timeout=None, **kwargs):
         """ PATCH request against the TM1 instance
         :param request: String, for instance : /api/v1/Dimensions('plan_business_unit')
         :param data: the payload
@@ -194,7 +197,7 @@ class RESTService:
             timeout=timeout if timeout else self._timeout)
 
     @httpmethod
-    def PUT(self, request, data, headers=None, timeout=None):
+    def PUT(self, request, data, headers=None, timeout=None, **kwargs):
         """ PUT request against the TM1 instance
         :param request: String, for instance : /api/v1/Dimensions('plan_business_unit')
         :param data: the payload
@@ -210,7 +213,7 @@ class RESTService:
             timeout=timeout if timeout else self._timeout)
 
     @httpmethod
-    def DELETE(self, request, data='', headers=None, timeout=None):
+    def DELETE(self, request, data='', headers=None, timeout=None, **kwargs):
         """ Delete request against TM1 instance
         :param request:  String, for instance : /api/v1/Dimensions('plan_business_unit')
         :param data: the payload
@@ -257,15 +260,15 @@ class RESTService:
             # After we have session cookie, drop the Authorization Header
             self.remove_http_header('Authorization')
 
-    def _url_and_body(self, request, data, odata_escape_single_quotes_in_object_names=True):
+    def _url_and_body(self, request, data, odata_escape_single_quotes_in_object_names=True, encoding='utf-8'):
         """ create proper url and payload
         """
         url = self._base_url + request
         url = url.replace(' ', '%20').replace('#', '%23')
         if odata_escape_single_quotes_in_object_names:
             url = Utils.odata_escape_single_quotes_in_object_names(url)
-        if type(data) is not bytes:
-            data = data.encode('utf-8')
+        if isinstance(data, str):
+            data = data.encode(encoding)
         return url, data
 
     def is_connected(self):

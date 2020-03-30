@@ -41,7 +41,7 @@ class CellService(ObjectService):
         """
         super().__init__(tm1_rest)
 
-    def get_value(self, cube_name, element_string, dimensions=None):
+    def get_value(self, cube_name, element_string, dimensions=None, **kwargs):
         """ Element_String describes the Dimension-Hierarchy-Element arrangement
             
         :param cube_name: Name of the cube
@@ -82,7 +82,7 @@ class CellService(ObjectService):
         # Construct final MDX
         mdx = mdx_template.format(mdx_rows, mdx_columns, cube_name)
         # Execute MDX
-        cellset = dict(self.execute_mdx(mdx))
+        cellset = dict(self.execute_mdx(mdx, **kwargs))
         return next(iter(cellset.values()))["Value"]
 
     def relative_proportional_spread(
@@ -152,7 +152,7 @@ class CellService(ObjectService):
     @tidy_cellset
     def _post_against_cellset(self, cellset_id, payload, **kwargs):
         request = "/api/v1/Cellsets('{}')/tm1.Update".format(cellset_id)
-        return self._rest.POST(request=request, data=json.dumps(payload))
+        return self._rest.POST(request=request, data=json.dumps(payload), **kwargs)
 
     def get_dimension_names_for_writing(self, cube_name):
         from TM1py.Services import CubeService
@@ -163,7 +163,7 @@ class CellService(ObjectService):
             return dimensions[1:]
         return dimensions
 
-    def write_value(self, value, cube_name, element_tuple, dimensions=None):
+    def write_value(self, value, cube_name, element_tuple, dimensions=None, **kwargs):
         """ Write value into cube at specified coordinates
 
         :param value: the actual value
@@ -184,9 +184,9 @@ class CellService(ObjectService):
             in zip(dimensions, element_tuple)]
         body_as_dict["Value"] = str(value) if value else ""
         data = json.dumps(body_as_dict, ensure_ascii=False)
-        return self._rest.POST(request=request, data=data)
+        return self._rest.POST(request=request, data=data, **kwargs)
 
-    def write_values(self, cube_name, cellset_as_dict, dimensions=None):
+    def write_values(self, cube_name, cellset_as_dict, dimensions=None, **kwargs):
         """ Write values in cube.  
         For cellsets with > 1000 cells look into "write_values_through_cellset"
 
@@ -210,9 +210,9 @@ class CellService(ObjectService):
             body_as_dict["Value"] = str(value) if value else ""
             updates.append(json.dumps(body_as_dict, ensure_ascii=False))
         updates = '[' + ','.join(updates) + ']'
-        return self._rest.POST(request=request, data=updates)
+        return self._rest.POST(request=request, data=updates, **kwargs)
 
-    def write_values_through_cellset(self, mdx, values):
+    def write_values_through_cellset(self, mdx, values, **kwargs):
         """ Significantly faster than write_values function
         Cellset gets created according to MDX Expression. For instance:
         [[61, 29 ,13], 
@@ -240,10 +240,10 @@ class CellService(ObjectService):
         """
         # execute mdx and create cellset at Server
         cellset_id = self.create_cellset(mdx)
-        self.update_cellset(cellset_id=cellset_id, values=values)
+        self.update_cellset(cellset_id=cellset_id, values=values, **kwargs)
 
     @tidy_cellset
-    def update_cellset(self, cellset_id, values):
+    def update_cellset(self, cellset_id, values, **kwargs):
         """ Write values into cellset
 
         Number of values must match the number of cells in the cellset
@@ -259,9 +259,9 @@ class CellService(ObjectService):
                 "Ordinal": i,
                 "Value": value
             })
-        self._rest.PATCH(request, json.dumps(data, ensure_ascii=False))
+        self._rest.PATCH(request, json.dumps(data, ensure_ascii=False), **kwargs)
 
-    def execute_mdx(self, mdx, cell_properties=None, top=None, skip_contexts=False):
+    def execute_mdx(self, mdx, cell_properties=None, top=None, skip_contexts=False, **kwargs):
         """ Execute MDX and return the cells with their properties
 
         :param mdx: MDX Query, as string
@@ -276,9 +276,11 @@ class CellService(ObjectService):
             cell_properties=cell_properties,
             top=top,
             skip_contexts=skip_contexts,
-            delete_cellset=True)
+            delete_cellset=True,
+            **kwargs)
 
-    def execute_view(self, cube_name, view_name, cell_properties=None, private=False, top=None, skip_contexts=False):
+    def execute_view(self, cube_name, view_name, cell_properties=None, private=False, top=None, skip_contexts=False,
+                     **kwargs):
         """ get view content as dictionary with sweet and concise structure.
             Works on NativeView and MDXView !
 
@@ -297,7 +299,8 @@ class CellService(ObjectService):
             cell_properties=cell_properties,
             top=top,
             skip_contexts=skip_contexts,
-            delete_cellset=True)
+            delete_cellset=True,
+            **kwargs)
 
     def execute_mdx_raw(
             self,
@@ -306,7 +309,8 @@ class CellService(ObjectService):
             elem_properties=None,
             member_properties=None,
             top=None,
-            skip_contexts=False):
+            skip_contexts=False,
+            **kwargs):
         """ Execute MDX and return the raw data from TM1
 
         :param mdx: String, a valid MDX Query
@@ -325,7 +329,8 @@ class CellService(ObjectService):
             member_properties=member_properties,
             top=top,
             delete_cellset=True,
-            skip_contexts=skip_contexts)
+            skip_contexts=skip_contexts,
+            **kwargs)
 
     def execute_view_raw(
             self,
@@ -336,7 +341,8 @@ class CellService(ObjectService):
             elem_properties=None,
             member_properties=None,
             top=None,
-            skip_contexts=False):
+            skip_contexts=False,
+            **kwargs):
         """ Execute a cube view and return the raw data from TM1
 
         :param cube_name: String, name of the cube
@@ -357,9 +363,10 @@ class CellService(ObjectService):
             member_properties=member_properties,
             top=top,
             skip_contexts=skip_contexts,
-            delete_cellset=True)
+            delete_cellset=True,
+            **kwargs)
 
-    def execute_mdx_values(self, mdx):
+    def execute_mdx_values(self, mdx, **kwargs):
         """ Optimized for performance. Query only raw cell values. 
         Coordinates are omitted !
 
@@ -367,19 +374,19 @@ class CellService(ObjectService):
         :return: Generator of cell values
         """
         cellset_id = self.create_cellset(mdx=mdx)
-        return self.extract_cellset_values(cellset_id, delete_cellset=True)
+        return self.extract_cellset_values(cellset_id, delete_cellset=True, **kwargs)
 
-    def execute_view_values(self, cube_name, view_name, private=False):
+    def execute_view_values(self, cube_name, view_name, private=False, **kwargs):
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
-        return self.extract_cellset_values(cellset_id, delete_cellset=True)
+        return self.extract_cellset_values(cellset_id, delete_cellset=True, **kwargs)
 
-    def execute_mdx_rows_and_values(self, mdx, element_unique_names=True):
+    def execute_mdx_rows_and_values(self, mdx, element_unique_names=True, **kwargs):
         cellset_id = self.create_cellset(mdx=mdx)
-        return self.extract_cellset_rows_and_values(cellset_id, element_unique_names, delete_cellset=True)
+        return self.extract_cellset_rows_and_values(cellset_id, element_unique_names, delete_cellset=True, **kwargs)
 
-    def execute_view_rows_and_values(self, cube_name, view_name, private=False, element_unique_names=True):
+    def execute_view_rows_and_values(self, cube_name, view_name, private=False, element_unique_names=True, **kwargs):
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
-        return self.extract_cellset_rows_and_values(cellset_id, element_unique_names, delete_cellset=True)
+        return self.extract_cellset_rows_and_values(cellset_id, element_unique_names, delete_cellset=True, **kwargs)
 
     def execute_mdx_csv(self, mdx):
         """ Optimized for performance. Get csv string of coordinates and values. 
@@ -707,12 +714,12 @@ class CellService(ObjectService):
             **kwargs):
         """ Extract full Cellset data and return the raw data from TM1
 
-        :param skip_contexts:
         :param cellset_id: String; ID of existing cellset
         :param cell_properties: List of properties to be queried from cells. E.g. ['Value', 'RuleDerived', ...]
         :param elem_properties: List of properties to be queried from elements. E.g. ['UniqueName','Attributes', ...]
         :param member_properties: List properties to be queried from the member. E.g. ['Name', 'UniqueName']
         :param top: Integer limiting the number of cells and the number or rows returned
+        :param skip_contexts:
         :return: Raw format from TM1.
         """
         if not cell_properties:
@@ -742,7 +749,7 @@ class CellService(ObjectService):
                     select_member_properties=select_member_properties,
                     expand_elem_properties=expand_elem_properties,
                     top_cells=";$top={}".format(top) if top else "")
-        response = self._rest.GET(request=request)
+        response = self._rest.GET(request=request, **kwargs)
         return response.json()
 
     @tidy_cellset
@@ -753,7 +760,7 @@ class CellService(ObjectService):
         :return: Raw format from TM1.
         """
         request = "/api/v1/Cellsets('{}')?$expand=Cells($select=Value)".format(cellset_id)
-        response = self._rest.GET(request=request, data='')
+        response = self._rest.GET(request=request, data='', **kwargs)
         return (cell["Value"] for cell in response.json()["Cells"])
 
     @tidy_cellset
@@ -762,7 +769,7 @@ class CellService(ObjectService):
                   "Axes($filter=Ordinal eq 1;$expand=Tuples(" \
                   "$expand=Members($select=Element;$expand=Element($select={}))))," \
                   "Cells($select=Value)".format(cellset_id, "UniqueName" if element_unique_names else "Name")
-        response = self._rest.GET(request=request, data='')
+        response = self._rest.GET(request=request, data='', **kwargs)
         response_json = response.json()
         rows = response_json["Axes"][0]["Tuples"]
         cell_values = [cell["Value"] for cell in response_json["Cells"]]
@@ -792,9 +799,7 @@ class CellService(ObjectService):
     def extract_cellset_composition(self, cellset_id, **kwargs):
         request = "/api/v1/Cellsets('{}')?$expand=Cube($select=Name),Axes($expand=Hierarchies($select=UniqueName))".format(
             cellset_id)
-        response = self._rest.GET(
-            request=request,
-            data='')
+        response = self._rest.GET(request=request, data='', **kwargs)
         response_json = response.json()
         cube = response_json["Cube"]["Name"]
 
@@ -810,7 +815,7 @@ class CellService(ObjectService):
     @tidy_cellset
     def extract_cellset_cellcount(self, cellset_id, **kwargs):
         request = "/api/v1/Cellsets('{}')/Cells/$count".format(cellset_id)
-        response = self._rest.GET(request)
+        response = self._rest.GET(request, **kwargs)
         return int(response.content)
 
     @tidy_cellset
@@ -821,7 +826,7 @@ class CellService(ObjectService):
         :return: Raw format from TM1.
         """
         request = "/api/v1/Cellsets('{}')/Content".format(cellset_id)
-        data = self._rest.GET(request)
+        data = self._rest.GET(request, **kwargs)
         return data.text
 
     def extract_cellset_dataframe(self, cellset_id, **kwargs):
@@ -831,7 +836,7 @@ class CellService(ObjectService):
         :param kwargs:
         :return:
         """
-        raw_csv = self.extract_cellset_csv(cellset_id=cellset_id, delete_cellset=True)
+        raw_csv = self.extract_cellset_csv(cellset_id=cellset_id, delete_cellset=True, **kwargs)
         memory_file = StringIO(raw_csv)
         # make sure all element names are strings and values column is derived from data
         if 'dtype' not in kwargs:
@@ -844,7 +849,7 @@ class CellService(ObjectService):
                   "Axes($filter=Ordinal eq 0 or Ordinal eq 1;$expand=Tuples(" \
                   "$expand=Members($select=Name)),Hierarchies($select=Name))," \
                   "Cells($select=Value)".format(cellset_id)
-        response = self._rest.GET(request=request, data='')
+        response = self._rest.GET(request=request, data='', **kwargs)
         response_json = response.json()
         rows = response_json["Axes"][1]["Tuples"]
         column_headers = [tupl["Members"][0]["Name"] for tupl in response_json["Axes"][0]["Tuples"]]
@@ -885,11 +890,13 @@ class CellService(ObjectService):
         """
         data = self.extract_cellset(
             cellset_id=cellset_id,
-            delete_cellset=False)
+            delete_cellset=False,
+            **kwargs)
 
         cube, titles, rows, columns = self.extract_cellset_composition(
             cellset_id=cellset_id,
-            delete_cellset=True)
+            delete_cellset=True,
+            **kwargs)
 
         df = build_pandas_dataframe_from_cellset(data, multiindex=False)
         return pd.pivot_table(
@@ -908,7 +915,8 @@ class CellService(ObjectService):
             cell_properties=None,
             top=None,
             delete_cellset=True,
-            skip_contexts=False):
+            skip_contexts=False,
+            **kwargs):
         """ Execute Cellset and return the cells with their properties
 
         :param skip_contexts:
@@ -928,13 +936,14 @@ class CellService(ObjectService):
             member_properties=['UniqueName'],
             top=top,
             skip_contexts=skip_contexts,
-            delete_cellset=delete_cellset)
+            delete_cellset=delete_cellset,
+            **kwargs)
 
         return Utils.build_content_from_cellset(
             raw_cellset_as_dict=raw_cellset,
             top=top)
 
-    def create_cellset(self, mdx):
+    def create_cellset(self, mdx, **kwargs):
         """ Execute MDX in order to create cellset at server. return the cellset-id
 
         :param mdx: MDX Query, as string
@@ -944,7 +953,7 @@ class CellService(ObjectService):
         data = {
             'MDX': mdx
         }
-        response = self._rest.POST(request=request, data=json.dumps(data, ensure_ascii=False))
+        response = self._rest.POST(request=request, data=json.dumps(data, ensure_ascii=False), **kwargs)
         cellset_id = response.json()['ID']
         return cellset_id
 
