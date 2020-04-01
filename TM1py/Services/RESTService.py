@@ -94,7 +94,7 @@ class RESTService:
         self._address = kwargs.get('address', None)
         self._port = kwargs.get('port', None)
         self._verify = False
-        self._timeout = int(kwargs.get('timeout', None))
+        self._timeout = None if kwargs.get('timeout', None) is None else int( kwargs.get('timeout'))
 
         if 'verify' in kwargs:
             if isinstance(kwargs['verify'], str):
