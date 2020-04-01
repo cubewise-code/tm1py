@@ -152,11 +152,14 @@ class HierarchyService(ObjectService):
         :param hierarchy_name:
         :return: String, name of Member
         """
-        request = "/api/v1/Dimensions('{dimension}')/Hierarchies('{hierarchy}')/DefaultMember/Name/$value".format(
+        request = "/api/v1/Dimensions('{dimension}')/Hierarchies('{hierarchy}')/DefaultMember".format(
             dimension=dimension_name,
             hierarchy=hierarchy_name if hierarchy_name else dimension_name)
         response = self._rest.GET(request=request)
-        return response.text
+
+        if not response.text:
+            return None
+        return response.json()["Name"]
 
     def update_default_member(self, dimension_name, hierarchy_name=None, member_name=""):
         """ Update the default member of a hierarchy.
