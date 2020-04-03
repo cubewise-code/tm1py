@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 import json
+from typing import Dict, Tuple
+
+from requests import Response
 
 from TM1py.Objects import Hierarchy
 from TM1py.Services.ElementService import ElementService
@@ -193,6 +196,23 @@ class HierarchyService(ObjectService):
             "Edges": []
         }
         return self._rest.PATCH(request=request, data=json.dumps(body))
+
+    def add_edges(self, dimension_name: str, hierarchy_name: str = None, edges: Dict[Tuple, int] = None) -> Response:
+        """ Add Edges to hierarchy. Fails if any edge already exists.
+
+        :param dimension_name:
+        :param hierarchy_name:
+        :param edges:
+        :return:
+        """
+        if not hierarchy_name:
+            hierarchy_name = dimension_name
+        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Edges".format(dimension_name, hierarchy_name)
+        body = [{"ParentName": parent, "ComponentName": component, "Weight": float(weight)}
+                for (parent, component), weight
+                in edges.items()]
+
+        return self._rest.POST(request=request, data=json.dumps(body))
 
     def is_balanced(self, dimension_name, hierarchy_name):
         """ Check if hierarchy is balanced

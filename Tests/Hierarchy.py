@@ -1,8 +1,11 @@
 import configparser
-from pathlib import Path
 import unittest
+from pathlib import Path
+
+import pytest
 
 from TM1py import Element
+from TM1py.Exceptions import TM1pyException
 from TM1py.Objects import Dimension, Hierarchy, Subset
 from TM1py.Services import TM1Service
 
@@ -354,6 +357,19 @@ class TestHierarchyMethods(unittest.TestCase):
         self.tm1.dimensions.hierarchies.remove_all_edges(DIMENSION_NAME, DIMENSION_NAME)
         hierarchy = self.tm1.dimensions.hierarchies.get(DIMENSION_NAME, DIMENSION_NAME)
         self.assertEqual(len(hierarchy.edges), 0)
+
+    def test_add_edges(self):
+        edges = {("Total Years", "My Element"): 1, ("Total Years", "No Year"): 1}
+        self.tm1.dimensions.hierarchies.add_edges(DIMENSION_NAME, DIMENSION_NAME, edges)
+
+        hierarchy = self.tm1.dimensions.hierarchies.get(DIMENSION_NAME, DIMENSION_NAME)
+        self.assertEqual(hierarchy.edges[("Total Years", "My Element")], 1)
+        self.assertEqual(hierarchy.edges[("Total Years", "No Year")], 1)
+
+    def test_add_edges_fail_existing(self):
+        edges = {("Total Years", "1989"): 1}
+        with pytest.raises(TM1pyException):
+            self.tm1.dimensions.hierarchies.add_edges(DIMENSION_NAME, DIMENSION_NAME, edges)
 
     def test_is_balanced_false(self):
         is_balanced = self.tm1.dimensions.hierarchies.is_balanced(DIMENSION_NAME, DIMENSION_NAME)
