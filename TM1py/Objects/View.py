@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from abc import abstractmethod
 
 from TM1py.Objects.TM1Object import TM1Object
 
@@ -8,22 +9,27 @@ class View(TM1Object):
         serves as a parentclass for TM1py.Objects.MDXView and TM1py.Objects.NativeView
 
     """
-    def __init__(self, cube, name):
+
+    def __init__(self, cube: str, name: str):
         self._cube = cube
         self._name = name
 
+    @abstractmethod
+    def body(self):
+        pass
+
     @property
-    def cube(self):
+    def cube(self) -> str:
         return self._cube
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @cube.setter
-    def cube(self, value):
+    def cube(self, value: str):
         self._cube = value
 
     @name.setter
-    def name(self, value):
+    def name(self, value: str):
         self._name = value

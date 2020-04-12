@@ -1,7 +1,7 @@
 import configparser
-from pathlib import Path
 import random
 import unittest
+from pathlib import Path
 
 from _datetime import datetime
 
@@ -214,7 +214,7 @@ class TestDataMethods(unittest.TestCase):
         self.run_test_dimension_application(private=False)
 
     def run_test_document_application(self, private):
-        with open(Path(__file__).parent.joinpath('resources','document.xlsx'), "rb") as file:
+        with open(Path(__file__).parent.joinpath('resources', 'document.xlsx'), "rb") as file:
             app = DocumentApplication(path=TM1PY_APP_FOLDER, name=DOCUMENT_NAME, content=file.read())
             self.tm1.applications.create(application=app, private=private)
 

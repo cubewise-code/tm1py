@@ -1,3 +1,4 @@
+from abc import abstractmethod
 
 
 class TM1Object:
@@ -7,6 +8,7 @@ class TM1Object:
     SANDBOX_DIMENSION = "Sandboxes"
 
     @property
+    @abstractmethod
     def body(self):
         pass
 

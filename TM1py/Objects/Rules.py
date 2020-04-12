@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from typing import List
 
 from TM1py.Objects.TM1Object import TM1Object
 
@@ -12,9 +13,9 @@ class Rules(TM1Object):
             comments are not included.
 
     """
-    keywords = ['SKIPCHECK', 'FEEDSTRINGS', 'UNDEFVALS', 'FEEDERS']
+    KEYWORDS = ['SKIPCHECK', 'FEEDSTRINGS', 'UNDEFVALS', 'FEEDERS']
 
-    def __init__(self, rules):
+    def __init__(self, rules: str):
         self._text = rules
         self._rules_analytics = []
         self.init_analytics()
@@ -30,48 +31,48 @@ class Rules(TM1Object):
                 self._rules_analytics.append(statement.replace('\n', '').upper())
 
     @property
-    def text(self):
+    def text(self) -> str:
         return self._text
 
     @property
-    def rules_analytics(self):
+    def rules_analytics(self) -> List[str]:
         return self._rules_analytics
 
     @property
-    def rule_statements(self):
+    def rule_statements(self) -> List[str]:
         if self.has_feeders:
             return self.rules_analytics[:self._rules_analytics.index('FEEDERS')]
         return self.rules_analytics
 
     @property
-    def feeder_statements(self):
+    def feeder_statements(self) -> List[str]:
         if self.has_feeders:
-            return self.rules_analytics[self._rules_analytics.index('FEEDERS')+1:]
+            return self.rules_analytics[self._rules_analytics.index('FEEDERS') + 1:]
         return []
 
     @property
-    def skipcheck(self):
+    def skipcheck(self) -> bool:
         for rule in self._rules_analytics[0:5]:
             if rule == 'SKIPCHECK':
                 return True
         return False
 
     @property
-    def undefvals(self):
+    def undefvals(self) -> bool:
         for rule in self._rules_analytics[0:5]:
             if rule == 'UNDEFVALS':
                 return True
         return False
 
     @property
-    def feedstrings(self):
+    def feedstrings(self) -> bool:
         for rule in self._rules_analytics[0:5]:
             if rule == 'FEEDSTRINGS':
                 return True
         return False
 
     @property
-    def has_feeders(self):
+    def has_feeders(self) -> bool:
         if 'FEEDERS' in self._rules_analytics:
             # has feeders declaration
             feeders = self.rules_analytics[self._rules_analytics.index('FEEDERS'):]

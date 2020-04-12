@@ -227,7 +227,7 @@ class TestViewMethods(unittest.TestCase):
                 view=native_view_original,
                 private=private)
             # Get it and check if its different
-            data_updated = self.tm1.data.execute_view(
+            data_updated = self.tm1.cells.execute_view(
                 cube_name=CUBE_NAME,
                 view_name=self.native_view_name,
                 private=private)
@@ -244,7 +244,7 @@ class TestViewMethods(unittest.TestCase):
                 view_name=self.mdx_view_name,
                 private=private)
             # Get data from mdx view
-            data_mdx_original = self.tm1.data.execute_view(
+            data_mdx_original = self.tm1.cells.execute_view(
                 cube_name=CUBE_NAME,
                 view_name=mdx_view_original.name,
                 private=private)
@@ -262,7 +262,7 @@ class TestViewMethods(unittest.TestCase):
                 cube_name=CUBE_NAME,
                 view_name=self.mdx_view_name,
                 private=private)
-            data_mdx_updated = self.tm1.data.execute_view(
+            data_mdx_updated = self.tm1.cells.execute_view(
                 cube_name=CUBE_NAME,
                 view_name=mdx_view_updated.name,
                 private=private)

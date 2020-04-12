@@ -236,8 +236,8 @@ class ProcessService(ObjectService):
         """
         process_name = "".join(['}TM1py', str(uuid.uuid4())])
         p = Process(name=process_name,
-                    prolog_procedure=Process.auto_generated_string + '\r\n'.join(lines_prolog),
-                    epilog_procedure=Process.auto_generated_string + '\r\n'.join(lines_epilog) if lines_epilog else '')
+                    prolog_procedure=Process.AUTO_GENERATED_STATEMENTS + '\r\n'.join(lines_prolog),
+                    epilog_procedure=Process.AUTO_GENERATED_STATEMENTS + '\r\n'.join(lines_epilog) if lines_epilog else '')
         self.create(p, **kwargs)
         try:
             return self.execute(process_name, **kwargs)
