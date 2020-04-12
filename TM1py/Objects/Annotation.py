@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import json
 import collections
+import json
+from typing import Iterable, Dict, List
 
 from TM1py.Objects.TM1Object import TM1Object
 
@@ -13,21 +14,24 @@ class Annotation(TM1Object):
             - Class complete, functional and tested.
             - doesn't cover Attachments though
     """
-    def __init__(self, comment_value, object_name, dimensional_context, comment_type='ANNOTATION', annotation_id=None,
-                 text='', creator=None, created=None, last_updated_by=None, last_updated=None):
+
+    def __init__(self, comment_value: str, object_name: str, dimensional_context: Iterable[str],
+                 comment_type: str = 'ANNOTATION', annotation_id: str = None,
+                 text: str = '', creator: str = None, created: str = None, last_updated_by: str = None,
+                 last_updated: str = None):
         self._id = annotation_id
         self._text = text
         self._creator = creator
         self._created = created
         self._last_updated_by = last_updated_by
         self._last_updated = last_updated
-        self._dimensional_context = dimensional_context
+        self._dimensional_context = list(dimensional_context)
         self._comment_type = comment_type
         self._comment_value = comment_value
         self._object_name = object_name
 
     @classmethod
-    def from_json(cls, annotation_as_json):
+    def from_json(cls, annotation_as_json: Dict) -> 'Annotation':
         """ Alternative constructor
 
             :param annotation_as_json: String, JSON
@@ -49,46 +53,46 @@ class Annotation(TM1Object):
                    last_updated_by=last_updated_by, last_updated=last_updated)
 
     @property
-    def body(self):
+    def body(self) -> Dict:
         return self._construct_body()
 
     @property
-    def comment_value(self):
+    def comment_value(self) -> str:
         return self._comment_value
 
     @property
-    def text(self):
+    def text(self) -> str:
         return self._text
 
     @property
-    def dimensional_context(self):
+    def dimensional_context(self) -> List[str]:
         return self._dimensional_context
 
     @property
-    def created(self):
+    def created(self) -> str:
         return self._created
 
     @property
-    def object_name(self):
+    def object_name(self) -> str:
         return self._object_name
 
     @property
-    def last_updated(self):
+    def last_updated(self) -> str:
         return self._last_updated
 
     @property
-    def last_updated_by(self):
+    def last_updated_by(self) -> str:
         return self._last_updated_by
 
     @comment_value.setter
-    def comment_value(self, value):
+    def comment_value(self, value: str):
         self._comment_value = value
 
     @property
-    def id(self):
+    def id(self) -> str:
         return self._id
 
-    def move(self, dimension_order, dimension, target_element, source_element=None):
+    def move(self, dimension_order: Iterable[str], dimension: str, target_element: str, source_element: str = None):
         """ Move annotation on given dimension from source_element to target_element
         
             :param dimension_order: List, order of the dimensions in the cube
@@ -102,7 +106,7 @@ class Annotation(TM1Object):
                 if not source_element or self._dimensional_context[i] == source_element:
                     self._dimensional_context[i] = target_element
 
-    def _construct_body(self):
+    def _construct_body(self) -> Dict:
         """ construct the ODATA conform JSON represenation for the Annotation entity.
 
             :return: string, the valid JSON

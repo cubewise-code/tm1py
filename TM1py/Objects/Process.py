@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import re
 import json
+import re
+from typing import Optional, Iterable, Dict, List, Union
+
 from TM1py.Objects.TM1Object import TM1Object
 
 
@@ -12,44 +14,44 @@ class Process(TM1Object):
     """
 
     """ the auto_generated_string code is required to be in all code-tabs. """
-    begin_generated_statements = "#****Begin: Generated Statements***"
-    end_generated_statements = "#****End: Generated Statements****"
-    auto_generated_string = "{}\r\n{}\r\n".format(begin_generated_statements, end_generated_statements)
+    BEGIN_GENERATED_STATEMENTS = "#****Begin: Generated Statements***"
+    END_GENERATED_STATEMENTS = "#****End: Generated Statements****"
+    AUTO_GENERATED_STATEMENTS = "{}\r\n{}\r\n".format(BEGIN_GENERATED_STATEMENTS, END_GENERATED_STATEMENTS)
 
     @staticmethod
-    def add_generated_string_to_code(code):
+    def add_generated_string_to_code(code: str) -> str:
         pattern = r"#\*\*\*\*Begin: Generated Statements(?s)(.*)#\*\*\*\*End: Generated Statements\*\*\*\*"
         if re.search(pattern=pattern, string=code):
             return code
         else:
-            return Process.auto_generated_string + code
+            return Process.AUTO_GENERATED_STATEMENTS + code
 
     def __init__(self,
-                 name,
-                 has_security_access=False,
-                 ui_data="CubeAction=1511€DataAction=1503€CubeLogChanges=0€",
-                 parameters=None,
-                 variables=None,
-                 variables_ui_data=None,
-                 prolog_procedure='',
-                 metadata_procedure='',
-                 data_procedure='',
-                 epilog_procedure='',
-                 datasource_type='None',
-                 datasource_ascii_decimal_separator='.',
-                 datasource_ascii_delimiter_char=';',
-                 datasource_ascii_delimiter_type='Character',
-                 datasource_ascii_header_records=1,
-                 datasource_ascii_quote_character='',
-                 datasource_ascii_thousand_separator=',',
-                 datasource_data_source_name_for_client='',
-                 datasource_data_source_name_for_server='',
-                 datasource_password='',
-                 datasource_user_name='',
-                 datasource_query='',
-                 datasource_uses_unicode=True,
-                 datasource_view='',
-                 datasource_subset=''):
+                 name: str,
+                 has_security_access: Optional[bool] = False,
+                 ui_data: str = "CubeAction=1511€DataAction=1503€CubeLogChanges=0€",
+                 parameters: Iterable = None,
+                 variables: Iterable = None,
+                 variables_ui_data: Iterable = None,
+                 prolog_procedure: str = '',
+                 metadata_procedure: str = '',
+                 data_procedure: str = '',
+                 epilog_procedure: str = '',
+                 datasource_type: str = 'None',
+                 datasource_ascii_decimal_separator: str = '.',
+                 datasource_ascii_delimiter_char: str = ';',
+                 datasource_ascii_delimiter_type: str = 'Character',
+                 datasource_ascii_header_records: int = 1,
+                 datasource_ascii_quote_character: str = '',
+                 datasource_ascii_thousand_separator: str = ',',
+                 datasource_data_source_name_for_client: str = '',
+                 datasource_data_source_name_for_server: str = '',
+                 datasource_password: str = '',
+                 datasource_user_name: str = '',
+                 datasource_query: str = '',
+                 datasource_uses_unicode: bool = True,
+                 datasource_view: str = '',
+                 datasource_subset: str = ''):
         """ Default construcor
 
         :param name: name of the process - mandatory
@@ -81,7 +83,7 @@ class Process(TM1Object):
         self._name = name
         self._has_security_access = has_security_access
         self._ui_data = ui_data
-        self._parameters = list(parameters)if parameters else []
+        self._parameters = list(parameters) if parameters else []
         self._variables = list(variables) if variables else []
         self._variables_ui_data = list(variables_ui_data) if variables_ui_data else []
         self._prolog_procedure = Process.add_generated_string_to_code(prolog_procedure)
@@ -105,7 +107,7 @@ class Process(TM1Object):
         self._datasource_subset = datasource_subset
 
     @classmethod
-    def from_json(cls, process_as_json):
+    def from_json(cls, process_as_json: str) -> 'Process':
         """
         :param process_as_json: response of /api/v1/Processes('x')?$expand=*
         :return: an instance of this class
@@ -114,12 +116,11 @@ class Process(TM1Object):
         return cls.from_dict(process_as_dict)
 
     @classmethod
-    def from_dict(cls, process_as_dict):
+    def from_dict(cls, process_as_dict: Dict) -> 'Process':
         """
         :param process_as_dict: Dictionary, process as dictionary
         :return: an instance of this class
         """
-        f = lambda dic, k: dic[k] if k in dic else ''
         return cls(name=process_as_dict['Name'],
                    has_security_access=process_as_dict['HasSecurityAccess'],
                    ui_data=process_as_dict['UIData'],
@@ -130,219 +131,219 @@ class Process(TM1Object):
                    metadata_procedure=process_as_dict['MetadataProcedure'],
                    data_procedure=process_as_dict['DataProcedure'],
                    epilog_procedure=process_as_dict['EpilogProcedure'],
-                   datasource_type=f(process_as_dict['DataSource'], 'Type'),
-                   datasource_ascii_decimal_separator=f(process_as_dict['DataSource'], 'asciiDecimalSeparator'),
-                   datasource_ascii_delimiter_char=f(process_as_dict['DataSource'], 'asciiDelimiterChar'),
-                   datasource_ascii_delimiter_type=f(process_as_dict['DataSource'], 'asciiDelimiterType'),
-                   datasource_ascii_header_records=f(process_as_dict['DataSource'], 'asciiHeaderRecords'),
-                   datasource_ascii_quote_character=f(process_as_dict['DataSource'], 'asciiQuoteCharacter'),
-                   datasource_ascii_thousand_separator=f(process_as_dict['DataSource'], 'asciiThousandSeparator'),
-                   datasource_data_source_name_for_client=f(process_as_dict['DataSource'], 'dataSourceNameForClient'),
-                   datasource_data_source_name_for_server=f(process_as_dict['DataSource'], 'dataSourceNameForServer'),
-                   datasource_password=f(process_as_dict['DataSource'], 'password'),
-                   datasource_user_name=f(process_as_dict['DataSource'], 'userName'),
-                   datasource_query=f(process_as_dict['DataSource'], 'query'),
-                   datasource_uses_unicode=f(process_as_dict['DataSource'], 'usesUnicode'),
-                   datasource_view=f(process_as_dict['DataSource'], 'view'),
-                   datasource_subset=f(process_as_dict['DataSource'], 'subset'))
+                   datasource_type=process_as_dict['DataSource'].get('Type', ''),
+                   datasource_ascii_decimal_separator=process_as_dict['DataSource'].get('asciiDecimalSeparator', ''),
+                   datasource_ascii_delimiter_char=process_as_dict['DataSource'].get('asciiDelimiterChar', ''),
+                   datasource_ascii_delimiter_type=process_as_dict['DataSource'].get('asciiDelimiterType', ''),
+                   datasource_ascii_header_records=process_as_dict['DataSource'].get('asciiHeaderRecords', ''),
+                   datasource_ascii_quote_character=process_as_dict['DataSource'].get('asciiQuoteCharacter', ''),
+                   datasource_ascii_thousand_separator=process_as_dict['DataSource'].get('asciiThousandSeparator', ''),
+                   datasource_data_source_name_for_client=process_as_dict['DataSource'].get('dataSourceNameForClient',''),
+                   datasource_data_source_name_for_server=process_as_dict['DataSource'].get('dataSourceNameForServer',''),
+                   datasource_password=process_as_dict['DataSource'].get('password', ''),
+                   datasource_user_name=process_as_dict['DataSource'].get('userName', ''),
+                   datasource_query=process_as_dict['DataSource'].get('query', ''),
+                   datasource_uses_unicode=process_as_dict['DataSource'].get('usesUnicode', ''),
+                   datasource_view=process_as_dict['DataSource'].get('view', ''),
+                   datasource_subset=process_as_dict['DataSource'].get('subset', ''))
 
     @property
-    def body(self):
+    def body(self) -> str:
         return self._construct_body()
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @name.setter
-    def name(self, value):
+    def name(self, value: str):
         self._name = value
 
     @property
-    def has_security_access(self):
+    def has_security_access(self) -> bool:
         return self._has_security_access
 
     @has_security_access.setter
-    def has_security_access(self, value):
+    def has_security_access(self, value: bool):
         self._has_security_access = value
 
     @property
-    def variables(self):
+    def variables(self) -> List:
         return self._variables
 
     @property
-    def parameters(self):
+    def parameters(self) -> List:
         return self._parameters
 
     @property
-    def prolog_procedure(self):
+    def prolog_procedure(self) -> str:
         return self._prolog_procedure
 
     @prolog_procedure.setter
-    def prolog_procedure(self, value):
+    def prolog_procedure(self, value: str):
         self._prolog_procedure = Process.add_generated_string_to_code(value)
 
     @property
-    def metadata_procedure(self):
+    def metadata_procedure(self) -> str:
         return self._metadata_procedure
 
     @metadata_procedure.setter
-    def metadata_procedure(self, value):
+    def metadata_procedure(self, value: str):
         self._metadata_procedure = Process.add_generated_string_to_code(value)
 
     @property
-    def data_procedure(self):
+    def data_procedure(self) -> str:
         return self._data_procedure
 
     @data_procedure.setter
-    def data_procedure(self, value):
+    def data_procedure(self, value: str):
         self._data_procedure = Process.add_generated_string_to_code(value)
 
     @property
-    def epilog_procedure(self):
+    def epilog_procedure(self) -> str:
         return self._epilog_procedure
 
     @epilog_procedure.setter
-    def epilog_procedure(self, value):
+    def epilog_procedure(self, value: str):
         self._epilog_procedure = Process.add_generated_string_to_code(value)
 
     @property
-    def datasource_type(self):
+    def datasource_type(self) -> str:
         return self._datasource_type
 
     @datasource_type.setter
-    def datasource_type(self, value):
+    def datasource_type(self, value: str):
         self._datasource_type = value
 
     @property
-    def datasource_ascii_decimal_separator(self):
+    def datasource_ascii_decimal_separator(self) -> str:
         return self._datasource_ascii_decimal_separator
 
     @datasource_ascii_decimal_separator.setter
-    def datasource_ascii_decimal_separator(self, value):
+    def datasource_ascii_decimal_separator(self, value: str):
         self._datasource_ascii_decimal_separator = value
 
     @property
-    def datasource_ascii_delimiter_char(self):
+    def datasource_ascii_delimiter_char(self) -> str:
         return self._datasource_ascii_delimiter_char
 
     @datasource_ascii_delimiter_char.setter
-    def datasource_ascii_delimiter_char(self, value):
+    def datasource_ascii_delimiter_char(self, value: str):
         self._datasource_ascii_delimiter_char = value
 
     @property
-    def datasource_ascii_delimiter_type(self):
+    def datasource_ascii_delimiter_type(self) -> str:
         return self._datasource_ascii_delimiter_type
 
     @datasource_ascii_delimiter_type.setter
-    def datasource_ascii_delimiter_type(self, value):
+    def datasource_ascii_delimiter_type(self, value: str):
         self._datasource_ascii_delimiter_type = value
 
     @property
-    def datasource_ascii_header_records(self):
+    def datasource_ascii_header_records(self) -> int:
         return self._datasource_ascii_header_records
 
     @datasource_ascii_header_records.setter
-    def datasource_ascii_header_records(self, value):
+    def datasource_ascii_header_records(self, value: int):
         self._datasource_ascii_header_records = value
 
     @property
-    def datasource_ascii_quote_character(self):
+    def datasource_ascii_quote_character(self) -> str:
         return self._datasource_ascii_quote_character
 
     @datasource_ascii_quote_character.setter
-    def datasource_ascii_quote_character(self, value):
+    def datasource_ascii_quote_character(self, value: str):
         self._datasource_ascii_quote_character = value
 
     @property
-    def datasource_ascii_thousand_separator(self):
+    def datasource_ascii_thousand_separator(self) -> str:
         return self._datasource_ascii_thousand_separator
 
     @datasource_ascii_thousand_separator.setter
-    def datasource_ascii_thousand_separator(self, value):
+    def datasource_ascii_thousand_separator(self, value: str):
         self._datasource_ascii_thousand_separator = value
 
     @property
-    def datasource_data_source_name_for_client(self):
+    def datasource_data_source_name_for_client(self) -> str:
         return self._datasource_data_source_name_for_client
 
     @datasource_data_source_name_for_client.setter
-    def datasource_data_source_name_for_client(self, value):
+    def datasource_data_source_name_for_client(self, value: str):
         self._datasource_data_source_name_for_client = value
 
     @property
-    def datasource_data_source_name_for_server(self):
+    def datasource_data_source_name_for_server(self) -> str:
         return self._datasource_data_source_name_for_server
 
     @datasource_data_source_name_for_server.setter
-    def datasource_data_source_name_for_server(self, value):
+    def datasource_data_source_name_for_server(self, value: str):
         self._datasource_data_source_name_for_server = value
 
     @property
-    def datasource_password(self):
+    def datasource_password(self) -> str:
         return self._datasource_password
 
     @datasource_password.setter
-    def datasource_password(self, value):
+    def datasource_password(self, value: str):
         self._datasource_password = value
 
     @property
-    def datasource_user_name(self):
+    def datasource_user_name(self) -> str:
         return self._datasource_user_name
 
     @datasource_user_name.setter
-    def datasource_user_name(self, value):
+    def datasource_user_name(self, value: str):
         self._datasource_user_name = value
 
     @property
-    def datasource_query(self):
+    def datasource_query(self) -> str:
         return self._datasource_query
 
     @datasource_query.setter
-    def datasource_query(self, value):
+    def datasource_query(self, value: str):
         self._datasource_query = value
 
     @property
-    def datasource_uses_unicode(self):
+    def datasource_uses_unicode(self) -> bool:
         return self._datasource_uses_unicode
 
     @datasource_uses_unicode.setter
-    def datasource_uses_unicode(self, value):
+    def datasource_uses_unicode(self, value: bool):
         self._datasource_uses_unicode = value
 
     @property
-    def datasource_view(self):
+    def datasource_view(self) -> str:
         return self._datasource_view
 
     @datasource_view.setter
-    def datasource_view(self, value):
+    def datasource_view(self, value: str):
         self._datasource_view = value
 
     @property
-    def datasource_subset(self):
+    def datasource_subset(self) -> str:
         return self._datasource_subset
 
     @datasource_subset.setter
-    def datasource_subset(self, value):
+    def datasource_subset(self, value: str):
         self._datasource_subset = value
 
-    def add_variable(self, name, type):
+    def add_variable(self, name: str, variable_type: str):
         """ add variable to the process
 
         :param name: -
-        :param type: 'String' or 'Numeric'
+        :param variable_type: 'String' or 'Numeric'
         :return:
         """
         # variable consists of actual variable and UI-Information ('ignore','other', etc.)
         # 1. handle Variable info
         variable = {'Name': name,
-                    'Type': type,
+                    'Type': variable_type,
                     'Position': len(self._variables) + 1,
                     'StartByte': 0,
                     'EndByte': 0}
         self._variables.append(variable)
         # 2. handle UI info
-        var_type = 33 if type == 'Numeric' else 32
+        var_type = 33 if variable_type == 'Numeric' else 32
         # '\f' !
         variable_ui_data = 'VarType=' + str(var_type) + '\f' + 'ColType=' + str(827) + '\f'
         """
@@ -353,14 +354,15 @@ class Process(TM1Object):
         """
         self._variables_ui_data.append(variable_ui_data)
 
-    def remove_variable(self, name):
-        for variable in self.variables:
+    def remove_variable(self, name: str):
+        for variable in self.variables[:]:
             if variable['Name'] == name:
                 vuid = self._variables_ui_data[self._variables.index(variable)]
                 self._variables_ui_data.remove(vuid)
                 self._variables.remove(variable)
 
-    def add_parameter(self, name, prompt, value, parameter_type=None):
+    def add_parameter(self, name: str, prompt: str, value: Union[str, int, float],
+                      parameter_type: Optional[str] = None):
         """
         
         :param name: 
@@ -377,8 +379,8 @@ class Process(TM1Object):
                      'Type': parameter_type}
         self._parameters.append(parameter)
 
-    def remove_parameter(self, name):
-        for parameter in self.parameters:
+    def remove_parameter(self, name: str):
+        for parameter in self.parameters[:]:
             if parameter['Name'] == name:
                 self._parameters.remove(parameter)
 
@@ -388,7 +390,7 @@ class Process(TM1Object):
                 del self.parameters[p]['Type']
 
     # construct self.body (json) from the class-attributes
-    def _construct_body(self):
+    def _construct_body(self) -> str:
         # general parameters
         body_as_dict = {
             'Name': self._name,

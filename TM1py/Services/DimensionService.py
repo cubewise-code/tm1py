@@ -51,14 +51,14 @@ class DimensionService(ObjectService):
             raise e
         return response
 
-    def get(self, dimension_name: str) -> Dimension:
+    def get(self, dimension_name: str, **kwargs) -> Dimension:
         """ Get a Dimension
 
         :param dimension_name:
         :return:
         """
         url = format_url("/api/v1/Dimensions('{}')?$expand=Hierarchies($expand=*)", dimension_name)
-        response = self._rest.GET(url)
+        response = self._rest.GET(url, **kwargs)
         return Dimension.from_json(response.text)
 
     def update(self, dimension: Dimension, **kwargs):

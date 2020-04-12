@@ -2,6 +2,7 @@
 
 import collections
 import json
+from typing import Iterable, Optional, List, Dict
 
 from TM1py.Objects.TM1Object import TM1Object
 from TM1py.Utils.Utils import CaseAndSpaceInsensitiveSet, format_url
@@ -12,53 +13,54 @@ class User(TM1Object):
     
     """
 
-    def __init__(self, name, groups, friendly_name=None, password=None):
+    def __init__(self, name: str, groups: Iterable[str], friendly_name: Optional[str] = None,
+                 password: Optional[str] = None):
         self._name = name
         self._groups = CaseAndSpaceInsensitiveSet(*groups)
         self._friendly_name = friendly_name
         self._password = password
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
-    def friendly_name(self):
+    def friendly_name(self) -> str:
         return self._friendly_name
 
     @property
-    def password(self):
+    def password(self) -> str:
         if self._password:
             return self._password
 
     @property
-    def is_admin(self):
+    def is_admin(self) -> bool:
         return 'ADMIN' in self.groups
 
     @property
-    def groups(self):
+    def groups(self) -> List[str]:
         return [group for group in self._groups]
 
     @name.setter
-    def name(self, value):
+    def name(self, value: str):
         self._name = value
 
     @friendly_name.setter
-    def friendly_name(self, value):
+    def friendly_name(self, value: str):
         self._friendly_name = value
 
     @password.setter
-    def password(self, value):
+    def password(self, value: str):
         self._password = value
 
-    def add_group(self, group_name):
+    def add_group(self, group_name: str):
         self._groups.add(group_name)
 
-    def remove_group(self, group_name):
+    def remove_group(self, group_name: str):
         self._groups.discard(group_name)
 
     @classmethod
-    def from_json(cls, user_as_json):
+    def from_json(cls, user_as_json: str):
         """ Alternative constructor
 
         :param user_as_json: user as JSON string
@@ -68,7 +70,7 @@ class User(TM1Object):
         return cls.from_dict(user_as_dict)
 
     @classmethod
-    def from_dict(cls, user_as_dict):
+    def from_dict(cls, user_as_dict: Dict) -> 'User':
         """ Alternative constructor
 
         :param user_as_dict: user as dict
@@ -79,10 +81,10 @@ class User(TM1Object):
                    groups=[group["Name"] for group in user_as_dict['Groups']])
 
     @property
-    def body(self):
+    def body(self) -> str:
         return self.construct_body()
 
-    def construct_body(self):
+    def construct_body(self) -> str:
         """
         construct body (json) from the class attributes
         :return: String, TM1 JSON representation of a user

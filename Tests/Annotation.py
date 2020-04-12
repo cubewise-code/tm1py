@@ -1,9 +1,9 @@
 import configparser
 import json
-from pathlib import Path
 import random
 import string
 import unittest
+from pathlib import Path
 
 from TM1py import Element, Hierarchy, Dimension, Cube
 from TM1py.Objects import Annotation
@@ -11,6 +11,7 @@ from TM1py.Services import TM1Service
 
 config = configparser.ConfigParser()
 config.read(Path(__file__).parent.joinpath('config.ini'))
+
 
 class TestAnnotationMethods(unittest.TestCase):
     tm1 = TM1Service(**config['tm1srv01'])
