@@ -181,7 +181,7 @@ class ProcessService(ObjectService):
                 parameters = {}
         return self._rest.POST(request=request, data=json.dumps(parameters, ensure_ascii=False))
 
-    def execute_process_with_return(self, process, compile_first=False):
+    def execute_process_with_return(self, process):
         '''
         Run unbound TI code directly
         :param process: a TI Process Object
@@ -191,24 +191,17 @@ class ProcessService(ObjectService):
 
         payload = json.loads("{\"Process\":" + process._construct_body() + "}")
 
-        compile_errors =[]
-        if compile_first:
-            compile_errors = self.compile_process(process)
+        response = self._rest.POST(
+            request=request,
+            data=json.dumps(payload, ensure_ascii=False))
 
-        if compile_errors:
-            return False, "Aborted", None, compile_errors
-        else:
-            response = self._rest.POST(
-                request=request,
-                data=json.dumps(payload, ensure_ascii=False))
+        execution_summary = response.json()
 
-            execution_summary = response.json()
-
-            execution_summary = response.json()
-            success = execution_summary["ProcessExecuteStatusCode"] == "CompletedSuccessfully"
-            status = execution_summary["ProcessExecuteStatusCode"]
-            error_log_file = None if execution_summary["ErrorLogFile"] is None else execution_summary["ErrorLogFile"]["Filename"]
-            return success, status, error_log_file, compile_errors
+        execution_summary = response.json()
+        success = execution_summary["ProcessExecuteStatusCode"] == "CompletedSuccessfully"
+        status = execution_summary["ProcessExecuteStatusCode"]
+        error_log_file = None if execution_summary["ErrorLogFile"] is None else execution_summary["ErrorLogFile"]["Filename"]
+        return success, status, error_log_file
 
     def execute_with_return(self, process_name, **kwargs):
         """ Ask TM1 Server to execute a process.
