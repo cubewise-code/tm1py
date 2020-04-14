@@ -146,6 +146,23 @@ class ProcessService(ObjectService):
         syntax_errors = response.json()["value"]
         return syntax_errors
 
+    def compile_process(self, process):
+        """ Compile a Process. Return List of Syntax errors.
+
+        :param name:
+        :return:
+        """
+        request = "/api/v1/CompileProcess"
+
+        payload = json.loads("{\"Process\":" + process._construct_body() + "}")
+
+        response = self._rest.POST(
+            request=request,
+            data=json.dumps(payload, ensure_ascii=False))
+
+        syntax_errors = response.json()["value"]
+        return syntax_errors
+
     def execute(self, process_name, parameters=None, **kwargs):
         """ Ask TM1 Server to execute a process. Call with parameter names as keyword arguments:
         tm1.processes.execute("Bedrock.Server.Wait", pLegalEntity="UK01")
@@ -163,6 +180,35 @@ class ProcessService(ObjectService):
             else:
                 parameters = {}
         return self._rest.POST(request=request, data=json.dumps(parameters, ensure_ascii=False))
+
+    def execute_process_with_return(self, process, compile_first=False):
+        '''
+        Run unbound TI code directly
+        :param process: a TI Process Object
+        :return: success (boolean), status (String), error_log_file (String)
+        '''
+        request = "/api/v1/ExecuteProcessWithReturn?$expand=*"
+
+        payload = json.loads("{\"Process\":" + process._construct_body() + "}")
+
+        compile_errors =[]
+        if compile_first:
+            compile_errors = self.compile_process(process)
+
+        if compile_errors:
+            return False, "Aborted", None, compile_errors
+        else:
+            response = self._rest.POST(
+                request=request,
+                data=json.dumps(payload, ensure_ascii=False))
+
+            execution_summary = response.json()
+
+            execution_summary = response.json()
+            success = execution_summary["ProcessExecuteStatusCode"] == "CompletedSuccessfully"
+            status = execution_summary["ProcessExecuteStatusCode"]
+            error_log_file = None if execution_summary["ErrorLogFile"] is None else execution_summary["ErrorLogFile"]["Filename"]
+            return success, status, error_log_file, compile_errors
 
     def execute_with_return(self, process_name, **kwargs):
         """ Ask TM1 Server to execute a process.
