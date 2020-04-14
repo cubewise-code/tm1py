@@ -195,7 +195,7 @@ class TestProcessMethods(unittest.TestCase):
 
         self.tm1.processes.delete(process.name)
 
-    def test_compile_process_success(self):
+    def test_compile_success(self):
         p_good = Process(
             name=str(uuid.uuid4()),
             prolog_procedure="nPro = DimSiz('}Processes');")
@@ -204,7 +204,7 @@ class TestProcessMethods(unittest.TestCase):
         self.assertTrue(len(errors) == 0)
         self.tm1.processes.delete(p_good.name)
 
-    def test_compile_process_with_errors(self):
+    def test_compile_with_errors(self):
         p_bad = Process(
             name=str(uuid.uuid4()),
             prolog_procedure="nPro = DimSize('}Processes');")
@@ -213,6 +213,73 @@ class TestProcessMethods(unittest.TestCase):
         self.assertTrue(len(errors) == 1)
         self.assertIn("Variable \"dimsize\" is undefined", errors[0]["Message"])
         self.tm1.processes.delete(p_bad.name)
+
+    # Unbound Tests
+    def test_execute_process_with_return_success(self):
+        process = Process(name=str(uuid.uuid4()))
+        process.prolog_procedure = "Sleep(100);"
+
+        success, status, error_log_file = self.tm1.processes.execute_process_with_return(process)
+        self.assertTrue(success)
+        self.assertEqual(status, "CompletedSuccessfully")
+        self.assertIsNone(error_log_file)
+
+    def test_execute_process_with_return_compile_error(self):
+        process = Process(name=str(uuid.uuid4()))
+        process.prolog_procedure = "sText = 'text';sText = 2;"
+
+        success, status, error_log_file = self.tm1.processes.execute_process_with_return(process)
+        self.assertFalse(success)
+        self.assertEqual(status, "Aborted")
+        self.assertIsNotNone(error_log_file)
+
+
+    def test_execute_process_with_return_with_item_reject(self):
+        process = Process(name=str(uuid.uuid4()))
+        process.epilog_procedure = "ItemReject('Not Relevant');"
+
+        success, status, error_log_file = self.tm1.processes.execute_process_with_return(process)
+        self.assertFalse(success)
+        self.assertEqual(status, "CompletedWithMessages")
+        self.assertIsNotNone(error_log_file)
+
+
+    def test_execute_process_with_return_with_process_break(self):
+        process = Process(name=str(uuid.uuid4()))
+        process.prolog_procedure = "sText = 'Something'; ProcessBreak;"
+
+        success, status, error_log_file = self.tm1.processes.execute_process_with_return(process)
+        self.assertTrue(success)
+        self.assertEqual(status, "CompletedSuccessfully")
+        self.assertIsNone(error_log_file)
+
+
+    def test_execute_process_with_return_with_process_quit(self):
+        process = Process(name=str(uuid.uuid4()))
+        process.prolog_procedure = "sText = 'Something'; ProcessQuit;"
+
+        success, status, error_log_file = self.tm1.processes.execute_process_with_return(process)
+        self.assertFalse(success)
+        self.assertEqual(status, "QuitCalled")
+        self.assertIsNone(error_log_file)
+
+
+    def test_compile_process_success(self):
+        p_good = Process(
+            name=str(uuid.uuid4()),
+            prolog_procedure="nPro = DimSiz('}Processes');")
+
+        errors = self.tm1.processes.compile_process(p_good)
+        self.assertTrue(len(errors) == 0)
+
+    def test_compile_process_with_errors(self):
+        p_bad = Process(
+            name=str(uuid.uuid4()),
+            prolog_procedure="nPro = DimSize('}Processes');")
+
+        errors = self.tm1.processes.compile_process(p_bad.name)
+        self.assertTrue(len(errors) == 1)
+        self.assertIn("Variable \"dimsize\" is undefined", errors[0]["Message"])
 
     # Get Process
     def test_get_process(self):
