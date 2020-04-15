@@ -13,6 +13,7 @@ class Dimension(TM1Object):
         
         A Dimension is a container for hierarchies.
     """
+
     def __init__(self, name, hierarchies=None):
         """ Abstraction of TM1 Dimension
         
@@ -109,10 +110,14 @@ class Dimension(TM1Object):
                 del self._hierarchies[num]
                 return
 
-    def _construct_body(self):
+    def _construct_body(self, include_leaves_hierarchy=False):
         body_as_dict = collections.OrderedDict()
         body_as_dict["Name"] = self._name
         body_as_dict["UniqueName"] = self.unique_name
         body_as_dict["Attributes"] = self._attributes
-        body_as_dict["Hierarchies"] = [hierarchy.body_as_dict for hierarchy in self.hierarchies]
+        body_as_dict["Hierarchies"] = [
+            hierarchy.body_as_dict
+            for hierarchy
+            in self.hierarchies if
+            not case_and_space_insensitive_equals(hierarchy.name, "Leaves") or include_leaves_hierarchy]
         return body_as_dict
