@@ -36,8 +36,9 @@ class DimensionService(ObjectService):
             # Create Dimension, Hierarchies, Elements, Edges.
             request = "/api/v1/Dimensions"
             response = self._rest.POST(request, dimension.body)
+            # Create ElementAttributes
             for hierarchy in dimension:
-                if len(hierarchy.element_attributes) > 0:
+                if not case_and_space_insensitive_equals(hierarchy.name, "Leaves"):
                     self.hierarchies.update(hierarchy)
         except TM1pyException as e:
             # undo everything if problem in step 1 or 2
