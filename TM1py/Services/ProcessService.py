@@ -197,7 +197,6 @@ class ProcessService(ObjectService):
 
         execution_summary = response.json()
 
-        execution_summary = response.json()
         success = execution_summary["ProcessExecuteStatusCode"] == "CompletedSuccessfully"
         status = execution_summary["ProcessExecuteStatusCode"]
         error_log_file = None if execution_summary["ErrorLogFile"] is None else execution_summary["ErrorLogFile"]["Filename"]
