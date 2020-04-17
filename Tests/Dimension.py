@@ -1,6 +1,6 @@
 import configparser
-from pathlib import Path
 import unittest
+from pathlib import Path
 
 from TM1py.Objects import Dimension, Hierarchy, Element
 from TM1py.Objects import ElementAttribute
@@ -144,7 +144,14 @@ class TestDimensionMethods(unittest.TestCase):
         self.assertEqual(len(dimension.hierarchies[0].elements), len(elements))
 
     def test_update_dimension_remove_hierarchy(self):
-        pass
+        self.create_dimension_with_multiple_hierarchies()
+        dimension = self.tm1.dimensions.get(DIMENSION_NAME_WITH_MULTI_HIERARCHY)
+        self.assertEqual(dimension.hierarchy_names, ['Hierarchy1', 'Hierarchy2', 'Hierarchy3', 'Leaves'])
+        dimension.remove_hierarchy('Hierarchy2')
+        dimension.remove_hierarchy('Hierarchy3')
+        self.tm1.dimensions.update(dimension)
+        dimension = self.tm1.dimensions.get(DIMENSION_NAME_WITH_MULTI_HIERARCHY)
+        self.assertEqual(dimension.hierarchy_names, ['Hierarchy1', 'Leaves'])
 
     def test_get_all_names(self):
         self.assertIn(DIMENSION_NAME, self.tm1.dimensions.get_all_names())

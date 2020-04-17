@@ -15,7 +15,7 @@ class View(TM1Object):
         self._name = name
 
     @abstractmethod
-    def body(self):
+    def body(self) -> str:
         pass
 
     @property

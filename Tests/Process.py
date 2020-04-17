@@ -1,10 +1,10 @@
 import configparser
 import copy
-from pathlib import Path
 import random
 import time
 import unittest
 import uuid
+from pathlib import Path
 
 from TM1py.Objects import Process
 from TM1py.Objects import Subset
@@ -17,6 +17,7 @@ PROCESS_PREFIX = 'TM1py_Tests_'
 
 
 class TestProcessMethods(unittest.TestCase):
+    tm1 = None
 
     @classmethod
     def setUpClass(cls):
@@ -233,7 +234,6 @@ class TestProcessMethods(unittest.TestCase):
         self.assertEqual(status, "Aborted")
         self.assertIsNotNone(error_log_file)
 
-
     def test_execute_process_with_return_with_item_reject(self):
         process = Process(name=str(uuid.uuid4()))
         process.epilog_procedure = "ItemReject('Not Relevant');"
@@ -242,7 +242,6 @@ class TestProcessMethods(unittest.TestCase):
         self.assertFalse(success)
         self.assertEqual(status, "CompletedWithMessages")
         self.assertIsNotNone(error_log_file)
-
 
     def test_execute_process_with_return_with_process_break(self):
         process = Process(name=str(uuid.uuid4()))
@@ -253,7 +252,6 @@ class TestProcessMethods(unittest.TestCase):
         self.assertEqual(status, "CompletedSuccessfully")
         self.assertIsNone(error_log_file)
 
-
     def test_execute_process_with_return_with_process_quit(self):
         process = Process(name=str(uuid.uuid4()))
         process.prolog_procedure = "sText = 'Something'; ProcessQuit;"
@@ -262,7 +260,6 @@ class TestProcessMethods(unittest.TestCase):
         self.assertFalse(success)
         self.assertEqual(status, "QuitCalled")
         self.assertIsNone(error_log_file)
-
 
     def test_compile_process_success(self):
         p_good = Process(
@@ -277,7 +274,7 @@ class TestProcessMethods(unittest.TestCase):
             name=str(uuid.uuid4()),
             prolog_procedure="nPro = DimSize('}Processes');")
 
-        errors = self.tm1.processes.compile_process(p_bad.name)
+        errors = self.tm1.processes.compile_process(p_bad)
         self.assertTrue(len(errors) == 1)
         self.assertIn("Variable \"dimsize\" is undefined", errors[0]["Message"])
 

@@ -1051,10 +1051,10 @@ class CellService(ObjectService):
         :param kwargs:
         :return:
         """
-        url = "/api/v1/Cubes('{cube_name}')/{views}('{view_name}')/tm1.Execute".format(
-            cube_name=cube_name,
-            views='PrivateViews' if private else 'Views',
-            view_name=view_name)
+        url = format_url("/api/v1/Cubes('{cube_name}')/{views}('{view_name}')/tm1.Execute",
+                         cube_name=cube_name,
+                         views='PrivateViews' if private else 'Views',
+                         view_name=view_name)
         return self._rest.POST(url=url, **kwargs).json()['ID']
 
     def delete_cellset(self, cellset_id: str, **kwargs) -> Response:

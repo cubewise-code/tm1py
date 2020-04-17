@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import collections
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 from requests import Response
 
@@ -22,7 +22,7 @@ class ViewService(ObjectService):
     def __init__(self, rest: RestService):
         super().__init__(rest)
 
-    def create(self, view: View, private: bool = False, **kwargs) -> Response:
+    def create(self, view: Union[MDXView, NativeView], private: bool = False, **kwargs) -> Response:
         """ create a new view on TM1 Server
 
         :param view: instance of subclass of TM1py.View (TM1py.NativeView or TM1py.MDXView)
@@ -167,7 +167,7 @@ class ViewService(ObjectService):
 
         return private_views, public_views
 
-    def update(self, view: View, private: bool = False, **kwargs) -> Response:
+    def update(self, view: Union[MDXView, NativeView], private: bool = False, **kwargs) -> Response:
         """ Update an existing view
 
         :param view: instance of TM1py.NativeView or TM1py.MDXView
