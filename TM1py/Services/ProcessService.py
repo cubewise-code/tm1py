@@ -91,7 +91,7 @@ class ProcessService(ObjectService):
         # https://www.ibm.com/developerworks/community/forums/html/topic?id=9188d139-8905-4895-9229-eaaf0e7fa683
         if int(self.version[0:2]) < 11:
             process.drop_parameter_types()
-        response = self._rest.PATCH(url, process.body)
+        response = self._rest.PATCH(url, process.body, **kwargs)
         return response
 
     def create(self, process: Process, **kwargs) -> Response:
@@ -138,19 +138,20 @@ class ProcessService(ObjectService):
         syntax_errors = response.json()["value"]
         return syntax_errors
 
-    def compile_process(self, process):
+    def compile_process(self, process: Process, **kwargs) -> List:
         """ Compile a Process. Return List of Syntax errors.
 
-        :param name:
+        :param process:
         :return:
         """
-        request = "/api/v1/CompileProcess"
+        url = "/api/v1/CompileProcess"
 
-        payload = json.loads("{\"Process\":" + process._construct_body() + "}")
+        payload = json.loads('{"Process":' + process.body + '}')
 
         response = self._rest.POST(
-            request=request,
-            data=json.dumps(payload, ensure_ascii=False))
+            url=url,
+            data=json.dumps(payload, ensure_ascii=False),
+            **kwargs)
 
         syntax_errors = response.json()["value"]
         return syntax_errors
@@ -175,25 +176,27 @@ class ProcessService(ObjectService):
                 parameters = {}
         return self._rest.POST(url=url, data=json.dumps(parameters, ensure_ascii=False), timeout=timeout, **kwargs)
 
-    def execute_process_with_return(self, process):
-        '''
+    def execute_process_with_return(self, process: Process, **kwargs):
+        """
         Run unbound TI code directly
         :param process: a TI Process Object
         :return: success (boolean), status (String), error_log_file (String)
-        '''
-        request = "/api/v1/ExecuteProcessWithReturn?$expand=*"
+        """
+        url = "/api/v1/ExecuteProcessWithReturn?$expand=*"
 
-        payload = json.loads("{\"Process\":" + process._construct_body() + "}")
+        payload = json.loads("{\"Process\":" + process.body + "}")
 
         response = self._rest.POST(
-            request=request,
-            data=json.dumps(payload, ensure_ascii=False))
+            url=url,
+            data=json.dumps(payload, ensure_ascii=False),
+            **kwargs)
 
         execution_summary = response.json()
 
         success = execution_summary["ProcessExecuteStatusCode"] == "CompletedSuccessfully"
         status = execution_summary["ProcessExecuteStatusCode"]
-        error_log_file = None if execution_summary["ErrorLogFile"] is None else execution_summary["ErrorLogFile"]["Filename"]
+        error_log_file = None if execution_summary["ErrorLogFile"] is None else execution_summary["ErrorLogFile"][
+            "Filename"]
         return success, status, error_log_file
 
     def execute_with_return(self, process_name: str, timeout: float = None, **kwargs) -> Tuple[bool, str, str]:
@@ -237,7 +240,8 @@ class ProcessService(ObjectService):
         process_name = "".join(['}TM1py', str(uuid.uuid4())])
         p = Process(name=process_name,
                     prolog_procedure=Process.AUTO_GENERATED_STATEMENTS + '\r\n'.join(lines_prolog),
-                    epilog_procedure=Process.AUTO_GENERATED_STATEMENTS + '\r\n'.join(lines_epilog) if lines_epilog else '')
+                    epilog_procedure=Process.AUTO_GENERATED_STATEMENTS + '\r\n'.join(
+                        lines_epilog) if lines_epilog else '')
         self.create(p, **kwargs)
         try:
             return self.execute(process_name, **kwargs)

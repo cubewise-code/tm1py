@@ -211,7 +211,7 @@ class HierarchyService(ObjectService):
         }
         return self._rest.PATCH(url=url, data=json.dumps(body), **kwargs)
 
-    def add_edges(self, dimension_name: str, hierarchy_name: str = None, edges: Dict[Tuple, int] = None,
+    def add_edges(self, dimension_name: str, hierarchy_name: str = None, edges: Dict[Tuple[str, str], int] = None,
                   **kwargs) -> Response:
         """ Add Edges to hierarchy. Fails if any edge already exists.
 

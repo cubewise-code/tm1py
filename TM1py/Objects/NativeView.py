@@ -194,7 +194,7 @@ class NativeView(View):
         self._titles.append(view_title_selection)
 
     def remove_title(self, dimension_name: str):
-        """ Reemove dimension from the titles-axis
+        """ Remove dimension from the titles-axis
 
         :param dimension_name: name of the dimension.
         :return:

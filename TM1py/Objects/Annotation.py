@@ -31,7 +31,7 @@ class Annotation(TM1Object):
         self._object_name = object_name
 
     @classmethod
-    def from_json(cls, annotation_as_json: Dict) -> 'Annotation':
+    def from_json(cls, annotation_as_json: str) -> 'Annotation':
         """ Alternative constructor
 
             :param annotation_as_json: String, JSON
@@ -53,7 +53,7 @@ class Annotation(TM1Object):
                    last_updated_by=last_updated_by, last_updated=last_updated)
 
     @property
-    def body(self) -> Dict:
+    def body(self) -> str:
         return self._construct_body()
 
     @property
@@ -106,7 +106,7 @@ class Annotation(TM1Object):
                 if not source_element or self._dimensional_context[i] == source_element:
                     self._dimensional_context[i] = target_element
 
-    def _construct_body(self) -> Dict:
+    def _construct_body(self) -> str:
         """ construct the ODATA conform JSON represenation for the Annotation entity.
 
             :return: string, the valid JSON

@@ -97,7 +97,7 @@ class DimensionApplication(Application):
     @property
     def body(self) -> str:
         body_as_dict = self.body_as_dict
-        body_as_dict["Dimension@odata.bind"] = format("Dimensions('{}')", self.dimension_name)
+        body_as_dict["Dimension@odata.bind"] = format_url("Dimensions('{}')", self.dimension_name)
         return json.dumps(body_as_dict, ensure_ascii=False)
 
 

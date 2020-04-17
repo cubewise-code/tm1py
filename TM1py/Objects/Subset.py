@@ -140,7 +140,8 @@ class Subset(TM1Object):
         body_as_dict['Name'] = self._subset_name
         if self.alias:
             body_as_dict['Alias'] = self._alias
-        body_as_dict['Hierarchy@odata.bind'] = "Dimensions('{}')/Hierarchies('{}')".format(
+        body_as_dict['Hierarchy@odata.bind'] = format_url(
+            "Dimensions('{}')/Hierarchies('{}')",
             self._dimension_name,
             self._hierarchy_name)
         body_as_dict['Expression'] = self._expression
@@ -151,7 +152,8 @@ class Subset(TM1Object):
         body_as_dict['Name'] = self._subset_name
         if self.alias:
             body_as_dict['Alias'] = self._alias
-        body_as_dict['Hierarchy@odata.bind'] = "Dimensions('{}')/Hierarchies('{}')".format(
+        body_as_dict['Hierarchy@odata.bind'] = format_url(
+            "Dimensions('{}')/Hierarchies('{}')",
             self._dimension_name,
             self.hierarchy_name)
         if self.elements and len(self.elements) > 0:
@@ -206,18 +208,24 @@ class AnonymousSubset(Subset):
 
     def _construct_body_dynamic(self) -> Dict:
         body_as_dict = collections.OrderedDict()
-        body_as_dict['Hierarchy@odata.bind'] = "Dimensions('{}')/Hierarchies('{}')" \
-            .format(self._dimension_name, self.hierarchy_name)
+        body_as_dict['Hierarchy@odata.bind'] = format_url(
+            "Dimensions('{}')/Hierarchies('{}')",
+            self._dimension_name,
+            self.hierarchy_name)
         body_as_dict['Expression'] = self._expression
         return body_as_dict
 
     def _construct_body_static(self) -> Dict:
         body_as_dict = collections.OrderedDict()
-        body_as_dict['Hierarchy@odata.bind'] = "Dimensions('{}')/Hierarchies('{}')".format(
+        body_as_dict['Hierarchy@odata.bind'] = format_url(
+            "Dimensions('{}')/Hierarchies('{}')",
             self._dimension_name,
             self.hierarchy_name)
         body_as_dict['Elements@odata.bind'] = [
-            format_url("Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
-                       self.dimension_name, self.hierarchy_name, element)
+            format_url(
+                "Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
+                self.dimension_name,
+                self.hierarchy_name,
+                element)
             for element in self.elements]
         return body_as_dict

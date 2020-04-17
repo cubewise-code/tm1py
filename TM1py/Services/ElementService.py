@@ -74,9 +74,9 @@ class ElementService(ObjectService):
         return [Element.from_dict(element) for element in response.json()["value"]]
 
     def get_leaf_element_names(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
-        url = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Type ne 3".format(
-            dimension_name,
-            hierarchy_name)
+        url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Type ne 3",
+                         dimension_name,
+                         hierarchy_name)
         response = self._rest.GET(url, **kwargs)
         return [e["Name"] for e in response.json()['value']]
 
@@ -387,8 +387,8 @@ class ElementService(ObjectService):
             expand_properties = ""
 
         url = f'/api/v1/ExecuteMDXSetExpression?$expand=Tuples({top}' \
-            f'$expand=Members({select_member_properties}' \
-            f'{expand_properties}))'
+              f'$expand=Members({select_member_properties}' \
+              f'{expand_properties}))'
 
         payload = {"MDX": mdx}
         response = self._rest.POST(url, json.dumps(payload, ensure_ascii=False), **kwargs)

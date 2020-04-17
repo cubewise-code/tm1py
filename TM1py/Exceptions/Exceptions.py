@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
 # TM1py Exceptions are defined here
+from typing import Mapping
 
 
 class TM1pyTimeout(Exception):
-    def __init__(self, method, url, timeout):
+    def __init__(self, method: str, url: str, timeout: float):
         self.method = method
         self.url = url
         self.timeout = timeout
@@ -17,7 +18,8 @@ class TM1pyException(Exception):
     """ The default exception for TM1py
 
     """
-    def __init__(self, response, status_code, reason, headers):
+
+    def __init__(self, response: str, status_code: int, reason: str, headers: Mapping):
         self._response = response
         self._status_code = status_code
         self._reason = reason
