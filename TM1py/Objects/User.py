@@ -12,11 +12,12 @@ class User(TM1Object):
     
     """
 
-    def __init__(self, name, groups, friendly_name=None, password=None):
+    def __init__(self, name, groups, friendly_name=None, password=None, enabled=True):
         self._name = name
         self._groups = CaseAndSpaceInsensitiveSet(*groups)
         self._friendly_name = friendly_name
         self._password = password
+        self._enabled = enabled
 
     @property
     def name(self):
@@ -25,6 +26,10 @@ class User(TM1Object):
     @property
     def friendly_name(self):
         return self._friendly_name
+
+    @property
+    def enabled(self):
+        return self._enabled
 
     @property
     def password(self):
@@ -51,6 +56,10 @@ class User(TM1Object):
     def password(self, value):
         self._password = value
 
+    @enabled.setter
+    def enabled(self, value):
+        self.enabled=value
+
     def add_group(self, group_name):
         self._groups.add(group_name)
 
@@ -76,7 +85,8 @@ class User(TM1Object):
         """
         return cls(name=user_as_dict['Name'],
                    friendly_name=user_as_dict['FriendlyName'],
-                   groups=[group["Name"] for group in user_as_dict['Groups']])
+                   groups=[group["Name"] for group in user_as_dict['Groups']],
+                   enabled=user_as_dict['Enabled'])
 
     @property
     def body(self):
