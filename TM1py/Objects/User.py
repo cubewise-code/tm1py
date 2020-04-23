@@ -100,6 +100,7 @@ class User(TM1Object):
         body_as_dict = collections.OrderedDict()
         body_as_dict['Name'] = self.name
         body_as_dict['FriendlyName'] = self.friendly_name or self.name
+        body_as_dict['Enabled'] = self.enabled
         if self.password:
             body_as_dict['Password'] = self._password
         body_as_dict['Groups@odata.bind'] = [
