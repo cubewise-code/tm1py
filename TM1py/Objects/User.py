@@ -14,11 +14,12 @@ class User(TM1Object):
     """
 
     def __init__(self, name: str, groups: Iterable[str], friendly_name: Optional[str] = None,
-                 password: Optional[str] = None):
+                 password: Optional[str] = None, enabled: Optional[bool] = True):
         self._name = name
         self._groups = CaseAndSpaceInsensitiveSet(*groups)
         self._friendly_name = friendly_name
         self._password = password
+        self._enabled = enabled
 
     @property
     def name(self) -> str:
@@ -41,6 +42,11 @@ class User(TM1Object):
     def groups(self) -> List[str]:
         return [group for group in self._groups]
 
+    @property
+    def enabled(self) -> bool:
+        if self._enabled:
+            return self._enabled
+
     @name.setter
     def name(self, value: str):
         self._name = value
@@ -52,6 +58,10 @@ class User(TM1Object):
     @password.setter
     def password(self, value: str):
         self._password = value
+
+    @enabled.setter
+    def password(self, value: bool):
+        self._enabled = value
 
     def add_group(self, group_name: str):
         self._groups.add(group_name)
@@ -78,7 +88,8 @@ class User(TM1Object):
         """
         return cls(name=user_as_dict['Name'],
                    friendly_name=user_as_dict['FriendlyName'],
-                   groups=[group["Name"] for group in user_as_dict['Groups']])
+                   groups=[group["Name"] for group in user_as_dict['Groups']],
+                   enabled= user_as_dict['Enabled'])
 
     @property
     def body(self) -> str:
@@ -97,4 +108,5 @@ class User(TM1Object):
         body_as_dict['Groups@odata.bind'] = [format_url("Groups('{}')", group)
                                              for group
                                              in self.groups]
+        body_as_dict['Enabled'] = self._enabled
         return json.dumps(body_as_dict, ensure_ascii=False)
