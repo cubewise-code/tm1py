@@ -1,8 +1,11 @@
 import configparser
-from pathlib import Path
 import unittest
+from pathlib import Path
+
+import pytest
 
 from TM1py.Objects import User
+from TM1py.Objects.User import UserType
 from TM1py.Services import TM1Service
 from TM1py.Utils.Utils import CaseAndSpaceInsensitiveSet
 
@@ -20,7 +23,8 @@ class TestSecurityMethods(unittest.TestCase):
         cls.tm1 = TM1Service(**config['tm1srv01'])
         cls.user_name = PREFIX + "Us'er1"
         cls.user_name_exotic_password = "UserWithExoticPassword"
-        cls.user = User(name=cls.user_name, groups=[], password='TM1py')
+        cls.enabled = True
+        cls.user = User(name=cls.user_name, groups=[], password='TM1py', enabled=cls.enabled)
         cls.group_name1 = PREFIX + "Gro'up1"
         cls.group_name2 = PREFIX + "Group2"
         cls.user.add_group(cls.group_name1)
@@ -73,6 +77,75 @@ class TestSecurityMethods(unittest.TestCase):
         # test it !
         groups = self.tm1.security.get_groups(u.name)
         self.assertNotIn(self.group_name2, groups)
+
+    def test_user_type_invalid_type(self):
+        with pytest.raises(ValueError):
+            user = User("not_relevant", groups=["ADMIN"], user_type=3)
+
+    def test_user_type_invalid_str(self):
+        with pytest.raises(ValueError):
+            user = User("not_relevant", groups=["ADMIN"], user_type="not_a_valid_type")
+
+    def test_user_type_derive_user_from_groups(self):
+        user = User("not_relevant", groups=["Marketing"], user_type=None)
+        self.assertEqual(user.user_type, UserType.User)
+
+    def test_user_type_derive_security_admin_from_groups(self):
+        user = User("not_relevant", groups=["SecurityAdmin"], user_type=None)
+        self.assertEqual(user.user_type, UserType.SecurityAdmin)
+
+    def test_user_type_derive_data_admin_from_groups(self):
+        user = User("not_relevant", groups=["DataAdmin"], user_type=None)
+        self.assertEqual(user.user_type, UserType.DataAdmin)
+
+    def test_user_type_derive_admin_from_groups(self):
+        user = User("not_relevant", groups=["ADMIN"], user_type=None)
+        self.assertEqual(user.user_type, UserType.Admin)
+
+    def test_user_type_derive_operations_admin_from_groups(self):
+        user = User("not_relevant", groups=["OperationsAdmin"], user_type=None)
+        self.assertEqual(user.user_type, UserType.OperationsAdmin)
+
+    def test_update_user_properties(self):
+        # get user
+        u = self.tm1.security.get_user(self.user_name)
+        self.assertNotIn("DataAdmin", u.groups)
+
+        # update enabled
+        u.enabled = False
+        # update UserType
+        u.user_type = UserType.DataAdmin
+        # update user. Add Group
+        u.add_group(self.group_name2)
+        self.assertIn("DataAdmin", u.groups)
+
+        self.tm1.security.update_user(u)
+        u = self.tm1.security.get_user(u.name)
+
+        self.assertFalse(u.enabled)
+        self.assertEqual(u.user_type, UserType.DataAdmin)
+        self.assertIn("DataAdmin", u.groups)
+
+    def test_update_user_properties_with_type_as_str(self):
+        # get user
+        u = self.tm1.security.get_user(self.user_name)
+        self.assertEqual(u.user_type, UserType.User)
+        self.assertNotIn("DataAdmin", u.groups)
+
+        # update enabled
+        u.enabled = False
+        # update UserType
+        u.user_type = "dataadmin"
+        # update user. Add Group
+        u.add_group(self.group_name2)
+
+        self.tm1.security.update_user(u)
+
+        u = self.tm1.security.get_user(u.name)
+
+        self.assertFalse(u.enabled)
+        self.assertEqual(u.user_type, UserType.DataAdmin)
+        self.assertIn("DataAdmin", u.groups)
 
     def test_get_all_users(self):
         all_users = [user.name for user in self.tm1.security.get_all_users()]
