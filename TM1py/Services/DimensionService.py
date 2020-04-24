@@ -43,7 +43,7 @@ class DimensionService(ObjectService):
             # Create ElementAttributes
             for hierarchy in dimension:
                 if not case_and_space_insensitive_equals(hierarchy.name, "Leaves"):
-                    self.hierarchies.update(hierarchy, **kwargs)
+                    self.hierarchies.update_element_attributes(hierarchy, **kwargs)
         except TM1pyException as e:
             # undo everything if problem in step 1 or 2
             if self.exists(dimension.name, **kwargs):
@@ -68,7 +68,8 @@ class DimensionService(ObjectService):
         :return: None
         """
         # delete hierarchies that have been removed from the dimension object
-        hierarchies_to_be_removed = CaseAndSpaceInsensitiveSet(*self.hierarchies.get_all_names(dimension.name, **kwargs))
+        hierarchies_to_be_removed = CaseAndSpaceInsensitiveSet(
+            *self.hierarchies.get_all_names(dimension.name, **kwargs))
         for hierarchy in dimension.hierarchy_names:
             hierarchies_to_be_removed.discard(hierarchy)
 

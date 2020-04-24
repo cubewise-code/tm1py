@@ -82,7 +82,7 @@ class HierarchyService(ObjectService):
         responses.append(self._rest.PATCH(url, json.dumps(hierarchy_body), **kwargs))
 
         # 2. Update Attributes
-        responses.append(self._update_element_attributes(hierarchy=hierarchy, **kwargs))
+        responses.append(self.update_element_attributes(hierarchy=hierarchy, **kwargs))
 
         # Workaround EDGES
         if self.version[0:8] in self.EDGES_WORKAROUND_VERSIONS:
@@ -126,7 +126,7 @@ class HierarchyService(ObjectService):
                 for hierarchy_property
                 in hierarchy_properties}
 
-    def _update_element_attributes(self, hierarchy: Hierarchy, **kwargs):
+    def update_element_attributes(self, hierarchy: Hierarchy, **kwargs):
         """ Update the elementattributes of a hierarchy
 
         :param hierarchy: Instance of TM1py.Hierarchy

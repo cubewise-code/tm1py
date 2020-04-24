@@ -40,7 +40,7 @@ class Hierarchy(TM1Object):
             dimension_name: str,
             elements: Optional[Iterable['Element']] = None,
             element_attributes: Optional[Iterable['ElementAttribute']] = None,
-            edges: Optional['CaseAndSpaceInsensitiveTuplesDict'] = None,
+            edges: Optional['Dict'] = None,
             subsets: Optional[Iterable[str]] = None,
             structure: Optional[int] = None,
             default_member: Optional[str] = None):
