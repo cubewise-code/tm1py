@@ -50,7 +50,9 @@ class SecurityService(ObjectService):
         :return: instance of TM1py.User
         """
         user_name = self.determine_actual_user_name(user_name, **kwargs)
-        url = format_url("/api/v1/Users('{}')?$expand=Groups", user_name)
+        url = format_url(
+            "/api/v1/Users('{}')?$select=Name,FriendlyName,Password,Type,Enabled&$expand=Groups",
+            user_name)
         response = self._rest.GET(url, **kwargs)
         return User.from_dict(response.json())
 
@@ -59,7 +61,7 @@ class SecurityService(ObjectService):
 
         :return: instance of TM1py.User
         """
-        url = "/api/v1/ActiveUser?$expand=Groups"
+        url = "/api/v1/ActiveUser?$select=Name,FriendlyName,Password,Type,Enabled&$expand=Groups"
         response = self._rest.GET(url, **kwargs)
         return User.from_dict(response.json())
 
@@ -101,7 +103,7 @@ class SecurityService(ObjectService):
 
         :return: List of TM1py.User instances
         """
-        url = '/api/v1/Users?$expand=Groups'
+        url = '/api/v1/Users?$select=Name,FriendlyName,Password,Type,Enabled&$expand=Groups'
         response = self._rest.GET(url, **kwargs)
         users = [User.from_dict(user) for user in response.json()['value']]
         return users
@@ -122,7 +124,9 @@ class SecurityService(ObjectService):
         :param group_name:
         :return: List of TM1py.User instances
         """
-        url = format_url("/api/v1/Groups('{}')?$expand=Users($expand=Groups)", group_name)
+        url = format_url(
+            "/api/v1/Groups('{}')?$expand=Users($select=Name,FriendlyName,Password,Type,Enabled;$expand=Groups)",
+            group_name)
         response = self._rest.GET(url, **kwargs)
         users = [User.from_dict(user) for user in response.json()['Users']]
         return users
