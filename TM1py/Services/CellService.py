@@ -2,6 +2,7 @@
 
 import functools
 import json
+import uuid
 import warnings
 from collections import OrderedDict
 from io import StringIO
@@ -155,6 +156,16 @@ class CellService(ObjectService):
                     *Utils.dimension_hierarchy_element_tuple_from_unique_name(unique_element_name)))
 
         return self._post_against_cellset(cellset_id=cellset_id, payload=payload, delete_cellset=True, **kwargs)
+
+    def clear_with_mdx(self, cube: str, mdx: str, **kwargs) -> Response:
+        view_name = "".join(['}TM1py', str(uuid.uuid4())])
+        ti = [
+            f"ViewCreateByMdx('{cube}','{view_name}','{mdx}',1);",
+            f"ViewZeroOut('{cube}','{view_name}');"]
+
+        from TM1py import ProcessService
+        process_service = ProcessService(self._rest)
+        return process_service.execute_ti_code(lines_prolog=ti, **kwargs)
 
     @tidy_cellset
     def _post_against_cellset(self, cellset_id: str, payload: Dict, **kwargs) -> Response:
