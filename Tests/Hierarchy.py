@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from TM1py import Element
-from TM1py.Exceptions import TM1pyException
+from TM1py.Exceptions import TM1pyRestException
 from TM1py.Objects import Dimension, Hierarchy, Subset
 from TM1py.Services import TM1Service
 
@@ -368,7 +368,7 @@ class TestHierarchyMethods(unittest.TestCase):
 
     def test_add_edges_fail_existing(self):
         edges = {("Total Years", "1989"): 1}
-        with pytest.raises(TM1pyException):
+        with pytest.raises(TM1pyRestException):
             self.tm1.dimensions.hierarchies.add_edges(DIMENSION_NAME, DIMENSION_NAME, edges)
 
     def test_is_balanced_false(self):

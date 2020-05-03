@@ -4,7 +4,7 @@ import random
 import unittest
 from base64 import b64encode
 
-from TM1py.Exceptions import TM1pyException
+from TM1py.Exceptions import TM1pyRestException, TM1pyException
 from TM1py.Objects import MDXView, User
 from TM1py.Services import TM1Service
 from TM1py.Utils import Utils
@@ -118,7 +118,7 @@ class TestOtherMethods(unittest.TestCase):
             self.tm1.security.delete_user(user_name)
         self.tm1.security.create_user(user)
 
-        self.assertRaises(TM1pyException, TM1Service,
+        self.assertRaises(TM1pyRestException, TM1Service,
                           user=user.name,
                           password=b64encode(str.encode("banana")),
                           decode_b64=True,
@@ -150,7 +150,7 @@ class TestOtherMethods(unittest.TestCase):
             self.tm1.security.delete_user(user_name)
         self.tm1.security.create_user(user)
         # test with random (wrong) password
-        self.assertRaises(TM1pyException, TM1Service,
+        self.assertRaises(TM1pyRestException, TM1Service,
                           user=user.name,
                           password="banana",
                           base_url=self.tm1._tm1_rest._base_url,

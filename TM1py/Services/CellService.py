@@ -11,7 +11,7 @@ from typing import List, Union, Dict, Iterable
 import pandas as pd
 from requests import Response
 
-from TM1py.Exceptions.Exceptions import TM1pyBaseException
+from TM1py.Exceptions.Exceptions import TM1pyException
 from TM1py.Objects.Process import Process
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
@@ -171,7 +171,7 @@ class CellService(ObjectService):
         process_service = ProcessService(self._rest)
         success, _, _ = process_service.execute_process_with_return(process, **kwargs)
         if not success:
-            raise TM1pyBaseException(f"Failed to clear cube: '{cube}' with mdx: '{abbreviate_mdx(mdx, 100)}'")
+            raise TM1pyException(f"Failed to clear cube: '{cube}' with mdx: '{abbreviate_mdx(mdx, 100)}'")
 
     @tidy_cellset
     def _post_against_cellset(self, cellset_id: str, payload: Dict, **kwargs) -> Response:

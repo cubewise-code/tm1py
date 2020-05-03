@@ -14,7 +14,7 @@ class TM1pyTimeout(Exception):
         return f"Timeout after {self.timeout} seconds for '{self.method}' request with url :'{self.url}'"
 
 
-class TM1pyBaseException(Exception):
+class TM1pyException(Exception):
     """ The default exception for TM1py
 
     """
@@ -26,14 +26,13 @@ class TM1pyBaseException(Exception):
         return self.message
 
 
-class TM1pyException(TM1pyBaseException):
+class TM1pyRestException(TM1pyException):
     """ Exception for failing REST operations
 
     """
 
     def __init__(self, response: str, status_code: int, reason: str, headers: Mapping):
-        super(TM1pyException, self).__init__(response)
-        self._response = response
+        super(TM1pyRestException, self).__init__(response)
         self._status_code = status_code
         self._reason = reason
         self._headers = headers
@@ -48,7 +47,7 @@ class TM1pyException(TM1pyBaseException):
 
     @property
     def response(self):
-        return self._response
+        return self.message
 
     @property
     def headers(self):
@@ -56,7 +55,7 @@ class TM1pyException(TM1pyBaseException):
 
     def __str__(self):
         return "Text: {} Status Code: {} Reason: {} Headers: {}".format(
-            self._response,
+            self.message,
             self._status_code,
             self._reason,
             self._headers)
