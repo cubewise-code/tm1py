@@ -17,7 +17,7 @@ try:
 except ImportError:
     warnings.warn("requests_negotiate_sspi failed to import. SSO will not work", ImportWarning)
 
-from TM1py.Exceptions import TM1pyException
+from TM1py.Exceptions import TM1pyRestException
 
 # import Http-Client depending on python version
 if sys.version[0] == '2':
@@ -242,7 +242,7 @@ class RestService:
         try:
             # ProductVersion >= TM1 10.2.2 FP 6
             self.POST('/api/v1/ActiveSession/tm1.Close', '', headers={"Connection": "close"}, timeout=timeout, **kwargs)
-        except TM1pyException:
+        except TM1pyRestException:
             # ProductVersion < TM1 10.2.2 FP 6
             self.POST('/api/logout', '', headers={"Connection": "close"}, timeout=timeout, **kwargs)
         finally:
@@ -332,10 +332,10 @@ class RestService:
             TM1pyException, raises TM1pyException when Code is not 200, 204 etc.
         """
         if not response.ok:
-            raise TM1pyException(response.text,
-                                 status_code=response.status_code,
-                                 reason=response.reason,
-                                 headers=response.headers)
+            raise TM1pyRestException(response.text,
+                                     status_code=response.status_code,
+                                     reason=response.reason,
+                                     headers=response.headers)
 
     @staticmethod
     def _build_authorization_token(user: str, password: str, namespace: str = None, gateway: str = None,

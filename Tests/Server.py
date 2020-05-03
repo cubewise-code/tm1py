@@ -8,7 +8,7 @@ import unittest
 
 import dateutil
 
-from TM1py.Exceptions import TM1pyException
+from TM1py.Exceptions import TM1pyRestException
 from TM1py.Objects import Cube, Dimension, Hierarchy, Process
 from TM1py.Services import TM1Service
 
@@ -125,8 +125,8 @@ class TestServerMethods(unittest.TestCase):
     def test_get_last_process_message_from_message_log(self):
         try:
             self.tm1.processes.execute(self.process_name1)
-        except TM1pyException as e:
-            if "ProcessCompletedWithMessages" in e._response:
+        except TM1pyRestException as e:
+            if "ProcessCompletedWithMessages" in e.response:
                 pass
             else:
                 raise e

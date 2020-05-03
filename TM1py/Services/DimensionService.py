@@ -6,7 +6,7 @@ from typing import List
 
 from requests import Response
 
-from TM1py.Exceptions import TM1pyException
+from TM1py.Exceptions.Exceptions import TM1pyException
 from TM1py.Objects.Dimension import Dimension
 from TM1py.Services.HierarchyService import HierarchyService
 from TM1py.Services.ObjectService import ObjectService

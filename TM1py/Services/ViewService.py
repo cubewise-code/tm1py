@@ -5,7 +5,7 @@ from typing import List, Tuple, Union
 
 from requests import Response
 
-from TM1py.Exceptions.Exceptions import TM1pyException
+from TM1py.Exceptions.Exceptions import TM1pyRestException
 from TM1py.Objects import View
 from TM1py.Objects.MDXView import MDXView
 from TM1py.Objects.NativeView import NativeView
@@ -56,7 +56,7 @@ class ViewService(ObjectService):
                 url = format_url(url_template, cube_name, view_type, view_name)
                 self._rest.GET(url, **kwargs)
                 view_types[view_type] = True
-            except TM1pyException as e:
+            except TM1pyRestException as e:
                 if e.status_code != 404:
                     raise e
         return tuple(view_types.values())

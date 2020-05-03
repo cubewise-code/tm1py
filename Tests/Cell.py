@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from TM1py.Exceptions.Exceptions import TM1pyBaseException
+from TM1py.Exceptions.Exceptions import TM1pyException
 from TM1py.Objects import MDXView, Cube, Dimension, Element, Hierarchy, NativeView, AnonymousSubset, ElementAttribute
 from TM1py.Services import TM1Service
 from TM1py.Utils import Utils, abbreviate_mdx
@@ -1552,8 +1552,7 @@ class TestDataMethods(unittest.TestCase):
         FROM [{CUBE_NAME}]
         WHERE ([{DIMENSION_NAMES[2]}].[Element1])
         """
-        success, status, error_log_file = self.tm1.cells.clear_with_mdx(cube=CUBE_NAME, mdx=mdx)
-        self.assertTrue(success)
+        self.tm1.cells.clear_with_mdx(cube=CUBE_NAME, mdx=mdx)
 
         value = next(self.tm1.cells.execute_mdx_values(mdx=mdx))
         self.assertEqual(value, None)
@@ -1567,14 +1566,13 @@ class TestDataMethods(unittest.TestCase):
         {{[{DIMENSION_NAMES[0]}].[Element1]}}*{{[{DIMENSION_NAMES[1]}].[Element1]}}*{{[{DIMENSION_NAMES[2]}].[Element1]}} ON 0
         FROM [{CUBE_NAME}]
         """
-        success, status, error_log_file = self.tm1.cells.clear_with_mdx(cube=CUBE_NAME, mdx=mdx)
-        self.assertTrue(success)
+        self.tm1.cells.clear_with_mdx(cube=CUBE_NAME, mdx=mdx)
 
         value = next(self.tm1.cells.execute_mdx_values(mdx=mdx))
         self.assertEqual(value, None)
 
     def test_clear_with_mdx_invalid_query(self):
-        with pytest.raises(TM1pyBaseException) as execinfo:
+        with pytest.raises(TM1pyException) as execinfo:
             mdx = f"""
             SELECT
             {{[{DIMENSION_NAMES[0]}].[NotExistingElement]}} ON 0

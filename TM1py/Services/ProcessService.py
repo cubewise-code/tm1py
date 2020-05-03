@@ -6,7 +6,7 @@ from typing import List, Dict, Tuple, Iterable
 
 from requests import Response
 
-from TM1py.Exceptions import TM1pyException
+from TM1py.Exceptions.Exceptions import TM1pyRestException
 from TM1py.Objects.Process import Process
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
@@ -245,7 +245,7 @@ class ProcessService(ObjectService):
         self.create(p, **kwargs)
         try:
             return self.execute(process_name, **kwargs)
-        except TM1pyException as e:
+        except TM1pyRestException as e:
             raise e
         finally:
             self.delete(process_name, **kwargs)

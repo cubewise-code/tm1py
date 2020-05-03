@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from TM1py.Exceptions import TM1pyException
+from TM1py.Exceptions import TM1pyRestException
 from TM1py.Services import RestService
 from TM1py.Utils import format_url
 
@@ -43,7 +43,7 @@ class ObjectService:
         try:
             self._rest.GET(url, **kwargs)
             return True
-        except TM1pyException as e:
+        except TM1pyRestException as e:
             if e.status_code == 404:
                 return False
             raise e
