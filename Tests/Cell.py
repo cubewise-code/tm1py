@@ -5,7 +5,9 @@ import unittest
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
+from TM1py.Exceptions import TM1pyException
 from TM1py.Objects import MDXView, Cube, Dimension, Element, Hierarchy, NativeView, AnonymousSubset, ElementAttribute
 from TM1py.Services import TM1Service
 from TM1py.Utils import Utils
@@ -71,11 +73,6 @@ class TestDataMethods(unittest.TestCase):
         # Connection to TM1
         cls.tm1 = TM1Service(**config['tm1srv01'])
 
-        # generate random coordinates
-        cls.target_coordinates = list(zip(('Element ' + str(random.randint(1, 1000)) for _ in range(100)),
-                                          ('Element ' + str(random.randint(1, 1000)) for _ in range(100)),
-                                          ('Element ' + str(random.randint(1, 1000)) for _ in range(100))))
-
         # Build Dimensions
         for dimension_name in DIMENSION_NAMES:
             elements = [Element('Element {}'.format(str(j)), 'Numeric') for j in range(1, 1001)]
@@ -130,16 +127,19 @@ class TestDataMethods(unittest.TestCase):
                 view=view,
                 private=False)
 
-        # Sum of all the values that we write in the cube. serves as a checksum.
-        cls.total_value = 0
+        # build target coordinates
+        cls.target_coordinates = list(zip(('Element ' + str(e) for e in range(1, 101)),
+                                          ('Element ' + str(e) for e in range(1, 101)),
+                                          ('Element ' + str(e) for e in range(1, 101))))
 
         # cellset of data that shall be written
-        cls.cellset = {}
+        cls.cellset = Utils.CaseAndSpaceInsensitiveTuplesDict()
         for element1, element2, element3 in cls.target_coordinates:
-            value = random.randint(1, 1000)
+            value = 1
             cls.cellset[(element1, element2, element3)] = value
-            # update the checksum
-            cls.total_value += value
+
+        # Sum of all the values that we write in the cube. serves as a checksum.
+        cls.total_value = sum(cls.cellset.values())
 
         # Fill cube with values
         cls.tm1.cubes.cells.write_values(CUBE_NAME, cls.cellset)
@@ -696,17 +696,19 @@ class TestDataMethods(unittest.TestCase):
                     self.assertNotIn("Ordinal", member)
 
     def test_execute_mdx_values(self):
+        self.tm1.cells.write_values(CUBE_NAME, self.cellset)
+
         mdx = """
         SELECT
-        NON EMPTY [{}].MEMBERS * [{}].MEMBERS ON ROWS,
-        NON EMPTY [{}].MEMBERS ON COLUMNS
+        NON EMPTY [{}].MEMBERS * [{}].MEMBERS * [{}].MEMBERS ON COLUMNS
         FROM [{}]
         """.format(*DIMENSION_NAMES, CUBE_NAME)
+
         cell_values = self.tm1.cubes.cells.execute_mdx_values(mdx)
         self.assertIsInstance(
             cell_values,
             types.GeneratorType)
-        # Check if total value is the same AND coordinates are the same. Handle None.
+        # Check if total value is the same. Handle None.
         self.assertEqual(
             self.total_value,
             sum([v for v in cell_values if v]))
@@ -1539,6 +1541,45 @@ class TestDataMethods(unittest.TestCase):
         """
         values = self.tm1.cubes.cells.execute_mdx_values(mdx=mdx, encoding="latin-1")
         self.assertNotEqual(LATIN_1_ENCODED_TEXT, next(values))
+
+    def test_clear_with_mdx_happy_case(self):
+        cells = {("Element1", "Element1", "Element1"): 1}
+        self.tm1.cells.write_values(CUBE_NAME, cells)
+
+        mdx = f"""
+        SELECT
+        {{[{DIMENSION_NAMES[0]}].[Element1]}} ON 0,
+        {{[{DIMENSION_NAMES[1]}].[Element1]}} ON 1
+        FROM [{CUBE_NAME}]
+        WHERE ([{DIMENSION_NAMES[2]}].[Element1])
+        """
+        self.tm1.cells.clear_with_mdx(cube=CUBE_NAME, mdx=mdx)
+
+        value = next(self.tm1.cells.execute_mdx_values(mdx=mdx))
+        self.assertEqual(value, None)
+
+    def test_clear_with_mdx_all_on_axis0(self):
+        cells = {("Element1", "Element1", "Element1"): 1}
+        self.tm1.cells.write_values(CUBE_NAME, cells)
+
+        mdx = f"""
+        SELECT
+        {{[{DIMENSION_NAMES[0]}].[Element1]}}*{{[{DIMENSION_NAMES[1]}].[Element1]}}*{{[{DIMENSION_NAMES[2]}].[Element1]}} ON 0
+        FROM [{CUBE_NAME}]
+        """
+        self.tm1.cells.clear_with_mdx(cube=CUBE_NAME, mdx=mdx)
+
+        value = next(self.tm1.cells.execute_mdx_values(mdx=mdx))
+        self.assertEqual(value, None)
+
+    def test_clear_with_mdx_invalid_query(self):
+        with pytest.raises(TM1pyException):
+            mdx = f"""
+            SELECT
+            {{[{DIMENSION_NAMES[0]}].[NotExistingElement]}} ON 0
+            FROM [{CUBE_NAME}]
+            """
+            self.tm1.cells.clear_with_mdx(cube=CUBE_NAME, mdx=mdx)
 
     # Delete Cube and Dimensions
     @classmethod
