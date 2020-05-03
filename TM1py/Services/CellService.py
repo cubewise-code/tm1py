@@ -6,17 +6,18 @@ import uuid
 import warnings
 from collections import OrderedDict
 from io import StringIO
-from typing import List, Union, Dict, Iterable, Tuple
+from typing import List, Union, Dict, Iterable
 
 import pandas as pd
 from requests import Response
 
+from TM1py.Exceptions.Exceptions import TM1pyBaseException
 from TM1py.Objects.Process import Process
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
-    CaseAndSpaceInsensitiveTuplesDict
+    CaseAndSpaceInsensitiveTuplesDict, abbreviate_mdx
 
 
 def tidy_cellset(func):
@@ -158,7 +159,7 @@ class CellService(ObjectService):
 
         return self._post_against_cellset(cellset_id=cellset_id, payload=payload, delete_cellset=True, **kwargs)
 
-    def clear_with_mdx(self, cube: str, mdx: str, **kwargs) -> Tuple[bool, str, str]:
+    def clear_with_mdx(self, cube: str, mdx: str, **kwargs):
         view_name = "".join(['}TM1py', str(uuid.uuid4())])
         code = "".join([
             f"ViewCreateByMdx('{cube}','{view_name}','{mdx}',1);",
@@ -168,7 +169,9 @@ class CellService(ObjectService):
 
         from TM1py import ProcessService
         process_service = ProcessService(self._rest)
-        return process_service.execute_process_with_return(process, **kwargs)
+        success, _, _ = process_service.execute_process_with_return(process, **kwargs)
+        if not success:
+            raise TM1pyBaseException(f"Failed to clear cube: '{cube}' with mdx: '{abbreviate_mdx(mdx, 100)}'")
 
     @tidy_cellset
     def _post_against_cellset(self, cellset_id: str, payload: Dict, **kwargs) -> Response:

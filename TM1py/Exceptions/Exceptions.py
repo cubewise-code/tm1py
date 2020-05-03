@@ -14,12 +14,25 @@ class TM1pyTimeout(Exception):
         return f"Timeout after {self.timeout} seconds for '{self.method}' request with url :'{self.url}'"
 
 
-class TM1pyException(Exception):
+class TM1pyBaseException(Exception):
     """ The default exception for TM1py
 
     """
 
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        return self.message
+
+
+class TM1pyException(TM1pyBaseException):
+    """ Exception for failing REST operations
+
+    """
+
     def __init__(self, response: str, status_code: int, reason: str, headers: Mapping):
+        super(TM1pyException, self).__init__(response)
         self._response = response
         self._status_code = status_code
         self._reason = reason

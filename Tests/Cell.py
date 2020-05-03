@@ -4,10 +4,12 @@ import unittest
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
+from TM1py.Exceptions.Exceptions import TM1pyBaseException
 from TM1py.Objects import MDXView, Cube, Dimension, Element, Hierarchy, NativeView, AnonymousSubset, ElementAttribute
 from TM1py.Services import TM1Service
-from TM1py.Utils import Utils
+from TM1py.Utils import Utils, abbreviate_mdx
 
 # Hard coded stuff
 PREFIX = 'TM1py_Tests_Cell_'
@@ -1572,16 +1574,17 @@ class TestDataMethods(unittest.TestCase):
         self.assertEqual(value, None)
 
     def test_clear_with_mdx_invalid_query(self):
-        mdx = f"""
-        SELECT
-        {{[{DIMENSION_NAMES[0]}].[NotExistingElement]}} ON 0
-        FROM [{CUBE_NAME}]
-        """
-        success, status, error_log_file = self.tm1.cells.clear_with_mdx(cube=CUBE_NAME, mdx=mdx)
+        with pytest.raises(TM1pyBaseException) as execinfo:
+            mdx = f"""
+            SELECT
+            {{[{DIMENSION_NAMES[0]}].[NotExistingElement]}} ON 0
+            FROM [{CUBE_NAME}]
+            """
+            self.tm1.cells.clear_with_mdx(cube=CUBE_NAME, mdx=mdx)
 
-        self.assertFalse(success)
-        self.assertEqual(status, "Aborted")
-        self.assertTrue(len(error_log_file) > 0)
+        self.assertEqual(
+            f"Failed to clear cube: '{CUBE_NAME}' with mdx: '{abbreviate_mdx(mdx, 100)}'",
+            execinfo.value.message)
 
     # Delete Cube and Dimensions
     @classmethod

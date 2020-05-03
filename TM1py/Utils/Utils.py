@@ -44,6 +44,13 @@ def format_url(url, *args: str, **kwargs: str) -> str:
     return url.format(*args, **kwargs)
 
 
+def abbreviate_mdx(mdx: str, size=100) -> str:
+    if len(mdx) < size:
+        return mdx
+    else:
+        return mdx[:size] + "..."
+
+
 def case_and_space_insensitive_equals(item1: str, item2: str) -> bool:
     return lower_and_drop_spaces(item1) == lower_and_drop_spaces(item2)
 
