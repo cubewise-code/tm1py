@@ -6,11 +6,12 @@ import uuid
 import warnings
 from collections import OrderedDict
 from io import StringIO
-from typing import List, Union, Dict, Iterable
+from typing import List, Union, Dict, Iterable, Tuple
 
 import pandas as pd
 from requests import Response
 
+from TM1py.Objects.Process import Process
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url
@@ -157,15 +158,17 @@ class CellService(ObjectService):
 
         return self._post_against_cellset(cellset_id=cellset_id, payload=payload, delete_cellset=True, **kwargs)
 
-    def clear_with_mdx(self, cube: str, mdx: str, **kwargs) -> Response:
+    def clear_with_mdx(self, cube: str, mdx: str, **kwargs) -> Tuple[bool, str, str]:
         view_name = "".join(['}TM1py', str(uuid.uuid4())])
-        ti = [
+        code = "".join([
             f"ViewCreateByMdx('{cube}','{view_name}','{mdx}',1);",
-            f"ViewZeroOut('{cube}','{view_name}');"]
+            f"ViewZeroOut('{cube}','{view_name}');"])
+        process = Process(name="")
+        process.prolog_procedure = code
 
         from TM1py import ProcessService
         process_service = ProcessService(self._rest)
-        return process_service.execute_ti_code(lines_prolog=ti, **kwargs)
+        return process_service.execute_process_with_return(process, **kwargs)
 
     @tidy_cellset
     def _post_against_cellset(self, cellset_id: str, payload: Dict, **kwargs) -> Response:

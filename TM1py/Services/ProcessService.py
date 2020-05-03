@@ -176,7 +176,7 @@ class ProcessService(ObjectService):
                 parameters = {}
         return self._rest.POST(url=url, data=json.dumps(parameters, ensure_ascii=False), timeout=timeout, **kwargs)
 
-    def execute_process_with_return(self, process: Process, **kwargs):
+    def execute_process_with_return(self, process: Process, **kwargs) -> Tuple[bool, str, str]:
         """
         Run unbound TI code directly
         :param process: a TI Process Object
