@@ -43,7 +43,7 @@ class TM1pyRestException(TM1pyException):
 
     @property
     def reason(self):
-        return self.reason
+        return self._reason
 
     @property
     def response(self):
