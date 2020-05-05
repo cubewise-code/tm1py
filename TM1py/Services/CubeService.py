@@ -160,7 +160,7 @@ class CubeService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return [dimension["Name"] for dimension in response.json()["value"]]
 
-    def update_storage_dimension_order(self, cube_name: str, dimension_names: Iterable[str]) -> Float[str]:
+    def update_storage_dimension_order(self, cube_name: str, dimension_names: Iterable[str]) -> Float:
         """ Update the storage dimension order of a cube
 
         :param cube_name:
