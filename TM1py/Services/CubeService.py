@@ -160,12 +160,12 @@ class CubeService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return [dimension["Name"] for dimension in response.json()["value"]]
 
-    def update_storage_dimension_order(self, cube_name: str, dimension_names: Iterable[str]) -> Response:
+    def update_storage_dimension_order(self, cube_name: str, dimension_names: Iterable[str]) -> Float[str]:
         """ Update the storage dimension order of a cube
 
         :param cube_name:
         :param dimension_names:
-        :return: percent change in memory usage
+        :return:  Float: -23.076489699337078 (percent change in memory usage)
         """
         url = format_url("/api/v1/Cubes('{}')/tm1.ReorderDimensions", cube_name)
         payload = dict()
