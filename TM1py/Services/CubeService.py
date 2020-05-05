@@ -165,14 +165,15 @@ class CubeService(ObjectService):
 
         :param cube_name:
         :param dimension_names:
-        :return:
+        :return: percent change in memory usage
         """
         url = format_url("/api/v1/Cubes('{}')/tm1.ReorderDimensions", cube_name)
         payload = dict()
         payload['Dimensions@odata.bind'] = [format_url("Dimensions('{}')", dimension)
                                             for dimension
                                             in dimension_names]
-        return self._rest.POST(url=url, data=json.dumps(payload))
+        response = self._rest.POST(request=url, data=json.dumps(payload))
+        return response.json()["value"]
 
     def load(self, cube_name: str, **kwargs) -> Response:
         """ Load the cube into memory on the server
