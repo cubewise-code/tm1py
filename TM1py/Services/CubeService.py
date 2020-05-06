@@ -172,7 +172,7 @@ class CubeService(ObjectService):
         payload['Dimensions@odata.bind'] = [format_url("Dimensions('{}')", dimension)
                                             for dimension
                                             in dimension_names]
-        response = self._rest.POST(request=url, data=json.dumps(payload))
+        response = self._rest.POST(url=url, data=json.dumps(payload))
         return response.json()["value"]
 
     def load(self, cube_name: str, **kwargs) -> Response:

@@ -37,6 +37,10 @@ class ChoreStartTime(TM1Object):
     def start_time_string(self) -> str:
         return self._datetime.strftime("%Y-%m-%dT%H:%M:%SZ")
 
+    @property
+    def datetime(self) -> datetime:
+        return self._datetime
+
     def __str__(self):
         return self.start_time_string
 

@@ -83,6 +83,10 @@ class ChoreService(ObjectService):
         """
         url = "/api/v1/Chores"
         response = self._rest.POST(url=url, data=chore.body, **kwargs)
+
+        if chore.dst_sensitivity:
+            self.set_local_start_time(chore.name, chore.start_time.datetime)
+
         if chore.active:
             self.activate(chore.name)
         return response
@@ -130,6 +134,9 @@ class ChoreService(ObjectService):
                     self._update_task(chore.name, task_new, **kwargs)
         for j in range(i + 1, task_old_count):
             self._delete_task(chore.name, i + 1, **kwargs)
+
+        if chore.dst_sensitivity:
+            self.set_local_start_time(chore.name, chore.start_time.datetime)
 
     def activate(self, chore_name: str, **kwargs) -> Response:
         """ activate chore on TM1 Server
@@ -218,13 +225,13 @@ class ChoreService(ObjectService):
                 self.activate(chore_name, **kwargs)
         return response
 
-    def _update_task(self, chore_name, chore_task, **kwargs):
+    def _update_task(self, chore_name: str, chore_task: ChoreTask, **kwargs):
         """ update a chore task
         :param chore_name: name of the Chore
         :param chore_task: instance TM1py.ChoreTask
         :return: response
         """
-        url = format_url("/api/v1/Chores('{}')/Tasks({})", chore_name, chore_task.step)
+        url = format_url("/api/v1/Chores('{}')/Tasks({})", chore_name, str(chore_task.step))
         return self._rest.PATCH(url, chore_task.body, **kwargs)
 
     @staticmethod

@@ -397,7 +397,7 @@ def lower_and_drop_spaces(item: str) -> str:
     return item.replace(" ", "").lower()
 
 
-class CaseAndSpaceInsensitiveDict(collections.MutableMapping):
+class CaseAndSpaceInsensitiveDict(collections.abc.MutableMapping):
     """A case-and-space-insensitive dict-like object with String keys.
 
     Implements all methods and operations of
@@ -472,7 +472,7 @@ class CaseAndSpaceInsensitiveDict(collections.MutableMapping):
         return str(dict(self.items()))
 
 
-class CaseAndSpaceInsensitiveTuplesDict(collections.MutableMapping):
+class CaseAndSpaceInsensitiveTuplesDict(collections.abc.MutableMapping):
     """A case-and-space-insensitive dict-like object with String-Tuples Keys.
 
     Implements all methods and operations of
@@ -548,7 +548,7 @@ class CaseAndSpaceInsensitiveTuplesDict(collections.MutableMapping):
         return str(dict(self.items()))
 
 
-class CaseAndSpaceInsensitiveSet(collections.MutableSet):
+class CaseAndSpaceInsensitiveSet(collections.abc.MutableSet):
     def __init__(self, *values):
         self._store = {}
         for v in values:
