@@ -1,3 +1,6 @@
+import warnings
+
+
 class DimensionSelection:
     """ Instances of this class to be passed to construct_mdx function
 
@@ -7,6 +10,10 @@ class DimensionSelection:
     ITERABLE = 3
 
     def __init__(self, dimension_name, elements=None, subset=None, expression=None):
+        warnings.warn(
+            f"class DimensionSelection will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
+            DeprecationWarning,
+            stacklevel=2)
         self.dimension_name = dimension_name
         self.selection_type = self.determine_selection_type(elements, subset, expression)
         if self.selection_type == self.SUBSET:
@@ -24,6 +31,10 @@ class DimensionSelection:
 
     @staticmethod
     def determine_selection_type(elements=None, subset=None, expression=None):
+        warnings.warn(
+            f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
+            DeprecationWarning,
+            stacklevel=2)
         if elements is not None and subset is None and expression is None:
             return DimensionSelection.ITERABLE
         elif elements is None and subset is not None and expression is None:
@@ -44,6 +55,10 @@ def construct_mdx_axis(dim_selections):
     :param dim_selections: instances of TM1py.Utils.MDXUtils.DimensionSelection
     :return: a valid MDX for an Axis
     """
+    warnings.warn(
+        f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
+        DeprecationWarning,
+        stacklevel=2)
     return "*".join(selection.expression
                     for selection
                     in dim_selections)
@@ -59,6 +74,10 @@ def construct_mdx(cube_name, rows, columns, contexts=None, suppress=None):
     :param suppress: "Both", "Rows", "Columns" or None
     :return: Generated MDX Query
     """
+    warnings.warn(
+        f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
+        DeprecationWarning,
+        stacklevel=2)
     # MDX Skeleton
     mdx_template = "SELECT {}{} ON ROWS, {}{} ON COLUMNS FROM [{}] {}"
     # Suppression
@@ -86,6 +105,10 @@ def curly_braces(expression):
     :param expression:
     :return:
     """
+    warnings.warn(
+        f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
+        DeprecationWarning,
+        stacklevel=2)
     return "".join(["{" if not expression.startswith("{") else "",
                     expression,
                     "}" if not expression.endswith("}") else ""])
@@ -97,6 +120,10 @@ def read_cube_name_from_mdx(mdx):
     :param mdx: The MDX Query as String
     :return: String, name of a cube
     """
+    warnings.warn(
+        f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
+        DeprecationWarning,
+        stacklevel=2)
     cube, _, _, _ = read_dimension_composition_from_mdx(mdx)
     return cube
 
@@ -107,6 +134,10 @@ def read_dimension_composition_from_mdx(mdx):
     :param mdx:
     :return:
     """
+    warnings.warn(
+        f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
+        DeprecationWarning,
+        stacklevel=2)
     mdx_rows, mdx_columns, mdx_from, mdx_where = split_mdx(mdx)
 
     cube = mdx_from[1:-1]
@@ -118,6 +149,10 @@ def read_dimension_composition_from_mdx(mdx):
 
 
 def read_dimension_composition_from_mdx_set_or_tuple(mdx):
+    warnings.warn(
+        f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
+        DeprecationWarning,
+        stacklevel=2)
     mdx_without_spaces = ''.join(mdx.split())
     # case for mdx statement no where statement
     if len(mdx_without_spaces) == 0:
@@ -134,6 +169,10 @@ def read_dimension_composition_from_mdx_set_or_tuple(mdx):
 
 
 def read_dimension_composition_from_mdx_set(mdx):
+    warnings.warn(
+        f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
+        DeprecationWarning,
+        stacklevel=2)
     dimensions = []
     mdx_without_spaces = ''.join(mdx.split())
     for sub_mdx in mdx_without_spaces.split("}*{"):
@@ -144,6 +183,10 @@ def read_dimension_composition_from_mdx_set(mdx):
 
 
 def read_dimension_composition_from_mdx_tuple(mdx):
+    warnings.warn(
+        f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
+        DeprecationWarning,
+        stacklevel=2)
     dimensions = []
     for unique_member_name in mdx.split(","):
         pos_start, pos_end = unique_member_name.find("["), unique_member_name.find("]")
@@ -156,6 +199,10 @@ def read_dimension_composition_from_mdx_tuple(mdx):
 
 
 def split_mdx(mdx):
+    warnings.warn(
+        f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
+        DeprecationWarning,
+        stacklevel=2)
     try:
         mdx_rows, mdx_rest = _find_case_and_space_insensitive_first_occurrence(
             text=mdx,
@@ -177,6 +224,10 @@ def split_mdx(mdx):
 
 
 def _find_case_and_space_insensitive_first_occurrence(text, pattern_start=None, pattern_end=None):
+    warnings.warn(
+        f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
+        DeprecationWarning,
+        stacklevel=2)
     text_without_spaces = ''.join(text.split())
     text_without_spaces_and_uppercase = text_without_spaces.upper()
 

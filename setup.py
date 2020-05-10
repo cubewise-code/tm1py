@@ -30,12 +30,14 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Natural Language :: English',
     ],
     install_requires=[
         'requests',
         'pandas',
         'pytz',
-        'requests_negotiate_sspi;platform_system=="Windows"'],
+        'requests_negotiate_sspi;platform_system=="Windows"',
+        'mdxpy'],
     python_requires='>=3.5',
 )
