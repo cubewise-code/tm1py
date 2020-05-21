@@ -25,6 +25,7 @@ class TM1Service:
         self.processes = ProcessService(self._tm1_rest)
         self.security = SecurityService(self._tm1_rest)
         self.server = ServerService(self._tm1_rest)
+        self.subsets = SubsetService(self._tm1_rest)
         self.applications = ApplicationService(self._tm1_rest)
 
     def logout(self, **kwargs):
