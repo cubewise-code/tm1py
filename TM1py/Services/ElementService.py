@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
-from typing import List, Union, Iterable
+from typing import List, Union, Iterable, Optional
 
 from requests import Response
 
@@ -347,10 +347,10 @@ class ElementService(ObjectService):
     def execute_set_mdx(
             self,
             mdx: str,
-            top_records: int = None,
-            member_properties: Iterable[str] = ('Name', 'Weight'),
-            parent_properties: Iterable[str] = ('Name', 'UniqueName'),
-            element_properties: Iterable[str] = ('Type', 'Level'),
+            top_records: Optional[int] = None,
+            member_properties: Optional[Iterable[str]] = ('Name', 'Weight'),
+            parent_properties: Optional[Iterable[str]] = ('Name', 'UniqueName'),
+            element_properties: Optional[Iterable[str]] = ('Type', 'Level'),
             **kwargs) -> List:
         """
         :method to execute an MDX statement against a dimension

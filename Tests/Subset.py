@@ -1,6 +1,6 @@
 import configparser
-from pathlib import Path
 import unittest
+from pathlib import Path
 
 from TM1py.Objects import Dimension, Hierarchy, Subset, ElementAttribute, Element
 from TM1py.Services import TM1Service
@@ -384,6 +384,26 @@ class TestSubsetMethods(unittest.TestCase):
             subset_name=static_subset.name,
             private=private)
         self.assertEqual(len(subset.elements), 0)
+
+    def test_get_element_names_static(self):
+        element_names = self.tm1.subsets.get_element_names(
+            self.dimension_name,
+            self.dimension_name,
+            self.subset_name_static,
+            False)
+
+        self.assertEqual(self.static_subset.elements, element_names)
+
+    def test_get_element_names_dynamic(self):
+        element_names = self.tm1.subsets.get_element_names(
+            self.dimension_name,
+            self.dimension_name,
+            self.subset_name_dynamic,
+            False)
+
+        self.assertEqual(
+            ['USD', 'EUR', 'JPY', 'CNY', 'GBP', 'NZD', "Dum'my"],
+            element_names)
 
     @classmethod
     def teardown_class(cls):
