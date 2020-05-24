@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 import functools
-import sys
+import time
 import warnings
+import zlib
 from base64 import b64encode, b64decode
-from typing import Union, Dict, Tuple
+from typing import Union, Dict, Tuple, Optional
 
 import requests
 from requests import Timeout, Response
@@ -19,11 +20,7 @@ except ImportError:
 
 from TM1py.Exceptions import TM1pyRestException
 
-# import Http-Client depending on python version
-if sys.version[0] == '2':
-    import httplib as http_client
-else:
-    import http.client as http_client
+import http.client as http_client
 
 
 def httpmethod(func):
@@ -34,7 +31,7 @@ def httpmethod(func):
     """
 
     @functools.wraps(func)
-    def wrapper(self, url: str, data: str = '', encoding='utf-8', **kwargs):
+    def wrapper(self, url: str, data: str = '', encoding='utf-8', ibm_cloud_mode: Optional[bool] = None, **kwargs):
         # url encoding
         url, data = self._url_and_body(
             url=url,
@@ -42,9 +39,36 @@ def httpmethod(func):
             encoding=encoding)
         # execute request
         try:
-            response = func(self, url, data, **kwargs)
+            # determine ibm_cloud_mode
+            if ibm_cloud_mode is None:
+                ibm_cloud_mode = self._ibm_cloud_mode
+
+            if not ibm_cloud_mode:
+                response = func(self, url, data, **kwargs)
+
+            else:
+                additional_header = {'Prefer': 'respond-async'}
+                http_headers = kwargs.get('headers', dict())
+                http_headers.update(additional_header)
+                kwargs['headers'] = http_headers
+                response = func(self, url, data, **kwargs)
+                self.verify_response(response=response)
+
+                if 'Location' not in response.headers or "'" not in response.headers['Location']:
+                    raise ValueError(f"Failed to retrieve async_id from request {func.__name__} '{url}'")
+                async_id = response.headers.get('Location').split("'")[1]
+
+                for wait in RestService.wait_time_generator(kwargs.get('timeout', self._timeout)):
+                    response = self.retrieve_async_response(async_id)
+                    if response.status_code == 200:
+                        break
+                    time.sleep(wait)
+
+                response = self.build_response_from_async_response(response)
+
             # verify
             self.verify_response(response=response)
+
             # response encoding
             response.encoding = encoding
             return response
@@ -92,6 +116,7 @@ class RestService:
         :param verify: path to .cer file or 'False' / False (if no ssl verification is required)
         :param logging: boolean - switch on/off verbose http logging into sys.stdout
         :param timeout: Float - Number of seconds that the client will wait to receive the first byte.
+        :param ibm_cloud_mode: changes internal REST execution mode to avoid 60s timeout on IBM cloud
         :param connection_pool_size - In a multithreaded environment, you should set this value to a
         higher number, such as the number of threads
         """
@@ -100,6 +125,7 @@ class RestService:
         self._port = kwargs.get('port', None)
         self._verify = False
         self._timeout = None if kwargs.get('timeout', None) is None else float(kwargs.get('timeout'))
+        self._ibm_cloud_mode = self.translate_to_boolean(kwargs.get('ibm_cloud_mode', False))
 
         if 'verify' in kwargs:
             if isinstance(kwargs['verify'], str):
@@ -241,7 +267,8 @@ class RestService:
         # Easier to ask for forgiveness than permission
         try:
             # ProductVersion >= TM1 10.2.2 FP 6
-            self.POST('/api/v1/ActiveSession/tm1.Close', '', headers={"Connection": "close"}, timeout=timeout, **kwargs)
+            self.POST('/api/v1/ActiveSession/tm1.Close', '', headers={"Connection": "close"}, timeout=timeout,
+                      ibm_cloud_mode=False, **kwargs)
         except TM1pyRestException:
             # ProductVersion < TM1 10.2.2 FP 6
             self.POST('/api/logout', '', headers={"Connection": "close"}, timeout=timeout, **kwargs)
@@ -310,9 +337,9 @@ class RestService:
         if isinstance(value, bool) or isinstance(value, int):
             return bool(value)
         elif isinstance(value, str):
-            return value.lower() == 'true'
+            return value.replace(" ", "").lower() == 'true'
         else:
-            raise ValueError("Invalid argument: " + value + ". Needs to be of type boolean or string")
+            raise ValueError("Invalid argument: '" + value + "'. Must be to be of type 'bool' or 'str'")
 
     @staticmethod
     def b64_decode_password(encrypted_password: str) -> str:
@@ -383,9 +410,42 @@ class RestService:
     def get_http_header(self, key: str) -> str:
         return self._headers[key]
 
-    def add_http_header(self, key: str, value: str) -> str:
+    def add_http_header(self, key: str, value: str):
         self._headers[key] = value
 
-    def remove_http_header(self, key: str) -> str:
+    def remove_http_header(self, key: str):
         if key in self._headers:
             self._headers.pop(key)
+
+    def retrieve_async_response(self, async_id: str, **kwargs) -> Response:
+        url = self._base_url + f"/api/v1/_async('{async_id}')"
+        return self._s.get(url, **kwargs)
+
+    @staticmethod
+    def build_response_from_async_response(response: Response) -> Response:
+        content_raw = response.content
+        http_headers_raw, content = content_raw.split(b"\r\n\r\n")
+
+        http_headers = http_headers_raw.split(b"\r\n")
+        status_code = http_headers[0].split(b" ")[1]
+        response.status_code = int(status_code)
+        for http_header in http_headers[1:]:
+            header_key, header_value = http_header.decode("utf-8").split(":")
+            response.headers[header_key.strip()] = header_value.strip()
+        if len(content) > 0:
+            response._content = zlib.decompress(content, 16 + zlib.MAX_WBITS)
+        else:
+            response._content = content
+        return response
+
+    @staticmethod
+    def wait_time_generator(timeout: int):
+        yield 0.1
+        yield 0.3
+        yield 0.6
+        if timeout:
+            for _ in range(1, timeout):
+                yield 1
+        else:
+            while True:
+                yield 1

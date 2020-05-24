@@ -91,7 +91,7 @@ class ChoreService(ObjectService):
             self.activate(chore.name)
         return response
 
-    def delete(self, chore_name: str) -> Response:
+    def delete(self, chore_name: str, **kwargs) -> Response:
         """ delete chore in TM1
         :param chore_name:
         :return: response
@@ -100,14 +100,14 @@ class ChoreService(ObjectService):
         response = self._rest.DELETE(url)
         return response
 
-    def exists(self, chore_name: str) -> bool:
+    def exists(self, chore_name: str, **kwargs) -> bool:
         """ Check if Chore exists
 
         :param chore_name:
         :return:
         """
         url = format_url("/api/v1/Chores('{}')", chore_name)
-        return self._exists(url)
+        return self._exists(url, **kwargs)
 
     @deactivate_activate
     def update(self, chore: Chore, **kwargs):
