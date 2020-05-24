@@ -85,7 +85,11 @@ class Process(TM1Object):
         self._ui_data = ui_data
         self._parameters = list(parameters) if parameters else []
         self._variables = list(variables) if variables else []
-        self._variables_ui_data = list(variables_ui_data) if variables_ui_data else []
+        if variables_ui_data:
+            # Handle encoding issue in variable_ui_data for async requests
+            self._variables_ui_data = [entry.replace("€", "\f") for entry in variables_ui_data]
+        else:
+            self._variables_ui_data = []
         self._prolog_procedure = Process.add_generated_string_to_code(prolog_procedure)
         self._metadata_procedure = Process.add_generated_string_to_code(metadata_procedure)
         self._data_procedure = Process.add_generated_string_to_code(data_procedure)
