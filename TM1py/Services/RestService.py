@@ -2,11 +2,13 @@
 import functools
 import time
 import warnings
-import zlib
 from base64 import b64encode, b64decode
+from http.client import HTTPResponse
+from io import BytesIO
 from typing import Union, Dict, Tuple, Optional
 
 import requests
+import urllib3
 from requests import Timeout, Response
 from requests.adapters import HTTPAdapter
 
@@ -21,6 +23,14 @@ except ImportError:
 from TM1py.Exceptions import TM1pyRestException
 
 import http.client as http_client
+
+
+class BytesIOSocket:
+    def __init__(self, content):
+        self.handle = BytesIO(content)
+
+    def makefile(self, mode):
+        return self.handle
 
 
 def httpmethod(func):
@@ -64,7 +74,11 @@ def httpmethod(func):
                         break
                     time.sleep(wait)
 
-                response = self.build_response_from_async_response(response)
+                # all wait times consumed and still no 200
+                if not response.status_code == 200:
+                    raise TM1pyTimeout(method=func.__name__, url=url, timeout=kwargs['timeout'])
+
+                response = self.build_response_from_raw_bytes(response.content)
 
             # verify
             self.verify_response(response=response)
@@ -422,21 +436,24 @@ class RestService:
         return self._s.get(url, **kwargs)
 
     @staticmethod
-    def build_response_from_async_response(response: Response) -> Response:
-        content_raw = response.content
-        http_headers_raw, content = content_raw.split(b"\r\n\r\n")
+    def urllib3_response_from_bytes(data: bytes) -> HTTPResponse:
+        sock = BytesIOSocket(data)
 
-        http_headers = http_headers_raw.split(b"\r\n")
-        status_code = http_headers[0].split(b" ")[1]
-        response.status_code = int(status_code)
-        for http_header in http_headers[1:]:
-            header_key, header_value = http_header.decode("utf-8").split(":")
-            response.headers[header_key.strip()] = header_value.strip()
-        if len(content) > 0:
-            response._content = zlib.decompress(content, 16 + zlib.MAX_WBITS)
-        else:
-            response._content = content
-        return response
+        response = HTTPResponse(sock)
+        response.begin()
+
+        return urllib3.HTTPResponse.from_httplib(response)
+
+    @staticmethod
+    def build_response_from_raw_bytes(data: bytes) -> Response:
+        urllib_response = RestService.urllib3_response_from_bytes(data)
+
+        adapter = HTTPAdapter()
+        requests_response = adapter.build_response(requests.PreparedRequest(), urllib_response)
+        # actual content of response needs to be set explicitly
+        requests_response._content = urllib_response.data
+
+        return requests_response
 
     @staticmethod
     def wait_time_generator(timeout: int):
