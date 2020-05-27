@@ -25,14 +25,6 @@ from TM1py.Exceptions import TM1pyRestException
 import http.client as http_client
 
 
-class BytesIOSocket:
-    def __init__(self, content):
-        self.handle = BytesIO(content)
-
-    def makefile(self, mode):
-        return self.handle
-
-
 def httpmethod(func):
     """ Higher Order Function to wrap the GET, POST, PATCH, PUT, DELETE methods
         Takes care of:
@@ -41,7 +33,7 @@ def httpmethod(func):
     """
 
     @functools.wraps(func)
-    def wrapper(self, url: str, data: str = '', encoding='utf-8', ibm_cloud_mode: Optional[bool] = None, **kwargs):
+    def wrapper(self, url: str, data: str = '', encoding='utf-8', async_requests_mode: Optional[bool] = None, **kwargs):
         # url encoding
         url, data = self._url_and_body(
             url=url,
@@ -49,11 +41,11 @@ def httpmethod(func):
             encoding=encoding)
         # execute request
         try:
-            # determine ibm_cloud_mode
-            if ibm_cloud_mode is None:
-                ibm_cloud_mode = self._ibm_cloud_mode
+            # determine async_requests_mode
+            if async_requests_mode is None:
+                async_requests_mode = self._async_requests_mode
 
-            if not ibm_cloud_mode:
+            if not async_requests_mode:
                 response = func(self, url, data, **kwargs)
 
             else:
@@ -70,12 +62,12 @@ def httpmethod(func):
 
                 for wait in RestService.wait_time_generator(kwargs.get('timeout', self._timeout)):
                     response = self.retrieve_async_response(async_id)
-                    if response.status_code == 200:
+                    if response.status_code in [200, 201]:
                         break
                     time.sleep(wait)
 
                 # all wait times consumed and still no 200
-                if not response.status_code == 200:
+                if response.status_code not in [200, 201]:
                     raise TM1pyTimeout(method=func.__name__, url=url, timeout=kwargs['timeout'])
 
                 response = self.build_response_from_raw_bytes(response.content)
@@ -130,7 +122,7 @@ class RestService:
         :param verify: path to .cer file or 'False' / False (if no ssl verification is required)
         :param logging: boolean - switch on/off verbose http logging into sys.stdout
         :param timeout: Float - Number of seconds that the client will wait to receive the first byte.
-        :param ibm_cloud_mode: changes internal REST execution mode to avoid 60s timeout on IBM cloud
+        :param async_requests_mode: changes internal REST execution mode to avoid 60s timeout on IBM cloud
         :param connection_pool_size - In a multithreaded environment, you should set this value to a
         higher number, such as the number of threads
         """
@@ -139,7 +131,7 @@ class RestService:
         self._port = kwargs.get('port', None)
         self._verify = False
         self._timeout = None if kwargs.get('timeout', None) is None else float(kwargs.get('timeout'))
-        self._ibm_cloud_mode = self.translate_to_boolean(kwargs.get('ibm_cloud_mode', False))
+        self._async_requests_mode = self.translate_to_boolean(kwargs.get('async_requests_mode', False))
 
         if 'verify' in kwargs:
             if isinstance(kwargs['verify'], str):
@@ -282,7 +274,7 @@ class RestService:
         try:
             # ProductVersion >= TM1 10.2.2 FP 6
             self.POST('/api/v1/ActiveSession/tm1.Close', '', headers={"Connection": "close"}, timeout=timeout,
-                      ibm_cloud_mode=False, **kwargs)
+                      async_requests_mode=False, **kwargs)
         except TM1pyRestException:
             # ProductVersion < TM1 10.2.2 FP 6
             self.POST('/api/logout', '', headers={"Connection": "close"}, timeout=timeout, **kwargs)
@@ -466,3 +458,15 @@ class RestService:
         else:
             while True:
                 yield 1
+
+
+class BytesIOSocket:
+    """ used in urllib3_response_from_bytes method to construct urllib3 response from raw bytes
+
+    """
+
+    def __init__(self, content: bytes):
+        self.handle = BytesIO(content)
+
+    def makefile(self, mode) -> BytesIO:
+        return self.handle
