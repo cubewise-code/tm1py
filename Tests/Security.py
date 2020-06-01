@@ -248,6 +248,18 @@ class TestSecurityMethods(unittest.TestCase):
         self.assertIn(group, groups_before_delete)
         self.assertNotIn(group, groups_after_delete)
 
+    def test_user_exists_true(self):
+        self.assertTrue(self.tm1.security.user_exists(user_name=self.user_name))
+
+    def test_user_exists_false(self):
+        self.assertFalse(self.tm1.security.user_exists(user_name="NotAValidName"))
+
+    def test_group_exists_true(self):
+        self.assertTrue(self.tm1.security.group_exists(group_name=self.group_name1))
+
+    def test_group_exists_false(self):
+        self.assertFalse(self.tm1.security.group_exists(group_name="NotAValidName"))
+
     @classmethod
     def teardown_class(cls):
         cls.tm1.logout()

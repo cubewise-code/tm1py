@@ -198,3 +198,11 @@ class SecurityService(ObjectService):
         ti = "SecurityRefresh;"
         process_service = ProcessService(self._rest)
         return process_service.execute_ti_code(ti, **kwargs)
+
+    def user_exists(self, user_name: str, **kwargs) -> bool:
+        url = format_url("/api/v1/Users('{}')", user_name)
+        return self._exists(url, **kwargs)
+
+    def group_exists(self, group_name: str, **kwargs) -> bool:
+        url = format_url("/api/v1/Groups('{}')", group_name)
+        return self._exists(url, **kwargs)
