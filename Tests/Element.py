@@ -286,6 +286,37 @@ class TestElementMethods(unittest.TestCase):
 
         self.assertEqual(number_of_elements, 2)
 
+    def test_create_element_attribute(self):
+        element_attribute = ElementAttribute("NewAttribute", "String")
+        self.tm1.dimensions.hierarchies.elements.create_element_attribute(
+            DIMENSION_NAME,
+            DIMENSION_NAME,
+            element_attribute)
+
+        element_attributes = self.tm1.dimensions.hierarchies.elements.get_element_attributes(
+            DIMENSION_NAME,
+            DIMENSION_NAME)
+
+        self.assertIn(element_attribute, element_attributes)
+
+    def test_delete_element_attribute(self):
+        element_attribute = ElementAttribute("NewAttribute", "String")
+        self.tm1.dimensions.hierarchies.elements.create_element_attribute(
+            DIMENSION_NAME,
+            DIMENSION_NAME,
+            element_attribute)
+
+        self.tm1.dimensions.hierarchies.elements.delete_element_attribute(
+            DIMENSION_NAME,
+            DIMENSION_NAME,
+            element_attribute.name)
+
+        element_attributes = self.tm1.dimensions.hierarchies.elements.get_element_attributes(
+            DIMENSION_NAME,
+            DIMENSION_NAME)
+
+        self.assertNotIn(element_attribute, element_attributes)
+
 
 if __name__ == '__main__':
     unittest.main()
