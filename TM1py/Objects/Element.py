@@ -28,7 +28,7 @@ class Element(TM1Object):
                 if member.name.lower() == value.replace(" ", "").lower():
                     return member
             # default
-            raise ValueError("Invalid element type=" + value)
+            raise ValueError(f"Invalid element type: '{value}'")
 
     def __init__(self, name, element_type: Union[Types, str], attributes: List[str] = None, unique_name: str = None,
                  index: int = None):

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import json
+from enum import Enum
 from typing import Dict, Union
 
 from TM1py.Objects.TM1Object import TM1Object
@@ -11,9 +12,24 @@ class ElementAttribute(TM1Object):
     """ Abstraction of TM1 Element Attributes
     
     """
-    valid_types = ['NUMERIC', 'STRING', 'ALIAS']
 
-    def __init__(self, name: str, attribute_type: str):
+    class Types(Enum):
+        NUMERIC = 1
+        STRING = 2
+        ALIAS = 3
+
+        def __str__(self):
+            return self.name.capitalize()
+
+        @classmethod
+        def _missing_(cls, value: str):
+            for member in cls:
+                if member.name.lower() == value.replace(" ", "").lower():
+                    return member
+            # default
+            raise ValueError(f"Invalid attribute type: '{value}'")
+
+    def __init__(self, name: str, attribute_type: Union[Types, str]):
         self.name = name
         self.attribute_type = attribute_type
 
@@ -27,14 +43,11 @@ class ElementAttribute(TM1Object):
 
     @property
     def attribute_type(self) -> str:
-        return self._attribute_type
+        return str(self._attribute_type)
 
     @attribute_type.setter
-    def attribute_type(self, value: str):
-        if not value.upper() in ElementAttribute.valid_types:
-            raise ValueError("'{}' is not a valid Attribute Type".format(value))
-
-        self._attribute_type = value.capitalize()
+    def attribute_type(self, value: Union[Types, str]):
+        self._attribute_type = ElementAttribute.Types(value)
 
     @property
     def body_as_dict(self) -> Dict:
