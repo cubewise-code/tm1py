@@ -37,6 +37,22 @@ class MonitoringService(ObjectService):
         response = self._rest.POST(url, **kwargs)
         return response
 
+    def cancel_all_running_threads(self, **kwargs) -> int:
+        running_threads = self.get_threads(**kwargs)
+        cancellations = 0
+        for thread in running_threads:
+            if thread["State"] == "Idle":
+                continue
+            if thread["Type"] == "System":
+                continue
+            if thread["Name"] == "Pseudo":
+                continue
+            if thread["Function"] == "GET /api/v1/Threads":
+                continue
+            self.cancel_thread(thread["ID"], **kwargs)
+            cancellations += 1
+        return cancellations
+
     def get_active_users(self, **kwargs) -> List[User]:
         """ Get the activate users in TM1
 
@@ -66,3 +82,12 @@ class MonitoringService(ObjectService):
         url = format_url("/api/v1/Users('{}')/tm1.Disconnect", user_name)
         response = self._rest.POST(url, **kwargs)
         return response
+
+    def disconnect_all_users(self, *exceptions, **kwargs) -> int:
+        active_users = self.get_active_users(**kwargs)
+        disconnects = 0
+        for active_user in active_users:
+            if active_user.name not in exceptions:
+                self.disconnect_user(active_user.name, **kwargs)
+                disconnects += 1
+        return disconnects
