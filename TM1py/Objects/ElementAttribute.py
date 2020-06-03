@@ -51,7 +51,7 @@ class ElementAttribute(TM1Object):
 
     @property
     def body_as_dict(self) -> Dict:
-        return {"Name": self._name, "Type": self._attribute_type}
+        return {"Name": self._name, "Type": self.attribute_type}
 
     @property
     def body(self) -> str:

@@ -46,6 +46,10 @@ class NativeView(View):
         return self._columns
 
     @property
+    def titles(self) -> List[ViewTitleSelection]:
+        return self._titles
+
+    @property
     def MDX(self) -> str:
         return self.as_MDX
 
