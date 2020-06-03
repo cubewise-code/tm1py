@@ -228,7 +228,7 @@ class NativeView(View):
                 subset = AnonymousSubset.from_dict(selection['Subset'])
             else:
                 subset = Subset.from_dict(selection['Subset'])
-            selected = selection['Selected']['Name']
+            selected = selection['Selected']['Name'] if selection['Selected'] else ""
             titles.append(ViewTitleSelection(dimension_name=subset.dimension_name,
                                              subset=subset, selected=selected))
         for i, axe in enumerate([view_as_dict['Columns'], view_as_dict['Rows']]):
