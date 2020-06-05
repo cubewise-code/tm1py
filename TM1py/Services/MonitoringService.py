@@ -37,9 +37,9 @@ class MonitoringService(ObjectService):
         response = self._rest.POST(url, **kwargs)
         return response
 
-    def cancel_all_running_threads(self, **kwargs) -> int:
+    def cancel_all_running_threads(self, **kwargs) -> list:
         running_threads = self.get_threads(**kwargs)
-        cancellations = 0
+        canceled_threads = list()
         for thread in running_threads:
             if thread["State"] == "Idle":
                 continue
@@ -50,8 +50,8 @@ class MonitoringService(ObjectService):
             if thread["Function"] == "GET /api/v1/Threads":
                 continue
             self.cancel_thread(thread["ID"], **kwargs)
-            cancellations += 1
-        return cancellations
+            canceled_threads.append(thread)
+        return canceled_threads
 
     def get_active_users(self, **kwargs) -> List[User]:
         """ Get the activate users in TM1
@@ -88,24 +88,24 @@ class MonitoringService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return response.json()["value"]
 
-    def disconnect_all_users(self, **kwargs) -> int:
+    def disconnect_all_users(self, **kwargs) -> list:
         current_user = self.get_current_user(**kwargs)
         active_users = self.get_active_users(**kwargs)
-        disconnects = 0
+        disconnected_users = list()
         for active_user in active_users:
             if not case_and_space_insensitive_equals(current_user.name, active_user.name):
                 self.disconnect_user(active_user.name, **kwargs)
-                disconnects += 1
-        return disconnects
+                disconnected_users += active_user.name
+        return disconnected_users
 
     def close_session(self, session_id, **kwargs) -> Response:
         url = format_url(f"/api/v1/Sessions('{session_id}')/tm1.Close")
         return self._rest.POST(url, **kwargs)
 
-    def close_all_sessions(self, **kwargs) -> int:
+    def close_all_sessions(self, **kwargs) -> list:
         current_user = self.get_current_user(**kwargs)
         sessions = self.get_sessions(**kwargs)
-        closed = 0
+        closed_sessions = list()
         for session in sessions:
             if "User" not in session:
                 continue
@@ -116,8 +116,8 @@ class MonitoringService(ObjectService):
             if case_and_space_insensitive_equals(current_user.name, session["User"]["Name"]):
                 continue
             self.close_session(session['ID'], **kwargs)
-            closed += 1
-        return closed
+            closed_sessions.append(session)
+        return closed_sessions
 
     def get_current_user(self, **kwargs):
         from TM1py import SecurityService
