@@ -95,7 +95,7 @@ class MonitoringService(ObjectService):
         for active_user in active_users:
             if not case_and_space_insensitive_equals(current_user.name, active_user.name):
                 self.disconnect_user(active_user.name, **kwargs)
-                disconnected_users += active_user.name
+                disconnected_users += [active_user.name]
         return disconnected_users
 
     def close_session(self, session_id, **kwargs) -> Response:
