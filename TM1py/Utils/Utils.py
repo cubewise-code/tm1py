@@ -97,6 +97,7 @@ def build_content_from_cellset(
 
     :param raw_cellset_as_dict:
     :param top: Maximum Number of cells
+    :param top: Number of cells of skip
     :return:
     """
     cube_dimensions = [dim['Name'] for dim in raw_cellset_as_dict['Cube']['Dimensions']]
@@ -106,6 +107,9 @@ def build_content_from_cellset(
 
     content_as_dict = CaseAndSpaceInsensitiveTuplesDict()
     for ordinal, cell in enumerate(cells[:top or len(cells)]):
+        # if skip is used in execution we must use the original ordinal from the cell, if not we can simply enumerate
+        ordinal = cell.get("Ordinal", ordinal)
+
         coordinates = []
         if row_axis:
             index_rows = ordinal // row_axis['Cardinality'] % column_axis['Cardinality']
