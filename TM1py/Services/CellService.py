@@ -302,13 +302,14 @@ class CellService(ObjectService):
             })
         return self._rest.PATCH(request, json.dumps(data, ensure_ascii=False), **kwargs)
 
-    def execute_mdx(self, mdx: str, cell_properties: List[str] = None, top: int = None,
-                    skip_contexts: bool = False, **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
+    def execute_mdx(self, mdx: str, cell_properties: List[str] = None, top: int = None, skip_contexts: bool = False,
+                    skip: int = None, **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
         """ Execute MDX and return the cells with their properties
 
         :param mdx: MDX Query, as string
         :param cell_properties: properties to be queried from the cell. E.g. Value, Ordinal, RuleDerived, ... 
         :param top: integer
+        :param skip: integer
         :param skip_contexts: skip elements from titles / contexts in response
         :return: content in sweet concise structure.
         """
@@ -317,12 +318,13 @@ class CellService(ObjectService):
             cellset_id=cellset_id,
             cell_properties=cell_properties,
             top=top,
+            skip=skip,
             skip_contexts=skip_contexts,
             delete_cellset=True,
             **kwargs)
 
     def execute_view(self, cube_name: str, view_name: str, cell_properties: Iterable[str] = None, private: bool = False,
-                     top: int = None, skip_contexts: bool = False,
+                     top: int = None, skip_contexts: bool = False, skip: int = None,
                      **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
         """ get view content as dictionary with sweet and concise structure.
             Works on NativeView and MDXView !
@@ -332,6 +334,7 @@ class CellService(ObjectService):
         :param cell_properties: List, cell properties: [Values, Status, HasPicklist, etc.]
         :param private: Boolean
         :param top: Int, number of cells to return (counting from top)
+        :param skip: Int, number of cells to skip (counting from top)
         :param skip_contexts: skip elements from titles / contexts in response
 
         :return: Dictionary : {([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }
@@ -341,6 +344,7 @@ class CellService(ObjectService):
             cellset_id=cellset_id,
             cell_properties=cell_properties,
             top=top,
+            skip=skip,
             skip_contexts=skip_contexts,
             delete_cellset=True,
             **kwargs)
@@ -353,6 +357,7 @@ class CellService(ObjectService):
             member_properties: Iterable[str] = None,
             top: int = None,
             skip_contexts: bool = False,
+            skip: int = None,
             **kwargs) -> Dict:
         """ Execute MDX and return the raw data from TM1
 
@@ -361,6 +366,7 @@ class CellService(ObjectService):
         :param elem_properties: List of properties to be queried from the elements. E.g. ['Name','Attributes', ...]
         :param member_properties: List of properties to be queried from the members. E.g. ['Name','Attributes', ...]
         :param top: Integer limiting the number of cells and the number or rows returned
+        :param skip: Integer limiting the number of cells and the number or rows returned
         :param skip_contexts: skip elements from titles / contexts in response
         :return: Raw format from TM1.
         """
@@ -371,6 +377,7 @@ class CellService(ObjectService):
             elem_properties=elem_properties,
             member_properties=member_properties,
             top=top,
+            skip=skip,
             delete_cellset=True,
             skip_contexts=skip_contexts,
             **kwargs)
@@ -385,6 +392,7 @@ class CellService(ObjectService):
             member_properties: Iterable[str] = None,
             top: int = None,
             skip_contexts: bool = False,
+            skip: int = None,
             **kwargs) -> Dict:
         """ Execute a cube view and return the raw data from TM1
 
@@ -396,6 +404,7 @@ class CellService(ObjectService):
         :param member_properties: List of properties to be queried from the members. E.g. ['Name','Attributes', ...]
         :param top: Integer limiting the number of cells and the number or rows returned
         :param skip_contexts: skip elements from titles / contexts in response
+        :param skip: Integer limiting the number of cells and the number or rows returned
         :return: Raw format from TM1.
         """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private, **kwargs)
@@ -405,6 +414,7 @@ class CellService(ObjectService):
             elem_properties=elem_properties,
             member_properties=member_properties,
             top=top,
+            skip=skip,
             skip_contexts=skip_contexts,
             delete_cellset=True,
             **kwargs)
@@ -592,6 +602,7 @@ class CellService(ObjectService):
             member_properties: Iterable[str] = None,
             value_precision: Iterable[str] = 2,
             top: int = None,
+            skip: int = None,
             **kwargs) -> Dict:
         """ Execute MDX get dygraph dictionary
         Useful for grids or charting libraries that want an array of cell values per column
@@ -610,6 +621,7 @@ class CellService(ObjectService):
                     ['Q4-2004', 14321501.940000001, 10333095.839474997]]
             },
         :param top:
+        :param skip:
         :param mdx: String, valid MDX Query
         :param elem_properties: List of properties to be queried from the elements. E.g. ['UniqueName','Attributes']
         :param member_properties: List of properties to be queried from the members. E.g. ['UniqueName','Attributes']
@@ -622,6 +634,7 @@ class CellService(ObjectService):
                                         elem_properties=elem_properties,
                                         member_properties=list(set(member_properties or []) | {"Name"}),
                                         top=top,
+                                        skip=skip,
                                         delete_cellset=True,
                                         **kwargs)
         return Utils.build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
@@ -635,6 +648,7 @@ class CellService(ObjectService):
             member_properties: Iterable[str] = None,
             value_precision: int = 2,
             top: int = None,
+            skip: int = None,
             **kwargs):
         """
         Useful for grids or charting libraries that want an array of cell values per row.
@@ -663,6 +677,7 @@ class CellService(ObjectService):
             },
 
         :param top:
+        :param skip:
         :param cube_name: cube name
         :param view_name: view name
         :param private: True (private) or False (public)
@@ -677,6 +692,7 @@ class CellService(ObjectService):
                                         elem_properties=elem_properties,
                                         member_properties=list(set(member_properties or []) | {"Name"}),
                                         top=top,
+                                        skip=skip,
                                         delete_cellset=True,
                                         **kwargs)
         return Utils.build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
@@ -688,6 +704,7 @@ class CellService(ObjectService):
             member_properties: Iterable[str] = None,
             value_precision: int = 2,
             top: int = None,
+            skip:int = None,
             **kwargs):
         """
         Useful for grids or charting libraries that want an array of cell values per row.
@@ -716,6 +733,7 @@ class CellService(ObjectService):
             },
 
         :param top:
+        :param skip:
         :param mdx: a valid MDX Query
         :param elem_properties: List of properties to be queried from the elements. E.g. ['UniqueName','Attributes']
         :param member_properties: List of properties to be queried from the members. E.g. ['UniqueName','Attributes']
@@ -728,6 +746,7 @@ class CellService(ObjectService):
                                         elem_properties=elem_properties,
                                         member_properties=list(set(member_properties or []) | {"Name"}),
                                         top=top,
+                                        skip=skip,
                                         delete_cellset=True,
                                         **kwargs)
         return Utils.build_ui_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
@@ -741,6 +760,7 @@ class CellService(ObjectService):
             member_properties: Iterable[str] = None,
             value_precision: int = 2,
             top: int = None,
+            skip: int = None,
             **kwargs):
         """
         Useful for grids or charting libraries that want an array of cell values per row.
@@ -769,6 +789,7 @@ class CellService(ObjectService):
             },
 
         :param top:
+        :param skip:
         :param cube_name: cube name
         :param view_name: view name
         :param private: True (private) or False (public)
@@ -783,6 +804,7 @@ class CellService(ObjectService):
                                         elem_properties=elem_properties,
                                         member_properties=list(set(member_properties or []) | {"Name"}),
                                         top=top,
+                                        skip=skip,
                                         delete_cellset=True,
                                         **kwargs)
         return Utils.build_ui_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
@@ -795,6 +817,7 @@ class CellService(ObjectService):
             elem_properties: Iterable[str] = None,
             member_properties: Iterable[str] = None,
             top: int = None,
+            skip: int = None,
             skip_contexts: bool = False,
             **kwargs) -> Dict:
         """ Extract full cellset data and return the raw data from TM1
@@ -804,6 +827,7 @@ class CellService(ObjectService):
         :param elem_properties: List of properties to be queried from elements. E.g. ['UniqueName','Attributes', ...]
         :param member_properties: List properties to be queried from the member. E.g. ['Name', 'UniqueName']
         :param top: Integer limiting the number of cells and the number or rows returned
+        :param skip: Integer limiting the number of cells and the number or rows returned
         :param skip_contexts:
         :return: Raw format from TM1.
         """
@@ -827,14 +851,15 @@ class CellService(ObjectService):
               "Cube($select=Name;$expand=Dimensions($select=Name))," \
               "Axes({filter_axis}$expand=Tuples($expand=Members({select_member_properties}" \
               "{expand_elem_properties}){top_rows}))," \
-              "Cells($select={cell_properties}{top_cells})" \
+              "Cells($select={cell_properties}{top_cells}{skip_cells})" \
             .format(cellset_id=cellset_id,
-                    top_rows=";$top={}".format(top) if top else "",
+                    top_rows=f";$top={top}" if top and not skip else "",
                     cell_properties=",".join(cell_properties),
                     filter_axis=filter_axis,
                     select_member_properties=select_member_properties,
                     expand_elem_properties=expand_elem_properties,
-                    top_cells=";$top={}".format(top) if top else "")
+                    top_cells=f";$top={top}" if top else "",
+                    skip_cells=f";$skip={skip}" if skip else "")
         response = self._rest.GET(url=url, **kwargs)
         return response.json()
 
@@ -1029,6 +1054,7 @@ class CellService(ObjectService):
             cellset_id: str,
             cell_properties: Iterable[str] = None,
             top: int = None,
+            skip: int = None,
             delete_cellset: bool = True,
             skip_contexts: bool = False,
             **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
@@ -1039,10 +1065,14 @@ class CellService(ObjectService):
         :param cellset_id:
         :param cell_properties: properties to be queried from the cell. E.g. Value, Ordinal, RuleDerived, ...
         :param top: integer
+        :param skip: integer
         :return: Content in sweet consice strcuture.
         """
         if not cell_properties:
             cell_properties = ['Value']
+
+        if skip and 'Ordinal' not in cell_properties:
+            cell_properties.append('Ordinal')
 
         raw_cellset = self.extract_cellset_raw(
             cellset_id,
@@ -1050,6 +1080,7 @@ class CellService(ObjectService):
             elem_properties=['UniqueName'],
             member_properties=['UniqueName'],
             top=top,
+            skip=skip,
             skip_contexts=skip_contexts,
             delete_cellset=delete_cellset,
             **kwargs)
