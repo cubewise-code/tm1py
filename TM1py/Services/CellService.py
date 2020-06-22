@@ -938,6 +938,9 @@ class CellService(ObjectService):
         :return:
         """
         raw_csv = self.extract_cellset_csv(cellset_id=cellset_id, delete_cellset=True, **kwargs)
+        if not raw_csv:
+            return pd.DataFrame()
+        
         memory_file = StringIO(raw_csv)
         # make sure all element names are strings and values column is derived from data
         if 'dtype' not in kwargs:
