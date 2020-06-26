@@ -387,8 +387,8 @@ def build_cellset_from_pandas_dataframe(df: pd.DataFrame) -> 'CaseAndSpaceInsens
     if isinstance(df.index, pd.MultiIndex):
         df.reset_index(inplace=True)
     cellset = CaseAndSpaceInsensitiveTuplesDict()
-    split = df.to_dict(orient='split')
-    for row in split['data']:
+    split = df.to_numpy().tolist()
+    for row in split:
         cellset[tuple(row[0:-1])] = row[-1]
     return cellset
 
