@@ -15,6 +15,7 @@ from TM1py.Exceptions.Exceptions import TM1pyException
 from TM1py.Objects.Process import Process
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
+from TM1py.Services.ViewService import ViewService
 from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
     CaseAndSpaceInsensitiveTuplesDict, abbreviate_mdx
@@ -166,12 +167,17 @@ class CellService(ObjectService):
             f"ViewZeroOut('{cube}','{view_name}');"])
         process = Process(name="")
         process.prolog_procedure = code
-
         from TM1py import ProcessService
         process_service = ProcessService(self._rest)
-        success, _, _ = process_service.execute_process_with_return(process, **kwargs)
-        if not success:
-            raise TM1pyException(f"Failed to clear cube: '{cube}' with mdx: '{abbreviate_mdx(mdx, 100)}'")
+
+        try:
+            success, _, _ = process_service.execute_process_with_return(process, **kwargs)
+            if not success:
+                raise TM1pyException(f"Failed to clear cube: '{cube}' with mdx: '{abbreviate_mdx(mdx, 100)}'")
+        finally:
+            view_service = ViewService(self._rest)
+            if view_service.exists(cube, view_name, private=False):
+                view_service.delete(cube, view_name, private=False)
 
     @tidy_cellset
     def _post_against_cellset(self, cellset_id: str, payload: Dict, **kwargs) -> Response:
@@ -940,7 +946,7 @@ class CellService(ObjectService):
         raw_csv = self.extract_cellset_csv(cellset_id=cellset_id, delete_cellset=True, **kwargs)
         if not raw_csv:
             return pd.DataFrame()
-        
+
         memory_file = StringIO(raw_csv)
         # make sure all element names are strings and values column is derived from data
         if 'dtype' not in kwargs:
@@ -967,17 +973,21 @@ class CellService(ObjectService):
         # avoid division by zero
         if not number_rows:
             return pd.DataFrame(body, columns=headers)
+
         number_cells = len(cell_values)
         number_columns = int(number_cells / number_rows)
+
+        element_names_by_row = [tuple(member["Name"] for member in tupl["Members"])
+                                for tupl
+                                in rows]
+
+        # case: skip attributes and skip parents
+        if not number_columns:
+            return pd.DataFrame(data=element_names_by_row, columns=headers)
 
         cell_values_by_row = [cell_values[cell_counter:cell_counter + number_columns]
                               for cell_counter
                               in range(0, number_cells, number_columns)]
-        element_names_by_row = [tuple(member["Name"]
-                                      for member
-                                      in tupl["Members"])
-                                for tupl
-                                in rows]
 
         for element_tuple, cells in zip(element_names_by_row, cell_values_by_row):
             body.append(list(element_tuple) + cells)

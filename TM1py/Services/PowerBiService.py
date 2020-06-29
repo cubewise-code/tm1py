@@ -117,6 +117,6 @@ class PowerBiService:
         FROM [{self.elements.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}]  
         """
 
-        df_data = self.execute_mdx(mdx, element_unique_names=False)
+        df_data = self.execute_mdx(mdx)
 
-        return pd.merge(df, df_data, on=dimension_name)
+        return pd.merge(df, df_data, on=dimension_name).drop_duplicates()

@@ -491,6 +491,33 @@ class TestPowerBiService(unittest.TestCase):
             tuple(row.values[0]),
             ("1989", "Numeric", "1988", "1988/89", "Total Years", "All Consolidations"))
 
+    def test_get_member_properties_member_skip_parents_skip_attributes(self):
+        members = self.tm1.power_bi.get_member_properties(
+            dimension_name=DIMENSION_NAME,
+            hierarchy_name=DIMENSION_NAME,
+            member_selection=f"{{ [{DIMENSION_NAME}].[1989], [{DIMENSION_NAME}].[1990] }}",
+            skip_parents=True,
+            skip_consolidations=True,
+            attributes=[])
+
+        self.assertEqual(
+            tuple(members.columns),
+            (DIMENSION_NAME, "Type"))
+
+        self.assertEqual(
+            tuple(members[DIMENSION_NAME]),
+            ("1989", "1990"))
+
+        row = members.loc[members[DIMENSION_NAME] == "1989"]
+        self.assertEqual(
+            tuple(row.values[0]),
+            ("1989", "Numeric"))
+
+        row = members.loc[members[DIMENSION_NAME] == "1990"]
+        self.assertEqual(
+            tuple(row.values[0]),
+            ("1990", "Numeric"))
+
     # Delete Cube and Dimensions
     @classmethod
     def teardown_class(cls):
