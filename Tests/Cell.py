@@ -10,7 +10,7 @@ from mdxpy import MdxBuilder, MdxHierarchySet, Member, CalculatedMember
 from TM1py.Exceptions.Exceptions import TM1pyException
 from TM1py.Objects import MDXView, Cube, Dimension, Element, Hierarchy, NativeView, AnonymousSubset, ElementAttribute
 from TM1py.Services import TM1Service
-from TM1py.Utils import Utils, abbreviate_mdx
+from TM1py.Utils import Utils, abbreviate_mdx, element_names_from_element_unique_names
 
 # Hard coded stuff
 PREFIX = 'TM1py_Tests_Cell_'
@@ -1504,6 +1504,36 @@ class TestDataMethods(unittest.TestCase):
         self.assertEqual(
             f"Failed to clear cube: '{CUBE_NAME}' with mdx: '{abbreviate_mdx(mdx, 100)}'",
             execinfo.value.message)
+
+    def test_execute_mdx_with_skip(self):
+        mdx = MdxBuilder.from_cube(CUBE_NAME) \
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.tm1_subset_all(DIMENSION_NAMES[0]).head(2)) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.tm1_subset_all(DIMENSION_NAMES[1]).head(2)) \
+            .where(Member.of(DIMENSION_NAMES[2], "Element1")) \
+            .to_mdx()
+
+        cells = self.tm1.cubes.cells.execute_mdx(mdx=mdx, skip=2)
+        self.assertEqual(len(cells), 2)
+
+        elements = element_names_from_element_unique_names(list(cells.keys())[0])
+        self.assertEqual(elements, ("Element 2", "Element 1", "Element 1"))
+
+        elements = element_names_from_element_unique_names(list(cells.keys())[1])
+        self.assertEqual(elements, ("Element 2", "Element 2", "Element 1"))
+
+    def test_execute_mdx_with_top_skip(self):
+        mdx = MdxBuilder.from_cube(CUBE_NAME) \
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.tm1_subset_all(DIMENSION_NAMES[0]).head(2)) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.tm1_subset_all(DIMENSION_NAMES[1]).head(2)) \
+            .where(Member.of(DIMENSION_NAMES[2], "Element1")) \
+            .to_mdx()
+
+        cells = self.tm1.cubes.cells.execute_mdx(mdx=mdx, top=1, skip=2)
+        self.assertEqual(len(cells), 1)
+
+        elements = element_names_from_element_unique_names(list(cells.keys())[0])
+        self.assertEqual(elements, ("Element 2", "Element 1", "Element 1"))
+
 
     # Delete Cube and Dimensions
     @classmethod
