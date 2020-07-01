@@ -96,6 +96,20 @@ class SubsetService(ObjectService):
             subset.dimension_name, subset.hierarchy_name, subsets, subset.name)
         return self._rest.PATCH(url=url, data=subset.body, **kwargs)
 
+    def update_or_create(self, subset: Subset, **kwargs) -> Response:
+        """ update if exists else create
+
+        :param subset:
+        :return:
+        """
+        if self.exists(
+                subset_name=subset.name,
+                dimension_name=subset.dimension_name,
+                hierarchy_name=subset.hierarchy_name):
+            return self.update(subset=subset, **kwargs)
+
+        return self.create(subset=subset, **kwargs)
+
     def delete(self, subset_name: str, dimension_name: str, hierarchy_name: str = None,
                private: bool = False, **kwargs) -> Response:
         """ Delete an existing subset on the TM1 Server
