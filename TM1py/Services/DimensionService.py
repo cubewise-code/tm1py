@@ -90,9 +90,9 @@ class DimensionService(ObjectService):
         :return:
         """
         if self.exists(dimension_name=dimension.name, **kwargs):
-            return self.update(dimension=dimension, **kwargs)
+            self.update(dimension=dimension, **kwargs)
         else:
-            return self.create(dimension=dimension, **kwargs)
+            self.create(dimension=dimension, **kwargs)
 
     def delete(self, dimension_name: str, **kwargs) -> Response:
         """ Delete a dimension
