@@ -310,7 +310,7 @@ class TestSubsetMethods(unittest.TestCase):
             '{{ [{}].[EUR], [{}].[USD] }})'.format(self.dimension_name, self.dimension_name))
 
         self.assertNotEqual(self.dynamic_subset, subset)
-        
+
     def test_make_static_private(self):
         private = True
         subset = self.tm1.dimensions.subsets.get(
@@ -322,9 +322,13 @@ class TestSubsetMethods(unittest.TestCase):
             subset_name=self.dynamic_subset.name,
             dimension_name=self.dynamic_subset.dimension_name,
             private=private)
+        subset = self.tm1.dimensions.subsets.get(
+            subset_name=self.dynamic_subset.name,
+            dimension_name=self.dynamic_subset.dimension_name,
+            private=private)
         self.assertTrue(subset.is_static)
-        
-    def test_make_static_private(self):
+
+    def test_make_static_public(self):
         private = False
         subset = self.tm1.dimensions.subsets.get(
             subset_name=self.dynamic_subset.name,
@@ -332,6 +336,10 @@ class TestSubsetMethods(unittest.TestCase):
             private=private)
         self.assertTrue(subset.is_dynamic)
         self.tm1.dimensions.hierarchies.subsets.make_static(
+            subset_name=self.dynamic_subset.name,
+            dimension_name=self.dynamic_subset.dimension_name,
+            private=private)
+        subset = self.tm1.dimensions.subsets.get(
             subset_name=self.dynamic_subset.name,
             dimension_name=self.dynamic_subset.dimension_name,
             private=private)
