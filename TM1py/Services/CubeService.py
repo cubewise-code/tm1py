@@ -95,7 +95,7 @@ class CubeService(ObjectService):
         :param cube:
         :return:
         """
-        if self.exists(cube_name=cube.name):
+        if self.exists(cube_name=cube.name, **kwargs):
             return self.update(cube=cube, **kwargs)
 
         return self.create(cube=cube, **kwargs)
@@ -118,14 +118,14 @@ class CubeService(ObjectService):
         url = format_url("/api/v1/Cubes('{}')", cube_name)
         return self._rest.DELETE(url, **kwargs)
 
-    def exists(self, cube_name: str) -> bool:
+    def exists(self, cube_name: str, **kwargs) -> bool:
         """ Check if a cube exists. Return boolean.
 
         :param cube_name: 
         :return: Boolean 
         """
         url = format_url("/api/v1/Cubes('{}')", cube_name)
-        return self._exists(url)
+        return self._exists(url, **kwargs)
 
     def get_all_names(self, **kwargs) -> List[str]:
         """ Ask TM1 Server for list of all cube names

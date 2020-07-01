@@ -96,19 +96,22 @@ class SubsetService(ObjectService):
             subset.dimension_name, subset.hierarchy_name, subsets, subset.name)
         return self._rest.PATCH(url=url, data=subset.body, **kwargs)
 
-    def update_or_create(self, subset: Subset, **kwargs) -> Response:
+    def update_or_create(self, subset: Subset, private: bool = False, **kwargs) -> Response:
         """ update if exists else create
 
         :param subset:
+        :param private:
         :return:
         """
         if self.exists(
                 subset_name=subset.name,
                 dimension_name=subset.dimension_name,
-                hierarchy_name=subset.hierarchy_name):
-            return self.update(subset=subset, **kwargs)
+                hierarchy_name=subset.hierarchy_name,
+                private=private,
+                **kwargs):
+            return self.update(subset=subset, private=private ** kwargs)
 
-        return self.create(subset=subset, **kwargs)
+        return self.create(subset=subset, private=private, **kwargs)
 
     def delete(self, subset_name: str, dimension_name: str, hierarchy_name: str = None,
                private: bool = False, **kwargs) -> Response:

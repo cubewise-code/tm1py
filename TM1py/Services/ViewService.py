@@ -179,6 +179,19 @@ class ViewService(ObjectService):
         response = self._rest.PATCH(url, view.body, **kwargs)
         return response
 
+    def update_or_create(self, view: Union[MDXView, NativeView], private: bool = False, **kwargs) -> Response:
+        """ update if exists, else create
+
+        :param view:
+        :param private:
+        :param kwargs:
+        :return:
+        """
+        if self.exists(view.cube, view.name, private=private, **kwargs):
+            return self.update(view, private=private, **kwargs)
+
+        return self.create(view, private=private, **kwargs)
+
     def delete(self, cube_name: str, view_name: str, private: bool = False, **kwargs) -> Response:
         """ Delete an existing view (MDXView or NativeView) on the TM1 Server
 
