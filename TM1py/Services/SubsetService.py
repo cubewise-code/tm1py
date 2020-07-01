@@ -95,6 +95,28 @@ class SubsetService(ObjectService):
             "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')",
             subset.dimension_name, subset.hierarchy_name, subsets, subset.name)
         return self._rest.PATCH(url=url, data=subset.body, **kwargs)
+    
+    def make_static(self, subset_name: str, dimension_name: str, hierarchy_name: str = None, 
+                    private: bool = False) -> Response:
+        """ convert a dynamic subset into static subset on the TM1 Server
+        :param subset_name: String, name of the subset
+        :param dimension_name: String, name of the dimension 
+        :param hierarchy_name: String, name of the hierarchy
+        :param private: Boolean
+        :return: response
+        """
+        import json
+        from collections import OrderedDict
+        hierarchy_name = hierarchy_name if hierarchy_name else dimension_name
+        payload = OrderedDict()
+        payload['Name'] = subset_name
+        payload['MakePrivate'] = True if private else False
+        payload['MakeStatic'] = True
+        subsets = "PrivateSubsets" if private else "Subsets"
+        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')/tm1.SaveAs".format(
+            dimension_name, dimension_name, subsets, subset_name)
+        return self._rest.POST(request=request, data=json.dumps(payload))
+
 
     def update_or_create(self, subset: Subset, private: bool = False, **kwargs) -> Response:
         """ update if exists else create
