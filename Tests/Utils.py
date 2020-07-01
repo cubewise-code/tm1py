@@ -699,7 +699,12 @@ class TestMDXUtils(unittest.TestCase):
         process_name = "pro'ces's"
         escaped_url = format_url(url, process_name=process_name)
         self.assertEqual("/api/v1/Processes('pro''ces''s')/tm1.ExecuteWithReturn?$expand=*", escaped_url)
-
+        
+    def test_get_seconds_from_duration(self):
+        elapsed_time = "P0DT00H04M02S"
+        seconds = Utils.get_seconds_from_duration(elapsed_time)
+        self.assertEqual(242, seconds)
+       
     @classmethod
     def tearDownClass(cls):
         cls.tm1.logout()
