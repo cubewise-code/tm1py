@@ -311,15 +311,30 @@ class TestSubsetMethods(unittest.TestCase):
 
         self.assertNotEqual(self.dynamic_subset, subset)
         
-    def test_make_static(self):
+    def test_make_static_private(self):
+        private = True
         subset = self.tm1.dimensions.subsets.get(
             subset_name=self.dynamic_subset.name,
             dimension_name=self.dynamic_subset.dimension_name,
-            private=False)
+            private=private)
         self.assertTrue(subset.is_dynamic)
         self.tm1.dimensions.hierarchies.subsets.make_static(
             subset_name=self.dynamic_subset.name,
-            dimension_name=self.dynamic_subset.dimension_name)
+            dimension_name=self.dynamic_subset.dimension_name,
+            private=private)
+        self.assertTrue(subset.is_static)
+        
+    def test_make_static_private(self):
+        private = False
+        subset = self.tm1.dimensions.subsets.get(
+            subset_name=self.dynamic_subset.name,
+            dimension_name=self.dynamic_subset.dimension_name,
+            private=private)
+        self.assertTrue(subset.is_dynamic)
+        self.tm1.dimensions.hierarchies.subsets.make_static(
+            subset_name=self.dynamic_subset.name,
+            dimension_name=self.dynamic_subset.dimension_name,
+            private=private)
         self.assertTrue(subset.is_static)
 
     def test_get_all_names_private(self):
