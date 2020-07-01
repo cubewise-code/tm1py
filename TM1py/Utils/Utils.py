@@ -401,6 +401,20 @@ def lower_and_drop_spaces(item: str) -> str:
     return item.replace(" ", "").lower()
 
 
+def get_seconds_from_duration(time_str: str) -> int:
+    """
+    This function will convert the TM1 time to seconds
+    :param time_str: P0DT00H01M43S
+    :return: int
+    """
+    import re
+    pattern = re.compile('\w(\d+)\w\w(\d+)\w(\d+)\w(\d+)\w')
+    matches = pattern.search(time_str)
+    d, h, m, s = matches.groups()
+    seconds = (int(d) * 86400) + (int(h) * 3600) + (int(m) * 60) + int(s)
+    return seconds
+
+
 class CaseAndSpaceInsensitiveDict(collections.abc.MutableMapping):
     """A case-and-space-insensitive dict-like object with String keys.
 
