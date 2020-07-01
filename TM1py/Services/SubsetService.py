@@ -113,8 +113,8 @@ class SubsetService(ObjectService):
         payload['MakePrivate'] = True if private else False
         payload['MakeStatic'] = True
         subsets = "PrivateSubsets" if private else "Subsets"
-        request = "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')/tm1.SaveAs".format(
-            dimension_name, dimension_name, subsets, subset_name)
+        request = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')/tm1.SaveAs", dimension_name,
+                             hierarchy_name, subsets, subset_name)
         return self._rest.POST(request=request, data=json.dumps(payload))
 
 
