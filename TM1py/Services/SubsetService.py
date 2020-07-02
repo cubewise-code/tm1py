@@ -130,7 +130,7 @@ class SubsetService(ObjectService):
                 hierarchy_name=subset.hierarchy_name,
                 private=private,
                 **kwargs):
-            return self.update(subset=subset, private=private ** kwargs)
+            return self.update(subset=subset, private=private, **kwargs)
 
         return self.create(subset=subset, private=private, **kwargs)
 
