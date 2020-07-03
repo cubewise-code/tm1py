@@ -73,11 +73,26 @@ class ServerService(ObjectService):
         self.mlog_last_delta_request = response.text[response.text.rfind("MessageLogEntries/!delta('"):-2]
         return response.json()['value']
 
-    def get_message_log_entries(self, reverse: bool = True, top: int = None, **kwargs) -> Dict:
-        reverse = 'true' if reverse else 'false'
-        url = '/api/v1/MessageLog(Reverse={})'.format(reverse)
+    def get_message_log_entries(self, reverse: bool = True, since: datetime = None, top: int = None, **kwargs) -> Dict:
+        """
+
+        :param reverse: Boolean
+        :param since: of type datetime. If it doesn't have tz information, UTC is assumed.
+        :param top: Integer
+        :param kwargs:
+        :return: Dict of server log
+        """
+        reverse = 'desc' if reverse else 'asc'
+        url = '/api/v1/MessageLogEntries?$orderby=TimeStamp {} '.format(reverse)
+        if since:
+            # If since doesn't have tz information, UTC is assumed
+            if not since.tzinfo:
+                since = pytz.utc.localize(since)
+            # TM1 REST API expects %Y-%m-%dT%H:%M:%SZ Format with UTC time !
+            since_utc = since.astimezone(pytz.utc)
+            url += "&$filter={}".format(format_url("TimeStamp ge {}", since_utc.strftime("%Y-%m-%dT%H:%M:%SZ")))
         if top:
-            url += '?$top={}'.format(top)
+            url += '&$top={}'.format(top)
         response = self._rest.GET(url, **kwargs)
         return response.json()['value']
 
