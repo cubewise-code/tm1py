@@ -215,6 +215,18 @@ class TestServerMethods(unittest.TestCase):
             # all the entries should have today's date
             entry_date = entry_timestamp.date()
             today_date = datetime.date.today()
+            self.assertTrue(entry_date == today_date)           
+    
+    def test_get_message_log_entries_from_today(self):
+        # get datetime from today at 00:00:00
+        today = datetime.datetime.combine(datetime.date.today(), datetime.time(0, 0))
+        entries = self.tm1.server.get_message_log_entries(reverse=True, since=today)
+        self.assertTrue(len(entries) > 0)
+        for entry in entries:
+            entry_timestamp = dateutil.parser.parse(entry['TimeStamp'])
+            # all the entries should have today's date
+            entry_date = entry_timestamp.date()
+            today_date = datetime.date.today()
             self.assertTrue(entry_date == today_date)
 
     def test_session_context_default(self):
