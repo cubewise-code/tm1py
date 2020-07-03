@@ -73,24 +73,43 @@ class ServerService(ObjectService):
         self.mlog_last_delta_request = response.text[response.text.rfind("MessageLogEntries/!delta('"):-2]
         return response.json()['value']
 
-    def get_message_log_entries(self, reverse: bool = True, since: datetime = None, top: int = None, **kwargs) -> Dict:
+    def get_message_log_entries(self, reverse: bool = True, start_time: datetime = None,
+                                end_time: datetime = None,  top: int = None, **kwargs) -> Dict:
         """
 
         :param reverse: Boolean
-        :param since: of type datetime. If it doesn't have tz information, UTC is assumed.
+        :param start_time: of type datetime. If it doesn't have tz information, UTC is assumed.
+        :param end_time: of type datetime. If it doesn't have tz information, UTC is assumed.
         :param top: Integer
         :param kwargs:
         :return: Dict of server log
         """
         reverse = 'desc' if reverse else 'asc'
         url = '/api/v1/MessageLogEntries?$orderby=TimeStamp {} '.format(reverse)
-        if since:
-            # If since doesn't have tz information, UTC is assumed
-            if not since.tzinfo:
-                since = pytz.utc.localize(since)
+        if start_time:
+            # If start_time doesn't have tz information, UTC is assumed
+            if not start_time.tzinfo:
+                start_time = pytz.utc.localize(start_time)
             # TM1 REST API expects %Y-%m-%dT%H:%M:%SZ Format with UTC time !
-            since_utc = since.astimezone(pytz.utc)
-            url += "&$filter={}".format(format_url("TimeStamp ge {}", since_utc.strftime("%Y-%m-%dT%H:%M:%SZ")))
+            start_time_utc = start_time.astimezone(pytz.utc)
+            _url = "&$filter={}".format(format_url("TimeStamp ge {}", start_time_utc.strftime("%Y-%m-%dT%H:%M:%SZ")))
+            if end_time:
+                # If end_time doesn't have tz information, UTC is assumed
+                if not end_time.tzinfo:
+                    end_time = pytz.utc.localize(end_time)
+                # TM1 REST API expects %Y-%m-%dT%H:%M:%SZ Format with UTC time !
+                end_time_utc = end_time.astimezone(pytz.utc)
+                _url = "&$filter={}".format(format_url("TimeStamp ge {} and TimeStamp le {}",
+                                                       start_time_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                                                       end_time_utc.strftime("%Y-%m-%dT%H:%M:%SZ")))
+            url += _url
+        elif end_time:
+            # If end_time doesn't have tz information, UTC is assumed
+            if not end_time.tzinfo:
+                end_time = pytz.utc.localize(end_time)
+            # TM1 REST API expects %Y-%m-%dT%H:%M:%SZ Format with UTC time !
+            end_time_utc = end_time.astimezone(pytz.utc)
+            url += "&$filter={}".format(format_url("TimeStamp le {}", end_time_utc.strftime("%Y-%m-%dT%H:%M:%SZ")))
         if top:
             url += '&$top={}'.format(top)
         response = self._rest.GET(url, **kwargs)
