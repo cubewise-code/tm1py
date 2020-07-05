@@ -1,10 +1,11 @@
 import configparser
 import datetime
-from pathlib import Path
 import random
 import re
 import time
 import unittest
+from datetime import timedelta
+from pathlib import Path
 
 import dateutil
 
@@ -215,19 +216,47 @@ class TestServerMethods(unittest.TestCase):
             # all the entries should have today's date
             entry_date = entry_timestamp.date()
             today_date = datetime.date.today()
-            self.assertTrue(entry_date == today_date)           
-    
+            self.assertTrue(entry_date == today_date)
+
     def test_get_message_log_entries_from_today(self):
         # get datetime from today at 00:00:00
         today = datetime.datetime.combine(datetime.date.today(), datetime.time(0, 0))
         entries = self.tm1.server.get_message_log_entries(reverse=True, since=today)
-        self.assertTrue(len(entries) > 0)
+
         for entry in entries:
             entry_timestamp = dateutil.parser.parse(entry['TimeStamp'])
             # all the entries should have today's date
             entry_date = entry_timestamp.date()
             today_date = datetime.date.today()
             self.assertTrue(entry_date == today_date)
+
+    def test_get_message_log_entries_until_yesterday(self):
+        # get datetime from today at 00:00:00
+        yesterday = datetime.datetime.combine(datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
+
+        entries = self.tm1.server.get_message_log_entries(reverse=True, until=yesterday)
+        self.assertTrue(len(entries) > 0)
+        for entry in entries:
+            # skip invalid timestamps from log
+            if entry['TimeStamp'] == '0000-00-00T00:00Z':
+                continue
+
+            entry_timestamp = dateutil.parser.parse(entry['TimeStamp'])
+            entry_date = entry_timestamp.date()
+            yesterdays_date = datetime.date.today() - timedelta(days=1)
+            self.assertTrue(entry_date <= yesterdays_date)
+
+    def test_get_message_log_entries_only_yesterday(self):
+        # get datetime from today at 00:00:00
+        yesterday = datetime.datetime.combine(datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
+        today = datetime.datetime.combine(datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
+
+        entries = self.tm1.server.get_message_log_entries(reverse=True, since=yesterday, until=today)
+        for entry in entries:
+            entry_timestamp = dateutil.parser.parse(entry['TimeStamp'])
+            entry_date = entry_timestamp.date()
+            yesterdays_date = datetime.date.today() - timedelta(days=1)
+            self.assertTrue(entry_date == yesterdays_date)
 
     def test_session_context_default(self):
         threads = self.tm1.monitoring.get_threads()
