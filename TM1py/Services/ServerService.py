@@ -90,13 +90,15 @@ class ServerService(ObjectService):
             time_filters = []
             if since:
                 # If since doesn't have tz information, UTC is assumed
-                since_utc = self.utc_localize_time(since)
-                time_filters.append(format_url("TimeStamp ge {}", since_utc.strftime("%Y-%m-%dT%H:%M:%SZ")))
+                if not since.tzinfo:
+                    since = self.utc_localize_time(since)
+                time_filters.append(format_url("TimeStamp ge {}", since.strftime("%Y-%m-%dT%H:%M:%SZ")))
 
             if until:
                 # If until doesn't have tz information, UTC is assumed
-                until_utc = self.utc_localize_time(until)
-                time_filters.append(format_url("TimeStamp le {}", until_utc.strftime("%Y-%m-%dT%H:%M:%SZ")))
+                if not until.tzinfo:
+                    until = self.utc_localize_time(until)
+                time_filters.append(format_url("TimeStamp le {}", until.strftime("%Y-%m-%dT%H:%M:%SZ")))
 
             url += "&$filter={}".format(" and ".join(time_filters))
 
@@ -107,9 +109,7 @@ class ServerService(ObjectService):
 
     @staticmethod
     def utc_localize_time(timestamp):
-        if not timestamp.tzinfo:
-            timestamp = pytz.utc.localize(timestamp)
-        # TM1 REST API expects %Y-%m-%dT%H:%M:%SZ Format with UTC time !
+        timestamp = pytz.utc.localize(timestamp)
         timestamp_utc = timestamp.astimezone(pytz.utc)
         return timestamp_utc
 
@@ -135,8 +135,9 @@ class ServerService(ObjectService):
                 log_filters.append(format_url("Cube eq '{}'", cube))
             if since:
                 # If since doesn't have tz information, UTC is assumed
-                since_utc = self.utc_localize_time(since)
-                log_filters.append(format_url("TimeStamp ge {}", since_utc.strftime("%Y-%m-%dT%H:%M:%SZ")))
+                if not since.tzinfo:
+                    since = self.utc_localize_time(since)
+                log_filters.append(format_url("TimeStamp ge {}", since.strftime("%Y-%m-%dT%H:%M:%SZ")))
             url += "&$filter={}".format(" and ".join(log_filters))
         # top limit
         if top:
