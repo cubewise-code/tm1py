@@ -8,12 +8,12 @@ from TM1py.Objects import ElementAttribute, Element
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import CaseAndSpaceInsensitiveDict, format_url, CaseAndSpaceInsensitiveSet
-from TM1py.Utils import build_element_unique_names
+from TM1py.Utils import build_element_unique_names, CaseAndSpaceInsensitiveTuplesDict
 
 
 class ElementService(ObjectService):
     """ Service to handle Object Updates for TM1 Dimension (resp. Hierarchy) Elements
-    
+
     """
 
     def __init__(self, rest: RestService):
@@ -82,9 +82,9 @@ class ElementService(ObjectService):
 
     def get_element_names(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
         """ Get all elementnames
-        
-        :param dimension_name: 
-        :param hierarchy_name: 
+
+        :param dimension_name:
+        :param hierarchy_name:
         :return: Generator of element-names
         """
         url = format_url(
@@ -168,10 +168,64 @@ class ElementService(ObjectService):
              """.format(
             elem_mdx=mdx_element_selection,
             attr_mdx=",".join(build_element_unique_names(
-                ["}ElementAttributes_" + dimension_name] * len(alias_attributes),
-                alias_attributes)),
+                ["}ElementAttributes_" + dimension_name] * len(alias_attributes), alias_attributes)),
             dim=dimension_name)
         return self._retrieve_mdx_rows_and_cell_values_as_string_set(mdx, **kwargs)
+
+    def get_element_by_attribute(self, dimension_name: str, hierarchy_name: str, attribute: str,
+                                 elements: Union[str, List[str]] = None, **kwargs) -> dict:
+        """
+         Get element name and attribute value for a set of elements in a hierarchy
+
+        :param dimension_name:
+        :param hierarchy_name:
+        :param attribute: Name of the Attribute
+        :param elements:  MDX (Set) expression or iterable of elements
+        :keyword exclude_empty_cells: Boolean
+        :keyword element_unique_names: Boolean
+        :return:
+        """
+        exclude_empty_cells = kwargs.get('exclude_empty_cells') if 'exclude_empty_cells' in kwargs else True
+        if not elements:
+            elements = self.get_element_names(dimension_name=dimension_name, hierarchy_name=hierarchy_name)
+
+        if isinstance(elements, str):
+            mdx_element_selection = elements
+        else:
+            mdx_element_selection = ",".join(build_element_unique_names(
+                [dimension_name] * len(elements),
+                elements,
+                [hierarchy_name] * len(elements)))
+        mdx = """
+             SELECT
+             {{ {elem_mdx} }} ON ROWS, 
+             {{ {attr_mdx} }} ON COLUMNS
+             FROM [}}ElementAttributes_{dim}]
+             """.format(
+            elem_mdx=mdx_element_selection,
+            attr_mdx="[}ElementAttributes_" + dimension_name + "].[" + attribute + "]",
+            dim=dimension_name)
+        rows_and_values = self._retrieve_mdx_rows_and_values(mdx, **kwargs)
+        return self._extract_dict_from_rows_and_values(rows_and_values, exclude_empty_cells=exclude_empty_cells)
+
+    @staticmethod
+    def _extract_dict_from_rows_and_values(
+            rows_and_values: CaseAndSpaceInsensitiveTuplesDict,
+            exclude_empty_cells: bool = True) -> dict:
+        """ Helper function for get_element_by_attribute method
+
+        :param rows_and_values:
+        :param exclude_empty_cells: Boolean
+        :return: Dictionary of Element:Attribute_Value
+        """
+        result_set = dict()
+        for row_elements, cell_values in rows_and_values.items():
+            for row_element in row_elements:
+                for cell_value in cell_values:
+                    if isinstance(cell_value, str):
+                        if cell_value or not exclude_empty_cells:
+                            result_set[row_element] = cell_value
+        return result_set
 
     def get_level_names(self, dimension_name: str, hierarchy_name: str, descending: bool = True, **kwargs) -> List[str]:
         url = format_url(
@@ -211,6 +265,10 @@ class ElementService(ObjectService):
         from TM1py import CellService
         return CellService(self._rest).execute_mdx_rows_and_values_string_set(mdx, exclude_empty_cells, **kwargs)
 
+    def _retrieve_mdx_rows_and_values(self, mdx: str, **kwargs):
+        from TM1py import CellService
+        return CellService(self._rest).execute_mdx_rows_and_values(mdx, **kwargs)
+
     def get_alias_element_attributes(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
         """
 
@@ -225,7 +283,7 @@ class ElementService(ObjectService):
 
     def get_element_attributes(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[ElementAttribute]:
         """ Get element attributes from hierarchy
-    
+
         :param dimension_name:
         :param hierarchy_name:
         :return:
@@ -241,7 +299,7 @@ class ElementService(ObjectService):
     def get_elements_filtered_by_attribute(self, dimension_name: str, hierarchy_name: str, attribute_name: str,
                                            attribute_value: Union[str, float], **kwargs) -> List[str]:
         """ Get all elements from a hierarchy with given attribute value
-    
+
         :param dimension_name:
         :param hierarchy_name:
         :param attribute_name:
@@ -296,7 +354,7 @@ class ElementService(ObjectService):
     def get_leaves_under_consolidation(self, dimension_name: str, hierarchy_name: str, consolidation: str,
                                        max_depth: int = None, **kwargs) -> List[str]:
         """ Get all leaves under a consolidated element
-        
+
         :param dimension_name: name of dimension
         :param hierarchy_name: name of hierarchy
         :param consolidation: name of consolidated Element

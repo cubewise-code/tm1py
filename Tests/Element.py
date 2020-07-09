@@ -143,6 +143,29 @@ class TestElementMethods(unittest.TestCase):
             '1988')
         self.assertIn('1989', elements)
 
+    def test_get_element_by_attribute_without_elements(self):
+        elements = self.tm1.dimensions.hierarchies.elements.get_element_by_attribute(
+            dimension_name=DIMENSION_NAME,
+            hierarchy_name=HIERARCHY_NAME,
+            attribute='Previous Year',
+            element_unique_names=False)
+        self.assertEqual('1989', elements['1990'])
+        self.assertEqual('1990', elements['1991'])
+        self.assertNotIn(self.extra_year, elements)
+        self.assertIsInstance(elements, dict)
+
+    def test_get_element_by_attribute_with_elements(self):
+        elements = self.tm1.dimensions.hierarchies.elements.get_element_by_attribute(
+            dimension_name=DIMENSION_NAME,
+            hierarchy_name=HIERARCHY_NAME,
+            elements=["1990", "1991"],
+            attribute="Previous Year",
+            element_unique_names=False)
+        self.assertNotIn("1989", elements)
+        self.assertEqual("1989", elements["1990"])
+        self.assertIn("1991", elements)
+        self.assertIsInstance(elements, dict)
+
     def test_create_filter_and_delete_element_attribute(self):
         attribute = ElementAttribute('Leap Year', 'Numeric')
         self.tm1.dimensions.hierarchies.elements.create_element_attribute(
