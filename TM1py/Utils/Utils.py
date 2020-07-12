@@ -79,6 +79,22 @@ def extract_unique_names_from_members(members: Iterable[Dict]) -> List[str]:
             in members]
 
 
+def extract_element_names_from_members(members: Iterable[Dict]) -> List[str]:
+    """ Extract list of unique names from part of the cellset response
+    in:
+    [{'UniqueName': '[dim1].[dim1].[elem1]', 'Element': {'UniqueName': '[dim1].[dim1].[elem1]'}},
+    {'UniqueName': '[dim2].[dim2].[elem3]', 'Element': {'UniqueName': '[dim2].[dim2].[elem3]'}}]
+    out:
+    ["elem1", "elem3"]
+
+    :param members: dictionary
+    :return: list of unique names
+    """
+    return [m['Element']['Name'] if 'Element' in m and m['Element'] else m['Name']
+            for m
+            in members]
+
+
 def sort_coordinates(cube_dimensions: Iterable[str], unsorted_coordinates: Iterable[str]) -> Tuple[str]:
     sorted_coordinates = []
     for dimension in cube_dimensions:
@@ -90,7 +106,7 @@ def sort_coordinates(cube_dimensions: Iterable[str], unsorted_coordinates: Itera
     return tuple(sorted_coordinates)
 
 
-def build_content_from_cellset(
+def build_content_from_cellset_dict(
         raw_cellset_as_dict: Dict,
         top: Optional[int] = None) -> 'CaseAndSpaceInsensitiveTuplesDict':
     """ transform raw cellset data into concise dictionary
@@ -122,6 +138,51 @@ def build_content_from_cellset(
         coordinates = sort_coordinates(cube_dimensions, coordinates)
         content_as_dict[coordinates] = cell
     return content_as_dict
+
+
+def build_csv_from_cellset_dict(
+        row_dimensions: List[str],
+        column_dimensions: List[str],
+        raw_cellset_as_dict: Dict,
+        top: Optional[int] = None,
+        line_separator="\r\n") -> str:
+    """ transform raw cellset data into concise dictionary
+
+    :param column_dimensions:
+    :param row_dimensions:
+    :param raw_cellset_as_dict:
+    :param top: Maximum Number of cells
+    :param top: Number of cells of skip
+    :param line_separator: 
+    :return:
+    """
+    csv_entries = list()
+    csv_entries.append(",".join(
+        [dimension_name_from_element_unique_name(dimension)
+         for dimension
+         in row_dimensions + column_dimensions] +
+        ["Value"]))
+
+    cells = raw_cellset_as_dict['Cells']
+    row_axis, column_axis, _ = extract_axes_from_cellset(raw_cellset_as_dict=raw_cellset_as_dict)
+
+    for ordinal, cell in enumerate(cells[:top or len(cells)]):
+        # if skip is used in execution we must use the original ordinal from the cell, if not we can simply enumerate
+        ordinal = cell.get("Ordinal", ordinal)
+
+        csv_entry = []
+        if row_axis:
+            index_rows = ordinal // row_axis['Cardinality'] % column_axis['Cardinality']
+            csv_entry.extend(extract_element_names_from_members(column_axis['Tuples'][index_rows]['Members']))
+        if column_axis:
+            index_columns = ordinal % row_axis['Cardinality']
+            csv_entry.extend(extract_element_names_from_members(row_axis['Tuples'][index_columns]['Members']))
+
+        csv_entry.append(str(cell["Value"]))
+
+        csv_entries.append(",".join(csv_entry))
+
+    return line_separator.join(csv_entries)
 
 
 def build_ui_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precision: int):
