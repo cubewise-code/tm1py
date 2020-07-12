@@ -665,6 +665,12 @@ class TestDataMethods(unittest.TestCase):
 
         csv = self.tm1.cubes.cells.execute_mdx_csv(mdx)
 
+        # check header
+        header = csv.split('\r\n')[0]
+        self.assertEqual(
+            ",".join(DIMENSION_NAMES + ["Value"]),
+            header)
+
         # check type
         self.assertIsInstance(csv, str)
         records = csv.split('\r\n')[1:]
@@ -688,6 +694,7 @@ class TestDataMethods(unittest.TestCase):
             self.total_value,
             sum(values))
 
+    def test_execute_mdx_csv_with_calculated_member(self):
         # MDX Query with calculated MEMBER
         mdx = MdxBuilder.from_cube(CUBE_NAME).with_member(CalculatedMember.lookup_attribute(
             DIMENSION_NAMES[1],
@@ -1427,10 +1434,13 @@ class TestDataMethods(unittest.TestCase):
         coordinates = ("d1e1", "d2e2", "d3e3")
         self.tm1.cubes.cells.write_values(STRING_CUBE_NAME, {coordinates: LATIN_1_ENCODED_TEXT}, encoding="latin-1")
 
-        mdx = MdxBuilder.from_cube(STRING_CUBE_NAME)\
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(STRING_DIMENSION_NAMES[0], coordinates[0])))\
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(STRING_DIMENSION_NAMES[1], coordinates[1])))\
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(STRING_DIMENSION_NAMES[2], coordinates[2])))\
+        mdx = MdxBuilder.from_cube(STRING_CUBE_NAME) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(STRING_DIMENSION_NAMES[0], coordinates[0]))) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(STRING_DIMENSION_NAMES[1], coordinates[1]))) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(STRING_DIMENSION_NAMES[2], coordinates[2]))) \
             .to_mdx()
 
         values = self.tm1.cubes.cells.execute_mdx_values(mdx=mdx, encoding="latin-1")
@@ -1440,10 +1450,13 @@ class TestDataMethods(unittest.TestCase):
         coordinates = ("d1e1", "d2e2", "d3e3")
         self.tm1.cubes.cells.write_values(STRING_CUBE_NAME, {coordinates: LATIN_1_ENCODED_TEXT}, encoding="latin-1")
 
-        mdx = MdxBuilder.from_cube(STRING_CUBE_NAME)\
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(STRING_DIMENSION_NAMES[0], coordinates[0])))\
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(STRING_DIMENSION_NAMES[1], coordinates[1])))\
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(STRING_DIMENSION_NAMES[2], coordinates[2])))\
+        mdx = MdxBuilder.from_cube(STRING_CUBE_NAME) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(STRING_DIMENSION_NAMES[0], coordinates[0]))) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(STRING_DIMENSION_NAMES[1], coordinates[1]))) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(STRING_DIMENSION_NAMES[2], coordinates[2]))) \
             .to_mdx()
 
         values = self.tm1.cubes.cells.execute_mdx_values(mdx=mdx)
@@ -1454,10 +1467,13 @@ class TestDataMethods(unittest.TestCase):
         coordinates = ("d1e1", "d2e2", "d3e3")
         self.tm1.cubes.cells.write_values(STRING_CUBE_NAME, {coordinates: LATIN_1_ENCODED_TEXT})
 
-        mdx = MdxBuilder.from_cube(STRING_CUBE_NAME)\
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(STRING_DIMENSION_NAMES[0], coordinates[0])))\
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(STRING_DIMENSION_NAMES[1], coordinates[1])))\
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(STRING_DIMENSION_NAMES[2], coordinates[2])))\
+        mdx = MdxBuilder.from_cube(STRING_CUBE_NAME) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(STRING_DIMENSION_NAMES[0], coordinates[0]))) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(STRING_DIMENSION_NAMES[1], coordinates[1]))) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(STRING_DIMENSION_NAMES[2], coordinates[2]))) \
             .to_mdx()
 
         values = self.tm1.cubes.cells.execute_mdx_values(mdx=mdx, encoding="latin-1")
@@ -1467,10 +1483,10 @@ class TestDataMethods(unittest.TestCase):
         cells = {("Element1", "Element1", "Element1"): 1}
         self.tm1.cells.write_values(CUBE_NAME, cells)
 
-        mdx = MdxBuilder.from_cube(CUBE_NAME)\
-            .add_hierarchy_set_to_row_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[0], "Element1")))\
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[1], "Element1")))\
-            .where(Member.of(DIMENSION_NAMES[2], "Element1"))\
+        mdx = MdxBuilder.from_cube(CUBE_NAME) \
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[0], "Element1"))) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[1], "Element1"))) \
+            .where(Member.of(DIMENSION_NAMES[2], "Element1")) \
             .to_mdx()
 
         self.tm1.cells.clear_with_mdx(cube=CUBE_NAME, mdx=mdx)
@@ -1482,7 +1498,7 @@ class TestDataMethods(unittest.TestCase):
         cells = {("Element1", "Element1", "Element1"): 1}
         self.tm1.cells.write_values(CUBE_NAME, cells)
 
-        mdx = MdxBuilder.from_cube(CUBE_NAME)\
+        mdx = MdxBuilder.from_cube(CUBE_NAME) \
             .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[0], "Element1"))) \
             .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[1], "Element1"))) \
             .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[2], "Element1"))) \
@@ -1533,7 +1549,6 @@ class TestDataMethods(unittest.TestCase):
 
         elements = element_names_from_element_unique_names(list(cells.keys())[0])
         self.assertEqual(elements, ("Element 2", "Element 1", "Element 1"))
-
 
     # Delete Cube and Dimensions
     @classmethod

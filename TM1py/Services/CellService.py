@@ -18,7 +18,7 @@ from TM1py.Services.RestService import RestService
 from TM1py.Services.ViewService import ViewService
 from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
-    CaseAndSpaceInsensitiveTuplesDict, abbreviate_mdx
+    CaseAndSpaceInsensitiveTuplesDict, abbreviate_mdx, build_csv_from_cellset_dict
 
 
 def tidy_cellset(func):
@@ -303,7 +303,8 @@ class CellService(ObjectService):
         return self._rest.PATCH(request, json.dumps(data, ensure_ascii=False), **kwargs)
 
     def execute_mdx(self, mdx: str, cell_properties: List[str] = None, top: int = None, skip_contexts: bool = False,
-                    skip: int = None, **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
+                    skip: int = None, skip_zeros: bool = False, skip_consolidated_cells: bool = False,
+                    skip_rule_derived_cells: bool = False, **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
         """ Execute MDX and return the cells with their properties
 
         :param mdx: MDX Query, as string
@@ -311,6 +312,9 @@ class CellService(ObjectService):
         :param top: integer
         :param skip: integer
         :param skip_contexts: skip elements from titles / contexts in response
+        :param skip_zeros: skip zeros in cellset
+        :param skip_consolidated_cells: skip consolidated cells in cellset
+        :param skip_rule_derived_cells: skip rule derived cells in cellset
         :return: content in sweet concise structure.
         """
         cellset_id = self.create_cellset(mdx=mdx, **kwargs)
@@ -320,11 +324,15 @@ class CellService(ObjectService):
             top=top,
             skip=skip,
             skip_contexts=skip_contexts,
+            skip_zeros=skip_zeros,
+            skip_consolidated_cells=skip_consolidated_cells,
+            skip_rule_derived_cells=skip_rule_derived_cells,
             delete_cellset=True,
             **kwargs)
 
     def execute_view(self, cube_name: str, view_name: str, cell_properties: Iterable[str] = None, private: bool = False,
-                     top: int = None, skip_contexts: bool = False, skip: int = None,
+                     top: int = None, skip_contexts: bool = False, skip: int = None, skip_zeros: bool = False,
+                     skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
                      **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
         """ get view content as dictionary with sweet and concise structure.
             Works on NativeView and MDXView !
@@ -336,6 +344,9 @@ class CellService(ObjectService):
         :param top: Int, number of cells to return (counting from top)
         :param skip: Int, number of cells to skip (counting from top)
         :param skip_contexts: skip elements from titles / contexts in response
+        :param skip_zeros: skip zeros in cellset
+        :param skip_consolidated_cells: skip consolidated cells in cellset
+        :param skip_rule_derived_cells: skip rule derived cells in cellset
 
         :return: Dictionary : {([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }
         """
@@ -346,6 +357,9 @@ class CellService(ObjectService):
             top=top,
             skip=skip,
             skip_contexts=skip_contexts,
+            skip_zeros=skip_zeros,
+            skip_consolidated_cells=skip_consolidated_cells,
+            skip_rule_derived_cells=skip_rule_derived_cells,
             delete_cellset=True,
             **kwargs)
 
@@ -358,6 +372,9 @@ class CellService(ObjectService):
             top: int = None,
             skip_contexts: bool = False,
             skip: int = None,
+            skip_zeros: bool = False,
+            skip_consolidated_cells: bool = False,
+            skip_rule_derived_cells: bool = False,
             **kwargs) -> Dict:
         """ Execute MDX and return the raw data from TM1
 
@@ -368,6 +385,9 @@ class CellService(ObjectService):
         :param top: Integer limiting the number of cells and the number or rows returned
         :param skip: Integer limiting the number of cells and the number or rows returned
         :param skip_contexts: skip elements from titles / contexts in response
+        :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
+        :param skip_consolidated_cells:
+        :param skip_rule_derived_cells:
         :return: Raw format from TM1.
         """
         cellset_id = self.create_cellset(mdx=mdx, **kwargs)
@@ -380,6 +400,9 @@ class CellService(ObjectService):
             skip=skip,
             delete_cellset=True,
             skip_contexts=skip_contexts,
+            skip_zeros=skip_zeros,
+            skip_consolidated_cells=skip_consolidated_cells,
+            skip_rule_derived_cells=skip_rule_derived_cells,
             **kwargs)
 
     def execute_view_raw(
@@ -393,8 +416,12 @@ class CellService(ObjectService):
             top: int = None,
             skip_contexts: bool = False,
             skip: int = None,
+            skip_zeros: bool = False,
+            skip_consolidated_cells: bool = False,
+            skip_rule_derived_cells: bool = False,
             **kwargs) -> Dict:
         """ Execute a cube view and return the raw data from TM1
+
 
         :param cube_name: String, name of the cube
         :param view_name: String, name of the view
@@ -405,6 +432,9 @@ class CellService(ObjectService):
         :param top: Integer limiting the number of cells and the number or rows returned
         :param skip_contexts: skip elements from titles / contexts in response
         :param skip: Integer limiting the number of cells and the number or rows returned
+        :param skip_zeros:
+        :param skip_consolidated_cells:
+        :param skip_rule_derived_cells:
         :return: Raw format from TM1.
         """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private, **kwargs)
@@ -416,6 +446,9 @@ class CellService(ObjectService):
             top=top,
             skip=skip,
             skip_contexts=skip_contexts,
+            skip_zeros=skip_zeros,
+            skip_rule_derived_cells=skip_rule_derived_cells,
+            skip_consolidated_cells=skip_consolidated_cells,
             delete_cellset=True,
             **kwargs)
 
@@ -467,20 +500,27 @@ class CellService(ObjectService):
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private, **kwargs)
         return self.extract_cellset_rows_and_values(cellset_id, element_unique_names, delete_cellset=True, **kwargs)
 
-    def execute_mdx_csv(self, mdx: str, **kwargs) -> str:
+    def execute_mdx_csv(self, mdx: str, skip_zeros: bool = True, skip_consolidated_cells: bool = False,
+                        skip_rule_derived_cells: bool = False, line_separator: str = "\r\n", **kwargs) -> str:
         """ Optimized for performance. Get csv string of coordinates and values. 
         Context dimensions are omitted !
         Cells with Zero/null are omitted !
 
-        :param mdx: Valid MDX Query 
+        :param mdx: Valid MDX Query
+        :param skip_zeros: skip zeros in cellset
+        :param skip_consolidated_cells: skip consolidated cells in cellset
+        :param skip_rule_derived_cells: skip rule derived cells in cellset
         :return: String
         """
         cellset_id = self.create_cellset(mdx, **kwargs)
-        return self.extract_cellset_csv(cellset_id=cellset_id, delete_cellset=True, **kwargs)
+        return self.extract_cellset_csv(cellset_id=cellset_id, skip_zeros=skip_zeros,
+                                        skip_consolidated_cells=skip_consolidated_cells,
+                                        skip_rule_derived_cells=skip_rule_derived_cells, line_separator=line_separator,
+                                        **kwargs)
 
     def execute_view_csv(self, cube_name: str, view_name: str, private: bool = False, **kwargs) -> str:
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
-        return self.extract_cellset_csv(cellset_id=cellset_id, delete_cellset=True, **kwargs)
+        return self.extract_cellset_csv(cellset_id=cellset_id, **kwargs)
 
     def execute_mdx_dataframe(self, mdx: str, **kwargs) -> pd.DataFrame:
         """ Optimized for performance. Get Pandas DataFrame from MDX Query.
@@ -704,7 +744,7 @@ class CellService(ObjectService):
             member_properties: Iterable[str] = None,
             value_precision: int = 2,
             top: int = None,
-            skip:int = None,
+            skip: int = None,
             **kwargs):
         """
         Useful for grids or charting libraries that want an array of cell values per row.
@@ -819,6 +859,9 @@ class CellService(ObjectService):
             top: int = None,
             skip: int = None,
             skip_contexts: bool = False,
+            skip_zeros: bool = False,
+            skip_consolidated_cells: bool = False,
+            skip_rule_derived_cells: bool = False,
             **kwargs) -> Dict:
         """ Extract full cellset data and return the raw data from TM1
 
@@ -829,10 +872,23 @@ class CellService(ObjectService):
         :param top: Integer limiting the number of cells and the number or rows returned
         :param skip: Integer limiting the number of cells and the number or rows returned
         :param skip_contexts:
+        :param skip_zeros: skip zeros in cellset
+        :param skip_consolidated_cells: skip consolidated cells in cellset
+        :param skip_rule_derived_cells: skip rule derived cells in cellset
         :return: Raw format from TM1.
         """
         if not cell_properties:
             cell_properties = ['Value']
+
+        if skip_rule_derived_cells:
+            cell_properties.append("RuleDerived")
+
+        if skip_consolidated_cells:
+            cell_properties.append("Consolidated")
+
+        if skip or skip_zeros or skip_rule_derived_cells or skip_consolidated_cells:
+            if 'Ordinal' not in cell_properties:
+                cell_properties.append('Ordinal')
 
         # select Name property if member_properties is None or empty.
         # Necessary, as tm1 default behaviour is to return all properties if no $select is specified in the request.
@@ -847,11 +903,23 @@ class CellService(ObjectService):
 
         filter_axis = "$filter=Ordinal ne 2;" if skip_contexts else ""
 
+        filter_cells = ""
+        if skip_zeros or skip_consolidated_cells or skip_rule_derived_cells:
+            filters = []
+            if skip_zeros:
+                filters.append("Value ne 0 and Value ne null")
+            if skip_consolidated_cells:
+                filters.append("RuleDerived eq false")
+            if skip_rule_derived_cells:
+                filters.append("Consolidate eq false")
+
+            filter_cells = " and ".join(filters)
+
         url = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
               "Cube($select=Name;$expand=Dimensions($select=Name))," \
               "Axes({filter_axis}$expand=Tuples($expand=Members({select_member_properties}" \
               "{expand_elem_properties}){top_rows}))," \
-              "Cells($select={cell_properties}{top_cells}{skip_cells})" \
+              "Cells($select={cell_properties}{top_cells}{skip_cells}{filter_cells})" \
             .format(cellset_id=cellset_id,
                     top_rows=f";$top={top}" if top and not skip else "",
                     cell_properties=",".join(cell_properties),
@@ -859,7 +927,8 @@ class CellService(ObjectService):
                     select_member_properties=select_member_properties,
                     expand_elem_properties=expand_elem_properties,
                     top_cells=f";$top={top}" if top else "",
-                    skip_cells=f";$skip={skip}" if skip else "")
+                    skip_cells=f";$skip={skip}" if skip else "",
+                    filter_cells=f";$filter={filter_cells}" if filter_cells else "")
         response = self._rest.GET(url=url, **kwargs)
         return response.json()
 
@@ -950,25 +1019,53 @@ class CellService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return int(response.content)
 
-    @tidy_cellset
-    def extract_cellset_csv(self, cellset_id: str, **kwargs) -> str:
+    def extract_cellset_csv(
+            self,
+            cellset_id: str,
+            skip_zeros: bool = True,
+            skip_consolidated_cells: bool = False,
+            skip_rule_derived_cells: bool = False,
+            line_separator: str = "\r\n",
+            **kwargs) -> str:
         """ Execute cellset and return only the 'Content', in csv format
 
         :param cellset_id: String; ID of existing cellset
+        :param skip_zeros: skip zeros in cellset
+        :param skip_consolidated_cells: skip consolidated cells in cellset
+        :param skip_rule_derived_cells: skip rule derived cells in cellset
+        :param line_separator:
         :return: Raw format from TM1.
         """
-        url = "/api/v1/Cellsets('{}')/Content".format(cellset_id)
-        data = self._rest.GET(url, **kwargs)
-        return data.text
+        _, _, rows, columns = self.extract_cellset_composition(cellset_id, delete_cellset=False, **kwargs)
 
-    def extract_cellset_dataframe(self, cellset_id: str, **kwargs) -> pd.DataFrame:
+        cellset_dict = self.extract_cellset_raw(cellset_id, cell_properties=["Value"], skip_contexts=True,
+                                                skip_zeros=skip_zeros, skip_consolidated_cells=skip_consolidated_cells,
+                                                skip_rule_derived_cells=skip_rule_derived_cells,
+                                                delete_cellset=True, **kwargs)
+        return build_csv_from_cellset_dict(rows, columns, cellset_dict, line_separator=line_separator)
+
+    def extract_cellset_dataframe(
+            self,
+            cellset_id: str,
+            skip_zeros: bool = True,
+            skip_consolidated_cells: bool = False,
+            skip_rule_derived_cells: bool = False,
+            **kwargs) -> pd.DataFrame:
         """ Build pandas data frame from cellset_id
 
         :param cellset_id:
+        :param skip_contexts:
+        :param skip_zeros: skip zeros in cellset
+        :param skip_consolidated_cells: skip consolidated cells in cellset
+        :param skip_rule_derived_cells: skip rule derived cells in cellset
+
         :param kwargs:
         :return:
         """
-        raw_csv = self.extract_cellset_csv(cellset_id=cellset_id, delete_cellset=True, **kwargs)
+        raw_csv = self.extract_cellset_csv(cellset_id=cellset_id, skip_zeros=skip_zeros,
+                                           skip_rule_derived_cells=skip_rule_derived_cells,
+                                           skip_consolidated_cells=skip_consolidated_cells,
+                                           **kwargs)
         if not raw_csv:
             return pd.DataFrame()
 
@@ -1057,6 +1154,9 @@ class CellService(ObjectService):
             skip: int = None,
             delete_cellset: bool = True,
             skip_contexts: bool = False,
+            skip_zeros: bool = False,
+            skip_consolidated_cells: bool = False,
+            skip_rule_derived_cells: bool = False,
             **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
         """ Execute cellset and return the cells with their properties
 
@@ -1066,13 +1166,13 @@ class CellService(ObjectService):
         :param cell_properties: properties to be queried from the cell. E.g. Value, Ordinal, RuleDerived, ...
         :param top: integer
         :param skip: integer
+        :param skip_zeros: skip zeros in cellset
+        :param skip_consolidated_cells: skip consolidated cells in cellset
+        :param skip_rule_derived_cells: skip rule derived cells in cellset
         :return: Content in sweet consice strcuture.
         """
         if not cell_properties:
             cell_properties = ['Value']
-
-        if skip and 'Ordinal' not in cell_properties:
-            cell_properties.append('Ordinal')
 
         raw_cellset = self.extract_cellset_raw(
             cellset_id,
@@ -1083,9 +1183,12 @@ class CellService(ObjectService):
             skip=skip,
             skip_contexts=skip_contexts,
             delete_cellset=delete_cellset,
+            skip_zeros=skip_zeros,
+            skip_consolidated_cells=skip_consolidated_cells,
+            skip_rule_derived_cells=skip_rule_derived_cells,
             **kwargs)
 
-        return Utils.build_content_from_cellset(
+        return Utils.build_content_from_cellset_dict(
             raw_cellset_as_dict=raw_cellset,
             top=top)
 
