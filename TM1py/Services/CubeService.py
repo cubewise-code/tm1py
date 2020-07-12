@@ -107,7 +107,10 @@ class CubeService(ObjectService):
         :return: response
         """
         url = format_url("/api/v1/Cubes('{}')/tm1.CheckRules", cube_name)
-        return self._rest.POST(url, **kwargs)
+
+        response = self._rest.POST(url, **kwargs)
+        errors = response.json()["value"]
+        return errors
 
     def delete(self, cube_name: str, **kwargs) -> Response:
         """ Delete a cube in TM1

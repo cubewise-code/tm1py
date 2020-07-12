@@ -134,6 +134,20 @@ class TestCubeMethods(unittest.TestCase):
         response = self.tm1.cubes.unload(cube_name=self.cube_name)
         self.assertTrue(response.ok)
 
+    def test_check_rules_without_errors(self):
+        errors = self.tm1.cubes.check_rules(cube_name=self.cube_name)
+        self.assertEqual(0, len(errors))
+
+    def test_check_rules_with_errors(self):
+        cube = self.tm1.cubes.get(cube_name=self.cube_name)
+        cube.rules = "SKIPCHECK"
+        self.tm1.cubes.update(cube)
+
+        errors = self.tm1.cubes.check_rules(cube_name=self.cube_name)
+        self.assertEqual(1, len(errors))
+
+
+
     @classmethod
     def tearDownClass(cls):
         cls.tm1.cubes.delete(cls.cube_name)
