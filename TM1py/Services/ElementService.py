@@ -172,8 +172,9 @@ class ElementService(ObjectService):
             dim=dimension_name)
         return self._retrieve_mdx_rows_and_cell_values_as_string_set(mdx, **kwargs)
 
-    def get_element_by_attribute(self, dimension_name: str, hierarchy_name: str, attribute: str,
-                                 elements: Union[str, List[str]] = None, **kwargs) -> dict:
+    def get_attribute_of_elements(self, dimension_name: str, hierarchy_name: str, attribute: str,
+                                  elements: Union[str, List[str]] = None, exclude_empty_cells: bool = True,
+                                  element_unique_names: bool = False) -> dict:
         """
          Get element name and attribute value for a set of elements in a hierarchy
 
@@ -181,11 +182,10 @@ class ElementService(ObjectService):
         :param hierarchy_name:
         :param attribute: Name of the Attribute
         :param elements:  MDX (Set) expression or iterable of elements
-        :keyword exclude_empty_cells: Boolean
-        :keyword element_unique_names: Boolean
-        :return:
+        :param exclude_empty_cells: Boolean
+        :param element_unique_names: Boolean
+        :return: Dict {'01':'Jan', '02':'Feb'}
         """
-        exclude_empty_cells = kwargs.get('exclude_empty_cells') if 'exclude_empty_cells' in kwargs else True
         if not elements:
             elements = self.get_element_names(dimension_name=dimension_name, hierarchy_name=hierarchy_name)
 
@@ -205,7 +205,7 @@ class ElementService(ObjectService):
             elem_mdx=mdx_element_selection,
             attr_mdx="[}ElementAttributes_" + dimension_name + "].[" + attribute + "]",
             dim=dimension_name)
-        rows_and_values = self._retrieve_mdx_rows_and_values(mdx, **kwargs)
+        rows_and_values = self._retrieve_mdx_rows_and_values(mdx, element_unique_names=element_unique_names)
         return self._extract_dict_from_rows_and_values(rows_and_values, exclude_empty_cells=exclude_empty_cells)
 
     @staticmethod

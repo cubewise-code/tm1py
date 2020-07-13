@@ -18,8 +18,8 @@ class TestElementMethods(unittest.TestCase):
     tm1 = None
 
     @classmethod
-    def setup_class(cls):
-
+    # def setup_class(cls):
+    def setUpClass(cls) -> None:
         # Connection to TM1
         cls.tm1 = TM1Service(**config['tm1srv01'])
 
@@ -144,26 +144,25 @@ class TestElementMethods(unittest.TestCase):
         self.assertIn('1989', elements)
 
     def test_get_element_by_attribute_without_elements(self):
-        elements = self.tm1.dimensions.hierarchies.elements.get_element_by_attribute(
+        elements = self.tm1.dimensions.hierarchies.elements.get_attribute_of_elements(
             dimension_name=DIMENSION_NAME,
             hierarchy_name=HIERARCHY_NAME,
-            attribute='Previous Year',
-            element_unique_names=False)
+            attribute='Previous Year')
         self.assertEqual('1989', elements['1990'])
         self.assertEqual('1990', elements['1991'])
         self.assertNotIn(self.extra_year, elements)
         self.assertIsInstance(elements, dict)
 
     def test_get_element_by_attribute_with_elements(self):
-        elements = self.tm1.dimensions.hierarchies.elements.get_element_by_attribute(
+        elements = self.tm1.dimensions.hierarchies.elements.get_attribute_of_elements(
             dimension_name=DIMENSION_NAME,
             hierarchy_name=HIERARCHY_NAME,
             elements=["1990", "1991"],
             attribute="Previous Year",
-            element_unique_names=False)
-        self.assertNotIn("1989", elements)
-        self.assertEqual("1989", elements["1990"])
-        self.assertIn("1991", elements)
+            element_unique_names=True)
+        self.assertNotIn("[" + DIMENSION_NAME + "]." + "[" + HIERARCHY_NAME + "]." + "[1989]", elements)
+        self.assertEqual("1989", elements["[" + DIMENSION_NAME + "]." + "[" + HIERARCHY_NAME + "]." + "[1990]"])
+        self.assertIn("[" + DIMENSION_NAME + "]." + "[" + HIERARCHY_NAME + "]." + "[1991]", elements)
         self.assertIsInstance(elements, dict)
 
     def test_create_filter_and_delete_element_attribute(self):
