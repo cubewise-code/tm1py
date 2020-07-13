@@ -18,8 +18,8 @@ class TestElementMethods(unittest.TestCase):
     tm1 = None
 
     @classmethod
-    # def setup_class(cls):
-    def setUpClass(cls) -> None:
+    def setup_class(cls):
+
         # Connection to TM1
         cls.tm1 = TM1Service(**config['tm1srv01'])
 
