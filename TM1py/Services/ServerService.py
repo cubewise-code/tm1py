@@ -114,20 +114,20 @@ class ServerService(ObjectService):
         return timestamp_utc
 
     def get_transaction_log_entries(self, reverse: bool = True, user: str = None, cube: str = None,
-                                    since: datetime = None, top: int = None, **kwargs) -> Dict:
+                                    since: datetime = None, until: datetime = None, top: int = None, **kwargs) -> Dict:
         """
-        
-        :param reverse: 
-        :param user: 
-        :param cube: 
+        :param reverse: Boolean
+        :param user: UserName
+        :param cube: CubeName
         :param since: of type datetime. If it doesn't have tz information, UTC is assumed.
-        :param top: 
-        :return: 
+        :param until: of type datetime. If it doesn't have tz information, UTC is assumed.
+        :param top: int
+        :return:
         """
         reverse = 'desc' if reverse else 'asc'
         url = '/api/v1/TransactionLogEntries?$orderby=TimeStamp {} '.format(reverse)
         # filter on user, cube and time
-        if user or cube or since:
+        if user or cube or since or until:
             log_filters = []
             if user:
                 log_filters.append(format_url("User eq '{}'", user))
@@ -138,6 +138,11 @@ class ServerService(ObjectService):
                 if not since.tzinfo:
                     since = self.utc_localize_time(since)
                 log_filters.append(format_url("TimeStamp ge {}", since.strftime("%Y-%m-%dT%H:%M:%SZ")))
+            if until:
+                # If until doesn't have tz information, UTC is assumed
+                if not until.tzinfo:
+                    until = self.utc_localize_time(until)
+                log_filters.append(format_url("TimeStamp le {}", until.strftime("%Y-%m-%dT%H:%M:%SZ")))
             url += "&$filter={}".format(" and ".join(log_filters))
         # top limit
         if top:
