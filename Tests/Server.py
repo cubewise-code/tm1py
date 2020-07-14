@@ -144,7 +144,6 @@ class TestServerMethods(unittest.TestCase):
         regex = re.compile('TM1ProcessError_.*.log')
         self.assertFalse(regex.search(log_entry))
 
-    @unittest.skip("Doesn't work in TM1 11")
     def test_get_last_transaction_log_entries(self):
         self.tm1.processes.execute_ti_code(lines_prolog="CubeSetLogChanges('{}', {});".format(self.cube_name, 1))
 
@@ -205,7 +204,6 @@ class TestServerMethods(unittest.TestCase):
         for v1, v2, v3 in zip(random_values, reversed(values_from_top), reversed(values_from_since)):
             self.assertAlmostEqual(v1, v2, delta=0.000000001)
 
-    @unittest.skip("Doesn't work in TM1 11")
     def test_get_transaction_log_entries_from_today(self):
         # get datetime from today at 00:00:00
         today = datetime.datetime.combine(datetime.date.today(), datetime.time(0, 0))
@@ -217,8 +215,7 @@ class TestServerMethods(unittest.TestCase):
             entry_date = entry_timestamp.date()
             today_date = datetime.date.today()
             self.assertTrue(entry_date == today_date)
-            
-    @unittest.skip("Doesn't work in TM1 11")
+
     def test_get_transaction_log_entries_until_yesterday(self):
         # get datetime until yesterday at 00:00:00
         yesterday = datetime.datetime.combine(datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
