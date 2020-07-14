@@ -217,6 +217,22 @@ class TestServerMethods(unittest.TestCase):
             entry_date = entry_timestamp.date()
             today_date = datetime.date.today()
             self.assertTrue(entry_date == today_date)
+            
+    @unittest.skip("Doesn't work in TM1 11")
+    def test_get_transaction_log_entries_until_yesterday(self):
+        # get datetime until yesterday at 00:00:00
+        yesterday = datetime.datetime.combine(datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
+        entries = self.tm1.server.get_transaction_log_entries(reverse=True, until=yesterday)
+        self.assertTrue(len(entries) > 0)
+        for entry in entries:
+            # skip invalid timestamps from log
+            if entry['TimeStamp'] == '0000-00-00T00:00Z':
+                continue
+
+            entry_timestamp = dateutil.parser.parse(entry['TimeStamp'])
+            entry_date = entry_timestamp.date()
+            yesterdays_date = datetime.date.today() - timedelta(days=1)
+            self.assertTrue(entry_date <= yesterdays_date)
 
     def test_get_message_log_entries_from_today(self):
         # get datetime from today at 00:00:00
@@ -231,7 +247,7 @@ class TestServerMethods(unittest.TestCase):
             self.assertTrue(entry_date == today_date)
 
     def test_get_message_log_entries_until_yesterday(self):
-        # get datetime from today at 00:00:00
+        # get datetime until yesterday at 00:00:00
         yesterday = datetime.datetime.combine(datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
 
         entries = self.tm1.server.get_message_log_entries(reverse=True, until=yesterday)
@@ -247,7 +263,7 @@ class TestServerMethods(unittest.TestCase):
             self.assertTrue(entry_date <= yesterdays_date)
 
     def test_get_message_log_entries_only_yesterday(self):
-        # get datetime from today at 00:00:00
+        # get datetime only yesterday at 00:00:00
         yesterday = datetime.datetime.combine(datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
         today = datetime.datetime.combine(datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
 
