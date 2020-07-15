@@ -309,8 +309,8 @@ class CellService(ObjectService):
 
         :param mdx: MDX Query, as string
         :param cell_properties: properties to be queried from the cell. E.g. Value, Ordinal, RuleDerived, ... 
-        :param top: integer
-        :param skip: integer
+        :param top: Int, number of cells to return (counting from top)
+        :param skip: Int, number of cells to skip (counting from top)
         :param skip_contexts: skip elements from titles / contexts in response
         :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
         :param skip_consolidated_cells: skip consolidated cells in cellset
@@ -330,15 +330,16 @@ class CellService(ObjectService):
             delete_cellset=True,
             **kwargs)
 
-    def execute_view(self, cube_name: str, view_name: str, cell_properties: Iterable[str] = None, private: bool = False,
+    def execute_view(self, cube_name: str, view_name: str, private: bool = False, cell_properties: Iterable[str] = None,
                      top: int = None, skip_contexts: bool = False, skip: int = None, skip_zeros: bool = False,
                      skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
                      **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
         """ get view content as dictionary with sweet and concise structure.
             Works on NativeView and MDXView !
 
-        :param cube_name: String
-        :param view_name: String
+        :param cube_name: String, name of the cube
+        :param view_name: String, name of the view
+        :param private: True (private) or False (public)
         :param cell_properties: List, cell properties: [Values, Status, HasPicklist, etc.]
         :param private: Boolean
         :param top: Int, number of cells to return (counting from top)
@@ -465,9 +466,9 @@ class CellService(ObjectService):
     def execute_view_values(self, cube_name: str, view_name: str, private: bool = False, **kwargs):
         """ Execute view and retrieve only the cell values
 
-        :param cube_name:
-        :param view_name:
-        :param private:
+        :param cube_name: String, name of the cube
+        :param view_name: String, name of the view
+        :param private: True (private) or False (public)
         :param kwargs:
         :return:
         """
@@ -490,9 +491,9 @@ class CellService(ObjectService):
                                      element_unique_names: bool = True, **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
         """ Execute cube view and retrieve row element names and values in a case and space insensitive dictionary
 
-        :param cube_name:
-        :param view_name:
-        :param private:
+        :param cube_name: String, name of the cube
+        :param view_name: String, name of the view
+        :param private: True (private) or False (public)
         :param element_unique_names:
         :param kwargs:
         :return:
@@ -500,13 +501,14 @@ class CellService(ObjectService):
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private, **kwargs)
         return self.extract_cellset_rows_and_values(cellset_id, element_unique_names, delete_cellset=True, **kwargs)
 
-    def execute_mdx_csv(self, mdx: str, skip_zeros: bool = True, skip_consolidated_cells: bool = False,
-                        skip_rule_derived_cells: bool = False, line_separator: str = "\r\n", **kwargs) -> str:
-        """ Optimized for performance. Get csv string of coordinates and values. 
-        Context dimensions are omitted !
-        Cells with Zero/null are omitted !
+    def execute_mdx_csv(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
+                        skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
+                        line_separator: str = "\r\n", **kwargs) -> str:
+        """ Optimized for performance. Get csv string of coordinates and values.
 
         :param mdx: Valid MDX Query
+        :param top: Int, number of cells to return (counting from top)
+        :param skip: Int, number of cells to skip (counting from top)
         :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
@@ -514,37 +516,62 @@ class CellService(ObjectService):
         :return: String
         """
         cellset_id = self.create_cellset(mdx, **kwargs)
-        return self.extract_cellset_csv(cellset_id=cellset_id, skip_zeros=skip_zeros,
+        return self.extract_cellset_csv(cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                                         skip_consolidated_cells=skip_consolidated_cells,
                                         skip_rule_derived_cells=skip_rule_derived_cells, line_separator=line_separator,
                                         **kwargs)
 
-    def execute_view_csv(self, cube_name: str, view_name: str, private: bool = False, **kwargs) -> str:
+    def execute_view_csv(self, cube_name: str, view_name: str, private: bool = False, top: int = None, skip: int = None,
+                         skip_zeros: bool = True, skip_consolidated_cells: bool = False,
+                         skip_rule_derived_cells: bool = False,
+                         line_separator: str = "\r\n", **kwargs) -> str:
+        """ Optimized for performance. Get csv string of coordinates and values.
+
+        :param cube_name: String, name of the cube
+        :param view_name: String, name of the view
+        :param private: True (private) or False (public)
+        :param top: Int, number of cells to return (counting from top)
+        :param skip: Int, number of cells to skip (counting from top)
+        :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
+        :param skip_consolidated_cells: skip consolidated cells in cellset
+        :param skip_rule_derived_cells: skip rule derived cells in cellset
+        :param line_separator:
+        :return: String
+        """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
-        return self.extract_cellset_csv(cellset_id=cellset_id, **kwargs)
+        return self.extract_cellset_csv(cellset_id=cellset_id, skip_zeros=skip_zeros, top=top, skip=skip,
+                                        skip_consolidated_cells=skip_consolidated_cells,
+                                        skip_rule_derived_cells=skip_rule_derived_cells, line_separator=line_separator,
+                                        **kwargs)
 
-    def execute_mdx_dataframe(self, mdx: str, **kwargs) -> pd.DataFrame:
+    def execute_mdx_dataframe(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
+                              skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
+                              **kwargs) -> pd.DataFrame:
         """ Optimized for performance. Get Pandas DataFrame from MDX Query.
-
-        Context dimensions are omitted in the resulting Dataframe !
-        Cells with Zero/null are omitted !
 
         Takes all arguments from the pandas.read_csv method:
         https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html
 
         :param mdx: Valid MDX Query
+        :param top: Int, number of cells to return (counting from top)
+        :param skip: Int, number of cells to skip (counting from top)
+        :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
+        :param skip_consolidated_cells: skip consolidated cells in cellset
+        :param skip_rule_derived_cells: skip rule derived cells in cellset
         :return: Pandas Dataframe
         """
         cellset_id = self.create_cellset(mdx, **kwargs)
-        return self.extract_cellset_dataframe(cellset_id, **kwargs)
+        return self.extract_cellset_dataframe(cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
+                                              skip_consolidated_cells=skip_consolidated_cells,
+                                              skip_rule_derived_cells=skip_rule_derived_cells, **kwargs)
 
     def execute_view_dataframe_pivot(self, cube_name: str, view_name: str, private: bool = False, dropna: bool = False,
                                      fill_value: bool = None, **kwargs) -> pd.DataFrame:
         """ Execute a cube view to get a pandas pivot dataframe, in the shape of the cube view
 
-        :param cube_name:
-        :param view_name:
-        :param private:
+        :param cube_name: String, name of the cube
+        :param view_name: String, name of the view
+        :param private: True (private) or False (public)
         :param dropna:
         :param fill_value:
         :return:
@@ -570,22 +597,6 @@ class CellService(ObjectService):
             dropna=dropna,
             fill_value=fill_value)
 
-    def execute_view_dataframe(self, cube_name: str, view_name: str, private: bool = False, **kwargs) -> pd.DataFrame:
-        """ Optimized for performance. Get Pandas DataFrame from an existing Cube View 
-        Context dimensions are omitted in the resulting Dataframe !
-        Cells with Zero/null are omitted !
-
-        Takes all arguments from the pandas.read_csv method:
-        https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html
-
-        :param cube_name: Name of the 
-        :param view_name: 
-        :param private: 
-        :return: Pandas Dataframe
-        """
-        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private, **kwargs)
-        return self.extract_cellset_dataframe(cellset_id, **kwargs)
-
     def execute_mdx_cellcount(self, mdx: str, **kwargs) -> int:
         """ Execute MDX in order to understand how many cells are in a cellset.
         Only return number of cells in the cellset. FAST!
@@ -596,12 +607,37 @@ class CellService(ObjectService):
         cellset_id = self.create_cellset(mdx, **kwargs)
         return self.extract_cellset_cellcount(cellset_id, delete_cellset=True, **kwargs)
 
+    def execute_view_dataframe(self, cube_name: str, view_name: str, private: bool = False, top: int = None,
+                               skip: int = None, skip_zeros: bool = True, skip_consolidated_cells: bool = False,
+                               skip_rule_derived_cells: bool = False, **kwargs) -> pd.DataFrame:
+        """ Optimized for performance. Get Pandas DataFrame from an existing Cube View
+        Context dimensions are omitted in the resulting Dataframe !
+        Cells with Zero/null are omitted !
+
+        Takes all arguments from the pandas.read_csv method:
+        https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html
+
+        :param cube_name: String, name of the cube
+        :param view_name: String, name of the view
+        :param private: True (private) or False (public)
+        :param top: Int, number of cells to return (counting from top)
+        :param skip: Int, number of cells to skip (counting from top)
+        :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
+        :param skip_consolidated_cells: skip consolidated cells in cellset
+        :param skip_rule_derived_cells: skip rule derived cells in cellset
+        :return: Pandas Dataframe
+        """
+        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private, **kwargs)
+        return self.extract_cellset_dataframe(cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
+                                              skip_consolidated_cells=skip_consolidated_cells,
+                                              skip_rule_derived_cells=skip_rule_derived_cells, **kwargs)
+
     def execute_view_cellcount(self, cube_name: str, view_name: str, private: bool = False, **kwargs) -> int:
         """ Execute cube view in order to understand how many cells are in a cellset.
         Only return number of cells in the cellset. FAST!
         
-        :param cube_name: cube name
-        :param view_name: view name
+        :param cube_name: String, name of the cube
+        :param view_name: String, name of the view
         :param private: True (private) or False (public)
         :return: 
         """
@@ -627,9 +663,9 @@ class CellService(ObjectService):
                                                 **kwargs) -> CaseAndSpaceInsensitiveSet:
         """ Retrieve row element names and **string** cell values in a case and space insensitive set
 
-        :param cube_name:
-        :param view_name:
-        :param private:
+        :param cube_name: String, name of the cube
+        :param view_name: String, name of the view
+        :param private: True (private) or False (public)
         :param exclude_empty_cells:
         :return:
         """
@@ -661,8 +697,8 @@ class CellService(ObjectService):
                     ['Q3-2004', 14502421.63, 10466934.096533755],
                     ['Q4-2004', 14321501.940000001, 10333095.839474997]]
             },
-        :param top:
-        :param skip:
+        :param top: Int, number of cells to return (counting from top)
+        :param skip: Int, number of cells to skip (counting from top)
         :param mdx: String, valid MDX Query
         :param elem_properties: List of properties to be queried from the elements. E.g. ['UniqueName','Attributes']
         :param member_properties: List of properties to be queried from the members. E.g. ['UniqueName','Attributes']
@@ -717,8 +753,8 @@ class CellService(ObjectService):
                                  14321501.940000001]}
             },
 
-        :param top:
-        :param skip:
+        :param top: Int, number of cells to return (counting from top)
+        :param skip: Int, number of cells to skip (counting from top)
         :param cube_name: cube name
         :param view_name: view name
         :param private: True (private) or False (public)
@@ -773,8 +809,8 @@ class CellService(ObjectService):
                                  14321501.940000001]}
             },
 
-        :param top:
-        :param skip:
+        :param top: Int, number of cells to return (counting from top)
+        :param skip: Int, number of cells to skip (counting from top)
         :param mdx: a valid MDX Query
         :param elem_properties: List of properties to be queried from the elements. E.g. ['UniqueName','Attributes']
         :param member_properties: List of properties to be queried from the members. E.g. ['UniqueName','Attributes']
@@ -829,10 +865,10 @@ class CellService(ObjectService):
                                  14321501.940000001]}
             },
 
-        :param top:
-        :param skip:
-        :param cube_name: cube name
-        :param view_name: view name
+        :param top: Int, number of cells to return (counting from top)
+        :param skip: Int, number of cells to skip (counting from top)
+        :param cube_name: String, name of the cube
+        :param view_name: String, name of the view
         :param private: True (private) or False (public)
         :param elem_properties: List of properties to be queried from the elements. E.g. ['UniqueName','Attributes']
         :param member_properties: List properties to be queried from the member. E.g. ['Name', 'UniqueName']
@@ -1023,6 +1059,8 @@ class CellService(ObjectService):
     def extract_cellset_csv(
             self,
             cellset_id: str,
+            top: int = None,
+            skip: int = None,
             skip_zeros: bool = True,
             skip_consolidated_cells: bool = False,
             skip_rule_derived_cells: bool = False,
@@ -1031,6 +1069,8 @@ class CellService(ObjectService):
         """ Execute cellset and return only the 'Content', in csv format
 
         :param cellset_id: String; ID of existing cellset
+        :param top: Int, number of cells to return (counting from top)
+        :param skip: Int, number of cells to skip (counting from top)
         :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
@@ -1039,8 +1079,9 @@ class CellService(ObjectService):
         """
         _, _, rows, columns = self.extract_cellset_composition(cellset_id, delete_cellset=False, **kwargs)
 
-        cellset_dict = self.extract_cellset_raw(cellset_id, cell_properties=["Value"], skip_contexts=True,
-                                                skip_zeros=skip_zeros, skip_consolidated_cells=skip_consolidated_cells,
+        cellset_dict = self.extract_cellset_raw(cellset_id, cell_properties=["Value"], top=top, skip=skip,
+                                                skip_contexts=True, skip_zeros=skip_zeros,
+                                                skip_consolidated_cells=skip_consolidated_cells,
                                                 skip_rule_derived_cells=skip_rule_derived_cells,
                                                 delete_cellset=True, **kwargs)
         return build_csv_from_cellset_dict(rows, columns, cellset_dict, line_separator=line_separator)
@@ -1048,6 +1089,8 @@ class CellService(ObjectService):
     def extract_cellset_dataframe(
             self,
             cellset_id: str,
+            top: int = None,
+            skip: int = None,
             skip_zeros: bool = True,
             skip_consolidated_cells: bool = False,
             skip_rule_derived_cells: bool = False,
@@ -1055,6 +1098,8 @@ class CellService(ObjectService):
         """ Build pandas data frame from cellset_id
 
         :param cellset_id:
+        :param top: Int, number of cells to return (counting from top)
+        :param skip: Int, number of cells to skip (counting from top)
         :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
@@ -1062,7 +1107,7 @@ class CellService(ObjectService):
         :param kwargs:
         :return:
         """
-        raw_csv = self.extract_cellset_csv(cellset_id=cellset_id, skip_zeros=skip_zeros,
+        raw_csv = self.extract_cellset_csv(cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                                            skip_rule_derived_cells=skip_rule_derived_cells,
                                            skip_consolidated_cells=skip_consolidated_cells,
                                            **kwargs)
@@ -1164,8 +1209,8 @@ class CellService(ObjectService):
         :param delete_cellset:
         :param cellset_id:
         :param cell_properties: properties to be queried from the cell. E.g. Value, Ordinal, RuleDerived, ...
-        :param top: integer
-        :param skip: integer
+        :param top: Int, number of cells to return (counting from top)
+        :param skip: Int, number of cells to skip (counting from top)
         :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
@@ -1209,9 +1254,9 @@ class CellService(ObjectService):
     def create_cellset_from_view(self, cube_name: str, view_name: str, private: bool, **kwargs) -> str:
         """ create cellset from a cube view. return the cellset-id
 
-        :param cube_name:
-        :param view_name:
-        :param private:
+        :param cube_name: String, name of the cube
+        :param view_name: String, name of the view
+        :param private: True (private) or False (public)
         :param kwargs:
         :return:
         """

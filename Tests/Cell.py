@@ -800,6 +800,18 @@ class TestDataMethods(unittest.TestCase):
             self.total_value,
             sum(values))
 
+    def test_execute_mdx_csv_empty_cellset(self):
+        mdx = MdxBuilder.from_cube(CUBE_NAME) \
+            .rows_non_empty() \
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[0], "Element9"))) \
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[1], "Element 18"))) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[2], "Element 2"))) \
+            .to_mdx()
+
+        csv = self.tm1.cubes.cells.execute_mdx_csv(mdx)
+
+        self.assertEqual("", csv)
+
     def test_execute_mdx_csv_skip_rule_derived(self):
         mdx = MdxBuilder.from_cube(CUBE_WITH_RULES_NAME) \
             .rows_non_empty() \
@@ -812,14 +824,35 @@ class TestDataMethods(unittest.TestCase):
 
         csv = self.tm1.cubes.cells.execute_mdx_csv(mdx, skip_rule_derived_cells=True)
 
-        # check header
-        header = csv.split('\r\n')[0]
-        self.assertEqual(
-            ",".join(DIMENSION_NAMES[1:] + ["Value"]),
-            header)
+        self.assertEqual("", csv)
+
+    def test_execute_mdx_csv_top(self):
+        mdx = MdxBuilder.from_cube(CUBE_NAME) \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(DIMENSION_NAMES[1], DIMENSION_NAMES[1]).head(10)) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(DIMENSION_NAMES[2], DIMENSION_NAMES[2]).head(10)) \
+            .add_member_to_where(Member.of(DIMENSION_NAMES[0], "Element1")) \
+            .to_mdx()
+
+        csv = self.tm1.cubes.cells.execute_mdx_csv(mdx, top=10, skip_zeros=False)
 
         records = csv.split("\r\n")
-        self.assertEqual(1, len(records))
+        self.assertEqual(11, len(records))
+
+    def test_execute_mdx_csv_skip(self):
+        mdx = MdxBuilder.from_cube(CUBE_NAME) \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(DIMENSION_NAMES[1], DIMENSION_NAMES[1]).head(10)) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(DIMENSION_NAMES[2], DIMENSION_NAMES[2]).head(10)) \
+            .add_member_to_where(Member.of(DIMENSION_NAMES[0], "Element1")) \
+            .to_mdx()
+
+        csv = self.tm1.cubes.cells.execute_mdx_csv(mdx, skip=10, skip_zeros=False)
+
+        records = csv.split("\r\n")
+        self.assertEqual(91, len(records))
 
     def test_execute_mdx_csv_with_calculated_member(self):
         # MDX Query with calculated MEMBER
