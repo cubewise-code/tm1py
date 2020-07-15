@@ -677,7 +677,7 @@ class CellService(ObjectService):
             mdx: str,
             elem_properties: Iterable[str] = None,
             member_properties: Iterable[str] = None,
-            value_precision: Iterable[str] = 2,
+            value_precision: int = 2,
             top: int = None,
             skip: int = None,
             **kwargs) -> Dict:

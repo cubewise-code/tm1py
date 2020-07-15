@@ -227,6 +227,7 @@ def build_ui_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precision: int
     titles = header_map['titles']
     headers = header_map['headers']
     cardinality = header_map['cardinality']
+    value_format_string = ""
 
     if value_precision:
         value_format_string = "{{0:.{}f}}".format(value_precision)
@@ -278,6 +279,7 @@ def build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precis
     titles = header_map['titles']
     headers = header_map['headers']
     cardinality = header_map['cardinality']
+    value_format_string = ""
 
     if value_precision:
         value_format_string = "{{0:.{}f}}".format(value_precision)
