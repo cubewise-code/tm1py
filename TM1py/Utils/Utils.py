@@ -156,6 +156,12 @@ def build_csv_from_cellset_dict(
     :param line_separator: 
     :return:
     """
+
+    cells = raw_cellset_as_dict['Cells']
+    # empty cellsets produce "" in order to be compliant with previous implementation that used `/Content` API endpoint
+    if len(cells) == 0:
+        return ""
+
     csv_entries = list()
     csv_entries.append(",".join(
         [dimension_name_from_element_unique_name(dimension)
@@ -163,7 +169,6 @@ def build_csv_from_cellset_dict(
          in row_dimensions + column_dimensions] +
         ["Value"]))
 
-    cells = raw_cellset_as_dict['Cells']
     row_axis, column_axis, _ = extract_axes_from_cellset(raw_cellset_as_dict=raw_cellset_as_dict)
 
     for ordinal, cell in enumerate(cells[:top or len(cells)]):
