@@ -144,7 +144,6 @@ class TestServerMethods(unittest.TestCase):
         regex = re.compile('TM1ProcessError_.*.log')
         self.assertFalse(regex.search(log_entry))
 
-    @unittest.skip("Doesn't work in TM1 11")
     def test_get_last_transaction_log_entries(self):
         self.tm1.processes.execute_ti_code(lines_prolog="CubeSetLogChanges('{}', {});".format(self.cube_name, 1))
 

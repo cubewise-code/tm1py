@@ -32,10 +32,15 @@ CELLS_IN_STRING_CUBE = {
 
 LATIN_1_ENCODED_TEXT = "Èd5áÂè"
 
-CUBE_NAME_RPS1 = PREFIX + "Cube" + "_RPS1"
-CUBE_NAME_RPS2 = PREFIX + "Cube" + "_RPS2"
-DIMENSION_NAME_RPS1 = PREFIX + "Dimension" + "_RPS1"
-DIMENSION_NAME_RPS2 = PREFIX + "Dimension" + "_RPS2"
+CUBE_RPS1_NAME = PREFIX + "Cube" + "_RPS1"
+CUBE_RPS2_NAME = PREFIX + "Cube" + "_RPS2"
+
+CUBE_WITH_CONSOLIDATIONS_NAME = CUBE_NAME + "_With_Consolidations"
+DIMENSIONS_WITH_CONSOLIDATIONS_NAMES = [dimension_name + "_With_Consolidations" for dimension_name in DIMENSION_NAMES]
+CUBE_WITH_RULES_NAME = CUBE_NAME + "_With_Rules"
+
+DIMENSION_RPS1_NAME = PREFIX + "Dimension" + "_RPS1"
+DIMENSION_RPS2_NAME = PREFIX + "Dimension" + "_RPS2"
 
 config = configparser.ConfigParser()
 config.read(Path(__file__).parent.joinpath('config.ini'))
@@ -124,6 +129,10 @@ class TestDataMethods(unittest.TestCase):
         # For tests on string related methods
         cls.build_string_cube()
 
+        cls.build_cube_with_rules()
+
+        cls.build_cube_with_consolidations()
+
     @classmethod
     def build_string_cube(cls):
         for d, dimension_name in enumerate(STRING_DIMENSION_NAMES, start=1):
@@ -153,8 +162,40 @@ class TestDataMethods(unittest.TestCase):
                 cls.tm1.dimensions.delete(dimension_name=dimension_name)
 
     @classmethod
+    def build_cube_with_rules(cls):
+        cube = Cube(name=CUBE_WITH_RULES_NAME, dimensions=DIMENSION_NAMES)
+        cube.rules = f"['{DIMENSION_NAMES[0]}':'Element1'] = N: 1;\r\n"
+        cls.tm1.cubes.create(cube)
+
+    @classmethod
+    def remove_cube_with_rules(cls):
+        cls.tm1.cubes.delete(CUBE_WITH_RULES_NAME)
+
+    @classmethod
+    def build_cube_with_consolidations(cls):
+        for dimension_name_source, dimension_name_target in zip(DIMENSION_NAMES, DIMENSIONS_WITH_CONSOLIDATIONS_NAMES):
+            dimension = cls.tm1.dimensions.get(dimension_name=dimension_name_source)
+            dimension.name = dimension_name_target
+            hierarchy = dimension.get_hierarchy(dimension_name_target)
+            for element in hierarchy:
+                hierarchy.add_edge(parent="TOTAL_" + dimension_name_target, component=element.name, weight=1)
+            hierarchy.add_element("TOTAL_" + dimension_name_target, "Consolidated")
+            cls.tm1.dimensions.create(dimension)
+
+        cube = Cube(name=CUBE_WITH_CONSOLIDATIONS_NAME, dimensions=DIMENSIONS_WITH_CONSOLIDATIONS_NAMES)
+        cls.tm1.cubes.create(cube)
+
+    @classmethod
+    def remove_cube_with_consolidations(cls):
+        if cls.tm1.cubes.exists(cube_name=CUBE_WITH_CONSOLIDATIONS_NAME):
+            cls.tm1.cubes.delete(cube_name=CUBE_WITH_CONSOLIDATIONS_NAME)
+        for dimension_name in DIMENSIONS_WITH_CONSOLIDATIONS_NAMES:
+            if cls.tm1.dimensions.exists(dimension_name=dimension_name):
+                cls.tm1.dimensions.delete(dimension_name=dimension_name)
+
+    @classmethod
     def build_assets_for_relative_proportional_spread_tests(cls):
-        for dimension_name in (DIMENSION_NAME_RPS1, DIMENSION_NAME_RPS2):
+        for dimension_name in (DIMENSION_RPS1_NAME, DIMENSION_RPS2_NAME):
             dimension = Dimension(dimension_name)
             hierarchy = Hierarchy(dimension_name, dimension_name)
             hierarchy.add_element(element_name="c1", element_type="Consolidated")
@@ -166,8 +207,8 @@ class TestDataMethods(unittest.TestCase):
             if not cls.tm1.dimensions.exists(dimension.name):
                 cls.tm1.dimensions.create(dimension)
 
-        for cube_name in (CUBE_NAME_RPS1, CUBE_NAME_RPS2):
-            cube = Cube(name=cube_name, dimensions=(DIMENSION_NAME_RPS1, DIMENSION_NAME_RPS2))
+        for cube_name in (CUBE_RPS1_NAME, CUBE_RPS2_NAME):
+            cube = Cube(name=cube_name, dimensions=(DIMENSION_RPS1_NAME, DIMENSION_RPS2_NAME))
             if not cls.tm1.cubes.exists(cube.name):
                 cls.tm1.cubes.create(cube)
             # zero out cube
@@ -175,10 +216,10 @@ class TestDataMethods(unittest.TestCase):
 
     @classmethod
     def remove_assets_for_relative_proportional_spread_tests(cls):
-        for cube_name in (CUBE_NAME_RPS1, CUBE_NAME_RPS2):
+        for cube_name in (CUBE_RPS1_NAME, CUBE_RPS2_NAME):
             if cls.tm1.cubes.exists(cube_name):
                 cls.tm1.cubes.delete(cube_name=cube_name)
-        for dimension_name in (DIMENSION_NAME_RPS1, DIMENSION_NAME_RPS2):
+        for dimension_name in (DIMENSION_RPS1_NAME, DIMENSION_RPS2_NAME):
             if cls.tm1.dimensions.exists(dimension_name):
                 cls.tm1.dimensions.delete(dimension_name=dimension_name)
 
@@ -206,21 +247,21 @@ class TestDataMethods(unittest.TestCase):
             ('e1', 'e2'): 2,
             ('e1', 'e3'): 3,
         }
-        self.tm1.cubes.cells.write_values(CUBE_NAME_RPS1, cells)
+        self.tm1.cubes.cells.write_values(CUBE_RPS1_NAME, cells)
 
         self.tm1.cubes.cells.relative_proportional_spread(
             value=12,
-            cube=CUBE_NAME_RPS1,
-            unique_element_names=("[" + DIMENSION_NAME_RPS1 + "].[e2]", "[" + DIMENSION_NAME_RPS2 + "].[c1]"),
-            reference_cube=CUBE_NAME_RPS1,
-            reference_unique_element_names=("[" + DIMENSION_NAME_RPS1 + "].[c1]", "[" + DIMENSION_NAME_RPS2 + "].[c1]"))
+            cube=CUBE_RPS1_NAME,
+            unique_element_names=("[" + DIMENSION_RPS1_NAME + "].[e2]", "[" + DIMENSION_RPS2_NAME + "].[c1]"),
+            reference_cube=CUBE_RPS1_NAME,
+            reference_unique_element_names=("[" + DIMENSION_RPS1_NAME + "].[c1]", "[" + DIMENSION_RPS2_NAME + "].[c1]"))
 
-        mdx = MdxBuilder.from_cube(CUBE_NAME_RPS1) \
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAME_RPS1, "e2"))) \
+        mdx = MdxBuilder.from_cube(CUBE_RPS1_NAME) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_RPS1_NAME, "e2"))) \
             .add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
-            Member.of(DIMENSION_NAME_RPS2, "e1"),
-            Member.of(DIMENSION_NAME_RPS2, "e2"),
-            Member.of(DIMENSION_NAME_RPS2, "e3")])).to_mdx()
+            Member.of(DIMENSION_RPS2_NAME, "e1"),
+            Member.of(DIMENSION_RPS2_NAME, "e2"),
+            Member.of(DIMENSION_RPS2_NAME, "e3")])).to_mdx()
 
         values = self.tm1.cubes.cells.execute_mdx_values(mdx)
         self.assertEqual(next(values), 2)
@@ -235,23 +276,23 @@ class TestDataMethods(unittest.TestCase):
             ('e1', 'e2'): 2,
             ('e1', 'e3'): 3,
         }
-        self.tm1.cubes.cells.write_values(CUBE_NAME_RPS1, cells)
+        self.tm1.cubes.cells.write_values(CUBE_RPS1_NAME, cells)
 
         self.tm1.cubes.cells.relative_proportional_spread(
             value=12,
-            cube=CUBE_NAME_RPS1,
-            unique_element_names=("[" + DIMENSION_NAME_RPS1 + "].[" + DIMENSION_NAME_RPS1 + "].[e2]",
-                                  "[" + DIMENSION_NAME_RPS2 + "].[" + DIMENSION_NAME_RPS2 + "].[c1]"),
-            reference_cube=CUBE_NAME_RPS1,
-            reference_unique_element_names=("[" + DIMENSION_NAME_RPS1 + "].[" + DIMENSION_NAME_RPS1 + "].[c1]",
-                                            "[" + DIMENSION_NAME_RPS2 + "].[" + DIMENSION_NAME_RPS2 + "].[c1]"))
+            cube=CUBE_RPS1_NAME,
+            unique_element_names=("[" + DIMENSION_RPS1_NAME + "].[" + DIMENSION_RPS1_NAME + "].[e2]",
+                                  "[" + DIMENSION_RPS2_NAME + "].[" + DIMENSION_RPS2_NAME + "].[c1]"),
+            reference_cube=CUBE_RPS1_NAME,
+            reference_unique_element_names=("[" + DIMENSION_RPS1_NAME + "].[" + DIMENSION_RPS1_NAME + "].[c1]",
+                                            "[" + DIMENSION_RPS2_NAME + "].[" + DIMENSION_RPS2_NAME + "].[c1]"))
 
-        mdx = MdxBuilder.from_cube(CUBE_NAME_RPS1) \
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAME_RPS1, "e2"))) \
+        mdx = MdxBuilder.from_cube(CUBE_RPS1_NAME) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_RPS1_NAME, "e2"))) \
             .add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
-            Member.of(DIMENSION_NAME_RPS2, "e1"),
-            Member.of(DIMENSION_NAME_RPS2, "e2"),
-            Member.of(DIMENSION_NAME_RPS2, "e3")])).to_mdx()
+            Member.of(DIMENSION_RPS2_NAME, "e1"),
+            Member.of(DIMENSION_RPS2_NAME, "e2"),
+            Member.of(DIMENSION_RPS2_NAME, "e3")])).to_mdx()
 
         values = self.tm1.cubes.cells.execute_mdx_values(mdx)
         self.assertEqual(next(values), 2)
@@ -266,20 +307,20 @@ class TestDataMethods(unittest.TestCase):
             ('e1', 'e2'): 2,
             ('e1', 'e3'): 3,
         }
-        self.tm1.cubes.cells.write_values(CUBE_NAME_RPS1, cells)
+        self.tm1.cubes.cells.write_values(CUBE_RPS1_NAME, cells)
 
         self.tm1.cubes.cells.relative_proportional_spread(
             value=12,
-            cube=CUBE_NAME_RPS1,
-            unique_element_names=("[" + DIMENSION_NAME_RPS1 + "].[e2]", "[" + DIMENSION_NAME_RPS2 + "].[c1]"),
-            reference_unique_element_names=("[" + DIMENSION_NAME_RPS1 + "].[c1]", "[" + DIMENSION_NAME_RPS2 + "].[c1]"))
+            cube=CUBE_RPS1_NAME,
+            unique_element_names=("[" + DIMENSION_RPS1_NAME + "].[e2]", "[" + DIMENSION_RPS2_NAME + "].[c1]"),
+            reference_unique_element_names=("[" + DIMENSION_RPS1_NAME + "].[c1]", "[" + DIMENSION_RPS2_NAME + "].[c1]"))
 
-        mdx = MdxBuilder.from_cube(CUBE_NAME_RPS1) \
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAME_RPS1, "e2"))) \
+        mdx = MdxBuilder.from_cube(CUBE_RPS1_NAME) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_RPS1_NAME, "e2"))) \
             .add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
-            Member.of(DIMENSION_NAME_RPS2, "e1"),
-            Member.of(DIMENSION_NAME_RPS2, "e2"),
-            Member.of(DIMENSION_NAME_RPS2, "e3")])).to_mdx()
+            Member.of(DIMENSION_RPS2_NAME, "e1"),
+            Member.of(DIMENSION_RPS2_NAME, "e2"),
+            Member.of(DIMENSION_RPS2_NAME, "e3")])).to_mdx()
 
         values = self.tm1.cubes.cells.execute_mdx_values(mdx)
         self.assertEqual(next(values), 2)
@@ -294,21 +335,21 @@ class TestDataMethods(unittest.TestCase):
             ('e1', 'e2'): 2,
             ('e1', 'e3'): 3,
         }
-        self.tm1.cubes.cells.write_values(CUBE_NAME_RPS2, cells)
+        self.tm1.cubes.cells.write_values(CUBE_RPS2_NAME, cells)
 
         self.tm1.cubes.cells.relative_proportional_spread(
             value=12,
-            cube=CUBE_NAME_RPS1,
-            unique_element_names=("[" + DIMENSION_NAME_RPS1 + "].[e2]", "[" + DIMENSION_NAME_RPS2 + "].[c1]"),
-            reference_cube=CUBE_NAME_RPS2,
-            reference_unique_element_names=("[" + DIMENSION_NAME_RPS1 + "].[c1]", "[" + DIMENSION_NAME_RPS2 + "].[c1]"))
+            cube=CUBE_RPS1_NAME,
+            unique_element_names=("[" + DIMENSION_RPS1_NAME + "].[e2]", "[" + DIMENSION_RPS2_NAME + "].[c1]"),
+            reference_cube=CUBE_RPS2_NAME,
+            reference_unique_element_names=("[" + DIMENSION_RPS1_NAME + "].[c1]", "[" + DIMENSION_RPS2_NAME + "].[c1]"))
 
-        mdx = MdxBuilder.from_cube(CUBE_NAME_RPS1) \
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAME_RPS1, "e2"))) \
+        mdx = MdxBuilder.from_cube(CUBE_RPS1_NAME) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_RPS1_NAME, "e2"))) \
             .add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
-            Member.of(DIMENSION_NAME_RPS2, "e1"),
-            Member.of(DIMENSION_NAME_RPS2, "e2"),
-            Member.of(DIMENSION_NAME_RPS2, "e3")])).to_mdx()
+            Member.of(DIMENSION_RPS2_NAME, "e1"),
+            Member.of(DIMENSION_RPS2_NAME, "e2"),
+            Member.of(DIMENSION_RPS2_NAME, "e3")])).to_mdx()
 
         values = self.tm1.cubes.cells.execute_mdx_values(mdx)
         self.assertEqual(next(values), 2)
@@ -415,6 +456,70 @@ class TestDataMethods(unittest.TestCase):
                 Utils.dimension_name_from_element_unique_name(coordinates[1]),
                 DIMENSION_NAMES[1])
 
+    def test_execute_mdx_skip_consolidated(self):
+        mdx = MdxBuilder.from_cube(CUBE_WITH_CONSOLIDATIONS_NAME) \
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+            Member.of(DIMENSIONS_WITH_CONSOLIDATIONS_NAMES[0], "Total_" + DIMENSIONS_WITH_CONSOLIDATIONS_NAMES[0]),
+            Member.of(DIMENSIONS_WITH_CONSOLIDATIONS_NAMES[0], "Element1")])) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(DIMENSIONS_WITH_CONSOLIDATIONS_NAMES[1], "Element1"))) \
+            .add_member_to_where("[" + DIMENSIONS_WITH_CONSOLIDATIONS_NAMES[2] + "].[Element1]").to_mdx()
+
+        data = self.tm1.cubes.cells.execute_mdx(mdx, skip_contexts=True, skip_consolidated_cells=True)
+
+        self.assertEqual(len(data), 1)
+        for coordinates, cell in data.items():
+            self.assertEqual(len(coordinates), 2)
+            self.assertEqual(
+                Utils.dimension_name_from_element_unique_name(coordinates[0]),
+                DIMENSIONS_WITH_CONSOLIDATIONS_NAMES[0])
+            self.assertEqual(
+                Utils.dimension_name_from_element_unique_name(coordinates[1]),
+                DIMENSIONS_WITH_CONSOLIDATIONS_NAMES[1])
+
+    def test_execute_mdx_skip_rule_derived(self):
+        mdx = MdxBuilder.from_cube(CUBE_WITH_RULES_NAME) \
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+            Member.of(DIMENSION_NAMES[0], "Element 1"),
+            Member.of(DIMENSION_NAMES[0], "Element 2")])) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[1], "Element1"))) \
+            .add_member_to_where("[" + DIMENSION_NAMES[2] + "].[Element1]").to_mdx()
+
+        data = self.tm1.cubes.cells.execute_mdx(mdx, skip_contexts=True, skip_rule_derived_cells=True)
+
+        self.assertEqual(len(data), 1)
+        for coordinates, cell in data.items():
+            self.assertEqual(len(coordinates), 2)
+            self.assertEqual(
+                Utils.dimension_name_from_element_unique_name(coordinates[0]),
+                DIMENSION_NAMES[0])
+            self.assertEqual(
+                Utils.dimension_name_from_element_unique_name(coordinates[1]),
+                DIMENSION_NAMES[1])
+
+    def test_execute_mdx_skip_zeros(self):
+        mdx = MdxBuilder.from_cube(CUBE_NAME) \
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+            Member.of(DIMENSION_NAMES[0], "Element 1"),
+            Member.of(DIMENSION_NAMES[0], "Element 2")])) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[1], "Element1"))) \
+            .add_member_to_where("[" + DIMENSION_NAMES[2] + "].[Element1]").to_mdx()
+
+        data = self.tm1.cubes.cells.execute_mdx(mdx, skip_contexts=False, skip_zeros=True)
+
+        self.assertEqual(len(data), 1)
+        for coordinates, cell in data.items():
+            self.assertEqual(len(coordinates), 3)
+            self.assertEqual(
+                Utils.dimension_name_from_element_unique_name(coordinates[0]),
+                DIMENSION_NAMES[0])
+            self.assertEqual(
+                Utils.dimension_name_from_element_unique_name(coordinates[1]),
+                DIMENSION_NAMES[1])
+            self.assertEqual(
+                Utils.dimension_name_from_element_unique_name(coordinates[2]),
+                DIMENSION_NAMES[2])
+
     def test_execute_mdx_raw_skip_contexts(self):
         mdx = MdxBuilder.from_cube(CUBE_NAME) \
             .add_hierarchy_set_to_row_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[0], "Element1"))) \
@@ -448,14 +553,14 @@ class TestDataMethods(unittest.TestCase):
 
     def test_execute_mdx_rows_and_values_empty_cellset(self):
         # make sure it's empty
-        self.tm1.cubes.cells.write_values(CUBE_NAME, {("Element1", "Element1", "Element1"): 0})
+        self.tm1.cubes.cells.write_values(CUBE_NAME, {("Element10", "Element11", "Element13"): 0})
 
         mdx = MdxBuilder.from_cube(CUBE_NAME) \
             .rows_non_empty() \
-            .add_hierarchy_set_to_row_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[0], "Element1"))) \
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[0], "Element10"))) \
             .columns_non_empty() \
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[1], "Element1"))) \
-            .add_member_to_where("[" + DIMENSION_NAMES[2] + "].[Element1]").to_mdx()
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[1], "Element11"))) \
+            .add_member_to_where("[" + DIMENSION_NAMES[2] + "].[Element13]").to_mdx()
 
         data = self.tm1.cubes.cells.execute_mdx_rows_and_values(mdx, element_unique_names=True)
         self.assertEqual(len(data), 0)
@@ -673,6 +778,7 @@ class TestDataMethods(unittest.TestCase):
 
         # check type
         self.assertIsInstance(csv, str)
+
         records = csv.split('\r\n')[1:]
         coordinates = {tuple(record.split(',')[0:3])
                        for record
@@ -694,6 +800,27 @@ class TestDataMethods(unittest.TestCase):
             self.total_value,
             sum(values))
 
+    def test_execute_mdx_csv_skip_rule_derived(self):
+        mdx = MdxBuilder.from_cube(CUBE_WITH_RULES_NAME) \
+            .rows_non_empty() \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(DIMENSION_NAMES[1], DIMENSION_NAMES[1]).head(100)) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(DIMENSION_NAMES[2], DIMENSION_NAMES[2]).head(100)) \
+            .add_member_to_where(Member.of(DIMENSION_NAMES[0], "Element1")) \
+            .to_mdx()
+
+        csv = self.tm1.cubes.cells.execute_mdx_csv(mdx, skip_rule_derived_cells=True)
+
+        # check header
+        header = csv.split('\r\n')[0]
+        self.assertEqual(
+            ",".join(DIMENSION_NAMES[1:] + ["Value"]),
+            header)
+
+        records = csv.split("\r\n")
+        self.assertEqual(1, len(records))
+
     def test_execute_mdx_csv_with_calculated_member(self):
         # MDX Query with calculated MEMBER
         mdx = MdxBuilder.from_cube(CUBE_NAME).with_member(CalculatedMember.lookup_attribute(
@@ -709,7 +836,13 @@ class TestDataMethods(unittest.TestCase):
 
         csv = self.tm1.cubes.cells.execute_mdx_csv(mdx)
 
-        # check type
+        # check header
+        header = csv.split('\r\n')[0]
+        self.assertEqual(
+            ",".join(DIMENSION_NAMES[0:2] + ["Value"]),
+            header)
+
+        # check coordinates
         records = csv.split('\r\n')[1:]
         coordinates = {tuple(record.split(',')[0:2])
                        for record
@@ -1480,13 +1613,13 @@ class TestDataMethods(unittest.TestCase):
         self.assertNotEqual(LATIN_1_ENCODED_TEXT, next(values))
 
     def test_clear_with_mdx_happy_case(self):
-        cells = {("Element1", "Element1", "Element1"): 1}
+        cells = {("Element17", "Element21", "Element15"): 1}
         self.tm1.cells.write_values(CUBE_NAME, cells)
 
         mdx = MdxBuilder.from_cube(CUBE_NAME) \
-            .add_hierarchy_set_to_row_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[0], "Element1"))) \
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[1], "Element1"))) \
-            .where(Member.of(DIMENSION_NAMES[2], "Element1")) \
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[0], "Element17"))) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[1], "Element21"))) \
+            .where(Member.of(DIMENSION_NAMES[2], "Element15")) \
             .to_mdx()
 
         self.tm1.cells.clear_with_mdx(cube=CUBE_NAME, mdx=mdx)
@@ -1495,13 +1628,13 @@ class TestDataMethods(unittest.TestCase):
         self.assertEqual(value, None)
 
     def test_clear_with_mdx_all_on_axis0(self):
-        cells = {("Element1", "Element1", "Element1"): 1}
+        cells = {("Element19", "Element11", "Element31"): 1}
         self.tm1.cells.write_values(CUBE_NAME, cells)
 
         mdx = MdxBuilder.from_cube(CUBE_NAME) \
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[0], "Element1"))) \
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[1], "Element1"))) \
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[2], "Element1"))) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[0], "Element19"))) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[1], "Element11"))) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[2], "Element31"))) \
             .to_mdx()
         self.tm1.cells.clear_with_mdx(cube=CUBE_NAME, mdx=mdx)
 
@@ -1554,10 +1687,13 @@ class TestDataMethods(unittest.TestCase):
     @classmethod
     def teardown_class(cls):
         cls.tm1.cubes.delete(CUBE_NAME)
+        cls.remove_string_cube()
+        cls.remove_cube_with_rules()
+        cls.remove_cube_with_consolidations()
         for dimension_name in DIMENSION_NAMES:
             cls.tm1.dimensions.delete(dimension_name)
         cls.remove_assets_for_relative_proportional_spread_tests()
-        cls.remove_string_cube()
+
         cls.tm1.logout()
 
 

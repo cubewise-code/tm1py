@@ -312,7 +312,7 @@ class CellService(ObjectService):
         :param top: integer
         :param skip: integer
         :param skip_contexts: skip elements from titles / contexts in response
-        :param skip_zeros: skip zeros in cellset
+        :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
         :return: content in sweet concise structure.
@@ -344,7 +344,7 @@ class CellService(ObjectService):
         :param top: Int, number of cells to return (counting from top)
         :param skip: Int, number of cells to skip (counting from top)
         :param skip_contexts: skip elements from titles / contexts in response
-        :param skip_zeros: skip zeros in cellset
+        :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
 
@@ -386,8 +386,8 @@ class CellService(ObjectService):
         :param skip: Integer limiting the number of cells and the number or rows returned
         :param skip_contexts: skip elements from titles / contexts in response
         :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
-        :param skip_consolidated_cells:
-        :param skip_rule_derived_cells:
+        :param skip_consolidated_cells: skip consolidated cells in cellset
+        :param skip_rule_derived_cells: skip rule derived cells in cellset
         :return: Raw format from TM1.
         """
         cellset_id = self.create_cellset(mdx=mdx, **kwargs)
@@ -432,9 +432,9 @@ class CellService(ObjectService):
         :param top: Integer limiting the number of cells and the number or rows returned
         :param skip_contexts: skip elements from titles / contexts in response
         :param skip: Integer limiting the number of cells and the number or rows returned
-        :param skip_zeros:
-        :param skip_consolidated_cells:
-        :param skip_rule_derived_cells:
+        :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
+        :param skip_consolidated_cells: skip consolidated cells in cellset
+        :param skip_rule_derived_cells: skip rule derived cells in cellset
         :return: Raw format from TM1.
         """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private, **kwargs)
@@ -507,9 +507,10 @@ class CellService(ObjectService):
         Cells with Zero/null are omitted !
 
         :param mdx: Valid MDX Query
-        :param skip_zeros: skip zeros in cellset
+        :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
+        :param line_separator:
         :return: String
         """
         cellset_id = self.create_cellset(mdx, **kwargs)
@@ -872,7 +873,7 @@ class CellService(ObjectService):
         :param top: Integer limiting the number of cells and the number or rows returned
         :param skip: Integer limiting the number of cells and the number or rows returned
         :param skip_contexts:
-        :param skip_zeros: skip zeros in cellset
+        :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
         :return: Raw format from TM1.
@@ -909,9 +910,9 @@ class CellService(ObjectService):
             if skip_zeros:
                 filters.append("Value ne 0 and Value ne null")
             if skip_consolidated_cells:
-                filters.append("RuleDerived eq false")
+                filters.append("Consolidated eq false")
             if skip_rule_derived_cells:
-                filters.append("Consolidate eq false")
+                filters.append("RuleDerived eq false")
 
             filter_cells = " and ".join(filters)
 
@@ -1030,7 +1031,7 @@ class CellService(ObjectService):
         """ Execute cellset and return only the 'Content', in csv format
 
         :param cellset_id: String; ID of existing cellset
-        :param skip_zeros: skip zeros in cellset
+        :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
         :param line_separator:
@@ -1054,8 +1055,7 @@ class CellService(ObjectService):
         """ Build pandas data frame from cellset_id
 
         :param cellset_id:
-        :param skip_contexts:
-        :param skip_zeros: skip zeros in cellset
+        :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
 
@@ -1166,7 +1166,7 @@ class CellService(ObjectService):
         :param cell_properties: properties to be queried from the cell. E.g. Value, Ordinal, RuleDerived, ...
         :param top: integer
         :param skip: integer
-        :param skip_zeros: skip zeros in cellset
+        :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
         :return: Content in sweet consice strcuture.
