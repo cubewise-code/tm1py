@@ -145,7 +145,8 @@ def build_csv_from_cellset_dict(
         column_dimensions: List[str],
         raw_cellset_as_dict: Dict,
         top: Optional[int] = None,
-        line_separator="\r\n") -> str:
+        line_separator="\r\n",
+        value_separator=",") -> str:
     """ transform raw cellset data into concise dictionary
 
     :param column_dimensions:
@@ -153,7 +154,8 @@ def build_csv_from_cellset_dict(
     :param raw_cellset_as_dict:
     :param top: Maximum Number of cells
     :param top: Number of cells of skip
-    :param line_separator: 
+    :param line_separator:
+    :param value_separator:
     :return:
     """
 
@@ -163,7 +165,7 @@ def build_csv_from_cellset_dict(
         return ""
 
     csv_entries = list()
-    csv_entries.append(",".join(
+    csv_entries.append(value_separator.join(
         [dimension_name_from_element_unique_name(dimension)
          for dimension
          in row_dimensions + column_dimensions] +
@@ -185,7 +187,7 @@ def build_csv_from_cellset_dict(
 
         csv_entry.append(str(cell["Value"]))
 
-        csv_entries.append(",".join(csv_entry))
+        csv_entries.append(value_separator.join(csv_entry))
 
     return line_separator.join(csv_entries)
 

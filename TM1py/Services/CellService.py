@@ -503,7 +503,7 @@ class CellService(ObjectService):
 
     def execute_mdx_csv(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
                         skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
-                        line_separator: str = "\r\n", **kwargs) -> str:
+                        line_separator: str = "\r\n", value_separator: str = ",", **kwargs) -> str:
         """ Optimized for performance. Get csv string of coordinates and values.
 
         :param mdx: Valid MDX Query
@@ -513,18 +513,19 @@ class CellService(ObjectService):
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
         :param line_separator:
+        :param value_separator:
         :return: String
         """
         cellset_id = self.create_cellset(mdx, **kwargs)
         return self.extract_cellset_csv(cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                                         skip_consolidated_cells=skip_consolidated_cells,
                                         skip_rule_derived_cells=skip_rule_derived_cells, line_separator=line_separator,
-                                        **kwargs)
+                                        value_separator=value_separator, **kwargs)
 
     def execute_view_csv(self, cube_name: str, view_name: str, private: bool = False, top: int = None, skip: int = None,
                          skip_zeros: bool = True, skip_consolidated_cells: bool = False,
                          skip_rule_derived_cells: bool = False,
-                         line_separator: str = "\r\n", **kwargs) -> str:
+                         line_separator: str = "\r\n", value_separator: str = ",", **kwargs) -> str:
         """ Optimized for performance. Get csv string of coordinates and values.
 
         :param cube_name: String, name of the cube
@@ -536,13 +537,14 @@ class CellService(ObjectService):
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
         :param line_separator:
+        :param value_separator:
         :return: String
         """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private)
         return self.extract_cellset_csv(cellset_id=cellset_id, skip_zeros=skip_zeros, top=top, skip=skip,
                                         skip_consolidated_cells=skip_consolidated_cells,
                                         skip_rule_derived_cells=skip_rule_derived_cells, line_separator=line_separator,
-                                        **kwargs)
+                                        value_separator=value_separator, **kwargs)
 
     def execute_mdx_dataframe(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
                               skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
@@ -1065,6 +1067,7 @@ class CellService(ObjectService):
             skip_consolidated_cells: bool = False,
             skip_rule_derived_cells: bool = False,
             line_separator: str = "\r\n",
+            value_separator: str = ",",
             **kwargs) -> str:
         """ Execute cellset and return only the 'Content', in csv format
 
@@ -1075,6 +1078,7 @@ class CellService(ObjectService):
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
         :param line_separator:
+        :param value_separator
         :return: Raw format from TM1.
         """
         _, _, rows, columns = self.extract_cellset_composition(cellset_id, delete_cellset=False, **kwargs)
@@ -1084,7 +1088,7 @@ class CellService(ObjectService):
                                                 skip_consolidated_cells=skip_consolidated_cells,
                                                 skip_rule_derived_cells=skip_rule_derived_cells,
                                                 delete_cellset=True, **kwargs)
-        return build_csv_from_cellset_dict(rows, columns, cellset_dict, line_separator=line_separator)
+        return build_csv_from_cellset_dict(rows, columns, cellset_dict, line_separator=line_separator,value_separator=value_separator)
 
     def extract_cellset_dataframe(
             self,
@@ -1109,7 +1113,7 @@ class CellService(ObjectService):
         """
         raw_csv = self.extract_cellset_csv(cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                                            skip_rule_derived_cells=skip_rule_derived_cells,
-                                           skip_consolidated_cells=skip_consolidated_cells,
+                                           skip_consolidated_cells=skip_consolidated_cells, value_separator="|",
                                            **kwargs)
         if not raw_csv:
             return pd.DataFrame()
@@ -1118,7 +1122,7 @@ class CellService(ObjectService):
         # make sure all element names are strings and values column is derived from data
         if 'dtype' not in kwargs:
             kwargs['dtype'] = {'Value': None, **{col: str for col in range(999)}}
-        return pd.read_csv(memory_file, sep=',', **kwargs)
+        return pd.read_csv(memory_file, sep='|', **kwargs)
 
     @tidy_cellset
     def extract_cellset_power_bi(self, cellset_id: str, **kwargs) -> pd.DataFrame:
