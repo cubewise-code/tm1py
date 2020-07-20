@@ -33,11 +33,11 @@ def format_url(url, *args: str, **kwargs: str) -> str:
     :param args: arguments to placeholders
     :return:
     """
-    args = [arg.replace("'", "''").replace('%', '%25') if isinstance(arg, str) else arg
+    args = [arg.replace("'", "''") if isinstance(arg, str) else arg
             for arg
             in args]
 
-    kwargs = {key: value.replace("'", "''").replace('%', '%25') if isinstance(value, str) else value
+    kwargs = {key: value.replace("'", "''") if isinstance(value, str) else value
               for key, value
               in kwargs.items()}
 
