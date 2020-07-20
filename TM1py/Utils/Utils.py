@@ -26,6 +26,10 @@ def get_all_servers_from_adminhost(adminhost='localhost') -> List:
     return servers
 
 
+def build_url_friendly_object_name(object_name: str) -> str:
+    return object_name.replace("'", "''").replace('%', '%25').replace('#', '%23')
+
+
 def format_url(url, *args: str, **kwargs: str) -> str:
     """ build url and escape single quotes in args and kwargs
 
@@ -33,11 +37,11 @@ def format_url(url, *args: str, **kwargs: str) -> str:
     :param args: arguments to placeholders
     :return:
     """
-    args = [arg.replace("'", "''") if isinstance(arg, str) else arg
+    args = [build_url_friendly_object_name(arg) if isinstance(arg, str) else arg
             for arg
             in args]
 
-    kwargs = {key: value.replace("'", "''") if isinstance(value, str) else value
+    kwargs = {key: build_url_friendly_object_name(value) if isinstance(value, str) else value
               for key, value
               in kwargs.items()}
 

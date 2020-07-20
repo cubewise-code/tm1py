@@ -1,7 +1,7 @@
 import configparser
-from pathlib import Path
 import unittest
 import uuid
+from pathlib import Path
 
 from TM1py import Element, Hierarchy, Dimension
 from TM1py.Objects import Cube
@@ -23,7 +23,7 @@ class TestCubeMethods(unittest.TestCase):
         PREFIX + "dimension3"]
 
     @classmethod
-    def setUpClass(cls):
+    def setUp(cls):
         cls.tm1 = TM1Service(**config['tm1srv01'])
 
         # Build Dimensions
@@ -146,10 +146,8 @@ class TestCubeMethods(unittest.TestCase):
         errors = self.tm1.cubes.check_rules(cube_name=self.cube_name)
         self.assertEqual(1, len(errors))
 
-
-
     @classmethod
-    def tearDownClass(cls):
+    def tearDown(cls):
         cls.tm1.cubes.delete(cls.cube_name)
         for dimension in cls.dimension_names:
             cls.tm1.dimensions.delete(dimension)

@@ -24,6 +24,10 @@ class TestSubsetMethods(unittest.TestCase):
         cls.subset_name_static = PREFIX + "static"
         cls.subset_name_dynamic = PREFIX + "dynamic"
 
+        cls.unfriendly_dimension_name = PREFIX + "Dimension#%AD"
+        cls.unfriendly_subset_name = PREFIX + "Subset#%AD"
+        cls.unfriendly_element_name = PREFIX + "Element#%AD"
+
     def setUp(self):
         # Instantiate Subsets
         self.static_subset = Subset(
@@ -47,6 +51,11 @@ class TestSubsetMethods(unittest.TestCase):
         d = Dimension(self.dimension_name, hierarchies=[h])
         self.tm1.dimensions.create(d)
 
+        elements = [Element(self.unfriendly_element_name, "Numeric")]
+        h = Hierarchy(self.unfriendly_dimension_name, self.unfriendly_dimension_name, elements)
+        d = Dimension(self.unfriendly_dimension_name, hierarchies=[h])
+        self.tm1.dimensions.create(d)
+
         for private in (True, False):
             self.tm1.dimensions.subsets.create(
                 subset=self.static_subset,
@@ -56,7 +65,10 @@ class TestSubsetMethods(unittest.TestCase):
                 private=private)
 
     def tearDown(self):
-        self.tm1.dimensions.delete(self.dimension_name)
+        if self.tm1.dimensions.exists(self.dimension_name):
+            self.tm1.dimensions.delete(self.dimension_name)
+        if self.tm1.dimensions.exists(self.unfriendly_dimension_name):
+            self.tm1.dimensions.delete(self.unfriendly_dimension_name)
 
     def test_is_dynamic(self):
         subset = self.tm1.dimensions.subsets.get(
@@ -438,6 +450,47 @@ class TestSubsetMethods(unittest.TestCase):
         self.assertEqual(
             ['USD', 'EUR', 'JPY', 'CNY', 'GBP', 'NZD', "Dum'my"],
             element_names)
+
+    def test_create_subset_with_url_unfriendly_characters_in_name(self):
+        subset = Subset(
+            subset_name=self.unfriendly_subset_name,
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.dimension_name,
+            elements=[])
+        self.tm1.subsets.create(subset=subset, private=False)
+
+        subset = self.tm1.subsets.get(dimension_name=self.dimension_name, subset_name=self.unfriendly_subset_name)
+        self.assertEqual(self.unfriendly_subset_name, subset.name)
+        self.assertEqual([], subset.elements)
+
+    def test_create_subset_with_url_unfriendly_characters_in_elements_dynamic(self):
+        expression = "{[" + self.unfriendly_dimension_name + "].[" + self.unfriendly_element_name + "]}"
+        subset = Subset(
+            subset_name=self.unfriendly_subset_name,
+            dimension_name=self.unfriendly_dimension_name,
+            hierarchy_name=self.unfriendly_dimension_name,
+            expression=expression)
+        self.tm1.subsets.create(subset=subset, private=False)
+
+        subset = self.tm1.subsets.get(
+            dimension_name=self.unfriendly_dimension_name,
+            subset_name=self.unfriendly_subset_name)
+        self.assertEqual(self.unfriendly_subset_name, subset.name)
+        self.assertEqual(expression, subset.expression)
+
+    def test_create_subset_with_url_unfriendly_characters_in_elements_static(self):
+        subset = Subset(
+            subset_name=self.unfriendly_subset_name,
+            dimension_name=self.unfriendly_dimension_name,
+            hierarchy_name=self.unfriendly_dimension_name,
+            elements=[self.unfriendly_element_name])
+        self.tm1.subsets.create(subset=subset, private=False)
+
+        subset = self.tm1.subsets.get(
+            dimension_name=self.unfriendly_dimension_name,
+            subset_name=self.unfriendly_subset_name)
+        self.assertEqual(self.unfriendly_subset_name, subset.name)
+        self.assertEqual([self.unfriendly_element_name], subset.elements)
 
     @classmethod
     def teardown_class(cls):
