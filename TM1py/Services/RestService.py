@@ -305,7 +305,7 @@ class RestService:
         """ create proper url and payload
         """
         url = self._base_url + url
-        url = url.replace('%', '%25').replace(' ', '%20').replace('#', '%23')
+        url = url.replace(' ', '%20')
         if isinstance(data, str):
             data = data.encode(encoding)
         return url, data
