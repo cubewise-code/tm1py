@@ -23,7 +23,7 @@ class TestCubeMethods(unittest.TestCase):
         PREFIX + "dimension3"]
 
     @classmethod
-    def setUp(cls):
+    def setUpClass(cls):
         cls.tm1 = TM1Service(**config['tm1srv01'])
 
         # Build Dimensions
@@ -146,8 +146,10 @@ class TestCubeMethods(unittest.TestCase):
         errors = self.tm1.cubes.check_rules(cube_name=self.cube_name)
         self.assertEqual(1, len(errors))
 
+
+
     @classmethod
-    def tearDown(cls):
+    def tearDownClass(cls):
         cls.tm1.cubes.delete(cls.cube_name)
         for dimension in cls.dimension_names:
             cls.tm1.dimensions.delete(dimension)
