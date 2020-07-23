@@ -144,6 +144,47 @@ def build_content_from_cellset_dict(
     return content_as_dict
 
 
+def build_dict_from_cellset_dict(raw_cellset_as_dict: Dict, top: Optional[int] = None,
+                                 value_separator: str = "|") -> dict:
+    """ transform raw cellset data into concise dictionary
+
+    :param raw_cellset_as_dict:
+    :param top: Maximum Number of cells
+    :param value_separator:
+    :return: dictionary
+    """
+    tuple_value_dict = dict()
+
+    cells = raw_cellset_as_dict['Cells']
+    if len(cells) == 0:
+        return tuple_value_dict
+
+    row_axis, column_axis, _ = extract_axes_from_cellset(raw_cellset_as_dict=raw_cellset_as_dict)
+
+    for ordinal, cell in enumerate(cells[:top or len(cells)]):
+        # if skip is used in execution we must use the original ordinal from the cell, if not we can simply enumerate
+        ordinal = cell.get("Ordinal", ordinal)
+
+        dict_entry = ''
+
+        if row_axis:
+            index_rows = ordinal // row_axis['Cardinality'] % column_axis['Cardinality']
+            dict_entry = ''.join([dict_entry,
+                                 value_separator.join(
+                                     extract_element_names_from_members(
+                                         column_axis['Tuples'][index_rows]['Members']))])
+        if column_axis:
+            index_columns = ordinal % row_axis['Cardinality']
+            dict_entry = value_separator.join([dict_entry,
+                                              value_separator.join(
+                                                  extract_element_names_from_members(
+                                                      row_axis['Tuples'][index_columns]['Members']))])
+
+        tuple_value_dict[dict_entry] = cell["Value"]
+
+    return tuple_value_dict
+
+
 def build_csv_from_cellset_dict(
         row_dimensions: List[str],
         column_dimensions: List[str],
