@@ -157,7 +157,6 @@ def build_csv_from_cellset_dict(
     :param row_dimensions:
     :param raw_cellset_as_dict:
     :param top: Maximum Number of cells
-    :param top: Number of cells of skip
     :param line_separator:
     :param value_separator:
     :return:

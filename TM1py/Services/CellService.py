@@ -957,7 +957,7 @@ class CellService(ObjectService):
         url = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
               "Cube($select=Name;$expand=Dimensions($select=Name))," \
               "Axes({filter_axis}$expand=Tuples($expand=Members({select_member_properties}" \
-              "{expand_elem_properties}){top_rows}))," \
+              "{expand_elem_properties}{top_rows})))," \
               "Cells($select={cell_properties}{top_cells}{skip_cells}{filter_cells})" \
             .format(cellset_id=cellset_id,
                     top_rows=f";$top={top}" if top and not skip else "",
@@ -1088,7 +1088,8 @@ class CellService(ObjectService):
                                                 skip_consolidated_cells=skip_consolidated_cells,
                                                 skip_rule_derived_cells=skip_rule_derived_cells,
                                                 delete_cellset=True, **kwargs)
-        return build_csv_from_cellset_dict(rows, columns, cellset_dict, line_separator=line_separator,value_separator=value_separator)
+        return build_csv_from_cellset_dict(rows, columns, cellset_dict, line_separator=line_separator,
+                                           value_separator=value_separator, top=top)
 
     def extract_cellset_dataframe(
             self,
@@ -1107,7 +1108,6 @@ class CellService(ObjectService):
         :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
-
         :param kwargs:
         :return:
         """
