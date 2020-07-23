@@ -1410,6 +1410,19 @@ class TestDataMethods(unittest.TestCase):
         values = df[["Value"]].values
         self.assertEqual(self.total_value, sum(values))
 
+    def test_execute_view_dataframe_with_top_argument(self):
+        df = self.tm1.cubes.cells.execute_view_dataframe(
+            cube_name=CUBE_NAME,
+            view_name=VIEW_NAME,
+            top=2,
+            private=False)
+
+        # check row count
+        self.assertTrue(len(df) == 2)
+
+        # check type
+        self.assertIsInstance(df, pd.DataFrame)
+
     def test_execute_view_dataframe_pivot_two_row_one_column_dimensions(self):
         view_name = PREFIX + "Pivot_two_row_one_column_dimensions"
         view = NativeView(
