@@ -116,8 +116,7 @@ def build_content_from_cellset_dict(
     """ transform raw cellset data into concise dictionary
 
     :param raw_cellset_as_dict:
-    :param top: Maximum Number of cells
-    :param top: Number of cells of skip
+    :param top: Int, number of cells to return (counting from top)
     :return:
     """
     cube_dimensions = [dim['Name'] for dim in raw_cellset_as_dict['Cube']['Dimensions']]
@@ -149,8 +148,8 @@ def build_dict_from_cellset_dict(raw_cellset_as_dict: Dict, top: Optional[int] =
     """ transform raw cellset data into concise dictionary
 
     :param raw_cellset_as_dict:
-    :param top: Maximum Number of cells
-    :param value_separator:
+    :param top: Int, number of cells to return (counting from top)
+    :param value_separator: value separator the dimension combination in the dict key
     :return: dictionary
     """
     tuple_value_dict = dict()

@@ -549,7 +549,7 @@ class CellService(ObjectService):
     def execute_mdx_dict(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
                               skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
                               **kwargs) -> Dict:
-        """ Get Dict from MDX Query.
+        """ Optimized for performance. Get Dict from MDX Query.
 
         :param mdx: Valid MDX Query
         :param top: Int, number of cells to return (counting from top)
@@ -632,7 +632,7 @@ class CellService(ObjectService):
                           skip: int = None, skip_zeros: bool = True, skip_consolidated_cells: bool = False,
                           skip_rule_derived_cells: bool = False, value_separator: str = "|", **kwargs) -> dict:
         """ Optimized for performance. Get a Dict(tuple, value) from an existing Cube View
-        Context dimensions are omitted in the resulting Dataframe !
+        Context dimensions are omitted in the resulting Dictionary !
         Cells with Zero/null are omitted by default, but still configurable!
 
         :param cube_name: String, name of the cube
@@ -1111,7 +1111,7 @@ class CellService(ObjectService):
             skip_rule_derived_cells: bool = False,
             value_separator: str = "|",
             **kwargs) -> dict:
-        """ Execute cellset and return only the 'Content', in csv format
+        """ Execute cellset and return only the 'Content' as a dictionary
 
         :param cellset_id: String; ID of existing cellset
         :param top: Int, number of cells to return (counting from top)
