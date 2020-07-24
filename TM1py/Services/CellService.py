@@ -18,7 +18,7 @@ from TM1py.Services.RestService import RestService
 from TM1py.Services.ViewService import ViewService
 from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
-    CaseAndSpaceInsensitiveTuplesDict, abbreviate_mdx, build_csv_from_cellset_dict, build_dict_from_cellset_dict
+    CaseAndSpaceInsensitiveTuplesDict, abbreviate_mdx, build_csv_from_cellset_dict
 
 
 def tidy_cellset(func):
@@ -546,9 +546,9 @@ class CellService(ObjectService):
                                         skip_rule_derived_cells=skip_rule_derived_cells, line_separator=line_separator,
                                         value_separator=value_separator, **kwargs)
 
-    def execute_mdx_dict(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
-                              skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
-                              **kwargs) -> Dict:
+    def execute_mdx_elements_value_dict(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
+                                        skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
+                                        value_separator: str = "|", **kwargs) -> Dict[str, Union[str, float]]:
         """ Optimized for performance. Get Dict from MDX Query.
 
         :param mdx: Valid MDX Query
@@ -557,12 +557,15 @@ class CellService(ObjectService):
         :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
-        :return: Dictionary
+        :param value_separator: value separator the tuple
+        :return: Dict  {'2020|Jan|Sales': 2000, '2020|Feb|Sales': 3000}
         """
-        cellset_id = self.create_cellset(mdx, **kwargs)
-        return self.extract_cellset_dict(cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
-                                         skip_consolidated_cells=skip_consolidated_cells,
-                                         skip_rule_derived_cells=skip_rule_derived_cells, **kwargs)
+        lines = self.execute_mdx_csv(mdx=mdx, top=top, skip=skip, skip_zeros=skip_zeros,
+                                     skip_consolidated_cells=skip_consolidated_cells,
+                                     skip_rule_derived_cells=skip_rule_derived_cells,
+                                     value_separator=value_separator, **kwargs)
+        return {value_separator.join(entries.split(value_separator)[:-1]): entries.split(value_separator)[-1]
+                for entries in lines.split("\r\n")[1:]}
 
     def execute_mdx_dataframe(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
                               skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
@@ -627,12 +630,12 @@ class CellService(ObjectService):
         cellset_id = self.create_cellset(mdx, **kwargs)
         return self.extract_cellset_cellcount(cellset_id, delete_cellset=True, **kwargs)
 
-
-    def execute_view_dict(self, cube_name: str, view_name: str, private: bool = False, top: int = None,
-                          skip: int = None, skip_zeros: bool = True, skip_consolidated_cells: bool = False,
-                          skip_rule_derived_cells: bool = False, value_separator: str = "|", **kwargs) -> dict:
+    def execute_view_elements_value_dict(self, cube_name: str, view_name: str, private: bool = False,
+                                         top: int = None, skip: int = None, skip_zeros: bool = True,
+                                         skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
+                                         value_separator: str = "|", **kwargs) -> Dict[str, Union[str, float]]:
         """ Optimized for performance. Get a Dict(tuple, value) from an existing Cube View
-        Context dimensions are omitted in the resulting Dictionary !
+        Context dimensions are omitted in the resulting Dataframe !
         Cells with Zero/null are omitted by default, but still configurable!
 
         :param cube_name: String, name of the cube
@@ -644,13 +647,14 @@ class CellService(ObjectService):
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
         :param value_separator: value separator the tuple
-        :return: Dict
+        :return: Dict  {'2020|Jan|Sales': 2000, '2020|Feb|Sales': 3000}
         """
-        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private, **kwargs)
-        return self.extract_cellset_dict(cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
-                                         skip_consolidated_cells=skip_consolidated_cells,
-                                         skip_rule_derived_cells=skip_rule_derived_cells,
-                                         value_separator=value_separator, **kwargs)
+        lines = self.execute_view_csv(cube_name=cube_name, view_name=view_name, private=private, top=top, skip=skip,
+                                      skip_zeros=skip_zeros, skip_consolidated_cells=skip_consolidated_cells,
+                                      skip_rule_derived_cells=skip_rule_derived_cells,
+                                      value_separator=value_separator, **kwargs)
+        return {value_separator.join(entries.split(value_separator)[:-1]): entries.split(value_separator)[-1]
+                for entries in lines.split("\r\n")[1:]}
 
     def execute_view_dataframe(self, cube_name: str, view_name: str, private: bool = False, top: int = None,
                                skip: int = None, skip_zeros: bool = True, skip_consolidated_cells: bool = False,
@@ -1100,36 +1104,6 @@ class CellService(ObjectService):
         url = "/api/v1/Cellsets('{}')/Cells/$count".format(cellset_id)
         response = self._rest.GET(url, **kwargs)
         return int(response.content)
-
-    def extract_cellset_dict(
-            self,
-            cellset_id: str,
-            top: int = None,
-            skip: int = None,
-            skip_zeros: bool = True,
-            skip_consolidated_cells: bool = False,
-            skip_rule_derived_cells: bool = False,
-            value_separator: str = "|",
-            **kwargs) -> dict:
-        """ Execute cellset and return only the 'Content' as a dictionary
-
-        :param cellset_id: String; ID of existing cellset
-        :param top: Int, number of cells to return (counting from top)
-        :param skip: Int, number of cells to skip (counting from top)
-        :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
-        :param skip_consolidated_cells: skip consolidated cells in cellset
-        :param skip_rule_derived_cells: skip rule derived cells in cellset
-        :param value_separator: Value separator the tuple
-        :return: Dict
-        """
-        _, _, rows, columns = self.extract_cellset_composition(cellset_id, delete_cellset=False, **kwargs)
-
-        cellset_dict = self.extract_cellset_raw(cellset_id, cell_properties=["Value"], top=top, skip=skip,
-                                                skip_contexts=True, skip_zeros=skip_zeros,
-                                                skip_consolidated_cells=skip_consolidated_cells,
-                                                skip_rule_derived_cells=skip_rule_derived_cells,
-                                                delete_cellset=True, **kwargs)
-        return build_dict_from_cellset_dict(cellset_dict, value_separator=value_separator)
 
     def extract_cellset_csv(
             self,
