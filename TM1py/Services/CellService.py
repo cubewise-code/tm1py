@@ -548,7 +548,7 @@ class CellService(ObjectService):
 
     def execute_mdx_elements_value_dict(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
                                         skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
-                                        value_separator: str = "|", **kwargs) -> Dict[str, Union[str, float]]:
+                                        element_separator: str = "|", **kwargs) -> Dict[str, Union[str, float]]:
         """ Optimized for performance. Get Dict from MDX Query.
 
         :param mdx: Valid MDX Query
@@ -557,14 +557,14 @@ class CellService(ObjectService):
         :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
-        :param value_separator: value separator the tuple
+        :param element_separator: separator for the dimension element combination
         :return: Dict  {'2020|Jan|Sales': 2000, '2020|Feb|Sales': 3000}
         """
         lines = self.execute_mdx_csv(mdx=mdx, top=top, skip=skip, skip_zeros=skip_zeros,
                                      skip_consolidated_cells=skip_consolidated_cells,
                                      skip_rule_derived_cells=skip_rule_derived_cells,
-                                     value_separator=value_separator, **kwargs)
-        return {value_separator.join(entries.split(value_separator)[:-1]): entries.split(value_separator)[-1]
+                                     value_separator=element_separator, **kwargs)
+        return {element_separator.join(entries.split(element_separator)[:-1]): entries.split(element_separator)[-1]
                 for entries in lines.split("\r\n")[1:]}
 
     def execute_mdx_dataframe(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
@@ -633,7 +633,7 @@ class CellService(ObjectService):
     def execute_view_elements_value_dict(self, cube_name: str, view_name: str, private: bool = False,
                                          top: int = None, skip: int = None, skip_zeros: bool = True,
                                          skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
-                                         value_separator: str = "|", **kwargs) -> Dict[str, Union[str, float]]:
+                                         element_separator: str = "|", **kwargs) -> Dict[str, Union[str, float]]:
         """ Optimized for performance. Get a Dict(tuple, value) from an existing Cube View
         Context dimensions are omitted in the resulting Dataframe !
         Cells with Zero/null are omitted by default, but still configurable!
@@ -646,14 +646,14 @@ class CellService(ObjectService):
         :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
-        :param value_separator: value separator the tuple
+        :param element_separator: separator for the dimension element combination
         :return: Dict  {'2020|Jan|Sales': 2000, '2020|Feb|Sales': 3000}
         """
         lines = self.execute_view_csv(cube_name=cube_name, view_name=view_name, private=private, top=top, skip=skip,
                                       skip_zeros=skip_zeros, skip_consolidated_cells=skip_consolidated_cells,
                                       skip_rule_derived_cells=skip_rule_derived_cells,
-                                      value_separator=value_separator, **kwargs)
-        return {value_separator.join(entries.split(value_separator)[:-1]): entries.split(value_separator)[-1]
+                                      value_separator=element_separator, **kwargs)
+        return {element_separator.join(entries.split(element_separator)[:-1]): entries.split(element_separator)[-1]
                 for entries in lines.split("\r\n")[1:]}
 
     def execute_view_dataframe(self, cube_name: str, view_name: str, private: bool = False, top: int = None,
