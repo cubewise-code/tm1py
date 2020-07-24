@@ -16,17 +16,15 @@ class PowerBiService:
         self.cells = CellService(tm1_rest)
         self.elements = ElementService(tm1_rest)
 
-    def execute_mdx(self, mdx, **kwargs):
-        cellset_id = self.cells.create_cellset(mdx)
-        return self.cells.extract_cellset_power_bi(cellset_id, **kwargs)
+    def execute_mdx(self, mdx, **kwargs) -> pd.DataFrame:
+        return self.cells.execute_mdx_dataframe_shaped(mdx, **kwargs)
 
-    def execute_view(self, cube_name, view_name, private, **kwargs):
-        cellset_id = self.cells.create_cellset_from_view(cube_name, view_name, private)
-        return self.cells.extract_cellset_power_bi(cellset_id, **kwargs)
+    def execute_view(self, cube_name, view_name, private, **kwargs) -> pd.DataFrame:
+        return self.cells.execute_view_dataframe_shaped(cube_name, view_name, private, **kwargs)
 
     def get_member_properties(self, dimension_name, hierarchy_name, member_selection=None,
                               skip_consolidations=True, attributes=None, skip_parents=False,
-                              level_names=None):
+                              level_names=None) -> pd.DataFrame:
         """
 
         :param dimension_name: Name of the dimension
