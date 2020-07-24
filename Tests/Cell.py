@@ -891,7 +891,7 @@ class TestDataMethods(unittest.TestCase):
         for value in values:
             self.assertEqual(value, 3)
 
-    def test_execute_mdx_dict(self):
+    def test_execute_mdx_elements_value_dict(self):
         mdx = MdxBuilder.from_cube(CUBE_NAME) \
             .rows_non_empty() \
             .add_hierarchy_set_to_row_axis(MdxHierarchySet.all_members(DIMENSION_NAMES[0], DIMENSION_NAMES[0])) \
@@ -899,7 +899,7 @@ class TestDataMethods(unittest.TestCase):
             .add_hierarchy_set_to_column_axis(MdxHierarchySet.all_members(DIMENSION_NAMES[2], DIMENSION_NAMES[2])) \
             .to_mdx()
 
-        values = self.tm1.cubes.cells.execute_mdx_dict(mdx)
+        values = self.tm1.cubes.cells.execute_mdx_elements_value_dict(mdx)
 
         # check type
         self.assertIsInstance(values, dict)
@@ -909,7 +909,7 @@ class TestDataMethods(unittest.TestCase):
         self.assertEqual(len(coordinates), len(self.target_coordinates))
 
         # check values
-        values = [value for key, value in values.items()]
+        values = [float(value) for _, value in values.items()]
         self.assertEqual(self.total_value, sum(values))
 
     def test_execute_mdx_dataframe(self):
@@ -1411,8 +1411,8 @@ class TestDataMethods(unittest.TestCase):
         # check if sum of retrieved values is sum of written values
         self.assertEqual(self.total_value, sum(values))
 
-    def test_execute_view_dict(self):
-        values = self.tm1.cubes.cells.execute_view_dict(
+    def test_execute_view_elements_value_dict(self):
+        values = self.tm1.cubes.cells.execute_view_elements_value_dict(
             cube_name=CUBE_NAME,
             view_name=VIEW_NAME,
             private=False)
@@ -1425,11 +1425,11 @@ class TestDataMethods(unittest.TestCase):
         self.assertEqual(len(coordinates), len(self.target_coordinates))
 
         # check values
-        values = [value for key, value in values.items()]
+        values = [float(value) for _, value in values.items()]
         self.assertEqual(self.total_value, sum(values))
 
-    def test_execute_view_dict_with_top_argument(self):
-        values = self.tm1.cubes.cells.execute_view_dict(
+    def test_execute_view_elements_value_dict_with_top_argument(self):
+        values = self.tm1.cubes.cells.execute_view_elements_value_dict(
             cube_name=CUBE_NAME,
             view_name=VIEW_NAME,
             top=4,
