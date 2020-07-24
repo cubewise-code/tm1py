@@ -567,6 +567,30 @@ class CellService(ObjectService):
                                               skip_consolidated_cells=skip_consolidated_cells,
                                               skip_rule_derived_cells=skip_rule_derived_cells, **kwargs)
 
+    def execute_mdx_dataframe_shaped(self, mdx, **kwargs) -> pd.DataFrame:
+        """ Retrieves data from cube in the shape of the query.
+        Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
+
+        :param mdx:
+        :param kwargs:
+        :return:
+        """
+        cellset_id = self.create_cellset(mdx)
+        return self.extract_cellset_dataframe_shaped(cellset_id, delete_cellset=True, **kwargs)
+
+    def execute_view_dataframe_shaped(self, cube_name, view_name, private, **kwargs) -> pd.DataFrame:
+        """ Retrieves data from cube in the shape of the query.
+        Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
+
+        :param cube_name:
+        :param view_name:
+        :param private:
+        :param kwargs:
+        :return:
+        """
+        cellset_id = self.create_cellset_from_view(cube_name, view_name, private)
+        return self.extract_cellset_dataframe_shaped(cellset_id, delete_cellset=True, **kwargs)
+
     def execute_view_dataframe_pivot(self, cube_name: str, view_name: str, private: bool = False, dropna: bool = False,
                                      fill_value: bool = None, **kwargs) -> pd.DataFrame:
         """ Execute a cube view to get a pandas pivot dataframe, in the shape of the cube view
@@ -1125,7 +1149,12 @@ class CellService(ObjectService):
         return pd.read_csv(memory_file, sep='|', **kwargs)
 
     @tidy_cellset
-    def extract_cellset_power_bi(self, cellset_id: str, **kwargs) -> pd.DataFrame:
+    def extract_cellset_dataframe_shaped(self, cellset_id: str, **kwargs) -> pd.DataFrame:
+        """ Retrieves data from cellset in the shape of the query.
+        Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
+
+        :param cellset_id
+        """
         url = "/api/v1/Cellsets('{}')?$expand=" \
               "Axes($filter=Ordinal eq 0 or Ordinal eq 1;$expand=Tuples(" \
               "$expand=Members($select=Name)),Hierarchies($select=Name))," \
@@ -1152,7 +1181,6 @@ class CellService(ObjectService):
                                 for tupl
                                 in rows]
 
-        # case: skip attributes and skip parents
         if not number_columns:
             return pd.DataFrame(data=element_names_by_row, columns=headers)
 
