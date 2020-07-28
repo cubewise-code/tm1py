@@ -18,7 +18,7 @@ from TM1py.Services.RestService import RestService
 from TM1py.Services.ViewService import ViewService
 from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
-    CaseAndSpaceInsensitiveTuplesDict, abbreviate_mdx, build_csv_from_cellset_dict
+    CaseAndSpaceInsensitiveTuplesDict, abbreviate_mdx, build_csv_from_cellset_dict, get_dimensions_from_where_clause
 
 
 def tidy_cellset(func):
@@ -160,7 +160,39 @@ class CellService(ObjectService):
 
         return self._post_against_cellset(cellset_id=cellset_id, payload=payload, delete_cellset=True, **kwargs)
 
-    def clear_with_mdx(self, cube: str, mdx: str, **kwargs):
+    def complement_mdx_with_all_leaf_selections(self, mdx: str, **kwargs) -> str:
+        mdx = mdx.upper()
+        if not ("ON 0" in mdx or "ON COLUMNS" in mdx):
+            raise ValueError(f"MDX '{abbreviate_mdx(mdx)}' must have selection on columns")
+
+        if not ("ON 1" in mdx or "ON ROWS" in mdx):
+            raise ValueError(f"MDX '{abbreviate_mdx(mdx)}' must have selection on rows")
+
+        mdx_axis_keywords = "ON 0", "ON 1", "ON ROWS", "ON COLUMNS"
+        if not any(keyword in mdx for keyword in mdx_axis_keywords):
+            raise ValueError(f"MDX '{abbreviate_mdx(mdx)}' must contain one "
+                             f"of the following keywords '{mdx_axis_keywords}'")
+
+        cellset_id = self.create_cellset(mdx, **kwargs)
+        _, titles, _, _ = self.extract_cellset_composition(cellset_id=cellset_id, delete_cellset=True, **kwargs)
+
+        dimensions_in_titles = [dimension_name_from_element_unique_name(title) for title in titles]
+        dimensions_in_where = CaseAndSpaceInsensitiveSet(*get_dimensions_from_where_clause(mdx))
+        not_referenced_dimensions = CaseAndSpaceInsensitiveSet(*dimensions_in_titles) - dimensions_in_where
+
+        additional_selections = []
+        for dimension in not_referenced_dimensions:
+            additional_selections.append(f"{{TM1FILTERBYLEVEL({{TM1SUBSETALL([{dimension}].[{dimension}])}},0)}}")
+        additional_mdx = "*".join(additional_selections)
+
+        for keyword in mdx_axis_keywords:
+            if keyword in mdx:
+                return mdx.replace(keyword, "*" + additional_mdx + " " + keyword)
+
+    def clear_with_mdx(self, cube: str, mdx: str, all_leaves_as_default=False, **kwargs):
+        if all_leaves_as_default:
+            mdx = self.complement_mdx_with_all_leaf_selections(mdx)
+
         view_name = "".join(['}TM1py', str(uuid.uuid4())])
         code = "".join([
             f"ViewCreateByMdx('{cube}','{view_name}','{mdx}',1);",

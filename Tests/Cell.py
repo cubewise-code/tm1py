@@ -10,7 +10,8 @@ from mdxpy import MdxBuilder, MdxHierarchySet, Member, CalculatedMember
 from TM1py.Exceptions.Exceptions import TM1pyException
 from TM1py.Objects import MDXView, Cube, Dimension, Element, Hierarchy, NativeView, AnonymousSubset, ElementAttribute
 from TM1py.Services import TM1Service
-from TM1py.Utils import Utils, abbreviate_mdx, element_names_from_element_unique_names
+from TM1py.Utils import Utils, abbreviate_mdx, element_names_from_element_unique_names, \
+    case_and_space_insensitive_equals
 
 # Hard coded stuff
 PREFIX = 'TM1py_Tests_Cell_'
@@ -1779,6 +1780,21 @@ class TestDataMethods(unittest.TestCase):
 
         elements = element_names_from_element_unique_names(list(cells.keys())[0])
         self.assertEqual(elements, ("Element 2", "Element 1", "Element 1"))
+
+    def test_complement_mdx_with_all_leaf_selections_happy_case(self):
+        mdx = MdxBuilder.from_cube(CUBE_NAME) \
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.tm1_subset_all(DIMENSION_NAMES[0])) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.tm1_subset_all(DIMENSION_NAMES[1])) \
+            .to_mdx()
+
+        complemented_mdx = self.tm1.cells.complement_mdx_with_all_leaf_selections(mdx)
+        expected_mdx = MdxBuilder.from_cube(CUBE_NAME) \
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.tm1_subset_all(DIMENSION_NAMES[0])) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.tm1_subset_all(DIMENSION_NAMES[1])) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.tm1_subset_all(DIMENSION_NAMES[2]).filter_by_level(0)) \
+            .to_mdx()
+
+        self.assertTrue(case_and_space_insensitive_equals(expected_mdx, complemented_mdx))
 
     # Delete Cube and Dimensions
     @classmethod

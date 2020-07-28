@@ -678,3 +678,19 @@ class CaseAndSpaceInsensitiveSet(collections.abc.MutableSet):
             return NotImplemented
         # Compare insensitively
         return set(self._store.keys()) == set(other._store.keys())
+
+    def __sub__(self, other):
+        result = self.copy()
+        for entry in other:
+            result.remove(entry)
+        return result
+
+
+def get_dimensions_from_where_clause(mdx: str) -> List[str]:
+    mdx = mdx.replace(" ", "").upper()
+    if "WHERE(" not in mdx:
+        return []
+
+    where = mdx[mdx.rfind("WHERE(") + 6:-1]
+    unique_names = where.split(",")
+    return [dimension_name_from_element_unique_name(unique_name) for unique_name in unique_names]
