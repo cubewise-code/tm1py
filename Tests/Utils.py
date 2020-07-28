@@ -14,7 +14,7 @@ from TM1py.Utils import Utils, MDXUtils
 from TM1py.Utils.MDXUtils import DimensionSelection, read_dimension_composition_from_mdx, \
     read_dimension_composition_from_mdx_set_or_tuple, read_dimension_composition_from_mdx_set, \
     read_dimension_composition_from_mdx_tuple, split_mdx, _find_case_and_space_insensitive_first_occurrence
-from TM1py.Utils.Utils import dimension_hierarchy_element_tuple_from_unique_name
+from TM1py.Utils.Utils import dimension_hierarchy_element_tuple_from_unique_name, get_dimensions_from_where_clause
 
 config = configparser.ConfigParser()
 config.read(Path(__file__).parent.joinpath('config.ini'))
@@ -699,12 +699,12 @@ class TestMDXUtils(unittest.TestCase):
         process_name = "pro'ces's"
         escaped_url = format_url(url, process_name=process_name)
         self.assertEqual("/api/v1/Processes('pro''ces''s')/tm1.ExecuteWithReturn?$expand=*", escaped_url)
-        
+
     def test_get_seconds_from_duration(self):
         elapsed_time = "P0DT00H04M02S"
         seconds = Utils.get_seconds_from_duration(elapsed_time)
         self.assertEqual(242, seconds)
-       
+
     @classmethod
     def tearDownClass(cls):
         cls.tm1.logout()
@@ -869,6 +869,34 @@ class TestTIObfuscatorMethods(unittest.TestCase):
                 ]
         }
         self.tm1.processes.execute("Bedrock.Cube.Clone.Obf", parameters)
+
+    def test_get_dimensions_from_where_clause_happy_case(self):
+        mdx = """
+        SELECT {[dim3].[e2]} COLUMNS, {[dim4].[e5]} ON ROWS FROM [cube] WHERE ([dim2].[e1], [dim1].[e4])
+        """
+        dimensions = get_dimensions_from_where_clause(mdx)
+        self.assertEqual(["DIM2", "DIM1"], dimensions)
+
+    def test_get_dimensions_from_where_clause_no_where(self):
+        mdx = """
+        SELECT {[dim3].[e2]} COLUMNS, {[dim4].[e5]} ON ROWS FROM [cube]
+        """
+        dimensions = get_dimensions_from_where_clause(mdx)
+        self.assertEqual([], dimensions)
+
+    def test_get_dimensions_from_where_clause_casing(self):
+        mdx = """
+        SELECT {[dim3].[e2]} COLUMNS, {[dim4].[e5]} ON ROWS FROM [cube] WhEre ([dim1].[e4])
+        """
+        dimensions = get_dimensions_from_where_clause(mdx)
+        self.assertEqual(["DIM1"], dimensions)
+
+    def test_get_dimensions_from_where_clause_spacing(self):
+        mdx = """
+        SELECT {[dim3].[e2]} COLUMNS, {[dim4].[e5]} ON ROWS FROM [cube] WHERE([dim5]. [e4] )
+        """
+        dimensions = get_dimensions_from_where_clause(mdx)
+        self.assertEqual(["DIM5"], dimensions)
 
     @classmethod
     def tearDownClass(cls):
