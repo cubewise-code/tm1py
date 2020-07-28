@@ -163,18 +163,19 @@ class CellService(ObjectService):
     def complement_mdx_with_all_leaf_selections(self, mdx: str, **kwargs) -> str:
         mdx = mdx.upper()
         if not ("ON 0" in mdx or "ON COLUMNS" in mdx):
-            raise ValueError(f"MDX '{abbreviate_mdx(mdx)}' must have selection on columns")
+            raise ValueError(f"MDX: '{abbreviate_mdx(mdx)}' must contain 'ON 0' or 'ON COLUMNS'")
 
         if not ("ON 1" in mdx or "ON ROWS" in mdx):
-            raise ValueError(f"MDX '{abbreviate_mdx(mdx)}' must have selection on rows")
-
-        mdx_axis_keywords = "ON 0", "ON 1", "ON ROWS", "ON COLUMNS"
-        if not any(keyword in mdx for keyword in mdx_axis_keywords):
-            raise ValueError(f"MDX '{abbreviate_mdx(mdx)}' must contain one "
-                             f"of the following keywords '{mdx_axis_keywords}'")
+            raise ValueError(f"MDX: '{abbreviate_mdx(mdx)}' must contain 'ON 1' or 'ON ROWS'")
 
         cellset_id = self.create_cellset(mdx, **kwargs)
-        _, titles, _, _ = self.extract_cellset_composition(cellset_id=cellset_id, delete_cellset=True, **kwargs)
+        _, titles, rows, cols = self.extract_cellset_composition(cellset_id=cellset_id, delete_cellset=True, **kwargs)
+
+        if not rows:
+            raise ValueError(f"Rows must not be empty in cellset. MDX: '{abbreviate_mdx(mdx)}'")
+
+        if not cols:
+            raise ValueError(f"Columns must not be empty in cellset. MDX: '{abbreviate_mdx(mdx)}'")
 
         dimensions_in_titles = [dimension_name_from_element_unique_name(title) for title in titles]
         dimensions_in_where = CaseAndSpaceInsensitiveSet(*get_dimensions_from_where_clause(mdx))
@@ -185,7 +186,7 @@ class CellService(ObjectService):
             additional_selections.append(f"{{TM1FILTERBYLEVEL({{TM1SUBSETALL([{dimension}].[{dimension}])}},0)}}")
         additional_mdx = "*".join(additional_selections)
 
-        for keyword in mdx_axis_keywords:
+        for keyword in "ON 0", "ON 1", "ON ROWS", "ON COLUMNS":
             if keyword in mdx:
                 return mdx.replace(keyword, "*" + additional_mdx + " " + keyword)
 
