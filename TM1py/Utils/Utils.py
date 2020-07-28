@@ -1,9 +1,12 @@
 import collections
+import functools
 import http.client as http_client
 import json
 from typing import Dict, List, Tuple, Iterable, Optional, Generator
 
 import pandas as pd
+
+from TM1py.Exceptions.Exceptions import TM1pyVersionException
 
 
 def get_all_servers_from_adminhost(adminhost='localhost') -> List:
@@ -53,6 +56,14 @@ def abbreviate_mdx(mdx: str, size=100) -> str:
         return mdx
     else:
         return mdx[:size] + "..."
+
+
+def integerize_version(version: str) -> int:
+    return int(version[0:4].replace(".", ""))
+
+
+def verify_version(required_version: str, version: str) -> bool:
+    return integerize_version(version) >= integerize_version(required_version)
 
 
 def case_and_space_insensitive_equals(item1: str, item2: str) -> bool:
@@ -705,3 +716,19 @@ def wrap_in_curly_braces(expression: str) -> str:
     return "".join(["{" if not expression.startswith("{") else "",
                     expression,
                     "}" if not expression.endswith("}") else ""])
+
+
+def require(version):
+    """ Higher order function to check required version for TM1py function
+    """
+
+    def wrap(func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            if not verify_version(required_version=version, version=self.version):
+                raise TM1pyVersionException(func.__name__, version)
+            return func(self, *args, **kwargs)
+
+        return wrapper
+
+    return wrap

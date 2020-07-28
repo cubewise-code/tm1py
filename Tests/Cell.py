@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 from mdxpy import MdxBuilder, MdxHierarchySet, Member, CalculatedMember
 
-from TM1py.Exceptions.Exceptions import TM1pyException
+from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyVersionException
 from TM1py.Objects import MDXView, Cube, Dimension, Element, Hierarchy, NativeView, AnonymousSubset, ElementAttribute
 from TM1py.Services import TM1Service
 from TM1py.Utils import Utils, element_names_from_element_unique_names
@@ -47,7 +47,7 @@ config.read(Path(__file__).parent.joinpath('config.ini'))
 
 
 class TestDataMethods(unittest.TestCase):
-    tm1 = None
+    tm1: TM1Service = None
 
     # Setup Cubes, Dimensions and Subsets
     @classmethod
@@ -132,6 +132,11 @@ class TestDataMethods(unittest.TestCase):
         cls.build_cube_with_rules()
 
         cls.build_cube_with_consolidations()
+
+    @classmethod
+    def setup(cls):
+        # set correct version before test, as it is overwritten in a test case
+        cls.tm1._tm1_rest.set_version()
 
     @classmethod
     def build_string_cube(cls):
@@ -1783,6 +1788,20 @@ class TestDataMethods(unittest.TestCase):
         self.assertEqual(
             "{\"error\":{\"code\":\"248\",\"message\":\"\\\"NotExistingElement\\\" : member not found (rte 81)\"}}",
             execinfo.value.message)
+
+    def test_clear_with_mdx_unsupported_version(self):
+        with pytest.raises(TM1pyVersionException) as exec_info:
+            mdx = MdxBuilder.from_cube(CUBE_NAME) \
+                .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[0], "Element19"))) \
+                .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[1], "Element11"))) \
+                .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[2], "Element31"))) \
+                .to_mdx()
+            self.tm1._tm1_rest._version = "11.2.00000.27"
+            self.tm1.cells.clear_with_mdx(cube=CUBE_NAME, mdx=mdx)
+
+        self.assertEqual(
+            f"Function 'clear_with_mdx' requires TM1 server version >= '11.7'",
+            str(exec_info.value))
 
     def test_execute_mdx_with_skip(self):
         mdx = MdxBuilder.from_cube(CUBE_NAME) \
