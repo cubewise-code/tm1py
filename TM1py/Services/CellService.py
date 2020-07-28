@@ -20,12 +20,12 @@ from TM1py.Services.RestService import RestService
 from TM1py.Services.ViewService import ViewService
 from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
-    CaseAndSpaceInsensitiveTuplesDict, abbreviate_mdx, build_csv_from_cellset_dict, CaseAndSpaceInsensitiveDict, \
-    wrap_in_curly_braces
+    CaseAndSpaceInsensitiveDict, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, abbreviate_mdx, \
+    build_csv_from_cellset_dict, require
 
 
 def tidy_cellset(func):
-    """ Higher Order Function to tidy up cellset after usage
+    """ Higher order function to tidy up cellset after usage
     """
 
     @functools.wraps(func)
@@ -163,6 +163,7 @@ class CellService(ObjectService):
 
         return self._post_against_cellset(cellset_id=cellset_id, payload=payload, delete_cellset=True, **kwargs)
 
+    @require(version="11.7")
     def clear(self, cube: str, **kwargs):
         """
         Takes the cube name and keyword argument pairs of dimensions and expressions:
@@ -193,6 +194,7 @@ class CellService(ObjectService):
 
         return self.clear_with_mdx(cube=cube, mdx=mdx_builder.to_mdx(), **kwargs)
 
+    @require(version="11.7")
     def clear_with_mdx(self, cube: str, mdx: str, **kwargs):
         """ clear a slice in a cube based on an MDX query.
         Function requires admin permissions, since TM1py uses an unbound TI with a `ViewZeroOut` statement.

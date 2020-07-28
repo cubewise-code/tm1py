@@ -14,6 +14,15 @@ class TM1pyTimeout(Exception):
         return f"Timeout after {self.timeout} seconds for '{self.method}' request with url :'{self.url}'"
 
 
+class TM1pyVersionException(Exception):
+    def __init__(self, function, required_version):
+        self.function = function
+        self.required_version = required_version
+
+    def __str__(self):
+        return f"Function '{self.function}' requires TM1 server version >= '{self.required_version}'"
+
+
 class TM1pyException(Exception):
     """ The default exception for TM1py
 

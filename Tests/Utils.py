@@ -14,7 +14,8 @@ from TM1py.Utils import Utils, MDXUtils
 from TM1py.Utils.MDXUtils import DimensionSelection, read_dimension_composition_from_mdx, \
     read_dimension_composition_from_mdx_set_or_tuple, read_dimension_composition_from_mdx_set, \
     read_dimension_composition_from_mdx_tuple, split_mdx, _find_case_and_space_insensitive_first_occurrence
-from TM1py.Utils.Utils import dimension_hierarchy_element_tuple_from_unique_name, get_dimensions_from_where_clause
+from TM1py.Utils.Utils import dimension_hierarchy_element_tuple_from_unique_name, get_dimensions_from_where_clause, \
+    integerize_version, verify_version
 
 config = configparser.ConfigParser()
 config.read(Path(__file__).parent.joinpath('config.ini'))
@@ -898,23 +899,87 @@ class TestTIObfuscatorMethods(unittest.TestCase):
         dimensions = get_dimensions_from_where_clause(mdx)
         self.assertEqual(["DIM5"], dimensions)
 
+    def test_integerize_version(self):
+        version = "11.0.00000.918"
+        integerized_version = integerize_version(version)
+        self.assertEqual(110, integerized_version)
+
+        version = "11.0.00100.927-0"
+        integerized_version = integerize_version(version)
+        self.assertEqual(110, integerized_version)
+
+        version = "11.1.00004.2"
+        integerized_version = integerize_version(version)
+        self.assertEqual(111, integerized_version)
+
+        version = "11.2.00000.27"
+        integerized_version = integerize_version(version)
+        self.assertEqual(112, integerized_version)
+
+        version = "11.3.00003.1"
+        integerized_version = integerize_version(version)
+        self.assertEqual(113, integerized_version)
+
+        version = "11.4.00003.8"
+        integerized_version = integerize_version(version)
+        self.assertEqual(114, integerized_version)
+
+        version = "11.7.00002.1"
+        integerized_version = integerize_version(version)
+        self.assertEqual(117, integerized_version)
+
+        version = "11.8.00000.33"
+        integerized_version = integerize_version(version)
+        self.assertEqual(118, integerized_version)
+
+    def test_verify_version_true(self):
+        required_version = "11.7.00002.1"
+        version = "11.8.00000.33"
+
+        result = verify_version(required_version=required_version, version=version)
+        self.assertEqual(True, result)
+
+    def test_verify_version_false(self):
+        required_version = "11.7.00002.1"
+        version = "11.2.00000.27"
+
+        result = verify_version(required_version=required_version, version=version)
+        self.assertEqual(False, result)
+
+    def test_verify_version_equal(self):
+        required_version = "11.7.00002.1"
+        version = "11.7.00002.1"
+
+        result = verify_version(required_version=required_version, version=version)
+        self.assertEqual(True, result)
+
     @classmethod
     def tearDownClass(cls):
-        # delete all this stuff
-        cls.tm1.processes.delete(cls.expand_process_name)
-        cls.tm1.processes.delete(cls.expand_process_name_obf)
+        # delete all the stuff
+        if cls.tm1.processes.exists(cls.expand_process_name):
+            cls.tm1.processes.delete(cls.expand_process_name)
+        if cls.tm1.processes.exists(cls.expand_process_name_obf):
+            cls.tm1.processes.delete(cls.expand_process_name_obf)
 
-        cls.tm1.processes.delete(cls.process_name)
-        cls.tm1.processes.delete(cls.process_name_obf)
+        if cls.tm1.processes.exists(cls.process_name):
+            cls.tm1.processes.delete(cls.process_name)
+        if cls.tm1.processes.exists(cls.process_name_obf):
+            cls.tm1.processes.delete(cls.process_name_obf)
 
-        cls.tm1.processes.delete("Bedrock.Dim.Clone.Obf")
-        cls.tm1.processes.delete("Bedrock.Cube.Clone.Obf")
+        if cls.tm1.processes.exists("Bedrock.Dim.Clone.Obf"):
+            cls.tm1.processes.delete("Bedrock.Dim.Clone.Obf")
+        if cls.tm1.processes.exists("Bedrock.Cube.Clone.Obf"):
+            cls.tm1.processes.delete("Bedrock.Cube.Clone.Obf")
 
-        cls.tm1.dimensions.delete(cls.dimension_name)
-        cls.tm1.dimensions.delete(cls.dimension_name_cloned)
+        if cls.tm1.dimensions.exists(cls.dimension_name):
+            cls.tm1.dimensions.delete(cls.dimension_name)
+        if cls.tm1.dimensions.exists(cls.dimension_name_cloned):
+            cls.tm1.dimensions.delete(cls.dimension_name_cloned)
 
-        cls.tm1.cubes.delete(cls.cube_name)
-        cls.tm1.cubes.delete(cls.cube_name_cloned)
+        if cls.tm1.cubes.exists(cls.cube_name):
+            cls.tm1.cubes.delete(cls.cube_name)
+        if cls.tm1.cubes.exists(cls.cube_name_cloned):
+            cls.tm1.cubes.delete(cls.cube_name_cloned)
 
         cls.tm1.logout()
 
