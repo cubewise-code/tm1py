@@ -194,6 +194,14 @@ class CellService(ObjectService):
         return self.clear_with_mdx(cube=cube, mdx=mdx_builder.to_mdx(), **kwargs)
 
     def clear_with_mdx(self, cube: str, mdx: str, **kwargs):
+        """ clear a slice in a cube based on an MDX query.
+        Function requires admin permissions, since TM1py uses an unbound TI with a `ViewZeroOut` statement.
+
+        :param cube: name of the cube
+        :param mdx: a valid MDX query
+        :param kwargs:
+        :return:
+        """
         from TM1py import ProcessService
         process_service = ProcessService(self._rest)
         view_service = ViewService(self._rest)
