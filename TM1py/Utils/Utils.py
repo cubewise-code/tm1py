@@ -694,3 +694,14 @@ def get_dimensions_from_where_clause(mdx: str) -> List[str]:
     where = mdx[mdx.rfind("WHERE(") + 6:-1]
     unique_names = where.split(",")
     return [dimension_name_from_element_unique_name(unique_name) for unique_name in unique_names]
+
+
+def wrap_in_curly_braces(expression: str) -> str:
+    """ Put curly braces around a string
+
+    :param expression:
+    :return:
+    """
+    return "".join(["{" if not expression.startswith("{") else "",
+                    expression,
+                    "}" if not expression.endswith("}") else ""])

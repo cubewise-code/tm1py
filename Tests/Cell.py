@@ -10,8 +10,7 @@ from mdxpy import MdxBuilder, MdxHierarchySet, Member, CalculatedMember
 from TM1py.Exceptions.Exceptions import TM1pyException
 from TM1py.Objects import MDXView, Cube, Dimension, Element, Hierarchy, NativeView, AnonymousSubset, ElementAttribute
 from TM1py.Services import TM1Service
-from TM1py.Utils import Utils, abbreviate_mdx, element_names_from_element_unique_names, \
-    case_and_space_insensitive_equals
+from TM1py.Utils import Utils, element_names_from_element_unique_names
 
 # Hard coded stuff
 PREFIX = 'TM1py_Tests_Cell_'
@@ -1739,6 +1738,39 @@ class TestDataMethods(unittest.TestCase):
         value = next(self.tm1.cells.execute_mdx_values(mdx=mdx))
         self.assertEqual(value, None)
 
+    def test_clear_happy_case(self):
+        cells = {("Element12", "Element17", "Element32"): 1}
+        self.tm1.cells.write_values(CUBE_NAME, cells)
+
+        kwargs = {
+            DIMENSION_NAMES[0]: f"[{DIMENSION_NAMES[0]}].[Element12]",
+            DIMENSION_NAMES[1]: f"{{[{DIMENSION_NAMES[1]}].[Element17]}}",
+            DIMENSION_NAMES[2]: f"[{DIMENSION_NAMES[2]}].[Element32]"
+        }
+        self.tm1.cells.clear(cube=CUBE_NAME, **kwargs)
+
+        mdx = MdxBuilder.from_cube(CUBE_NAME) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[0], "Element12"))) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[1], "Element17"))) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[2], "Element32"))) \
+            .to_mdx()
+
+        value = next(self.tm1.cells.execute_mdx_values(mdx=mdx))
+        self.assertEqual(value, None)
+
+    def test_clear_invalid_element_name(self):
+        with pytest.raises(TM1pyException) as execinfo:
+            kwargs = {
+                DIMENSION_NAMES[0]: f"[{DIMENSION_NAMES[0]}].[Element12]",
+                DIMENSION_NAMES[1]: f"[{DIMENSION_NAMES[1]}].[Element17]",
+                DIMENSION_NAMES[2]: f"[{DIMENSION_NAMES[2]}].[NotExistingElement]"
+            }
+            self.tm1.cells.clear(cube=CUBE_NAME, **kwargs)
+
+        self.assertEqual(
+            "{\"error\":{\"code\":\"248\",\"message\":\"\\\"NotExistingElement\\\" : member not found (rte 81)\"}}",
+            execinfo.value.message)
+
     def test_clear_with_mdx_invalid_query(self):
         with pytest.raises(TM1pyException) as execinfo:
             mdx = f"""
@@ -1749,7 +1781,7 @@ class TestDataMethods(unittest.TestCase):
             self.tm1.cells.clear_with_mdx(cube=CUBE_NAME, mdx=mdx)
 
         self.assertEqual(
-            f"Failed to clear cube: '{CUBE_NAME}' with mdx: '{abbreviate_mdx(mdx, 100)}'",
+            "{\"error\":{\"code\":\"248\",\"message\":\"\\\"NotExistingElement\\\" : member not found (rte 81)\"}}",
             execinfo.value.message)
 
     def test_execute_mdx_with_skip(self):
@@ -1780,21 +1812,6 @@ class TestDataMethods(unittest.TestCase):
 
         elements = element_names_from_element_unique_names(list(cells.keys())[0])
         self.assertEqual(elements, ("Element 2", "Element 1", "Element 1"))
-
-    def test_complement_mdx_with_all_leaf_selections_happy_case(self):
-        mdx = MdxBuilder.from_cube(CUBE_NAME) \
-            .add_hierarchy_set_to_row_axis(MdxHierarchySet.tm1_subset_all(DIMENSION_NAMES[0])) \
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.tm1_subset_all(DIMENSION_NAMES[1])) \
-            .to_mdx()
-
-        complemented_mdx = self.tm1.cells.complement_mdx_with_all_leaf_selections(mdx)
-        expected_mdx = MdxBuilder.from_cube(CUBE_NAME) \
-            .add_hierarchy_set_to_row_axis(MdxHierarchySet.tm1_subset_all(DIMENSION_NAMES[0])) \
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.tm1_subset_all(DIMENSION_NAMES[1])) \
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.tm1_subset_all(DIMENSION_NAMES[2]).filter_by_level(0)) \
-            .to_mdx()
-
-        self.assertTrue(case_and_space_insensitive_equals(expected_mdx, complemented_mdx))
 
     # Delete Cube and Dimensions
     @classmethod
