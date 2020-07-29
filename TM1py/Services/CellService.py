@@ -9,16 +9,19 @@ from io import StringIO
 from typing import List, Union, Dict, Iterable
 
 import pandas as pd
+from mdxpy import MdxHierarchySet, MdxBuilder
 from requests import Response
 
 from TM1py.Exceptions.Exceptions import TM1pyException
+from TM1py.Objects.MDXView import MDXView
 from TM1py.Objects.Process import Process
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.ViewService import ViewService
 from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
-    CaseAndSpaceInsensitiveTuplesDict, abbreviate_mdx, build_csv_from_cellset_dict, get_dimensions_from_where_clause
+    CaseAndSpaceInsensitiveTuplesDict, abbreviate_mdx, build_csv_from_cellset_dict, CaseAndSpaceInsensitiveDict, \
+    wrap_in_curly_braces
 
 
 def tidy_cellset(func):
@@ -160,55 +163,53 @@ class CellService(ObjectService):
 
         return self._post_against_cellset(cellset_id=cellset_id, payload=payload, delete_cellset=True, **kwargs)
 
-    def complement_mdx_with_all_leaf_selections(self, mdx: str, **kwargs) -> str:
-        mdx = mdx.upper()
-        if not ("ON 0" in mdx or "ON COLUMNS" in mdx):
-            raise ValueError(f"MDX: '{abbreviate_mdx(mdx)}' must contain 'ON 0' or 'ON COLUMNS'")
+    def clear(self, cube: str, **kwargs):
+        """
+        Takes the cube name and keyword argument pairs of dimensions and expressions:
+        `tm1.cells.clear(cube="Sales", product="{[Product].[ABC]}", time="{[Time].[2020].Children}")`
 
-        if not ("ON 1" in mdx or "ON ROWS" in mdx):
-            raise ValueError(f"MDX: '{abbreviate_mdx(mdx)}' must contain 'ON 1' or 'ON ROWS'")
+        :param cube: name of the cube
+        :param kwargs: keyword argument pairs of dimension names and mdx set expressions
+        :return:
+        """
+        from TM1py import CubeService
+        cube_service = CubeService(self._rest)
+        dimension_names = CaseAndSpaceInsensitiveSet(*cube_service.get_dimension_names(cube_name=cube))
+        dimension_expression_pairs = CaseAndSpaceInsensitiveDict()
 
-        cellset_id = self.create_cellset(mdx, **kwargs)
-        _, titles, rows, cols = self.extract_cellset_composition(cellset_id=cellset_id, delete_cellset=True, **kwargs)
+        for kwarg in kwargs:
+            if kwarg in dimension_names:
+                dimension_expression_pairs[kwarg] = wrap_in_curly_braces(kwargs[kwarg])
 
-        if not rows:
-            raise ValueError(f"Rows must not be empty in cellset. MDX: '{abbreviate_mdx(mdx)}'")
+        for dimension_name in dimension_names:
+            if dimension_name not in dimension_expression_pairs:
+                expression = MdxHierarchySet.tm1_subset_all(dimension_name).filter_by_level(0).to_mdx()
+                dimension_expression_pairs[dimension_name] = expression
 
-        if not cols:
-            raise ValueError(f"Columns must not be empty in cellset. MDX: '{abbreviate_mdx(mdx)}'")
+        mdx_builder = MdxBuilder.from_cube(cube).columns_non_empty()
+        for dimension, expression in dimension_expression_pairs.items():
+            hierarchy_set = MdxHierarchySet.from_str(dimension=dimension, hierarchy=dimension, mdx=expression)
+            mdx_builder.add_hierarchy_set_to_column_axis(hierarchy_set)
 
-        dimensions_in_titles = [dimension_name_from_element_unique_name(title) for title in titles]
-        dimensions_in_where = CaseAndSpaceInsensitiveSet(*get_dimensions_from_where_clause(mdx))
-        not_referenced_dimensions = CaseAndSpaceInsensitiveSet(*dimensions_in_titles) - dimensions_in_where
+        return self.clear_with_mdx(cube=cube, mdx=mdx_builder.to_mdx(), **kwargs)
 
-        additional_selections = []
-        for dimension in not_referenced_dimensions:
-            additional_selections.append(f"{{TM1FILTERBYLEVEL({{TM1SUBSETALL([{dimension}].[{dimension}])}},0)}}")
-        additional_mdx = "*".join(additional_selections)
-
-        for keyword in "ON 0", "ON 1", "ON ROWS", "ON COLUMNS":
-            if keyword in mdx:
-                return mdx.replace(keyword, "*" + additional_mdx + " " + keyword)
-
-    def clear_with_mdx(self, cube: str, mdx: str, all_leaves_as_default=False, **kwargs):
-        if all_leaves_as_default:
-            mdx = self.complement_mdx_with_all_leaf_selections(mdx)
-
-        view_name = "".join(['}TM1py', str(uuid.uuid4())])
-        code = "".join([
-            f"ViewCreateByMdx('{cube}','{view_name}','{mdx}',1);",
-            f"ViewZeroOut('{cube}','{view_name}');"])
-        process = Process(name="")
-        process.prolog_procedure = code
+    def clear_with_mdx(self, cube: str, mdx: str, **kwargs):
         from TM1py import ProcessService
         process_service = ProcessService(self._rest)
+        view_service = ViewService(self._rest)
+
+        view_name = "".join(['}TM1py', str(uuid.uuid4())])
+        view_service.create(MDXView(cube_name=cube, view_name=view_name, MDX=mdx))
 
         try:
+            code = f"ViewZeroOut('{cube}','{view_name}');"
+            process = Process(name="")
+            process.prolog_procedure = code
+
             success, _, _ = process_service.execute_process_with_return(process, **kwargs)
             if not success:
                 raise TM1pyException(f"Failed to clear cube: '{cube}' with mdx: '{abbreviate_mdx(mdx, 100)}'")
         finally:
-            view_service = ViewService(self._rest)
             if view_service.exists(cube, view_name, private=False):
                 view_service.delete(cube, view_name, private=False)
 
