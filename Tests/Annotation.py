@@ -9,23 +9,20 @@ from TM1py import Element, Hierarchy, Dimension, Cube
 from TM1py.Objects import Annotation
 from TM1py.Services import TM1Service
 
-config = configparser.ConfigParser()
-config.read(Path(__file__).parent.joinpath('config.ini'))
-
 
 class TestAnnotationMethods(unittest.TestCase):
-    tm1 = TM1Service(**config['tm1srv01'])
-
-    # create cube
-    cube_name = "TM1py_tests_annotations"
-    dimension_names = ("TM1py_tests_annotations_dimension1",
-                       "TM1py_tests_annotations_dimension2",
-                       "TM1py_tests_annotations_dimension3")
 
     @classmethod
     def setup_class(cls):
+
         # Connection to TM1
+        config = configparser.ConfigParser()
+        config.read(Path(__file__).parent.joinpath('config.ini'))
         cls.tm1 = TM1Service(**config['tm1srv01'])
+
+        cls.dimension_names = ("TM1py_tests_annotations_dimension1",
+                               "TM1py_tests_annotations_dimension2",
+                               "TM1py_tests_annotations_dimension3")
 
         # Build Dimensions
         for dimension_name in cls.dimension_names:
@@ -33,15 +30,18 @@ class TestAnnotationMethods(unittest.TestCase):
             hierarchy = Hierarchy(dimension_name=dimension_name,
                                   name=dimension_name,
                                   elements=elements)
-            dimension = Dimension(dimension_name, [hierarchy])
-            if not cls.tm1.dimensions.exists(dimension.name):
+            if not cls.tm1.dimensions.exists(dimension_name):
+                dimension = Dimension(dimension_name, [hierarchy])
                 cls.tm1.dimensions.create(dimension)
 
         # Build Cube
-        cube = Cube(cls.cube_name, cls.dimension_names)
+        cls.cube_name = "TM1py_tests_annotations"
+
         if not cls.tm1.cubes.exists(cls.cube_name):
+            cube = Cube(cls.cube_name, cls.dimension_names)
             cls.tm1.cubes.create(cube)
 
+        # Adds a single annotation to the cube
         cls.create_annotation()
 
     @classmethod
