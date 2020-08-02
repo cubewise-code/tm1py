@@ -321,7 +321,7 @@ class TestMDXUtils(unittest.TestCase):
             private_views, public_views = self.tm1.cubes.views.get_all(cube_name)
             for view in private_views + public_views:
                 mdx = view.MDX
-                self.assertEquals(
+                self.assertEqual(
                     cube_name.upper().replace(" ", ""),
                     MDXUtils.read_cube_name_from_mdx(mdx))
 

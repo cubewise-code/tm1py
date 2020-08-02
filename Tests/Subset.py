@@ -240,7 +240,7 @@ class TestSubsetMethods(unittest.TestCase):
             subset_name=self.subset_name_static,
             private=private)
         # Check after update
-        self.assertEquals(len(s.elements), 5)
+        self.assertEqual(len(s.elements), 5)
         self.assertNotEqual(self.static_subset, s)
 
     def test_update_subset_dynamic_private(self):
@@ -266,7 +266,7 @@ class TestSubsetMethods(unittest.TestCase):
             subset_name=self.subset_name_dynamic,
             private=private)
         # Check after update
-        self.assertEquals(
+        self.assertEqual(
             s.expression,
             '{{ [{}].[EUR], [{}].[USD] }})'.format(self.dimension_name, self.dimension_name))
 
@@ -291,7 +291,7 @@ class TestSubsetMethods(unittest.TestCase):
             subset_name=self.subset_name_static,
             private=private)
         # Check after update
-        self.assertEquals(len(subset.elements), 5)
+        self.assertEqual(len(subset.elements), 5)
         self.assertNotEqual(self.static_subset, subset)
 
     def test_update_subset_dynamic_public(self):
@@ -317,7 +317,7 @@ class TestSubsetMethods(unittest.TestCase):
             subset_name=self.subset_name_dynamic,
             private=private)
         # Check after update
-        self.assertEquals(
+        self.assertEqual(
             subset.expression,
             '{{ [{}].[EUR], [{}].[USD] }})'.format(self.dimension_name, self.dimension_name))
 
