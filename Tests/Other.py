@@ -4,7 +4,7 @@ import random
 import unittest
 from base64 import b64encode
 
-from TM1py.Exceptions import TM1pyRestException, TM1pyException
+from TM1py.Exceptions import TM1pyRestException
 from TM1py.Objects import MDXView, User
 from TM1py.Services import TM1Service
 from TM1py.Utils import Utils
