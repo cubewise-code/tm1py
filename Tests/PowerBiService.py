@@ -2,11 +2,8 @@ import configparser
 import os
 import unittest
 
-import pandas as pd
-from numpy import NaN
-
 from TM1py import MDXView
-from TM1py.Objects import Cube, Dimension, Element, Hierarchy, NativeView, AnonymousSubset, ElementAttribute
+from TM1py.Objects import Cube, Dimension, Element, Hierarchy, ElementAttribute
 from TM1py.Services import TM1Service
 
 # Hard coded stuff
