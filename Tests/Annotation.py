@@ -30,16 +30,14 @@ class TestAnnotationMethods(unittest.TestCase):
             hierarchy = Hierarchy(dimension_name=dimension_name,
                                   name=dimension_name,
                                   elements=elements)
-            if not cls.tm1.dimensions.exists(dimension_name):
-                dimension = Dimension(dimension_name, [hierarchy])
-                cls.tm1.dimensions.create(dimension)
+            dimension = Dimension(dimension_name, [hierarchy])
+            cls.tm1.dimensions.update_or_create(dimension)
 
         # Build Cube
         cls.cube_name = "TM1py_tests_annotations"
 
-        if not cls.tm1.cubes.exists(cls.cube_name):
-            cube = Cube(cls.cube_name, cls.dimension_names)
-            cls.tm1.cubes.create(cube)
+        cube = Cube(cls.cube_name, cls.dimension_names)
+        cls.tm1.cubes.update_or_create(cube)
 
         # Adds a single annotation to the cube
         cls.create_annotation()
