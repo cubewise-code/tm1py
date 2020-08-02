@@ -13,7 +13,7 @@ from TM1py.Services import TM1Service
 class TestAnnotationMethods(unittest.TestCase):
 
     @classmethod
-    def setup_class(cls):
+    def setUpClass(cls):
 
         # Connection to TM1
         config = configparser.ConfigParser()
