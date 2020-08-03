@@ -49,7 +49,16 @@ class TestAnnotationMethods(unittest.TestCase):
                                 dimensional_context=random_intersection)
         
         self.annotation_id = self.tm1.cubes.annotations.create(annotation).json().get("ID")
+
+    @classmethod
+    def tearDown(self):
+        annotations = self.tm1.cubes.annotations.get_all(self.cube_name)
         
+        for a in annotations:
+            if a.id == self.annotation_id:
+                self.tm1.annotations.delete(self.annotation_id)
+            
+
     def test_get_all(self):
         annotations = self.tm1.cubes.annotations.get_all(self.cube_name)
         self.assertGreater(len(annotations), 0)
@@ -67,7 +76,7 @@ class TestAnnotationMethods(unittest.TestCase):
         self.tm1.annotations.create(annotation)
 
         self.assertGreater(len(self.tm1.cubes.annotations.get_all(self.cube_name)), annotation_count)
-
+        
 
     def test_get(self):
         annotation = self.tm1.cubes.annotations.get(self.annotation_id)
@@ -88,6 +97,7 @@ class TestAnnotationMethods(unittest.TestCase):
         annotation_count = len(self.tm1.cubes.annotations.get_all(self.cube_name))
         self.tm1.annotations.delete(annotation_id)
         self.assertLess(len(self.tm1.cubes.annotations.get_all(self.cube_name)), annotation_count)
+
 
     @classmethod
     def tearDownClass(cls):
