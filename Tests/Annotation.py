@@ -74,9 +74,9 @@ class TestAnnotationMethods(unittest.TestCase):
                                 dimensional_context=random_intersection)
 
         self.tm1.annotations.create(annotation)
-
         self.assertGreater(len(self.tm1.cubes.annotations.get_all(self.cube_name)), annotation_count)
-        
+        annotation_new = self.tm1.annotations.get(annotation.id)
+        self.assertEqual(annotation, annotation_new)
 
     def test_get(self):
         annotation = self.tm1.cubes.annotations.get(self.annotation_id)
