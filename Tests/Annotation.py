@@ -1,11 +1,10 @@
 import configparser
-import json
 import random
 import string
 import unittest
 from pathlib import Path
 
-from TM1py import Element, Hierarchy, Dimension, Cube
+from TM1py import Cube, Dimension, Element, Hierarchy
 from TM1py.Objects import Annotation
 from TM1py.Services import TM1Service
 
@@ -39,62 +38,56 @@ class TestAnnotationMethods(unittest.TestCase):
         cube = Cube(cls.cube_name, cls.dimension_names)
         cls.tm1.cubes.update_or_create(cube)
 
-        # Adds a single annotation to the cube
-        cls.create_annotation()
-
     @classmethod
-    def create_annotation(cls):
-        # create annotations
-        random_intersection = cls.tm1.cubes.get_random_intersection(cls.cube_name, False)
+    def setUp(self):
+
+        random_intersection = self.tm1.cubes.get_random_intersection(self.cube_name, False)
         random_text = "".join([random.choice(string.printable) for _ in range(100)])
 
         annotation = Annotation(comment_value=random_text,
-                                object_name=cls.cube_name,
+                                object_name=self.cube_name,
                                 dimensional_context=random_intersection)
-        response = cls.tm1.cubes.annotations.create(annotation)
-        annotation_id = response.json()['ID']
-
-        return annotation_id
-
-    @classmethod
-    def delete_latest_annotation(cls):
-        # get Annotations
-        annotations = cls.tm1.cubes.annotations.get_all(cls.cube_name)
-        # sort Them
-        annotations = sorted(annotations, key=lambda a: str(a.last_updated if a.last_updated else a.created))
-        cls.tm1.cubes.annotations.delete(annotations[-1].id)
-
-    def test_create_and_delete_annotation(self):
-        # create a random annotation
-        annotation_id = self.create_annotation()
-        # count existing annotation
-        annotations = self.tm1.cubes.annotations.get_all(self.cube_name)
-        number_annotations_at_start = len(annotations)
-        # delete
-        self.tm1.cubes.annotations.delete(annotation_id)
-        # count existing annotations
-        annotations = self.tm1.cubes.annotations.get_all(self.cube_name)
-        number_annotations_at_end = len(annotations)
-        # assert
-        self.assertEqual(number_annotations_at_start, number_annotations_at_end + 1)
-
-    def test_get_all_annotations_from_cube(self):
+        
+        self.annotation_id = self.tm1.cubes.annotations.create(annotation).json().get("ID")
+        
+    def test_get_all(self):
         annotations = self.tm1.cubes.annotations.get_all(self.cube_name)
         self.assertGreater(len(annotations), 0)
-        for a in annotations:
-            b = self.tm1.cubes.annotations.get(a.id)
-            self.assertEqual(a.body, b.body)
 
-    def test_update_annotation(self):
-        annotations = self.tm1.cubes.annotations.get_all(self.cube_name)
-        annotation = annotations[-1]
-        # Update Value
+    def test_create(self):
+        annotation_count = len(self.tm1.cubes.annotations.get_all(self.cube_name))
+        
+        random_intersection = self.tm1.cubes.get_random_intersection(self.cube_name, False)
+        random_text = "".join([random.choice(string.printable) for _ in range(100)])
+
+        annotation = Annotation(comment_value=random_text,
+                                object_name=self.cube_name,
+                                dimensional_context=random_intersection)
+
+        self.tm1.annotations.create(annotation)
+
+        self.assertGreater(len(self.tm1.cubes.annotations.get_all(self.cube_name)), annotation_count)
+
+
+    def test_get(self):
+        annotation = self.tm1.cubes.annotations.get(self.annotation_id)
+        self.assertEqual(annotation.id, self.annotation_id)
+
+    def test_update(self):
+        annotation = self.tm1.cubes.annotations.get(self.annotation_id)  
         new_random_text = "".join([random.choice(string.printable) for _ in range(100)])
         annotation.comment_value = new_random_text
-        response = self.tm1.cubes.annotations.update(annotation)
-        annotation_id = json.loads(response.text)['ID']
-        a_updated = self.tm1.cubes.annotations.get(annotation_id)
-        self.assertEqual(a_updated.comment_value, new_random_text)
+
+        self.tm1.cubes.annotations.update(annotation)
+        annotation_updated = self.tm1.cubes.annotations.get(self.annotation_id)
+        self.assertEqual(annotation_updated.comment_value, new_random_text)
+        self.assertNotEqual(annotation_updated.last_updated, annotation.last_updated)
+
+    def test_delete(self):
+        annotation_id = self.tm1.cubes.annotations.get(self.annotation_id).id  
+        annotation_count = len(self.tm1.cubes.annotations.get_all(self.cube_name))
+        self.tm1.annotations.delete(annotation_id)
+        self.assertLess(len(self.tm1.cubes.annotations.get_all(self.cube_name)), annotation_count)
 
     @classmethod
     def tearDownClass(cls):
