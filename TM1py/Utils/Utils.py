@@ -4,9 +4,42 @@ import http.client as http_client
 import json
 from typing import Dict, List, Tuple, Iterable, Optional, Generator
 
-import pandas as pd
-
 from TM1py.Exceptions.Exceptions import TM1pyVersionException
+
+try:
+    import pandas as pd
+
+    _has_pandas = True
+except ImportError:
+    _has_pandas = False
+
+
+def require(version):
+    """ Higher order function to check required version for TM1py function
+    """
+
+    def wrap(func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            if not verify_version(required_version=version, version=self.version):
+                raise TM1pyVersionException(func.__name__, version)
+            return func(self, *args, **kwargs)
+
+        return wrapper
+
+    return wrap
+
+
+def require_pandas(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        try:
+            import pandas
+            return func(self, *args, **kwargs)
+        except ImportError:
+            raise ImportError(f"Function '{func.__name__}' requires pandas")
+
+    return wrapper
 
 
 def get_all_servers_from_adminhost(adminhost='localhost') -> List:
@@ -428,8 +461,9 @@ def build_element_unique_names(
                 in zip(dimension_names, hierarchy_names, element_names))
 
 
+@require_pandas
 def build_pandas_dataframe_from_cellset(cellset: Dict, multiindex: bool = True,
-                                        sort_values: bool = True) -> pd.DataFrame:
+                                        sort_values: bool = True) -> 'pd.DataFrame':
     """
     
     :param cellset: 
@@ -465,7 +499,8 @@ def build_pandas_dataframe_from_cellset(cellset: Dict, multiindex: bool = True,
         raise ValueError(message)
 
 
-def build_cellset_from_pandas_dataframe(df: pd.DataFrame) -> 'CaseAndSpaceInsensitiveTuplesDict':
+@require_pandas
+def build_cellset_from_pandas_dataframe(df: 'pd.DataFrame') -> 'CaseAndSpaceInsensitiveTuplesDict':
     """
     
     :param df: a Pandas Dataframe, with dimension-column mapping in correct order. As created in build_pandas_dataframe_from_cellset
@@ -716,19 +751,3 @@ def wrap_in_curly_braces(expression: str) -> str:
     return "".join(["{" if not expression.startswith("{") else "",
                     expression,
                     "}" if not expression.endswith("}") else ""])
-
-
-def require(version):
-    """ Higher order function to check required version for TM1py function
-    """
-
-    def wrap(func):
-        @functools.wraps(func)
-        def wrapper(self, *args, **kwargs):
-            if not verify_version(required_version=version, version=self.version):
-                raise TM1pyVersionException(func.__name__, version)
-            return func(self, *args, **kwargs)
-
-        return wrapper
-
-    return wrap

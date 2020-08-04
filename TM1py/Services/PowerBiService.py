@@ -1,9 +1,15 @@
 from collections.abc import Iterable
 
-import pandas as pd
-
 from TM1py.Services import CellService
 from TM1py.Services import ElementService
+from TM1py.Utils import require_pandas
+
+try:
+    import pandas as pd
+
+    _has_pandas = True
+except ImportError:
+    _has_pandas = False
 
 
 class PowerBiService:
@@ -16,15 +22,18 @@ class PowerBiService:
         self.cells = CellService(tm1_rest)
         self.elements = ElementService(tm1_rest)
 
-    def execute_mdx(self, mdx, **kwargs) -> pd.DataFrame:
+    @require_pandas
+    def execute_mdx(self, mdx, **kwargs) -> 'pd.DataFrame':
         return self.cells.execute_mdx_dataframe_shaped(mdx, **kwargs)
 
-    def execute_view(self, cube_name, view_name, private, **kwargs) -> pd.DataFrame:
+    @require_pandas
+    def execute_view(self, cube_name, view_name, private, **kwargs) -> 'pd.DataFrame':
         return self.cells.execute_view_dataframe_shaped(cube_name, view_name, private, **kwargs)
 
+    @require_pandas
     def get_member_properties(self, dimension_name, hierarchy_name, member_selection=None,
                               skip_consolidations=True, attributes=None, skip_parents=False,
-                              level_names=None) -> pd.DataFrame:
+                              level_names=None) -> 'pd.DataFrame':
         """
 
         :param dimension_name: Name of the dimension
