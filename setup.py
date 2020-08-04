@@ -35,9 +35,11 @@ setup(
     ],
     install_requires=[
         'requests',
-        'pandas',
         'pytz',
         'requests_negotiate_sspi;platform_system=="Windows"',
         'mdxpy'],
+    extras_require={
+        "pandas": ["pandas"]
+    },
     python_requires='>=3.5',
 )

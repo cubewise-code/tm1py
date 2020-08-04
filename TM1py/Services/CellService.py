@@ -8,7 +8,6 @@ from collections import OrderedDict
 from io import StringIO
 from typing import List, Union, Dict, Iterable
 
-import pandas as pd
 from mdxpy import MdxHierarchySet, MdxBuilder
 from requests import Response
 
@@ -21,7 +20,14 @@ from TM1py.Services.ViewService import ViewService
 from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
     CaseAndSpaceInsensitiveDict, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, abbreviate_mdx, \
-    build_csv_from_cellset_dict, require
+    build_csv_from_cellset_dict, require, require_pandas
+
+try:
+    import pandas as pd
+
+    _has_pandas = True
+except ImportError:
+    _has_pandas = False
 
 
 def tidy_cellset(func):
@@ -611,9 +617,10 @@ class CellService(ObjectService):
         return {element_separator.join(entries.split(element_separator)[:-1]): entries.split(element_separator)[-1]
                 for entries in lines.split("\r\n")[1:]}
 
+    @require_pandas
     def execute_mdx_dataframe(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
                               skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
-                              **kwargs) -> pd.DataFrame:
+                              **kwargs) -> 'pd.DataFrame':
         """ Optimized for performance. Get Pandas DataFrame from MDX Query.
 
         Takes all arguments from the pandas.read_csv method:
@@ -632,7 +639,8 @@ class CellService(ObjectService):
                                               skip_consolidated_cells=skip_consolidated_cells,
                                               skip_rule_derived_cells=skip_rule_derived_cells, **kwargs)
 
-    def execute_mdx_dataframe_shaped(self, mdx, **kwargs) -> pd.DataFrame:
+    @require_pandas
+    def execute_mdx_dataframe_shaped(self, mdx, **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cube in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
 
@@ -643,7 +651,8 @@ class CellService(ObjectService):
         cellset_id = self.create_cellset(mdx)
         return self.extract_cellset_dataframe_shaped(cellset_id, delete_cellset=True, **kwargs)
 
-    def execute_view_dataframe_shaped(self, cube_name, view_name, private, **kwargs) -> pd.DataFrame:
+    @require_pandas
+    def execute_view_dataframe_shaped(self, cube_name, view_name, private, **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cube in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
 
@@ -656,8 +665,9 @@ class CellService(ObjectService):
         cellset_id = self.create_cellset_from_view(cube_name, view_name, private)
         return self.extract_cellset_dataframe_shaped(cellset_id, delete_cellset=True, **kwargs)
 
+    @require_pandas
     def execute_view_dataframe_pivot(self, cube_name: str, view_name: str, private: bool = False, dropna: bool = False,
-                                     fill_value: bool = None, **kwargs) -> pd.DataFrame:
+                                     fill_value: bool = None, **kwargs) -> 'pd.DataFrame':
         """ Execute a cube view to get a pandas pivot dataframe, in the shape of the cube view
 
         :param cube_name: String, name of the cube
@@ -674,7 +684,8 @@ class CellService(ObjectService):
             fill_value=fill_value,
             **kwargs)
 
-    def execute_mdx_dataframe_pivot(self, mdx: str, dropna: bool = False, fill_value: bool = None) -> pd.DataFrame:
+    @require_pandas
+    def execute_mdx_dataframe_pivot(self, mdx: str, dropna: bool = False, fill_value: bool = None) -> 'pd.DataFrame':
         """ Execute MDX Query to get a pandas pivot data frame in the shape as specified in the Query
 
         :param mdx:
@@ -724,9 +735,10 @@ class CellService(ObjectService):
         return {element_separator.join(entries.split(element_separator)[:-1]): entries.split(element_separator)[-1]
                 for entries in lines.split("\r\n")[1:]}
 
+    @require_pandas
     def execute_view_dataframe(self, cube_name: str, view_name: str, private: bool = False, top: int = None,
                                skip: int = None, skip_zeros: bool = True, skip_consolidated_cells: bool = False,
-                               skip_rule_derived_cells: bool = False, **kwargs) -> pd.DataFrame:
+                               skip_rule_derived_cells: bool = False, **kwargs) -> 'pd.DataFrame':
         """ Optimized for performance. Get Pandas DataFrame from an existing Cube View
         Context dimensions are omitted in the resulting Dataframe !
         Cells with Zero/null are omitted !
@@ -1206,6 +1218,7 @@ class CellService(ObjectService):
         return build_csv_from_cellset_dict(rows, columns, cellset_dict, line_separator=line_separator,
                                            value_separator=value_separator, top=top)
 
+    @require_pandas
     def extract_cellset_dataframe(
             self,
             cellset_id: str,
@@ -1214,7 +1227,7 @@ class CellService(ObjectService):
             skip_zeros: bool = True,
             skip_consolidated_cells: bool = False,
             skip_rule_derived_cells: bool = False,
-            **kwargs) -> pd.DataFrame:
+            **kwargs) -> 'pd.DataFrame':
         """ Build pandas data frame from cellset_id
 
         :param cellset_id:
@@ -1240,7 +1253,8 @@ class CellService(ObjectService):
         return pd.read_csv(memory_file, sep='|', **kwargs)
 
     @tidy_cellset
-    def extract_cellset_dataframe_shaped(self, cellset_id: str, **kwargs) -> pd.DataFrame:
+    @require_pandas
+    def extract_cellset_dataframe_shaped(self, cellset_id: str, **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cellset in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
 
@@ -1283,8 +1297,9 @@ class CellService(ObjectService):
             body.append(list(element_tuple) + cells)
         return pd.DataFrame(body, columns=headers, dtype=str)
 
+    @require_pandas
     def extract_cellset_dataframe_pivot(self, cellset_id: str, dropna: bool = False, fill_value: bool = False,
-                                        **kwargs) -> pd.DataFrame:
+                                        **kwargs) -> 'pd.DataFrame':
         """ Extract a pivot table (pandas dataframe) from a cellset in TM1
 
         :param cellset_id:
@@ -1293,6 +1308,7 @@ class CellService(ObjectService):
         :param kwargs:
         :return:
         """
+
         data = self.extract_cellset(
             cellset_id=cellset_id,
             delete_cellset=False,
