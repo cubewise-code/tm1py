@@ -137,6 +137,10 @@ class RestService:
             if isinstance(kwargs['verify'], str):
                 if kwargs['verify'].upper() != 'FALSE':
                     self._verify = kwargs.get('verify')
+            elif isinstance(kwargs['verify'], bool):
+                self._verify = kwargs['verify']
+            else:
+                raise ValueError("verify argument must be of type str or bool")
 
         if 'base_url' in kwargs:
             self._base_url = kwargs['base_url']
