@@ -13,6 +13,9 @@ class TestAnnotationMethods(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        """
+        Establishes a connection to TM1 and creates a dimensions and a cube to use across all tests
+        """
 
         # Connection to TM1
         config = configparser.ConfigParser()
@@ -40,7 +43,9 @@ class TestAnnotationMethods(unittest.TestCase):
 
     @classmethod
     def setUp(self):
-
+        """
+        Run before each test to create a test annotation
+        """
         random_intersection = self.tm1.cubes.get_random_intersection(self.cube_name, False)
         random_text = "".join([random.choice(string.printable) for _ in range(100)])
 
@@ -52,20 +57,30 @@ class TestAnnotationMethods(unittest.TestCase):
 
     @classmethod
     def tearDown(self):
-
+        """
+        Run at the end of each test to delete all test annotations
+        """
         for a in self.tm1.cubes.annotations.get_all(self.cube_name):
             self.tm1.annotations.delete(a.id)
             
 
     def test_get_all(self):
-
+        """
+        Check that get_all returns a list
+        Check that the list of annotations returned contains the test annotation
+        """
         annotations = self.tm1.cubes.annotations.get_all(self.cube_name)
         self.assertIsInstance(annotations, list)
 
-    def test_create(self):
+        annotation_ids = [a.id for a in annotations] 
+        self.assertIn(self.annotation_id, annotation_ids)
 
-        annotation_count = len(self.tm1.cubes.annotations.get_all(self.cube_name))
-        
+    def test_create(self):
+        """
+        Check that an annotation can be created on the server
+        Check that created annotation has the correct comment_value
+        """
+        annotation_count = len(self.tm1.cubes.annotations.get_all(self.cube_name))        
         random_intersection = self.tm1.cubes.get_random_intersection(self.cube_name, False)
         random_text = "".join([random.choice(string.printable) for _ in range(100)])
 
@@ -83,10 +98,18 @@ class TestAnnotationMethods(unittest.TestCase):
 
 
     def test_get(self):
+        """
+        Check that get returns the test annotation from its id
+        """
         annotation = self.tm1.cubes.annotations.get(self.annotation_id)
         self.assertEqual(annotation.id, self.annotation_id)
 
     def test_update(self):
+        """
+        Check that the test annotation's comment_value can be changed
+        Check that the last_updated date has increased
+        Check that the created date remains the same
+        """
         annotation = self.tm1.cubes.annotations.get(self.annotation_id)  
         new_random_text = "".join([random.choice(string.printable) for _ in range(100)])
         annotation.comment_value = new_random_text
@@ -98,17 +121,21 @@ class TestAnnotationMethods(unittest.TestCase):
         self.assertNotEqual(annotation_updated.last_updated, annotation.last_updated)
         self.assertEqual(annotation_updated.created, annotation.created)
 
-
-
     def test_delete(self):
-        annotation_id = self.tm1.cubes.annotations.get(self.annotation_id).id  
+        """
+        Check that the test annotation can be deleted
+        """
+
+        annotation_id = self.annotation_id
         annotation_count = len(self.tm1.cubes.annotations.get_all(self.cube_name))
         self.tm1.annotations.delete(annotation_id)
         self.assertLess(len(self.tm1.cubes.annotations.get_all(self.cube_name)), annotation_count)
 
-
     @classmethod
     def tearDownClass(cls):
+        """
+        Remove test cube and dimensions and close the connection once all tests have run.
+        """
         cls.tm1.cubes.delete(cube_name=cls.cube_name)
         for dimension_name in cls.dimension_names:
             cls.tm1.dimensions.delete(dimension_name=dimension_name)
