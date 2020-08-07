@@ -93,8 +93,12 @@ class TestAnnotationMethods(unittest.TestCase):
 
         self.tm1.cubes.annotations.update(annotation)
         annotation_updated = self.tm1.cubes.annotations.get(self.annotation_id)
+        
         self.assertEqual(annotation_updated.comment_value, new_random_text)
         self.assertNotEqual(annotation_updated.last_updated, annotation.last_updated)
+        self.assertEqual(annotation_updated.created, annotation.created)
+
+
 
     def test_delete(self):
         annotation_id = self.tm1.cubes.annotations.get(self.annotation_id).id  
