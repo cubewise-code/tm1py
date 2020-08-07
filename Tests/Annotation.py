@@ -19,11 +19,11 @@ class TestAnnotationMethods(unittest.TestCase):
         config.read(Path(__file__).parent.joinpath('config.ini'))
         cls.tm1 = TM1Service(**config['tm1srv01'])
 
+        # Build Dimensions
         cls.dimension_names = ("TM1py_tests_annotations_dimension1",
                                "TM1py_tests_annotations_dimension2",
                                "TM1py_tests_annotations_dimension3")
 
-        # Build Dimensions
         for dimension_name in cls.dimension_names:
             elements = [Element('Element {}'.format(str(j)), 'Numeric') for j in range(1, 1001)]
             hierarchy = Hierarchy(dimension_name=dimension_name,
@@ -52,31 +52,35 @@ class TestAnnotationMethods(unittest.TestCase):
 
     @classmethod
     def tearDown(self):
-        annotations = self.tm1.cubes.annotations.get_all(self.cube_name)
-        
-        for a in annotations:
-            if a.id == self.annotation_id:
-                self.tm1.annotations.delete(self.annotation_id)
+
+        for a in self.tm1.cubes.annotations.get_all(self.cube_name):
+            self.tm1.annotations.delete(a.id)
             
 
     def test_get_all(self):
+
         annotations = self.tm1.cubes.annotations.get_all(self.cube_name)
-        self.assertGreater(len(annotations), 0)
+        self.assertIsInstance(annotations, list)
 
     def test_create(self):
+
         annotation_count = len(self.tm1.cubes.annotations.get_all(self.cube_name))
         
         random_intersection = self.tm1.cubes.get_random_intersection(self.cube_name, False)
         random_text = "".join([random.choice(string.printable) for _ in range(100)])
 
-        annotation = Annotation(comment_value=random_text,
+        annotation = Annotation(
+                                comment_value=random_text,
                                 object_name=self.cube_name,
                                 dimensional_context=random_intersection)
 
-        self.tm1.annotations.create(annotation)
-        self.assertGreater(len(self.tm1.cubes.annotations.get_all(self.cube_name)), annotation_count)
-        annotation_new = self.tm1.annotations.get(annotation.id)
-        self.assertEqual(annotation, annotation_new)
+        annotation_id = self.tm1.cubes.annotations.create(annotation).json().get("ID")
+        all_annotations = self.tm1.cubes.annotations.get_all(self.cube_name)
+        self.assertGreater(len(all_annotations),annotation_count)
+
+        new_annotation = self.tm1.cubes.annotations.get(annotation_id)
+        self.assertEqual(new_annotation.comment_value, random_text)
+
 
     def test_get(self):
         annotation = self.tm1.cubes.annotations.get(self.annotation_id)
