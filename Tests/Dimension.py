@@ -156,6 +156,10 @@ class TestDimensionMethods(unittest.TestCase):
     def test_get_all_names(self):
         self.assertIn(DIMENSION_NAME, self.tm1.dimensions.get_all_names())
 
+    def test_get_number_of_dimensions(self):
+        number_of_dimensions = self.tm1.dimensions.get_number_of_dimensions()
+        self.assertIsInstance(number_of_dimensions, int)
+
     def test_execute_mdx(self):
         mdx = "{TM1SubsetAll(" + DIMENSION_NAME + ")}"
         elements = self.tm1.dimensions.execute_mdx(DIMENSION_NAME, mdx)

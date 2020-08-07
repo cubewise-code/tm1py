@@ -121,6 +121,14 @@ class DimensionService(ObjectService):
         dimension_names = list(entry['Name'] for entry in response.json()['value'])
         return dimension_names
 
+    def get_number_of_dimensions(self, **kwargs) -> int:
+        """Ask TM1 Server for the total number of dimensions
+
+        :return: Number of dimensions
+        """
+        response = self._rest.GET(url='/api/v1/Dimensions/$count', **kwargs)
+        return int(response.text)
+
     def execute_mdx(self, dimension_name: str, mdx: str, **kwargs) -> List:
         """ Execute MDX against Dimension. 
         Requires }ElementAttributes_ Cube of the dimension to exist !
