@@ -96,27 +96,27 @@ class ElementService(ObjectService):
 
     def get_number_of_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> int:
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?&$count&$top=0",
+            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements/$count",
             dimension_name,
             hierarchy_name)
         response = self._rest.GET(url, **kwargs)
-        return int(response.json()["@odata.count"])
+        return int(response.text)
 
     def get_number_of_consolidated_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> int:
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$filter=Type eq 3&$count&$top=0",
+            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements/$count?$filter=Type eq 3",
             dimension_name,
             hierarchy_name)
         response = self._rest.GET(url, **kwargs)
-        return int(response.json()["@odata.count"])
+        return int(response.text)
 
     def get_number_of_leaf_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> int:
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$filter=Type ne 3&$count&$top=0",
+            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements/$count?$filter=Type ne 3",
             dimension_name,
             hierarchy_name)
         response = self._rest.GET(url, **kwargs)
-        return int(response.json()["@odata.count"])
+        return int(response.text)
 
     def get_all_leaf_element_identifiers(self, dimension_name: str, hierarchy_name: str,
                                          **kwargs) -> CaseAndSpaceInsensitiveSet:
@@ -128,6 +128,23 @@ class ElementService(ObjectService):
         """
         mdx_elements = f"{{ Tm1FilterByLevel ( {{ Tm1SubsetAll ([{dimension_name}].[{hierarchy_name}]) }} , 0 ) }}"
         return self.get_element_identifiers(dimension_name, hierarchy_name, mdx_elements, **kwargs)
+
+    def get_elements_by_level(self, dimension_name: str, hierarchy_name: str, level: int,
+                              **kwargs) -> List:
+        """ Get all element names by level in a hierarchy
+
+        :param dimension_name: Name of the dimension
+        :param hierarchy_name: Name of the hierarchy
+        :param level: Level to filter
+        :return: List of element names
+        """
+        url = format_url(
+            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Level eq {}",
+            dimension_name,
+            hierarchy_name,
+            level)
+        response = self._rest.GET(url, **kwargs)
+        return [e["Name"] for e in response.json()['value']]
 
     def get_all_element_identifiers(self, dimension_name: str, hierarchy_name: str,
                                     **kwargs) -> CaseAndSpaceInsensitiveSet:
