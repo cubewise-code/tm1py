@@ -268,28 +268,40 @@ class TestElementMethods(unittest.TestCase):
         self.assertEqual(expected_identifiers, set(identifiers))
 
     def test_get_element_identifiers_with_string(self):
-        exepected_identifiers = {'1988/89', '1989/90', '1990/91', '1991/92', *self.years}
+        expected_identifiers = {'1988/89', '1989/90', '1990/91', '1991/92', *self.years}
         elements = "{" + ",".join(["[" + DIMENSION_NAME + "].[" + year + "]" for year in self.years]) + "}"
         identifiers = self.tm1.dimensions.hierarchies.elements.get_element_identifiers(
             dimension_name=DIMENSION_NAME,
             hierarchy_name=HIERARCHY_NAME,
             elements=elements)
-        self.assertEqual(exepected_identifiers, set(identifiers))
+        self.assertEqual(expected_identifiers, set(identifiers))
 
     def test_get_all_element_identifiers(self):
-        exepected_identifiers = {'1988/89', '1989/90', '1990/91', '1991/92', 'Total Years', 'All Consolidations',
+        expected_identifiers = {'1988/89', '1989/90', '1990/91', '1991/92', 'Total Years', 'All Consolidations',
                                  *self.years}
         identifiers = self.tm1.dimensions.hierarchies.elements.get_all_element_identifiers(
             DIMENSION_NAME,
             HIERARCHY_NAME)
-        self.assertEqual(exepected_identifiers, set(identifiers))
+        self.assertEqual(expected_identifiers, set(identifiers))
 
     def test_get_all_leaf_element_identifiers(self):
-        exepected_identifiers = {'1988/89', '1989/90', '1990/91', '1991/92', *self.years}
+        expected_identifiers = {'1988/89', '1989/90', '1990/91', '1991/92', *self.years}
         identifiers = self.tm1.dimensions.hierarchies.elements.get_all_leaf_element_identifiers(
             DIMENSION_NAME,
             HIERARCHY_NAME)
-        self.assertEqual(exepected_identifiers, set(identifiers))
+        self.assertEqual(expected_identifiers, set(identifiers))
+
+    def test_get_elements_by_level(self):
+        expected_elements = ['No Year', '1989', '1990', '1991', '1992']
+        elements = self.tm1.dimensions.hierarchies.elements.get_elements_by_level(
+            DIMENSION_NAME, HIERARCHY_NAME, 0)
+
+        self.assertEqual(elements, expected_elements)
+
+        expected_elements = ['Total Years']
+        elements = self.tm1.dimensions.hierarchies.elements.get_elements_by_level(
+            DIMENSION_NAME, HIERARCHY_NAME, 1)
+        self.assertEqual(elements, expected_elements)
 
     def test_get_number_of_elements(self):
         number_of_elements = self.tm1.dimensions.hierarchies.elements.get_number_of_elements(

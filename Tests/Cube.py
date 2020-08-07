@@ -117,6 +117,10 @@ class TestCubeMethods(unittest.TestCase):
         dimensions = self.tm1.cubes.get_storage_dimension_order(cube_name=self.cube_name)
         self.assertEqual(dimensions, self.dimension_names)
 
+    def test_get_number_of_cubes(self):
+        number_of_cubes = self.tm1.cubes.get_number_of_cubes()
+        self.assertIsInstance(number_of_cubes, int)
+
     def test_update_storage_dimension_order(self):
         self.tm1.cubes.update_storage_dimension_order(
             cube_name=self.cube_name,

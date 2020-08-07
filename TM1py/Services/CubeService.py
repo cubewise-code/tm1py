@@ -80,6 +80,12 @@ class CubeService(ObjectService):
         cubes = [Cube.from_dict(cube_as_dict=cube) for cube in response.json()['value']]
         return cubes
 
+    def get_number_of_cubes(self, **kwargs) -> int:
+        url = format_url(
+            "/api/v1/Cubes/$count")
+        response = self._rest.GET(url, **kwargs)
+        return int(response.text)
+
     def update(self, cube: Cube, **kwargs) -> Response:
         """ Update existing cube on TM1 Server
 
