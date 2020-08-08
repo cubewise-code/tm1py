@@ -31,7 +31,7 @@ def require(version):
 
 
 def require_pandas(func):
-    @functools.wraps(func)
+    @functools.wraps(func)  
     def wrapper(self, *args, **kwargs):
         try:
             import pandas

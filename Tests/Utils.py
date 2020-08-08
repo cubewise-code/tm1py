@@ -16,24 +16,12 @@ from TM1py.Utils.MDXUtils import DimensionSelection, read_dimension_composition_
 from TM1py.Utils.Utils import dimension_hierarchy_element_tuple_from_unique_name, get_dimensions_from_where_clause, \
     integerize_version, verify_version
 
+from .TestUtils import skip_if_no_pandas
+
 try:
     import pandas as pd
-
-    _has_pandas = True
 except ImportError:
-    _has_pandas = False
-
-
-def skip_if_no_pandas(func):
-    @functools.wraps(func)
-    def wrapper(self, *args, **kwargs):
-        if not _has_pandas:
-            self.skipTest("Test requires Pandas which is not installed.")
-        else:
-            func(self, *args, **kwargs)
-
-    return wrapper
-
+    pass
 
 
 config = configparser.ConfigParser()

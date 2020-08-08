@@ -12,23 +12,12 @@ from TM1py.Objects import MDXView, Cube, Dimension, Element, Hierarchy, NativeVi
 from TM1py.Services import TM1Service
 from TM1py.Utils import Utils, element_names_from_element_unique_names
 
+from .TestUtils import skip_if_no_pandas
+
 try:
     import pandas as pd
-
-    _has_pandas = True
 except ImportError:
-    _has_pandas = False
-
-def skip_if_no_pandas(func):
-    @functools.wraps(func)
-    def wrapper(self, *args, **kwargs):
-        if not _has_pandas:
-            self.skipTest("Test requires Pandas which is not installed.")
-        else:
-            func(self, *args, **kwargs)
-
-    return wrapper
-
+    pass
 
 # Hard coded stuff
 PREFIX = 'TM1py_Tests_Cell_'
