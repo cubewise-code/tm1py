@@ -12,7 +12,7 @@ from TM1py.Objects import MDXView, Cube, Dimension, Element, Hierarchy, NativeVi
 from TM1py.Services import TM1Service
 from TM1py.Utils import Utils, element_names_from_element_unique_names
 
-from .TestUtils import skip_if_no_pandas
+from .TestUtils import skip_if_no_pandas, skip_if_insufficient_version
 
 try:
     import pandas as pd
@@ -1730,6 +1730,7 @@ class TestDataMethods(unittest.TestCase):
         values = self.tm1.cubes.cells.execute_mdx_values(mdx=mdx, encoding="latin-1")
         self.assertNotEqual(LATIN_1_ENCODED_TEXT, next(values))
 
+    @skip_if_insufficient_version(version="11.7")
     def test_clear_with_mdx_happy_case(self):
         cells = {("Element17", "Element21", "Element15"): 1}
         self.tm1.cells.write_values(CUBE_NAME, cells)
@@ -1745,6 +1746,7 @@ class TestDataMethods(unittest.TestCase):
         value = next(self.tm1.cells.execute_mdx_values(mdx=mdx))
         self.assertEqual(value, None)
 
+    @skip_if_insufficient_version(version="11.7")
     def test_clear_with_mdx_all_on_axis0(self):
         cells = {("Element19", "Element11", "Element31"): 1}
         self.tm1.cells.write_values(CUBE_NAME, cells)
@@ -1759,6 +1761,7 @@ class TestDataMethods(unittest.TestCase):
         value = next(self.tm1.cells.execute_mdx_values(mdx=mdx))
         self.assertEqual(value, None)
 
+    @skip_if_insufficient_version(version="11.7")
     def test_clear_happy_case(self):
         cells = {("Element12", "Element17", "Element32"): 1}
         self.tm1.cells.write_values(CUBE_NAME, cells)
@@ -1779,6 +1782,7 @@ class TestDataMethods(unittest.TestCase):
         value = next(self.tm1.cells.execute_mdx_values(mdx=mdx))
         self.assertEqual(value, None)
 
+    @skip_if_insufficient_version(version="11.7")
     def test_clear_invalid_element_name(self):
         with pytest.raises(TM1pyException) as execinfo:
             kwargs = {
@@ -1792,6 +1796,7 @@ class TestDataMethods(unittest.TestCase):
             "{\"error\":{\"code\":\"248\",\"message\":\"\\\"NotExistingElement\\\" : member not found (rte 81)\"}}",
             execinfo.value.message)
 
+    @skip_if_insufficient_version(version="11.7")
     def test_clear_with_mdx_invalid_query(self):
         with pytest.raises(TM1pyException) as execinfo:
             mdx = f"""
