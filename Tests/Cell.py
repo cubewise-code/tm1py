@@ -14,7 +14,7 @@ from TM1py.Utils import Utils, element_names_from_element_unique_names
 
 try:
     import pandas as pd
-    
+
     _has_pandas = True
 except ImportError:
     _has_pandas = False
@@ -935,7 +935,7 @@ class TestDataMethods(unittest.TestCase):
         values = [float(value) for _, value in values.items()]
         self.assertEqual(self.total_value, sum(values))
 
-    @unittest.skip
+    @skip_if_no_pandas
     def test_execute_mdx_dataframe(self):
         mdx = MdxBuilder.from_cube(CUBE_NAME) \
             .rows_non_empty() \
@@ -1488,7 +1488,7 @@ class TestDataMethods(unittest.TestCase):
         values = df[["Value"]].values
         self.assertEqual(self.total_value, sum(values))
 
-    @unittest.skip
+    @skip_if_no_pandas
     def test_execute_view_dataframe_with_top_argument(self):
         df = self.tm1.cubes.cells.execute_view_dataframe(
             cube_name=CUBE_NAME,
