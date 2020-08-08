@@ -14,12 +14,12 @@ from TM1py.Utils import Utils, element_names_from_element_unique_names
 
 try:
     import pandas as pd
-
+    
     _has_pandas = True
 except ImportError:
     _has_pandas = False
 
-def skipIfNoPandas(func):
+def skip_if_no_pandas(func):
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
         if not _has_pandas:
@@ -965,7 +965,7 @@ class TestDataMethods(unittest.TestCase):
             self.total_value,
             sum(values))
 
-    @skipIfNoPandas
+    @skip_if_no_pandas
     def test_execute_mdx_dataframe_pivot(self):
         mdx = MdxBuilder.from_cube(CUBE_NAME) \
             .add_hierarchy_set_to_row_axis(MdxHierarchySet.all_members(DIMENSION_NAMES[0], DIMENSION_NAMES[0]).head(7)) \
@@ -977,7 +977,7 @@ class TestDataMethods(unittest.TestCase):
         pivot = self.tm1.cubes.cells.execute_mdx_dataframe_pivot(mdx=mdx)
         self.assertEqual(pivot.shape, (7, 8))
     
-    @skipIfNoPandas
+    @skip_if_no_pandas
     def test_execute_mdx_dataframe_pivot_no_titles(self):
         mdx = MdxBuilder.from_cube(CUBE_NAME) \
             .add_hierarchy_set_to_row_axis(MdxHierarchySet.all_members(DIMENSION_NAMES[0], DIMENSION_NAMES[0]).head(7)) \
@@ -1467,7 +1467,7 @@ class TestDataMethods(unittest.TestCase):
         # check type
         self.assertIsInstance(values, dict)
 
-    @skipIfNoPandas
+    @skip_if_no_pandas
     def test_execute_view_dataframe(self):
         df = self.tm1.cubes.cells.execute_view_dataframe(
             cube_name=CUBE_NAME,
@@ -1502,7 +1502,7 @@ class TestDataMethods(unittest.TestCase):
         # check type
         self.assertIsInstance(df, pd.DataFrame)
 
-    @skipIfNoPandas
+    @skip_if_no_pandas
     def test_execute_view_dataframe_pivot_two_row_one_column_dimensions(self):
         view_name = PREFIX + "Pivot_two_row_one_column_dimensions"
         view = NativeView(
@@ -1532,7 +1532,7 @@ class TestDataMethods(unittest.TestCase):
             view_name=view_name)
         self.assertEqual((100, 10), pivot.shape)
 
-    @skipIfNoPandas
+    @skip_if_no_pandas
     def test_execute_view_dataframe_pivot_one_row_two_column_dimensions(self):
         view_name = PREFIX + "Pivot_one_row_two_column_dimensions"
         view = NativeView(
@@ -1564,7 +1564,7 @@ class TestDataMethods(unittest.TestCase):
             view_name=view_name)
         self.assertEqual((10, 100), pivot.shape)
 
-    @skipIfNoPandas
+    @skip_if_no_pandas
     def test_execute_view_dataframe_pivot_one_row_one_column_dimensions(self):
         view_name = PREFIX + "Pivot_one_row_one_column_dimensions"
         view = NativeView(
@@ -1594,7 +1594,7 @@ class TestDataMethods(unittest.TestCase):
             view_name=view_name)
         self.assertEqual((10, 10), pivot.shape)
 
-    @skipIfNoPandas
+    @skip_if_no_pandas
     def test_execute_mdxview_dataframe_pivot(self):
         mdx = MdxBuilder.from_cube(CUBE_NAME) \
             .add_hierarchy_set_to_row_axis(MdxHierarchySet.default_member(DIMENSION_NAMES[0])) \

@@ -24,7 +24,7 @@ except ImportError:
     _has_pandas = False
 
 
-def skipIfNoPandas(func):
+def skip_if_no_pandas(func):
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
         if not _has_pandas:
@@ -256,7 +256,7 @@ class TestMDXUtils(unittest.TestCase):
         self.assertTrue("[dim1].[hier2].[elem2]" in element_unique_names)
         self.assertTrue("[dim1].[hier3].[elem3]" in element_unique_names)
 
-    @skipIfNoPandas
+    @skip_if_no_pandas
     def test_build_pandas_multiindex_dataframe_from_cellset(self):
         
         rows = [DimensionSelection(dimension_name=self.dim1_name),
@@ -283,7 +283,7 @@ class TestMDXUtils(unittest.TestCase):
         self.assertTrue(len(cellset.keys()) == 1000)
         self.assertIsInstance(cellset, Utils.CaseAndSpaceInsensitiveTuplesDict)
 
-    @skipIfNoPandas
+    @skip_if_no_pandas
     def test_build_pandas_dataframe_from_cellset(self):
         
         rows = [DimensionSelection(dimension_name=self.dim1_name),
@@ -316,7 +316,7 @@ class TestMDXUtils(unittest.TestCase):
         self.assertTrue(len(cellset.keys()) == 1000)
         self.assertIsInstance(cellset, Utils.CaseAndSpaceInsensitiveTuplesDict)
 
-    @skipIfNoPandas
+    @skip_if_no_pandas
     def test_build_pandas_dataframe_empty_cellset(self):
 
         self.tm1.cubes.cells.write_value(
