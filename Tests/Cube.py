@@ -138,6 +138,15 @@ class TestCubeMethods(unittest.TestCase):
         response = self.tm1.cubes.unload(cube_name=self.cube_name)
         self.assertTrue(response.ok)
 
+    def test_lock(self):
+        response = self.tm1.cubes.lock(cube_name=self.cube_name)
+        self.assertTrue(response.ok)
+
+    def test_unlock(self):
+        self.tm1.cubes.lock(cube_name=self.cube_name)
+        response = self.tm1.cubes.unlock(cube_name=self.cube_name)
+        self.assertTrue(response.ok)
+
     def test_check_rules_without_errors(self):
         errors = self.tm1.cubes.check_rules(cube_name=self.cube_name)
         self.assertEqual(0, len(errors))
