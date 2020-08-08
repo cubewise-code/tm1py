@@ -14,7 +14,9 @@ from TM1py.Utils.MDXUtils import DimensionSelection, read_dimension_composition_
     read_dimension_composition_from_mdx_set_or_tuple, read_dimension_composition_from_mdx_set, \
     read_dimension_composition_from_mdx_tuple, split_mdx, _find_case_and_space_insensitive_first_occurrence
 from TM1py.Utils.Utils import dimension_hierarchy_element_tuple_from_unique_name, get_dimensions_from_where_clause, \
-    integerize_version, verify_version, skip_if_no_pandas
+    integerize_version, verify_version
+
+from .TestUtils import skip_if_no_pandas
 
 try:
     import pandas as pd

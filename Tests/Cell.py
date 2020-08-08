@@ -10,7 +10,9 @@ from mdxpy import MdxBuilder, MdxHierarchySet, Member, CalculatedMember
 from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyVersionException
 from TM1py.Objects import MDXView, Cube, Dimension, Element, Hierarchy, NativeView, AnonymousSubset, ElementAttribute
 from TM1py.Services import TM1Service
-from TM1py.Utils import Utils, element_names_from_element_unique_names, skip_if_no_pandas
+from TM1py.Utils import Utils, element_names_from_element_unique_names
+
+from .TestUtils import skip_if_no_pandas
 
 try:
     import pandas as pd

@@ -41,19 +41,6 @@ def require_pandas(func):
 
     return wrapper
 
-def skip_if_no_pandas(func):
-
-    @functools.wraps(func)
-    def wrapper(self, *args, **kwargs):
-        try:
-            import pandas
-            return func(self, *args, **kwargs)
-        except:
-            self.skipTest(f"Test '{func.__name__}' requires pandas")
-
-    return wrapper
-
-
 
 def get_all_servers_from_adminhost(adminhost='localhost') -> List:
     from TM1py.Objects import Server
