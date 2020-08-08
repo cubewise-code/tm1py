@@ -125,6 +125,7 @@ class RestService:
         :param async_requests_mode: changes internal REST execution mode to avoid 60s timeout on IBM cloud
         :param connection_pool_size - In a multithreaded environment, you should set this value to a
         higher number, such as the number of threads
+        :param integrated_login: True for IntegratedSecurityMode3
         """
         self._ssl = self.translate_to_boolean(kwargs['ssl'])
         self._address = kwargs.get('address', None)
@@ -160,14 +161,17 @@ class RestService:
         self._s = requests.session()
         if "session_id" in kwargs:
             self._s.cookies.set("TM1SessionId", kwargs["session_id"])
-            self.set_version()
         else:
             self._start_session(
                 user=kwargs.get("user", None),
                 password=kwargs.get("password", None),
                 namespace=kwargs.get("namespace", None),
                 gateway=kwargs.get("gateway", None),
-                decode_b64=self.translate_to_boolean(kwargs.get("decode_b64", False)))
+                decode_b64=self.translate_to_boolean(kwargs.get("decode_b64", False)),
+                integrated_login=self.translate_to_boolean(kwargs.get("integrated_login", False)))
+
+        if not self._version:
+            self.set_version()
 
         # manage connection pool
         if "connection_pool_size" in kwargs:
@@ -286,17 +290,23 @@ class RestService:
             self._s.close()
 
     def _start_session(self, user: str, password: str, decode_b64: bool = False, namespace: str = None,
-                       gateway: str = None):
+                       gateway: str = None, integrated_login: bool = None):
         """ perform a simple GET request (Ask for the TM1 Version) to start a session
         """
+        # Authorization with integrated_login
+        if integrated_login:
+            self._s.auth = HttpNegotiateAuth()
+
         # Authorization [Basic, CAM] through Headers
-        token = self._build_authorization_token(
-            user,
-            self.b64_decode_password(password) if decode_b64 else password,
-            namespace,
-            gateway,
-            self._verify)
-        self.add_http_header('Authorization', token)
+        else:
+            token = self._build_authorization_token(
+                user,
+                self.b64_decode_password(password) if decode_b64 else password,
+                namespace,
+                gateway,
+                self._verify)
+            self.add_http_header('Authorization', token)
+
         url = '/api/v1/Configuration/ProductVersion/$value'
         try:
             response = self.GET(url=url)
