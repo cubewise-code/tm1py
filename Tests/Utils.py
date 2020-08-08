@@ -2,9 +2,8 @@ import configparser
 import json
 import unittest
 import uuid
+import functools
 from pathlib import Path
-
-import pandas as pd
 
 from TM1py import Subset
 from TM1py.Objects import Process, Dimension, Hierarchy, Cube
@@ -16,6 +15,26 @@ from TM1py.Utils.MDXUtils import DimensionSelection, read_dimension_composition_
     read_dimension_composition_from_mdx_tuple, split_mdx, _find_case_and_space_insensitive_first_occurrence
 from TM1py.Utils.Utils import dimension_hierarchy_element_tuple_from_unique_name, get_dimensions_from_where_clause, \
     integerize_version, verify_version
+
+try:
+    import pandas as pd
+
+    _has_pandas = True
+except ImportError:
+    _has_pandas = False
+
+
+def skipIfNoPandas(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if not _has_pandas:
+            self.skipTest("Test requires Pandas which is not installed.")
+        else:
+            func(self, *args, **kwargs)
+
+    return wrapper
+
+
 
 config = configparser.ConfigParser()
 config.read(Path(__file__).parent.joinpath('config.ini'))
@@ -237,7 +256,9 @@ class TestMDXUtils(unittest.TestCase):
         self.assertTrue("[dim1].[hier2].[elem2]" in element_unique_names)
         self.assertTrue("[dim1].[hier3].[elem3]" in element_unique_names)
 
+    @skipIfNoPandas
     def test_build_pandas_multiindex_dataframe_from_cellset(self):
+        
         rows = [DimensionSelection(dimension_name=self.dim1_name),
                 DimensionSelection(dimension_name=self.dim2_name, elements=self.dim2_element_names)]
         columns = [
@@ -262,7 +283,9 @@ class TestMDXUtils(unittest.TestCase):
         self.assertTrue(len(cellset.keys()) == 1000)
         self.assertIsInstance(cellset, Utils.CaseAndSpaceInsensitiveTuplesDict)
 
+    @skipIfNoPandas
     def test_build_pandas_dataframe_from_cellset(self):
+        
         rows = [DimensionSelection(dimension_name=self.dim1_name),
                 DimensionSelection(dimension_name=self.dim2_name, elements=self.dim2_element_names)]
         columns = [
@@ -293,7 +316,9 @@ class TestMDXUtils(unittest.TestCase):
         self.assertTrue(len(cellset.keys()) == 1000)
         self.assertIsInstance(cellset, Utils.CaseAndSpaceInsensitiveTuplesDict)
 
+    @skipIfNoPandas
     def test_build_pandas_dataframe_empty_cellset(self):
+
         self.tm1.cubes.cells.write_value(
             value=0,
             cube_name=self.cube_name,
