@@ -10,7 +10,7 @@ from TM1py.Services.CellService import CellService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.ViewService import ViewService
-from TM1py.Utils import format_url
+from TM1py.Utils import format_url, require
 
 
 class CubeService(ObjectService):
@@ -159,6 +159,7 @@ class CubeService(ObjectService):
             return dimension_names[1:]
         return dimension_names
 
+    @require(version="11.4")
     def get_storage_dimension_order(self, cube_name: str, **kwargs) -> List[str]:
         """ Get the storage dimension order of a cube
 
@@ -169,6 +170,7 @@ class CubeService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return [dimension["Name"] for dimension in response.json()["value"]]
 
+    @require(version="11.4")
     def update_storage_dimension_order(self, cube_name: str, dimension_names: Iterable[str]) -> float:
         """ Update the storage dimension order of a cube
 
@@ -184,6 +186,7 @@ class CubeService(ObjectService):
         response = self._rest.POST(url=url, data=json.dumps(payload))
         return response.json()["value"]
 
+    @require(version="11.6")
     def load(self, cube_name: str, **kwargs) -> Response:
         """ Load the cube into memory on the server
 
@@ -193,6 +196,7 @@ class CubeService(ObjectService):
         url = format_url("/api/v1/Cubes('{}')/tm1.Load", cube_name)
         return self._rest.POST(url=url, **kwargs)
 
+    @require(version="11.6")
     def unload(self, cube_name: str, **kwargs) -> Response:
         """ Unload the cube from memory
 
