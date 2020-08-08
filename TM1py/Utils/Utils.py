@@ -537,7 +537,7 @@ class CaseAndSpaceInsensitiveDict(collections.abc.MutableMapping):
     """A case-and-space-insensitive dict-like object with String keys.
 
     Implements all methods and operations of
-    ``collections.MutableMapping`` as well as dict's ``copy``. Also
+    ``collections.abc.MutableMapping`` as well as dict's ``copy``. Also
     provides ``adjusted_items``, ``adjusted_keys``.
 
     All keys are expected to be strings. The structure remembers the
@@ -593,7 +593,7 @@ class CaseAndSpaceInsensitiveDict(collections.abc.MutableMapping):
         )
 
     def __eq__(self, other):
-        if isinstance(other, collections.Mapping):
+        if isinstance(other, collections.abc.Mapping):
             other = CaseAndSpaceInsensitiveDict(other)
         else:
             return NotImplemented
@@ -612,7 +612,7 @@ class CaseAndSpaceInsensitiveTuplesDict(collections.abc.MutableMapping):
     """A case-and-space-insensitive dict-like object with String-Tuples Keys.
 
     Implements all methods and operations of
-    ``collections.MutableMapping`` as well as dict's ``copy``. Also
+    ``collections.abc.MutableMapping`` as well as dict's ``copy``. Also
     provides ``adjusted_items``, ``adjusted_keys``.
 
     All keys are expected to be tuples of strings. The structure remembers the
@@ -669,7 +669,7 @@ class CaseAndSpaceInsensitiveTuplesDict(collections.abc.MutableMapping):
         )
 
     def __eq__(self, other):
-        if isinstance(other, collections.Mapping):
+        if isinstance(other, collections.abc.Mapping):
             other = CaseAndSpaceInsensitiveTuplesDict(other)
         else:
             return NotImplemented
@@ -718,7 +718,7 @@ class CaseAndSpaceInsensitiveSet(collections.abc.MutableSet):
         return str(self._store)
 
     def __eq__(self, other):
-        if isinstance(other, collections.MutableSet):
+        if isinstance(other, collections.abc.MutableSet):
             other = CaseAndSpaceInsensitiveSet(*other)
         else:
             return NotImplemented
