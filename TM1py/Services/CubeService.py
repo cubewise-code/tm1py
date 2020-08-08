@@ -202,6 +202,24 @@ class CubeService(ObjectService):
         url = format_url("/api/v1/Cubes('{}')/tm1.Unload", cube_name)
         return self._rest.POST(url=url, **kwargs)
 
+    def lock(self, cube_name: str, **kwargs) -> Response:
+        """ Locks the cube to prevent any users from modifying it
+
+        :param cube_name:
+        :return:
+        """
+        url = format_url("/api/v1/Cubes('{}')/tm1.Lock", cube_name)
+        return self._rest.POST(url=url, **kwargs)
+
+    def unlock(self, cube_name: str, **kwargs) -> Response:
+        """ Unlocks the cube to allow modifications
+
+        :param cube_name:
+        :return:
+        """
+        url = format_url("/api/v1/Cubes('{}')/tm1.Unlock", cube_name)
+        return self._rest.POST(url=url, **kwargs)
+
     def get_random_intersection(self, cube_name: str, unique_names: bool = False) -> List[str]:
         """ Get a random Intersection in a cube
         used mostly for regression testing.

@@ -130,7 +130,7 @@ class ElementService(ObjectService):
         return self.get_element_identifiers(dimension_name, hierarchy_name, mdx_elements, **kwargs)
 
     def get_elements_by_level(self, dimension_name: str, hierarchy_name: str, level: int,
-                              **kwargs) -> List:
+                              **kwargs) -> List[str]:
         """ Get all element names by level in a hierarchy
 
         :param dimension_name: Name of the dimension
