@@ -64,10 +64,10 @@ class TestPowerBiService(unittest.TestCase):
         """
 
         # Connection to TM1
-        config = configparser.ConfigParser()
-        config.read(Path(__file__).parent.joinpath('config.ini'))
-        cls.tm1 = TM1Service(**config['tm1srv01'])
-
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        
         # generate random coordinates
         cls.target_coordinates = list(zip(('Element ' + str(e) for e in range(1, 100)),
                                           ('Element ' + str(e) for e in range(1, 100)),

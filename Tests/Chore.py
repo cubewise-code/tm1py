@@ -31,11 +31,11 @@ class TestChoreMethods(unittest.TestCase):
         Establishes a connection to TM1 and creates objects to use across all tests
         """
 
-        # Connection to TM1
-        config = configparser.ConfigParser()
-        config.read(Path(__file__).parent.joinpath('config.ini'))
-        cls.tm1 = TM1Service(**config['tm1srv01'])
-
+         # Connection to TM1
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        
         # create processes
         p1 = Process(name=PROCESS_NAME1)
         p1.add_parameter('pRegion', 'pRegion (String)', value='US')

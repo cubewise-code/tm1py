@@ -9,18 +9,22 @@ from TM1py.Objects.User import UserType
 from TM1py.Services import TM1Service
 from TM1py.Utils.Utils import CaseAndSpaceInsensitiveSet
 
-config = configparser.ConfigParser()
-config.read(Path(__file__).parent.joinpath('config.ini'))
-
 PREFIX = "TM1py_Tests_"
 
 
 class TestSecurityMethods(unittest.TestCase):
-    tm1 = None
 
     @classmethod
-    def setup_class(cls):
-        cls.tm1 = TM1Service(**config['tm1srv01'])
+    def setUpClass(cls):
+        """
+        Establishes a connection to TM1 and creates TM! objects to use across all tests
+        """
+
+        # Connection to TM1
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+
         cls.user_name = PREFIX + "Us'er1"
         cls.user_name_exotic_password = "UserWithExoticPassword"
         cls.enabled = True
@@ -57,9 +61,9 @@ class TestSecurityMethods(unittest.TestCase):
 
     def test_get_current_user(self):
         me = self.tm1.security.get_current_user()
-        self.assertEqual(me.name, config['tm1srv01']['User'])
+        self.assertEqual(me.name, self.config['tm1srv01']['User'])
 
-        user = self.tm1.security.get_user(config['tm1srv01']['User'])
+        user = self.tm1.security.get_user(self.config['tm1srv01']['User'])
         self.assertEqual(me, user)
 
     def test_update_user(self):
@@ -217,7 +221,7 @@ class TestSecurityMethods(unittest.TestCase):
         self.tm1.security.create_user(user)
 
         # login as user with exotic password
-        kwargs = dict(config["tm1srv01"])
+        kwargs = dict(self.config["tm1srv01"])
         kwargs["user"] = user.name
         kwargs["password"] = exotic_password
         # raises TM1pyException if login fails

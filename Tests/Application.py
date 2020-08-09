@@ -37,9 +37,9 @@ class TestDataMethods(unittest.TestCase):
         """
 
         # Connection to TM1
-        config = configparser.ConfigParser()
-        config.read(Path(__file__).parent.joinpath('config.ini'))
-        cls.tm1 = TM1Service(**config['tm1srv01'])
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
 
         # Build Dimensions
         for dimension_name in DIMENSION_NAMES:

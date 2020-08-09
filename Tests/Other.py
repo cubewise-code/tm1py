@@ -9,16 +9,18 @@ from TM1py.Objects import MDXView, User
 from TM1py.Services import TM1Service
 from TM1py.Utils import Utils
 
-config = configparser.ConfigParser()
-config.read(Path(__file__).parent.joinpath('config.ini'))
-
-
 class TestOtherMethods(unittest.TestCase):
-    tm1 = None
 
     @classmethod
     def setUpClass(cls):
-        cls.tm1 = TM1Service(**config['tm1srv01'])
+        """
+        Establishes a connection to TM1 and creates TM! objects to use across all tests
+        """
+
+        # Connection to TM1
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
 
     @unittest.skip("Not deterministic. Needs improvement.")
     def test_mdx_from_cubeview(self):
@@ -54,7 +56,7 @@ class TestOtherMethods(unittest.TestCase):
                     self.assertEqual(sum_mdx, sum_native_view)
 
     def test_get_instances_from_adminhost(self):
-        servers = Utils.get_all_servers_from_adminhost(config['tm1srv01']['address'])
+        servers = Utils.get_all_servers_from_adminhost(self.config['tm1srv01']['address'])
         self.assertGreater(len(servers), 0)
 
     def test_tm1service_with_encrypted_password_decode_b64_as_string(self):

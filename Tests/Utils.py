@@ -51,10 +51,10 @@ class TestMDXUtils(unittest.TestCase):
         """
 
         # Connection to TM1
-        config = configparser.ConfigParser()
-        config.read(Path(__file__).parent.joinpath('config.ini'))
-        cls.tm1 = TM1Service(**config['tm1srv01'])
-
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        
         # Build 4 Dimensions
         cls.dim1_name = PREFIX + "Dimension1"
         cls.dim1_element_names = ["A " + str(i) for i in range(10)]

@@ -17,10 +17,10 @@ class TestMonitoringMethods(unittest.TestCase):
         """
 
         # Connection to TM1
-        config = configparser.ConfigParser()
-        config.read(Path(__file__).parent.joinpath('config.ini'))
-        cls.tm1 = TM1Service(**config['tm1srv01'])
-
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        
     def test_get_threads(self):
         threads = self.tm1.monitoring.get_threads()
         self.assertTrue(any(thread["Function"] == "GET /api/v1/Threads" for thread in threads))

@@ -15,10 +15,10 @@ class TestRestServiceMethods(unittest.TestCase):
         """
 
         # Connection to TM1
-        config = configparser.ConfigParser()
-        config.read(Path(__file__).parent.joinpath('config.ini'))
-        cls.tm1 = TM1Service(**config['tm1srv01'])
-
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        
     def test_wait_time_generator_with_timeout(self):
         self.assertEqual(
             [0.1, 0.3, 0.6, 1, 1, 1, 1, 1, 1, 1, 1, 1],
