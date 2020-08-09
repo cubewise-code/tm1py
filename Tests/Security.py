@@ -4,6 +4,11 @@ from pathlib import Path
 
 import pytest
 
+from base64 import b64encode
+
+from TM1py.Exceptions import TM1pyRestException
+
+
 from TM1py.Objects import User
 from TM1py.Objects.User import UserType
 from TM1py.Services import TM1Service
@@ -251,6 +256,108 @@ class TestSecurityMethods(unittest.TestCase):
         groups_after_delete = self.tm1.security.get_all_groups()
         self.assertIn(group, groups_before_delete)
         self.assertNotIn(group, groups_after_delete)
+
+    def test_tm1service_with_encrypted_password_decode_b64_as_string(self):
+        user_name = "TM1py user name"
+        user = User(name=user_name, groups=["ADMIN"], password="apple")
+        if user.name in self.tm1.security.get_all_user_names():
+            self.tm1.security.delete_user(user_name)
+        self.tm1.security.create_user(user)
+
+        with TM1Service(
+                user=user.name,
+                password=b64encode(str.encode(user._password)),
+                decode_b64="True",
+                base_url=self.tm1._tm1_rest._base_url,
+                ssl=self.tm1._tm1_rest._ssl) as _:
+            # if no exception. Login was successful
+            pass
+
+        self.tm1.security.delete_user(user.name)
+
+    def test_tm1service_without_encrypted_password(self):
+        user_name = "TM1py user name"
+        user = User(name=user_name, groups=["ADMIN"], password="apple")
+        if user.name in self.tm1.security.get_all_user_names():
+            self.tm1.security.delete_user(user_name)
+        self.tm1.security.create_user(user)
+
+        with TM1Service(
+                user=user.name,
+                password=user._password,
+                decode_b64=False,
+                base_url=self.tm1._tm1_rest._base_url,
+                ssl=self.tm1._tm1_rest._ssl) as _:
+            # if no exception. Login was successful
+            pass
+
+        self.tm1.security.delete_user(user.name)
+
+    def test_tm1service_with_encrypted_password(self):
+        user_name = "TM1py user name"
+        user = User(name=user_name, groups=["ADMIN"], password="apple")
+        if user.name in self.tm1.security.get_all_user_names():
+            self.tm1.security.delete_user(user_name)
+        self.tm1.security.create_user(user)
+
+        with TM1Service(
+                user=user.name,
+                password=b64encode(str.encode(user._password)),
+                decode_b64=True,
+                base_url=self.tm1._tm1_rest._base_url,
+                ssl=self.tm1._tm1_rest._ssl) as _:
+            # if no exception. Login was successful
+            pass
+
+        self.tm1.security.delete_user(user.name)
+
+    def test_tm1service_with_encrypted_password_fail(self):
+        user_name = "TM1py user name"
+        user = User(name=user_name, groups=["ADMIN"], password="apple")
+        if user.name in self.tm1.security.get_all_user_names():
+            self.tm1.security.delete_user(user_name)
+        self.tm1.security.create_user(user)
+
+        self.assertRaises(TM1pyRestException, TM1Service,
+                          user=user.name,
+                          password=b64encode(str.encode("banana")),
+                          decode_b64=True,
+                          base_url=self.tm1._tm1_rest._base_url,
+                          ssl=self.tm1._tm1_rest._ssl)
+
+        self.tm1.security.delete_user(user.name)
+
+    def test_tm1service_with_plain_password(self):
+        user_name = "TM1py user name"
+        user = User(name=user_name, groups=["ADMIN"], password="apple")
+        if user.name in self.tm1.security.get_all_user_names():
+            self.tm1.security.delete_user(user_name)
+        self.tm1.security.create_user(user)
+
+        with TM1Service(
+                user=user.name,
+                password=user.password,
+                base_url=self.tm1._tm1_rest._base_url,
+                ssl=self.tm1._tm1_rest._ssl) as _:
+            # if no exception. Login was successful
+            pass
+        self.tm1.security.delete_user(user.name)
+
+    def test_tm1service_with_plain_password_fail(self):
+        user_name = "TM1py user name"
+        user = User(name=user_name, groups=["ADMIN"], password="apple")
+        if user.name in self.tm1.security.get_all_user_names():
+            self.tm1.security.delete_user(user_name)
+        self.tm1.security.create_user(user)
+        # test with random (wrong) password
+        self.assertRaises(TM1pyRestException, TM1Service,
+                          user=user.name,
+                          password="banana",
+                          base_url=self.tm1._tm1_rest._base_url,
+                          ssl=self.tm1._tm1_rest._ssl)
+
+        self.tm1.security.delete_user(user.name)
+
 
     def test_user_exists_true(self):
         self.assertTrue(self.tm1.security.user_exists(user_name=self.user_name))
