@@ -100,7 +100,6 @@ class TestProcessMethods(unittest.TestCase):
         cls.tm1.processes.delete(cls.p_odbc.name)
         cls.tm1.processes.delete(cls.p_subset.name)
 
-
     def test_execute_process(self):
         if not self.tm1.processes.exists(self.p_bedrock_server_wait.name):
             self.tm1.processes.create(self.p_bedrock_server_wait)
@@ -220,15 +219,15 @@ class TestProcessMethods(unittest.TestCase):
         self.tm1.processes.delete(p_bad.name)
 
     @skip_if_insufficient_version(version="11.4")
-    def test_execute_process_with_return_success(self):	
-        process = Process(name=str(uuid.uuid4()))	
-        process.prolog_procedure = "Sleep(100);"	
+    def test_execute_process_with_return_success(self):
+        process = Process(name=str(uuid.uuid4()))
+        process.prolog_procedure = "Sleep(100);"
 
-        success, status, error_log_file = self.tm1.processes.execute_process_with_return(process)	
-        self.assertTrue(success)	
-        self.assertEqual(status, "CompletedSuccessfully")	
+        success, status, error_log_file = self.tm1.processes.execute_process_with_return(process)
+        self.assertTrue(success)
+        self.assertEqual(status, "CompletedSuccessfully")
         self.assertIsNone(error_log_file)
-
+        
     def test_execute_process_with_return_compile_error(self):
         process = Process(name=str(uuid.uuid4()))
         process.prolog_procedure = "sText = 'text';sText = 2;"
