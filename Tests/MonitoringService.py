@@ -5,17 +5,20 @@ from pathlib import Path
 from TM1py.Services import TM1Service
 from TM1py.Utils import case_and_space_insensitive_equals
 
-config = configparser.ConfigParser()
-config.read(Path(__file__).parent.joinpath('config.ini'))
-
 PREFIX = "TM1py_Tests_MonitoringService_"
 
 
 class TestMonitoringMethods(unittest.TestCase):
-    tm1 = None
 
     @classmethod
     def setUpClass(cls):
+        """
+        Establishes a connection to TM1 and creates TM! objects to use across all tests
+        """
+
+        # Connection to TM1
+        config = configparser.ConfigParser()
+        config.read(Path(__file__).parent.joinpath('config.ini'))
         cls.tm1 = TM1Service(**config['tm1srv01'])
 
     def test_get_threads(self):

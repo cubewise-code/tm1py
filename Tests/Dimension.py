@@ -6,8 +6,6 @@ from TM1py.Objects import Dimension, Hierarchy, Element
 from TM1py.Objects import ElementAttribute
 from TM1py.Services import TM1Service
 
-config = configparser.ConfigParser()
-config.read(Path(__file__).parent.joinpath('config.ini'))
 
 PREFIX = "TM1py_Tests_Dimension_"
 DIMENSION_NAME = PREFIX + "Some_Dimension"
@@ -16,10 +14,16 @@ DIMENSION_NAME_WITH_MULTI_HIERARCHY = PREFIX + "Dimension_With_Multiple_Hierarch
 
 
 class TestDimensionMethods(unittest.TestCase):
-    tm1 = None
 
     @classmethod
     def setUpClass(cls):
+        """
+        Establishes a connection to TM1 and creates objects to use across all tests
+        """
+
+        # Connection to TM1
+        config = configparser.ConfigParser()
+        config.read(Path(__file__).parent.joinpath('config.ini'))
         cls.tm1 = TM1Service(**config['tm1srv01'])
 
     @classmethod
