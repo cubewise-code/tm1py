@@ -640,7 +640,7 @@ class CellService(ObjectService):
                                               skip_rule_derived_cells=skip_rule_derived_cells, **kwargs)
 
     @require_pandas
-    def execute_mdx_dataframe_shaped(self, mdx, **kwargs) -> 'pd.DataFrame':
+    def execute_mdx_dataframe_shaped(self, mdx: str, **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cube in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
 
@@ -652,7 +652,8 @@ class CellService(ObjectService):
         return self.extract_cellset_dataframe_shaped(cellset_id, delete_cellset=True, **kwargs)
 
     @require_pandas
-    def execute_view_dataframe_shaped(self, cube_name, view_name, private, **kwargs) -> 'pd.DataFrame':
+    def execute_view_dataframe_shaped(self, cube_name: str, view_name: str, private: bool = False,
+                                      **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cube in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
 

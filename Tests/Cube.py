@@ -8,6 +8,8 @@ from TM1py.Objects import Cube
 from TM1py.Objects import Rules
 from TM1py.Services import TM1Service
 
+from .TestUtils import skip_if_insufficient_version
+
 PREFIX = "TM1py_Tests_Cube_"
 
 
@@ -112,6 +114,7 @@ class TestCubeMethods(unittest.TestCase):
         all_cubes_after = self.tm1.cubes.get_all_names()
         self.assertEqual(len(all_cubes_before) - 1, len(all_cubes_after))
 
+    @skip_if_insufficient_version(version="11.4")
     def test_get_storage_dimension_order(self):
         dimensions = self.tm1.cubes.get_storage_dimension_order(cube_name=self.cube_name)
         self.assertEqual(dimensions, self.dimension_names)
@@ -120,6 +123,7 @@ class TestCubeMethods(unittest.TestCase):
         number_of_cubes = self.tm1.cubes.get_number_of_cubes()
         self.assertIsInstance(number_of_cubes, int)
 
+    @skip_if_insufficient_version(version="11.4")
     def test_update_storage_dimension_order(self):
         self.tm1.cubes.update_storage_dimension_order(
             cube_name=self.cube_name,
@@ -129,10 +133,12 @@ class TestCubeMethods(unittest.TestCase):
             list(reversed(dimensions)),
             self.dimension_names)
 
+    @skip_if_insufficient_version(version="11.6")
     def test_load(self):
         response = self.tm1.cubes.load(cube_name=self.cube_name)
         self.assertTrue(response.ok)
 
+    @skip_if_insufficient_version(version="11.6")
     def test_unload(self):
         response = self.tm1.cubes.unload(cube_name=self.cube_name)
         self.assertTrue(response.ok)

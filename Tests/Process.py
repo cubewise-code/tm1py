@@ -6,12 +6,12 @@ import unittest
 import uuid
 from pathlib import Path
 
-from TM1py.Objects import Process
-from TM1py.Objects import Subset
+from TM1py.Objects import Process, Subset
 from TM1py.Services import TM1Service
 
-PROCESS_PREFIX = 'TM1py_Tests_'
+from .TestUtils import skip_if_insufficient_version
 
+PROCESS_PREFIX = 'TM1py_Tests_'
 
 class TestProcessMethods(unittest.TestCase):
 
@@ -123,6 +123,7 @@ class TestProcessMethods(unittest.TestCase):
         # without arguments
         self.tm1.processes.execute(self.p_bedrock_server_wait.name)
 
+    @skip_if_insufficient_version(version="11.4")
     def test_execute_with_return_success(self):
         process = self.p_bedrock_server_wait
         if not self.tm1.processes.exists(process.name):
@@ -169,6 +170,7 @@ class TestProcessMethods(unittest.TestCase):
 
         self.tm1.processes.delete(process.name)
 
+    @skip_if_insufficient_version(version="11.4")
     def test_execute_with_return_with_process_break(self):
         process = Process(name=str(uuid.uuid4()))
         process.prolog_procedure = "sText = 'Something'; ProcessBreak;"
@@ -184,6 +186,7 @@ class TestProcessMethods(unittest.TestCase):
 
         self.tm1.processes.delete(process.name)
 
+    @skip_if_insufficient_version(version="11.4")
     def test_execute_with_return_with_process_quit(self):
         process = Process(name=str(uuid.uuid4()))
         process.prolog_procedure = "sText = 'Something'; ProcessQuit;"
@@ -218,7 +221,7 @@ class TestProcessMethods(unittest.TestCase):
         self.assertIn("Variable \"dimsize\" is undefined", errors[0]["Message"])
         self.tm1.processes.delete(p_bad.name)
 
-    # Unbound Tests
+    @skip_if_insufficient_version(version="11.4")
     def test_execute_process_with_return_success(self):
         process = Process(name=str(uuid.uuid4()))
         process.prolog_procedure = "Sleep(100);"
@@ -246,6 +249,7 @@ class TestProcessMethods(unittest.TestCase):
         self.assertEqual(status, "CompletedWithMessages")
         self.assertIsNotNone(error_log_file)
 
+    @skip_if_insufficient_version(version="11.4")
     def test_execute_process_with_return_with_process_break(self):
         process = Process(name=str(uuid.uuid4()))
         process.prolog_procedure = "sText = 'Something'; ProcessBreak;"
@@ -255,6 +259,7 @@ class TestProcessMethods(unittest.TestCase):
         self.assertEqual(status, "CompletedSuccessfully")
         self.assertIsNone(error_log_file)
 
+    @skip_if_insufficient_version(version="11.4")
     def test_execute_process_with_return_with_process_quit(self):
         process = Process(name=str(uuid.uuid4()))
         process.prolog_procedure = "sText = 'Something'; ProcessQuit;"
@@ -281,7 +286,6 @@ class TestProcessMethods(unittest.TestCase):
         self.assertTrue(len(errors) == 1)
         self.assertIn("Variable \"dimsize\" is undefined", errors[0]["Message"])
 
-    # Get Process
     def test_get_process(self):
         p_ascii_orig = copy.deepcopy(self.p_ascii)
         p_none_orig = copy.deepcopy(self.p_none)
@@ -302,7 +306,6 @@ class TestProcessMethods(unittest.TestCase):
         p5 = self.tm1.processes.get(p_subset_orig.name)
         self.assertEqual(p5.body, p_subset_orig.body)
 
-    # Update process
     def test_update_process(self):
         # get
         p = self.tm1.processes.get(self.p_ascii.name)
@@ -332,7 +335,6 @@ class TestProcessMethods(unittest.TestCase):
 
         self.tm1.processes.delete(process.name)
 
-    # Delete process
     def test_delete_process(self):
         process = self.p_bedrock_server_wait
         process.name = str(uuid.uuid4())

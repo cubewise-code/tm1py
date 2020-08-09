@@ -20,7 +20,7 @@ class Process(TM1Object):
 
     @staticmethod
     def add_generated_string_to_code(code: str) -> str:
-        pattern = r"#\*\*\*\*Begin: Generated Statements(?s)(.*)#\*\*\*\*End: Generated Statements\*\*\*\*"
+        pattern = r"(?s)#\*\*\*\*Begin: Generated Statements(.*)#\*\*\*\*End: Generated Statements\*\*\*\*"
         if re.search(pattern=pattern, string=code):
             return code
         else:
