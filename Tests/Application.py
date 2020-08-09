@@ -10,9 +10,6 @@ from TM1py import TM1Service, Element, ElementAttribute, Hierarchy, Dimension, C
 from TM1py.Objects.Application import CubeApplication, ApplicationTypes, ChoreApplication, DimensionApplication, \
     FolderApplication, LinkApplication, ProcessApplication, SubsetApplication, ViewApplication, DocumentApplication
 
-config = configparser.ConfigParser()
-config.read(Path(__file__).parent.joinpath('config.ini'))
-
 # Hard coded stuff
 PREFIX = 'TM1py_Tests_Applications_'
 TM1PY_APP_FOLDER = PREFIX + "RootFolder"
@@ -32,16 +29,18 @@ DIMENSION_NAMES = [
 
 
 class TestDataMethods(unittest.TestCase):
-    tm1 = None
-
-    # Setup Cubes, Dimensions and Subsets
-    @classmethod
-    def setup_class(cls):
-        # Connection to TM1
-        cls.tm1 = TM1Service(**config['tm1srv01'])
 
     @classmethod
     def setUpClass(cls) -> None:
+        """
+        Establishes a connection to TM1 and creates TM1 objects to use across all tests
+        """
+
+        # Connection to TM1
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+
         # Build Dimensions
         for dimension_name in DIMENSION_NAMES:
             elements = [Element('Element {}'.format(str(j)), 'Numeric') for j in range(1, 1001)]

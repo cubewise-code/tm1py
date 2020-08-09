@@ -6,23 +6,24 @@ import uuid
 from TM1py.Objects import Dimension, Hierarchy, Element, ElementAttribute
 from TM1py.Services import TM1Service
 
-config = configparser.ConfigParser()
-config.read(Path(__file__).parent.joinpath('config.ini'))
-
 DIMENSION_PREFIX = 'TM1py_unittest_element_{}'
 DIMENSION_NAME = DIMENSION_PREFIX.format(uuid.uuid4())
 HIERARCHY_NAME = DIMENSION_NAME
 
 
 class TestElementMethods(unittest.TestCase):
-    tm1 = None
 
     @classmethod
-    def setup_class(cls):
+    def setUpClass(cls):
+        """
+        Establishes a connection to TM1 and creates TM! objects to use across all tests
+        """
 
         # Connection to TM1
-        cls.tm1 = TM1Service(**config['tm1srv01'])
-
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        
     @classmethod
     def setUp(cls):
         # Elements

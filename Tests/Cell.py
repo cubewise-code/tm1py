@@ -49,18 +49,19 @@ CUBE_WITH_RULES_NAME = CUBE_NAME + "_With_Rules"
 DIMENSION_RPS1_NAME = PREFIX + "Dimension" + "_RPS1"
 DIMENSION_RPS2_NAME = PREFIX + "Dimension" + "_RPS2"
 
-config = configparser.ConfigParser()
-config.read(Path(__file__).parent.joinpath('config.ini'))
-
 
 class TestDataMethods(unittest.TestCase):
-    tm1: TM1Service = None
 
-    # Setup Cubes, Dimensions and Subsets
     @classmethod
-    def setup_class(cls):
+    def setUpClass(cls):
+        """
+        Establishes a connection to TM1 and creates TM! objects to use across all tests
+        """
+
         # Connection to TM1
-        cls.tm1 = TM1Service(**config['tm1srv01'])
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
 
         # Build Dimensions
         for dimension_name in DIMENSION_NAMES:

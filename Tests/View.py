@@ -6,9 +6,6 @@ import unittest
 from TM1py.Objects import AnonymousSubset, Subset, Cube, Dimension, Element, Hierarchy, MDXView, NativeView
 from TM1py.Services import TM1Service
 
-config = configparser.ConfigParser()
-config.read(Path(__file__).parent.joinpath('config.ini'))
-
 CUBE_NAME = 'TM1py_Tests_View_Cube'
 DIMENSION_NAMES = [
     'TM1py_Tests_View_Dimension1',
@@ -18,14 +15,21 @@ SUBSET_NAME = 'TM1py_Tests_View_Subset'
 
 
 class TestViewMethods(unittest.TestCase):
-    tm1 = TM1Service(**config['tm1srv01'])
 
     native_view_name = 'TM1py_Tests_Native_View'
     mdx_view_name = 'TM1py_Tests_Mdx_View'
 
-    # Setup Cubes, Dimensions and Subsets
     @classmethod
-    def setup_class(cls):
+    def setUpClass(cls):
+        """
+        Establishes a connection to TM1 and creates TM! objects to use across all tests
+        """
+
+        # Connection to TM1
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        
         # Build Dimensions
         for i in range(3):
             elements = [Element('Element {}'.format(str(j)), 'Numeric') for j in range(1, 1001)]

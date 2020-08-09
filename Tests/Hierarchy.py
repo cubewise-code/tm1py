@@ -9,20 +9,23 @@ from TM1py.Exceptions import TM1pyRestException
 from TM1py.Objects import Dimension, Hierarchy, Subset
 from TM1py.Services import TM1Service
 
-config = configparser.ConfigParser()
-config.read(Path(__file__).parent.joinpath('config.ini'))
-
 DIMENSION_PREFIX = 'TM1py_Tests_Hierarchy_'
 DIMENSION_NAME = DIMENSION_PREFIX + "Some_Name"
 SUBSET_NAME = DIMENSION_PREFIX + "Some_Subset"
 
 
 class TestHierarchyMethods(unittest.TestCase):
-    tm1 = None
 
     @classmethod
-    def setup_class(cls):
-        cls.tm1 = TM1Service(**config['tm1srv01'])
+    def setUpClass(cls):
+        """
+        Establishes a connection to TM1 and creates TM! objects to use across all tests
+        """
+
+        # Connection to TM1
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
 
     @classmethod
     def teardown_class(cls):

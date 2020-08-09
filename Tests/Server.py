@@ -13,9 +13,6 @@ from TM1py.Exceptions import TM1pyRestException
 from TM1py.Objects import Cube, Dimension, Hierarchy, Process
 from TM1py.Services import TM1Service
 
-config = configparser.ConfigParser()
-config.read(Path(__file__).parent.joinpath('config.ini'))
-
 PREFIX = "TM1py_Tests_Server_"
 
 
@@ -23,6 +20,15 @@ class TestServerMethods(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        """
+        Establishes a connection to TM1 and creates TM! objects to use across all tests
+        """
+
+        # Connection to TM1
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+
         # Namings
         cls.dimension_name1 = PREFIX + "Dimension1"
         cls.dimension_name2 = PREFIX + "Dimension2"
@@ -30,8 +36,6 @@ class TestServerMethods(unittest.TestCase):
         cls.process_name1 = PREFIX + "Process1"
         cls.process_name2 = PREFIX + "Process2"
 
-        # Connect to TM1
-        cls.tm1 = TM1Service(**config['tm1srv01'])
 
         # create a simple cube with dimensions to test transactionlog methods
         if not cls.tm1.dimensions.exists(cls.dimension_name1):
@@ -178,7 +182,7 @@ class TestServerMethods(unittest.TestCase):
         # Digest time in TM1
         time.sleep(8)
 
-        user = config['tm1srv01']['user']
+        user = self.config['tm1srv01']['user']
         cube = self.cube_name
 
         # Query transaction log with top filter
@@ -274,17 +278,17 @@ class TestServerMethods(unittest.TestCase):
     def test_session_context_default(self):
         threads = self.tm1.monitoring.get_threads()
         for thread in threads:
-            if "GET /api/v1/Threads" in thread["Function"] and thread["Name"] == config['tm1srv01']['user']:
+            if "GET /api/v1/Threads" in thread["Function"] and thread["Name"] == self.config['tm1srv01']['user']:
                 self.assertTrue(thread["Context"] == "TM1py")
                 return
         raise Exception("Did not find my own Thread")
 
     def test_session_context_custom(self):
         app_name = "Some Application"
-        with TM1Service(**config['tm1srv01'], session_context=app_name) as tm1:
+        with TM1Service(**self.config['tm1srv01'], session_context=app_name) as tm1:
             threads = tm1.monitoring.get_threads()
             for thread in threads:
-                if "GET /api/v1/Threads" in thread["Function"] and thread["Name"] == config['tm1srv01']['user']:
+                if "GET /api/v1/Threads" in thread["Function"] and thread["Name"] == self.config['tm1srv01']['user']:
                     self.assertTrue(thread["Context"] == app_name)
                     return
         raise Exception("Did not find my own Thread")

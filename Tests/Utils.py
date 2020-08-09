@@ -24,9 +24,6 @@ except ImportError:
     pass
 
 
-config = configparser.ConfigParser()
-config.read(Path(__file__).parent.joinpath('config.ini'))
-
 PREFIX = "TM1py_Tests_Utils_"
 
 MDX_TEMPLATE = """
@@ -46,13 +43,18 @@ FROM {cube}
 
 
 class TestMDXUtils(unittest.TestCase):
-    tm1 = None
 
     @classmethod
     def setUpClass(cls):
-        # Connect to TM1
-        cls.tm1 = TM1Service(**config['tm1srv01'])
+        """
+        Establishes a connection to TM1 and creates TM! objects to use across all tests
+        """
 
+        # Connection to TM1
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        
         # Build 4 Dimensions
         cls.dim1_name = PREFIX + "Dimension1"
         cls.dim1_element_names = ["A " + str(i) for i in range(10)]
@@ -725,11 +727,19 @@ class TestMDXUtils(unittest.TestCase):
 
 
 class TestTIObfuscatorMethods(unittest.TestCase):
-    tm1 = None
+
 
     @classmethod
     def setUpClass(cls):
-        # Namings
+        """
+        Establishes a connection to TM1 and creates TM! objects to use across all tests
+        """
+
+        # Connection to TM1
+        config = configparser.ConfigParser()
+        config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**config['tm1srv01'])
+
         cls.expand_process_name = str(uuid.uuid4())
         cls.expand_process_name_obf = str(uuid.uuid4())
         cls.process_name = str(uuid.uuid4())
@@ -738,9 +748,6 @@ class TestTIObfuscatorMethods(unittest.TestCase):
         cls.dimension_name_cloned = str(uuid.uuid4())
         cls.cube_name = str(uuid.uuid4())
         cls.cube_name_cloned = str(uuid.uuid4())
-
-        # Connect to TM1
-        cls.tm1 = TM1Service(**config['tm1srv01'])
 
         # create process
         prolog = "\r\nSaveDataAll;\r\nsText='abcABC';\r\n"

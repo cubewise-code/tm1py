@@ -5,17 +5,20 @@ from pathlib import Path
 from TM1py import TM1Service
 from TM1py.Services.RestService import RestService
 
-config = configparser.ConfigParser()
-config.read(Path(__file__).parent.joinpath('config.ini'))
-
 
 class TestRestServiceMethods(unittest.TestCase):
-    tm1 = None
 
     @classmethod
     def setUpClass(cls):
-        cls.tm1 = TM1Service(**config['tm1srv01'])
+        """
+        Establishes a connection to TM1 and creates TM! objects to use across all tests
+        """
 
+        # Connection to TM1
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        
     def test_wait_time_generator_with_timeout(self):
         self.assertEqual(
             [0.1, 0.3, 0.6, 1, 1, 1, 1, 1, 1, 1, 1, 1],

@@ -9,9 +9,6 @@ from pathlib import Path
 from TM1py.Objects import Chore, ChoreStartTime, ChoreFrequency, ChoreTask, Process
 from TM1py.Services import TM1Service
 
-config = configparser.ConfigParser()
-config.read(Path(__file__).parent.joinpath('config.ini'))
-
 # Hard stuff for this test
 PREFIX = "TM1py_Tests_Chore_"
 PROCESS_NAME1 = PREFIX + 'Process1'
@@ -23,15 +20,22 @@ CHORE_NAME4 = PREFIX + "Chore4"
 
 
 class TestChoreMethods(unittest.TestCase):
-    tm1 = None
+ 
     start_time = None
     frequency = None
     tasks = None
 
     @classmethod
-    def setup_class(cls):
-        cls.tm1 = TM1Service(**config['tm1srv01'])
+    def setUpClass(cls):
+        """
+        Establishes a connection to TM1 and creates objects to use across all tests
+        """
 
+         # Connection to TM1
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        
         # create processes
         p1 = Process(name=PROCESS_NAME1)
         p1.add_parameter('pRegion', 'pRegion (String)', value='US')

@@ -11,18 +11,21 @@ from TM1py.Services import TM1Service
 
 from .TestUtils import skip_if_insufficient_version
 
-config = configparser.ConfigParser()
-config.read(Path(__file__).parent.joinpath('config.ini'))
-
 PROCESS_PREFIX = 'TM1py_Tests_'
 
 class TestProcessMethods(unittest.TestCase):
-    tm1 = None
 
     @classmethod
     def setUpClass(cls):
-        cls.tm1 = TM1Service(**config['tm1srv01'])
+        """
+        Establishes a connection to TM1 and creates TM! objects to use across all tests
+        """
 
+        # Connection to TM1
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        
         cls.some_name = "some_name"
 
         cls.all_dimension_names = cls.tm1.dimensions.get_all_names()

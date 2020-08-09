@@ -5,20 +5,22 @@ from pathlib import Path
 from TM1py.Objects import Dimension, Hierarchy, Subset, ElementAttribute, Element
 from TM1py.Services import TM1Service
 
-config = configparser.ConfigParser()
-config.read(Path(__file__).parent.joinpath('config.ini'))
-
 PREFIX = "TM1py_Tests_Subset_"
 
 
 class TestSubsetMethods(unittest.TestCase):
-    tm1 = None
 
-    # Check if Dimensions exists. If not create it
     @classmethod
-    def setup_class(cls):
-        cls.tm1 = TM1Service(**config['tm1srv01'])
+    def setUpClass(cls):
+        """
+        Establishes a connection to TM1 and creates TM! objects to use across all tests
+        """
 
+        # Connection to TM1
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        
         # Define Names
         cls.dimension_name = PREFIX + "Dimension"
         cls.subset_name_static = PREFIX + "static"

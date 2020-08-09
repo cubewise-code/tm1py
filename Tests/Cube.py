@@ -10,10 +10,6 @@ from TM1py.Services import TM1Service
 
 from .TestUtils import skip_if_insufficient_version
 
-
-config = configparser.ConfigParser()
-config.read(Path(__file__).parent.joinpath('config.ini'))
-
 PREFIX = "TM1py_Tests_Cube_"
 
 
@@ -27,9 +23,12 @@ class TestCubeMethods(unittest.TestCase):
 
     @classmethod
     def setUp(cls):
-        cls.tm1 = TM1Service(**config['tm1srv01'])
 
-        # Build Dimensions
+        # Connection to TM1
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        
         for dimension_name in cls.dimension_names:
             elements = [Element('Element {}'.format(str(j)), 'Numeric') for j in range(1, 1001)]
             hierarchy = Hierarchy(dimension_name=dimension_name,
