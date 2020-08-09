@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 from TM1py import Element
-from TM1py.Exceptions import TM1pyRestException, TM1pyException
+from TM1py.Exceptions import TM1pyException, TM1pyRestException
 from TM1py.Objects import Dimension, Hierarchy, Subset
 from TM1py.Services import TM1Service
 

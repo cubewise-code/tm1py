@@ -3,14 +3,15 @@ import types
 import unittest
 from pathlib import Path
 
-from mdxpy import MdxBuilder, MdxHierarchySet, Member, CalculatedMember
+from mdxpy import CalculatedMember, MdxBuilder, MdxHierarchySet, Member
 
 from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyVersionException
-from TM1py.Objects import MDXView, Cube, Dimension, Element, Hierarchy, NativeView, AnonymousSubset, ElementAttribute
+from TM1py.Objects import (AnonymousSubset, Cube, Dimension, Element,
+                           ElementAttribute, Hierarchy, MDXView, NativeView)
 from TM1py.Services import TM1Service
 from TM1py.Utils import Utils, element_names_from_element_unique_names, CaseAndSpaceInsensitiveDict
 
-from .TestUtils import skip_if_no_pandas, skip_if_insufficient_version
+from .TestUtils import skip_if_insufficient_version, skip_if_no_pandas
 
 try:
     import pandas as pd
