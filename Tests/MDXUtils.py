@@ -1,20 +1,21 @@
 import configparser
 import json
+import random
 import unittest
-import uuid
-import functools
 from pathlib import Path
 
 from TM1py import Subset
-from TM1py.Objects import Process, Dimension, Hierarchy, Cube
+from TM1py.Objects import Cube, Dimension, Hierarchy, MDXView
 from TM1py.Services import TM1Service
-from TM1py.Utils import TIObfuscator, format_url
-from TM1py.Utils import Utils, MDXUtils
-from TM1py.Utils.MDXUtils import DimensionSelection, read_dimension_composition_from_mdx, \
-    read_dimension_composition_from_mdx_set_or_tuple, read_dimension_composition_from_mdx_set, \
-    read_dimension_composition_from_mdx_tuple, split_mdx, _find_case_and_space_insensitive_first_occurrence
-from TM1py.Utils.Utils import dimension_hierarchy_element_tuple_from_unique_name, get_dimensions_from_where_clause, \
-    integerize_version, verify_version
+from TM1py.Utils import MDXUtils, Utils, format_url
+from TM1py.Utils.MDXUtils import (
+    DimensionSelection, _find_case_and_space_insensitive_first_occurrence,
+    read_dimension_composition_from_mdx,
+    read_dimension_composition_from_mdx_set,
+    read_dimension_composition_from_mdx_set_or_tuple,
+    read_dimension_composition_from_mdx_tuple, split_mdx)
+from TM1py.Utils.Utils import \
+    dimension_hierarchy_element_tuple_from_unique_name
 
 from .TestUtils import skip_if_no_pandas
 
