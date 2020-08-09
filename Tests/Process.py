@@ -227,7 +227,7 @@ class TestProcessMethods(unittest.TestCase):
         self.assertTrue(success)
         self.assertEqual(status, "CompletedSuccessfully")
         self.assertIsNone(error_log_file)
-        
+
     def test_execute_process_with_return_compile_error(self):
         process = Process(name=str(uuid.uuid4()))
         process.prolog_procedure = "sText = 'text';sText = 2;"
