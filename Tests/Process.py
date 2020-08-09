@@ -219,6 +219,15 @@ class TestProcessMethods(unittest.TestCase):
         self.assertIn("Variable \"dimsize\" is undefined", errors[0]["Message"])
         self.tm1.processes.delete(p_bad.name)
 
+    @skip_if_insufficient_version(version="11.4")
+    def test_execute_process_with_return_success(self):	
+        process = Process(name=str(uuid.uuid4()))	
+        process.prolog_procedure = "Sleep(100);"	
+
+        success, status, error_log_file = self.tm1.processes.execute_process_with_return(process)	
+        self.assertTrue(success)	
+        self.assertEqual(status, "CompletedSuccessfully")	
+        self.assertIsNone(error_log_file)
 
     def test_execute_process_with_return_compile_error(self):
         process = Process(name=str(uuid.uuid4()))
