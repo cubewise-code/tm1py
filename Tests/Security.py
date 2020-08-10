@@ -2,13 +2,6 @@ import configparser
 import unittest
 from pathlib import Path
 
-import pytest
-
-from base64 import b64encode
-
-from TM1py.Exceptions import TM1pyRestException
-
-
 from TM1py.Objects import User
 from TM1py.Objects.User import UserType
 from TM1py.Services import TM1Service
@@ -88,12 +81,12 @@ class TestSecurityMethods(unittest.TestCase):
         self.assertNotIn(self.group_name2, groups)
 
     def test_user_type_invalid_type(self):
-        with pytest.raises(ValueError):
-            user = User("not_relevant", groups=["ADMIN"], user_type=3)
+        with self.assertRaises(ValueError) as e:
+            self.tm1.security.create_user(User("not_relevant", groups=["ADMIN"], user_type=3))
 
     def test_user_type_invalid_str(self):
-        with pytest.raises(ValueError):
-            user = User("not_relevant", groups=["ADMIN"], user_type="not_a_valid_type")
+        with self.assertRaises(ValueError) as e:
+            self.tm1.security.create_user(User("not_relevant", groups=["ADMIN"], user_type="not_a_valid_type"))
 
     def test_user_type_derive_user_from_groups(self):
         user = User("not_relevant", groups=["Marketing"], user_type=None)
