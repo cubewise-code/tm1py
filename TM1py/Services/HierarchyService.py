@@ -212,10 +212,10 @@ class HierarchyService(ObjectService):
         return self._rest.PATCH(url=url, data=json.dumps(body), **kwargs)
 
     def remove_edges_under_consolidation(self, dimension_name: str,  hierarchy_name: str,
-                                         consolidation_element: str, **kwargs) -> Response:
+                                         consolidation_element: str, **kwargs) -> List[Response]:
         """
         :param dimension_name: Name of the dimension
-        :param hierarchy_name: Nmae of the hierarchy
+        :param hierarchy_name: Name of the hierarchy
         :param consolidation_element: Name of the Consolidated element
         :return: response
         """
@@ -226,14 +226,11 @@ class HierarchyService(ObjectService):
                                                                                         consolidation_element)
         elements_under_consolidations.append(consolidation_element)
         remove_edges = []
-        for element, _ in hierarchy.edges.items():
-            if element[0] in elements_under_consolidations and element[1] in elements_under_consolidations:
-                remove_edges.append(element)
+        for (parent, component) in hierarchy.edges:
+            if parent in elements_under_consolidations and component in elements_under_consolidations:
+                remove_edges.append((parent, component))
         hierarchy.remove_edges(remove_edges)
-
-        url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')", dimension_name, hierarchy_name)
-        response = self._rest.PATCH(url=url, data=hierarchy.body, **kwargs)
-        return response
+        return self.update(hierarchy, **kwargs)
 
     def add_edges(self, dimension_name: str, hierarchy_name: str = None, edges: Dict[Tuple[str, str], int] = None,
                   **kwargs) -> Response:
