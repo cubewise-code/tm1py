@@ -2,17 +2,16 @@ import configparser
 import types
 import unittest
 from pathlib import Path
-import functools
 
-import pytest
-from mdxpy import MdxBuilder, MdxHierarchySet, Member, CalculatedMember
+from mdxpy import CalculatedMember, MdxBuilder, MdxHierarchySet, Member
 
 from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyVersionException
-from TM1py.Objects import MDXView, Cube, Dimension, Element, Hierarchy, NativeView, AnonymousSubset, ElementAttribute
+from TM1py.Objects import (AnonymousSubset, Cube, Dimension, Element,
+                           ElementAttribute, Hierarchy, MDXView, NativeView)
 from TM1py.Services import TM1Service
 from TM1py.Utils import Utils, element_names_from_element_unique_names, CaseAndSpaceInsensitiveDict
 
-from .TestUtils import skip_if_no_pandas, skip_if_insufficient_version
+from .TestUtils import skip_if_insufficient_version, skip_if_no_pandas
 
 try:
     import pandas as pd
@@ -1785,7 +1784,8 @@ class TestDataMethods(unittest.TestCase):
 
     @skip_if_insufficient_version(version="11.7")
     def test_clear_invalid_element_name(self):
-        with pytest.raises(TM1pyException) as execinfo:
+
+        with self.assertRaises(TM1pyException) as e:
             kwargs = {
                 DIMENSION_NAMES[0]: f"[{DIMENSION_NAMES[0]}].[Element12]",
                 DIMENSION_NAMES[1]: f"[{DIMENSION_NAMES[1]}].[Element17]",
@@ -1795,11 +1795,11 @@ class TestDataMethods(unittest.TestCase):
 
         self.assertEqual(
             "{\"error\":{\"code\":\"248\",\"message\":\"\\\"NotExistingElement\\\" : member not found (rte 81)\"}}",
-            execinfo.value.message)
+            str(e.exception))
 
     @skip_if_insufficient_version(version="11.7")
     def test_clear_with_mdx_invalid_query(self):
-        with pytest.raises(TM1pyException) as execinfo:
+        with self.assertRaises(TM1pyException) as e:
             mdx = f"""
             SELECT
             {{[{DIMENSION_NAMES[0]}].[NotExistingElement]}} ON 0
@@ -1809,21 +1809,24 @@ class TestDataMethods(unittest.TestCase):
 
         self.assertEqual(
             "{\"error\":{\"code\":\"248\",\"message\":\"\\\"NotExistingElement\\\" : member not found (rte 81)\"}}",
-            execinfo.value.message)
+            str(e.exception))
 
     def test_clear_with_mdx_unsupported_version(self):
-        with pytest.raises(TM1pyVersionException) as exec_info:
+
+        with self.assertRaises(TM1pyVersionException) as e:
             mdx = MdxBuilder.from_cube(CUBE_NAME) \
                 .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[0], "Element19"))) \
                 .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[1], "Element11"))) \
                 .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[2], "Element31"))) \
                 .to_mdx()
+
+            # This needs to be rethought as may influence other tests
             self.tm1._tm1_rest._version = "11.2.00000.27"
+
             self.tm1.cells.clear_with_mdx(cube=CUBE_NAME, mdx=mdx)
 
-        self.assertEqual(
-            f"Function 'clear_with_mdx' requires TM1 server version >= '11.7'",
-            str(exec_info.value))
+        self.assertEqual(str(e.exception), str(TM1pyVersionException(function = "clear_with_mdx", required_version="11.7")))
+
 
     def test_execute_mdx_with_skip(self):
         mdx = MdxBuilder.from_cube(CUBE_NAME) \
