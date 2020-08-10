@@ -24,10 +24,6 @@ try:
 except ImportError:
     pass
 
-
-config = configparser.ConfigParser()
-config.read(Path(__file__).parent.joinpath('config.ini'))
-
 PREFIX = "TM1py_Tests_Utils_"
 
 MDX_TEMPLATE = """
@@ -47,12 +43,17 @@ FROM {cube}
 
 
 class TestMDXUtils(unittest.TestCase):
-    tm1 = None
 
     @classmethod
     def setUpClass(cls):
-        # Connect to TM1
-        cls.tm1 = TM1Service(**config['tm1srv01'])
+        """
+        Establishes a connection to TM1 and creates TM1 objects to use across all tests
+        """
+
+        # Connection to TM1
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
 
         # Build 4 Dimensions
         cls.dim1_name = PREFIX + "Dimension1"
