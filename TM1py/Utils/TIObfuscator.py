@@ -82,7 +82,7 @@ def remove_generated_code(code):
     :param code: 
     :return: 
     """
-    return re.sub(r"#\*\*\*\*Begin: Generated Statements(?s)(.*)#\*\*\*\*End: Generated Statements\*\*\*\*", '', code)
+    return re.sub(r"#\*\*\*\*Begin: Generated Statements(.*)#\*\*\*\*End: Generated Statements\*\*\*\*", '', code)
 
 
 def remove_comment_lines(code):
