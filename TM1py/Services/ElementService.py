@@ -129,8 +129,7 @@ class ElementService(ObjectService):
         mdx_elements = f"{{ Tm1FilterByLevel ( {{ Tm1SubsetAll ([{dimension_name}].[{hierarchy_name}]) }} , 0 ) }}"
         return self.get_element_identifiers(dimension_name, hierarchy_name, mdx_elements, **kwargs)
 
-    def get_elements_by_level(self, dimension_name: str, hierarchy_name: str, level: int,
-                              **kwargs) -> List[str]:
+    def get_elements_by_level(self, dimension_name: str, hierarchy_name: str, level: int, **kwargs) -> List[str]:
         """ Get all element names by level in a hierarchy
 
         :param dimension_name: Name of the dimension
@@ -142,7 +141,27 @@ class ElementService(ObjectService):
             "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Level eq {}",
             dimension_name,
             hierarchy_name,
-            level)
+            str(level))
+        response = self._rest.GET(url, **kwargs)
+        return [e["Name"] for e in response.json()['value']]
+
+    def get_elements_by_wildcard(self, dimension_name: str, hierarchy_name: str,
+                                 wildcard: str, level: int = None, **kwargs) -> List[str]:
+        """ Get all element names filtered by wildcard (CaseInsensitive) and level in a hierarchy
+
+        :param dimension_name: Name of the dimension
+        :param hierarchy_name: Name of the hierarchy
+        :param wildcard: wildcard to filter
+        :param level: Level to filter
+        :return: List of element names
+        """
+        filter_elements = format_url("contains(tolower(Name),tolower('{}'))", wildcard)
+        if isinstance(level, int):
+            filter_elements = filter_elements + f" and Level eq {level}"
+        url = format_url(
+            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=" + filter_elements,
+            dimension_name,
+            hierarchy_name)
         response = self._rest.GET(url, **kwargs)
         return [e["Name"] for e in response.json()['value']]
 
