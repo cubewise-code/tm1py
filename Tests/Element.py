@@ -306,22 +306,22 @@ class TestElementMethods(unittest.TestCase):
 
     def test_get_elements_by_wildcard(self):
         expected_elements = ['Total Years', 'No Year']
-        elements = self.tm1.dimensions.hierarchies.elements.get_elements_by_wildcard(
+        elements = self.tm1.dimensions.hierarchies.elements.get_elements_filtered_by_wildcard(
             DIMENSION_NAME, HIERARCHY_NAME, 'year')
         self.assertEqual(elements, expected_elements)
 
         expected_elements = ['Total Years']
-        elements = self.tm1.dimensions.hierarchies.elements.get_elements_by_wildcard(
-            DIMENSION_NAME, HIERARCHY_NAME, 'year', 1)
+        elements = self.tm1.dimensions.hierarchies.elements.get_elements_filtered_by_wildcard(
+            DIMENSION_NAME, HIERARCHY_NAME, 'talyear', 1)
         self.assertEqual(elements, expected_elements)
 
         expected_elements = ['1989', '1990', '1991', '1992']
-        elements = self.tm1.dimensions.hierarchies.elements.get_elements_by_wildcard(
+        elements = self.tm1.dimensions.hierarchies.elements.get_elements_filtered_by_wildcard(
             DIMENSION_NAME, HIERARCHY_NAME, '19', 0)
         self.assertEqual(elements, expected_elements)
 
         expected_elements = ['1990', '1991', '1992']
-        elements = self.tm1.dimensions.hierarchies.elements.get_elements_by_wildcard(
+        elements = self.tm1.dimensions.hierarchies.elements.get_elements_filtered_by_wildcard(
             DIMENSION_NAME, HIERARCHY_NAME, '99', 0)
         self.assertEqual(elements, expected_elements)
 
