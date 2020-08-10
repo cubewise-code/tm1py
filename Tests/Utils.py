@@ -3,11 +3,15 @@ import unittest
 from pathlib import Path
 
 from TM1py.Services import TM1Service
-from TM1py.Utils import Utils
-from TM1py.Utils import integerize_version, verify_version, get_dimensions_from_where_clause
+from TM1py.Utils import (
+    Utils,
+    get_dimensions_from_where_clause,
+    integerize_version,
+    verify_version,
+)
+
 
 class TestUtilsMethods(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
         """
@@ -16,12 +20,13 @@ class TestUtilsMethods(unittest.TestCase):
 
         # Connection to TM1
         cls.config = configparser.ConfigParser()
-        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
-        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
-
+        cls.config.read(Path(__file__).parent.joinpath("config.ini"))
+        cls.tm1 = TM1Service(**cls.config["tm1srv01"])
 
     def test_get_instances_from_adminhost(self):
-        servers = Utils.get_all_servers_from_adminhost(self.config['tm1srv01']['address'])
+        servers = Utils.get_all_servers_from_adminhost(
+            self.config["tm1srv01"]["address"]
+        )
         self.assertGreater(len(servers), 0)
 
     def test_integerize_version(self):
@@ -106,13 +111,10 @@ class TestUtilsMethods(unittest.TestCase):
         dimensions = get_dimensions_from_where_clause(mdx)
         self.assertEqual(["DIM5"], dimensions)
 
-
-
-
     @classmethod
     def tearDownClass(cls):
         cls.tm1.logout()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
