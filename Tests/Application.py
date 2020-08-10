@@ -10,6 +10,8 @@ from TM1py import TM1Service, Element, ElementAttribute, Hierarchy, Dimension, C
 from TM1py.Objects.Application import CubeApplication, ApplicationTypes, ChoreApplication, DimensionApplication, \
     FolderApplication, LinkApplication, ProcessApplication, SubsetApplication, ViewApplication, DocumentApplication
 
+from .TestUtils import skip_if_insufficient_version
+
 # Hard coded stuff
 PREFIX = 'TM1py_Tests_Applications_'
 TM1PY_APP_FOLDER = PREFIX + "RootFolder"
@@ -209,9 +211,11 @@ class TestDataMethods(unittest.TestCase):
     def test_dimension_application_private(self):
         self.run_test_dimension_application(private=True)
 
+    @skip_if_insufficient_version(version="11.4")
     def test_dimension_application_public(self):
         self.run_test_dimension_application(private=False)
 
+    @skip_if_insufficient_version(version="11.4")
     def run_test_document_application(self, private):
         with open(Path(__file__).parent.joinpath('resources', 'document.xlsx'), "rb") as file:
             app = DocumentApplication(path=TM1PY_APP_FOLDER, name=DOCUMENT_NAME, content=file.read())
