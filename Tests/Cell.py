@@ -78,7 +78,7 @@ class TestDataMethods(unittest.TestCase):
             else:
                 cls.tm1.dimensions.create(dimension)
             attribute_cube = "}ElementAttributes_" + dimension_name
-            attribute_values = dict()
+            attribute_values = {}
             for element in elements:
                 attribute_values[(element.name, "Attr1")] = "TM1py"
                 attribute_values[(element.name, "Attr2")] = "2"
@@ -123,8 +123,8 @@ class TestDataMethods(unittest.TestCase):
 
         # cellset of data that shall be written
         cls.cellset = Utils.CaseAndSpaceInsensitiveTuplesDict()
+        value = 1
         for element1, element2, element3 in cls.target_coordinates:
-            value = 1
             cls.cellset[(element1, element2, element3)] = value
 
         # Sum of all the values that we write in the cube. serves as a checksum.
