@@ -503,17 +503,18 @@ class CellService(ObjectService):
             delete_cellset=True,
             **kwargs)
 
-    def execute_mdx_values(self, mdx: str, **kwargs):
+    def execute_mdx_values(self, mdx: str, **kwargs) -> List[Union[str, float]]:
         """ Optimized for performance. Query only raw cell values. 
         Coordinates are omitted !
 
         :param mdx: a valid MDX Query
-        :return: Generator of cell values
+        :return: List of cell values
         """
         cellset_id = self.create_cellset(mdx=mdx, **kwargs)
         return self.extract_cellset_values(cellset_id, delete_cellset=True, **kwargs)
 
-    def execute_view_values(self, cube_name: str, view_name: str, private: bool = False, **kwargs):
+    def execute_view_values(self, cube_name: str, view_name: str, private: bool = False,
+                            **kwargs) -> List[Union[str, float]]:
         """ Execute view and retrieve only the cell values
 
         :param cube_name: String, name of the cube
@@ -1099,7 +1100,7 @@ class CellService(ObjectService):
         return response.json()
 
     @tidy_cellset
-    def extract_cellset_values(self, cellset_id: str, **kwargs):
+    def extract_cellset_values(self, cellset_id: str, **kwargs) -> List[Union[str, float]]:
         """ Extract cellset data and return only the cells and values
 
         :param cellset_id: String; ID of existing cellset
@@ -1107,7 +1108,7 @@ class CellService(ObjectService):
         """
         url = format_url("/api/v1/Cellsets('{}')?$expand=Cells($select=Value)", cellset_id)
         response = self._rest.GET(url=url, **kwargs)
-        return (cell["Value"] for cell in response.json()["Cells"])
+        return [cell["Value"] for cell in response.json()["Cells"]]
 
     @tidy_cellset
     def extract_cellset_rows_and_values(self, cellset_id: str, element_unique_names: bool = True,
