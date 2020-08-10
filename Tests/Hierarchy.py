@@ -359,6 +359,17 @@ class TestHierarchyMethods(unittest.TestCase):
         hierarchy = self.tm1.dimensions.hierarchies.get(DIMENSION_NAME, DIMENSION_NAME)
         self.assertEqual(len(hierarchy.edges), 0)
 
+    def test_remove_edges_under_consolidation(self):
+        members = self.tm1.dimensions.hierarchies.elements.get_members_under_consolidation(DIMENSION_NAME,
+                                                                                           DIMENSION_NAME,
+                                                                                           'Total Years')
+        self.assertGreater(len(members), 0)
+        self.tm1.dimensions.hierarchies.remove_edges_under_consolidation(DIMENSION_NAME, DIMENSION_NAME, 'Total Years')
+        members = self.tm1.dimensions.hierarchies.elements.get_members_under_consolidation(DIMENSION_NAME,
+                                                                                           DIMENSION_NAME,
+                                                                                           'Total Years')
+        self.assertEqual(len(members), 0)
+
     def test_add_edges(self):
         edges = {("Total Years", "My Element"): 1, ("Total Years", "No Year"): 1}
         self.tm1.dimensions.hierarchies.add_edges(DIMENSION_NAME, DIMENSION_NAME, edges)
