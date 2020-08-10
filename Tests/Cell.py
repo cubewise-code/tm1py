@@ -251,8 +251,10 @@ class TestDataMethods(unittest.TestCase):
         response = self.tm1.cubes.cells.write_values(CUBE_NAME, self.cellset)
         self.assertTrue(response.ok)
 
-    @unittest.skip("Failing")
     def test_relative_proportional_spread_happy_case(self):
+        """
+        Tests that relative proportional spread populates a cube with the expected values
+        """
         self.build_assets_for_relative_proportional_spread_tests()
 
         cells = {
@@ -277,11 +279,11 @@ class TestDataMethods(unittest.TestCase):
             Member.of(DIMENSION_RPS2_NAME, "e3")])).to_mdx()
 
         values = self.tm1.cubes.cells.execute_mdx_values(mdx)
-        self.assertEqual(next(values), 2)
-        self.assertEqual(next(values), 4)
-        self.assertEqual(next(values), 6)
+        
+        self.assertEqual(values[0], 2)
+        self.assertEqual(values[1], 4)
+        self.assertEqual(values[2], 6)
 
-    @unittest.skip("Failing")
     def test_relative_proportional_with_explicit_hierarchies(self):
         self.build_assets_for_relative_proportional_spread_tests()
 
@@ -309,11 +311,10 @@ class TestDataMethods(unittest.TestCase):
             Member.of(DIMENSION_RPS2_NAME, "e3")])).to_mdx()
 
         values = self.tm1.cubes.cells.execute_mdx_values(mdx)
-        self.assertEqual(next(values), 2)
-        self.assertEqual(next(values), 4)
-        self.assertEqual(next(values), 6)
+        self.assertEqual(values[0], 2)
+        self.assertEqual(values[1], 4)
+        self.assertEqual(values[2], 6)
 
-    @unittest.skip("Failing")
     def test_relative_proportional_spread_without_reference_cube(self):
         self.build_assets_for_relative_proportional_spread_tests()
 
@@ -338,11 +339,10 @@ class TestDataMethods(unittest.TestCase):
             Member.of(DIMENSION_RPS2_NAME, "e3")])).to_mdx()
 
         values = self.tm1.cubes.cells.execute_mdx_values(mdx)
-        self.assertEqual(next(values), 2)
-        self.assertEqual(next(values), 4)
-        self.assertEqual(next(values), 6)
+        self.assertEqual(values[0], 2)
+        self.assertEqual(values[1], 4)
+        self.assertEqual(values[2], 6)
 
-    @unittest.skip("Failing")
     def test_relative_proportional_spread_with_different_reference_cube(self):
         self.build_assets_for_relative_proportional_spread_tests()
 
@@ -368,9 +368,9 @@ class TestDataMethods(unittest.TestCase):
             Member.of(DIMENSION_RPS2_NAME, "e3")])).to_mdx()
 
         values = self.tm1.cubes.cells.execute_mdx_values(mdx)
-        self.assertEqual(next(values), 2)
-        self.assertEqual(next(values), 4)
-        self.assertEqual(next(values), 6)
+        self.assertEqual(values[0], 2)
+        self.assertEqual(values[1], 4)
+        self.assertEqual(values[2], 6)
 
     def test_execute_mdx(self):
         # write cube content
@@ -1403,12 +1403,11 @@ class TestDataMethods(unittest.TestCase):
             top=5)
         self.assertEqual(len(raw["Cells"]), 5)
 
-    @unittest.skip("Failing")
     def test_execute_view_values(self):
         cell_values = self.tm1.cubes.cells.execute_view_values(cube_name=CUBE_NAME, view_name=VIEW_NAME, private=False)
 
         # check type
-        self.assertIsInstance(cell_values, types.GeneratorType)
+        self.assertIsInstance(cell_values, list)
 
         # Check if total value is the same AND coordinates are the same. Handle None.
         self.assertEqual(self.total_value,
@@ -1654,7 +1653,6 @@ class TestDataMethods(unittest.TestCase):
             view_name=VIEW_NAME,
             private=False)
 
-    @unittest.skip("Failing")
     def test_write_values_through_cellset(self):
         mdx = MdxBuilder.from_cube(CUBE_NAME) \
             .add_hierarchy_set_to_row_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[0], "element2"))) \
@@ -1662,13 +1660,13 @@ class TestDataMethods(unittest.TestCase):
             .where(Member.of(DIMENSION_NAMES[2], "element2")) \
             .to_mdx()
 
-        original_value = next(self.tm1.cubes.cells.execute_mdx_values(mdx))
+        original_value = self.tm1.cubes.cells.execute_mdx_values(mdx)[0]
 
         self.tm1.cubes.cells.write_values_through_cellset(mdx, (1.5,))
 
         # check value on coordinate in cube
         values = self.tm1.cubes.cells.execute_mdx_values(mdx)
-        self.assertEqual(next(values), 1.5)
+        self.assertEqual(values[0], 1.5)
 
         self.tm1.cubes.cells.write_values_through_cellset(mdx, (original_value,))
 
@@ -1688,7 +1686,6 @@ class TestDataMethods(unittest.TestCase):
         value = self.tm1.cubes.cells.get_value("}CubeProperties", "{},LOGGING".format(CUBE_NAME))
         self.assertEqual("YES", value.upper())
 
-    @unittest.skip("Failing")
     def test_read_write_with_custom_encoding(self):
         coordinates = ("d1e1", "d2e2", "d3e3")
         self.tm1.cubes.cells.write_values(STRING_CUBE_NAME, {coordinates: LATIN_1_ENCODED_TEXT}, encoding="latin-1")
@@ -1703,9 +1700,8 @@ class TestDataMethods(unittest.TestCase):
             .to_mdx()
 
         values = self.tm1.cubes.cells.execute_mdx_values(mdx=mdx, encoding="latin-1")
-        self.assertEqual(LATIN_1_ENCODED_TEXT, next(values))
+        self.assertEqual(LATIN_1_ENCODED_TEXT, values[0])
 
-    @unittest.skip("Failing")
     def test_read_write_with_custom_encoding_fail_response_encoding(self):
         coordinates = ("d1e1", "d2e2", "d3e3")
         self.tm1.cubes.cells.write_values(STRING_CUBE_NAME, {coordinates: LATIN_1_ENCODED_TEXT}, encoding="latin-1")
@@ -1721,9 +1717,8 @@ class TestDataMethods(unittest.TestCase):
 
         values = self.tm1.cubes.cells.execute_mdx_values(mdx=mdx)
 
-        self.assertNotEqual(LATIN_1_ENCODED_TEXT, next(values))
+        self.assertNotEqual(LATIN_1_ENCODED_TEXT, values[0])
 
-    @unittest.skip("Failing")
     def test_read_write_with_custom_encoding_fail_request_encoding(self):
         coordinates = ("d1e1", "d2e2", "d3e3")
         self.tm1.cubes.cells.write_values(STRING_CUBE_NAME, {coordinates: LATIN_1_ENCODED_TEXT})
@@ -1738,7 +1733,7 @@ class TestDataMethods(unittest.TestCase):
             .to_mdx()
 
         values = self.tm1.cubes.cells.execute_mdx_values(mdx=mdx, encoding="latin-1")
-        self.assertNotEqual(LATIN_1_ENCODED_TEXT, next(values))
+        self.assertNotEqual(LATIN_1_ENCODED_TEXT, values[0])
 
     @skip_if_insufficient_version(version="11.7")
     def test_clear_with_mdx_happy_case(self):
@@ -1753,6 +1748,7 @@ class TestDataMethods(unittest.TestCase):
 
         self.tm1.cells.clear_with_mdx(cube=CUBE_NAME, mdx=mdx)
 
+        # this may need looking at
         value = next(self.tm1.cells.execute_mdx_values(mdx=mdx))
         self.assertEqual(value, None)
 
@@ -1768,6 +1764,7 @@ class TestDataMethods(unittest.TestCase):
             .to_mdx()
         self.tm1.cells.clear_with_mdx(cube=CUBE_NAME, mdx=mdx)
 
+        # this may need looking at
         value = next(self.tm1.cells.execute_mdx_values(mdx=mdx))
         self.assertEqual(value, None)
 
@@ -1789,6 +1786,7 @@ class TestDataMethods(unittest.TestCase):
             .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[2], "Element32"))) \
             .to_mdx()
 
+        # this may need looking at
         value = next(self.tm1.cells.execute_mdx_values(mdx=mdx))
         self.assertEqual(value, None)
 
