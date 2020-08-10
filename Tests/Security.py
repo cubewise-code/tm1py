@@ -1,7 +1,9 @@
 import configparser
 import unittest
 from pathlib import Path
+from base64 import b64encode
 
+from TM1py.Exceptions import TM1pyRestException
 from TM1py.Objects import User
 from TM1py.Objects.User import UserType
 from TM1py.Services import TM1Service
