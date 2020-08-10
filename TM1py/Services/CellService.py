@@ -598,7 +598,7 @@ class CellService(ObjectService):
 
     def execute_mdx_elements_value_dict(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
                                         skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
-                                        element_separator: str = "|", **kwargs) -> Dict[str, Union[str, float]]:
+                                        element_separator: str = "|", **kwargs) -> CaseAndSpaceInsensitiveDict:
         """ Optimized for performance. Get Dict from MDX Query.
 
         :param mdx: Valid MDX Query
@@ -608,14 +608,17 @@ class CellService(ObjectService):
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
         :param element_separator: separator for the dimension element combination
-        :return: Dict  {'2020|Jan|Sales': 2000, '2020|Feb|Sales': 3000}
+        :return: CaseAndSpaceInsensitiveDict {'2020|Jan|Sales': 2000, '2020|Feb|Sales': 3000}
         """
         lines = self.execute_mdx_csv(mdx=mdx, top=top, skip=skip, skip_zeros=skip_zeros,
                                      skip_consolidated_cells=skip_consolidated_cells,
                                      skip_rule_derived_cells=skip_rule_derived_cells,
                                      value_separator=element_separator, **kwargs)
-        return {element_separator.join(entries.split(element_separator)[:-1]): entries.split(element_separator)[-1]
-                for entries in lines.split("\r\n")[1:]}
+        elements_value_dict = CaseAndSpaceInsensitiveDict()
+        for entries in lines.split("\r\n")[1:]:
+            elements_value_dict[
+                element_separator.join(entries.split(element_separator)[:-1])] = entries.split(element_separator)[-1]
+        return elements_value_dict
 
     @require_pandas
     def execute_mdx_dataframe(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
@@ -713,7 +716,7 @@ class CellService(ObjectService):
     def execute_view_elements_value_dict(self, cube_name: str, view_name: str, private: bool = False,
                                          top: int = None, skip: int = None, skip_zeros: bool = True,
                                          skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
-                                         element_separator: str = "|", **kwargs) -> Dict[str, Union[str, float]]:
+                                         element_separator: str = "|", **kwargs) -> CaseAndSpaceInsensitiveDict:
         """ Optimized for performance. Get a Dict(tuple, value) from an existing Cube View
         Context dimensions are omitted in the resulting Dataframe !
         Cells with Zero/null are omitted by default, but still configurable!
@@ -727,14 +730,17 @@ class CellService(ObjectService):
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
         :param element_separator: separator for the dimension element combination
-        :return: Dict  {'2020|Jan|Sales': 2000, '2020|Feb|Sales': 3000}
+        :return: CaseAndSpaceInsensitiveDict {'2020|Jan|Sales': 2000, '2020|Feb|Sales': 3000}
         """
         lines = self.execute_view_csv(cube_name=cube_name, view_name=view_name, private=private, top=top, skip=skip,
                                       skip_zeros=skip_zeros, skip_consolidated_cells=skip_consolidated_cells,
                                       skip_rule_derived_cells=skip_rule_derived_cells,
                                       value_separator=element_separator, **kwargs)
-        return {element_separator.join(entries.split(element_separator)[:-1]): entries.split(element_separator)[-1]
-                for entries in lines.split("\r\n")[1:]}
+        elements_value_dict = CaseAndSpaceInsensitiveDict()
+        for entries in lines.split("\r\n")[1:]:
+            elements_value_dict[
+                element_separator.join(entries.split(element_separator)[:-1])] = entries.split(element_separator)[-1]
+        return elements_value_dict
 
     @require_pandas
     def execute_view_dataframe(self, cube_name: str, view_name: str, private: bool = False, top: int = None,

@@ -10,7 +10,7 @@ from mdxpy import MdxBuilder, MdxHierarchySet, Member, CalculatedMember
 from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyVersionException
 from TM1py.Objects import MDXView, Cube, Dimension, Element, Hierarchy, NativeView, AnonymousSubset, ElementAttribute
 from TM1py.Services import TM1Service
-from TM1py.Utils import Utils, element_names_from_element_unique_names
+from TM1py.Utils import Utils, element_names_from_element_unique_names, CaseAndSpaceInsensitiveDict
 
 from .TestUtils import skip_if_no_pandas, skip_if_insufficient_version
 
@@ -915,7 +915,7 @@ class TestDataMethods(unittest.TestCase):
         values = self.tm1.cubes.cells.execute_mdx_elements_value_dict(mdx)
 
         # check type
-        self.assertIsInstance(values, dict)
+        self.assertIsInstance(values, CaseAndSpaceInsensitiveDict)
 
         # check coordinates
         coordinates = {key for key, value in values.items()}
@@ -1434,7 +1434,7 @@ class TestDataMethods(unittest.TestCase):
             private=False)
 
         # check type
-        self.assertIsInstance(values, dict)
+        self.assertIsInstance(values, CaseAndSpaceInsensitiveDict)
 
         # check coordinates
         coordinates = {key for key, value in values.items()}
@@ -1455,7 +1455,7 @@ class TestDataMethods(unittest.TestCase):
         self.assertTrue(len(values) == 4)
 
         # check type
-        self.assertIsInstance(values, dict)
+        self.assertIsInstance(values, CaseAndSpaceInsensitiveDict)
 
     @skip_if_no_pandas
     def test_execute_view_dataframe(self):
