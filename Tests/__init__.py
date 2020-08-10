@@ -5,13 +5,14 @@ from Tests.Cube import TestCubeMethods
 from Tests.Dimension import TestDimensionMethods
 from Tests.Element import TestElementMethods
 from Tests.Hierarchy import TestHierarchyMethods
-from Tests.Other import TestOtherMethods
+from Tests.MDXUtils import TestMDXUtils
 from Tests.PowerBiService import TestPowerBiService
 from Tests.Process import TestProcessMethods
 from Tests.Security import TestSecurityMethods
 from Tests.Server import TestServerMethods
 from Tests.Subset import TestSubsetMethods
-from Tests.Utils import TestTIObfuscatorMethods, TestMDXUtils
+from Tests.TIObfuscator import TestTIObfuscatorMethods
+from Tests.Utils import TestUtilsMethods
 from Tests.View import TestViewMethods
 
 """ Notes on TM1py Tests
