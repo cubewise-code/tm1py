@@ -386,7 +386,10 @@ class TestDataMethods(unittest.TestCase):
 
         data = self.tm1.cubes.cells.execute_mdx(mdx)
         # Check if total value is the same AND coordinates are the same. Handle None
-        self.assertEqual(self.total_value, sum([v["Value"] for v in data.values() if v["Value"]]))
+        self.assertEqual(
+            self.total_value, sum(v["Value"] for v in data.values() if v["Value"])
+        )
+
 
         # MDX with top
         data = self.tm1.cubes.cells.execute_mdx(mdx, top=5)
@@ -406,9 +409,7 @@ class TestDataMethods(unittest.TestCase):
         data = self.tm1.cubes.cells.execute_mdx(mdx, cell_properties=["Value", "Ordinal"])
         self.assertEqual(1000, len(data))
         self.assertEqual(2000, sum(v["Value"] for v in data.values()))
-        self.assertEqual(
-            sum(range(0, 1000)),
-            sum(v["Ordinal"] for v in data.values()))
+        self.assertEqual(sum(range(1000)), sum(v["Ordinal"] for v in data.values()))
 
     def test_execute_mdx_without_rows(self):
         # write cube content
@@ -425,7 +426,10 @@ class TestDataMethods(unittest.TestCase):
 
         data = self.tm1.cubes.cells.execute_mdx(mdx)
         # Check if total value is the same AND coordinates are the same. Handle None
-        self.assertEqual(self.total_value, sum([v["Value"] for v in data.values() if v["Value"]]))
+        self.assertEqual(
+            self.total_value, sum(v["Value"] for v in data.values() if v["Value"])
+        )
+
         for coordinates in data.keys():
             self.assertEqual(len(coordinates), 3)
             self.assertIn("[TM1py_Tests_Cell_Dimension1].", coordinates[0])
@@ -447,7 +451,10 @@ class TestDataMethods(unittest.TestCase):
 
         data = self.tm1.cubes.cells.execute_mdx(mdx)
         # Check if total value is the same AND coordinates are the same. Handle None
-        self.assertEqual(self.total_value, sum([v["Value"] for v in data.values() if v["Value"]]))
+        self.assertEqual(
+            self.total_value, sum(v["Value"] for v in data.values() if v["Value"])
+        )
+
         for coordinates in data.keys():
             self.assertEqual(len(coordinates), 3)
             self.assertIn("[TM1py_Tests_Cell_Dimension1].", coordinates[0])
@@ -756,9 +763,7 @@ class TestDataMethods(unittest.TestCase):
             cell_values,
             list)
         # Check if total value is the same. Handle None.
-        self.assertEqual(
-            self.total_value,
-            sum([v for v in cell_values if v]))
+        self.assertEqual(self.total_value, sum(v for v in cell_values if v))
         # Define MDX Query with calculated MEMBER
         mdx = "WITH MEMBER[{}].[{}] AS 2 " \
               "SELECT[{}].MEMBERS ON ROWS, " \
@@ -1409,8 +1414,7 @@ class TestDataMethods(unittest.TestCase):
         self.assertIsInstance(cell_values, list)
 
         # Check if total value is the same AND coordinates are the same. Handle None.
-        self.assertEqual(self.total_value,
-                         sum([v for v in cell_values if v]))
+        self.assertEqual(self.total_value, sum(v for v in cell_values if v))
 
     def test_execute_view_csv(self):
         csv = self.tm1.cubes.cells.execute_view_csv(cube_name=CUBE_NAME, view_name=VIEW_NAME, private=False)
