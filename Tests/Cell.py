@@ -741,7 +741,6 @@ class TestDataMethods(unittest.TestCase):
                     self.assertNotIn("UniqueName", member)
                     self.assertNotIn("Ordinal", member)
 
-    @unittest.skip("Failing")
     def test_execute_mdx_values(self):
         self.tm1.cells.write_values(CUBE_NAME, self.cellset)
 
@@ -755,7 +754,7 @@ class TestDataMethods(unittest.TestCase):
         cell_values = self.tm1.cubes.cells.execute_mdx_values(mdx)
         self.assertIsInstance(
             cell_values,
-            types.GeneratorType)
+            list)
         # Check if total value is the same. Handle None.
         self.assertEqual(
             self.total_value,
