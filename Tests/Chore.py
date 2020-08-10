@@ -9,6 +9,8 @@ from pathlib import Path
 from TM1py.Objects import Chore, ChoreStartTime, ChoreFrequency, ChoreTask, Process
 from TM1py.Services import TM1Service
 
+from .TestUtils import skip_if_insufficient_version
+
 # Hard stuff for this test
 PREFIX = "TM1py_Tests_Chore_"
 PROCESS_NAME1 = PREFIX + 'Process1'
@@ -104,6 +106,7 @@ class TestChoreMethods(unittest.TestCase):
         if cls.tm1.chores.exists(CHORE_NAME4):
             cls.tm1.chores.delete(CHORE_NAME4)
 
+    @skip_if_insufficient_version(version="11.7.00002.1")
     def test_create_chore_with_dst(self):
         # create chores
         c4 = Chore(name=CHORE_NAME4,
