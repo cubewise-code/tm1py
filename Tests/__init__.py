@@ -11,6 +11,7 @@ from Tests.Process import TestProcessMethods
 from Tests.Security import TestSecurityMethods
 from Tests.Server import TestServerMethods
 from Tests.Subset import TestSubsetMethods
+from Tests.TIObfuscator import TestTIObfuscatorMethods
 from Tests.Utils import TestUtilsMethods
 from Tests.View import TestViewMethods
 
