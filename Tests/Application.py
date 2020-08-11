@@ -30,7 +30,7 @@ DIMENSION_NAMES = [
     PREFIX + 'Dimension3']
 
 
-class TestDataMethods(unittest.TestCase):
+class TestApplicationMethods(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:

@@ -49,7 +49,7 @@ DIMENSION_RPS1_NAME = PREFIX + "Dimension" + "_RPS1"
 DIMENSION_RPS2_NAME = PREFIX + "Dimension" + "_RPS2"
 
 
-class TestDataMethods(unittest.TestCase):
+class TestCellMethods(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
