@@ -107,7 +107,7 @@ class TestChoreMethods(unittest.TestCase):
             cls.tm1.chores.delete(CHORE_NAME4)
 
     @skip_if_insufficient_version(version="11.7.00002.1")
-    def test_create_chore_with_dst(self):
+    def test_create_chore_with_dst_multi_commit(self):
         # create chores
         c4 = Chore(name=CHORE_NAME4,
                    start_time=ChoreStartTime(self.start_time.year, self.start_time.month, self.start_time.day,
@@ -135,6 +135,35 @@ class TestChoreMethods(unittest.TestCase):
         self.assertEqual(c4._frequency._seconds, str(self.frequency_seconds).zfill(2))
         for task1, task2 in zip(self.tasks, c4._tasks):
             self.assertEqual(task1, task2)
+
+    def test_create_chore_with_dst_single_commit(self):
+        # create chores
+        c4 = Chore(name=CHORE_NAME4,
+                   start_time=ChoreStartTime(self.start_time.year, self.start_time.month, self.start_time.day,
+                                             self.start_time.hour, self.start_time.minute, self.start_time.second),
+                   dst_sensitivity=True,
+                   active=True,
+                   execution_mode=Chore.SINGLE_COMMIT,
+                   frequency=self.frequency,
+                   tasks=self.tasks)
+        self.tm1.chores.create(c4)
+
+        c4 = self.tm1.chores.get(CHORE_NAME4)
+
+        # delta in start time is expected to be <= 1h due to potential DST
+        self.assertLessEqual(abs(c4.start_time.datetime.hour - self.start_time.hour), 1)
+        self.assertEqual(c4._start_time._datetime.replace(hour=0), self.start_time.replace(hour=0, microsecond=0))
+        self.assertEqual(c4._name, CHORE_NAME4)
+        self.assertEqual(c4.active, True)
+        self.assertEqual(c4._dst_sensitivity, True)
+        self.assertEqual(c4._execution_mode, Chore.SINGLE_COMMIT)
+        self.assertEqual(c4._frequency._days, str(self.frequency_days).zfill(2))
+        self.assertEqual(c4._frequency._hours, str(self.frequency_hours).zfill(2))
+        self.assertEqual(c4._frequency._minutes, str(self.frequency_minutes).zfill(2))
+        self.assertEqual(c4._frequency._seconds, str(self.frequency_seconds).zfill(2))
+        for task1, task2 in zip(self.tasks, c4._tasks):
+            self.assertEqual(task1, task2)
+
 
     def test_get_chore(self):
         c1 = self.tm1.chores.get(CHORE_NAME1)
