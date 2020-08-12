@@ -1,5 +1,4 @@
 import configparser
-import types
 import unittest
 from pathlib import Path
 
@@ -10,7 +9,6 @@ from TM1py.Objects import (AnonymousSubset, Cube, Dimension, Element,
                            ElementAttribute, Hierarchy, MDXView, NativeView)
 from TM1py.Services import TM1Service
 from TM1py.Utils import Utils, element_names_from_element_unique_names, CaseAndSpaceInsensitiveDict
-
 from .TestUtils import skip_if_insufficient_version, skip_if_no_pandas
 
 try:
@@ -22,7 +20,7 @@ except ImportError:
 PREFIX = 'TM1py_Tests_Cell_'
 CUBE_NAME = PREFIX + "Cube"
 VIEW_NAME = PREFIX + "View"
-DIMENSION_NAMES = [ 
+DIMENSION_NAMES = [
     PREFIX + 'Dimension1',
     PREFIX + 'Dimension2',
     PREFIX + 'Dimension3']
@@ -279,7 +277,7 @@ class TestDataMethods(unittest.TestCase):
             Member.of(DIMENSION_RPS2_NAME, "e3")])).to_mdx()
 
         values = self.tm1.cubes.cells.execute_mdx_values(mdx)
-        
+
         self.assertEqual(values[0], 2)
         self.assertEqual(values[1], 4)
         self.assertEqual(values[2], 6)
@@ -389,7 +387,6 @@ class TestDataMethods(unittest.TestCase):
         self.assertEqual(
             self.total_value, sum(v["Value"] for v in data.values() if v["Value"])
         )
-
 
         # MDX with top
         data = self.tm1.cubes.cells.execute_mdx(mdx, top=5)
@@ -974,7 +971,7 @@ class TestDataMethods(unittest.TestCase):
 
         pivot = self.tm1.cubes.cells.execute_mdx_dataframe_pivot(mdx=mdx)
         self.assertEqual(pivot.shape, (7, 8))
-    
+
     @skip_if_no_pandas
     def test_execute_mdx_dataframe_pivot_no_titles(self):
         mdx = MdxBuilder.from_cube(CUBE_NAME) \
@@ -1751,8 +1748,7 @@ class TestDataMethods(unittest.TestCase):
 
         self.tm1.cells.clear_with_mdx(cube=CUBE_NAME, mdx=mdx)
 
-        # this may need looking at
-        value = next(self.tm1.cells.execute_mdx_values(mdx=mdx))
+        value = self.tm1.cells.execute_mdx_values(mdx=mdx)[0]
         self.assertEqual(value, None)
 
     @skip_if_insufficient_version(version="11.7")
@@ -1767,8 +1763,7 @@ class TestDataMethods(unittest.TestCase):
             .to_mdx()
         self.tm1.cells.clear_with_mdx(cube=CUBE_NAME, mdx=mdx)
 
-        # this may need looking at
-        value = next(self.tm1.cells.execute_mdx_values(mdx=mdx))
+        value = self.tm1.cells.execute_mdx_values(mdx=mdx)[0]
         self.assertEqual(value, None)
 
     @skip_if_insufficient_version(version="11.7")
@@ -1789,8 +1784,7 @@ class TestDataMethods(unittest.TestCase):
             .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[2], "Element32"))) \
             .to_mdx()
 
-        # this may need looking at
-        value = next(self.tm1.cells.execute_mdx_values(mdx=mdx))
+        value = self.tm1.cells.execute_mdx_values(mdx=mdx)[0]
         self.assertEqual(value, None)
 
     @skip_if_insufficient_version(version="11.7")
@@ -1806,7 +1800,7 @@ class TestDataMethods(unittest.TestCase):
 
         self.assertEqual(
             "{\"error\":{\"code\":\"248\",\"message\":\"\\\"NotExistingElement\\\" : member not found (rte 81)\"}}",
-            str(e.exception))
+            str(e.exception.message))
 
     @skip_if_insufficient_version(version="11.7")
     def test_clear_with_mdx_invalid_query(self):
@@ -1820,7 +1814,7 @@ class TestDataMethods(unittest.TestCase):
 
         self.assertEqual(
             "{\"error\":{\"code\":\"248\",\"message\":\"\\\"NotExistingElement\\\" : member not found (rte 81)\"}}",
-            str(e.exception))
+            str(e.exception.message))
 
     def test_clear_with_mdx_unsupported_version(self):
 
@@ -1836,8 +1830,9 @@ class TestDataMethods(unittest.TestCase):
 
             self.tm1.cells.clear_with_mdx(cube=CUBE_NAME, mdx=mdx)
 
-        self.assertEqual(str(e.exception), str(TM1pyVersionException(function = "clear_with_mdx", required_version="11.7")))
-
+        self.assertEqual(
+            str(e.exception),
+            str(TM1pyVersionException(function="clear_with_mdx", required_version="11.7")))
 
     def test_execute_mdx_with_skip(self):
         mdx = MdxBuilder.from_cube(CUBE_NAME) \
