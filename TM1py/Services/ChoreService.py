@@ -21,21 +21,41 @@ def deactivate_activate(func):
     """
 
     @functools.wraps(func)
-    def wrapper(self, chore: Chore):
-        # Get Chore
-        chore_old = self.get(chore.name)
+    def wrapper(self, *args, **kwargs):
+        # chore (type Chore) or chore_name (type str) is passed as first arg or kwargs
+        if 'chore' in kwargs:
+            chore = kwargs.get('chore').name
+        elif 'chore_name' in kwargs:
+            chore = kwargs.get('chore_name')
+        else:
+            chore = args[0]
+
+        reactivate = None
+        if isinstance(chore, Chore):
+            chore_name = chore.name
+            reactivate = chore.active
+        elif isinstance(chore, str):
+            chore_name = chore
+        else:
+            raise ValueError("Argument must be of type 'Chore' or 'str'")
+
+        # Get current chore
+        chore_old = self.get(chore_name)
+        if reactivate is None:
+            reactivate = chore_old.active
+
         # Deactivate
         if chore_old.active:
-            self.deactivate(chore.name)
+            self.deactivate(chore_name)
         # Do stuff
         try:
-            response = func(self, chore)
+            response = func(self, *args, **kwargs)
         except Exception as e:
             raise e
         # Activate if necessary
         finally:
-            if chore.active:
-                self.activate(chore.name)
+            if reactivate:
+                self.activate(chore_name)
         return response
 
     return wrapper
@@ -97,7 +117,7 @@ class ChoreService(ObjectService):
         :return: response
         """
         url = format_url("/api/v1/Chores('{}')", chore_name)
-        response = self._rest.DELETE(url)
+        response = self._rest.DELETE(url, **kwargs)
         return response
 
     def exists(self, chore_name: str, **kwargs) -> bool:
@@ -138,6 +158,12 @@ class ChoreService(ObjectService):
         if chore.dst_sensitivity:
             self.set_local_start_time(chore.name, chore.start_time.datetime)
 
+    def update_or_create(self, chore: Chore, **kwargs) -> Response:
+        if self.exists(chore_name=chore.name, **kwargs):
+            return self.update(chore, **kwargs)
+
+        return self.create(chore=chore, **kwargs)
+
     def activate(self, chore_name: str, **kwargs) -> Response:
         """ activate chore on TM1 Server
         :param chore_name:
@@ -154,6 +180,7 @@ class ChoreService(ObjectService):
         url = format_url("/api/v1/Chores('{}')/tm1.Deactivate", chore_name)
         return self._rest.POST(url, '', **kwargs)
 
+    @deactivate_activate
     def set_local_start_time(self, chore_name: str, date_time: datetime, **kwargs) -> Response:
         """ Makes Server crash if chore is activated (10.2.2 FP6) :)
         :param chore_name:
