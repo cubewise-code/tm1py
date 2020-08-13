@@ -1,17 +1,21 @@
 from Tests.Annotation import TestAnnotationMethods
-from Tests.Cell import TestDataMethods
+from Tests.Application import TestApplicationMethods
+from Tests.Cell import TestCellMethods
 from Tests.Chore import TestChoreMethods
 from Tests.Cube import TestCubeMethods
 from Tests.Dimension import TestDimensionMethods
 from Tests.Element import TestElementMethods
 from Tests.Hierarchy import TestHierarchyMethods
 from Tests.MDXUtils import TestMDXUtils
+from Tests.MonitoringService import TestMonitoringMethods
 from Tests.PowerBiService import TestPowerBiService
 from Tests.Process import TestProcessMethods
+from Tests.RestService import TestRestServiceMethods
 from Tests.Security import TestSecurityMethods
 from Tests.Server import TestServerMethods
 from Tests.Subset import TestSubsetMethods
 from Tests.TIObfuscator import TestTIObfuscatorMethods
+from Tests.TM1pyDict import TestCaseAndSpaceInsensitiveDict, TestCaseAndSpaceInsensitiveSet, TestCaseAndSpaceInsensitiveTuplesDict
 from Tests.Utils import TestUtilsMethods
 from Tests.View import TestViewMethods
 
