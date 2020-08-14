@@ -52,7 +52,7 @@ class TestAnnotationMethods(unittest.TestCase):
         annotation = Annotation(comment_value=random_text,
                                 object_name=self.cube_name,
                                 dimensional_context=random_intersection)
-        
+
         self.annotation_id = self.tm1.cubes.annotations.create(annotation).json().get("ID")
 
     @classmethod
@@ -62,7 +62,6 @@ class TestAnnotationMethods(unittest.TestCase):
         """
         for a in self.tm1.cubes.annotations.get_all(self.cube_name):
             self.tm1.annotations.delete(a.id)
-            
 
     def test_get_all(self):
         """
@@ -72,7 +71,7 @@ class TestAnnotationMethods(unittest.TestCase):
         annotations = self.tm1.cubes.annotations.get_all(self.cube_name)
         self.assertIsInstance(annotations, list)
 
-        annotation_ids = [a.id for a in annotations] 
+        annotation_ids = [a.id for a in annotations]
         self.assertIn(self.annotation_id, annotation_ids)
 
     def test_create(self):
@@ -80,22 +79,21 @@ class TestAnnotationMethods(unittest.TestCase):
         Check that an annotation can be created on the server
         Check that created annotation has the correct comment_value
         """
-        annotation_count = len(self.tm1.cubes.annotations.get_all(self.cube_name))        
+        annotation_count = len(self.tm1.cubes.annotations.get_all(self.cube_name))
         random_intersection = self.tm1.cubes.get_random_intersection(self.cube_name, False)
         random_text = "".join([random.choice(string.printable) for _ in range(100)])
 
         annotation = Annotation(
-                                comment_value=random_text,
-                                object_name=self.cube_name,
-                                dimensional_context=random_intersection)
+            comment_value=random_text,
+            object_name=self.cube_name,
+            dimensional_context=random_intersection)
 
         annotation_id = self.tm1.cubes.annotations.create(annotation).json().get("ID")
         all_annotations = self.tm1.cubes.annotations.get_all(self.cube_name)
-        self.assertGreater(len(all_annotations),annotation_count)
+        self.assertGreater(len(all_annotations), annotation_count)
 
         new_annotation = self.tm1.cubes.annotations.get(annotation_id)
         self.assertEqual(new_annotation.comment_value, random_text)
-
 
     def test_get(self):
         """
@@ -110,13 +108,13 @@ class TestAnnotationMethods(unittest.TestCase):
         Check that the last_updated date has increased
         Check that the created date remains the same
         """
-        annotation = self.tm1.cubes.annotations.get(self.annotation_id)  
+        annotation = self.tm1.cubes.annotations.get(self.annotation_id)
         new_random_text = "".join([random.choice(string.printable) for _ in range(100)])
         annotation.comment_value = new_random_text
 
         self.tm1.cubes.annotations.update(annotation)
         annotation_updated = self.tm1.cubes.annotations.get(self.annotation_id)
-        
+
         self.assertEqual(annotation_updated.comment_value, new_random_text)
         self.assertNotEqual(annotation_updated.last_updated, annotation.last_updated)
         self.assertEqual(annotation_updated.created, annotation.created)

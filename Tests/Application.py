@@ -1,15 +1,13 @@
 import configparser
 import random
 import unittest
-from pathlib import Path
-
 from _datetime import datetime
+from pathlib import Path
 
 from TM1py import TM1Service, Element, ElementAttribute, Hierarchy, Dimension, Cube, NativeView, AnonymousSubset, \
     Subset, Process, Chore, ChoreStartTime, ChoreFrequency, ChoreTask
 from TM1py.Objects.Application import CubeApplication, ApplicationTypes, ChoreApplication, DimensionApplication, \
     FolderApplication, LinkApplication, ProcessApplication, SubsetApplication, ViewApplication, DocumentApplication
-
 from .TestUtils import skip_if_insufficient_version
 
 # Hard coded stuff
@@ -151,7 +149,7 @@ class TestApplicationMethods(unittest.TestCase):
             application_name=TM1PY_APP_FOLDER,
             private=False)
 
-    def run_test_cube_application(self, private):
+    def run_cube_application(self, private):
         app = CubeApplication(TM1PY_APP_FOLDER, APPLICATION_NAME, CUBE_NAME)
         self.tm1.applications.create(application=app, private=private)
         app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=private)
@@ -167,12 +165,12 @@ class TestApplicationMethods(unittest.TestCase):
 
     @unittest.skip
     def test_cube_application_private(self):
-        self.run_test_cube_application(private=True)
+        self.run_cube_application(private=True)
 
     def test_cube_application_public(self):
-        self.run_test_cube_application(private=False)
+        self.run_cube_application(private=False)
 
-    def run_test_chore_application(self, private):
+    def run_chore_application(self, private):
         app = ChoreApplication(TM1PY_APP_FOLDER, APPLICATION_NAME, CHORE_NAME)
         self.tm1.applications.create(application=app, private=private)
         app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=private)
@@ -188,12 +186,12 @@ class TestApplicationMethods(unittest.TestCase):
 
     @unittest.skip
     def test_chore_application_private(self):
-        self.run_test_chore_application(True)
+        self.run_chore_application(True)
 
     def test_chore_application_public(self):
-        self.run_test_chore_application(False)
+        self.run_chore_application(False)
 
-    def run_test_dimension_application(self, private=False):
+    def run_dimension_application(self, private=False):
         app = DimensionApplication(TM1PY_APP_FOLDER, APPLICATION_NAME, DIMENSION_NAMES[0])
         self.tm1.applications.create(application=app, private=private)
         app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=private)
@@ -209,14 +207,14 @@ class TestApplicationMethods(unittest.TestCase):
 
     @unittest.skip
     def test_dimension_application_private(self):
-        self.run_test_dimension_application(private=True)
+        self.run_dimension_application(private=True)
 
     @skip_if_insufficient_version(version="11.4")
     def test_dimension_application_public(self):
-        self.run_test_dimension_application(private=False)
+        self.run_dimension_application(private=False)
 
     @skip_if_insufficient_version(version="11.4")
-    def run_test_document_application(self, private):
+    def run_document_application(self, private):
         with open(Path(__file__).parent.joinpath('resources', 'document.xlsx'), "rb") as file:
             app = DocumentApplication(path=TM1PY_APP_FOLDER, name=DOCUMENT_NAME, content=file.read())
             self.tm1.applications.create(application=app, private=private)
@@ -233,12 +231,12 @@ class TestApplicationMethods(unittest.TestCase):
         self.assertFalse(exists)
 
     def test_document_application_private(self):
-        self.run_test_document_application(private=True)
+        self.run_document_application(private=True)
 
     def test_document_application_public(self):
-        self.run_test_document_application(private=False)
+        self.run_document_application(private=False)
 
-    def run_test_folder_application(self, private):
+    def run_folder_application(self, private):
         app = FolderApplication(TM1PY_APP_FOLDER, "not_relevant")
         self.tm1.applications.create(application=app, private=private)
         app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=private)
@@ -253,12 +251,12 @@ class TestApplicationMethods(unittest.TestCase):
         self.assertFalse(exists)
 
     def test_run_folder_application_private(self):
-        self.run_test_folder_application(private=True)
+        self.run_folder_application(private=True)
 
     def test_run_folder_application_public(self):
-        self.run_test_folder_application(private=False)
+        self.run_folder_application(private=False)
 
-    def run_test_link_application(self, private):
+    def run_link_application(self, private):
         app = LinkApplication(TM1PY_APP_FOLDER, APPLICATION_NAME, LINK_NAME)
         self.tm1.applications.create(application=app, private=private)
         app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=private)
@@ -273,12 +271,12 @@ class TestApplicationMethods(unittest.TestCase):
         self.assertFalse(exists)
 
     def test_run_link_application_private(self):
-        self.run_test_link_application(True)
+        self.run_link_application(True)
 
     def test_run_link_application_public(self):
-        self.run_test_link_application(False)
+        self.run_link_application(False)
 
-    def run_test_process_application(self, private):
+    def run_process_application(self, private):
         app = ProcessApplication(TM1PY_APP_FOLDER, APPLICATION_NAME, PROCESS_NAME)
         self.tm1.applications.create(application=app, private=private)
         app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=private)
@@ -294,12 +292,12 @@ class TestApplicationMethods(unittest.TestCase):
 
     @unittest.skip
     def test_process_application_private(self):
-        self.run_test_process_application(True)
+        self.run_process_application(True)
 
     def test_process_application_public(self):
-        self.run_test_process_application(False)
+        self.run_process_application(False)
 
-    def run_test_subset_application(self, private):
+    def run_subset_application(self, private):
         app = SubsetApplication(TM1PY_APP_FOLDER, APPLICATION_NAME, DIMENSION_NAMES[0], DIMENSION_NAMES[0], SUBSET_NAME)
         self.tm1.applications.create(application=app, private=private)
         app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=private)
@@ -315,12 +313,12 @@ class TestApplicationMethods(unittest.TestCase):
 
     @unittest.skip
     def test_subset_application_private(self):
-        self.run_test_subset_application(True)
+        self.run_subset_application(True)
 
     def test_subset_application_public(self):
-        self.run_test_subset_application(False)
+        self.run_subset_application(False)
 
-    def run_test_view_application(self, private):
+    def run_view_application(self, private):
         app = ViewApplication(TM1PY_APP_FOLDER, APPLICATION_NAME, CUBE_NAME, VIEW_NAME)
         self.tm1.applications.create(application=app, private=private)
         app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=private)
@@ -336,7 +334,7 @@ class TestApplicationMethods(unittest.TestCase):
 
     @unittest.skip
     def test_view_application_private(self):
-        self.run_test_view_application(True)
+        self.run_view_application(True)
 
     def test_view_application_public(self):
-        self.run_test_view_application(False)
+        self.run_view_application(False)
