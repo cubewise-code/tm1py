@@ -258,9 +258,8 @@ class ElementService(ObjectService):
         for row_elements, cell_values in rows_and_values.items():
             for row_element in row_elements:
                 for cell_value in cell_values:
-                    if isinstance(cell_value, str):
-                        if cell_value or not exclude_empty_cells:
-                            result_set[row_element] = cell_value
+                    if cell_value or not exclude_empty_cells:
+                        result_set[row_element] = cell_value
         return result_set
 
     def get_level_names(self, dimension_name: str, hierarchy_name: str, descending: bool = True, **kwargs) -> List[str]:
