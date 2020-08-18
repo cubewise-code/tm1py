@@ -231,7 +231,7 @@ def build_csv_from_cellset_dict(
             index_columns = ordinal % row_axis['Cardinality']
             csv_entry.extend(extract_element_names_from_members(row_axis['Tuples'][index_columns]['Members']))
 
-        csv_entry.append(str(cell["Value"]))
+        csv_entry.append(str(cell["Value"] or ""))
 
         csv_entries.append(value_separator.join(csv_entry))
 
