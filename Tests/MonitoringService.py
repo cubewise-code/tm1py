@@ -20,7 +20,7 @@ class TestMonitoringMethods(unittest.TestCase):
         cls.config = configparser.ConfigParser()
         cls.config.read(Path(__file__).parent.joinpath('config.ini'))
         cls.tm1 = TM1Service(**cls.config['tm1srv01'])
-        
+
     def test_get_threads(self):
         threads = self.tm1.monitoring.get_threads()
         self.assertTrue(any(thread["Function"] == "GET /api/v1/Threads" for thread in threads))
@@ -34,13 +34,6 @@ class TestMonitoringMethods(unittest.TestCase):
         current_user = self.tm1.security.get_current_user()
         self.assertTrue(self.tm1.monitoring.user_is_active(current_user.name))
 
-    def test_get_sessions(self):
-        current_user = self.tm1.security.get_current_user()
-        sessions = self.tm1.monitoring.get_sessions()
-        self.assertTrue(any(case_and_space_insensitive_equals(session["User"]["Name"], current_user.name)
-                            for session
-                            in sessions if session["User"]))
-
     def test_close_all_sessions(self):
         self.tm1.monitoring.close_all_sessions()
 
@@ -49,6 +42,42 @@ class TestMonitoringMethods(unittest.TestCase):
 
     def test_cancel_all_running_threads(self):
         self.tm1.monitoring.cancel_all_running_threads()
+
+    def test_get_sessions(self):
+        sessions = self.tm1.monitoring.get_sessions()
+        self.assertTrue(len(sessions) > 0)
+        self.assertIn('ID', sessions[0])
+        self.assertIn('Context', sessions[0])
+        self.assertIn('Active', sessions[0])
+        self.assertIn('User', sessions[0])
+        self.assertIn('Threads', sessions[0])
+
+    def test_get_sessions_exclude_user(self):
+        sessions = self.tm1.monitoring.get_sessions(include_user=False)
+        self.assertTrue(len(sessions) > 0)
+        self.assertIn('ID', sessions[0])
+        self.assertIn('Context', sessions[0])
+        self.assertIn('Active', sessions[0])
+        self.assertNotIn('User', sessions[0])
+        self.assertIn('Threads', sessions[0])
+
+    def test_get_sessions_exclude_threads(self):
+        sessions = self.tm1.monitoring.get_sessions(include_threads=False)
+        self.assertTrue(len(sessions) > 0)
+        self.assertIn('ID', sessions[0])
+        self.assertIn('Context', sessions[0])
+        self.assertIn('Active', sessions[0])
+        self.assertIn('User', sessions[0])
+        self.assertNotIn('Threads', sessions[0])
+
+    def test_get_sessions_exclude_threads_and_user(self):
+        sessions = self.tm1.monitoring.get_sessions(include_threads=False, include_user=False)
+        self.assertTrue(len(sessions) > 0)
+        self.assertIn('ID', sessions[0])
+        self.assertIn('Context', sessions[0])
+        self.assertIn('Active', sessions[0])
+        self.assertNotIn('User', sessions[0])
+        self.assertNotIn('Threads', sessions[0])
 
     @classmethod
     def tearDownClass(cls):
