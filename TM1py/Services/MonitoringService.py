@@ -83,8 +83,16 @@ class MonitoringService(ObjectService):
         response = self._rest.POST(url, **kwargs)
         return response
 
-    def get_sessions(self, **kwargs) -> List:
-        url = format_url("/api/v1/Sessions?$expand=User,Threads")
+    def get_sessions(self, include_user: bool = True, include_threads: bool = True, **kwargs) -> List:
+        url = "/api/v1/Sessions"
+        if include_user or include_threads:
+            expands = list()
+            if include_user:
+                expands.append("User")
+            if include_threads:
+                expands.append("Threads")
+            url += "?$expand=" + ",".join(expands)
+
         response = self._rest.GET(url, **kwargs)
         return response.json()["value"]
 
