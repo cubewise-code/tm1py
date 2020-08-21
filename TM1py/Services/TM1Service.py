@@ -31,6 +31,7 @@ class TM1Service:
         self.applications = ApplicationService(self._tm1_rest)
         self.views = ViewService(self._tm1_rest)
 
+        self.sandboxes = SandboxService(self._tm1_rest)
     def logout(self, **kwargs):
         self._tm1_rest.logout(**kwargs)
 
