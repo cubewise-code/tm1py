@@ -249,6 +249,37 @@ class TestCellMethods(unittest.TestCase):
         response = self.tm1.cubes.cells.write_values(CUBE_NAME, self.cellset)
         self.assertTrue(response.ok)
 
+    @skip_if_no_pandas
+    def test_write_dataframe(self):
+        df = pd.DataFrame({
+            DIMENSION_NAMES[0]: ["element 1", "element 1", "element 1"],
+            DIMENSION_NAMES[1]: ["element 1", "element 2", "element 3"],
+            DIMENSION_NAMES[2]: ["element 5", "element 5", "element 5"],
+            "Value": [1, 2, 3]})
+        self.tm1.cubes.cells.write_dataframe(CUBE_NAME, df)
+
+        mdx = MdxBuilder.from_cube(CUBE_NAME) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[0], "element 1"))) \
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+            Member.of(DIMENSION_NAMES[1], "element 1"),
+            Member.of(DIMENSION_NAMES[1], "element 2"),
+            Member.of(DIMENSION_NAMES[1], "element 3")])) \
+            .add_member_to_where(Member.of(DIMENSION_NAMES[2], "element 5")).to_mdx()
+        values = self.tm1.cubes.cells.execute_mdx_values(mdx)
+
+        self.assertEqual(list(df["Value"]), values)
+
+    @skip_if_no_pandas
+    def test_write_dataframe_error(self):
+        df = pd.DataFrame({
+            DIMENSION_NAMES[0]: ["element 1", "element 3", "element 5"],
+            DIMENSION_NAMES[1]: ["element 1", "element 2", "element 4"],
+            DIMENSION_NAMES[2]: ["element 1", "element 3", "element 5"],
+            "Extra Column": ["element 1", "element2", "element3"],
+            "Value": [1, 2, 3]})
+        with self.assertRaises(ValueError) as e:
+            self.tm1.cubes.cells.write_dataframe(CUBE_NAME, df)
+
     def test_relative_proportional_spread_happy_case(self):
         """
         Tests that relative proportional spread populates a cube with the expected values

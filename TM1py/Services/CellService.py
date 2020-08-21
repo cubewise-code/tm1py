@@ -20,7 +20,7 @@ from TM1py.Services.ViewService import ViewService
 from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
     CaseAndSpaceInsensitiveDict, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, abbreviate_mdx, \
-    build_csv_from_cellset_dict, require, require_pandas
+    build_csv_from_cellset_dict, require, require_pandas, build_cellset_from_pandas_dataframe
 
 try:
     import pandas as pd
@@ -252,6 +252,33 @@ class CellService(ObjectService):
         cube_service = CubeService(self._rest)
         dimensions = cube_service.get_dimension_names(cube_name, True, **kwargs)
         return dimensions
+
+    @require_pandas
+    def write_dataframe(self, cube_name: str, data: 'pd.DataFrame', dimensions: Iterable[str] = None,
+                        **kwargs) -> Response:
+        """
+        Function expects same shape as `execute_mdx_dataframe` returns.
+        Column order must match dimensions in the target cube with an additional column for the values.
+        Column names are not relevant.
+
+        :param cube_name:
+        :param data:
+        :param dimensions:
+        :param kwargs:
+        :return:
+        """
+        if not isinstance(data, pd.DataFrame):
+            raise ValueError("argument 'data' must of type DataFrame")
+
+        if not dimensions:
+            dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
+
+        if not len(data.columns) == len(dimensions) + 1:
+            raise ValueError("Number of columns in 'data' DataFrame must be number of dimensions in cube + 1")
+
+        cells = build_cellset_from_pandas_dataframe(data)
+
+        return self.write_values(cube_name=cube_name, cellset_as_dict=cells, dimensions=dimensions, **kwargs)
 
     def write_value(self, value: Union[str, float], cube_name: str, element_tuple: Iterable,
                     dimensions: Iterable[str] = None, **kwargs) -> Response:
