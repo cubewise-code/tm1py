@@ -20,7 +20,8 @@ from TM1py.Services.ViewService import ViewService
 from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
     CaseAndSpaceInsensitiveDict, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, abbreviate_mdx, \
-    build_csv_from_cellset_dict, require, require_pandas, build_cellset_from_pandas_dataframe
+    build_csv_from_cellset_dict, require, require_pandas, build_cellset_from_pandas_dataframe, \
+    case_and_space_insensitive_equals
 
 try:
     import pandas as pd
@@ -38,9 +39,29 @@ def tidy_cellset(func):
     def wrapper(self, cellset_id, *args, **kwargs):
         try:
             return func(self, cellset_id, *args, **kwargs)
+
         finally:
             if kwargs.get("delete_cellset", True):
                 self.delete_cellset(cellset_id=cellset_id)
+
+    return wrapper
+
+
+def manage_transaction_log(func):
+    """ Control state of transaction during and after write operation for a given cube through:
+    `deactivate_transaction_log` and `reactivate_transaction_log`
+    """
+
+    @functools.wraps(func)
+    def wrapper(self, cube_name, *args, **kwargs):
+        try:
+            if kwargs.get("deactivate_transaction_log", False):
+                self.deactivate_transactionlog(cube_name)
+            return func(self, cube_name, *args, **kwargs)
+
+        finally:
+            if kwargs.get("reactivate_transaction_log", False):
+                self.activate_transactionlog(cube_name)
 
     return wrapper
 
@@ -77,7 +98,7 @@ class CellService(ObjectService):
             dimensions = CubeService(self._rest).get(cube_name).dimensions
         element_selections = element_string.split(',')
         # Build the ON ROWS statement:
-        # Loop through the comma seperated element selection, except for the last one
+        # Loop through the comma separated element selection, except for the last one
         for dimension_name, element_selection in zip(dimensions[:-1], element_selections[:-1]):
             if "&&" not in element_selection:
                 mdx_rows_list.append("{[" + dimension_name + "].[" + dimension_name + "].[" + element_selection + "]}")
@@ -303,6 +324,7 @@ class CellService(ObjectService):
         data = json.dumps(body_as_dict, ensure_ascii=False)
         return self._rest.POST(url=url, data=data, **kwargs)
 
+    @manage_transaction_log
     def write_values(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None,
                      **kwargs) -> Response:
         """ Write values in cube.  
@@ -1448,6 +1470,14 @@ class CellService(ObjectService):
         """
         url = "/api/v1/Cellsets('{}')".format(cellset_id)
         return self._rest.DELETE(url, **kwargs)
+
+    def transaction_log_is_active(self, cube_name):
+        mdx = f"""
+        SELECT {{[}}Cubes].[{cube_name}]}} ON 0, {{[}}CubeProperties].[LOGGING]}} ON 1 FROM [}}CubeProperties]
+        """
+        values = self.execute_mdx_values(mdx)
+        return case_and_space_insensitive_equals(values[0], "YES")
+
 
     def deactivate_transactionlog(self, *args: str, **kwargs) -> Response:
         """ Deactivate Transactionlog for one or many cubes

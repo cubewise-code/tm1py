@@ -1894,6 +1894,45 @@ class TestCellMethods(unittest.TestCase):
         elements = element_names_from_element_unique_names(list(cells.keys())[0])
         self.assertEqual(elements, ("Element 2", "Element 1", "Element 1"))
 
+    def test_transaction_log_is_active_false(self):
+        self.tm1.cells.deactivate_transactionlog(CUBE_NAME)
+
+        self.assertFalse(self.tm1.cells.transaction_log_is_active(CUBE_NAME))
+
+    def test_transaction_log_is_active_true(self):
+        self.tm1.cells.activate_transactionlog(CUBE_NAME)
+
+        self.assertTrue(self.tm1.cells.transaction_log_is_active(CUBE_NAME))
+
+    def test_manage_transaction_log_deactivate_reactivate(self):
+        self.tm1.cubes.cells.write_values(
+            CUBE_NAME,
+            self.cellset,
+            deactivate_transaction_log=True,
+            reactivate_transaction_log=True)
+
+        self.assertTrue(self.tm1.cells.transaction_log_is_active(CUBE_NAME))
+
+    def test_manage_transaction_log_not_activate_not_reactivate(self):
+        pre_state = self.tm1.cells.transaction_log_is_active(CUBE_NAME)
+
+        self.tm1.cubes.cells.write_values(
+            CUBE_NAME,
+            self.cellset,
+            deactivate_transaction_log=False,
+            reactivate_transaction_log=False)
+
+        self.assertEqual(pre_state, self.tm1.cells.transaction_log_is_active(CUBE_NAME))
+
+    def test_manage_transaction_log_deactivate_not_reactivate(self):
+        self.tm1.cubes.cells.write_values(
+            CUBE_NAME,
+            self.cellset,
+            deactivate_transaction_log=True,
+            reactivate_transaction_log=False)
+
+        self.assertFalse(self.tm1.cells.transaction_log_is_active(CUBE_NAME))
+
     # Delete Cube and Dimensions
     @classmethod
     def teardown_class(cls):
