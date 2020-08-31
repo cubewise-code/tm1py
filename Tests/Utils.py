@@ -7,7 +7,7 @@ from TM1py.Utils import (
     Utils,
     get_dimensions_from_where_clause,
     integerize_version,
-    verify_version,
+    verify_version, get_cube, resembles_mdx,
 )
 
 
@@ -85,31 +85,111 @@ class TestUtilsMethods(unittest.TestCase):
 
     def test_get_dimensions_from_where_clause_happy_case(self):
         mdx = """
-        SELECT {[dim3].[e2]} COLUMNS, {[dim4].[e5]} ON ROWS FROM [cube] WHERE ([dim2].[e1], [dim1].[e4])
+        SELECT {[dim3].[e2]} ON COLUMNS, {[dim4].[e5]} ON ROWS FROM [cube] WHERE ([dim2].[e1], [dim1].[e4])
         """
         dimensions = get_dimensions_from_where_clause(mdx)
         self.assertEqual(["DIM2", "DIM1"], dimensions)
 
     def test_get_dimensions_from_where_clause_no_where(self):
         mdx = """
-        SELECT {[dim3].[e2]} COLUMNS, {[dim4].[e5]} ON ROWS FROM [cube]
+        SELECT {[dim3].[e2]} ON COLUMNS, {[dim4].[e5]} ON ROWS FROM [cube]
         """
         dimensions = get_dimensions_from_where_clause(mdx)
         self.assertEqual([], dimensions)
 
     def test_get_dimensions_from_where_clause_casing(self):
         mdx = """
-        SELECT {[dim3].[e2]} COLUMNS, {[dim4].[e5]} ON ROWS FROM [cube] WhEre ([dim1].[e4])
+        SELECT {[dim3].[e2]} ON COLUMNS, {[dim4].[e5]} ON ROWS FROM [cube] WhEre ([dim1].[e4])
         """
         dimensions = get_dimensions_from_where_clause(mdx)
         self.assertEqual(["DIM1"], dimensions)
 
     def test_get_dimensions_from_where_clause_spacing(self):
         mdx = """
-        SELECT {[dim3].[e2]} COLUMNS, {[dim4].[e5]} ON ROWS FROM [cube] WHERE([dim5]. [e4] )
+        SELECT {[dim3].[e2]} ON COLUMNS, {[dim4].[e5]} ON ROWS FROM [cube] WHERE([dim5]. [e4] )
         """
         dimensions = get_dimensions_from_where_clause(mdx)
         self.assertEqual(["DIM5"], dimensions)
+
+    def test_get_cube(self):
+        mdx = """
+        SELECT {[dim3].[e2]} ON COLUMNS, {[dim4].[e5]} ON ROWS FROM [cube] WHERE([dim5]. [e4] )
+        """
+        cube_name = get_cube(mdx)
+        self.assertEqual(cube_name, "CUBE")
+
+    def test_get_cube_without_brackets(self):
+        mdx = """
+        SELECT {[dim3].[e2]} ON COLUMNS, {[dim4].[e5]} ON ROWS FROM cube WHERE([dim5]. [e4] )
+        """
+        cube_name = get_cube(mdx)
+        self.assertEqual(cube_name, "CUBE")
+
+    def test_get_cube_without_rows(self):
+        mdx = """
+        SELECT {[dim3].[e2]} ON COLUMNS FROM [cube] WHERE([dim5]. [e4] )
+        """
+        cube_name = get_cube(mdx)
+        self.assertEqual(cube_name, "CUBE")
+
+    def test_get_cube_without_where(self):
+        mdx = """
+        SELECT {[dim3].[e2]} ON COLUMNS, {[dim4].[e5]} ON ROWS FROM [cube]
+        """
+        cube_name = get_cube(mdx)
+        self.assertEqual(cube_name, "CUBE")
+
+    def test_get_cube_without_brackets_without_where(self):
+        mdx = """
+        SELECT {[dim3].[e2]} ON COLUMNS, {[dim4].[e5]} ON ROWS FROM [cube]
+        """
+        cube_name = get_cube(mdx)
+        self.assertEqual(cube_name, "CUBE")
+
+    def test_resemble_mdx_happy_case_true(self):
+        mdx = """
+        SELECT {[dim3].[e2]} ON COLUMNS, {[dim4].[e5]} ON ROWS FROM [cube]
+        """
+        self.assertTrue(resembles_mdx(mdx))
+
+    def test_resemble_mdx_happy_case_false(self):
+        mdx = """
+        not mdx
+        """
+        self.assertFalse(resembles_mdx(mdx))
+
+    def test_resemble_mdx_lower_case(self):
+        mdx = """
+        SELECT {[dim3].[e2]} ON COLUMNS, {[dim4].[e5]} ON ROWS FROM [cube]
+        """.lower()
+
+        self.assertTrue(resembles_mdx(mdx))
+
+    def test_resemble_mdx_with_line_breaks(self):
+        mdx = """
+        SELECT
+        {[dim3].[e2]} ON 
+        COLUMNS,
+        {[dim4].[e5]} 
+        ON ROWS FROM
+        [cube]
+        """
+        self.assertTrue(resembles_mdx(mdx))
+
+    def test_resemble_mdx_no_rows(self):
+        mdx = """
+        SELECT {[dim3].[e2]} ON COLUMNS FROM [cube]
+        """
+
+        self.assertTrue(resembles_mdx(mdx))
+
+    def test_resemble_mdx_with_member(self):
+        mdx = """
+        WITH MEMBER [dim3].[e3] AS 1
+        SELECT {[dim3].[e2], [dim3].[e3]} ON COLUMNS FROM [cube]
+        """
+
+        self.assertTrue(resembles_mdx(mdx))
 
     @classmethod
     def tearDownClass(cls):

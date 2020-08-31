@@ -21,7 +21,7 @@ from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
     CaseAndSpaceInsensitiveDict, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, abbreviate_mdx, \
     build_csv_from_cellset_dict, require, require_pandas, build_cellset_from_pandas_dataframe, \
-    case_and_space_insensitive_equals
+    case_and_space_insensitive_equals, get_cube, resembles_mdx
 
 try:
     import pandas as pd
@@ -49,15 +49,30 @@ def tidy_cellset(func):
 
 def manage_transaction_log(func):
     """ Control state of transaction during and after write operation for a given cube through:
-    `deactivate_transaction_log` and `reactivate_transaction_log`
+    `deactivate_transaction_log` and `reactivate_transaction_log`.
+
+    Function must have either `cube_name` or `mdx` as first argument or keyword argument
+
+    Can decorate `write_values` and `write_values_through_cellset`
     """
 
     @functools.wraps(func)
-    def wrapper(self, cube_name, *args, **kwargs):
+    def wrapper(self, *args, **kwargs):
+        if "cube_name" in kwargs:
+            cube_name = kwargs["cube_name"]
+        elif "mdx" in kwargs:
+            cube_name = get_cube(kwargs["mdx"])
+        else:
+            arg = args[0]
+            if resembles_mdx(arg):
+                cube_name = get_cube(arg)
+            else:
+                cube_name = arg
+
         try:
             if kwargs.get("deactivate_transaction_log", False):
                 self.deactivate_transactionlog(cube_name)
-            return func(self, cube_name, *args, **kwargs)
+            return func(self, *args, **kwargs)
 
         finally:
             if kwargs.get("reactivate_transaction_log", False):
@@ -353,6 +368,7 @@ class CellService(ObjectService):
         updates = '[' + ','.join(updates) + ']'
         return self._rest.POST(url=url, data=updates, **kwargs)
 
+    @manage_transaction_log
     def write_values_through_cellset(self, mdx: str, values: List, **kwargs) -> Response:
         """ Significantly faster than write_values function
         Cellset gets created according to MDX Expression. For instance:
@@ -1477,7 +1493,6 @@ class CellService(ObjectService):
         """
         values = self.execute_mdx_values(mdx)
         return case_and_space_insensitive_equals(values[0], "YES")
-
 
     def deactivate_transactionlog(self, *args: str, **kwargs) -> Response:
         """ Deactivate Transactionlog for one or many cubes
