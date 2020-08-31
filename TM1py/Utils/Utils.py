@@ -2,6 +2,7 @@ import collections
 import functools
 import http.client as http_client
 import json
+import re
 from typing import Dict, List, Tuple, Iterable, Optional, Generator
 
 from TM1py.Exceptions.Exceptions import TM1pyVersionException
@@ -31,7 +32,7 @@ def require(version):
 
 
 def require_pandas(func):
-    @functools.wraps(func)  
+    @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
         try:
             import pandas
@@ -740,6 +741,21 @@ def get_dimensions_from_where_clause(mdx: str) -> List[str]:
     where = mdx[mdx.rfind("WHERE(") + 6:-1]
     unique_names = where.split(",")
     return [dimension_name_from_element_unique_name(unique_name) for unique_name in unique_names]
+
+
+def get_cube(mdx: str) -> str:
+    _, sub_mdx = mdx.upper().replace(" ", "").split("FROM")
+    if "WHERE" in sub_mdx:
+        sub_mdx, _ = sub_mdx.split("WHERE")
+    return sub_mdx.strip().strip("[").strip("]")
+
+
+
+def resembles_mdx(mdx: str) -> bool:
+    pattern = r"(?s)(?i).*SELECT.*ON.*FROM.*"
+    if re.search(pattern=pattern, string=mdx):
+        return True
+    return False
 
 
 def wrap_in_curly_braces(expression: str) -> str:

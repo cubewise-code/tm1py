@@ -1699,7 +1699,43 @@ class TestCellMethods(unittest.TestCase):
         values = self.tm1.cubes.cells.execute_mdx_values(mdx)
         self.assertEqual(values[0], 1.5)
 
-        self.tm1.cubes.cells.write_values_through_cellset(mdx, (original_value,))
+    def test_write_values_through_cellset_deactivate_transaction_log(self):
+        mdx = MdxBuilder.from_cube(CUBE_NAME) \
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[0], "element2"))) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[1], "element2"))) \
+            .where(Member.of(DIMENSION_NAMES[2], "element2")) \
+            .to_mdx()
+
+        original_value = self.tm1.cubes.cells.execute_mdx_values(mdx)[0]
+
+        self.tm1.cubes.cells.write_values_through_cellset(mdx, (1.5,), deactivate_transaction_log=True)
+
+        # check value on coordinate in cube
+        values = self.tm1.cubes.cells.execute_mdx_values(mdx)
+
+        self.assertEqual(values[0], 1.5)
+        self.assertFalse(self.tm1.cells.transaction_log_is_active(CUBE_NAME))
+
+    def test_write_values_through_cellset_deactivate_transaction_log_reactivate_transaction_log(self):
+        mdx = MdxBuilder.from_cube(CUBE_NAME) \
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[0], "element2"))) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(DIMENSION_NAMES[1], "element2"))) \
+            .where(Member.of(DIMENSION_NAMES[2], "element2")) \
+            .to_mdx()
+
+        original_value = self.tm1.cubes.cells.execute_mdx_values(mdx)[0]
+
+        self.tm1.cubes.cells.write_values_through_cellset(
+            mdx,
+            (1.5,),
+            deactivate_transaction_log=True,
+            reactivate_transaction_log=True)
+
+        # check value on coordinate in cube
+        values = self.tm1.cubes.cells.execute_mdx_values(mdx)
+
+        self.assertEqual(values[0], 1.5)
+        self.assertTrue(self.tm1.cells.transaction_log_is_active(CUBE_NAME))
 
     def test_deactivate_transaction_log(self):
         self.tm1.cubes.cells.write_value(value="YES",
