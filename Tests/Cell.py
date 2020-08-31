@@ -1949,7 +1949,7 @@ class TestCellMethods(unittest.TestCase):
 
         self.assertTrue(self.tm1.cells.transaction_log_is_active(CUBE_NAME))
 
-    def test_manage_transaction_log_not_activate_not_reactivate(self):
+    def test_manage_transaction_log_not_deactivate_not_reactivate(self):
         pre_state = self.tm1.cells.transaction_log_is_active(CUBE_NAME)
 
         self.tm1.cubes.cells.write_values(

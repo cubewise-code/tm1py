@@ -744,11 +744,26 @@ def get_dimensions_from_where_clause(mdx: str) -> List[str]:
 
 
 def get_cube(mdx: str) -> str:
-    _, sub_mdx = mdx.upper().replace(" ", "").split("FROM")
-    if "WHERE" in sub_mdx:
-        sub_mdx, _ = sub_mdx.split("WHERE")
-    return sub_mdx.strip().strip("[").strip("]")
 
+    # replace tabs, line breaks, spaces
+    mdx = re.sub(r'\s+', '', mdx)
+
+    # happy case: cube name in square brackets
+    pattern = r"(?s)(?i)FROM\[(.*?)\]"
+    search_result = re.search(pattern, mdx)
+    if search_result:
+        return search_result.group(1)
+
+    # cut off where
+    pattern = r"(?s)(?i).*SELECT.*ON.*FROM.*WHERE\(.*"
+    if re.search(pattern=pattern, string=mdx):
+        # part before where
+        mdx = re.split(r"(?s)(?i)WHERE\(.*", mdx)[0]
+
+    # part after from
+    cube = re.split(r"(?s)(?i)FROM", mdx)[-1]
+
+    return cube
 
 
 def resembles_mdx(mdx: str) -> bool:

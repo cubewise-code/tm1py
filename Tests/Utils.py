@@ -116,35 +116,61 @@ class TestUtilsMethods(unittest.TestCase):
         SELECT {[dim3].[e2]} ON COLUMNS, {[dim4].[e5]} ON ROWS FROM [cube] WHERE([dim5]. [e4] )
         """
         cube_name = get_cube(mdx)
-        self.assertEqual(cube_name, "CUBE")
+        self.assertEqual(cube_name, "cube")
 
     def test_get_cube_without_brackets(self):
         mdx = """
         SELECT {[dim3].[e2]} ON COLUMNS, {[dim4].[e5]} ON ROWS FROM cube WHERE([dim5]. [e4] )
         """
         cube_name = get_cube(mdx)
-        self.assertEqual(cube_name, "CUBE")
+        self.assertEqual(cube_name, "cube")
+
+    def test_get_cube_without_brackets_multi_from_where(self):
+        mdx = """
+        SELECT {[dim3from].[e2where]} ON COLUMNS, {[dim4from].[wheree5]} ON ROWS FROM cube WHERE([dim5]. [e4] )
+        """
+        cube_name = get_cube(mdx)
+        self.assertEqual(cube_name, "cube")
 
     def test_get_cube_without_rows(self):
         mdx = """
         SELECT {[dim3].[e2]} ON COLUMNS FROM [cube] WHERE([dim5]. [e4] )
         """
         cube_name = get_cube(mdx)
-        self.assertEqual(cube_name, "CUBE")
+        self.assertEqual(cube_name, "cube")
 
     def test_get_cube_without_where(self):
         mdx = """
         SELECT {[dim3].[e2]} ON COLUMNS, {[dim4].[e5]} ON ROWS FROM [cube]
         """
         cube_name = get_cube(mdx)
-        self.assertEqual(cube_name, "CUBE")
+        self.assertEqual(cube_name, "cube")
+
+    def test_get_cube_with_tabs_and_linebreaks(self):
+        mdx = """
+        SELECT 
+        {[dim3].[e2]} ON      COLUMNS, 
+        {[dim4].[e5]} 
+        ON 
+        ROWS 
+            FROM    [cube ]
+        """
+        cube_name = get_cube(mdx)
+        self.assertEqual(cube_name, "cube")
 
     def test_get_cube_without_brackets_without_where(self):
         mdx = """
         SELECT {[dim3].[e2]} ON COLUMNS, {[dim4].[e5]} ON ROWS FROM [cube]
         """
         cube_name = get_cube(mdx)
-        self.assertEqual(cube_name, "CUBE")
+        self.assertEqual(cube_name, "cube")
+
+    def test_get_cube_from_and_where_in_dimension_names(self):
+        mdx = """
+        SELECT {[dim3from].[e2]} ON COLUMNS, {[dim4where].[e5]} ON ROWS FROM [cube]
+        """
+        cube_name = get_cube(mdx)
+        self.assertEqual(cube_name, "cube")
 
     def test_resemble_mdx_happy_case_true(self):
         mdx = """

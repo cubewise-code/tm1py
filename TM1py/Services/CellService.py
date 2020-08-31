@@ -48,12 +48,10 @@ def tidy_cellset(func):
 
 
 def manage_transaction_log(func):
-    """ Control state of transaction during and after write operation for a given cube through:
+    """ Control state of transaction log during and after write operation for a given cube through:
     `deactivate_transaction_log` and `reactivate_transaction_log`.
 
-    Function must have either `cube_name` or `mdx` as first argument or keyword argument
-
-    Can decorate `write_values` and `write_values_through_cellset`
+    Decorated function must have either `cube_name` or `mdx` as first argument or keyword argument
     """
 
     @functools.wraps(func)
@@ -1487,7 +1485,7 @@ class CellService(ObjectService):
         url = "/api/v1/Cellsets('{}')".format(cellset_id)
         return self._rest.DELETE(url, **kwargs)
 
-    def transaction_log_is_active(self, cube_name):
+    def transaction_log_is_active(self, cube_name: str) -> bool:
         mdx = f"""
         SELECT {{[}}Cubes].[{cube_name}]}} ON 0, {{[}}CubeProperties].[LOGGING]}} ON 1 FROM [}}CubeProperties]
         """
