@@ -246,8 +246,60 @@ class TestCellMethods(unittest.TestCase):
         self.tm1.cubes.cells.write_value(original_value, CUBE_NAME, ('element1', 'ELEMENT 2', 'EleMent  3'))
 
     def test_write_values(self):
-        response = self.tm1.cubes.cells.write_values(CUBE_NAME, self.cellset)
-        self.assertTrue(response.ok)
+        cells = dict()
+        cells["Element 2", "Element4", "Element7"] = 716
+
+        self.tm1.cubes.cells.write_values(CUBE_NAME, cells)
+        query = MdxBuilder.from_cube(CUBE_NAME)
+        query.add_member_tuple_to_columns(
+            f"[{DIMENSION_NAMES[0]}].[Element 2]",
+            f"[{DIMENSION_NAMES[1]}].[Element 4]",
+            f"[{DIMENSION_NAMES[2]}].[Element 7]")
+
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [716])
+
+    def test_write(self):
+        cells = dict()
+        cells["Element 1", "Element4", "Element9"] = 717
+        self.tm1.cubes.cells.write(CUBE_NAME, cells)
+
+        query = MdxBuilder.from_cube(CUBE_NAME)
+        query.add_member_tuple_to_columns(
+            f"[{DIMENSION_NAMES[0]}].[Element 1]",
+            f"[{DIMENSION_NAMES[1]}].[Element 4]",
+            f"[{DIMENSION_NAMES[2]}].[Element 9]")
+
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [717])
+
+    def test_write_increment_true(self):
+        cells = dict()
+        cells["Element 1", "Element5", "Element8"] = 211
+
+        self.tm1.cubes.cells.write(CUBE_NAME, cells)
+        self.tm1.cubes.cells.write(CUBE_NAME, cells, increment=True)
+
+        query = MdxBuilder.from_cube(CUBE_NAME)
+        query.add_member_tuple_to_columns(
+            f"[{DIMENSION_NAMES[0]}].[Element 1]",
+            f"[{DIMENSION_NAMES[1]}].[Element 5]",
+            f"[{DIMENSION_NAMES[2]}].[Element 8]")
+
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [422])
+
+    def test_write_increment_false(self):
+        cells = dict()
+        cells["Element 1", "Element5", "Element8"] = 211
+
+        self.tm1.cubes.cells.write(CUBE_NAME, cells)
+        self.tm1.cubes.cells.write(CUBE_NAME, cells, increment=False)
+
+        query = MdxBuilder.from_cube(CUBE_NAME)
+        query.add_member_tuple_to_columns(
+            f"[{DIMENSION_NAMES[0]}].[Element 1]",
+            f"[{DIMENSION_NAMES[1]}].[Element 5]",
+            f"[{DIMENSION_NAMES[2]}].[Element 8]")
+
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [211])
 
     @skip_if_no_pandas
     def test_write_dataframe(self):
