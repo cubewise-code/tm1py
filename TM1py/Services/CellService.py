@@ -8,7 +8,7 @@ from collections import OrderedDict
 from io import StringIO
 from typing import List, Union, Dict, Iterable
 
-from mdxpy import MdxHierarchySet, MdxBuilder
+from mdxpy import MdxHierarchySet, MdxBuilder, Member
 from requests import Response
 
 from TM1py.Exceptions.Exceptions import TM1pyException
@@ -338,10 +338,42 @@ class CellService(ObjectService):
         return self._rest.POST(url=url, data=data, **kwargs)
 
     @manage_transaction_log
+    def write(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None, increment: bool = False,
+              **kwargs) -> Response:
+        """ Write values to a cube
+
+        Same signature as `write_values` method, but faster since it uses `write_values_through_cellset`
+        behind the scenes.
+
+        Supports incrementing cell values through optional `increment` argument
+        Spreading through spreading shortcuts is not supported!
+
+        :param cube_name: name of the cube
+        :param cellset_as_dict: {(elem_a, elem_b, elem_c): 243, (elem_d, elem_e, elem_f) : 109}
+        :param dimensions: optional. Dimension names in their natural order. Will speed up the execution!
+        :param increment: increment or update cell values
+        :return: Response
+        """
+        if not dimensions:
+            dimensions = self.get_dimension_names_for_writing(cube_name=cube_name, **kwargs)
+
+        values = []
+        query = MdxBuilder.from_cube(cube_name)
+        for coordinates, value in cellset_as_dict.items():
+            members = (Member.of(dimension, element) for dimension, element in zip(dimensions, coordinates))
+            query.add_member_tuple_to_columns(*members)
+            values.append(value)
+        mdx = query.to_mdx()
+
+        return self.write_values_through_cellset(mdx=mdx, values=values, increment=increment, **kwargs)
+
+    @manage_transaction_log
     def write_values(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None,
                      **kwargs) -> Response:
-        """ Write values in cube.  
-        For cellsets with > 1000 cells look into "write_values_through_cellset"
+        """ Write values to a cube
+
+        For cellsets with > 1000 cells look into `write` or `write_values_through_cellset`
+        Supports spreading shortcuts
 
         :param cube_name: name of the cube
         :param cellset_as_dict: {(elem_a, elem_b, elem_c): 243, (elem_d, elem_e, elem_f) : 109}
@@ -349,7 +381,8 @@ class CellService(ObjectService):
         :return: Response
         """
         if not dimensions:
-            dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
+            dimensions = self.get_dimension_names_for_writing(cube_name=cube_name, **kwargs)
+
         url = format_url("/api/v1/Cubes('{}')/tm1.Update", cube_name)
         updates = []
         for element_tuple, value in cellset_as_dict.items():
@@ -367,8 +400,9 @@ class CellService(ObjectService):
         return self._rest.POST(url=url, data=updates, **kwargs)
 
     @manage_transaction_log
-    def write_values_through_cellset(self, mdx: str, values: List, **kwargs) -> Response:
+    def write_values_through_cellset(self, mdx: str, values: Iterable, increment: bool = False, **kwargs) -> Response:
         """ Significantly faster than write_values function
+
         Cellset gets created according to MDX Expression. For instance:
         [[61, 29 ,13], 
         [42, 54, 15], 
@@ -388,16 +422,22 @@ class CellService(ObjectService):
         [35, 28, 11]]
 
         When writing large datasets into TM1 Cubes it can be convenient to call this function asynchronously.
-        
+
         :param mdx: Valid MDX Expression.
         :param values: List of values. The Order of the List/ Iterable determines the insertion point in the cellset.
+        :param increment: increment or update cells
         :return: 
         """
         cellset_id = self.create_cellset(mdx, **kwargs)
+
+        if increment:
+            current_values = self.extract_cellset_values(cellset_id, delete_cellset=False, **kwargs)
+            values = (x + y for x, y in zip(values, current_values))
+
         return self.update_cellset(cellset_id=cellset_id, values=values, **kwargs)
 
     @tidy_cellset
-    def update_cellset(self, cellset_id: str, values: List, **kwargs) -> Response:
+    def update_cellset(self, cellset_id: str, values: Iterable, **kwargs) -> Response:
         """ Write values into cellset
 
         Number of values must match the number of cells in the cellset
