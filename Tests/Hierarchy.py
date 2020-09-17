@@ -382,7 +382,6 @@ class TestHierarchyMethods(unittest.TestCase):
         with self.assertRaises(TM1pyException) as e:
             edges = {("Total Years", "1989"): 1}
             self.tm1.dimensions.hierarchies.add_edges(DIMENSION_NAME, DIMENSION_NAME, edges)
-        
 
     def test_is_balanced_false(self):
         is_balanced = self.tm1.dimensions.hierarchies.is_balanced(DIMENSION_NAME, DIMENSION_NAME)
@@ -394,6 +393,30 @@ class TestHierarchyMethods(unittest.TestCase):
 
         is_balanced = self.tm1.dimensions.hierarchies.is_balanced(DIMENSION_NAME, balanced_hierarchy_name)
         self.assertTrue(is_balanced)
+
+    def test_hierarchy_remove_all_elements(self):
+        hierarchy = self.tm1.hierarchies.get(DIMENSION_NAME, DIMENSION_NAME)
+        self.assertGreater(len(hierarchy.elements), 0)
+        self.assertGreater(len(hierarchy.edges), 0)
+
+        hierarchy.remove_all_elements()
+        self.tm1.hierarchies.update(hierarchy)
+
+        hierarchy = self.tm1.hierarchies.get(DIMENSION_NAME, DIMENSION_NAME)
+        self.assertEqual(len(hierarchy.elements), 0)
+        self.assertEqual(len(hierarchy.edges), 0)
+
+    def test_hierarchy_remove_all_edges(self):
+        hierarchy = self.tm1.hierarchies.get(DIMENSION_NAME, DIMENSION_NAME)
+        self.assertGreater(len(hierarchy.elements), 0)
+        self.assertGreater(len(hierarchy.edges), 0)
+
+        hierarchy.remove_all_edges()
+        self.tm1.hierarchies.update(hierarchy)
+
+        hierarchy = self.tm1.hierarchies.get(DIMENSION_NAME, DIMENSION_NAME)
+        self.assertGreater(len(hierarchy.elements), 0)
+        self.assertEqual(len(hierarchy.edges), 0)
 
 
 if __name__ == '__main__':

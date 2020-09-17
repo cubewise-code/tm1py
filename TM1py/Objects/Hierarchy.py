@@ -151,6 +151,10 @@ class Hierarchy(TM1Object):
         del self._elements[element_name]
         self.remove_edges_related_to_element(element_name=element_name)
 
+    def remove_all_elements(self):
+        self._elements = CaseAndSpaceInsensitiveDict()
+        self.remove_all_edges()
+
     def add_edge(self, parent: str, component: str, weight: int):
         self._edges[(parent, component)] = weight
 
@@ -164,6 +168,9 @@ class Hierarchy(TM1Object):
     def remove_edges(self, edges: Iterable[Tuple[str, str]]):
         for edge in edges:
             self.remove_edge(*edge)
+
+    def remove_all_edges(self):
+        self._edges = CaseAndSpaceInsensitiveTuplesDict()
 
     def remove_edges_related_to_element(self, element_name: str):
         element_name_adjusted = lower_and_drop_spaces(element_name)
