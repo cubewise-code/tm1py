@@ -1,7 +1,7 @@
 import configparser
 import unittest
-from pathlib import Path
 from base64 import b64encode
+from pathlib import Path
 
 from TM1py.Exceptions import TM1pyRestException
 from TM1py.Objects import User
@@ -353,7 +353,6 @@ class TestSecurityMethods(unittest.TestCase):
 
         self.tm1.security.delete_user(user.name)
 
-
     def test_user_exists_true(self):
         self.assertTrue(self.tm1.security.user_exists(user_name=self.user_name))
 
@@ -365,6 +364,13 @@ class TestSecurityMethods(unittest.TestCase):
 
     def test_group_exists_false(self):
         self.assertFalse(self.tm1.security.group_exists(group_name="NotAValidName"))
+
+    def test_impersonate(self):
+        tm1 = TM1Service(**self.config['tm1srv01'])
+        self.assertNotEqual(self.user_name, tm1.whoami.name)
+
+        tm1 = TM1Service(**self.config['tm1srv01'], impersonate=self.user_name)
+        self.assertEqual(self.user_name, tm1.whoami.name)
 
     @classmethod
     def teardown_class(cls):
