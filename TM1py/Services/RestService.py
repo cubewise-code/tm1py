@@ -126,6 +126,7 @@ class RestService:
         :param connection_pool_size - In a multithreaded environment, you should set this value to a
         higher number, such as the number of threads
         :param integrated_login: True for IntegratedSecurityMode3
+        :param impersonate: Name of user to impersonate
         """
         self._ssl = self.translate_to_boolean(kwargs['ssl'])
         self._address = kwargs.get('address', None)
@@ -168,7 +169,8 @@ class RestService:
                 namespace=kwargs.get("namespace", None),
                 gateway=kwargs.get("gateway", None),
                 decode_b64=self.translate_to_boolean(kwargs.get("decode_b64", False)),
-                integrated_login=self.translate_to_boolean(kwargs.get("integrated_login", False)))
+                integrated_login=self.translate_to_boolean(kwargs.get("integrated_login", False)),
+                impersonate=kwargs.get("impersonate", None))
 
         if not self._version:
             self.set_version()
@@ -290,7 +292,7 @@ class RestService:
             self._s.close()
 
     def _start_session(self, user: str, password: str, decode_b64: bool = False, namespace: str = None,
-                       gateway: str = None, integrated_login: bool = None):
+                       gateway: str = None, integrated_login: bool = None, impersonate: str = None):
         """ perform a simple GET request (Ask for the TM1 Version) to start a session
         """
         # Authorization with integrated_login
@@ -309,7 +311,11 @@ class RestService:
 
         url = '/api/v1/Configuration/ProductVersion/$value'
         try:
-            response = self.GET(url=url)
+            additional_headers = dict()
+            if impersonate:
+                additional_headers["TM1-Impersonate"] = impersonate
+
+            response = self.GET(url=url, headers=additional_headers)
             self._version = response.text
         finally:
             # After we have session cookie, drop the Authorization Header
