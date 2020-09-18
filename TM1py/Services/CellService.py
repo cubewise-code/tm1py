@@ -337,9 +337,8 @@ class CellService(ObjectService):
         data = json.dumps(body_as_dict, ensure_ascii=False)
         return self._rest.POST(url=url, data=data, **kwargs)
 
-    @manage_transaction_log
     def write(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None, increment: bool = False,
-              **kwargs) -> Response:
+              deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False, **kwargs) -> Response:
         """ Write values to a cube
 
         Same signature as `write_values` method, but faster since it uses `write_values_through_cellset`
@@ -352,6 +351,8 @@ class CellService(ObjectService):
         :param cellset_as_dict: {(elem_a, elem_b, elem_c): 243, (elem_d, elem_e, elem_f) : 109}
         :param dimensions: optional. Dimension names in their natural order. Will speed up the execution!
         :param increment: increment or update cell values
+        :param deactivate_transaction_log: deactivate before writing
+        :param reactivate_transaction_log: reactivate after writing
         :return: Response
         """
         if not dimensions:
@@ -365,7 +366,13 @@ class CellService(ObjectService):
             values.append(value)
         mdx = query.to_mdx()
 
-        return self.write_values_through_cellset(mdx=mdx, values=values, increment=increment, **kwargs)
+        return self.write_values_through_cellset(
+            mdx=mdx,
+            values=values,
+            increment=increment,
+            deactivate_transaction_log=deactivate_transaction_log,
+            reactivate_transaction_log=reactivate_transaction_log,
+            **kwargs)
 
     @manage_transaction_log
     def write_values(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None,
