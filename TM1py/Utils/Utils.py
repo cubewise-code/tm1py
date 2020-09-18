@@ -729,7 +729,7 @@ class CaseAndSpaceInsensitiveSet(collections.abc.MutableSet):
     def __sub__(self, other):
         result = self.copy()
         for entry in other:
-            result.remove(entry)
+            result.discard(entry)
         return result
 
 

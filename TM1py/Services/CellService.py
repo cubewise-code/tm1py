@@ -1312,7 +1312,7 @@ class CellService(ObjectService):
         """
         raw_csv = self.extract_cellset_csv(cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                                            skip_rule_derived_cells=skip_rule_derived_cells,
-                                           skip_consolidated_cells=skip_consolidated_cells, value_separator="|",
+                                           skip_consolidated_cells=skip_consolidated_cells, value_separator='¦',
                                            **kwargs)
         if not raw_csv:
             return pd.DataFrame()
@@ -1321,7 +1321,7 @@ class CellService(ObjectService):
         # make sure all element names are strings and values column is derived from data
         if 'dtype' not in kwargs:
             kwargs['dtype'] = {'Value': None, **{col: str for col in range(999)}}
-        return pd.read_csv(memory_file, sep='|', **kwargs)
+        return pd.read_csv(memory_file, sep='¦', **kwargs)
 
     @tidy_cellset
     @require_pandas
