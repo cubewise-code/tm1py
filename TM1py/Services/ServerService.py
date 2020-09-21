@@ -74,36 +74,50 @@ class ServerService(ObjectService):
         return response.json()['value']
 
     def get_message_log_entries(self, reverse: bool = True, since: datetime = None,
-                                until: datetime = None, top: int = None, **kwargs) -> Dict:
+                                until: datetime = None, top: int = None, level: str = None, msg_contains: str = None, **kwargs) -> Dict:
         """
         :param reverse: Boolean
         :param since: of type datetime. If it doesn't have tz information, UTC is assumed.
         :param until: of type datetime. If it doesn't have tz information, UTC is assumed.
         :param top: Integer
+        :param msg_contains: string, will find if substring exists anywhere in message
+        :param level: string, 1=Error, 2=Warning, 3=Info, 4=Debug, 5=Unknown
         :param kwargs:
         :return: Dict of server log
         """
         reverse = 'desc' if reverse else 'asc'
         url = '/api/v1/MessageLogEntries?$orderby=TimeStamp {}'.format(reverse)
 
-        if since or until:
-            time_filters = []
+        if since or until or level or msg_contains:
+            log_filters = []
             if since:
                 # If since doesn't have tz information, UTC is assumed
                 if not since.tzinfo:
                     since = self.utc_localize_time(since)
-                time_filters.append(format_url("TimeStamp ge {}", since.strftime("%Y-%m-%dT%H:%M:%SZ")))
+                log_filters.append(format_url("TimeStamp ge {}", since.strftime("%Y-%m-%dT%H:%M:%SZ")))
 
             if until:
                 # If until doesn't have tz information, UTC is assumed
                 if not until.tzinfo:
                     until = self.utc_localize_time(until)
-                time_filters.append(format_url("TimeStamp le {}", until.strftime("%Y-%m-%dT%H:%M:%SZ")))
+                log_filters.append(format_url("TimeStamp le {}", until.strftime("%Y-%m-%dT%H:%M:%SZ")))
 
-            url += "&$filter={}".format(" and ".join(time_filters))
+            if level:
+                level_dict={'Error':1, 'Warning':2, 'Info':3, 'Debug':4, 'Unknown':5}
+                nLvl = level_dict[level]
+                log_filters.append("Level eq {}".format(nLvl))
+
+            if msg_contains:
+                log_filters.append("contains(Message,'{}')".format(msg_contains))
+
+            url += "&$filter={}".format(" and ".join(log_filters))
 
         if top:
             url += '&$top={}'.format(top)
+
+
+
+
         response = self._rest.GET(url, **kwargs)
         return response.json()['value']
 
