@@ -1,13 +1,11 @@
 import configparser
-import os
 import unittest
+from pathlib import Path
 
 from TM1py.Objects import Dimension, Hierarchy, Element
 from TM1py.Objects import ElementAttribute
 from TM1py.Services import TM1Service
 
-config = configparser.ConfigParser()
-config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
 
 PREFIX = "TM1py_Tests_Dimension_"
 DIMENSION_NAME = PREFIX + "Some_Dimension"
@@ -16,12 +14,18 @@ DIMENSION_NAME_WITH_MULTI_HIERARCHY = PREFIX + "Dimension_With_Multiple_Hierarch
 
 
 class TestDimensionMethods(unittest.TestCase):
-    tm1 = None
 
     @classmethod
     def setUpClass(cls):
-        cls.tm1 = TM1Service(**config['tm1srv01'])
+        """
+        Establishes a connection to TM1 and creates objects to use across all tests
+        """
 
+        # Connection to TM1
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        
     @classmethod
     def setUp(cls):
         cls.create_dimension()
@@ -143,8 +147,22 @@ class TestDimensionMethods(unittest.TestCase):
         dimension = self.tm1.dimensions.get(DIMENSION_NAME)
         self.assertEqual(len(dimension.hierarchies[0].elements), len(elements))
 
+    def test_update_dimension_remove_hierarchy(self):
+        self.create_dimension_with_multiple_hierarchies()
+        dimension = self.tm1.dimensions.get(DIMENSION_NAME_WITH_MULTI_HIERARCHY)
+        self.assertEqual(dimension.hierarchy_names, ['Hierarchy1', 'Hierarchy2', 'Hierarchy3', 'Leaves'])
+        dimension.remove_hierarchy('Hierarchy2')
+        dimension.remove_hierarchy('Hierarchy3')
+        self.tm1.dimensions.update(dimension)
+        dimension = self.tm1.dimensions.get(DIMENSION_NAME_WITH_MULTI_HIERARCHY)
+        self.assertEqual(dimension.hierarchy_names, ['Hierarchy1', 'Leaves'])
+
     def test_get_all_names(self):
         self.assertIn(DIMENSION_NAME, self.tm1.dimensions.get_all_names())
+
+    def test_get_number_of_dimensions(self):
+        number_of_dimensions = self.tm1.dimensions.get_number_of_dimensions()
+        self.assertIsInstance(number_of_dimensions, int)
 
     def test_execute_mdx(self):
         mdx = "{TM1SubsetAll(" + DIMENSION_NAME + ")}"

@@ -1,13 +1,10 @@
 import configparser
-import os
+from pathlib import Path
 import unittest
 import uuid
 
 from TM1py.Objects import Dimension, Hierarchy, Element, ElementAttribute
 from TM1py.Services import TM1Service
-
-config = configparser.ConfigParser()
-config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
 
 DIMENSION_PREFIX = 'TM1py_unittest_element_{}'
 DIMENSION_NAME = DIMENSION_PREFIX.format(uuid.uuid4())
@@ -15,14 +12,18 @@ HIERARCHY_NAME = DIMENSION_NAME
 
 
 class TestElementMethods(unittest.TestCase):
-    tm1 = None
 
     @classmethod
-    def setup_class(cls):
+    def setUpClass(cls):
+        """
+        Establishes a connection to TM1 and creates TM! objects to use across all tests
+        """
 
         # Connection to TM1
-        cls.tm1 = TM1Service(**config['tm1srv01'])
-
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        
     @classmethod
     def setUp(cls):
         # Elements
@@ -30,6 +31,7 @@ class TestElementMethods(unittest.TestCase):
         cls.extra_year = "4321"
         # Element Attributes
         cls.attributes = ('Previous Year', 'Next Year')
+        cls.alias_attributes = ("Financial Year",)
 
         # create dimension with a default hierarchy
         d = Dimension(DIMENSION_NAME)
@@ -42,11 +44,36 @@ class TestElementMethods(unittest.TestCase):
             h.add_edge('Total Years', year, 1)
         for attribute in cls.attributes:
             h.add_element_attribute(attribute, "String")
+        for attribute in cls.alias_attributes:
+            h.add_element_attribute(attribute, "Alias")
         d.add_hierarchy(h)
         cls.tm1.dimensions.create(d)
 
-        # write one element attribute value
+        # write attribute values
         cls.tm1.cubes.cells.write_value('1988', '}ElementAttributes_' + DIMENSION_NAME, ('1989', 'Previous Year'))
+        cls.tm1.cubes.cells.write_value('1989', '}ElementAttributes_' + DIMENSION_NAME, ('1990', 'Previous Year'))
+        cls.tm1.cubes.cells.write_value('1990', '}ElementAttributes_' + DIMENSION_NAME, ('1991', 'Previous Year'))
+        cls.tm1.cubes.cells.write_value('1991', '}ElementAttributes_' + DIMENSION_NAME, ('1992', 'Previous Year'))
+
+        cls.tm1.cubes.cells.write_value('1988/89', '}ElementAttributes_' + DIMENSION_NAME, ('1989', 'Financial Year'))
+        cls.tm1.cubes.cells.write_value('1989/90', '}ElementAttributes_' + DIMENSION_NAME, ('1990', 'Financial Year'))
+        cls.tm1.cubes.cells.write_value('1990/91', '}ElementAttributes_' + DIMENSION_NAME, ('1991', 'Financial Year'))
+        cls.tm1.cubes.cells.write_value('1991/92', '}ElementAttributes_' + DIMENSION_NAME, ('1992', 'Financial Year'))
+
+    def add_unbalanced_hierarchy(self, hierarchy_name):
+        dimension = self.tm1.dimensions.get(DIMENSION_NAME)
+        # other hierarchy
+        hierarchy = Hierarchy(name=hierarchy_name, dimension_name=DIMENSION_NAME)
+
+        hierarchy.add_element("Total Years Unbalanced", "Consolidated")
+        hierarchy.add_element('1989', 'Numeric')
+        hierarchy.add_element('1990', 'Numeric')
+        hierarchy.add_element('1991', 'Numeric')
+        hierarchy.add_edge("Total Years Unbalanced", "1989", 1)
+        hierarchy.add_edge("Total Years Unbalanced", "1990", 1)
+        dimension.add_hierarchy(hierarchy)
+
+        self.tm1.dimensions.update(dimension)
 
     @classmethod
     def tearDown(cls):
@@ -83,7 +110,7 @@ class TestElementMethods(unittest.TestCase):
             self.assertEqual(element.name, element_name)
 
     def test_update_element(self):
-        element = Element(self.extra_year, "S T R I N G")
+        element = Element(self.extra_year, Element.Types("S T R I N G"))
         self.tm1.dimensions.hierarchies.elements.create(
             DIMENSION_NAME,
             HIERARCHY_NAME,
@@ -95,7 +122,7 @@ class TestElementMethods(unittest.TestCase):
         self.tm1.dimensions.hierarchies.elements.update(DIMENSION_NAME, HIERARCHY_NAME, element)
 
         element = self.tm1.dimensions.hierarchies.elements.get(DIMENSION_NAME, HIERARCHY_NAME, element_name)
-        self.assertTrue(element.element_type == "Numeric")
+        self.assertTrue(element.element_type == Element.Types.NUMERIC)
 
         self.tm1.dimensions.hierarchies.elements.delete(
             DIMENSION_NAME,
@@ -116,6 +143,28 @@ class TestElementMethods(unittest.TestCase):
             'Previous Year',
             '1988')
         self.assertIn('1989', elements)
+
+    def test_get_element_by_attribute_without_elements(self):
+        elements = self.tm1.dimensions.hierarchies.elements.get_attribute_of_elements(
+            dimension_name=DIMENSION_NAME,
+            hierarchy_name=HIERARCHY_NAME,
+            attribute='Previous Year')
+        self.assertEqual('1989', elements['1990'])
+        self.assertEqual('1990', elements['1991'])
+        self.assertNotIn(self.extra_year, elements)
+        self.assertIsInstance(elements, dict)
+
+    def test_get_element_by_attribute_with_elements(self):
+        elements = self.tm1.dimensions.hierarchies.elements.get_attribute_of_elements(
+            dimension_name=DIMENSION_NAME,
+            hierarchy_name=HIERARCHY_NAME,
+            elements=["1990", "1991"],
+            attribute="Previous Year",
+            element_unique_names=True)
+        self.assertNotIn("[" + DIMENSION_NAME + "]." + "[" + HIERARCHY_NAME + "]." + "[1989]", elements)
+        self.assertEqual("1989", elements["[" + DIMENSION_NAME + "]." + "[" + HIERARCHY_NAME + "]." + "[1990]"])
+        self.assertIn("[" + DIMENSION_NAME + "]." + "[" + HIERARCHY_NAME + "]." + "[1991]", elements)
+        self.assertIsInstance(elements, dict)
 
     def test_create_filter_and_delete_element_attribute(self):
         attribute = ElementAttribute('Leap Year', 'Numeric')
@@ -209,6 +258,120 @@ class TestElementMethods(unittest.TestCase):
         self.assertIn("Total Years", members)
         for year in self.years:
             self.assertIn(year, members)
+
+    def test_get_element_identifiers_with_iterable(self):
+        expected_identifiers = {'1988/89', '1989/90', '1990/91', '1991/92', *self.years}
+        elements = self.years
+        identifiers = self.tm1.dimensions.hierarchies.elements.get_element_identifiers(
+            dimension_name=DIMENSION_NAME,
+            hierarchy_name=HIERARCHY_NAME,
+            elements=elements)
+        self.assertEqual(expected_identifiers, set(identifiers))
+
+    def test_get_element_identifiers_with_string(self):
+        expected_identifiers = {'1988/89', '1989/90', '1990/91', '1991/92', *self.years}
+        elements = "{" + ",".join(["[" + DIMENSION_NAME + "].[" + year + "]" for year in self.years]) + "}"
+        identifiers = self.tm1.dimensions.hierarchies.elements.get_element_identifiers(
+            dimension_name=DIMENSION_NAME,
+            hierarchy_name=HIERARCHY_NAME,
+            elements=elements)
+        self.assertEqual(expected_identifiers, set(identifiers))
+
+    def test_get_all_element_identifiers(self):
+        expected_identifiers = {'1988/89', '1989/90', '1990/91', '1991/92', 'Total Years', 'All Consolidations',
+                                 *self.years}
+        identifiers = self.tm1.dimensions.hierarchies.elements.get_all_element_identifiers(
+            DIMENSION_NAME,
+            HIERARCHY_NAME)
+        self.assertEqual(expected_identifiers, set(identifiers))
+
+    def test_get_all_leaf_element_identifiers(self):
+        expected_identifiers = {'1988/89', '1989/90', '1990/91', '1991/92', *self.years}
+        identifiers = self.tm1.dimensions.hierarchies.elements.get_all_leaf_element_identifiers(
+            DIMENSION_NAME,
+            HIERARCHY_NAME)
+        self.assertEqual(expected_identifiers, set(identifiers))
+
+    def test_get_elements_by_level(self):
+        expected_elements = ['No Year', '1989', '1990', '1991', '1992']
+        elements = self.tm1.dimensions.hierarchies.elements.get_elements_by_level(
+            DIMENSION_NAME, HIERARCHY_NAME, 0)
+
+        self.assertEqual(elements, expected_elements)
+
+        expected_elements = ['Total Years']
+        elements = self.tm1.dimensions.hierarchies.elements.get_elements_by_level(
+            DIMENSION_NAME, HIERARCHY_NAME, 1)
+        self.assertEqual(elements, expected_elements)
+
+    def test_get_elements_by_wildcard(self):
+        expected_elements = ['Total Years', 'No Year']
+        elements = self.tm1.dimensions.hierarchies.elements.get_elements_filtered_by_wildcard(
+            DIMENSION_NAME, HIERARCHY_NAME, 'year')
+        self.assertEqual(elements, expected_elements)
+
+        expected_elements = ['Total Years']
+        elements = self.tm1.dimensions.hierarchies.elements.get_elements_filtered_by_wildcard(
+            DIMENSION_NAME, HIERARCHY_NAME, 'talyear', 1)
+        self.assertEqual(elements, expected_elements)
+
+        expected_elements = ['1989', '1990', '1991', '1992']
+        elements = self.tm1.dimensions.hierarchies.elements.get_elements_filtered_by_wildcard(
+            DIMENSION_NAME, HIERARCHY_NAME, '19', 0)
+        self.assertEqual(elements, expected_elements)
+
+        expected_elements = ['1990', '1991', '1992']
+        elements = self.tm1.dimensions.hierarchies.elements.get_elements_filtered_by_wildcard(
+            DIMENSION_NAME, HIERARCHY_NAME, '99', 0)
+        self.assertEqual(elements, expected_elements)
+
+    def test_get_number_of_elements(self):
+        number_of_elements = self.tm1.dimensions.hierarchies.elements.get_number_of_elements(
+            DIMENSION_NAME, HIERARCHY_NAME)
+        self.assertEqual(number_of_elements, 7)
+
+    def test_get_number_of_leaf_elements(self):
+        number_of_elements = self.tm1.dimensions.hierarchies.elements.get_number_of_leaf_elements(
+            DIMENSION_NAME, HIERARCHY_NAME)
+
+        self.assertEqual(number_of_elements, 5)
+
+    def test_get_number_of_consolidated_elements(self):
+        number_of_elements = self.tm1.dimensions.hierarchies.elements.get_number_of_consolidated_elements(
+            DIMENSION_NAME, HIERARCHY_NAME)
+
+        self.assertEqual(number_of_elements, 2)
+
+    def test_create_element_attribute(self):
+        element_attribute = ElementAttribute("NewAttribute", "String")
+        self.tm1.dimensions.hierarchies.elements.create_element_attribute(
+            DIMENSION_NAME,
+            DIMENSION_NAME,
+            element_attribute)
+
+        element_attributes = self.tm1.dimensions.hierarchies.elements.get_element_attributes(
+            DIMENSION_NAME,
+            DIMENSION_NAME)
+
+        self.assertIn(element_attribute, element_attributes)
+
+    def test_delete_element_attribute(self):
+        element_attribute = ElementAttribute("NewAttribute", "String")
+        self.tm1.dimensions.hierarchies.elements.create_element_attribute(
+            DIMENSION_NAME,
+            DIMENSION_NAME,
+            element_attribute)
+
+        self.tm1.dimensions.hierarchies.elements.delete_element_attribute(
+            DIMENSION_NAME,
+            DIMENSION_NAME,
+            element_attribute.name)
+
+        element_attributes = self.tm1.dimensions.hierarchies.elements.get_element_attributes(
+            DIMENSION_NAME,
+            DIMENSION_NAME)
+
+        self.assertNotIn(element_attribute, element_attributes)
 
 
 if __name__ == '__main__':

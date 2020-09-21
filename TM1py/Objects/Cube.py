@@ -2,16 +2,19 @@
 
 import collections
 import json
+from typing import Iterable, List, Dict, Optional
 
 from TM1py.Objects.Rules import Rules
 from TM1py.Objects.TM1Object import TM1Object
+from TM1py.Utils import format_url
 
 
 class Cube(TM1Object):
     """ Abstraction of a TM1 Cube
         
     """
-    def __init__(self, name, dimensions, rules=None):
+
+    def __init__(self, name: str, dimensions: Iterable[str], rules: Optional[Rules] = None):
         """
         
         :param name: name of the Cube
@@ -19,55 +22,55 @@ class Cube(TM1Object):
         :param rules: instance of TM1py.Objects.Rules
         """
         self._name = name
-        self._dimensions = dimensions
-        self._rules = rules
+        self.dimensions = list(dimensions)
+        self.rules = rules
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
-    def dimensions(self):
+    def dimensions(self) -> List[str]:
         return self._dimensions
 
     @dimensions.setter
-    def dimensions(self, value):
+    def dimensions(self, value: List[str]):
         self._dimensions = value
 
     @property
-    def has_rules(self):
+    def has_rules(self) -> bool:
         if self._rules:
             return True
         return False
 
     @property
-    def rules(self):
+    def rules(self) -> Rules:
         return self._rules
 
     @rules.setter
-    def rules(self, value):
+    def rules(self, value: Rules):
         self._rules = value
 
     @property
-    def skipcheck(self):
+    def skipcheck(self) -> bool:
         if self.has_rules:
             return self.rules.skipcheck
         return False
 
     @property
-    def undefvals(self):
+    def undefvals(self) -> bool:
         if self.has_rules:
             return self.rules.undefvals
         return False
 
     @property
-    def feedstrings(self):
+    def feedstrings(self) -> bool:
         if self.has_rules:
             return self.rules.feedstrings
         return False
 
     @classmethod
-    def from_json(cls, cube_as_json):
+    def from_json(cls, cube_as_json: str) -> 'Cube':
         """ Alternative constructor
 
         :param cube_as_json: user as JSON string
@@ -77,30 +80,31 @@ class Cube(TM1Object):
         return cls.from_dict(cube_as_dict)
 
     @classmethod
-    def from_dict(cls, cube_as_dict):
+    def from_dict(cls, cube_as_dict: Dict) -> 'Cube':
         """ Alternative constructor
 
         :param cube_as_dict: user as dict
         :return: user, an instance of this class
         """
-        return cls(name=cube_as_dict['Name'],
-                   dimensions=[dimension['Name'] for dimension in cube_as_dict['Dimensions']],
-                   rules=Rules(cube_as_dict['Rules']) if cube_as_dict['Rules'] else None)
+        return cls(
+            name=cube_as_dict['Name'],
+            dimensions=[dimension['Name'] for dimension in cube_as_dict['Dimensions']],
+            rules=Rules(cube_as_dict['Rules']) if cube_as_dict['Rules'] else None)
 
     @property
-    def body(self):
+    def body(self) -> str:
         return self._construct_body()
 
-    def _construct_body(self):
+    def _construct_body(self) -> str:
         """
         construct body (json) from the class attributes
         :return: String, TM1 JSON representation of a cube
         """
         body_as_dict = collections.OrderedDict()
         body_as_dict['Name'] = self.name
-        body_as_dict['Dimensions@odata.bind'] = ['Dimensions(\'{}\')'.format(dimension)
+        body_as_dict['Dimensions@odata.bind'] = [format_url("Dimensions('{}')", dimension)
                                                  for dimension
                                                  in self.dimensions]
-        if self.rules:
+        if self.has_rules:
             body_as_dict['Rules'] = str(self.rules)
         return json.dumps(body_as_dict, ensure_ascii=False)

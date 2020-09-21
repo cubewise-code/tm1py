@@ -2,31 +2,33 @@
 
 import collections
 import json
+from typing import Dict, List, Iterable
 
 from TM1py.Objects.ChoreFrequency import ChoreFrequency
-from TM1py.Objects.ChoreTask import ChoreTask
-
 from TM1py.Objects.ChoreStartTime import ChoreStartTime
-
+from TM1py.Objects.ChoreTask import ChoreTask
 from TM1py.Objects.TM1Object import TM1Object
 
 
 class Chore(TM1Object):
     """ Abstraction of TM1 Chore
-        
-    
+
     """
-    def __init__(self, name, start_time, dst_sensitivity, active, execution_mode, frequency, tasks):
+    SINGLE_COMMIT = 'SingleCommit'
+    MULTIPLE_COMMIT = 'MultipleCommit'
+
+    def __init__(self, name: str, start_time: ChoreStartTime, dst_sensitivity: bool, active: bool,
+                 execution_mode: str, frequency: ChoreFrequency, tasks: Iterable[ChoreTask]):
         self._name = name
         self._start_time = start_time
         self._dst_sensitivity = dst_sensitivity
         self._active = active
         self._execution_mode = execution_mode
         self._frequency = frequency
-        self._tasks = tasks
+        self._tasks = list(tasks)
 
     @classmethod
-    def from_json(cls, chore_as_json):
+    def from_json(cls, chore_as_json: str) -> 'Chore':
         """ Alternative constructor
 
         :param chore_as_json: string, JSON. Response of /api/v1/Chores('x')/Tasks?$expand=*
@@ -36,7 +38,7 @@ class Chore(TM1Object):
         return cls.from_dict(chore_as_dict)
 
     @classmethod
-    def from_dict(cls, chore_as_dict):
+    def from_dict(cls, chore_as_dict: Dict) -> 'Chore':
         """ Alternative constructor
 
         :param chore_as_dict: Chore as dict
@@ -51,35 +53,35 @@ class Chore(TM1Object):
                    tasks=[ChoreTask.from_dict(task) for task in chore_as_dict['Tasks']])
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @name.setter
-    def name(self, name):
+    def name(self, name: str):
         self._name = name
 
     @property
-    def start_time(self):
+    def start_time(self) -> ChoreStartTime:
         return self._start_time
 
     @start_time.setter
-    def start_time(self, start_time):
+    def start_time(self, start_time: ChoreStartTime):
         self._start_time = start_time
 
     @property
-    def dst_sensitivity(self):
+    def dst_sensitivity(self) -> bool:
         return self._dst_sensitivity
 
     @dst_sensitivity.setter
-    def dst_sensitivity(self, dst_sensitivity):
+    def dst_sensitivity(self, dst_sensitivity: bool):
         self._dst_sensitivity = dst_sensitivity
 
     @property
-    def active(self):
+    def active(self) -> bool:
         return self._active
 
     @property
-    def execution_mode(self):
+    def execution_mode(self) -> str:
         return self._execution_mode
 
     @execution_mode.setter
@@ -87,30 +89,30 @@ class Chore(TM1Object):
         self._execution_mode = execution_mode
 
     @property
-    def frequency(self):
+    def frequency(self) -> ChoreFrequency:
         return self._frequency
 
     @frequency.setter
-    def frequency(self, frequency):
+    def frequency(self, frequency: ChoreFrequency):
         self._frequency = frequency
 
     @property
-    def tasks(self):
+    def tasks(self) -> List[ChoreTask]:
         return self._tasks
 
     @tasks.setter
-    def tasks(self, tasks):
+    def tasks(self, tasks: List[ChoreTask]):
         self._tasks = tasks
 
     @property
-    def body(self):
+    def body(self) -> str:
         return self.construct_body()
 
     @property
-    def body_as_dict(self):
+    def body_as_dict(self) -> Dict:
         return json.loads(self.body)
 
-    def add_task(self, task):
+    def add_task(self, task: ChoreTask):
         self._tasks.append(task)
 
     def activate(self):
@@ -119,10 +121,10 @@ class Chore(TM1Object):
     def deactivate(self):
         self._active = False
 
-    def reschedule(self, days=0, hours=0, minutes=0, seconds=0):
+    def reschedule(self, days: int = 0, hours: int = 0, minutes: int = 0, seconds: int = 0):
         self._start_time.add(days=days, hours=hours, minutes=minutes, seconds=seconds)
 
-    def construct_body(self):
+    def construct_body(self) -> str:
         """
         construct self.body (json) from the class attributes
         :return: String, TM1 JSON representation of a chore
@@ -136,4 +138,3 @@ class Chore(TM1Object):
         body_as_dict['Frequency'] = self._frequency.frequency_string
         body_as_dict['Tasks'] = [task.body_as_dict for task in self._tasks]
         return json.dumps(body_as_dict, ensure_ascii=False)
-

@@ -1,20 +1,50 @@
 import collections
+import functools
+import http.client as http_client
 import json
-import sys
-import warnings
+import re
+from typing import Dict, List, Tuple, Iterable, Optional, Generator
 
-import pandas as pd
+from TM1py.Exceptions.Exceptions import TM1pyVersionException
 
-from TM1py.Objects.Process import Process
-from TM1py.Objects.Server import Server
+try:
+    import pandas as pd
 
-if sys.version[0] == '2':
-    import httplib as http_client
-else:
-    import http.client as http_client
+    _has_pandas = True
+except ImportError:
+    _has_pandas = False
 
 
-def get_all_servers_from_adminhost(adminhost='localhost'):
+def require(version):
+    """ Higher order function to check required version for TM1py function
+    """
+
+    def wrap(func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            if not verify_version(required_version=version, version=self.version):
+                raise TM1pyVersionException(func.__name__, version)
+            return func(self, *args, **kwargs)
+
+        return wrapper
+
+    return wrap
+
+
+def require_pandas(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        try:
+            import pandas
+            return func(self, *args, **kwargs)
+        except ImportError:
+            raise ImportError(f"Function '{func.__name__}' requires pandas")
+
+    return wrapper
+
+
+def get_all_servers_from_adminhost(adminhost='localhost') -> List:
+    from TM1py.Objects import Server
     """ Ask Adminhost for TM1 Servers
 
     :param adminhost: IP or DNS Alias of the adminhost
@@ -33,11 +63,48 @@ def get_all_servers_from_adminhost(adminhost='localhost'):
     return servers
 
 
-def case_and_space_insensitive_equals(item1, item2):
+def build_url_friendly_object_name(object_name: str) -> str:
+    return object_name.replace("'", "''").replace('%', '%25').replace('#', '%23')
+
+
+def format_url(url, *args: str, **kwargs: str) -> str:
+    """ build url and escape single quotes in args and kwargs
+
+    :param url: url with {} placeholders
+    :param args: arguments to placeholders
+    :return:
+    """
+    args = [build_url_friendly_object_name(arg) if isinstance(arg, str) else arg
+            for arg
+            in args]
+
+    kwargs = {key: build_url_friendly_object_name(value) if isinstance(value, str) else value
+              for key, value
+              in kwargs.items()}
+
+    return url.format(*args, **kwargs)
+
+
+def abbreviate_mdx(mdx: str, size=100) -> str:
+    if len(mdx) < size:
+        return mdx
+    else:
+        return mdx[:size] + "..."
+
+
+def integerize_version(version: str) -> int:
+    return int(version[0:4].replace(".", ""))
+
+
+def verify_version(required_version: str, version: str) -> bool:
+    return integerize_version(version) >= integerize_version(required_version)
+
+
+def case_and_space_insensitive_equals(item1: str, item2: str) -> bool:
     return lower_and_drop_spaces(item1) == lower_and_drop_spaces(item2)
 
 
-def extract_axes_from_cellset(raw_cellset_as_dict):
+def extract_axes_from_cellset(raw_cellset_as_dict: Dict) -> Tuple:
     axes = raw_cellset_as_dict['Axes']
     row_axis = axes[0] if axes[0] and "Tuples" in axes[0] and len(axes[0]["Tuples"]) > 0 else None
     column_axis = axes[1] if axes[1] and "Tuples" in axes[1] and len(axes[1]["Tuples"]) > 0 else None
@@ -45,7 +112,7 @@ def extract_axes_from_cellset(raw_cellset_as_dict):
     return row_axis, column_axis, title_axis
 
 
-def extract_unique_names_from_members(members):
+def extract_unique_names_from_members(members: Iterable[Dict]) -> List[str]:
     """ Extract list of unique names from part of the cellset response
     in:
     [{'UniqueName': '[dim1].[dim1].[elem1]', 'Element': {'UniqueName': '[dim1].[dim1].[elem1]'}},
@@ -61,7 +128,23 @@ def extract_unique_names_from_members(members):
             in members]
 
 
-def sort_coordinates(cube_dimensions, unsorted_coordinates):
+def extract_element_names_from_members(members: Iterable[Dict]) -> List[str]:
+    """ Extract list of unique names from part of the cellset response
+    in:
+    [{'UniqueName': '[dim1].[dim1].[elem1]', 'Element': {'UniqueName': '[dim1].[dim1].[elem1]'}},
+    {'UniqueName': '[dim2].[dim2].[elem3]', 'Element': {'UniqueName': '[dim2].[dim2].[elem3]'}}]
+    out:
+    ["elem1", "elem3"]
+
+    :param members: dictionary
+    :return: list of unique names
+    """
+    return [m['Element']['Name'] if 'Element' in m and m['Element'] else m['Name']
+            for m
+            in members]
+
+
+def sort_coordinates(cube_dimensions: Iterable[str], unsorted_coordinates: Iterable[str]) -> Tuple[str]:
     sorted_coordinates = []
     for dimension in cube_dimensions:
         # could be more than one hierarchy!
@@ -72,11 +155,13 @@ def sort_coordinates(cube_dimensions, unsorted_coordinates):
     return tuple(sorted_coordinates)
 
 
-def build_content_from_cellset(raw_cellset_as_dict, top=None):
+def build_content_from_cellset_dict(
+        raw_cellset_as_dict: Dict,
+        top: Optional[int] = None) -> 'CaseAndSpaceInsensitiveTuplesDict':
     """ transform raw cellset data into concise dictionary
 
     :param raw_cellset_as_dict:
-    :param top: Maximum Number of cells
+    :param top: Int, number of cells to return (counting from top)
     :return:
     """
     cube_dimensions = [dim['Name'] for dim in raw_cellset_as_dict['Cube']['Dimensions']]
@@ -86,6 +171,9 @@ def build_content_from_cellset(raw_cellset_as_dict, top=None):
 
     content_as_dict = CaseAndSpaceInsensitiveTuplesDict()
     for ordinal, cell in enumerate(cells[:top or len(cells)]):
+        # if skip is used in execution we must use the original ordinal from the cell, if not we can simply enumerate
+        ordinal = cell.get("Ordinal", ordinal)
+
         coordinates = []
         if row_axis:
             index_rows = ordinal // row_axis['Cardinality'] % column_axis['Cardinality']
@@ -100,7 +188,58 @@ def build_content_from_cellset(raw_cellset_as_dict, top=None):
     return content_as_dict
 
 
-def build_ui_arrays_from_cellset(raw_cellset_as_dict, value_precision):
+def build_csv_from_cellset_dict(
+        row_dimensions: List[str],
+        column_dimensions: List[str],
+        raw_cellset_as_dict: Dict,
+        top: Optional[int] = None,
+        line_separator="\r\n",
+        value_separator=",") -> str:
+    """ transform raw cellset data into concise dictionary
+
+    :param column_dimensions:
+    :param row_dimensions:
+    :param raw_cellset_as_dict:
+    :param top: Maximum Number of cells
+    :param line_separator:
+    :param value_separator:
+    :return:
+    """
+
+    cells = raw_cellset_as_dict['Cells']
+    # empty cellsets produce "" in order to be compliant with previous implementation that used `/Content` API endpoint
+    if len(cells) == 0:
+        return ""
+
+    csv_entries = list()
+    csv_entries.append(value_separator.join(
+        [dimension_name_from_element_unique_name(dimension)
+         for dimension
+         in row_dimensions + column_dimensions] +
+        ["Value"]))
+
+    row_axis, column_axis, _ = extract_axes_from_cellset(raw_cellset_as_dict=raw_cellset_as_dict)
+
+    for ordinal, cell in enumerate(cells[:top or len(cells)]):
+        # if skip is used in execution we must use the original ordinal from the cell, if not we can simply enumerate
+        ordinal = cell.get("Ordinal", ordinal)
+
+        csv_entry = []
+        if row_axis:
+            index_rows = ordinal // row_axis['Cardinality'] % column_axis['Cardinality']
+            csv_entry.extend(extract_element_names_from_members(column_axis['Tuples'][index_rows]['Members']))
+        if column_axis:
+            index_columns = ordinal % row_axis['Cardinality']
+            csv_entry.extend(extract_element_names_from_members(row_axis['Tuples'][index_columns]['Members']))
+
+        csv_entry.append(str(cell["Value"] or ""))
+
+        csv_entries.append(value_separator.join(csv_entry))
+
+    return line_separator.join(csv_entries)
+
+
+def build_ui_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precision: int):
     """ Transform raw 1,2 or 3-dimension cellset data into concise dictionary
 
     * Useful for grids or charting libraries that want an array of cell values per row
@@ -137,6 +276,7 @@ def build_ui_arrays_from_cellset(raw_cellset_as_dict, value_precision):
     titles = header_map['titles']
     headers = header_map['headers']
     cardinality = header_map['cardinality']
+    value_format_string = ""
 
     if value_precision:
         value_format_string = "{{0:.{}f}}".format(value_precision)
@@ -161,7 +301,7 @@ def build_ui_arrays_from_cellset(raw_cellset_as_dict, value_precision):
     return {'titles': titles, 'headers': headers, 'cells': cells}
 
 
-def build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict, value_precision=None):
+def build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precision: int = None):
     """ Transform raw 1,2 or 3-dimension cellset data into dygraph-friendly format
 
     * Useful for grids or charting libraries that want an array of cell values per column
@@ -188,6 +328,7 @@ def build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict, value_precision=No
     titles = header_map['titles']
     headers = header_map['headers']
     cardinality = header_map['cardinality']
+    value_format_string = ""
 
     if value_precision:
         value_format_string = "{{0:.{}f}}".format(value_precision)
@@ -212,7 +353,7 @@ def build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict, value_precision=No
     return {'titles': titles, 'headers': headers, 'cells': cells}
 
 
-def build_headers_from_cellset(raw_cellset_as_dict, force_header_dimensionality=1):
+def build_headers_from_cellset(raw_cellset_as_dict: Dict, force_header_dimensionality: int = 1) -> Dict:
     """ Extract dimension headers from cellset into dictionary of titles (slicers) and headers (row,column,page)
     * Title dimensions are in a single list of dicts 
     * Header dimensions are a 2-dimensional list of the element dicts
@@ -262,22 +403,7 @@ def build_headers_from_cellset(raw_cellset_as_dict, force_header_dimensionality=
     return {'titles': titles, 'headers': headers, 'dimensionality': dimensionality, 'cardinality': cardinality}
 
 
-def element_names_from_element_unqiue_names(element_unique_names):
-    """ Get tuple of simple element names from the full element unique names
-    
-    :param element_unique_names: tuple of element unique names ([dim1].[hier1].[elem1], ... )
-    :return: tuple of element names: (elem1, elem2, ... )
-    """
-    warnings.simplefilter('always', PendingDeprecationWarning)
-    warnings.warn(
-        "Function deprecated and will be removed. Use element_names_from_element_unique_names instead.",
-        PendingDeprecationWarning
-    )
-    warnings.simplefilter('default', PendingDeprecationWarning)
-    return element_names_from_element_unique_names(element_unique_names)
-
-
-def dimension_hierarchy_element_tuple_from_unique_name(element_unique_name):
+def dimension_hierarchy_element_tuple_from_unique_name(element_unique_name: str) -> Tuple[str, str, str]:
     """ Extract dimension name, hierarchy name and element name from element unique name.
     Works with explicit and implicit hierarchy references.
 
@@ -292,19 +418,19 @@ def dimension_hierarchy_element_tuple_from_unique_name(element_unique_name):
     return dimension, hierarchy, element
 
 
-def dimension_name_from_element_unique_name(element_unique_name):
+def dimension_name_from_element_unique_name(element_unique_name: str) -> str:
     return element_unique_name[1:element_unique_name.find('].[')]
 
 
-def hierarchy_name_from_element_unique_name(element_unique_name):
+def hierarchy_name_from_element_unique_name(element_unique_name: str) -> str:
     return element_unique_name[element_unique_name.find('].[') + 3:element_unique_name.rfind('].[')]
 
 
-def element_name_from_element_unique_name(element_unique_name):
+def element_name_from_element_unique_name(element_unique_name: str) -> str:
     return element_unique_name[element_unique_name.rfind('].[') + 3:-1]
 
 
-def element_names_from_element_unique_names(element_unique_names):
+def element_names_from_element_unique_names(element_unique_names: Iterable[str]) -> Tuple[str]:
     """ Get tuple of simple element names from the full element unique names
 
     :param element_unique_names: tuple of element unique names ([dim1].[hier1].[elem1], ... )
@@ -315,7 +441,10 @@ def element_names_from_element_unique_names(element_unique_names):
                  in element_unique_names)
 
 
-def build_element_unique_names(dimension_names, element_names, hierarchy_names=None):
+def build_element_unique_names(
+        dimension_names: Iterable[str],
+        element_names: Iterable[str],
+        hierarchy_names: Optional[Iterable[str]] = None) -> Generator:
     """ Create tuple of unique names from dimension, hierarchy and elements
     
     :param dimension_names: 
@@ -326,14 +455,16 @@ def build_element_unique_names(dimension_names, element_names, hierarchy_names=N
     if not hierarchy_names:
         return ("[{}].[{}]".format(dim, elem)
                 for dim, elem
-                in zip(dimension_names, hierarchy_names, element_names))
+                in zip(dimension_names, element_names))
     else:
         return ("[{}].[{}].[{}]".format(dim, hier, elem)
                 for dim, hier, elem
                 in zip(dimension_names, hierarchy_names, element_names))
 
 
-def build_pandas_dataframe_from_cellset(cellset, multiindex=True, sort_values=True):
+@require_pandas
+def build_pandas_dataframe_from_cellset(cellset: Dict, multiindex: bool = True,
+                                        sort_values: bool = True) -> 'pd.DataFrame':
     """
     
     :param cellset: 
@@ -369,7 +500,8 @@ def build_pandas_dataframe_from_cellset(cellset, multiindex=True, sort_values=Tr
         raise ValueError(message)
 
 
-def build_cellset_from_pandas_dataframe(df):
+@require_pandas
+def build_cellset_from_pandas_dataframe(df: 'pd.DataFrame') -> 'CaseAndSpaceInsensitiveTuplesDict':
     """
     
     :param df: a Pandas Dataframe, with dimension-column mapping in correct order. As created in build_pandas_dataframe_from_cellset
@@ -378,48 +510,35 @@ def build_cellset_from_pandas_dataframe(df):
     if isinstance(df.index, pd.MultiIndex):
         df.reset_index(inplace=True)
     cellset = CaseAndSpaceInsensitiveTuplesDict()
-    split = df.to_dict(orient='split')
-    for row in split['data']:
+    split = df.to_numpy().tolist()
+    for row in split:
         cellset[tuple(row[0:-1])] = row[-1]
     return cellset
 
 
-def load_bedrock_from_github(bedrock_process_name):
-    """ Load bedrock from GitHub as TM1py.Process instance
-    
-    :param bedrock_process_name:
-    :return: 
-    """
-    import requests
-    url = 'https://raw.githubusercontent.com/MariusWirtz/bedrock/master/json/{}.json'.format(bedrock_process_name)
-    process_as_json = requests.get(url).text
-    return Process.from_json(process_as_json)
-
-
-def load_all_bedrocks_from_github():
-    """ Load all Bedrocks from GitHub as TM1py.Process instances
-    
-    :return: 
-    """
-    import requests
-    # Connect to Bedrock github repo and load the names of all Bedrocks
-    url = "https://api.github.com/repos/MariusWirtz/bedrock/contents/json?ref=master"
-    raw_github_data = requests.get(url).json()
-    all_bedrocks = [entry['name'] for entry in raw_github_data]
-    # instantiate TM1py.Process instances from github-json content
-    url_to_bedrock = 'https://raw.githubusercontent.com/MariusWirtz/bedrock/master/json/{}'
-    return [Process.from_json(requests.get(url_to_bedrock.format(bedrock)).text) for bedrock in all_bedrocks]
-
-
-def lower_and_drop_spaces(item):
+def lower_and_drop_spaces(item: str) -> str:
     return item.replace(" ", "").lower()
 
 
-class CaseAndSpaceInsensitiveDict(collections.MutableMapping):
+def get_seconds_from_duration(time_str: str) -> int:
+    """
+    This function will convert the TM1 time to seconds
+    :param time_str: P0DT00H01M43S
+    :return: int
+    """
+    import re
+    pattern = re.compile('\w(\d+)\w\w(\d+)\w(\d+)\w(\d+)\w')
+    matches = pattern.search(time_str)
+    d, h, m, s = matches.groups()
+    seconds = (int(d) * 86400) + (int(h) * 3600) + (int(m) * 60) + int(s)
+    return seconds
+
+
+class CaseAndSpaceInsensitiveDict(collections.abc.MutableMapping):
     """A case-and-space-insensitive dict-like object with String keys.
 
     Implements all methods and operations of
-    ``collections.MutableMapping`` as well as dict's ``copy``. Also
+    ``collections.abc.MutableMapping`` as well as dict's ``copy``. Also
     provides ``adjusted_items``, ``adjusted_keys``.
 
     All keys are expected to be strings. The structure remembers the
@@ -429,7 +548,7 @@ class CaseAndSpaceInsensitiveDict(collections.MutableMapping):
 
     However, querying and contains testing is case insensitive:
         elements = TM1pyElementsDictionary()
-        elements['Travel Expesnses'] = 100
+        elements['Travel Expenses'] = 100
         elements['travelexpenses'] == 100 # True
 
     Entries are ordered
@@ -441,15 +560,15 @@ class CaseAndSpaceInsensitiveDict(collections.MutableMapping):
             data = {}
         self.update(data, **kwargs)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value):
         # Use the adjusted cased key for lookups, but store the actual
         # key alongside the value.
         self._store[lower_and_drop_spaces(key)] = (key, value)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str):
         return self._store[lower_and_drop_spaces(key)][1]
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: str):
         del self._store[lower_and_drop_spaces(key)]
 
     def __iter__(self):
@@ -458,7 +577,7 @@ class CaseAndSpaceInsensitiveDict(collections.MutableMapping):
     def __len__(self):
         return len(self._store)
 
-    def adjusted_items(self):
+    def adjusted_items(self) -> Generator:
         """Like iteritems(), but with all adjusted keys."""
         return (
             (adjusted_key, key_value[1])
@@ -466,7 +585,7 @@ class CaseAndSpaceInsensitiveDict(collections.MutableMapping):
             in self._store.items()
         )
 
-    def adjusted_keys(self):
+    def adjusted_keys(self) -> Generator:
         """Like keys(), but with all adjusted keys."""
         return (
             adjusted_key
@@ -475,7 +594,7 @@ class CaseAndSpaceInsensitiveDict(collections.MutableMapping):
         )
 
     def __eq__(self, other):
-        if isinstance(other, collections.Mapping):
+        if isinstance(other, collections.abc.Mapping):
             other = CaseAndSpaceInsensitiveDict(other)
         else:
             return NotImplemented
@@ -490,11 +609,11 @@ class CaseAndSpaceInsensitiveDict(collections.MutableMapping):
         return str(dict(self.items()))
 
 
-class CaseAndSpaceInsensitiveTuplesDict(collections.MutableMapping):
+class CaseAndSpaceInsensitiveTuplesDict(collections.abc.MutableMapping):
     """A case-and-space-insensitive dict-like object with String-Tuples Keys.
 
     Implements all methods and operations of
-    ``collections.MutableMapping`` as well as dict's ``copy``. Also
+    ``collections.abc.MutableMapping`` as well as dict's ``copy``. Also
     provides ``adjusted_items``, ``adjusted_keys``.
 
     All keys are expected to be tuples of strings. The structure remembers the
@@ -551,7 +670,7 @@ class CaseAndSpaceInsensitiveTuplesDict(collections.MutableMapping):
         )
 
     def __eq__(self, other):
-        if isinstance(other, collections.Mapping):
+        if isinstance(other, collections.abc.Mapping):
             other = CaseAndSpaceInsensitiveTuplesDict(other)
         else:
             return NotImplemented
@@ -566,7 +685,7 @@ class CaseAndSpaceInsensitiveTuplesDict(collections.MutableMapping):
         return str(dict(self.items()))
 
 
-class CaseAndSpaceInsensitiveSet(collections.MutableSet):
+class CaseAndSpaceInsensitiveSet(collections.abc.MutableSet):
     def __init__(self, *values):
         self._store = {}
         for v in values:
@@ -600,9 +719,66 @@ class CaseAndSpaceInsensitiveSet(collections.MutableSet):
         return str(self._store)
 
     def __eq__(self, other):
-        if isinstance(other, collections.MutableSet):
+        if isinstance(other, collections.abc.MutableSet):
             other = CaseAndSpaceInsensitiveSet(*other)
         else:
             return NotImplemented
         # Compare insensitively
         return set(self._store.keys()) == set(other._store.keys())
+
+    def __sub__(self, other):
+        result = self.copy()
+        for entry in other:
+            result.discard(entry)
+        return result
+
+
+def get_dimensions_from_where_clause(mdx: str) -> List[str]:
+    mdx = mdx.replace(" ", "").upper()
+    if "WHERE(" not in mdx:
+        return []
+
+    where = mdx[mdx.rfind("WHERE(") + 6:-1]
+    unique_names = where.split(",")
+    return [dimension_name_from_element_unique_name(unique_name) for unique_name in unique_names]
+
+
+def get_cube(mdx: str) -> str:
+
+    # replace tabs, line breaks, spaces
+    mdx = re.sub(r'\s+', '', mdx)
+
+    # happy case: cube name in square brackets
+    pattern = r"(?s)(?i)FROM\[(.*?)\]"
+    search_result = re.search(pattern, mdx)
+    if search_result:
+        return search_result.group(1)
+
+    # cut off where
+    pattern = r"(?s)(?i).*SELECT.*ON.*FROM.*WHERE\(.*"
+    if re.search(pattern=pattern, string=mdx):
+        # part before where
+        mdx = re.split(r"(?s)(?i)WHERE\(.*", mdx)[0]
+
+    # part after from
+    cube = re.split(r"(?s)(?i)FROM", mdx)[-1]
+
+    return cube
+
+
+def resembles_mdx(mdx: str) -> bool:
+    pattern = r"(?s)(?i).*SELECT.*ON.*FROM.*"
+    if re.search(pattern=pattern, string=mdx):
+        return True
+    return False
+
+
+def wrap_in_curly_braces(expression: str) -> str:
+    """ Put curly braces around a string
+
+    :param expression:
+    :return:
+    """
+    return "".join(["{" if not expression.startswith("{") else "",
+                    expression,
+                    "}" if not expression.endswith("}") else ""])

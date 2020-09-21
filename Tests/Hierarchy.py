@@ -1,13 +1,11 @@
 import configparser
-import os
 import unittest
+from pathlib import Path
 
 from TM1py import Element
+from TM1py.Exceptions import TM1pyException
 from TM1py.Objects import Dimension, Hierarchy, Subset
 from TM1py.Services import TM1Service
-
-config = configparser.ConfigParser()
-config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
 
 DIMENSION_PREFIX = 'TM1py_Tests_Hierarchy_'
 DIMENSION_NAME = DIMENSION_PREFIX + "Some_Name"
@@ -15,11 +13,17 @@ SUBSET_NAME = DIMENSION_PREFIX + "Some_Subset"
 
 
 class TestHierarchyMethods(unittest.TestCase):
-    tm1 = None
 
     @classmethod
-    def setup_class(cls):
-        cls.tm1 = TM1Service(**config['tm1srv01'])
+    def setUpClass(cls):
+        """
+        Establishes a connection to TM1 and creates TM! objects to use across all tests
+        """
+
+        # Connection to TM1
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
 
     @classmethod
     def teardown_class(cls):
@@ -72,6 +76,22 @@ class TestHierarchyMethods(unittest.TestCase):
         dimension.add_hierarchy(hierarchy)
         self.tm1.dimensions.update(dimension)
 
+    def add_balanced_hierarchy(self, hierarchy_name):
+        dimension = self.tm1.dimensions.get(DIMENSION_NAME)
+        # other hierarchy
+        hierarchy = Hierarchy(name=hierarchy_name, dimension_name=DIMENSION_NAME)
+
+        hierarchy.add_element("Total Years Balanced", "Consolidated")
+        hierarchy.add_element('1989', 'Numeric')
+        hierarchy.add_element('1990', 'Numeric')
+        hierarchy.add_element('1991', 'Numeric')
+        hierarchy.add_edge("Total Years Balanced", "1989", 1)
+        hierarchy.add_edge("Total Years Balanced", "1990", 1)
+        hierarchy.add_edge("Total Years Balanced", "1991", 1)
+        dimension.add_hierarchy(hierarchy)
+
+        self.tm1.dimensions.update(dimension)
+
     def update_hierarchy(self):
         d = self.tm1.dimensions.get(dimension_name=DIMENSION_NAME)
         h = d.default_hierarchy
@@ -113,17 +133,17 @@ class TestHierarchyMethods(unittest.TestCase):
         element = h["Total Years"]
         self.assertIsInstance(element, Element)
         self.assertEqual(element.name, "Total Years")
-        self.assertEqual(element.element_type, "Consolidated")
+        self.assertEqual(element.element_type, Element.Types.CONSOLIDATED)
         element = h["Total Years".replace(" ", "").lower()]
         self.assertIsInstance(element, Element)
         self.assertEqual(element.name, "Total Years")
-        self.assertEqual(element.element_type, "Consolidated")
+        self.assertEqual(element.element_type, Element.Types.CONSOLIDATED)
 
         element = h["1989"]
         self.assertIsInstance(element, Element)
         self.assertEqual(element.name, "1989")
-        self.assertEqual(element.element_type, "Numeric")
-        self.assertNotEqual(element.element_type, "String")
+        self.assertEqual(element.element_type, Element.Types.NUMERIC)
+        self.assertNotEqual(element.element_type, Element.Types.STRING)
 
     def test_hierarchy___get__exception(self):
         h = self.tm1.dimensions.hierarchies.get(DIMENSION_NAME, DIMENSION_NAME)
@@ -171,7 +191,7 @@ class TestHierarchyMethods(unittest.TestCase):
         self.assertIn('Name Long', [ea.name for ea in h.element_attributes])
 
         self.assertEqual(h.edges[('Total Years', '2011')], 2)
-        self.assertEqual(h.elements['No Year'].element_type, 'String')
+        self.assertEqual(h.elements['No Year'].element_type, Element.Types.STRING)
 
         summary = self.tm1.dimensions.hierarchies.get_hierarchy_summary(DIMENSION_NAME, DIMENSION_NAME)
         self.assertEqual(summary["Elements"], 147)
@@ -331,6 +351,72 @@ class TestHierarchyMethods(unittest.TestCase):
             member_name="I am not a valid Member")
         default_member = self.tm1.dimensions.hierarchies.get_default_member(DIMENSION_NAME, DIMENSION_NAME)
         self.assertEqual(default_member, "Total Years")
+
+    def test_remove_all_edges(self):
+        hierarchy = self.tm1.dimensions.hierarchies.get(DIMENSION_NAME, DIMENSION_NAME)
+        self.assertGreater(len(hierarchy.edges), 0)
+        self.tm1.dimensions.hierarchies.remove_all_edges(DIMENSION_NAME, DIMENSION_NAME)
+        hierarchy = self.tm1.dimensions.hierarchies.get(DIMENSION_NAME, DIMENSION_NAME)
+        self.assertEqual(len(hierarchy.edges), 0)
+
+    def test_remove_edges_under_consolidation(self):
+        members = self.tm1.dimensions.hierarchies.elements.get_members_under_consolidation(DIMENSION_NAME,
+                                                                                           DIMENSION_NAME,
+                                                                                           'Total Years')
+        self.assertGreater(len(members), 0)
+        self.tm1.dimensions.hierarchies.remove_edges_under_consolidation(DIMENSION_NAME, DIMENSION_NAME, 'Total Years')
+        members = self.tm1.dimensions.hierarchies.elements.get_members_under_consolidation(DIMENSION_NAME,
+                                                                                           DIMENSION_NAME,
+                                                                                           'Total Years')
+        self.assertEqual(len(members), 0)
+
+    def test_add_edges(self):
+        edges = {("Total Years", "My Element"): 1, ("Total Years", "No Year"): 1}
+        self.tm1.dimensions.hierarchies.add_edges(DIMENSION_NAME, DIMENSION_NAME, edges)
+
+        hierarchy = self.tm1.dimensions.hierarchies.get(DIMENSION_NAME, DIMENSION_NAME)
+        self.assertEqual(hierarchy.edges[("Total Years", "My Element")], 1)
+        self.assertEqual(hierarchy.edges[("Total Years", "No Year")], 1)
+
+    def test_add_edges_fail_existing(self):
+        with self.assertRaises(TM1pyException) as e:
+            edges = {("Total Years", "1989"): 1}
+            self.tm1.dimensions.hierarchies.add_edges(DIMENSION_NAME, DIMENSION_NAME, edges)
+
+    def test_is_balanced_false(self):
+        is_balanced = self.tm1.dimensions.hierarchies.is_balanced(DIMENSION_NAME, DIMENSION_NAME)
+        self.assertFalse(is_balanced)
+
+    def test_is_balanced_true(self):
+        balanced_hierarchy_name = "Balanced Hierarchy"
+        self.add_balanced_hierarchy(balanced_hierarchy_name)
+
+        is_balanced = self.tm1.dimensions.hierarchies.is_balanced(DIMENSION_NAME, balanced_hierarchy_name)
+        self.assertTrue(is_balanced)
+
+    def test_hierarchy_remove_all_elements(self):
+        hierarchy = self.tm1.hierarchies.get(DIMENSION_NAME, DIMENSION_NAME)
+        self.assertGreater(len(hierarchy.elements), 0)
+        self.assertGreater(len(hierarchy.edges), 0)
+
+        hierarchy.remove_all_elements()
+        self.tm1.hierarchies.update(hierarchy)
+
+        hierarchy = self.tm1.hierarchies.get(DIMENSION_NAME, DIMENSION_NAME)
+        self.assertEqual(len(hierarchy.elements), 0)
+        self.assertEqual(len(hierarchy.edges), 0)
+
+    def test_hierarchy_remove_all_edges(self):
+        hierarchy = self.tm1.hierarchies.get(DIMENSION_NAME, DIMENSION_NAME)
+        self.assertGreater(len(hierarchy.elements), 0)
+        self.assertGreater(len(hierarchy.edges), 0)
+
+        hierarchy.remove_all_edges()
+        self.tm1.hierarchies.update(hierarchy)
+
+        hierarchy = self.tm1.hierarchies.get(DIMENSION_NAME, DIMENSION_NAME)
+        self.assertGreater(len(hierarchy.elements), 0)
+        self.assertEqual(len(hierarchy.edges), 0)
 
 
 if __name__ == '__main__':

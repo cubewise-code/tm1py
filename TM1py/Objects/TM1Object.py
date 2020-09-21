@@ -1,11 +1,14 @@
+from abc import abstractmethod
 
 
 class TM1Object:
     """ Parent Class for all TM1 Objects e.g. Cube, Process, Dimension.
     
     """
+    SANDBOX_DIMENSION = "Sandboxes"
 
     @property
+    @abstractmethod
     def body(self):
         pass
 

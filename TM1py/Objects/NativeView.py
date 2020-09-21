@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import json
+from typing import Optional, Iterable, List, Union, Dict
 
 from TM1py.Objects.Axis import ViewAxisSelection, ViewTitleSelection
 from TM1py.Objects.Subset import Subset, AnonymousSubset
 from TM1py.Objects.View import View
+from TM1py.Utils import case_and_space_insensitive_equals
 
 
 class NativeView(View):
@@ -15,40 +17,44 @@ class NativeView(View):
     """
 
     def __init__(self,
-                 cube_name,
-                 view_name,
-                 suppress_empty_columns=False,
-                 suppress_empty_rows=False,
-                 format_string="0.#########",
-                 titles=None,
-                 columns=None,
-                 rows=None):
+                 cube_name: str,
+                 view_name: str,
+                 suppress_empty_columns: Optional[bool] = False,
+                 suppress_empty_rows: Optional[bool] = False,
+                 format_string: Optional[str] = "0.#########",
+                 titles: Optional[Iterable[ViewTitleSelection]] = None,
+                 columns: Optional[Iterable[ViewAxisSelection]] = None,
+                 rows: Optional[Iterable[ViewAxisSelection]] = None):
         super().__init__(cube_name, view_name)
         self._suppress_empty_columns = suppress_empty_columns
         self._suppress_empty_rows = suppress_empty_rows
         self._format_string = format_string
-        self._titles = titles if titles else []
-        self._columns = columns if columns else []
-        self._rows = rows if rows else []
+        self._titles = list(titles) if titles else []
+        self._columns = list(columns) if columns else []
+        self._rows = list(rows) if rows else []
 
     @property
-    def body(self):
+    def body(self) -> str:
         return self._construct_body()
 
     @property
-    def rows(self):
+    def rows(self) -> List[ViewAxisSelection]:
         return self._rows
 
     @property
-    def columns(self):
+    def columns(self) -> List[ViewAxisSelection]:
         return self._columns
 
     @property
-    def MDX(self):
+    def titles(self) -> List[ViewTitleSelection]:
+        return self._titles
+
+    @property
+    def MDX(self) -> str:
         return self.as_MDX
 
     @property
-    def as_MDX(self):
+    def as_MDX(self) -> str:
         """ Build a valid MDX Query from an Existing cubeview. 
         Takes Zero suppression into account. 
         Throws an Exception when no elements are place on the columns.
@@ -108,59 +114,59 @@ class NativeView(View):
         return mdx
 
     @property
-    def suppress_empty_cells(self):
+    def suppress_empty_cells(self) -> bool:
         return self._suppress_empty_columns and self._suppress_empty_rows
 
     @property
-    def suppress_empty_columns(self):
+    def suppress_empty_columns(self) -> bool:
         return self._suppress_empty_columns
 
     @property
-    def suppress_empty_rows(self):
+    def suppress_empty_rows(self) -> bool:
         return self._suppress_empty_rows
 
     @property
-    def format_string(self):
+    def format_string(self) -> str:
         return self._format_string
 
     @suppress_empty_cells.setter
-    def suppress_empty_cells(self, value):
+    def suppress_empty_cells(self, value: bool):
         self.suppress_empty_columns = value
         self.suppress_empty_rows = value
 
     @suppress_empty_rows.setter
-    def suppress_empty_rows(self, value):
+    def suppress_empty_rows(self, value: bool):
         self._suppress_empty_rows = value
 
     @suppress_empty_columns.setter
-    def suppress_empty_columns(self, value):
+    def suppress_empty_columns(self, value: bool):
         self._suppress_empty_columns = value
 
     @format_string.setter
-    def format_string(self, value):
+    def format_string(self, value: str):
         self._format_string = value
 
-    def add_column(self, dimension_name, subset=None):
+    def add_column(self, dimension_name: str, subset: Union[Subset, AnonymousSubset] = None):
         """ Add Dimension or Subset to the column-axis
 
         :param dimension_name: name of the dimension
-        :param subset: instance of TM1py.Subset. Can be None instead.
+        :param subset: instance of TM1py.Subset. Can be None
         :return:
         """
         view_axis_selection = ViewAxisSelection(dimension_name=dimension_name, subset=subset)
         self._columns.append(view_axis_selection)
 
-    def remove_column(self, dimension_name):
+    def remove_column(self, dimension_name: str):
         """ remove dimension from the column axis
 
         :param dimension_name:
         :return:
         """
-        for column in self._columns:
-            if column.dimension_name == dimension_name:
+        for column in self._columns[:]:
+            if case_and_space_insensitive_equals(column.dimension_name, dimension_name):
                 self._columns.remove(column)
 
-    def add_row(self, dimension_name, subset=None):
+    def add_row(self, dimension_name: str, subset: Subset = None):
         """ Add Dimension or Subset to the row-axis
 
         :param dimension_name:
@@ -170,17 +176,17 @@ class NativeView(View):
         view_axis_selection = ViewAxisSelection(dimension_name=dimension_name, subset=subset)
         self._rows.append(view_axis_selection)
 
-    def remove_row(self, dimension_name):
+    def remove_row(self, dimension_name: str):
         """ remove dimension from the row axis
 
         :param dimension_name:
         :return:
         """
-        for row in self._rows:
-            if row.dimension_name == dimension_name:
+        for row in self._rows[:]:
+            if case_and_space_insensitive_equals(row.dimension_name, dimension_name):
                 self._rows.remove(row)
 
-    def add_title(self, dimension_name, selection, subset=None):
+    def add_title(self, dimension_name: str, selection: str, subset: Union[Subset, AnonymousSubset] = None):
         """ Add subset and element to the titles-axis
 
         :param dimension_name: name of the dimension.
@@ -191,18 +197,18 @@ class NativeView(View):
         view_title_selection = ViewTitleSelection(dimension_name, subset, selection)
         self._titles.append(view_title_selection)
 
-    def remove_title(self, dimension_name):
-        """ remove dimension from the titles-axis
+    def remove_title(self, dimension_name: str):
+        """ Remove dimension from the titles-axis
 
         :param dimension_name: name of the dimension.
         :return:
         """
-        for title in self._titles:
-            if title.dimension_name == dimension_name:
+        for title in self._titles[:]:
+            if case_and_space_insensitive_equals(title.dimension_name, dimension_name):
                 self._titles.remove(title)
 
     @classmethod
-    def from_json(cls, view_as_json, cube_name=None):
+    def from_json(cls, view_as_json: str, cube_name: Optional[str] = None) -> 'NativeView':
         """ Alternative constructor
                 :Parameters:
                     `view_as_json` : string, JSON
@@ -214,7 +220,7 @@ class NativeView(View):
         return NativeView.from_dict(view_as_dict, cube_name)
 
     @classmethod
-    def from_dict(cls, view_as_dict, cube_name=None):
+    def from_dict(cls, view_as_dict: Dict, cube_name: str = None) -> 'NativeView':
         titles, columns, rows = [], [], []
 
         for selection in view_as_dict['Titles']:
@@ -222,7 +228,7 @@ class NativeView(View):
                 subset = AnonymousSubset.from_dict(selection['Subset'])
             else:
                 subset = Subset.from_dict(selection['Subset'])
-            selected = selection['Selected']['Name']
+            selected = selection['Selected']['Name'] if selection['Selected'] else ""
             titles.append(ViewTitleSelection(dimension_name=subset.dimension_name,
                                              subset=subset, selected=selected))
         for i, axe in enumerate([view_as_dict['Columns'], view_as_dict['Rows']]):
@@ -246,8 +252,8 @@ class NativeView(View):
             columns=columns,
             rows=rows)
 
-    def _construct_body(self):
-        """ construct the ODATA conform JSON represenation for the NativeView entity.
+    def _construct_body(self) -> str:
+        """ construct the ODATA conform JSON representation for the NativeView entity.
 
         :return: string, the valid JSON
         """

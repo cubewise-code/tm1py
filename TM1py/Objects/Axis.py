@@ -2,9 +2,11 @@
 
 import collections
 import json
+from typing import Dict, Union
 
 from TM1py.Objects.Subset import Subset, AnonymousSubset
 from TM1py.Objects.TM1Object import TM1Object
+from TM1py.Utils import format_url
 
 
 class ViewAxisSelection(TM1Object):
@@ -12,7 +14,7 @@ class ViewAxisSelection(TM1Object):
 
     """
 
-    def __init__(self, dimension_name, subset):
+    def __init__(self, dimension_name: str, subset: Union[Subset, AnonymousSubset]):
         """
             :Parameters:
                 `dimension_name` : String
@@ -23,26 +25,26 @@ class ViewAxisSelection(TM1Object):
         self._hierarchy_name = dimension_name
 
     @property
-    def subset(self):
+    def subset(self) -> Union[Subset, AnonymousSubset]:
         return self._subset
 
     @property
-    def dimension_name(self):
+    def dimension_name(self) -> str:
         return self._dimension_name
 
     @property
-    def hierarchy_name(self):
+    def hierarchy_name(self) -> str:
         return self._hierarchy_name
 
     @property
-    def body(self):
+    def body(self) -> str:
         return json.dumps(self._construct_body(), ensure_ascii=False)
 
     @property
-    def body_as_dict(self):
+    def body_as_dict(self) -> Dict:
         return self._construct_body()
 
-    def _construct_body(self):
+    def _construct_body(self) -> Dict:
         """ construct the ODATA conform JSON represenation for the ViewAxisSelection entity.
 
         :return: dictionary
@@ -51,9 +53,10 @@ class ViewAxisSelection(TM1Object):
         if isinstance(self._subset, AnonymousSubset):
             body_as_dict['Subset'] = json.loads(self._subset.body)
         elif isinstance(self._subset, Subset):
-            path = 'Dimensions(\'{}\')/Hierarchies(\'{}\')/Subsets(\'{}\')'.format(
+            subset_path = format_url(
+                "Dimensions('{}')/Hierarchies('{}')/Subsets('{}')",
                 self._dimension_name, self._hierarchy_name, self._subset.name)
-            body_as_dict['Subset@odata.bind'] = path
+            body_as_dict['Subset@odata.bind'] = subset_path
         return body_as_dict
 
 
@@ -63,33 +66,33 @@ class ViewTitleSelection:
 
     """
 
-    def __init__(self, dimension_name, subset, selected):
+    def __init__(self, dimension_name: str, subset: Union[AnonymousSubset, Subset], selected: str):
         self._dimension_name = dimension_name
         self._hierarchy_name = dimension_name
         self._subset = subset
         self._selected = selected
 
     @property
-    def subset(self):
+    def subset(self) -> Union[Subset, AnonymousSubset]:
         return self._subset
 
     @property
-    def dimension_name(self):
+    def dimension_name(self) -> str:
         return self._dimension_name
 
     @property
-    def hierarchy_name(self):
+    def hierarchy_name(self) -> str:
         return self._hierarchy_name
 
     @property
-    def selected(self):
+    def selected(self) -> str:
         return self._selected
 
     @property
-    def body(self):
+    def body(self) -> str:
         return json.dumps(self._construct_body(), ensure_ascii=False)
 
-    def _construct_body(self):
+    def _construct_body(self) -> Dict:
         """ construct the ODATA conform JSON represenation for the ViewTitleSelection entity.
 
         :return: string, the valid JSON
@@ -98,10 +101,12 @@ class ViewTitleSelection:
         if isinstance(self._subset, AnonymousSubset):
             body_as_dict['Subset'] = json.loads(self._subset.body)
         elif isinstance(self._subset, Subset):
-            path = "Dimensions('{}')/Hierarchies('{}')/Subsets('{}')".format(
+            subset_path = format_url(
+                "Dimensions('{}')/Hierarchies('{}')/Subsets('{}')",
                 self._dimension_name, self._hierarchy_name, self._subset.name)
-            body_as_dict['Subset@odata.bind'] = path
-        selected = "Dimensions('{}')/Hierarchies('{}')/Elements('{}')".format(
+            body_as_dict['Subset@odata.bind'] = subset_path
+        element_path = format_url(
+            "Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
             self._dimension_name, self._hierarchy_name, self._selected)
-        body_as_dict['Selected@odata.bind'] = selected
+        body_as_dict['Selected@odata.bind'] = element_path
         return body_as_dict
