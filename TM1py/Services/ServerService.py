@@ -74,21 +74,23 @@ class ServerService(ObjectService):
         return response.json()['value']
 
     def get_message_log_entries(self, reverse: bool = True, since: datetime = None,
-                                until: datetime = None, top: int = None, level: str = None, msg_contains: str = None, **kwargs) -> Dict:
+                                until: datetime = None, top: int = None, logger: str = None, level: str = None, msg_contains: str = None, **kwargs) -> Dict:
         """
         :param reverse: Boolean
         :param since: of type datetime. If it doesn't have tz information, UTC is assumed.
         :param until: of type datetime. If it doesn't have tz information, UTC is assumed.
         :param top: Integer
-        :param msg_contains: string, will find if substring exists anywhere in message
+        :param logger: string, eg TM1.Server, TM1.Chore, TM1.Mdx.Interface, TM1.Process
         :param level: string, 1=Error, 2=Warning, 3=Info, 4=Debug, 5=Unknown
+        :param msg_contains: string or list, will find if substring exists anywhere in message
+
         :param kwargs:
         :return: Dict of server log
         """
         reverse = 'desc' if reverse else 'asc'
         url = '/api/v1/MessageLogEntries?$orderby=TimeStamp {}'.format(reverse)
 
-        if since or until or level or msg_contains:
+        if since or until or logger or level or msg_contains:
             log_filters = []
             if since:
                 # If since doesn't have tz information, UTC is assumed
@@ -102,21 +104,27 @@ class ServerService(ObjectService):
                     until = self.utc_localize_time(until)
                 log_filters.append(format_url("TimeStamp le {}", until.strftime("%Y-%m-%dT%H:%M:%SZ")))
 
+            if logger:
+                log_filters.append(format_url("Logger eq '{}'", logger))
+
             if level:
                 level_dict={'Error':1, 'Warning':2, 'Info':3, 'Debug':4, 'Unknown':5}
                 nLvl = level_dict[level]
                 log_filters.append("Level eq {}".format(nLvl))
 
             if msg_contains:
-                log_filters.append("contains(Message,'{}')".format(msg_contains))
+                if isinstance(msg_contains, list):
+                    msg_filters = []
+                    for msg in msg_contains:
+                        msg_filters.append(format_url("contains(Message,'{}')", msg))
+                    log_filters.append("({})".format(" and ".join(msg_filters)))
+                else:
+                    log_filters.append(format_url("contains(Message,'{}')", msg_contains))
 
             url += "&$filter={}".format(" and ".join(log_filters))
 
         if top:
             url += '&$top={}'.format(top)
-
-
-
 
         response = self._rest.GET(url, **kwargs)
         return response.json()['value']
