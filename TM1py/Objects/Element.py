@@ -2,18 +2,36 @@
 
 import collections
 import json
+from enum import Enum
+from typing import Union, Iterable, Dict, List
 
 from TM1py.Objects.TM1Object import TM1Object
-from TM1py.Utils.Utils import lower_and_drop_spaces
 
 
 class Element(TM1Object):
     """ Abstraction of TM1 Element
 
     """
-    valid_types = ('Numeric', 'String', 'Consolidated')
+    ELEMENT_ATTRIBUTES_PREFIX = "}ElementAttributes_"
 
-    def __init__(self, name, element_type, attributes=None, unique_name=None, index=None):
+    class Types(Enum):
+        NUMERIC = 1
+        STRING = 2
+        CONSOLIDATED = 3
+
+        def __str__(self):
+            return self.name.capitalize()
+
+        @classmethod
+        def _missing_(cls, value: str):
+            for member in cls:
+                if member.name.lower() == value.replace(" ", "").lower():
+                    return member
+            # default
+            raise ValueError(f"Invalid element type: '{value}'")
+
+    def __init__(self, name, element_type: Union[Types, str], attributes: List[str] = None, unique_name: str = None,
+                 index: int = None):
         self._name = name
         self._unique_name = unique_name
         self._index = index
@@ -22,7 +40,7 @@ class Element(TM1Object):
         self._attributes = attributes
 
     @staticmethod
-    def from_dict(element_as_dict):
+    def from_dict(element_as_dict: Dict) -> 'Element':
         return Element(name=element_as_dict['Name'],
                        unique_name=element_as_dict['UniqueName'],
                        index=element_as_dict['Index'],
@@ -30,47 +48,43 @@ class Element(TM1Object):
                        attributes=element_as_dict['Attributes'])
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @name.setter
-    def name(self, value):
+    def name(self, value: str):
         self._name = value
 
     @property
-    def unique_name(self):
+    def unique_name(self) -> str:
         return self._unique_name
 
     @property
-    def index(self):
+    def index(self) -> int:
         return self._index
 
     @property
-    def element_attributes(self):
+    def element_attributes(self) -> List[str]:
         return self._attributes
 
     @property
-    def element_type(self):
+    def element_type(self) -> Types:
         return self._element_type
 
     @element_type.setter
-    def element_type(self, value):
-        element_type = lower_and_drop_spaces(value).capitalize()
-        if element_type in self.valid_types:
-            self._element_type = element_type
-        else:
-            raise ValueError('{} is not a valid Element Type'.format(value))
+    def element_type(self, value: Union[Types, str]):
+        self._element_type = Element.Types(value)
 
     @property
-    def body(self):
+    def body(self) -> str:
         return json.dumps(self._construct_body())
 
     @property
-    def body_as_dict(self):
+    def body_as_dict(self) -> Dict:
         return self._construct_body()
 
-    def _construct_body(self):
+    def _construct_body(self) -> Dict:
         body_as_dict = collections.OrderedDict()
         body_as_dict['Name'] = self._name
-        body_as_dict['Type'] = self._element_type
+        body_as_dict['Type'] = str(self._element_type)
         return body_as_dict

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from typing import Dict
 
 
 class Server:
@@ -8,7 +9,7 @@ class Server:
             contains the information you get from http://localhost:5895/api/v1/Servers
             no methods so far
     """
-    def __init__(self, server_as_dict):
+    def __init__(self, server_as_dict: Dict):
         self.name = server_as_dict['Name']
         self.ip_address = server_as_dict['IPAddress']
         self.ip_v6_address = server_as_dict['IPv6Address']

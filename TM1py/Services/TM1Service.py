@@ -1,6 +1,8 @@
 import pickle
 
-from TM1py.Services import *
+from TM1py.Services import HierarchyService, SecurityService, ApplicationService, SubsetService, ServerService, \
+    MonitoringService, ProcessService, PowerBiService, AnnotationService, ViewService, RestService, CellService, \
+    ChoreService, DimensionService, CubeService, ElementService
 
 
 class TM1Service:
@@ -8,24 +10,29 @@ class TM1Service:
     
     Can be saved and restored from File, to avoid multiple authentication with TM1.
     """
+
     def __init__(self, **kwargs):
-        self._tm1_rest = RESTService(**kwargs)
+        self._tm1_rest = RestService(**kwargs)
 
         # instantiate all Services
+        self.annotations = AnnotationService(self._tm1_rest)
+        self.cells = CellService(self._tm1_rest)
         self.chores = ChoreService(self._tm1_rest)
         self.cubes = CubeService(self._tm1_rest)
         self.dimensions = DimensionService(self._tm1_rest)
+        self.elements = ElementService(self._tm1_rest)
+        self.hierarchies = HierarchyService(self._tm1_rest)
         self.monitoring = MonitoringService(self._tm1_rest)
+        self.power_bi = PowerBiService(self._tm1_rest)
         self.processes = ProcessService(self._tm1_rest)
         self.security = SecurityService(self._tm1_rest)
         self.server = ServerService(self._tm1_rest)
+        self.subsets = SubsetService(self._tm1_rest)
         self.applications = ApplicationService(self._tm1_rest)
+        self.views = ViewService(self._tm1_rest)
 
-        # Deprecated, use cubes.cells instead!
-        self.data = CellService(self._tm1_rest)
-
-    def logout(self):
-        self._tm1_rest.logout()
+    def logout(self, **kwargs):
+        self._tm1_rest.logout(**kwargs)
 
     def __enter__(self):
         return self

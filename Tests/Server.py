@@ -1,19 +1,17 @@
 import configparser
 import datetime
-import os
 import random
 import re
 import time
 import unittest
+from datetime import timedelta
+from pathlib import Path
 
 import dateutil
 
-from TM1py.Exceptions import TM1pyException
+from TM1py.Exceptions import TM1pyRestException
 from TM1py.Objects import Cube, Dimension, Hierarchy, Process
 from TM1py.Services import TM1Service
-
-config = configparser.ConfigParser()
-config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
 
 PREFIX = "TM1py_Tests_Server_"
 
@@ -22,6 +20,15 @@ class TestServerMethods(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        """
+        Establishes a connection to TM1 and creates TM! objects to use across all tests
+        """
+
+        # Connection to TM1
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+
         # Namings
         cls.dimension_name1 = PREFIX + "Dimension1"
         cls.dimension_name2 = PREFIX + "Dimension2"
@@ -29,8 +36,6 @@ class TestServerMethods(unittest.TestCase):
         cls.process_name1 = PREFIX + "Process1"
         cls.process_name2 = PREFIX + "Process2"
 
-        # Connect to TM1
-        cls.tm1 = TM1Service(**config['tm1srv01'])
 
         # create a simple cube with dimensions to test transactionlog methods
         if not cls.tm1.dimensions.exists(cls.dimension_name1):
@@ -125,8 +130,8 @@ class TestServerMethods(unittest.TestCase):
     def test_get_last_process_message_from_message_log(self):
         try:
             self.tm1.processes.execute(self.process_name1)
-        except TM1pyException as e:
-            if "ProcessCompletedWithMessages" in e._response:
+        except TM1pyRestException as e:
+            if "ProcessCompletedWithMessages" in e.response:
                 pass
             else:
                 raise e
@@ -143,7 +148,6 @@ class TestServerMethods(unittest.TestCase):
         regex = re.compile('TM1ProcessError_.*.log')
         self.assertFalse(regex.search(log_entry))
 
-    @unittest.skip("Doesn't work in TM1 11")
     def test_get_last_transaction_log_entries(self):
         self.tm1.processes.execute_ti_code(lines_prolog="CubeSetLogChanges('{}', {});".format(self.cube_name, 1))
 
@@ -178,7 +182,7 @@ class TestServerMethods(unittest.TestCase):
         # Digest time in TM1
         time.sleep(8)
 
-        user = config['tm1srv01']['user']
+        user = self.config['tm1srv01']['user']
         cube = self.cube_name
 
         # Query transaction log with top filter
@@ -204,7 +208,6 @@ class TestServerMethods(unittest.TestCase):
         for v1, v2, v3 in zip(random_values, reversed(values_from_top), reversed(values_from_since)):
             self.assertAlmostEqual(v1, v2, delta=0.000000001)
 
-    @unittest.skip("Doesn't work in TM1 11")
     def test_get_transaction_log_entries_from_today(self):
         # get datetime from today at 00:00:00
         today = datetime.datetime.combine(datetime.date.today(), datetime.time(0, 0))
@@ -217,20 +220,75 @@ class TestServerMethods(unittest.TestCase):
             today_date = datetime.date.today()
             self.assertTrue(entry_date == today_date)
 
+    def test_get_transaction_log_entries_until_yesterday(self):
+        # get datetime until yesterday at 00:00:00
+        yesterday = datetime.datetime.combine(datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
+        entries = self.tm1.server.get_transaction_log_entries(reverse=True, until=yesterday)
+        self.assertTrue(len(entries) > 0)
+        for entry in entries:
+            # skip invalid timestamps from log
+            if entry['TimeStamp'] == '0000-00-00T00:00Z':
+                continue
+
+            entry_timestamp = dateutil.parser.parse(entry['TimeStamp'])
+            entry_date = entry_timestamp.date()
+            yesterdays_date = datetime.date.today() - timedelta(days=1)
+            self.assertTrue(entry_date <= yesterdays_date)
+
+    def test_get_message_log_entries_from_today(self):
+        # get datetime from today at 00:00:00
+        today = datetime.datetime.combine(datetime.date.today(), datetime.time(0, 0))
+        entries = self.tm1.server.get_message_log_entries(reverse=True, since=today)
+
+        for entry in entries:
+            entry_timestamp = dateutil.parser.parse(entry['TimeStamp'])
+            # all the entries should have today's date
+            entry_date = entry_timestamp.date()
+            today_date = datetime.date.today()
+            self.assertTrue(entry_date == today_date)
+
+    def test_get_message_log_entries_until_yesterday(self):
+        # get datetime until yesterday at 00:00:00
+        yesterday = datetime.datetime.combine(datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
+
+        entries = self.tm1.server.get_message_log_entries(reverse=True, until=yesterday)
+        self.assertTrue(len(entries) > 0)
+        for entry in entries:
+            # skip invalid timestamps from log
+            if entry['TimeStamp'] == '0000-00-00T00:00Z':
+                continue
+
+            entry_timestamp = dateutil.parser.parse(entry['TimeStamp'])
+            entry_date = entry_timestamp.date()
+            yesterdays_date = datetime.date.today() - timedelta(days=1)
+            self.assertTrue(entry_date <= yesterdays_date)
+
+    def test_get_message_log_entries_only_yesterday(self):
+        # get datetime only yesterday at 00:00:00
+        yesterday = datetime.datetime.combine(datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
+        today = datetime.datetime.combine(datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
+
+        entries = self.tm1.server.get_message_log_entries(reverse=True, since=yesterday, until=today)
+        for entry in entries:
+            entry_timestamp = dateutil.parser.parse(entry['TimeStamp'])
+            entry_date = entry_timestamp.date()
+            yesterdays_date = datetime.date.today() - timedelta(days=1)
+            self.assertTrue(entry_date == yesterdays_date)
+
     def test_session_context_default(self):
         threads = self.tm1.monitoring.get_threads()
         for thread in threads:
-            if "GET /api/v1/Threads" in thread["Function"] and thread["Name"] == config['tm1srv01']['user']:
+            if "GET /api/v1/Threads" in thread["Function"] and thread["Name"] == self.config['tm1srv01']['user']:
                 self.assertTrue(thread["Context"] == "TM1py")
                 return
         raise Exception("Did not find my own Thread")
 
     def test_session_context_custom(self):
         app_name = "Some Application"
-        with TM1Service(**config['tm1srv01'], session_context=app_name) as tm1:
+        with TM1Service(**self.config['tm1srv01'], session_context=app_name) as tm1:
             threads = tm1.monitoring.get_threads()
             for thread in threads:
-                if "GET /api/v1/Threads" in thread["Function"] and thread["Name"] == config['tm1srv01']['user']:
+                if "GET /api/v1/Threads" in thread["Function"] and thread["Name"] == self.config['tm1srv01']['user']:
                     self.assertTrue(thread["Context"] == app_name)
                     return
         raise Exception("Did not find my own Thread")

@@ -2,8 +2,10 @@
 
 import collections
 import json
+from typing import Dict, List
 
 from TM1py.Objects.TM1Object import TM1Object
+from TM1py.Utils import format_url
 
 
 class ChoreTask(TM1Object):
@@ -16,7 +18,8 @@ class ChoreTask(TM1Object):
         - The parameters for the process
     
     """
-    def __init__(self, step, process_name, parameters):
+
+    def __init__(self, step: int, process_name: str, parameters: List[Dict[str, str]]):
         """
         
         :param step: step in the execution order of the Chores' processes. 1 to n, where n the number of processes
@@ -34,36 +37,36 @@ class ChoreTask(TM1Object):
         self._parameters = parameters
 
     @classmethod
-    def from_dict(cls, chore_task_as_dict):
+    def from_dict(cls, chore_task_as_dict: Dict):
         return cls(step=int(chore_task_as_dict['Step']),
                    process_name=chore_task_as_dict['Process']['Name'],
-                   parameters=[{'Name': p['Name'], 'Value':p['Value']} for p in chore_task_as_dict['Parameters']])
+                   parameters=[{'Name': p['Name'], 'Value': p['Value']} for p in chore_task_as_dict['Parameters']])
 
     @property
-    def body_as_dict(self):
+    def body_as_dict(self) -> Dict:
         body_as_dict = collections.OrderedDict()
-        body_as_dict['Process@odata.bind'] = 'Processes(\'{}\')'.format(self._process_name)
+        body_as_dict['Process@odata.bind'] = format_url("Processes('{}')", self._process_name)
         body_as_dict['Parameters'] = self._parameters
         return body_as_dict
 
     @property
-    def step(self):
+    def step(self) -> int:
         return self._step
 
     @property
-    def process_name(self):
+    def process_name(self) -> str:
         return self._process_name
 
     @property
-    def parameters(self):
+    def parameters(self) -> List[Dict[str, str]]:
         return self._parameters
 
     @property
-    def body(self):
+    def body(self) -> str:
         return json.dumps(self.body_as_dict, ensure_ascii=False)
 
-    def __eq__(self, other):
+    def __eq__(self, other: 'ChoreTask') -> bool:
         return self.process_name == other.process_name and self.parameters == other.parameters
 
-    def __ne__(self, other):
+    def __ne__(self, other: 'ChoreTask') -> bool:
         return self.process_name != other.process_name or self._parameters != other.parameters

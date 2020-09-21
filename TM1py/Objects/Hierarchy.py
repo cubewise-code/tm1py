@@ -2,11 +2,13 @@
 
 import collections
 import json
+from typing import List, Dict, Iterable, Optional, Tuple, Union
 
 from TM1py.Objects.Element import Element
 from TM1py.Objects.ElementAttribute import ElementAttribute
 from TM1py.Objects.TM1Object import TM1Object
-from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, CaseAndSpaceInsensitiveTuplesDict, lower_and_drop_spaces
+from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, CaseAndSpaceInsensitiveTuplesDict, lower_and_drop_spaces, \
+    case_and_space_insensitive_equals
 
 
 class Hierarchy(TM1Object):
@@ -32,125 +34,145 @@ class Hierarchy(TM1Object):
 
     """
 
-    def __init__(self, name, dimension_name, elements=None, element_attributes=None,
-                 edges=None, subsets=None, structure=None, default_member=None):
+    def __init__(
+            self,
+            name: str,
+            dimension_name: str,
+            elements: Optional[Iterable['Element']] = None,
+            element_attributes: Optional[Iterable['ElementAttribute']] = None,
+            edges: Optional['Dict'] = None,
+            subsets: Optional[Iterable[str]] = None,
+            structure: Optional[int] = None,
+            default_member: Optional[str] = None):
+
         self._name = name
-        self._dimension_name = dimension_name
+        self._dimension_name = None
+        self.dimension_name = dimension_name
         self._elements = CaseAndSpaceInsensitiveDict()
         if elements:
             for elem in elements:
                 self._elements[elem.name] = elem
-        self._element_attributes = element_attributes if element_attributes else []
+        self._element_attributes = list(element_attributes) if element_attributes else []
         self._edges = CaseAndSpaceInsensitiveTuplesDict(edges) if edges else CaseAndSpaceInsensitiveTuplesDict()
-        self._subsets = subsets if subsets else []
+        self._subsets = list(subsets) if subsets else []
         # balanced is true, false or None (in versions < TM1 11)
-        self._balanced = structure if not structure else structure == 0
+        self._balanced = False if not structure else structure == 0
         self._default_member = default_member
 
     @classmethod
-    def from_dict(cls, hierarchy_as_dict):
+    def from_dict(cls, hierarchy_as_dict: Dict) -> 'Hierarchy':
         # Build the Dictionary for the edges
-        edges = CaseAndSpaceInsensitiveTuplesDict({(edge['ParentName'], edge['ComponentName']): edge['Weight']
-                                                   for edge
-                                                   in hierarchy_as_dict['Edges']})
-        return cls(name=hierarchy_as_dict['Name'],
-                   dimension_name=hierarchy_as_dict['UniqueName'][1:hierarchy_as_dict['UniqueName'].find("].[")],
-                   elements=[Element.from_dict(elem) for elem in hierarchy_as_dict['Elements']],
-                   element_attributes=[ElementAttribute(ea['Name'], ea['Type'])
-                                       for ea in hierarchy_as_dict['ElementAttributes']],
-                   edges=edges,
-                   subsets=[subset['Name'] for subset in hierarchy_as_dict['Subsets']],
-                   structure=hierarchy_as_dict['Structure'] if 'Structure' in hierarchy_as_dict else None,
-                   default_member=hierarchy_as_dict['DefaultMember']['Name']
-                   if hierarchy_as_dict['DefaultMember'] else None)
+        edges = CaseAndSpaceInsensitiveTuplesDict(
+            {(edge['ParentName'], edge['ComponentName']): edge['Weight']
+             for edge
+             in hierarchy_as_dict['Edges']})
+
+        return cls(
+            name=hierarchy_as_dict['Name'],
+            dimension_name=hierarchy_as_dict['UniqueName'][1:hierarchy_as_dict['UniqueName'].find("].[")],
+            elements=[Element.from_dict(elem) for elem in hierarchy_as_dict['Elements']],
+            element_attributes=[ElementAttribute(ea['Name'], ea['Type'])
+                                for ea in hierarchy_as_dict['ElementAttributes']],
+            edges=edges,
+            subsets=[subset['Name'] for subset in hierarchy_as_dict['Subsets']],
+            structure=hierarchy_as_dict['Structure'] if 'Structure' in hierarchy_as_dict else None,
+            default_member=hierarchy_as_dict['DefaultMember']['Name']
+            if hierarchy_as_dict['DefaultMember'] else None)
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @name.setter
-    def name(self, value):
+    def name(self, value: str):
         self._name = value
 
     @property
-    def dimension_name(self):
+    def dimension_name(self) -> str:
         return self._dimension_name
 
     @dimension_name.setter
-    def dimension_name(self, dimension_name):
+    def dimension_name(self, dimension_name: str):
         self._dimension_name = dimension_name
 
     @property
-    def elements(self):
+    def elements(self) -> CaseAndSpaceInsensitiveDict:
         return self._elements
 
     @property
-    def element_attributes(self):
+    def element_attributes(self) -> List[ElementAttribute]:
         return self._element_attributes
 
     @property
-    def edges(self):
+    def edges(self) -> 'CaseAndSpaceInsensitiveTuplesDict':
         return self._edges
 
     @property
-    def subsets(self):
+    def subsets(self) -> List[str]:
         return self._subsets
 
     @property
-    def balanced(self):
+    def balanced(self) -> bool:
         return self._balanced
 
     @property
-    def default_member(self):
+    def default_member(self) -> str:
         return self._default_member
 
     @property
-    def body(self):
+    def body(self) -> str:
         return json.dumps(self._construct_body())
 
     @property
-    def body_as_dict(self):
+    def body_as_dict(self) -> Dict:
         return self._construct_body()
 
-    def contains_element(self, element_name):
+    def contains_element(self, element_name: str) -> bool:
         return element_name in self._elements
 
-    def get_element(self, element_name):
+    def get_element(self, element_name: str) -> Element:
         if element_name in self._elements:
             return self._elements[element_name]
         else:
             raise ValueError("Element: {} not found in Hierarchy: {}".format(element_name, self.name))
 
-    def add_element(self, element_name, element_type):
+    def add_element(self, element_name: str, element_type: Union[str, Element.Types]):
         if element_name in self._elements:
-            raise Exception("Elementname must be unique")
-        e = Element(name=element_name, element_type=element_type)
-        self._elements[element_name] = e
+            raise ValueError("Element name must be unique")
 
-    def update_element(self, element_name, element_type=None):
+        self._elements[element_name] = Element(name=element_name, element_type=element_type)
+
+    def update_element(self, element_name: str, element_type: Union[str, Element.Types]):
         self._elements[element_name].element_type = element_type
 
-    def remove_element(self, element_name):
+    def remove_element(self, element_name: str):
         if element_name not in self._elements:
             return
         del self._elements[element_name]
         self.remove_edges_related_to_element(element_name=element_name)
 
-    def add_edge(self, parent, component, weight):
+    def remove_all_elements(self):
+        self._elements = CaseAndSpaceInsensitiveDict()
+        self.remove_all_edges()
+
+    def add_edge(self, parent: str, component: str, weight: int):
         self._edges[(parent, component)] = weight
 
-    def update_edge(self, parent, component, weight):
+    def update_edge(self, parent: str, component: str, weight: int):
         self._edges[(parent, component)] = weight
 
-    def remove_edge(self, parent, component):
+    def remove_edge(self, parent: str, component: str):
         if (parent, component) in self.edges:
             del self.edges[(parent, component)]
 
-    def remove_edges(self, edges):
+    def remove_edges(self, edges: Iterable[Tuple[str, str]]):
         for edge in edges:
             self.remove_edge(*edge)
 
-    def remove_edges_related_to_element(self, element_name):
+    def remove_all_edges(self):
+        self._edges = CaseAndSpaceInsensitiveTuplesDict()
+
+    def remove_edges_related_to_element(self, element_name: str):
         element_name_adjusted = lower_and_drop_spaces(element_name)
         edges_to_remove = set()
         for edge in self._edges.adjusted_keys():
@@ -158,16 +180,19 @@ class Hierarchy(TM1Object):
                 edges_to_remove.add(edge)
         self.remove_edges(edges=edges_to_remove)
 
-    def add_element_attribute(self, name, attribute_type):
-        if name not in self.element_attributes:
-            self.element_attributes.append(ElementAttribute(name, attribute_type))
+    def add_element_attribute(self, name: str, attribute_type: str):
+        attribute = ElementAttribute(name, attribute_type)
+        if attribute not in self.element_attributes:
+            self.element_attributes.append(attribute)
 
-    def remove_element_attribute(self, name):
-        if name in self.element_attributes:
-            self.element_attributes.remove(name)
+    def remove_element_attribute(self, name: str):
+        self._element_attributes = [
+            element_attribute
+            for element_attribute
+            in self.element_attributes if not case_and_space_insensitive_equals(element_attribute.name, name)]
 
-    def _construct_body(self, element_attributes=False):
-        """ 
+    def _construct_body(self, element_attributes: Optional[bool] = False) -> Dict:
+        """
         With TM1 10.2.2 Hierarchy and Element Attributes can't be created in one batch
         -> https://www.ibm.com/developerworks/community/forums/html/threadTopic?id=d91f3e0e-d305-44db-ac02-2fdcbee00393
         Thus, no need to have the ElementAttribute included in the JSON

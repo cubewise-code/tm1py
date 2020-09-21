@@ -1,26 +1,35 @@
 import configparser
-import os
 import unittest
+from base64 import b64encode
+from pathlib import Path
 
+from TM1py.Exceptions import TM1pyRestException
 from TM1py.Objects import User
+from TM1py.Objects.User import UserType
 from TM1py.Services import TM1Service
 from TM1py.Utils.Utils import CaseAndSpaceInsensitiveSet
-
-config = configparser.ConfigParser()
-config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
 
 PREFIX = "TM1py_Tests_"
 
 
 class TestSecurityMethods(unittest.TestCase):
-    tm1 = None
 
     @classmethod
-    def setup_class(cls):
-        cls.tm1 = TM1Service(**config['tm1srv01'])
-        cls.user_name = PREFIX + "User1"
-        cls.user = User(name=cls.user_name, groups=[], password='TM1py')
-        cls.group_name1 = PREFIX + "Group1"
+    def setUpClass(cls):
+        """
+        Establishes a connection to TM1 and creates TM! objects to use across all tests
+        """
+
+        # Connection to TM1
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+
+        cls.user_name = PREFIX + "Us'er1"
+        cls.user_name_exotic_password = "UserWithExoticPassword"
+        cls.enabled = True
+        cls.user = User(name=cls.user_name, groups=[], password='TM1py', enabled=cls.enabled)
+        cls.group_name1 = PREFIX + "Gro'up1"
         cls.group_name2 = PREFIX + "Group2"
         cls.user.add_group(cls.group_name1)
 
@@ -40,6 +49,8 @@ class TestSecurityMethods(unittest.TestCase):
         self.tm1.security.delete_user(self.user_name)
         self.tm1.security.delete_group(self.group_name1)
         self.tm1.security.delete_group(self.group_name2)
+        if self.user_name_exotic_password in self.tm1.security.get_all_user_names():
+            self.tm1.security.delete_user(self.user_name_exotic_password)
 
     def test_get_user(self):
         u = self.tm1.security.get_user(self.user_name)
@@ -50,9 +61,9 @@ class TestSecurityMethods(unittest.TestCase):
 
     def test_get_current_user(self):
         me = self.tm1.security.get_current_user()
-        self.assertEqual(me.name, config['tm1srv01']['User'])
+        self.assertEqual(me.name, self.config['tm1srv01']['User'])
 
-        user = self.tm1.security.get_user(config['tm1srv01']['User'])
+        user = self.tm1.security.get_user(self.config['tm1srv01']['User'])
         self.assertEqual(me, user)
 
     def test_update_user(self):
@@ -70,6 +81,75 @@ class TestSecurityMethods(unittest.TestCase):
         # test it !
         groups = self.tm1.security.get_groups(u.name)
         self.assertNotIn(self.group_name2, groups)
+
+    def test_user_type_invalid_type(self):
+        with self.assertRaises(ValueError) as e:
+            self.tm1.security.create_user(User("not_relevant", groups=["ADMIN"], user_type=3))
+
+    def test_user_type_invalid_str(self):
+        with self.assertRaises(ValueError) as e:
+            self.tm1.security.create_user(User("not_relevant", groups=["ADMIN"], user_type="not_a_valid_type"))
+
+    def test_user_type_derive_user_from_groups(self):
+        user = User("not_relevant", groups=["Marketing"], user_type=None)
+        self.assertEqual(user.user_type, UserType.User)
+
+    def test_user_type_derive_security_admin_from_groups(self):
+        user = User("not_relevant", groups=["SecurityAdmin"], user_type=None)
+        self.assertEqual(user.user_type, UserType.SecurityAdmin)
+
+    def test_user_type_derive_data_admin_from_groups(self):
+        user = User("not_relevant", groups=["DataAdmin"], user_type=None)
+        self.assertEqual(user.user_type, UserType.DataAdmin)
+
+    def test_user_type_derive_admin_from_groups(self):
+        user = User("not_relevant", groups=["ADMIN"], user_type=None)
+        self.assertEqual(user.user_type, UserType.Admin)
+
+    def test_user_type_derive_operations_admin_from_groups(self):
+        user = User("not_relevant", groups=["OperationsAdmin"], user_type=None)
+        self.assertEqual(user.user_type, UserType.OperationsAdmin)
+
+    def test_update_user_properties(self):
+        # get user
+        u = self.tm1.security.get_user(self.user_name)
+        self.assertNotIn("DataAdmin", u.groups)
+
+        # update enabled
+        u.enabled = False
+        # update UserType
+        u.user_type = UserType.DataAdmin
+        # update user. Add Group
+        u.add_group(self.group_name2)
+        self.assertIn("DataAdmin", u.groups)
+
+        self.tm1.security.update_user(u)
+        u = self.tm1.security.get_user(u.name)
+
+        self.assertFalse(u.enabled)
+        self.assertEqual(u.user_type, UserType.DataAdmin)
+        self.assertIn("DataAdmin", u.groups)
+
+    def test_update_user_properties_with_type_as_str(self):
+        # get user
+        u = self.tm1.security.get_user(self.user_name)
+        self.assertEqual(u.user_type, UserType.User)
+        self.assertNotIn("DataAdmin", u.groups)
+
+        # update enabled
+        u.enabled = False
+        # update UserType
+        u.user_type = "dataadmin"
+        # update user. Add Group
+        u.add_group(self.group_name2)
+
+        self.tm1.security.update_user(u)
+
+        u = self.tm1.security.get_user(u.name)
+
+        self.assertFalse(u.enabled)
+        self.assertEqual(u.user_type, UserType.DataAdmin)
+        self.assertIn("DataAdmin", u.groups)
 
     def test_get_all_users(self):
         all_users = [user.name for user in self.tm1.security.get_all_users()]
@@ -105,7 +185,8 @@ class TestSecurityMethods(unittest.TestCase):
 
     def test_get_user_names_from_group(self):
         users = self.tm1.security.get_user_names_from_group(self.group_name1)
-        mdx = "{ FILTER ( { [}Clients].Members } , [}ClientGroups].([}Groups].[" + self.group_name1 + "]) = '" + self.group_name1 + "' ) }"
+        mdx = "{ FILTER ( { [}Clients].Members } , [}ClientGroups].([}Groups].[" + self.group_name1 + "]) = '" + \
+              self.group_name1.replace("'", "''") + "' ) }"
         clients = self.tm1.dimensions.execute_mdx("}Clients", mdx)
         self.assertGreater(len(users), 0)
         self.assertGreater(len(clients), 0)
@@ -123,12 +204,29 @@ class TestSecurityMethods(unittest.TestCase):
         self.assertGreater(len(groups), 0)
         self.assertEqual(
             sorted(groups),
-            sorted(self.tm1.dimensions.hierarchies.elements.get_element_names("}Groups", "}Groups"))
-        )
+            sorted(self.tm1.dimensions.hierarchies.elements.get_element_names("}Groups", "}Groups")))
 
     def test_security_refresh(self):
         response = self.tm1.security.security_refresh()
         self.assertTrue(response.ok)
+
+    def test_auth_with_exotic_characters_in_password(self):
+        exotic_password = "d'8!?:Y4"
+
+        # create user
+        user = User(
+            name=self.user_name_exotic_password,
+            groups=("ADMIN",),
+            password=exotic_password)
+        self.tm1.security.create_user(user)
+
+        # login as user with exotic password
+        kwargs = dict(self.config["tm1srv01"])
+        kwargs["user"] = user.name
+        kwargs["password"] = exotic_password
+        # raises TM1pyException if login fails
+        with TM1Service(**kwargs) as tm1_second_conn:
+            self.assertEqual(tm1_second_conn.whoami.name, user.name)
 
     def test_create_and_delete_user(self):
         u = User(name=PREFIX + "User2", groups=())
@@ -153,6 +251,126 @@ class TestSecurityMethods(unittest.TestCase):
         groups_after_delete = self.tm1.security.get_all_groups()
         self.assertIn(group, groups_before_delete)
         self.assertNotIn(group, groups_after_delete)
+
+    def test_tm1service_with_encrypted_password_decode_b64_as_string(self):
+        user_name = "TM1py user name"
+        user = User(name=user_name, groups=["ADMIN"], password="apple")
+        if user.name in self.tm1.security.get_all_user_names():
+            self.tm1.security.delete_user(user_name)
+        self.tm1.security.create_user(user)
+
+        with TM1Service(
+                user=user.name,
+                password=b64encode(str.encode(user._password)),
+                decode_b64="True",
+                base_url=self.tm1._tm1_rest._base_url,
+                ssl=self.tm1._tm1_rest._ssl) as _:
+            # if no exception. Login was successful
+            pass
+
+        self.tm1.security.delete_user(user.name)
+
+    def test_tm1service_without_encrypted_password(self):
+        user_name = "TM1py user name"
+        user = User(name=user_name, groups=["ADMIN"], password="apple")
+        if user.name in self.tm1.security.get_all_user_names():
+            self.tm1.security.delete_user(user_name)
+        self.tm1.security.create_user(user)
+
+        with TM1Service(
+                user=user.name,
+                password=user._password,
+                decode_b64=False,
+                base_url=self.tm1._tm1_rest._base_url,
+                ssl=self.tm1._tm1_rest._ssl) as _:
+            # if no exception. Login was successful
+            pass
+
+        self.tm1.security.delete_user(user.name)
+
+    def test_tm1service_with_encrypted_password(self):
+        user_name = "TM1py user name"
+        user = User(name=user_name, groups=["ADMIN"], password="apple")
+        if user.name in self.tm1.security.get_all_user_names():
+            self.tm1.security.delete_user(user_name)
+        self.tm1.security.create_user(user)
+
+        with TM1Service(
+                user=user.name,
+                password=b64encode(str.encode(user._password)),
+                decode_b64=True,
+                base_url=self.tm1._tm1_rest._base_url,
+                ssl=self.tm1._tm1_rest._ssl) as _:
+            # if no exception. Login was successful
+            pass
+
+        self.tm1.security.delete_user(user.name)
+
+    def test_tm1service_with_encrypted_password_fail(self):
+        user_name = "TM1py user name"
+        user = User(name=user_name, groups=["ADMIN"], password="apple")
+        if user.name in self.tm1.security.get_all_user_names():
+            self.tm1.security.delete_user(user_name)
+        self.tm1.security.create_user(user)
+
+        self.assertRaises(TM1pyRestException, TM1Service,
+                          user=user.name,
+                          password=b64encode(str.encode("banana")),
+                          decode_b64=True,
+                          base_url=self.tm1._tm1_rest._base_url,
+                          ssl=self.tm1._tm1_rest._ssl)
+
+        self.tm1.security.delete_user(user.name)
+
+    def test_tm1service_with_plain_password(self):
+        user_name = "TM1py user name"
+        user = User(name=user_name, groups=["ADMIN"], password="apple")
+        if user.name in self.tm1.security.get_all_user_names():
+            self.tm1.security.delete_user(user_name)
+        self.tm1.security.create_user(user)
+
+        with TM1Service(
+                user=user.name,
+                password=user.password,
+                base_url=self.tm1._tm1_rest._base_url,
+                ssl=self.tm1._tm1_rest._ssl) as _:
+            # if no exception. Login was successful
+            pass
+        self.tm1.security.delete_user(user.name)
+
+    def test_tm1service_with_plain_password_fail(self):
+        user_name = "TM1py user name"
+        user = User(name=user_name, groups=["ADMIN"], password="apple")
+        if user.name in self.tm1.security.get_all_user_names():
+            self.tm1.security.delete_user(user_name)
+        self.tm1.security.create_user(user)
+        # test with random (wrong) password
+        self.assertRaises(TM1pyRestException, TM1Service,
+                          user=user.name,
+                          password="banana",
+                          base_url=self.tm1._tm1_rest._base_url,
+                          ssl=self.tm1._tm1_rest._ssl)
+
+        self.tm1.security.delete_user(user.name)
+
+    def test_user_exists_true(self):
+        self.assertTrue(self.tm1.security.user_exists(user_name=self.user_name))
+
+    def test_user_exists_false(self):
+        self.assertFalse(self.tm1.security.user_exists(user_name="NotAValidName"))
+
+    def test_group_exists_true(self):
+        self.assertTrue(self.tm1.security.group_exists(group_name=self.group_name1))
+
+    def test_group_exists_false(self):
+        self.assertFalse(self.tm1.security.group_exists(group_name="NotAValidName"))
+
+    def test_impersonate(self):
+        tm1 = TM1Service(**self.config['tm1srv01'])
+        self.assertNotEqual(self.user_name, tm1.whoami.name)
+
+        tm1 = TM1Service(**self.config['tm1srv01'], impersonate=self.user_name)
+        self.assertEqual(self.user_name, tm1.whoami.name)
 
     @classmethod
     def teardown_class(cls):

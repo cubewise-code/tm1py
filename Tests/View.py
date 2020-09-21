@@ -1,13 +1,10 @@
 import configparser
-import os
+from pathlib import Path
 import random
 import unittest
 
 from TM1py.Objects import AnonymousSubset, Subset, Cube, Dimension, Element, Hierarchy, MDXView, NativeView
 from TM1py.Services import TM1Service
-
-config = configparser.ConfigParser()
-config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
 
 CUBE_NAME = 'TM1py_Tests_View_Cube'
 DIMENSION_NAMES = [
@@ -18,14 +15,21 @@ SUBSET_NAME = 'TM1py_Tests_View_Subset'
 
 
 class TestViewMethods(unittest.TestCase):
-    tm1 = TM1Service(**config['tm1srv01'])
 
     native_view_name = 'TM1py_Tests_Native_View'
     mdx_view_name = 'TM1py_Tests_Mdx_View'
 
-    # Setup Cubes, Dimensions and Subsets
     @classmethod
-    def setup_class(cls):
+    def setUpClass(cls):
+        """
+        Establishes a connection to TM1 and creates TM! objects to use across all tests
+        """
+
+        # Connection to TM1
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        
         # Build Dimensions
         for i in range(3):
             elements = [Element('Element {}'.format(str(j)), 'Numeric') for j in range(1, 1001)]
@@ -49,7 +53,7 @@ class TestViewMethods(unittest.TestCase):
             element2 = 'Element ' + str(random.randint(1, 1000))
             element3 = 'Element ' + str(random.randint(1, 1000))
             cellset[(element1, element2, element3)] = random.randint(1, 1000)
-        cls.tm1.data.write_values(CUBE_NAME, cellset)
+        cls.tm1.cells.write_values(CUBE_NAME, cellset)
 
     def setUp(self):
         for private in (True, False):
@@ -206,7 +210,7 @@ class TestViewMethods(unittest.TestCase):
                 view_name=self.native_view_name,
                 private=private)
             # Sum up all the values from the views
-            data_original = self.tm1.data.execute_view(
+            data_original = self.tm1.cells.execute_view(
                 cube_name=CUBE_NAME,
                 view_name=self.native_view_name,
                 private=private)
@@ -227,7 +231,7 @@ class TestViewMethods(unittest.TestCase):
                 view=native_view_original,
                 private=private)
             # Get it and check if its different
-            data_updated = self.tm1.data.execute_view(
+            data_updated = self.tm1.cells.execute_view(
                 cube_name=CUBE_NAME,
                 view_name=self.native_view_name,
                 private=private)
@@ -244,7 +248,7 @@ class TestViewMethods(unittest.TestCase):
                 view_name=self.mdx_view_name,
                 private=private)
             # Get data from mdx view
-            data_mdx_original = self.tm1.data.execute_view(
+            data_mdx_original = self.tm1.cells.execute_view(
                 cube_name=CUBE_NAME,
                 view_name=mdx_view_original.name,
                 private=private)
@@ -262,7 +266,7 @@ class TestViewMethods(unittest.TestCase):
                 cube_name=CUBE_NAME,
                 view_name=self.mdx_view_name,
                 private=private)
-            data_mdx_updated = self.tm1.data.execute_view(
+            data_mdx_updated = self.tm1.cells.execute_view(
                 cube_name=CUBE_NAME,
                 view_name=mdx_view_updated.name,
                 private=private)
