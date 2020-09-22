@@ -4,6 +4,7 @@ import functools
 import json
 from datetime import datetime
 from typing import Dict, Optional
+from collections.abc import Iterable
 
 import pytz
 from requests import Response
@@ -11,6 +12,7 @@ from requests import Response
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import format_url
+from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict
 
 
 def odata_track_changes_header(func):
@@ -74,36 +76,59 @@ class ServerService(ObjectService):
         return response.json()['value']
 
     def get_message_log_entries(self, reverse: bool = True, since: datetime = None,
-                                until: datetime = None, top: int = None, **kwargs) -> Dict:
+                                until: datetime = None, top: int = None, logger: str = None,
+                                level: str = None, msg_contains: Iterable = None, **kwargs) -> Dict:
         """
         :param reverse: Boolean
         :param since: of type datetime. If it doesn't have tz information, UTC is assumed.
         :param until: of type datetime. If it doesn't have tz information, UTC is assumed.
         :param top: Integer
+        :param logger: string, eg TM1.Server, TM1.Chore, TM1.Mdx.Interface, TM1.Process
+        :param level: string, ERROR, WARNING, INFO, DEBUG, UNKNOWN
+        :param msg_contains: iterable, find substring in log message; list of substrings will be queried as AND statement
+
         :param kwargs:
         :return: Dict of server log
         """
         reverse = 'desc' if reverse else 'asc'
         url = '/api/v1/MessageLogEntries?$orderby=TimeStamp {}'.format(reverse)
 
-        if since or until:
-            time_filters = []
+        if since or until or logger or level or msg_contains:
+            log_filters = []
+
             if since:
                 # If since doesn't have tz information, UTC is assumed
                 if not since.tzinfo:
                     since = self.utc_localize_time(since)
-                time_filters.append(format_url("TimeStamp ge {}", since.strftime("%Y-%m-%dT%H:%M:%SZ")))
+                log_filters.append(format_url("TimeStamp ge {}", since.strftime("%Y-%m-%dT%H:%M:%SZ")))
 
             if until:
                 # If until doesn't have tz information, UTC is assumed
                 if not until.tzinfo:
                     until = self.utc_localize_time(until)
-                time_filters.append(format_url("TimeStamp le {}", until.strftime("%Y-%m-%dT%H:%M:%SZ")))
+                log_filters.append(format_url("TimeStamp le {}", until.strftime("%Y-%m-%dT%H:%M:%SZ")))
 
-            url += "&$filter={}".format(" and ".join(time_filters))
+            if logger:
+                log_filters.append(format_url("Logger eq '{}'", logger))
+
+            if level:
+                level_dict = CaseAndSpaceInsensitiveDict({'ERROR': 1, 'WARNING': 2, 'INFO': 3, 'DEBUG': 4, 'UNKNOWN': 5})
+                level_index = level_dict.get(level)
+                if level_index:
+                    log_filters.append("Level eq {}".format(level_index))
+
+            if msg_contains:
+                if isinstance(msg_contains, str):
+                    log_filters.append(format_url("contains(Message,'{}')", msg_contains))
+                else:
+                    msg_filters = [format_url("contains(Message,'{}')", wildcard) for wildcard in msg_contains]
+                    log_filters.append("({})".format(" and ".join(msg_filters)))
+
+            url += "&$filter={}".format(" and ".join(log_filters))
 
         if top:
             url += '&$top={}'.format(top)
+
         response = self._rest.GET(url, **kwargs)
         return response.json()['value']
 
