@@ -11,7 +11,6 @@ class TM1Service:
 
     def __init__(self, **kwargs):
         self._tm1_rest = RestService(**kwargs)
-
         # instantiate all Services
         self.annotations = AnnotationService(self._tm1_rest)
         self.cells = CellService(self._tm1_rest)
@@ -27,6 +26,7 @@ class TM1Service:
         self.server = ServerService(self._tm1_rest)
         self.subsets = SubsetService(self._tm1_rest)
         self.applications = ApplicationService(self._tm1_rest)
+        self.sandboxes = SandboxService(self._tm1_rest)
 
     def logout(self, **kwargs):
         self._tm1_rest.logout(**kwargs)
@@ -39,6 +39,7 @@ class TM1Service:
 
     @property
     def whoami(self):
+        print("who am i")
         return self.security.get_current_user()
 
     @property
@@ -50,10 +51,10 @@ class TM1Service:
         return self._tm1_rest
 
     def save_to_file(self, file_name):
-        with open(file_name, 'wb') as file:
+        with open(file_name, "wb") as file:
             pickle.dump(self, file)
 
     @classmethod
     def restore_from_file(cls, file_name):
-        with open(file_name, 'rb') as file:
+        with open(file_name, "rb") as file:
             return pickle.load(file)
