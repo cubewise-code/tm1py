@@ -4,6 +4,7 @@ import functools
 import json
 from datetime import datetime
 from typing import Dict, Optional
+from collections.abc import Iterable
 
 import pytz
 from requests import Response
@@ -11,6 +12,7 @@ from requests import Response
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import format_url
+from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict
 
 
 def odata_track_changes_header(func):
@@ -74,15 +76,16 @@ class ServerService(ObjectService):
         return response.json()['value']
 
     def get_message_log_entries(self, reverse: bool = True, since: datetime = None,
-                                until: datetime = None, top: int = None, logger: str = None, level: str = None, msg_contains: str = None, **kwargs) -> Dict:
+                                until: datetime = None, top: int = None, logger: str = None,
+                                level: str = None, msg_contains: Iterable = None, **kwargs) -> Dict:
         """
         :param reverse: Boolean
         :param since: of type datetime. If it doesn't have tz information, UTC is assumed.
         :param until: of type datetime. If it doesn't have tz information, UTC is assumed.
         :param top: Integer
         :param logger: string, eg TM1.Server, TM1.Chore, TM1.Mdx.Interface, TM1.Process
-        :param level: string, 1=Error, 2=Warning, 3=Info, 4=Debug, 5=Unknown
-        :param msg_contains: string or list, will find if substring exists anywhere in message
+        :param level: string, ERROR, WARNING, INFO, DEBUG, UNKNOWN
+        :param msg_contains: iterable, find substring in log message; list of substrings will be queried as AND statement
 
         :param kwargs:
         :return: Dict of server log
@@ -92,6 +95,7 @@ class ServerService(ObjectService):
 
         if since or until or logger or level or msg_contains:
             log_filters = []
+
             if since:
                 # If since doesn't have tz information, UTC is assumed
                 if not since.tzinfo:
@@ -108,18 +112,17 @@ class ServerService(ObjectService):
                 log_filters.append(format_url("Logger eq '{}'", logger))
 
             if level:
-                level_dict={'Error':1, 'Warning':2, 'Info':3, 'Debug':4, 'Unknown':5}
-                nLvl = level_dict[level]
-                log_filters.append("Level eq {}".format(nLvl))
+                level_dict = CaseAndSpaceInsensitiveDict({'ERROR': 1, 'WARNING': 2, 'INFO': 3, 'DEBUG': 4, 'UNKNOWN': 5})
+                level_index = level_dict.get(level)
+                if level_index:
+                    log_filters.append("Level eq {}".format(level_index))
 
             if msg_contains:
-                if isinstance(msg_contains, list):
-                    msg_filters = []
-                    for msg in msg_contains:
-                        msg_filters.append(format_url("contains(Message,'{}')", msg))
-                    log_filters.append("({})".format(" and ".join(msg_filters)))
-                else:
+                if isinstance(msg_contains, str):
                     log_filters.append(format_url("contains(Message,'{}')", msg_contains))
+                else:
+                    msg_filters = [format_url("contains(Message,'{}')", wildcard) for wildcard in msg_contains]
+                    log_filters.append("({})".format(" and ".join(msg_filters)))
 
             url += "&$filter={}".format(" and ".join(log_filters))
 
