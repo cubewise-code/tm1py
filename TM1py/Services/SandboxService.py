@@ -1,3 +1,6 @@
+from typing import List, Iterable
+from requests import Response
+
 from TM1py.Exceptions.Exceptions import TM1pyRestException
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
@@ -24,18 +27,47 @@ class SandboxService(ObjectService):
         sandbox = Sandbox.from_json(response.text)
         return sandbox
 
-    def sandbox_exists(self, sandbox_name: str, **kwargs):
+    def create(self, sandbox: Sandbox, **kwargs) -> Response:
+        """ create a new sandbox in TM1 Server
+
+        :param sandbox: Sandbox
+        :return: response
+        """
+        url = format_url("/api/v1/Sandboxes")
+        return self._rest.POST(url=url, data=sandbox.body, **kwargs)
+
+    def delete(self, sandbox_name: str, **kwargs) -> Response:
+        """ Delete a sandobx in TM1
+
+        :param sandbox_name:
+        :return: response
+        """
+        url = format_url("/api/v1/Sandboxes('{}')", sandbox_name)
+        return self._rest.DELETE(url, **kwargs)
+
+    def get_all(self, **kwargs) -> List[Sandbox]:
+        """ get all sandboxes from TM1 Server
+
+        :return: List of TM1py.Sandbox instances
+        """
+        url = "/api/v1/Sandboxes?$select=Name,IncludeInSandboxDimension"
+        response = self._rest.GET(url, **kwargs)
+        sandboxes = [
+            Sandbox.from_dict(sandbox_as_dict=sandbox)
+            for sandbox in response.json()["value"]
+        ]
+        return sandboxes
+
+    def exists(self, sandbox_name: str, **kwargs) -> bool:
         """ checks if the sandbox exists in TM1
 
         :param cube_name: String
         :return: bool
         """
         url = format_url("/api/v1/Sandboxes('{}')", sandbox_name)
-        response = self._rest.GET(url=url, **kwargs)
-        sandbox = Sandbox.from_json(response.text)
-        return sandbox
+        return self._exists(url, **kwargs)
 
-    def set_sandbox(self, sandbox_name: str):
+    def set_sandbox(self, sandbox_name: str) -> str:
         """ set sandbox parameter on Rest service, which will be applied to all requests to TM1
 
         :param sandbox_name: String - name of existing sandbox in TM1
@@ -44,7 +76,7 @@ class SandboxService(ObjectService):
         self._rest._sandbox = sandbox_name
         return sandbox_name
 
-    def set_base(self):
+    def set_base(self) -> str:
         """ use base version of TM1 data
 
         :return: text
@@ -52,8 +84,8 @@ class SandboxService(ObjectService):
         self._rest._sandbox = None
         return "[Base]"
 
-    def current_sandbox(self):
-        """ returns name of sandbox which is currently set on Rest service
+    def current_sandbox(self) -> str:
+        """ returns name of the sandbox which is currently set on Rest service
 
         :return: text
         """

@@ -1,4 +1,5 @@
 from TM1py.Services import TM1Service
+from TM1py.Objects import Sandbox
 
 with TM1Service(
     address="localhost",
@@ -9,8 +10,11 @@ with TM1Service(
     async_requests_mode=True,
 ) as tm1:
 
-    box = tm1.sandboxes.get("box2")
-    print(box.name)
+    if tm1.sandboxes.exists("myBox"):
+        tm1.sandboxes.delete("myBox")
+        print("deleted")
+    else:
+        box = Sandbox("myBox")
+        tm1.sandboxes.create(box)
+        print("created")
 
-    # print(cube)
-    # print(tm1.sandboxes.get("box21111"))
