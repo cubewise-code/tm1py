@@ -119,7 +119,7 @@ class RestService:
         :param session_id: String - TM1SessionId e.g. q7O6e1w49AixeuLVxJ1GZg
         :param session_context: String - Name of the Application. Controls "Context" column in Arc / TM1top.
         If None, use default: TM1py
-        :param verify: path to .cer file or 'False' / False (if no ssl verification is required)
+        :param verify: path to .cer file or 'True' / True / 'False' / False (if no ssl verification is required)
         :param logging: boolean - switch on/off verbose http logging into sys.stdout
         :param timeout: Float - Number of seconds that the client will wait to receive the first byte.
         :param async_requests_mode: changes internal REST execution mode to avoid 60s timeout on IBM cloud
@@ -137,7 +137,12 @@ class RestService:
 
         if 'verify' in kwargs:
             if isinstance(kwargs['verify'], str):
-                if kwargs['verify'].upper() != 'FALSE':
+                if kwargs['verify'].upper() == 'FALSE':
+                    self._verify = False
+                elif kwargs['verify'].upper() == 'TRUE':
+                    self._verify = True
+                # path to .cer file
+                else:
                     self._verify = kwargs.get('verify')
             elif isinstance(kwargs['verify'], bool):
                 self._verify = kwargs['verify']
