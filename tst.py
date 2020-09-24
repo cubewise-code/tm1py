@@ -10,11 +10,8 @@ with TM1Service(
     async_requests_mode=True,
 ) as tm1:
 
-    if tm1.sandboxes.exists("myBox"):
-        tm1.sandboxes.delete("myBox")
-        print("deleted")
-    else:
-        box = Sandbox("myBox")
-        tm1.sandboxes.create(box)
-        print("created")
+    z = tm1.sandboxes.merge("box2", "box11")
+    tm1.sandboxes.publish("box11")
+
+    print(z)
 

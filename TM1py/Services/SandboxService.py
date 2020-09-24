@@ -1,5 +1,6 @@
 from typing import List, Iterable
 from requests import Response
+import json
 
 from TM1py.Exceptions.Exceptions import TM1pyRestException
 from TM1py.Services.ObjectService import ObjectService
@@ -37,13 +38,47 @@ class SandboxService(ObjectService):
         return self._rest.POST(url=url, data=sandbox.body, **kwargs)
 
     def delete(self, sandbox_name: str, **kwargs) -> Response:
-        """ Delete a sandobx in TM1
+        """ Delete a sandbox in TM1
 
         :param sandbox_name:
         :return: response
         """
         url = format_url("/api/v1/Sandboxes('{}')", sandbox_name)
         return self._rest.DELETE(url, **kwargs)
+
+    def publish(self, sandbox_name: str, **kwargs) -> Response:
+        """ publish existing sandbox to base
+
+        :param sandbox_name: str
+        :return: response
+        """
+        url = format_url("/api/v1/Sandboxes('{}')/tm1.Publish", sandbox_name)
+        return self._rest.POST(url=url, **kwargs)
+
+    def reset(self, sandbox_name: str, **kwargs) -> Response:
+        """ reset all changes in specified sandbox
+
+        :param sandbox_name: str
+        :return: response
+        """
+        url = format_url("/api/v1/Sandboxes('{}')/tm1.DiscardChanges", sandbox_name)
+        return self._rest.POST(url=url, **kwargs)
+
+    def merge(
+        self, source_sandbox_name: str, target_sandbox_name: str, **kwargs
+    ) -> Response:
+        """ merge one sandbox into another
+
+        :param source_sandbox_name: str
+        :param target_sandbox_name: str
+        :return: response
+        """
+        url = format_url("/api/v1/Sandboxes('{}')/tm1.Merge", source_sandbox_name)
+        payload = dict()
+        payload["Target@odata.bind"] = format_url(
+            "Sandboxes('{}')", target_sandbox_name
+        )
+        return self._rest.POST(url=url, data=json.dumps(payload), **kwargs)
 
     def get_all(self, **kwargs) -> List[Sandbox]:
         """ get all sandboxes from TM1 Server
