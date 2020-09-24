@@ -439,7 +439,7 @@ class CellService(ObjectService):
 
         if increment:
             current_values = self.extract_cellset_values(cellset_id, delete_cellset=False, **kwargs)
-            values = (x + y for x, y in zip(values, current_values))
+            values = (x + (y or None) for x, y in zip(values, current_values))
 
         return self.update_cellset(cellset_id=cellset_id, values=values, **kwargs)
 
