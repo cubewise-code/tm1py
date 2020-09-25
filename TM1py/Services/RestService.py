@@ -140,6 +140,7 @@ class RestService:
         :param logging: boolean - switch on/off verbose http logging into sys.stdout
         :param timeout: Float - Number of seconds that the client will wait to receive the first byte.
         :param async_requests_mode: changes internal REST execution mode to avoid 60s timeout on IBM cloud
+        :param sandbox: modifies data related requests to include !sandbox parameter in url
         :param connection_pool_size - In a multithreaded environment, you should set this value to a
         higher number, such as the number of threads
         """
@@ -155,6 +156,7 @@ class RestService:
         self._async_requests_mode = self.translate_to_boolean(
             kwargs.get("async_requests_mode", False)
         )
+
         self._sandbox = kwargs.get("sandbox", None)
 
         if "verify" in kwargs:

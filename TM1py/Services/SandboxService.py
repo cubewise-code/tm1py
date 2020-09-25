@@ -65,12 +65,17 @@ class SandboxService(ObjectService):
         return self._rest.POST(url=url, **kwargs)
 
     def merge(
-        self, source_sandbox_name: str, target_sandbox_name: str, **kwargs
+        self,
+        source_sandbox_name: str,
+        target_sandbox_name: str,
+        clean_after: bool = False,
+        **kwargs
     ) -> Response:
         """ merge one sandbox into another
 
         :param source_sandbox_name: str
         :param target_sandbox_name: str
+        :param clean_after: bool: Reset source sandbox after merging
         :return: response
         """
         url = format_url("/api/v1/Sandboxes('{}')/tm1.Merge", source_sandbox_name)
@@ -78,6 +83,7 @@ class SandboxService(ObjectService):
         payload["Target@odata.bind"] = format_url(
             "Sandboxes('{}')", target_sandbox_name
         )
+        payload["CleanAfter"] = clean_after
         return self._rest.POST(url=url, data=json.dumps(payload), **kwargs)
 
     def get_all(self, **kwargs) -> List[Sandbox]:

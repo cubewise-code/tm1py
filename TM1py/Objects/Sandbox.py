@@ -12,7 +12,7 @@ class Sandbox(TM1Object):
         
     """
 
-    def __init__(self, name: str, includeInSandboxDimension=True):
+    def __init__(self, name: str, includeInSandboxDimension: bool = True):
         """
         
         :param name: name of the Sandbox
