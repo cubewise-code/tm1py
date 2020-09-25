@@ -107,28 +107,3 @@ class SandboxService(ObjectService):
         """
         url = format_url("/api/v1/Sandboxes('{}')", sandbox_name)
         return self._exists(url, **kwargs)
-
-    def set_sandbox(self, sandbox_name: str) -> str:
-        """ set sandbox parameter on Rest service, which will be applied to all requests to TM1
-
-        :param sandbox_name: String - name of existing sandbox in TM1
-        :return: text
-        """
-        self._rest._sandbox = sandbox_name
-        return sandbox_name
-
-    def set_base(self) -> str:
-        """ use base version of TM1 data
-
-        :return: text
-        """
-        self._rest._sandbox = None
-        return "[Base]"
-
-    def current_sandbox(self) -> str:
-        """ returns name of the sandbox which is currently set on Rest service
-
-        :return: text
-        """
-        current_sandbox = self._rest._sandbox
-        return current_sandbox
