@@ -18,7 +18,7 @@ class SandboxService(ObjectService):
         super().__init__(rest)
 
     def get(self, sandbox_name: str, **kwargs) -> Sandbox:
-        """ get sandbox from TM1 Server
+        """ get a sandbox from TM1 Server
 
         :param cube_name:
         :return: instance of TM1py.Sandbox
@@ -34,11 +34,11 @@ class SandboxService(ObjectService):
         :param sandbox: Sandbox
         :return: response
         """
-        url = format_url("/api/v1/Sandboxes")
+        url = "/api/v1/Sandboxes"
         return self._rest.POST(url=url, data=sandbox.body, **kwargs)
 
     def delete(self, sandbox_name: str, **kwargs) -> Response:
-        """ Delete a sandbox in TM1
+        """ delete a sandbox in TM1
 
         :param sandbox_name:
         :return: response
@@ -100,9 +100,9 @@ class SandboxService(ObjectService):
         return sandboxes
 
     def exists(self, sandbox_name: str, **kwargs) -> bool:
-        """ checks if the sandbox exists in TM1
+        """ check if the sandbox exists in TM1
 
-        :param cube_name: String
+        :param sandbox_name: String
         :return: bool
         """
         url = format_url("/api/v1/Sandboxes('{}')", sandbox_name)
