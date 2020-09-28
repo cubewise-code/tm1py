@@ -12,14 +12,14 @@ class Sandbox(TM1Object):
         
     """
 
-    def __init__(self, name: str, includeInSandboxDimension: bool = True):
+    def __init__(self, name: str, include_in_sandbox_dimension: bool = True):
         """
         
         :param name: name of the Sandbox
-        :param includeInSandboxDimension: 
+        :param include_in_sandbox_dimension: 
         """
         self._name = name
-        self._includeInSandboxDimension = includeInSandboxDimension
+        self._include_in_sandbox_dimension = include_in_sandbox_dimension
 
     @property
     def name(self) -> str:
@@ -44,7 +44,7 @@ class Sandbox(TM1Object):
         """
         return cls(
             name=sandbox_as_dict["Name"],
-            includeInSandboxDimension=sandbox_as_dict["IncludeInSandboxDimension"],
+            include_in_sandbox_dimension=sandbox_as_dict["IncludeInSandboxDimension"],
         )
 
     @property
@@ -58,5 +58,5 @@ class Sandbox(TM1Object):
         """
         body_as_dict = collections.OrderedDict()
         body_as_dict["Name"] = self.name
-        body_as_dict["IncludeInSandboxDimension"] = self._includeInSandboxDimension
+        body_as_dict["IncludeInSandboxDimension"] = self._include_in_sandbox_dimension
         return json.dumps(body_as_dict, ensure_ascii=False)
