@@ -198,7 +198,7 @@ class CellService(ObjectService):
         :return:
         """
         url = ""
-        if sandbox_name == None:
+        if sandbox_name is None:
             url = format_url("/api/v1/Cellsets('{}')/tm1.Update", cellset_id)
         else:
             url = format_url(
@@ -234,7 +234,7 @@ class CellService(ObjectService):
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
         url = ""
-        if sandbox_name == None:
+        if sandbox_name is None:
             url = format_url("/api/v1/Cubes('{}')/tm1.Update", cube_name)
         else:
             url = format_url(
@@ -265,7 +265,8 @@ class CellService(ObjectService):
         """
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
-        if sandbox_name == None:
+        url = ""
+        if sandbox_name is None:
             url = format_url("/api/v1/Cubes('{}')/tm1.Update", cube_name)
         else:
             url = format_url(
@@ -330,7 +331,7 @@ class CellService(ObjectService):
         :return: 
         """
         url = ""
-        if sandbox_name == None:
+        if sandbox_name is None:
             url = format_url("/api/v1/Cellsets('{}')/Cells", cellset_id)
         else:
             url = format_url(
@@ -930,8 +931,8 @@ class CellService(ObjectService):
 
         filter_axis = "$filter=Ordinal ne 2;" if skip_contexts else ""
 
-        url=""
-        if sandbox_name == None:
+        url = ""
+        if sandbox_name is None:
             url = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
                 "Cube($select=Name;$expand=Dimensions($select=Name))," \
                 "Axes({filter_axis}$expand=Tuples($expand=Members({select_member_properties}" \
@@ -972,7 +973,7 @@ class CellService(ObjectService):
         :return: Raw format from TM1.
         """
         url = ""
-        if sandbox_name == None:
+        if sandbox_name is None:
             url = format_url("/api/v1/Cellsets('{}')?$expand=Cells($select=Value)", cellset_id)
         else:
             url = format_url(
@@ -995,7 +996,7 @@ class CellService(ObjectService):
         :return:
         """
         url = ""
-        if sandbox_name == None:
+        if sandbox_name is None:
             url = "/api/v1/Cellsets('{}')?$expand=" \
                 "Axes($filter=Ordinal eq 1;$expand=Tuples(" \
                 "$expand=Members($select=Element;$expand=Element($select={}))))," \
@@ -1048,7 +1049,7 @@ class CellService(ObjectService):
         :return:
         """
         url = ""
-        if sandbox_name == None:
+        if sandbox_name is None:
             url = "/api/v1/Cellsets('{}')?$expand=" \
                 "Cube($select=Name)," \
                 "Axes($expand=Hierarchies($select=UniqueName))".format(cellset_id)
@@ -1082,7 +1083,7 @@ class CellService(ObjectService):
         :return:
         """
         url = ""
-        if sandbox_name == None:
+        if sandbox_name is None:
             url = "/api/v1/Cellsets('{}')/Cells/$count".format(cellset_id)
         else:
             url = "/api/v1/Cellsets('{}')/Cells/$count?!sandbox={}".format(
@@ -1100,7 +1101,7 @@ class CellService(ObjectService):
         :return: Raw format from TM1.
         """
         url = ""
-        if sandbox_name == None:
+        if sandbox_name is None:
             url = "/api/v1/Cellsets('{}')/Content".format(cellset_id)
         else:
             url = "/api/v1/Cellsets('{}')/Content?!sandbox={}".format(
@@ -1130,7 +1131,7 @@ class CellService(ObjectService):
     @tidy_cellset
     def extract_cellset_power_bi(self, cellset_id: str, sandbox_name: str = None, **kwargs) -> pd.DataFrame:
         url = ""
-        if sandbox_name == None:
+        if sandbox_name is None:
             url = "/api/v1/Cellsets('{}')?$expand=" \
                 "Axes($filter=Ordinal eq 0 or Ordinal eq 1;$expand=Tuples(" \
                 "$expand=Members($select=Name)),Hierarchies($select=Name))," \
@@ -1262,7 +1263,7 @@ class CellService(ObjectService):
         :return:
         """
         url = ''
-        if sandbox_name == None:
+        if sandbox_name is None:
             url = '/api/v1/ExecuteMDX'
         else:
             url = format_url('/api/v1/ExecuteMDX?!sandbox={}', sandbox_name)
@@ -1288,7 +1289,7 @@ class CellService(ObjectService):
         :return:
         """
         url = ""
-        if sandbox_name == None:
+        if sandbox_name is None:
             url = format_url("/api/v1/Cubes('{cube_name}')/{views}('{view_name}')/tm1.Execute",
                             cube_name=cube_name,
                             views='PrivateViews' if private else 'Views',
@@ -1311,7 +1312,7 @@ class CellService(ObjectService):
         :return:
         """
         url = ""
-        if sandbox_name == None:
+        if sandbox_name is None:
             url = "/api/v1/Cellsets('{}')".format(cellset_id)
         else:
             url = format_url(
