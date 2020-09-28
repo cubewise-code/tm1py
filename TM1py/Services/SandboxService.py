@@ -20,7 +20,7 @@ class SandboxService(ObjectService):
     def get(self, sandbox_name: str, **kwargs) -> Sandbox:
         """ get a sandbox from TM1 Server
 
-        :param cube_name:
+        :param sandbox_name: str
         :return: instance of TM1py.Sandbox
         """
         url = format_url("/api/v1/Sandboxes('{}')", sandbox_name)
