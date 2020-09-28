@@ -32,11 +32,10 @@ def tidy_cellset(func):
         finally:
             if kwargs.get("delete_cellset", True):
                 sandbox_name=kwargs.get("sandbox_name", None)
-                if sandbox_name != None:
+                if sandbox_name is not None:
                     self.delete_cellset(cellset_id=cellset_id, sandbox_name=sandbox_name)
                 else:
                     self.delete_cellset(cellset_id=cellset_id)
-
     return wrapper
 
 
