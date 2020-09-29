@@ -295,7 +295,7 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return: 
         """
-        cellset_id = self.create_cellset(mdx=mdx,sandbox_name=sandbox_name **kwargs)
+        cellset_id = self.create_cellset(mdx=mdx,sandbox_name=sandbox_name, **kwargs)
         return self.update_cellset(cellset_id=cellset_id, values=values, sandbox_name=sandbox_name, **kwargs)
 
     @tidy_cellset
