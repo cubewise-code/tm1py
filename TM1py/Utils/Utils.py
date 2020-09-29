@@ -2,6 +2,8 @@ import collections
 import http.client as http_client
 import json
 from typing import Dict, List, Tuple, Iterable, Optional, Generator
+import urllib.parse as urlparse
+from urllib.parse import urlencode
 
 import pandas as pd
 
@@ -414,6 +416,23 @@ def get_seconds_from_duration(time_str: str) -> int:
     seconds = (int(d) * 86400) + (int(h) * 3600) + (int(m) * 60) + int(s)
     return seconds
 
+def url_parameters_add(url, **kwargs: str) -> str:
+    """ Append parameters to url string passed in kwargs
+
+    :param url: str
+    :param kwargs: key:value pairs of url parameters. For example, {'$select':'Name'}
+    :return: str
+    """
+    parameters = []
+    for key, value in kwargs.items():
+        if value is not None:
+            value = value.replace("'", "''") if isinstance(value, str) else value 
+            parameters.append(key + "=" + value)
+    url_parts = list(urlparse.urlparse(url))
+    query_part = url_parts[4]
+    query_part += "&" + "&".join(parameters) if query_part else "&".join(parameters)
+    url_parts[4] = query_part
+    return urlparse.urlunparse(url_parts)
 
 class CaseAndSpaceInsensitiveDict(collections.abc.MutableMapping):
     """A case-and-space-insensitive dict-like object with String keys.
