@@ -118,6 +118,22 @@ class TestCellMethods(unittest.TestCase):
                                           ('Element ' + str(e) for e in range(1, 101)),
                                           ('Element ' + str(e) for e in range(1, 101))))
 
+        cls.build_cube_with_rules()
+
+        cls.build_cube_with_consolidations()
+
+        # For tests on string related methods
+        cls.build_string_cube()
+
+
+
+    @classmethod
+    def setUp(cls):
+        # set correct version before test, as it is overwritten in a test case
+        cls.tm1._tm1_rest.set_version()
+
+        # populate data in cube
+
         # cellset of data that shall be written
         cls.cellset = Utils.CaseAndSpaceInsensitiveTuplesDict()
         value = 1
@@ -130,21 +146,18 @@ class TestCellMethods(unittest.TestCase):
         # Fill cube with values
         cls.tm1.cubes.cells.write_values(cls.cube_name, cls.cellset)
 
-        cls.build_cube_with_rules()
+        cls.tm1.cubes.cells.write_values(cls.string_cube_name, cls.cells_in_string_cube)
 
-        cls.build_cube_with_consolidations()
 
-    @classmethod
-    def setUp(cls):
-        # set correct version before test, as it is overwritten in a test case
-        cls.tm1._tm1_rest.set_version()
 
-        # For tests on string related methods
-        cls.build_string_cube()
 
     @classmethod
     def tearDown(cls):
-        cls.remove_string_cube()
+
+        cls.tm1.processes.execute_ti_code("CubeClearData('" + cls.cube_name + "');")
+        cls.tm1.processes.execute_ti_code("CubeClearData('" + cls.string_cube_name + "');")
+
+
 
     @classmethod
     def build_string_cube(cls):
@@ -164,7 +177,6 @@ class TestCellMethods(unittest.TestCase):
         # zero out cube
         cls.tm1.processes.execute_ti_code("CubeClearData('" + cls.string_cube_name + "');")
 
-        cls.tm1.cubes.cells.write_values(cls.string_cube_name, cls.cells_in_string_cube)
 
     @classmethod
     def remove_string_cube(cls):
@@ -456,7 +468,6 @@ class TestCellMethods(unittest.TestCase):
         self.assertEqual(values[1], 4)
         self.assertEqual(values[2], 6)
 
-    @unittest.skip("Failing")
     def test_execute_mdx(self):
         # write cube content
         self.tm1.cubes.cells.write_values(self.cube_name, self.cellset)
@@ -495,7 +506,6 @@ class TestCellMethods(unittest.TestCase):
         self.assertEqual(2000, sum(v["Value"] for v in data.values()))
         self.assertEqual(sum(range(1000)), sum(v["Ordinal"] for v in data.values()))
 
-    @unittest.skip("Failing")
     def test_execute_mdx_without_rows(self):
         # write cube content
         self.tm1.cubes.cells.write_values(self.cube_name, self.cellset)
@@ -521,7 +531,6 @@ class TestCellMethods(unittest.TestCase):
             self.assertIn("[TM1py_Tests_Cell_Dimension2].", coordinates[1])
             self.assertIn("[TM1py_Tests_Cell_Dimension3].", coordinates[2])
 
-    @unittest.skip("Failing")
     def test_execute_mdx_without_columns(self):
         # write cube content
         self.tm1.cubes.cells.write_values(self.cube_name, self.cellset)
@@ -834,7 +843,6 @@ class TestCellMethods(unittest.TestCase):
                     self.assertNotIn("UniqueName", member)
                     self.assertNotIn("Ordinal", member)
 
-    @unittest.skip("Failing")
     def test_execute_mdx_values(self):
         self.tm1.cells.write_values(self.cube_name, self.cellset)
 
@@ -868,7 +876,6 @@ class TestCellMethods(unittest.TestCase):
             2000,
             sum(data))
 
-    @unittest.skip("Failing")
     def test_execute_mdx_csv(self):
         mdx = MdxBuilder.from_cube(self.cube_name) \
             .rows_non_empty() \
@@ -1000,7 +1007,6 @@ class TestCellMethods(unittest.TestCase):
         for value in values:
             self.assertEqual(value, 3)
 
-    @unittest.skip("Failing")
     def test_execute_mdx_elements_value_dict(self):
         mdx = MdxBuilder.from_cube(self.cube_name) \
             .rows_non_empty() \
@@ -1177,7 +1183,6 @@ class TestCellMethods(unittest.TestCase):
             set(elements_and_string_values),
             {"d1e1", "d1e2", "d1e3", "d1e4", "String1", "String2", "String3"})
 
-    @unittest.skip("Failing")
     def test_execute_view(self):
         data = self.tm1.cubes.cells.execute_view(cube_name=self.cube_name, view_name=self.view_name, private=False)
 
@@ -1497,7 +1502,6 @@ class TestCellMethods(unittest.TestCase):
             top=5)
         self.assertEqual(len(raw["Cells"]), 5)
 
-    @unittest.skip("Failing")
     def test_execute_view_values(self):
         cell_values = self.tm1.cubes.cells.execute_view_values(cube_name=self.cube_name, view_name=self.view_name, private=False)
 
@@ -1507,7 +1511,6 @@ class TestCellMethods(unittest.TestCase):
         # Check if total value is the same AND coordinates are the same. Handle None.
         self.assertEqual(self.total_value, sum(v for v in cell_values if v))
 
-    @unittest.skip("Failing")
     def test_execute_view_csv(self):
         csv = self.tm1.cubes.cells.execute_view_csv(cube_name=self.cube_name, view_name=self.view_name, private=False)
 
@@ -1526,7 +1529,6 @@ class TestCellMethods(unittest.TestCase):
         # check if sum of retrieved values is sum of written values
         self.assertEqual(self.total_value, sum(values))
 
-    @unittest.skip("Failing")
     def test_execute_view_elements_value_dict(self):
         values = self.tm1.cubes.cells.execute_view_elements_value_dict(
             cube_name=self.cube_name,
