@@ -2,7 +2,7 @@ import pickle
 
 from TM1py.Services import HierarchyService, SecurityService, ApplicationService, SubsetService, ServerService, \
     MonitoringService, ProcessService, PowerBiService, AnnotationService, ViewService, RestService, CellService, \
-    ChoreService, DimensionService, CubeService, ElementService
+    ChoreService, DimensionService, CubeService, ElementService, SandboxService
 
 
 class TM1Service:
