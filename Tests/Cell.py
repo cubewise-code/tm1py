@@ -125,6 +125,8 @@ class TestCellMethods(unittest.TestCase):
         # For tests on string related methods
         cls.build_string_cube()
 
+        cls.build_assets_for_relative_proportional_spread_tests()
+
 
     @classmethod
     def setUp(cls):
@@ -158,7 +160,9 @@ class TestCellMethods(unittest.TestCase):
         """
         cls.tm1.processes.execute_ti_code("CubeClearData('" + cls.cube_name + "');")
         cls.tm1.processes.execute_ti_code("CubeClearData('" + cls.string_cube_name + "');")
-
+        cls.tm1.processes.execute_ti_code("CubeClearData('" + cls.cube_rps1_name + "');")
+        cls.tm1.processes.execute_ti_code("CubeClearData('" + cls.cube_rps2_name + "');")
+    
     @classmethod
     def build_string_cube(cls):
         for d, dimension_name in enumerate(cls.string_dimension_names, start=1):
@@ -351,7 +355,6 @@ class TestCellMethods(unittest.TestCase):
         """
         Tests that relative proportional spread populates a cube with the expected values
         """
-        self.build_assets_for_relative_proportional_spread_tests()
 
         cells = {
             ('e1', 'e1'): 1,
@@ -381,7 +384,6 @@ class TestCellMethods(unittest.TestCase):
         self.assertEqual(values[2], 6)
 
     def test_relative_proportional_with_explicit_hierarchies(self):
-        self.build_assets_for_relative_proportional_spread_tests()
 
         cells = {
             ('e1', 'e1'): 1,
@@ -412,7 +414,6 @@ class TestCellMethods(unittest.TestCase):
         self.assertEqual(values[2], 6)
 
     def test_relative_proportional_spread_without_reference_cube(self):
-        self.build_assets_for_relative_proportional_spread_tests()
 
         cells = {
             ('e1', 'e1'): 1,
@@ -440,7 +441,6 @@ class TestCellMethods(unittest.TestCase):
         self.assertEqual(values[2], 6)
 
     def test_relative_proportional_spread_with_different_reference_cube(self):
-        self.build_assets_for_relative_proportional_spread_tests()
 
         cells = {
             ('e1', 'e1'): 1,
