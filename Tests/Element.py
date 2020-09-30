@@ -81,22 +81,6 @@ class TestElementMethods(unittest.TestCase):
                 cls.dimension_name,
                 cls.added_attribute_name)
 
-    def add_unbalanced_hierarchy(self, hierarchy_name):
-        dimension = self.tm1.dimensions.get(self.dimension_name)
-        
-        # other hierarchy
-        hierarchy = Hierarchy(name=hierarchy_name, dimension_name=self.dimension_name)
-
-        hierarchy.add_element("Total Years Unbalanced", "Consolidated")
-        hierarchy.add_element('1989', 'Numeric')
-        hierarchy.add_element('1990', 'Numeric')
-        hierarchy.add_element('1991', 'Numeric')
-        hierarchy.add_edge("Total Years Unbalanced", "1989", 1)
-        hierarchy.add_edge("Total Years Unbalanced", "1990", 1)
-        dimension.add_hierarchy(hierarchy)
-
-        self.tm1.dimensions.update(dimension)
-
     def test_create_and_delete_element(self):
         element = Element(self.extra_year, "String")
         self.tm1.dimensions.hierarchies.elements.create(
