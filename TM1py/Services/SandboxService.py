@@ -28,6 +28,29 @@ class SandboxService(ObjectService):
         sandbox = Sandbox.from_json(response.text)
         return sandbox
 
+    def get_all(self, **kwargs) -> List[Sandbox]:
+        """ get all sandboxes from TM1 Server
+
+        :return: List of TM1py.Sandbox instances
+        """
+        url = "/api/v1/Sandboxes?$select=Name,IncludeInSandboxDimension"
+        response = self._rest.GET(url, **kwargs)
+        sandboxes = [
+            Sandbox.from_dict(sandbox_as_dict=sandbox)
+            for sandbox in response.json()["value"]
+        ]
+        return sandboxes
+
+    def get_all_names(self, **kwargs) -> List[str]:
+        """ get all sandbox names
+
+        :param kwargs:
+        :return:
+        """
+        url = "/api/v1/Sandboxes?$select=Name"
+        response = self._rest.GET(url, **kwargs)
+        return [entry["Name"] for entry in response.json()["value"]]
+
     def create(self, sandbox: Sandbox, **kwargs) -> Response:
         """ create a new sandbox in TM1 Server
 
@@ -36,6 +59,15 @@ class SandboxService(ObjectService):
         """
         url = "/api/v1/Sandboxes"
         return self._rest.POST(url=url, data=sandbox.body, **kwargs)
+
+    def update(self, sandbox: Sandbox, **kwargs) -> Response:
+        """ update a sandbox in TM1
+
+        :param sandbox:
+        :return: response
+        """
+        url = format_url("/api/v1/Sandboxes('{}')", sandbox.name)
+        return self._rest.PATCH(url=url, data=sandbox.body, **kwargs)
 
     def delete(self, sandbox_name: str, **kwargs) -> Response:
         """ delete a sandbox in TM1
@@ -85,19 +117,6 @@ class SandboxService(ObjectService):
         )
         payload["CleanAfter"] = clean_after
         return self._rest.POST(url=url, data=json.dumps(payload), **kwargs)
-
-    def get_all(self, **kwargs) -> List[Sandbox]:
-        """ get all sandboxes from TM1 Server
-
-        :return: List of TM1py.Sandbox instances
-        """
-        url = "/api/v1/Sandboxes?$select=Name,IncludeInSandboxDimension"
-        response = self._rest.GET(url, **kwargs)
-        sandboxes = [
-            Sandbox.from_dict(sandbox_as_dict=sandbox)
-            for sandbox in response.json()["value"]
-        ]
-        return sandboxes
 
     def exists(self, sandbox_name: str, **kwargs) -> bool:
         """ check if the sandbox exists in TM1
