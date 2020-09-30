@@ -17,7 +17,7 @@ from TM1py.Objects.Process import Process
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.ViewService import ViewService
-from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url, url_parameters_add
+from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url, add_url_parameters
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
     CaseAndSpaceInsensitiveDict, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, abbreviate_mdx, \
     build_csv_from_cellset_dict, require, require_pandas, build_cellset_from_pandas_dataframe, \
@@ -83,7 +83,6 @@ def manage_transaction_log(func):
     return wrapper
 
 
-# noinspection SpellCheckingInspection
 class CellService(ObjectService):
     """ Service to handle Read and Write operations to TM1 cubes
     
@@ -103,7 +102,7 @@ class CellService(ObjectService):
         :param cube_name: Name of the cube
         :param element_string: "Hierarchy1::Element1 && Hierarchy2::Element4, Element9, Element2"
             - Dimensions are not specified! They are derived from the position.
-            - The , seperates the element-selections
+            - The , separates the element-selections
             - If more than one hierarchy is selected per dimension && splits the elementselections
             - If no Hierarchy is specified. Default Hierarchy will be addressed
         :param dimensions: List of dimension names in correct order
@@ -286,7 +285,7 @@ class CellService(ObjectService):
         :return:
         """
         url = format_url("/api/v1/Cellsets('{}')/tm1.Update", cellset_id)
-        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
+        url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         return self._rest.POST(url=url, data=json.dumps(payload), **kwargs)
 
     def get_dimension_names_for_writing(self, cube_name: str, **kwargs) -> List[str]:
@@ -345,7 +344,7 @@ class CellService(ObjectService):
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
         url = format_url("/api/v1/Cubes('{}')/tm1.Update", cube_name)
-        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
+        url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         body_as_dict = OrderedDict()
         body_as_dict["Cells"] = [{}]
         body_as_dict["Cells"][0]["Tuple@odata.bind"] = [
@@ -398,8 +397,7 @@ class CellService(ObjectService):
 
     @manage_transaction_log
     def write_values(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None,
-                     sandbox_name: str = None,
-                     **kwargs) -> Response:
+                     sandbox_name: str = None, **kwargs) -> Response:
         """ Write values to a cube
 
         For cellsets with > 1000 cells look into `write` or `write_values_through_cellset`
@@ -414,7 +412,8 @@ class CellService(ObjectService):
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name, **kwargs)
         url = format_url("/api/v1/Cubes('{}')/tm1.Update", cube_name)
-        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
+        url = add_url_parameters(url, **{"!sandbox": sandbox_name})
+
         updates = []
         for element_tuple, value in cellset_as_dict.items():
             body_as_dict = OrderedDict()
@@ -481,7 +480,7 @@ class CellService(ObjectService):
         :return:
         """
         url = format_url("/api/v1/Cellsets('{}')/Cells", cellset_id)
-        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
+        url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         data = []
         for o, value in enumerate(values):
             data.append({
@@ -1316,7 +1315,7 @@ class CellService(ObjectService):
                     top_cells=f";$top={top}" if top else "",
                     skip_cells=f";$skip={skip}" if skip else "",
                     filter_cells=f";$filter={filter_cells}" if filter_cells else "")
-        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
+        url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url=url, **kwargs)
         return response.json()
 
@@ -1329,7 +1328,7 @@ class CellService(ObjectService):
         :return: Raw format from TM1.
         """
         url = format_url("/api/v1/Cellsets('{}')?$expand=Cells($select=Value)", cellset_id)
-        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
+        url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url=url, **kwargs)
         return [cell["Value"] for cell in response.json()["Cells"]]
 
@@ -1349,7 +1348,7 @@ class CellService(ObjectService):
               "Axes($filter=Ordinal eq 1;$expand=Tuples(" \
               "$expand=Members($select=Element;$expand=Element($select={}))))," \
               "Cells($select=Value)".format(cellset_id, "UniqueName" if element_unique_names else "Name")
-        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
+        url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url=url, **kwargs)
         response_json = response.json()
         rows = response_json["Axes"][0]["Tuples"]
@@ -1388,7 +1387,7 @@ class CellService(ObjectService):
         url = "/api/v1/Cellsets('{}')?$expand=" \
               "Cube($select=Name)," \
               "Axes($expand=Hierarchies($select=UniqueName))".format(cellset_id)
-        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
+        url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url=url, **kwargs)
         response_json = response.json()
         cube = response_json["Cube"]["Name"]
@@ -1412,7 +1411,7 @@ class CellService(ObjectService):
         :return:
         """
         url = "/api/v1/Cellsets('{}')/Cells/$count".format(cellset_id)
-        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
+        url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url, **kwargs)
         return int(response.content)
 
@@ -1501,7 +1500,7 @@ class CellService(ObjectService):
               "Axes($filter=Ordinal eq 0 or Ordinal eq 1;$expand=Tuples(" \
               "$expand=Members($select=Name)),Hierarchies($select=Name))," \
               "Cells($select=Value)".format(cellset_id)
-        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
+        url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url=url, **kwargs)
         response_json = response.json()
         rows = response_json["Axes"][1]["Tuples"]
@@ -1629,7 +1628,7 @@ class CellService(ObjectService):
         :return:
         """
         url = '/api/v1/ExecuteMDX'
-        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
+        url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         data = {
             'MDX': mdx
         }
@@ -1652,7 +1651,7 @@ class CellService(ObjectService):
                          cube_name=cube_name,
                          views='PrivateViews' if private else 'Views',
                          view_name=view_name)
-        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
+        url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         return self._rest.POST(url=url, **kwargs).json()['ID']
 
     def delete_cellset(self, cellset_id: str, sandbox_name: str = None, **kwargs) -> Response:
@@ -1663,7 +1662,7 @@ class CellService(ObjectService):
         :return:
         """
         url = "/api/v1/Cellsets('{}')".format(cellset_id)
-        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
+        url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         return self._rest.DELETE(url, **kwargs)
 
     def transaction_log_is_active(self, cube_name: str) -> bool:

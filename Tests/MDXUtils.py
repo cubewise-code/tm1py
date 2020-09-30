@@ -821,62 +821,6 @@ class TestMDXUtils(unittest.TestCase):
             self.assertIn("[Date].[Date].[2017-11-27]", json.dumps(column_axis))
             self.assertIn("[Version].[Version].[Actual]", json.dumps(title_axis))
 
-    def test_format_url_args_no_single_quote(self):
-        url = "/api/v1/Processes('{}')/tm1.ExecuteWithReturn?$expand=*"
-        process_name = "process"
-        escaped_url = format_url(url, process_name)
-        self.assertEqual(
-            "/api/v1/Processes('process')/tm1.ExecuteWithReturn?$expand=*", escaped_url
-        )
-
-    def test_format_url_args_one_single_quote(self):
-        url = "/api/v1/Processes('{}')/tm1.ExecuteWithReturn?$expand=*"
-        process_name = "pro'cess"
-        escaped_url = format_url(url, process_name)
-        self.assertEqual(
-            "/api/v1/Processes('pro''cess')/tm1.ExecuteWithReturn?$expand=*",
-            escaped_url,
-        )
-
-    def test_format_url_args_multi_single_quote(self):
-        url = "/api/v1/Processes('{}')/tm1.ExecuteWithReturn?$expand=*"
-        process_name = "pro'ces's"
-        escaped_url = format_url(url, process_name)
-        self.assertEqual(
-            "/api/v1/Processes('pro''ces''s')/tm1.ExecuteWithReturn?$expand=*",
-            escaped_url,
-        )
-
-    def test_format_url_kwargs_no_single_quote(self):
-        url = "/api/v1/Processes('{process_name}')/tm1.ExecuteWithReturn?$expand=*"
-        process_name = "process"
-        escaped_url = format_url(url, process_name=process_name)
-        self.assertEqual(
-            "/api/v1/Processes('process')/tm1.ExecuteWithReturn?$expand=*", escaped_url
-        )
-
-    def test_format_url_kwargs_one_single_quote(self):
-        url = "/api/v1/Processes('{process_name}')/tm1.ExecuteWithReturn?$expand=*"
-        process_name = "pro'cess"
-        escaped_url = format_url(url, process_name=process_name)
-        self.assertEqual(
-            "/api/v1/Processes('pro''cess')/tm1.ExecuteWithReturn?$expand=*",
-            escaped_url,
-        )
-
-    def test_format_url_kwargs_multi_single_quote(self):
-        url = "/api/v1/Processes('{process_name}')/tm1.ExecuteWithReturn?$expand=*"
-        process_name = "pro'ces's"
-        escaped_url = format_url(url, process_name=process_name)
-        self.assertEqual(
-            "/api/v1/Processes('pro''ces''s')/tm1.ExecuteWithReturn?$expand=*",
-            escaped_url,
-        )
-
-    def test_get_seconds_from_duration(self):
-        elapsed_time = "P0DT00H04M02S"
-        seconds = Utils.get_seconds_from_duration(elapsed_time)
-        self.assertEqual(242, seconds)
 
     @unittest.skip("Not deterministic. Needs improvement.")
     def test_mdx_from_cubeview(self):
