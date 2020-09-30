@@ -24,22 +24,25 @@ class TestElementMethods(unittest.TestCase):
         cls.hierarchy_name = cls.dimension_name
         cls.attribute_cube_name = '}ElementAttributes_' + cls.dimension_name
 
-        # Elements
-        cls.years = ("No Year", "1989", "1990", "1991", "1992")
-        cls.extra_year = "4321"
-        # Element Attributes
-        cls.attributes = ('Previous Year', 'Next Year')
-        cls.alias_attributes = ("Financial Year",)
-
         # create dimension with a default hierarchy
         d = Dimension(cls.dimension_name)
         h = Hierarchy(cls.dimension_name, cls.hierarchy_name)
+
+        # add elements
+        cls.years = ("No Year", "1989", "1990", "1991", "1992")
+        cls.extra_year = "4321"
+
         h.add_element('Total Years', 'Consolidated')
         h.add_element('All Consolidations', 'Consolidated')
         h.add_edge("All Consolidations", "Total Years", 1)
         for year in cls.years:
             h.add_element(year, 'Numeric')
             h.add_edge('Total Years', year, 1)
+
+        # add attributes
+        cls.attributes = ('Previous Year', 'Next Year')
+        cls.alias_attributes = ("Financial Year",)
+
         for attribute in cls.attributes:
             h.add_element_attribute(attribute, "String")
         for attribute in cls.alias_attributes:
@@ -47,7 +50,7 @@ class TestElementMethods(unittest.TestCase):
         d.add_hierarchy(h)
         cls.tm1.dimensions.create(d)
 
-
+        cls.added_attribute_name = "NewAttribute"
 
     @classmethod
     def setUp(cls):
@@ -65,8 +68,18 @@ class TestElementMethods(unittest.TestCase):
 
     @classmethod
     def tearDown(cls):
+        
         cls.tm1.processes.execute_ti_code("CubeClearData('" + cls.attribute_cube_name + "');")
-
+        
+        # remove added attribute if exists
+        if cls.added_attribute_name in cls.tm1.dimensions.hierarchies.elements.get_element_attributes(
+            cls.dimension_name,
+            cls.dimension_name):
+        
+            cls.tm1.dimensions.hierarchies.elements.delete_element_attribute(
+                cls.dimension_name,
+                cls.dimension_name,
+                cls.added_attribute_name)
 
     def add_unbalanced_hierarchy(self, hierarchy_name):
         dimension = self.tm1.dimensions.get(self.dimension_name)
@@ -83,11 +96,6 @@ class TestElementMethods(unittest.TestCase):
         dimension.add_hierarchy(hierarchy)
 
         self.tm1.dimensions.update(dimension)
-
-
-    @classmethod
-    def teardown_class(cls):
-        cls.tm1.logout()
 
     def test_create_and_delete_element(self):
         element = Element(self.extra_year, "String")
