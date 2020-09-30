@@ -10,16 +10,7 @@ from TM1py.Services import TM1Service
 
 from .TestUtils import skip_if_insufficient_version
 
-PREFIX = "TM1py_Tests_Cube_"
-
-
 class TestCubeMethods(unittest.TestCase):
-    tm1 = None
-    cube_name = PREFIX + "some_name"
-    dimension_names = [
-        PREFIX + "dimension1",
-        PREFIX + "dimension2",
-        PREFIX + "dimension3"]
 
     @classmethod
     def setUp(cls):
@@ -29,6 +20,14 @@ class TestCubeMethods(unittest.TestCase):
         cls.config.read(Path(__file__).parent.joinpath('config.ini'))
         cls.tm1 = TM1Service(**cls.config['tm1srv01'])
         
+        cls.prefix = "TM1py_Tests_Cube_"
+
+        cls.cube_name = cls.prefix + "some_name"
+        cls.dimension_names = [
+            cls.prefix + "dimension1",
+            cls.prefix + "dimension2",
+            cls.prefix + "dimension3"]
+
         for dimension_name in cls.dimension_names:
             elements = [Element('Element {}'.format(str(j)), 'Numeric') for j in range(1, 1001)]
             hierarchy = Hierarchy(dimension_name=dimension_name,
@@ -95,7 +94,7 @@ class TestCubeMethods(unittest.TestCase):
         self.assertFalse(self.tm1.cubes.exists(uuid.uuid4()))
 
     def test_create_delete_cube(self):
-        cube_name = PREFIX + "Some_Other_Name"
+        cube_name = self.prefix + "Some_Other_Name"
         # element with index 0 is Sandboxes
         dimension_names = self.tm1.dimensions.get_all_names()[1:3]
         cube = Cube(cube_name, dimension_names)
