@@ -21,7 +21,7 @@ class TestCellMethods(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """
-        Establishes a connection to TM1 and creates TM! objects to use across all tests
+        Establishes a connection to TM1 and creates TM1 objects to use across all tests
         """
 
         # Connection to TM1
@@ -126,9 +126,11 @@ class TestCellMethods(unittest.TestCase):
         cls.build_string_cube()
 
 
-
     @classmethod
     def setUp(cls):
+        """
+        Reset data before each test run
+        """
         # set correct version before test, as it is overwritten in a test case
         cls.tm1._tm1_rest.set_version()
 
@@ -149,15 +151,13 @@ class TestCellMethods(unittest.TestCase):
         cls.tm1.cubes.cells.write_values(cls.string_cube_name, cls.cells_in_string_cube)
 
 
-
-
     @classmethod
     def tearDown(cls):
-
+        """
+        Clear data from cubes after each test run
+        """
         cls.tm1.processes.execute_ti_code("CubeClearData('" + cls.cube_name + "');")
         cls.tm1.processes.execute_ti_code("CubeClearData('" + cls.string_cube_name + "');")
-
-
 
     @classmethod
     def build_string_cube(cls):
@@ -261,7 +261,7 @@ class TestCellMethods(unittest.TestCase):
         self.tm1.cubes.cells.write_value(original_value, self.cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
 
     def test_write_values(self):
-        cells = dict()
+        cells = {}
         cells["Element 2", "Element4", "Element7"] = 716
 
         self.tm1.cubes.cells.write_values(self.cube_name, cells)
@@ -274,7 +274,7 @@ class TestCellMethods(unittest.TestCase):
         self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [716])
 
     def test_write(self):
-        cells = dict()
+        cells = {}
         cells["Element 1", "Element4", "Element9"] = 717
         self.tm1.cubes.cells.write(self.cube_name, cells)
 
@@ -287,7 +287,7 @@ class TestCellMethods(unittest.TestCase):
         self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [717])
 
     def test_write_increment_true(self):
-        cells = dict()
+        cells = {}
         cells["Element 1", "Element5", "Element8"] = 211
 
         self.tm1.cubes.cells.write(self.cube_name, cells)
@@ -302,7 +302,7 @@ class TestCellMethods(unittest.TestCase):
         self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [422])
 
     def test_write_increment_false(self):
-        cells = dict()
+        cells = {}
         cells["Element 1", "Element5", "Element8"] = 211
 
         self.tm1.cubes.cells.write(self.cube_name, cells)
