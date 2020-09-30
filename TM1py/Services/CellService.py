@@ -42,12 +42,14 @@ def tidy_cellset(func):
 
         finally:
             if kwargs.get("delete_cellset", True):
-                sandbox_name=kwargs.get("sandbox_name", None)
+                sandbox_name = kwargs.get("sandbox_name", None)
                 if sandbox_name is not None:
                     self.delete_cellset(cellset_id=cellset_id, sandbox_name=sandbox_name)
                 else:
                     self.delete_cellset(cellset_id=cellset_id)
+
     return wrapper
+
 
 def manage_transaction_log(func):
     """ Control state of transaction log during and after write operation for a given cube through:
@@ -80,6 +82,8 @@ def manage_transaction_log(func):
 
     return wrapper
 
+
+# noinspection SpellCheckingInspection
 class CellService(ObjectService):
     """ Service to handle Read and Write operations to TM1 cubes
     
@@ -176,7 +180,8 @@ class CellService(ObjectService):
                     "Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
                     *Utils.dimension_hierarchy_element_tuple_from_unique_name(unique_element_name)))
 
-        return self._post_against_cellset(cellset_id=cellset_id, payload=payload, delete_cellset=True, **kwargs)
+        return self._post_against_cellset(cellset_id=cellset_id, payload=payload, delete_cellset=True,
+                                          sandbox_name=sandbox_name, **kwargs)
 
     def clear_spread(
             self,
@@ -207,7 +212,8 @@ class CellService(ObjectService):
                     "Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
                     *Utils.dimension_hierarchy_element_tuple_from_unique_name(unique_element_name)))
 
-        return self._post_against_cellset(cellset_id=cellset_id, payload=payload, delete_cellset=True, sandbox_name=sandbox_name, **kwargs)
+        return self._post_against_cellset(cellset_id=cellset_id, payload=payload, delete_cellset=True,
+                                          sandbox_name=sandbox_name, **kwargs)
 
     @require(version="11.7")
     def clear(self, cube: str, **kwargs):
@@ -270,7 +276,7 @@ class CellService(ObjectService):
                 view_service.delete(cube, view_name, private=False)
 
     @tidy_cellset
-    def _post_against_cellset(self, cellset_id: str, payload: Dict, sandbox_name: str = None,**kwargs) -> Response:
+    def _post_against_cellset(self, cellset_id: str, payload: Dict, sandbox_name: str = None, **kwargs) -> Response:
         """ Execute a post request against a cellset
 
         :param cellset_id:
@@ -280,7 +286,7 @@ class CellService(ObjectService):
         :return:
         """
         url = format_url("/api/v1/Cellsets('{}')/tm1.Update", cellset_id)
-        url = url_parameters_add(url,**{"!sandbox": sandbox_name})
+        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
         return self._rest.POST(url=url, data=json.dumps(payload), **kwargs)
 
     def get_dimension_names_for_writing(self, cube_name: str, **kwargs) -> List[str]:
@@ -297,6 +303,7 @@ class CellService(ObjectService):
 
     @require_pandas
     def write_dataframe(self, cube_name: str, data: 'pd.DataFrame', dimensions: Iterable[str] = None,
+                        sandbox_name: str = None,
                         **kwargs) -> Response:
         """
         Function expects same shape as `execute_mdx_dataframe` returns.
@@ -306,6 +313,7 @@ class CellService(ObjectService):
         :param cube_name:
         :param data:
         :param dimensions:
+        :param sandbox_name: str
         :param kwargs:
         :return:
         """
@@ -320,23 +328,24 @@ class CellService(ObjectService):
 
         cells = build_cellset_from_pandas_dataframe(data)
 
-        return self.write_values(cube_name=cube_name, cellset_as_dict=cells, dimensions=dimensions, **kwargs)
+        return self.write_values(cube_name=cube_name, cellset_as_dict=cells, dimensions=dimensions,
+                                 sandbox_name=sandbox_name, **kwargs)
 
     def write_value(self, value: Union[str, float], cube_name: str, element_tuple: Iterable,
-                    dimensions: Iterable[str] = None, sandbox_name: str = None,**kwargs) -> Response:
+                    dimensions: Iterable[str] = None, sandbox_name: str = None, **kwargs) -> Response:
         """ Write value into cube at specified coordinates
 
         :param value: the actual value
         :param cube_name: name of the target cube
         :param element_tuple: target coordinates
         :param dimensions: optional. Dimension names in their natural order. Will speed up the execution!
-        :paramm sandbox_name: str
+        :param sandbox_name: str
         :return: response
         """
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
         url = format_url("/api/v1/Cubes('{}')/tm1.Update", cube_name)
-        url = url_parameters_add(url,**{"!sandbox": sandbox_name})
+        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
         body_as_dict = OrderedDict()
         body_as_dict["Cells"] = [{}]
         body_as_dict["Cells"][0]["Tuple@odata.bind"] = [
@@ -348,7 +357,8 @@ class CellService(ObjectService):
         return self._rest.POST(url=url, data=data, **kwargs)
 
     def write(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None, increment: bool = False,
-              deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False, **kwargs) -> Response:
+              deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
+              sandbox_name: str = None, **kwargs) -> Response:
         """ Write values to a cube
 
         Same signature as `write_values` method, but faster since it uses `write_values_through_cellset`
@@ -363,6 +373,7 @@ class CellService(ObjectService):
         :param increment: increment or update cell values
         :param deactivate_transaction_log: deactivate before writing
         :param reactivate_transaction_log: reactivate after writing
+        :param sandbox_name: str
         :return: Response
         """
         if not dimensions:
@@ -382,10 +393,12 @@ class CellService(ObjectService):
             increment=increment,
             deactivate_transaction_log=deactivate_transaction_log,
             reactivate_transaction_log=reactivate_transaction_log,
+            sandbox_name=sandbox_name,
             **kwargs)
 
     @manage_transaction_log
-    def write_values(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None, sandbox_name: str = None,
+    def write_values(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None,
+                     sandbox_name: str = None,
                      **kwargs) -> Response:
         """ Write values to a cube
 
@@ -401,7 +414,7 @@ class CellService(ObjectService):
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name, **kwargs)
         url = format_url("/api/v1/Cubes('{}')/tm1.Update", cube_name)
-        url = url_parameters_add(url,**{"!sandbox": sandbox_name})
+        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
         updates = []
         for element_tuple, value in cellset_as_dict.items():
             body_as_dict = OrderedDict()
@@ -418,7 +431,8 @@ class CellService(ObjectService):
         return self._rest.POST(url=url, data=updates, **kwargs)
 
     @manage_transaction_log
-    def write_values_through_cellset(self, mdx: str, values: Iterable, increment: bool = False, sandbox_name: str = None, **kwargs) -> Response:
+    def write_values_through_cellset(self, mdx: str, values: Iterable, increment: bool = False,
+                                     sandbox_name: str = None, **kwargs) -> Response:
         """ Significantly faster than write_values function
 
         Cellset gets created according to MDX Expression. For instance:
@@ -447,7 +461,7 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return:
         """
-        cellset_id = self.create_cellset(mdx=mdx,sandbox_name=sandbox_name, **kwargs)
+        cellset_id = self.create_cellset(mdx=mdx, sandbox_name=sandbox_name, **kwargs)
 
         if increment:
             current_values = self.extract_cellset_values(cellset_id, delete_cellset=False, **kwargs)
@@ -467,7 +481,7 @@ class CellService(ObjectService):
         :return:
         """
         url = format_url("/api/v1/Cellsets('{}')/Cells", cellset_id)
-        url = url_parameters_add(url,**{"!sandbox": sandbox_name})
+        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
         data = []
         for o, value in enumerate(values):
             data.append({
@@ -478,7 +492,8 @@ class CellService(ObjectService):
 
     def execute_mdx(self, mdx: str, cell_properties: List[str] = None, top: int = None, skip_contexts: bool = False,
                     skip: int = None, skip_zeros: bool = False, skip_consolidated_cells: bool = False,
-                    skip_rule_derived_cells: bool = False, sandbox_name: str = None, **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
+                    skip_rule_derived_cells: bool = False, sandbox_name: str = None,
+                    **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
         """ Execute MDX and return the cells with their properties
 
         :param mdx: MDX Query, as string
@@ -508,7 +523,8 @@ class CellService(ObjectService):
 
     def execute_view(self, cube_name: str, view_name: str, private: bool = False, cell_properties: Iterable[str] = None,
                      top: int = None, skip_contexts: bool = False, skip: int = None, skip_zeros: bool = False,
-                     skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False, sandbox_name: str = None,
+                     skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
+                     sandbox_name: str = None,
                      **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
         """ get view content as dictionary with sweet and concise structure.
             Works on NativeView and MDXView !
@@ -528,7 +544,8 @@ class CellService(ObjectService):
 
         :return: Dictionary : {([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }
         """
-        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private, sandbox_name=sandbox_name, **kwargs)
+        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
+                                                   sandbox_name=sandbox_name, **kwargs)
         return self.extract_cellset(
             cellset_id=cellset_id,
             cell_properties=cell_properties,
@@ -621,7 +638,8 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return: Raw format from TM1.
         """
-        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private, sandbox_name=sandbox_name, **kwargs)
+        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
+                                                   sandbox_name=sandbox_name, **kwargs)
         return self.extract_cellset_raw(
             cellset_id=cellset_id,
             cell_properties=cell_properties,
@@ -648,7 +666,8 @@ class CellService(ObjectService):
         cellset_id = self.create_cellset(mdx=mdx, sandbox_name=sandbox_name, **kwargs)
         return self.extract_cellset_values(cellset_id, delete_cellset=True, sandbox_name=sandbox_name, **kwargs)
 
-    def execute_view_values(self, cube_name: str, view_name: str, private: bool = False, sandbox_name: str = None, **kwargs) -> List[Union[str, float]]:
+    def execute_view_values(self, cube_name: str, view_name: str, private: bool = False, sandbox_name: str = None,
+                            **kwargs) -> List[Union[str, float]]:
         """ Execute view and retrieve only the cell values
 
         :param cube_name: String, name of the cube
@@ -658,7 +677,8 @@ class CellService(ObjectService):
         :param kwargs:
         :return:
         """
-        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private, sandbox_name=sandbox_name, **kwargs)
+        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
+                                                   sandbox_name=sandbox_name, **kwargs)
         return self.extract_cellset_values(cellset_id, delete_cellset=True, sandbox_name=sandbox_name, **kwargs)
 
     def execute_mdx_rows_and_values(self, mdx: str, element_unique_names: bool = True, sandbox_name: str = None,
@@ -672,10 +692,12 @@ class CellService(ObjectService):
         :return:
         """
         cellset_id = self.create_cellset(mdx=mdx, sandbox_name=sandbox_name, **kwargs)
-        return self.extract_cellset_rows_and_values(cellset_id, element_unique_names, delete_cellset=True, sandbox_name=sandbox_name, **kwargs)
+        return self.extract_cellset_rows_and_values(cellset_id, element_unique_names, delete_cellset=True,
+                                                    sandbox_name=sandbox_name, **kwargs)
 
     def execute_view_rows_and_values(self, cube_name: str, view_name: str, private: bool = False,
-                                     element_unique_names: bool = True, sandbox_name: str = None, **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
+                                     element_unique_names: bool = True, sandbox_name: str = None,
+                                     **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
         """ Execute cube view and retrieve row element names and values in a case and space insensitive dictionary
 
         :param cube_name: String, name of the cube
@@ -686,12 +708,15 @@ class CellService(ObjectService):
         :param kwargs:
         :return:
         """
-        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private, sandbox_name=sandbox_name, **kwargs)
-        return self.extract_cellset_rows_and_values(cellset_id, element_unique_names, delete_cellset=True, sandbox_name=sandbox_name, **kwargs)
+        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
+                                                   sandbox_name=sandbox_name, **kwargs)
+        return self.extract_cellset_rows_and_values(cellset_id, element_unique_names, delete_cellset=True,
+                                                    sandbox_name=sandbox_name, **kwargs)
 
     def execute_mdx_csv(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
                         skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
-                        line_separator: str = "\r\n", value_separator: str = ",", sandbox_name: str = None, **kwargs) -> str:
+                        line_separator: str = "\r\n", value_separator: str = ",", sandbox_name: str = None,
+                        **kwargs) -> str:
         """ Optimized for performance. Get csv string of coordinates and values.
 
         :param mdx: Valid MDX Query
@@ -714,7 +739,8 @@ class CellService(ObjectService):
     def execute_view_csv(self, cube_name: str, view_name: str, private: bool = False, top: int = None, skip: int = None,
                          skip_zeros: bool = True, skip_consolidated_cells: bool = False,
                          skip_rule_derived_cells: bool = False,
-                         line_separator: str = "\r\n", value_separator: str = ",", sandbox_name: str = None, **kwargs) -> str:
+                         line_separator: str = "\r\n", value_separator: str = ",", sandbox_name: str = None,
+                         **kwargs) -> str:
         """ Optimized for performance. Get csv string of coordinates and values.
 
         :param cube_name: String, name of the cube
@@ -730,7 +756,8 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return: String
         """
-        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private, sandbox_name=sandbox_name)
+        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
+                                                   sandbox_name=sandbox_name)
         return self.extract_cellset_csv(cellset_id=cellset_id, skip_zeros=skip_zeros, top=top, skip=skip,
                                         skip_consolidated_cells=skip_consolidated_cells,
                                         skip_rule_derived_cells=skip_rule_derived_cells, line_separator=line_separator,
@@ -738,7 +765,8 @@ class CellService(ObjectService):
 
     def execute_mdx_elements_value_dict(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
                                         skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
-                                        element_separator: str = "|", **kwargs) -> CaseAndSpaceInsensitiveDict:
+                                        element_separator: str = "|",
+                                        sandbox_name: str = None, **kwargs) -> CaseAndSpaceInsensitiveDict:
         """ Optimized for performance. Get Dict from MDX Query.
         :param mdx: Valid MDX Query
         :param top: Int, number of cells to return (counting from top)
@@ -747,12 +775,14 @@ class CellService(ObjectService):
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
         :param element_separator: separator for the dimension element combination
+        :param sandbox_name: str
         :return: CaseAndSpaceInsensitiveDict {'2020|Jan|Sales': 2000, '2020|Feb|Sales': 3000}
         """
         lines = self.execute_mdx_csv(mdx=mdx, top=top, skip=skip, skip_zeros=skip_zeros,
                                      skip_consolidated_cells=skip_consolidated_cells,
                                      skip_rule_derived_cells=skip_rule_derived_cells,
-                                     value_separator=element_separator, **kwargs)
+                                     value_separator=element_separator,
+                                     sandbox_name=sandbox_name, **kwargs)
         elements_value_dict = CaseAndSpaceInsensitiveDict()
         for entries in lines.split("\r\n")[1:]:
             elements_value_dict[
@@ -761,7 +791,8 @@ class CellService(ObjectService):
 
     @require_pandas
     def execute_mdx_dataframe(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
-                              skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False, sandbox_name: str = None,
+                              skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
+                              sandbox_name: str = None,
                               **kwargs) -> 'pd.DataFrame':
         """ Optimized for performance. Get Pandas DataFrame from MDX Query.
 
@@ -784,19 +815,22 @@ class CellService(ObjectService):
                                               sandbox_name=sandbox_name, **kwargs)
 
     @require_pandas
-    def execute_mdx_dataframe_shaped(self, mdx: str, **kwargs) -> 'pd.DataFrame':
+    def execute_mdx_dataframe_shaped(self, mdx: str, sandbox_name: str = None, **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cube in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
 
         :param mdx:
+        :param sandbox_name: str
         :param kwargs:
         :return:
         """
-        cellset_id = self.create_cellset(mdx)
-        return self.extract_cellset_dataframe_shaped(cellset_id, delete_cellset=True, **kwargs)
+        cellset_id = self.create_cellset(mdx, sandbox_name=sandbox_name)
+        return self.extract_cellset_dataframe_shaped(cellset_id, delete_cellset=True, sandbox_name=sandbox_name,
+                                                     **kwargs)
 
     @require_pandas
     def execute_view_dataframe_shaped(self, cube_name: str, view_name: str, private: bool = False,
+                                      sandbox_name: str = None,
                                       **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cube in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
@@ -804,32 +838,17 @@ class CellService(ObjectService):
         :param cube_name:
         :param view_name:
         :param private:
-        :param kwargs:
-        :return:
-        """
-        cellset_id = self.create_cellset_from_view(cube_name, view_name, private)
-        return self.extract_cellset_dataframe_shaped(cellset_id, delete_cellset=True, **kwargs)
-
-    def execute_view_dataframe_pivot(self, cube_name: str, view_name: str, private: bool = False, dropna: bool = False,
-                                     fill_value: bool = None, sandbox_name: str = None, **kwargs) -> pd.DataFrame:
-        """ Execute a cube view to get a pandas pivot dataframe, in the shape of the cube view
-
-        :param cube_name:
-        :param view_name:
-        :param private:
-        :param dropna:
-        :param fill_value:
         :param sandbox_name: str
         :param kwargs:
-
         :return:
         """
         cellset_id = self.create_cellset_from_view(cube_name, view_name, private, sandbox_name=sandbox_name)
-        return self.extract_cellset_dataframe_shaped(cellset_id, delete_cellset=True, sandbox_name=sandbox_name, **kwargs)
+        return self.extract_cellset_dataframe_shaped(cellset_id, delete_cellset=True, sandbox_name=sandbox_name,
+                                                     **kwargs)
 
     @require_pandas
     def execute_view_dataframe_pivot(self, cube_name: str, view_name: str, private: bool = False, dropna: bool = False,
-                                     fill_value: bool = None, **kwargs) -> 'pd.DataFrame':
+                                     fill_value: bool = None, sandbox_name: str = None, **kwargs) -> 'pd.DataFrame':
         """ Execute a cube view to get a pandas pivot dataframe, in the shape of the cube view
 
         :param cube_name: String, name of the cube
@@ -840,15 +859,18 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return:
         """
-        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private, sandbox_name=sandbox_name, **kwargs)
+        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
+                                                   sandbox_name=sandbox_name, **kwargs)
         return self.extract_cellset_dataframe_pivot(
             cellset_id=cellset_id,
             dropna=dropna,
             fill_value=fill_value,
+            sandbox_name=sandbox_name,
             **kwargs)
 
     @require_pandas
-    def execute_mdx_dataframe_pivot(self, mdx: str, dropna: bool = False, fill_value: bool = None, sandbox_name: str = None) -> 'pd.DataFrame':
+    def execute_mdx_dataframe_pivot(self, mdx: str, dropna: bool = False, fill_value: bool = None,
+                                    sandbox_name: str = None) -> 'pd.DataFrame':
         """ Execute MDX Query to get a pandas pivot data frame in the shape as specified in the Query
 
         :param mdx:
@@ -864,20 +886,22 @@ class CellService(ObjectService):
             fill_value=fill_value,
             sandbox_name=sandbox_name)
 
-    def execute_mdx_cellcount(self, mdx: str, **kwargs) -> int:
+    def execute_mdx_cellcount(self, mdx: str, sandbox_name: str = None, **kwargs) -> int:
         """ Execute MDX in order to understand how many cells are in a cellset.
         Only return number of cells in the cellset. FAST!
 
         :param mdx: MDX Query, as string
+        :param sandbox_name: str
         :return: Number of Cells in the CellSet
         """
-        cellset_id = self.create_cellset(mdx, **kwargs)
-        return self.extract_cellset_cellcount(cellset_id, delete_cellset=True, **kwargs)
+        cellset_id = self.create_cellset(mdx, sandbox_name=sandbox_name, **kwargs)
+        return self.extract_cellset_cellcount(cellset_id, delete_cellset=True, sandbox_name=sandbox_name, **kwargs)
 
     def execute_view_elements_value_dict(self, cube_name: str, view_name: str, private: bool = False,
                                          top: int = None, skip: int = None, skip_zeros: bool = True,
                                          skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
-                                         element_separator: str = "|", **kwargs) -> CaseAndSpaceInsensitiveDict:
+                                         element_separator: str = "|", sandbox_name: str = None,
+                                         **kwargs) -> CaseAndSpaceInsensitiveDict:
         """ Optimized for performance. Get a Dict(tuple, value) from an existing Cube View
         Context dimensions are omitted in the resulting Dataframe !
         Cells with Zero/null are omitted by default, but still configurable!
@@ -891,12 +915,13 @@ class CellService(ObjectService):
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
         :param element_separator: separator for the dimension element combination
+        :param sandbox_name: str
         :return: CaseAndSpaceInsensitiveDict {'2020|Jan|Sales': 2000, '2020|Feb|Sales': 3000}
         """
         lines = self.execute_view_csv(cube_name=cube_name, view_name=view_name, private=private, top=top, skip=skip,
                                       skip_zeros=skip_zeros, skip_consolidated_cells=skip_consolidated_cells,
                                       skip_rule_derived_cells=skip_rule_derived_cells,
-                                      value_separator=element_separator, **kwargs)
+                                      value_separator=element_separator, sandbox_name=sandbox_name, **kwargs)
         elements_value_dict = CaseAndSpaceInsensitiveDict()
         for entries in lines.split("\r\n")[1:]:
             elements_value_dict[
@@ -906,7 +931,8 @@ class CellService(ObjectService):
     @require_pandas
     def execute_view_dataframe(self, cube_name: str, view_name: str, private: bool = False, top: int = None,
                                skip: int = None, skip_zeros: bool = True, skip_consolidated_cells: bool = False,
-                               skip_rule_derived_cells: bool = False, sandbox_name: str = None, **kwargs) -> 'pd.DataFrame':
+                               skip_rule_derived_cells: bool = False, sandbox_name: str = None,
+                               **kwargs) -> 'pd.DataFrame':
         """ Optimized for performance. Get Pandas DataFrame from an existing Cube View
         Context dimensions are omitted in the resulting Dataframe !
         Cells with Zero/null are omitted !
@@ -925,22 +951,15 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return: Pandas Dataframe
         """
-        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private, sandbox_name=sandbox_name, **kwargs)
+        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
+                                                   sandbox_name=sandbox_name, **kwargs)
         return self.extract_cellset_dataframe(cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                                               skip_consolidated_cells=skip_consolidated_cells,
-                                              skip_rule_derived_cells=skip_rule_derived_cells, sandbox_name=sandbox_name, **kwargs)
+                                              skip_rule_derived_cells=skip_rule_derived_cells,
+                                              sandbox_name=sandbox_name, **kwargs)
 
-    def execute_mdx_cellcount(self, mdx: str, sandbox_name: str = None, **kwargs) -> int:
-        """ Execute MDX in order to understand how many cells are in a cellset.
-        Only return number of cells in the cellset. FAST!
-
-        :param mdx: MDX Query, as string
-        :return: Number of Cells in the CellSet
-        """
-        cellset_id = self.create_cellset(mdx, sandbox_name=sandbox_name, **kwargs)
-        return self.extract_cellset_cellcount(cellset_id, delete_cellset=True, sandbox_name=sandbox_name, **kwargs)
-
-    def execute_view_cellcount(self, cube_name: str, view_name: str, private: bool = False, sandbox_name: str = None, **kwargs) -> int:
+    def execute_view_cellcount(self, cube_name: str, view_name: str, private: bool = False, sandbox_name: str = None,
+                               **kwargs) -> int:
         """ Execute cube view in order to understand how many cells are in a cellset.
         Only return number of cells in the cellset. FAST!
         
@@ -950,7 +969,8 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return:
         """
-        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private, sandbox_name=sandbox_name, **kwargs)
+        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
+                                                   sandbox_name=sandbox_name, **kwargs)
         return self.extract_cellset_cellcount(cellset_id, delete_cellset=True, sandbox_name=sandbox_name, **kwargs)
 
     def execute_mdx_rows_and_values_string_set(
@@ -966,7 +986,8 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return:
         """
-        rows_and_values = self.execute_mdx_rows_and_values(mdx, element_unique_names=False, sandbox_name=sandbox_name, **kwargs)
+        rows_and_values = self.execute_mdx_rows_and_values(mdx, element_unique_names=False, sandbox_name=sandbox_name,
+                                                           **kwargs)
         return self._extract_string_set_from_rows_and_values(rows_and_values, exclude_empty_cells)
 
     def execute_view_rows_and_values_string_set(self, cube_name: str, view_name: str, private: bool = False,
@@ -981,7 +1002,8 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return:
         """
-        rows_and_values = self.execute_view_rows_and_values(cube_name, view_name, private, False, sandbox_name=sandbox_name, **kwargs)
+        rows_and_values = self.execute_view_rows_and_values(cube_name, view_name, private, False,
+                                                            sandbox_name=sandbox_name, **kwargs)
         return self._extract_string_set_from_rows_and_values(rows_and_values, exclude_empty_cells)
 
     def execute_mdx_ui_dygraph(
@@ -1080,7 +1102,8 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return:
         """
-        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private, sandbox_name=sandbox_name, **kwargs)
+        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
+                                                   sandbox_name=sandbox_name, **kwargs)
         data = self.extract_cellset_raw(cellset_id=cellset_id,
                                         cell_properties=["Value"],
                                         elem_properties=elem_properties,
@@ -1137,7 +1160,7 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return: dict :{ titles: [], headers: [axis][], cells:{ Page0:{ Row0:{ [row values], Row1: [], ...}, ...}, ...}}
         """
-        cellset_id = self.create_cellset(mdx=mdx,sandbox_name=sandbox_name, **kwargs)
+        cellset_id = self.create_cellset(mdx=mdx, sandbox_name=sandbox_name, **kwargs)
         data = self.extract_cellset_raw(cellset_id=cellset_id,
                                         cell_properties=["Value"],
                                         elem_properties=elem_properties,
@@ -1198,7 +1221,8 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return: dict :{ titles: [], headers: [axis][], cells:{ Page0:{ Row0: {[row values], Row1: [], ...}, ...}, ...}}
         """
-        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private, sandbox_name=sandbox_name, **kwargs)
+        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
+                                                   sandbox_name=sandbox_name, **kwargs)
         data = self.extract_cellset_raw(cellset_id=cellset_id,
                                         cell_properties=["Value"],
                                         elem_properties=elem_properties,
@@ -1279,10 +1303,10 @@ class CellService(ObjectService):
             filter_cells = " and ".join(filters)
 
         url = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
-            "Cube($select=Name;$expand=Dimensions($select=Name))," \
-            "Axes({filter_axis}$expand=Tuples($expand=Members({select_member_properties}" \
-            "{expand_elem_properties}{top_rows})))," \
-            "Cells($select={cell_properties}{top_cells}{skip_cells}{filter_cells})" \
+              "Cube($select=Name;$expand=Dimensions($select=Name))," \
+              "Axes({filter_axis}$expand=Tuples($expand=Members({select_member_properties}" \
+              "{expand_elem_properties}{top_rows})))," \
+              "Cells($select={cell_properties}{top_cells}{skip_cells}{filter_cells})" \
             .format(cellset_id=cellset_id,
                     top_rows=f";$top={top}" if top and not skip else "",
                     cell_properties=",".join(cell_properties),
@@ -1292,7 +1316,7 @@ class CellService(ObjectService):
                     top_cells=f";$top={top}" if top else "",
                     skip_cells=f";$skip={skip}" if skip else "",
                     filter_cells=f";$filter={filter_cells}" if filter_cells else "")
-        url = url_parameters_add(url,**{"!sandbox": sandbox_name})
+        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url=url, **kwargs)
         return response.json()
 
@@ -1305,12 +1329,13 @@ class CellService(ObjectService):
         :return: Raw format from TM1.
         """
         url = format_url("/api/v1/Cellsets('{}')?$expand=Cells($select=Value)", cellset_id)
-        url = url_parameters_add(url,**{"!sandbox": sandbox_name})
+        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url=url, **kwargs)
         return [cell["Value"] for cell in response.json()["Cells"]]
 
     @tidy_cellset
-    def extract_cellset_rows_and_values(self, cellset_id: str, element_unique_names: bool = True, sandbox_name: str = None,
+    def extract_cellset_rows_and_values(self, cellset_id: str, element_unique_names: bool = True,
+                                        sandbox_name: str = None,
                                         **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
         """ Retrieve row element names and values in a case and space insensitive dictionary
 
@@ -1321,10 +1346,10 @@ class CellService(ObjectService):
         :return:
         """
         url = "/api/v1/Cellsets('{}')?$expand=" \
-            "Axes($filter=Ordinal eq 1;$expand=Tuples(" \
-            "$expand=Members($select=Element;$expand=Element($select={}))))," \
-            "Cells($select=Value)".format(cellset_id, "UniqueName" if element_unique_names else "Name")
-        url = url_parameters_add(url,**{"!sandbox": sandbox_name})
+              "Axes($filter=Ordinal eq 1;$expand=Tuples(" \
+              "$expand=Members($select=Element;$expand=Element($select={}))))," \
+              "Cells($select=Value)".format(cellset_id, "UniqueName" if element_unique_names else "Name")
+        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url=url, **kwargs)
         response_json = response.json()
         rows = response_json["Axes"][0]["Tuples"]
@@ -1361,9 +1386,9 @@ class CellService(ObjectService):
         :return:
         """
         url = "/api/v1/Cellsets('{}')?$expand=" \
-                "Cube($select=Name)," \
-                "Axes($expand=Hierarchies($select=UniqueName))".format(cellset_id)
-        url = url_parameters_add(url,**{"!sandbox": sandbox_name})
+              "Cube($select=Name)," \
+              "Axes($expand=Hierarchies($select=UniqueName))".format(cellset_id)
+        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url=url, **kwargs)
         response_json = response.json()
         cube = response_json["Cube"]["Name"]
@@ -1387,7 +1412,7 @@ class CellService(ObjectService):
         :return:
         """
         url = "/api/v1/Cellsets('{}')/Cells/$count".format(cellset_id)
-        url = url_parameters_add(url,**{"!sandbox": sandbox_name})
+        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url, **kwargs)
         return int(response.content)
 
@@ -1416,7 +1441,8 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return: Raw format from TM1.
         """
-        _, _, rows, columns = self.extract_cellset_composition(cellset_id, delete_cellset=False, **kwargs)
+        _, _, rows, columns = self.extract_cellset_composition(cellset_id, delete_cellset=False,
+                                                               sandbox_name=sandbox_name, **kwargs)
         cellset_dict = self.extract_cellset_raw(cellset_id, cell_properties=["Value"], top=top, skip=skip,
                                                 skip_contexts=True, skip_zeros=skip_zeros,
                                                 skip_consolidated_cells=skip_consolidated_cells,
@@ -1424,7 +1450,6 @@ class CellService(ObjectService):
                                                 delete_cellset=True, sandbox_name=sandbox_name, **kwargs)
         return build_csv_from_cellset_dict(rows, columns, cellset_dict, line_separator=line_separator,
                                            value_separator=value_separator, top=top)
-
 
     @require_pandas
     def extract_cellset_dataframe(
@@ -1470,12 +1495,13 @@ class CellService(ObjectService):
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
 
         :param cellset_id
+        :param sandbox_name: str
         """
         url = "/api/v1/Cellsets('{}')?$expand=" \
-            "Axes($filter=Ordinal eq 0 or Ordinal eq 1;$expand=Tuples(" \
-            "$expand=Members($select=Name)),Hierarchies($select=Name))," \
-            "Cells($select=Value)".format(cellset_id)
-        url = url_parameters_add(url,**{"!sandbox": sandbox_name})
+              "Axes($filter=Ordinal eq 0 or Ordinal eq 1;$expand=Tuples(" \
+              "$expand=Members($select=Name)),Hierarchies($select=Name))," \
+              "Cells($select=Value)".format(cellset_id)
+        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url=url, **kwargs)
         response_json = response.json()
         rows = response_json["Axes"][1]["Tuples"]
@@ -1510,7 +1536,8 @@ class CellService(ObjectService):
         return pd.DataFrame(body, columns=headers, dtype=str)
 
     @require_pandas
-    def extract_cellset_dataframe_pivot(self, cellset_id: str, dropna: bool = False, fill_value: bool = False, sandbox_name: str = None,
+    def extract_cellset_dataframe_pivot(self, cellset_id: str, dropna: bool = False, fill_value: bool = False,
+                                        sandbox_name: str = None,
                                         **kwargs) -> 'pd.DataFrame':
         """ Extract a pivot table (pandas dataframe) from a cellset in TM1
 
@@ -1601,13 +1628,8 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return:
         """
-
         url = '/api/v1/ExecuteMDX'
-        url = url_parameters_add(url,**{"!sandbox": sandbox_name})
-        data = {'MDX': mdx}
-        response = self._rest.POST(
-            url=url, data=json.dumps(data, ensure_ascii=False), **kwargs
-        )
+        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
         data = {
             'MDX': mdx
         }
@@ -1615,7 +1637,8 @@ class CellService(ObjectService):
         cellset_id = response.json()['ID']
         return cellset_id
 
-    def create_cellset_from_view(self, cube_name: str, view_name: str, private: bool, sandbox_name: str = None, **kwargs) -> str:
+    def create_cellset_from_view(self, cube_name: str, view_name: str, private: bool, sandbox_name: str = None,
+                                 **kwargs) -> str:
         """ create cellset from a cube view. return the cellset-id
 
         :param cube_name: String, name of the cube
@@ -1626,10 +1649,10 @@ class CellService(ObjectService):
         :return:
         """
         url = format_url("/api/v1/Cubes('{cube_name}')/{views}('{view_name}')/tm1.Execute",
-                        cube_name=cube_name,
-                        views='PrivateViews' if private else 'Views',
-                        view_name=view_name)
-        url = url_parameters_add(url,**{"!sandbox": sandbox_name})
+                         cube_name=cube_name,
+                         views='PrivateViews' if private else 'Views',
+                         view_name=view_name)
+        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
         return self._rest.POST(url=url, **kwargs).json()['ID']
 
     def delete_cellset(self, cellset_id: str, sandbox_name: str = None, **kwargs) -> Response:
@@ -1640,7 +1663,7 @@ class CellService(ObjectService):
         :return:
         """
         url = "/api/v1/Cellsets('{}')".format(cellset_id)
-        url = url_parameters_add(url,**{"!sandbox": sandbox_name})
+        url = url_parameters_add(url, **{"!sandbox": sandbox_name})
         return self._rest.DELETE(url, **kwargs)
 
     def transaction_log_is_active(self, cube_name: str) -> bool:
