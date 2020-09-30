@@ -18,3 +18,4 @@ from TM1py.Objects.Server import Server
 from TM1py.Objects.Subset import Subset, AnonymousSubset
 from TM1py.Objects.User import User
 from TM1py.Objects.View import View
+from TM1py.Objects.Sandbox import Sandbox

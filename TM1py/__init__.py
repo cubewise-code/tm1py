@@ -33,7 +33,7 @@ from TM1py.Services.SubsetService import SubsetService
 from TM1py.Services.MonitoringService import MonitoringService
 from TM1py.Services.SecurityService import SecurityService
 from TM1py.Services.ViewService import ViewService
-
+from TM1py.Services.SandboxService import SandboxService
 from TM1py.Objects.Annotation import Annotation
 from TM1py.Objects.Application import Application
 from TM1py.Objects.Axis import ViewAxisSelection, ViewTitleSelection
@@ -54,5 +54,6 @@ from TM1py.Objects.Server import Server
 from TM1py.Objects.Subset import Subset, AnonymousSubset
 from TM1py.Objects.User import User
 from TM1py.Objects.View import View
+from TM1py.Objects.Sandbox import Sandbox
 
 from TM1py.Utils import Utils

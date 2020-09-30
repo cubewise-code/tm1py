@@ -2,7 +2,7 @@ import pickle
 
 from TM1py.Services import HierarchyService, SecurityService, ApplicationService, SubsetService, ServerService, \
     MonitoringService, ProcessService, PowerBiService, AnnotationService, ViewService, RestService, CellService, \
-    ChoreService, DimensionService, CubeService, ElementService
+    ChoreService, DimensionService, CubeService, ElementService, SandboxService
 
 
 class TM1Service:
@@ -31,6 +31,7 @@ class TM1Service:
         self.applications = ApplicationService(self._tm1_rest)
         self.views = ViewService(self._tm1_rest)
 
+        self.sandboxes = SandboxService(self._tm1_rest)
     def logout(self, **kwargs):
         self._tm1_rest.logout(**kwargs)
 
