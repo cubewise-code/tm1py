@@ -410,7 +410,7 @@ class ElementService(ObjectService):
         :param leaves_only: Only Leaf Elements or all Elements
         :return:
         """
-        depth = max_depth if max_depth else 99
+        depth = max_depth - 1 if max_depth else 99
         # members to return
         members = []
         # build url
