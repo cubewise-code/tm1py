@@ -430,7 +430,7 @@ class ElementService(ObjectService):
             elif element["Type"] == "Consolidated":
                 if "Components" in element:
                     for component in element["Components"]:
-                        if not leaves_only:
+                        if not leaves_only and component["Type"] == "Consolidated":
                             members.append(component["Name"])
                         get_members(component)
 
