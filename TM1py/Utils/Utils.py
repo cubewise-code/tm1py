@@ -545,7 +545,7 @@ def url_parameters_add(url, **kwargs: str) -> str:
     parameters = []
     for key, value in kwargs.items():
         if value is not None:
-            value = value.replace("'", "''") if isinstance(value, str) else value 
+            value = value.replace("'", "''") if isinstance(value, str) else value
             parameters.append(key + "=" + value)
     url_parts = list(urlparse.urlparse(url))
     query_part = url_parts[4]
@@ -801,3 +801,40 @@ def wrap_in_curly_braces(expression: str) -> str:
     return "".join(["{" if not expression.startswith("{") else "",
                     expression,
                     "}" if not expression.endswith("}") else ""])
+
+def extract_bit(decimal_value: int, position: int) -> bool:
+    """ Function converts passed decimal (integer) value to binary
+    and extracts specified (position) bit counting from the right.
+    It will return TRUE if bit is set and FALSE if bit is not set
+    Each has 'Updateable' property - a decimal value, which needs to be converted to binary to get information
+    about the cell
+    Know bits positions and properties. If bit is set, the property is true:
+    1 - security restriction
+    2 - updatable using UPDATE CUBE
+    3 - rule is applied
+    4 - picklist exists
+    5 - sandbox value is different to base
+    9 - no spreading hold
+    10 - leaf hold
+    11 - consolidation spreading hold
+    12 - temporary spreading hold
+    29 - cell is not updateable
+
+    :param decimal_value: int Decimal number
+    :param position: int Bit position to be extracted. Count starts from 1.
+    :return: bool
+
+    """
+    bit = (decimal_value & (1 << position - 1)) != 0
+    return bit
+
+
+def cell_is_updateable(cell: dict) -> bool:
+    """ Function checks if the cell can be updated
+    :param cell: dict cell including Updateable property
+    :return: bool
+    """
+    if cell.get("Updateable", False):
+        bit = extract_bit(cell["Updateable"], 29)
+        updateable = not bit
+        return updateable
