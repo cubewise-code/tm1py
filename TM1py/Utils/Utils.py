@@ -6,7 +6,7 @@ import re
 from typing import Dict, List, Tuple, Iterable, Optional, Generator
 import urllib.parse as urlparse
 from urllib.parse import urlencode
-
+from enum import Enum, unique
 from TM1py.Exceptions.Exceptions import TM1pyVersionException
 
 try:
@@ -535,6 +535,7 @@ def get_seconds_from_duration(time_str: str) -> int:
     seconds = (int(d) * 86400) + (int(h) * 3600) + (int(m) * 60) + int(s)
     return seconds
 
+
 def url_parameters_add(url, **kwargs: str) -> str:
     """ Append parameters to url string passed in kwargs
 
@@ -552,6 +553,7 @@ def url_parameters_add(url, **kwargs: str) -> str:
     query_part += "&" + "&".join(parameters) if query_part else "&".join(parameters)
     url_parts[4] = query_part
     return urlparse.urlunparse(url_parts)
+
 
 class CaseAndSpaceInsensitiveDict(collections.abc.MutableMapping):
     """A case-and-space-insensitive dict-like object with String keys.
@@ -763,7 +765,6 @@ def get_dimensions_from_where_clause(mdx: str) -> List[str]:
 
 
 def get_cube(mdx: str) -> str:
-
     # replace tabs, line breaks, spaces
     mdx = re.sub(r'\s+', '', mdx)
 
@@ -802,30 +803,34 @@ def wrap_in_curly_braces(expression: str) -> str:
                     expression,
                     "}" if not expression.endswith("}") else ""])
 
-def extract_bit(decimal_value: int, position: int) -> bool:
+
+@unique
+class CellUpdateableProperty(Enum):
+    SECURITY_RESTRICTED = 1
+    UPDATE_CUBE_APPLICABLE = 2
+    RULE_IS_APPLIED = 3
+    PICKLIST_EXISTS = 4
+    SANDBOX_VALUE_IS_DIFFERENT_TO_BASE = 5
+    NO_SPREADING_HOLD = 9
+    LEAF_HOLD = 10
+    CONSOLIDATION_SPREADING_HOLD = 11
+    TEMPORARY_SPREADING_HOLD = 12
+    CELL_IS_NOT_UPDATEABLE = 29
+
+
+def extract_cell_updateable_property(decimal_value: int, cell_property: CellUpdateableProperty) -> bool:
     """ Function converts passed decimal (integer) value to binary
-    and extracts specified (position) bit counting from the right.
-    It will return TRUE if bit is set and FALSE if bit is not set
-    Each has 'Updateable' property - a decimal value, which needs to be converted to binary to get information
+    and extracts specified (cell_property) bit counting from the right.
+    It will return TRUE if bit is set, and FALSE if bit is not set
+    Each cell has 'Updateable' property - a decimal value, which needs to be converted to binary to get information
     about the cell
-    Know bits positions and properties. If bit is set, the property is true:
-    1 - security restriction
-    2 - updatable using UPDATE CUBE
-    3 - rule is applied
-    4 - picklist exists
-    5 - sandbox value is different to base
-    9 - no spreading hold
-    10 - leaf hold
-    11 - consolidation spreading hold
-    12 - temporary spreading hold
-    29 - cell is not updateable
 
     :param decimal_value: int Decimal number
-    :param position: int Bit position to be extracted. Count starts from 1.
+    :param cell_property: CellUpdateableProperty enum property to extract from decimal value
     :return: bool
 
     """
-    bit = (decimal_value & (1 << position - 1)) != 0
+    bit = (decimal_value & (1 << cell_property.value - 1)) != 0
     return bit
 
 
@@ -834,7 +839,7 @@ def cell_is_updateable(cell: dict) -> bool:
     :param cell: dict cell including Updateable property
     :return: bool
     """
-    if cell.get("Updateable", False):
-        bit = extract_bit(cell["Updateable"], 29)
+    if cell.get("Updateable"):
+        bit = extract_cell_updateable_property(cell["Updateable"], CellUpdateableProperty.CELL_IS_NOT_UPDATEABLE)
         updateable = not bit
         return updateable
