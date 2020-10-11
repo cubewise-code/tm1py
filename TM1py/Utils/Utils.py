@@ -3,10 +3,10 @@ import functools
 import http.client as http_client
 import json
 import re
-from typing import Dict, List, Tuple, Iterable, Optional, Generator
 import urllib.parse as urlparse
-from urllib.parse import urlencode
+from typing import Dict, List, Tuple, Iterable, Optional, Generator
 from enum import Enum, unique
+
 from TM1py.Exceptions.Exceptions import TM1pyVersionException
 
 try:
@@ -248,8 +248,8 @@ def build_ui_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precision: int
     * Returns 3-dimensional cell structure for tabbed grids or multiple charts
     * Rows and pages are dicts, addressable by their name. Proper order of rows can be obtained in headers[1]
     * Example 'cells' return format:
-        'cells': { 
-            '10100': { 
+        'cells': {
+            '10100': {
                 'Net Operating Income': [ 19832724.72429739,
                                           20365654.788303416,
                                           20729201.329183243,
@@ -258,7 +258,7 @@ def build_ui_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precision: int
                              29512482.207418434,
                              29913730.038971487,
                              29563345.9542385]},
-            '10200': { 
+            '10200': {
                 'Net Operating Income': [ 9853293.623709997,
                                            10277650.763958748,
                                            10466934.096533755,
@@ -309,19 +309,19 @@ def build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precis
     * Useful for grids or charting libraries that want an array of cell values per column
     * Returns 3-dimensional cell structure for tabbed grids or multiple charts
     * Example 'cells' return format:
-        'cells': { 
-            '10100': [ 
+        'cells': {
+            '10100': [
                 ['Q1-2004', 28981046.50724231, 19832724.72429739],
                 ['Q2-2004', 29512482.207418434, 20365654.788303416],
                 ['Q3-2004', 29913730.038971487, 20729201.329183243],
                 ['Q4-2004', 29563345.9542385, 20480205.20121749]],
-            '10200': [ 
+            '10200': [
                 ['Q1-2004', 13888143.710000003, 9853293.623709997],
                 ['Q2-2004', 14300216.43, 10277650.763958748],
                 ['Q3-2004', 14502421.63, 10466934.096533755],
                 ['Q4-2004', 14321501.940000001, 10333095.839474997]]
         },
-    
+
     :param raw_cellset_as_dict: raw data from TM1
     :param value_precision: Integer (optional) specifying number of decimal places to return
     :return: dict : { titles: [], headers: [axis][], cells: { Page0: [  [column name, column values], [], ... ], ...} }
@@ -357,7 +357,7 @@ def build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precis
 
 def build_headers_from_cellset(raw_cellset_as_dict: Dict, force_header_dimensionality: int = 1) -> Dict:
     """ Extract dimension headers from cellset into dictionary of titles (slicers) and headers (row,column,page)
-    * Title dimensions are in a single list of dicts 
+    * Title dimensions are in a single list of dicts
     * Header dimensions are a 2-dimensional list of the element dicts
 
       * The first dimension in the header list is the axis
@@ -448,10 +448,10 @@ def build_element_unique_names(
         element_names: Iterable[str],
         hierarchy_names: Optional[Iterable[str]] = None) -> Generator:
     """ Create tuple of unique names from dimension, hierarchy and elements
-    
-    :param dimension_names: 
-    :param element_names: 
-    :param hierarchy_names: 
+
+    :param dimension_names:
+    :param element_names:
+    :param hierarchy_names:
     :return: Generator
     """
     if not hierarchy_names:
@@ -468,11 +468,11 @@ def build_element_unique_names(
 def build_pandas_dataframe_from_cellset(cellset: Dict, multiindex: bool = True,
                                         sort_values: bool = True) -> 'pd.DataFrame':
     """
-    
-    :param cellset: 
+
+    :param cellset:
     :param multiindex: True or False
     :param sort_values: Boolean to control sorting in result DataFrame
-    :return: 
+    :return:
     """
     try:
         cellset_clean = {}
@@ -505,7 +505,7 @@ def build_pandas_dataframe_from_cellset(cellset: Dict, multiindex: bool = True,
 @require_pandas
 def build_cellset_from_pandas_dataframe(df: 'pd.DataFrame') -> 'CaseAndSpaceInsensitiveTuplesDict':
     """
-    
+
     :param df: a Pandas Dataframe, with dimension-column mapping in correct order. As created in build_pandas_dataframe_from_cellset
     :return: a CaseAndSpaceInsensitiveTuplesDict
     """
@@ -536,7 +536,7 @@ def get_seconds_from_duration(time_str: str) -> int:
     return seconds
 
 
-def url_parameters_add(url, **kwargs: str) -> str:
+def add_url_parameters(url, **kwargs: str) -> str:
     """ Append parameters to url string passed in kwargs
 
     :param url: str
@@ -548,9 +548,13 @@ def url_parameters_add(url, **kwargs: str) -> str:
         if value is not None:
             value = value.replace("'", "''") if isinstance(value, str) else value
             parameters.append(key + "=" + value)
+
     url_parts = list(urlparse.urlparse(url))
     query_part = url_parts[4]
-    query_part += "&" + "&".join(parameters) if query_part else "&".join(parameters)
+    if query_part:
+        query_part += "&"
+    query_part += "&".join(parameters)
+
     url_parts[4] = query_part
     return urlparse.urlunparse(url_parts)
 
@@ -565,7 +569,7 @@ class CaseAndSpaceInsensitiveDict(collections.abc.MutableMapping):
     All keys are expected to be strings. The structure remembers the
     case of the last key to be set, and ``iter(instance)``,
     ``keys()``, ``items()``, ``iterkeys()``, and ``iteritems()``
-    will contain case-sensitive keys. 
+    will contain case-sensitive keys.
 
     However, querying and contains testing is case insensitive:
         elements = TM1pyElementsDictionary()
@@ -640,7 +644,7 @@ class CaseAndSpaceInsensitiveTuplesDict(collections.abc.MutableMapping):
     All keys are expected to be tuples of strings. The structure remembers the
     case of the last key to be set, and ``iter(instance)``,
     ``keys()``, ``items()``, ``iterkeys()``, and ``iteritems()``
-    will contain case-sensitive keys. 
+    will contain case-sensitive keys.
 
     However, querying and contains testing is case insensitive:
         data = CaseAndSpaceInsensitiveTuplesDict()
