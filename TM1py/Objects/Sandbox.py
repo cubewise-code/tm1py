@@ -3,8 +3,8 @@
 import collections
 import json
 from typing import Dict
+
 from TM1py.Objects.TM1Object import TM1Object
-from TM1py.Utils import format_url
 
 
 class Sandbox(TM1Object):
@@ -18,12 +18,24 @@ class Sandbox(TM1Object):
         :param name: name of the Sandbox
         :param include_in_sandbox_dimension: 
         """
-        self._name = name
-        self._include_in_sandbox_dimension = include_in_sandbox_dimension
+        self.name = name
+        self.include_in_sandbox_dimension = include_in_sandbox_dimension
 
     @property
     def name(self) -> str:
         return self._name
+
+    @name.setter
+    def name(self, value: str):
+        self._name = value
+
+    @property
+    def include_in_sandbox_dimension(self) -> bool:
+        return self._include_in_sandbox_dimension
+
+    @include_in_sandbox_dimension.setter
+    def include_in_sandbox_dimension(self, value: bool):
+        self._include_in_sandbox_dimension = value
 
     @classmethod
     def from_json(cls, sandbox_as_json: str) -> "Sandbox":
