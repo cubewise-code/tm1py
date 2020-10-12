@@ -7,6 +7,7 @@ from TM1py.Services import TM1Service
 
 PREFIX = "TM1py_Tests_Subset_"
 
+
 class TestSubsetMethods(unittest.TestCase):
 
     @classmethod
@@ -19,7 +20,7 @@ class TestSubsetMethods(unittest.TestCase):
         cls.config = configparser.ConfigParser()
         cls.config.read(Path(__file__).parent.joinpath('config.ini'))
         cls.tm1 = TM1Service(**cls.config['tm1srv01'])
-        
+
         # Define Names
         cls.dimension_name = PREFIX + "Dimension"
         cls.subset_name_static = PREFIX + "static"
@@ -48,12 +49,14 @@ class TestSubsetMethods(unittest.TestCase):
                     Element('NZD', 'Numeric'),
                     Element('Dum\'my', 'Numeric')]
         element_attributes = [ElementAttribute('Currency Name', 'String')]
-        h = Hierarchy(self.dimension_name, self.dimension_name, elements, element_attributes)
+        h = Hierarchy(self.dimension_name, self.dimension_name,
+                      elements, element_attributes)
         d = Dimension(self.dimension_name, hierarchies=[h])
         self.tm1.dimensions.create(d)
 
         elements = [Element(self.unfriendly_element_name, "Numeric")]
-        h = Hierarchy(self.unfriendly_dimension_name, self.unfriendly_dimension_name, elements)
+        h = Hierarchy(self.unfriendly_dimension_name,
+                      self.unfriendly_dimension_name, elements)
         d = Dimension(self.unfriendly_dimension_name, hierarchies=[h])
         self.tm1.dimensions.create(d)
 
@@ -444,12 +447,14 @@ class TestSubsetMethods(unittest.TestCase):
             elements=[])
         self.tm1.subsets.create(subset=subset, private=False)
 
-        subset = self.tm1.subsets.get(dimension_name=self.dimension_name, subset_name=self.unfriendly_subset_name)
+        subset = self.tm1.subsets.get(
+            dimension_name=self.dimension_name, subset_name=self.unfriendly_subset_name)
         self.assertEqual(self.unfriendly_subset_name, subset.name)
         self.assertEqual([], subset.elements)
 
     def test_create_subset_with_url_unfriendly_characters_in_elements_dynamic(self):
-        expression = "{[" + self.unfriendly_dimension_name + "].[" + self.unfriendly_element_name + "]}"
+        expression = "{[" + self.unfriendly_dimension_name + \
+            "].[" + self.unfriendly_element_name + "]}"
         subset = Subset(
             subset_name=self.unfriendly_subset_name,
             dimension_name=self.unfriendly_dimension_name,
