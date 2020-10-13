@@ -168,6 +168,7 @@ class TestSubsetMethods(unittest.TestCase):
         """
         Tear down anything as required
         """
+        # nothing to do here
         pass
 
 
