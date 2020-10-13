@@ -1,8 +1,9 @@
 import unittest
 
-from TM1py.Objects import Subset, AnonymousSubset
+from TM1py.Objects import AnonymousSubset, Element, Subset
 
 PREFIX = "TM1py_Tests_Subset_"
+
 
 class TestSubsetMethods(unittest.TestCase):
 
@@ -11,7 +12,7 @@ class TestSubsetMethods(unittest.TestCase):
         """
         Create any class scoped fixtures here.
         """
-        
+
         cls.dimension_name = PREFIX + "dimension"
         cls.hierarchy_name = PREFIX + "hierarchy"
         cls.subset_name_static = PREFIX + "static_subset"
@@ -20,6 +21,51 @@ class TestSubsetMethods(unittest.TestCase):
         cls.subset_name_complete = PREFIX + "complete_subset"
         cls.subset_name_alias = PREFIX + "alias_subset"
         cls.subset_name_anon = PREFIX + "anon_subset"
+        cls.element_name = PREFIX + "element"
+
+        cls.subset_dict = {
+            "Name": "dict_subset",
+            "UniqueName": f"[{cls.dimension_name}]",
+            "Hierarchy": {
+                "Name": f"{cls.hierarchy_name}"
+            },
+            "Alias": "dict_subset" + "_alias",
+            "Elements": [
+                {
+                    "Name": "x"
+                },
+                {
+                    "Name": "y"
+                },
+                {
+                    "Name": "z"
+                }
+            ],
+            "Expression": ""
+        }
+
+        cls.subset_json = '''
+        {
+            "Name": "json_subset",
+            "UniqueName" : "json_subset",
+            "Hierarchy": {
+                "Name": "json_subset"
+            },
+            "Alias": "json_subset_alias",
+            "Elements" : [
+                {
+                    "Name" : "xoy"
+                },
+                {
+                    "Name": "o"
+                },
+                {
+                    "Name": "xxx"
+                }            
+            ],
+            "Expression" : ""
+        }
+        '''
 
     def setUp(self):
         """
@@ -30,7 +76,7 @@ class TestSubsetMethods(unittest.TestCase):
             dimension_name=self.dimension_name,
             subset_name=self.subset_name_static,
             elements=['USD', 'EUR', 'NZD', 'Dum\'my'])
-        
+
         self.dynamic_subset = Subset(
             dimension_name=self.dimension_name,
             subset_name=self.subset_name_dynamic,
@@ -80,32 +126,42 @@ class TestSubsetMethods(unittest.TestCase):
         self.assertTrue(self.anon_subset.is_static)
 
     def test_from_json(self):
-        # test needed - should define a json string in the class
-        self.assertTrue(False)
+        s = Subset.from_json(self.subset_json)
+        self.assertEqual(s.name, "json_subset")
+        self.assertEqual(s.elements, ["xoy", "o", "xxx"])
 
     def test_from_dict(self):
-        # test needed - should define a dict in the class
-        self.assertTrue(False)
+        s = Subset.from_dict(self.subset_dict)
+        self.assertEqual(s.name, "dict_subset")
+        self.assertEqual(s.elements, ["x", "y", "z"])
 
     def test_add_elements(self):
-        # test needed - should this fail for dynamic subsets I wonder?
-        self.assertTrue(False)
+        self.static_subset.add_elements(["AUD", "CHF"])
+        self.assertIn("AUD", self.static_subset.elements)
+        self.assertIn("CHF", self.static_subset.elements)
 
     def test_anonymous_subset(self):
-        # test needed - I guess it's a case of testing it has no name property?
-        self.assertTrue(False)
+        self.assertEqual(self.anon_subset.name, "")
 
     def test_property_setters(self):
-        # test needed
-        self.assertTrue(False)
+        self.minimal_subset.elements = ["1", "2", "3"]
+        self.assertEqual(self.minimal_subset.elements, ["1", "2", "3"])
 
     def test_property_getters(self):
-        # test needed
-        self.assertTrue(False)
+        self.assertEqual(self.complete_subset.name, self.subset_name_complete)
+        self.assertEqual(self.dynamic_subset.name, self.subset_name_dynamic)
+        self.assertEqual(self.static_subset.dimension_name,
+                         self.dimension_name)
+        self.assertEqual(self.minimal_subset.elements, [])
+        self.assertIn("a", self.complete_subset.elements)
 
-    def test_subset_comparisons(self):
-        # test needed - check whether they equal one another or not
-        self.assertTrue(False)
+    def test_subset_equality(self):
+        self.assertNotEqual(self.complete_subset, self.minimal_subset)
+        self.assertNotEqual(self.complete_subset, self.anon_subset)
+        self.assertNotEqual(self.complete_subset, self.static_subset)
+        self.assertNotEqual(self.complete_subset, self.dynamic_subset)
+        static_subset_copy = self.static_subset
+        self.assertEqual(static_subset_copy, self.static_subset)
 
     @classmethod
     def tearDownClass(cls):
@@ -113,6 +169,7 @@ class TestSubsetMethods(unittest.TestCase):
         Tear down anything as required
         """
         pass
+
 
 if __name__ == '__main__':
     unittest.main()
