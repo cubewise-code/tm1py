@@ -8,7 +8,7 @@ from TM1py.Services import TM1Service
 PREFIX = "TM1py_Tests_Subset_"
 
 
-class TestSubsetMethods(unittest.TestCase):
+class TestSubsetService(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
