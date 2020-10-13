@@ -3,7 +3,7 @@ import unittest
 from TM1py.Objects import Sandbox
 
 
-class TestDimensionMethods(unittest.TestCase):
+class TestSandboxMethods(unittest.TestCase):
 
     def test_body_include_in_sandbox_dimension_true(self):
         sandbox = Sandbox("sandbox", True)
