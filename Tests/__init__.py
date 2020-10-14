@@ -11,9 +11,12 @@ from Tests.MonitoringService import TestMonitoringMethods
 from Tests.PowerBiService import TestPowerBiService
 from Tests.Process import TestProcessMethods
 from Tests.RestService import TestRestServiceMethods
+from Tests.Sandbox import TestSandboxMethods
+from Tests.SandboxService import TestSandboxService
 from Tests.Security import TestSecurityMethods
 from Tests.Server import TestServerMethods
 from Tests.Subset import TestSubsetMethods
+from Tests.SubsetService import TestSubsetService
 from Tests.TIObfuscator import TestTIObfuscatorMethods
 from Tests.TM1pyDict import TestCaseAndSpaceInsensitiveDict, TestCaseAndSpaceInsensitiveSet, TestCaseAndSpaceInsensitiveTuplesDict
 from Tests.Utils import TestUtilsMethods

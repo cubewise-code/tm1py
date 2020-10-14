@@ -106,12 +106,12 @@ class Subset(TM1Object):
     @classmethod
     def from_dict(cls, subset_as_dict: Dict) -> 'Subset':
         return cls(dimension_name=subset_as_dict["UniqueName"][1:subset_as_dict["UniqueName"].find('].[')],
-                   hierarchy_name=subset_as_dict["Hierarchy"]["Name"],
+                   hierarchy_name=subset_as_dict.get("Hierarchy", {}).get("Name"),
                    subset_name=subset_as_dict['Name'],
-                   alias=subset_as_dict['Alias'],
-                   expression=subset_as_dict['Expression'],
-                   elements=[element['Name'] for element in subset_as_dict['Elements']]
-                   if not subset_as_dict['Expression'] else None)
+                   alias=subset_as_dict.get('Alias'),
+                   expression=subset_as_dict.get('Expression'),
+                   elements=[element['Name'] for element in subset_as_dict.get('Elements', [])]
+                   if not subset_as_dict.get('Expression') else None)
 
     @property
     def body(self) -> str:
