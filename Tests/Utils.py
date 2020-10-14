@@ -7,7 +7,8 @@ from TM1py.Utils import (
     Utils,
     get_dimensions_from_where_clause,
     integerize_version,
-    verify_version, get_cube, resembles_mdx, format_url, add_url_parameters,
+    verify_version, get_cube, resembles_mdx, format_url, add_url_parameters, extract_cell_updateable_property,
+    CellUpdateableProperty, cell_is_updateable,
 )
 
 
@@ -289,6 +290,38 @@ class TestUtilsMethods(unittest.TestCase):
         elapsed_time = "P0DT00H04M02S"
         seconds = Utils.get_seconds_from_duration(elapsed_time)
         self.assertEqual(242, seconds)
+
+    def test_extract_cell_updateable_property_rule_is_applied_true(self):
+        value = 268435716
+        self.assertTrue(extract_cell_updateable_property(
+            decimal_value=value,
+            cell_property=CellUpdateableProperty.RULE_IS_APPLIED))
+
+    def test_extract_cell_updateable_property_rule_is_applied_false(self):
+        value = 258
+        self.assertFalse(extract_cell_updateable_property(
+            decimal_value=value,
+            cell_property=CellUpdateableProperty.RULE_IS_APPLIED))
+
+    def test_extract_cell_updateable_property_cell_is_not_updateable_true(self):
+        value = 268435716
+        self.assertTrue(extract_cell_updateable_property(
+            decimal_value=value,
+            cell_property=CellUpdateableProperty.CELL_IS_NOT_UPDATEABLE))
+
+    def test_extract_cell_updateable_property_cell_is_not_updateable_false(self):
+        value = 258
+        self.assertFalse(extract_cell_updateable_property(
+            decimal_value=value,
+            cell_property=CellUpdateableProperty.CELL_IS_NOT_UPDATEABLE))
+
+    def test_cell_is_updateable_true(self):
+        cell = {'Updateable': 258}
+        self.assertTrue(cell_is_updateable(cell))
+
+    def test_cell_is_updateable_false(self):
+        cell = {'Updateable': 268435716}
+        self.assertFalse(cell_is_updateable(cell))
 
     @classmethod
     def tearDownClass(cls):
