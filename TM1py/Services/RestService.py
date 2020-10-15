@@ -126,6 +126,14 @@ class RestService:
         :param connection_pool_size - In a multithreaded environment, you should set this value to a
         higher number, such as the number of threads
         :param integrated_login: True for IntegratedSecurityMode3
+        :param integrated_login_domain: NT Domain name.
+                Default: '.' for local account. 
+        :param integrated_login_service: Kerberos Service type for remote Service Principal Name.
+                Default: 'HTTP' 
+        :param integrated_login_host: Host name for Service Principal Name.
+                Default: Extracted from request URI
+        :param integrated_login_delegate: Indicates that the user's credentials are to be delegated to the server.
+                Default: False
         :param impersonate: Name of user to impersonate
         """
         self._ssl = self.translate_to_boolean(kwargs['ssl'])
@@ -175,6 +183,10 @@ class RestService:
                 gateway=kwargs.get("gateway", None),
                 decode_b64=self.translate_to_boolean(kwargs.get("decode_b64", False)),
                 integrated_login=self.translate_to_boolean(kwargs.get("integrated_login", False)),
+                integrated_login_domain=kwargs.get("integrated_login_domain"),
+                integrated_login_service=kwargs.get("integrated_login_service"),
+                integrated_login_host=kwargs.get("integrated_login_host"),
+                integrated_login_delegate=kwargs.get("integrated_login_delegate"),
                 impersonate=kwargs.get("impersonate", None))
 
         if not self._version:
@@ -297,12 +309,18 @@ class RestService:
             self._s.close()
 
     def _start_session(self, user: str, password: str, decode_b64: bool = False, namespace: str = None,
-                       gateway: str = None, integrated_login: bool = None, impersonate: str = None):
+                       gateway: str = None, integrated_login: bool = None, integrated_login_domain: str = None,
+                       integrated_login_service: str = None, integrated_login_host: str = None,
+                       integrated_login_delegate: bool = None, impersonate: str = None):
         """ perform a simple GET request (Ask for the TM1 Version) to start a session
         """
         # Authorization with integrated_login
         if integrated_login:
-            self._s.auth = HttpNegotiateAuth()
+            self._s.auth = HttpNegotiateAuth(
+                domain=integrated_login_domain,
+                service=integrated_login_service,
+                host=integrated_login_host,
+                delegate=integrated_login_delegate)
 
         # Authorization [Basic, CAM] through Headers
         else:
