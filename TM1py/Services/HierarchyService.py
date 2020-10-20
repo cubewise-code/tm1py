@@ -211,7 +211,7 @@ class HierarchyService(ObjectService):
         }
         return self._rest.PATCH(url=url, data=json.dumps(body), **kwargs)
 
-    def remove_edges_under_consolidation(self, dimension_name: str,  hierarchy_name: str,
+    def remove_edges_under_consolidation(self, dimension_name: str, hierarchy_name: str,
                                          consolidation_element: str, **kwargs) -> List[Response]:
         """
         :param dimension_name: Name of the dimension

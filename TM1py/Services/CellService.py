@@ -6,7 +6,7 @@ import uuid
 import warnings
 from collections import OrderedDict
 from io import StringIO
-from typing import List, Union, Dict, Iterable
+from typing import List, Union, Dict, Iterable, Tuple
 
 from mdxpy import MdxHierarchySet, MdxBuilder, Member
 from requests import Response
@@ -20,8 +20,8 @@ from TM1py.Services.ViewService import ViewService
 from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url, add_url_parameters
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
     CaseAndSpaceInsensitiveDict, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, abbreviate_mdx, \
-    build_csv_from_cellset_dict, require, require_pandas, build_cellset_from_pandas_dataframe, \
-    case_and_space_insensitive_equals, get_cube, resembles_mdx
+    build_csv_from_cellset_dict, require_version, require_pandas, build_cellset_from_pandas_dataframe, \
+    case_and_space_insensitive_equals, get_cube, resembles_mdx, require_admin
 
 try:
     import pandas as pd
@@ -214,7 +214,8 @@ class CellService(ObjectService):
         return self._post_against_cellset(cellset_id=cellset_id, payload=payload, delete_cellset=True,
                                           sandbox_name=sandbox_name, **kwargs)
 
-    @require(version="11.7")
+    @require_admin
+    @require_version(version="11.7")
     def clear(self, cube: str, **kwargs):
         """
         Takes the cube name and keyword argument pairs of dimensions and expressions:
@@ -245,7 +246,8 @@ class CellService(ObjectService):
 
         return self.clear_with_mdx(cube=cube, mdx=mdx_builder.to_mdx(), **kwargs)
 
-    @require(version="11.7")
+    @require_admin
+    @require_version(version="11.7")
     def clear_with_mdx(self, cube: str, mdx: str, **kwargs):
         """ clear a slice in a cube based on an MDX query.
         Function requires admin permissions, since TM1py uses an unbound TI with a `ViewZeroOut` statement.
@@ -267,7 +269,7 @@ class CellService(ObjectService):
             process = Process(name="")
             process.prolog_procedure = code
 
-            success, _, _ = process_service.execute_process_with_return(process, **kwargs)
+            success, _, _ = self.execute_unbound_process(process, **kwargs)
             if not success:
                 raise TM1pyException(f"Failed to clear cube: '{cube}' with mdx: '{abbreviate_mdx(mdx, 100)}'")
         finally:
@@ -357,7 +359,7 @@ class CellService(ObjectService):
 
     def write(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None, increment: bool = False,
               deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
-              sandbox_name: str = None, **kwargs) -> Response:
+              sandbox_name: str = None, use_ti=False, **kwargs):
         """ Write values to a cube
 
         Same signature as `write_values` method, but faster since it uses `write_values_through_cellset`
@@ -373,8 +375,19 @@ class CellService(ObjectService):
         :param deactivate_transaction_log: deactivate before writing
         :param reactivate_transaction_log: reactivate after writing
         :param sandbox_name: str
-        :return: Response
+        :param use_ti: Use unbound process to write. Requires admin permissions. causes massive performance improvement.
+        :return:
         """
+        if use_ti:
+            return self.write_through_unbound_process(
+                cube_name=cube_name,
+                cellset_as_dict=cellset_as_dict,
+                increment=increment,
+                sandbox_name=sandbox_name,
+                deactivate_transaction_log=deactivate_transaction_log,
+                reactivate_transaction_log=reactivate_transaction_log,
+                **kwargs)
+
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name, **kwargs)
 
@@ -386,7 +399,7 @@ class CellService(ObjectService):
             values.append(value)
         mdx = query.to_mdx()
 
-        return self.write_values_through_cellset(
+        self.write_values_through_cellset(
             mdx=mdx,
             values=values,
             increment=increment,
@@ -394,6 +407,48 @@ class CellService(ObjectService):
             reactivate_transaction_log=reactivate_transaction_log,
             sandbox_name=sandbox_name,
             **kwargs)
+
+    @require_admin
+    @manage_transaction_log
+    def write_through_unbound_process(self, cube_name: str, cellset_as_dict: Dict, increment: bool = False,
+                                      sandbox_name: str = None, **kwargs):
+        if sandbox_name:
+            raise NotImplementedError("Function does not support writing to sandboxes yet")
+
+        successes = list()
+        lines = list()
+
+        function_str = f"{'CellIncrementN(' if increment else 'CellPutN('}"
+        for coordinates, value in cellset_as_dict.items():
+            value_str = f'{value}' if isinstance(value, str) else str(value)
+
+            line = "".join([
+                function_str,
+                value_str,
+                f",'{cube_name}',",
+                ",".join(f"'{element}'" for element in coordinates),
+                ");"])
+            lines.append(line)
+
+        for n, line in enumerate(lines):
+            if n > 0 and n % Process.MAX_STATEMENTS == 0:
+                process = Process(name="", prolog_procedure="".join(lines))
+                success, _, _ = self.execute_unbound_process(process, **kwargs)
+                successes.append(success)
+                lines = list()
+
+        process = Process(name="", prolog_procedure="".join(lines))
+        success, _, _ = self.execute_unbound_process(process, **kwargs)
+        successes.append(success)
+
+        if not all(successes):
+            raise TM1pyException(f"{len(successes) - sum(successes)} out of {len(successes)} unbound processes failed")
+
+    def execute_unbound_process(self, process: Process, **kwargs) -> Tuple[bool, str, str]:
+        from TM1py import ProcessService
+        process_service = ProcessService(self._rest)
+
+        return process_service.execute_process_with_return(process, **kwargs)
 
     @manage_transaction_log
     def write_values(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None,

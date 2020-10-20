@@ -6,7 +6,7 @@ from requests import Response
 from TM1py.Objects.User import User
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import format_url, case_and_space_insensitive_equals
+from TM1py.Utils import format_url, case_and_space_insensitive_equals, require_admin
 
 
 class MonitoringService(ObjectService):
@@ -96,6 +96,7 @@ class MonitoringService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return response.json()["value"]
 
+    @require_admin
     def disconnect_all_users(self, **kwargs) -> list:
         current_user = self.get_current_user(**kwargs)
         active_users = self.get_active_users(**kwargs)
@@ -110,6 +111,7 @@ class MonitoringService(ObjectService):
         url = format_url(f"/api/v1/Sessions('{session_id}')/tm1.Close")
         return self._rest.POST(url, **kwargs)
 
+    @require_admin
     def close_all_sessions(self, **kwargs) -> list:
         current_user = self.get_current_user(**kwargs)
         sessions = self.get_sessions(**kwargs)

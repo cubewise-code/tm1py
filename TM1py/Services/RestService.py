@@ -14,6 +14,7 @@ from requests.adapters import HTTPAdapter
 
 # SSO not supported for Linux
 from TM1py.Exceptions.Exceptions import TM1pyTimeout
+from TM1py.Utils import case_and_space_insensitive_equals, CaseAndSpaceInsensitiveSet
 
 try:
     from requests_negotiate_sspi import HttpNegotiateAuth
@@ -142,6 +143,8 @@ class RestService:
         self._verify = False
         self._timeout = None if kwargs.get('timeout', None) is None else float(kwargs.get('timeout'))
         self._async_requests_mode = self.translate_to_boolean(kwargs.get('async_requests_mode', False))
+        # populated on the fly
+        self._is_admin = True if case_and_space_insensitive_equals(kwargs.get("user", None), "ADMIN") else None
 
         if 'verify' in kwargs:
             if isinstance(kwargs['verify'], str):
@@ -372,6 +375,16 @@ class RestService:
     @property
     def version(self) -> str:
         return self._version
+
+    @property
+    def is_admin(self) -> bool:
+        if self._is_admin is None:
+            response = self.GET("/api/v1/ActiveUser/Groups")
+            self._is_admin = "ADMIN" in CaseAndSpaceInsensitiveSet(
+                *[group["Name"] for group in response.json()["value"]])
+
+        return self._is_admin
+
 
     @property
     def session_id(self) -> str:

@@ -8,7 +8,7 @@ from contextlib import suppress
 from enum import Enum, unique
 from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator
 
-from TM1py.Exceptions.Exceptions import TM1pyVersionException
+from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminException
 
 try:
     import pandas as pd
@@ -18,7 +18,17 @@ except ImportError:
     _has_pandas = False
 
 
-def require(version):
+def require_admin(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if not self.is_admin:
+            raise TM1pyNotAdminException(func.__name__)
+        return func(self, *args, **kwargs)
+
+    return wrapper
+
+
+def require_version(version):
     """ Higher order function to check required version for TM1py function
     """
 
