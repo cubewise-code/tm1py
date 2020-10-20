@@ -15,12 +15,20 @@ class TM1pyTimeout(Exception):
 
 
 class TM1pyVersionException(Exception):
-    def __init__(self, function, required_version):
+    def __init__(self, function: str, required_version):
         self.function = function
         self.required_version = required_version
 
     def __str__(self):
         return f"Function '{self.function}' requires TM1 server version >= '{self.required_version}'"
+
+
+class TM1pyNotAdminException(Exception):
+    def __init__(self, function: str):
+        self.function = function
+
+    def __str__(self):
+        return f"Function '{self.function}' requires admin permissions"
 
 
 class TM1pyException(Exception):

@@ -1,6 +1,6 @@
 from Tests.Annotation import TestAnnotationMethods
 from Tests.Application import TestApplicationMethods
-from Tests.Cell import TestCellMethods
+from Tests.CellService import TestCellService
 from Tests.Chore import TestChoreMethods
 from Tests.Cube import TestCubeMethods
 from Tests.Dimension import TestDimensionMethods

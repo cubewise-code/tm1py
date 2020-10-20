@@ -18,7 +18,7 @@ except ImportError:
     pass
 
 
-class TestCellMethods(unittest.TestCase):
+class TestCellService(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -284,8 +284,7 @@ class TestCellMethods(unittest.TestCase):
         self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [716])
 
     def test_write(self):
-        cells = {}
-        cells["Element 1", "Element4", "Element9"] = 717
+        cells = {("Element 1", "Element4", "Element9"): 717}
         self.tm1.cubes.cells.write(self.cube_name, cells)
 
         query = MdxBuilder.from_cube(self.cube_name)
@@ -296,9 +295,20 @@ class TestCellMethods(unittest.TestCase):
 
         self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [717])
 
+    def test_write_use_ti(self):
+        cells = {("Element 1", "Element4", "Element9"): 1234}
+        self.tm1.cubes.cells.write(self.cube_name, cells, use_ti=True)
+
+        query = MdxBuilder.from_cube(self.cube_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[Element 1]",
+            f"[{self.dimension_names[1]}].[Element 4]",
+            f"[{self.dimension_names[2]}].[Element 9]")
+
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [1234])
+
     def test_write_increment_true(self):
-        cells = {}
-        cells["Element 1", "Element5", "Element8"] = 211
+        cells = {("Element 1", "Element5", "Element8"): 211}
 
         self.tm1.cubes.cells.write(self.cube_name, cells)
         self.tm1.cubes.cells.write(self.cube_name, cells, increment=True)
@@ -312,8 +322,7 @@ class TestCellMethods(unittest.TestCase):
         self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [422])
 
     def test_write_increment_false(self):
-        cells = {}
-        cells["Element 1", "Element5", "Element8"] = 211
+        cells = {("Element 1", "Element5", "Element8"): 211}
 
         self.tm1.cubes.cells.write(self.cube_name, cells)
         self.tm1.cubes.cells.write(self.cube_name, cells, increment=False)
@@ -325,6 +334,67 @@ class TestCellMethods(unittest.TestCase):
             f"[{self.dimension_names[2]}].[Element 8]")
 
         self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [211])
+
+    def test_write_through_unbound_process_happy_case(self):
+        cells = dict()
+        cells["Element 1", "Element4", "Element9"] = 719
+        self.tm1.cubes.cells.write_through_unbound_process(self.cube_name, cells)
+
+        query = MdxBuilder.from_cube(self.cube_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[Element 1]",
+            f"[{self.dimension_names[1]}].[Element 4]",
+            f"[{self.dimension_names[2]}].[Element 9]")
+
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [719])
+
+    def test_write_through_unbound_process_multi_cells(self):
+        cells = dict()
+        cells["Element 1", "Element4", "Element9"] = 702
+        cells["Element 2", "Element4", "Element7"] = 701
+        self.tm1.cubes.cells.write_through_unbound_process(self.cube_name, cells)
+
+        query = MdxBuilder.from_cube(self.cube_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[Element 1]",
+            f"[{self.dimension_names[1]}].[Element 4]",
+            f"[{self.dimension_names[2]}].[Element 9]")
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [702])
+
+        query = MdxBuilder.from_cube(self.cube_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[Element 2]",
+            f"[{self.dimension_names[1]}].[Element 4]",
+            f"[{self.dimension_names[2]}].[Element 7]")
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [701])
+
+    def test_write_through_unbound_process_increment_true(self):
+        cells = {("Element 1", "Element5", "Element8"): 111}
+
+        self.tm1.cubes.cells.write_through_unbound_process(self.cube_name, cells)
+        self.tm1.cubes.cells.write_through_unbound_process(self.cube_name, cells, increment=True)
+
+        query = MdxBuilder.from_cube(self.cube_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[Element 1]",
+            f"[{self.dimension_names[1]}].[Element 5]",
+            f"[{self.dimension_names[2]}].[Element 8]")
+
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [222])
+
+    def test_write_through_unbound_process_increment_false(self):
+        cells = {("Element 1", "Element5", "Element8"): 109}
+
+        self.tm1.cubes.cells.write_through_unbound_process(self.cube_name, cells)
+        self.tm1.cubes.cells.write_through_unbound_process(self.cube_name, cells, increment=False)
+
+        query = MdxBuilder.from_cube(self.cube_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[Element 1]",
+            f"[{self.dimension_names[1]}].[Element 5]",
+            f"[{self.dimension_names[2]}].[Element 8]")
+
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [109])
 
     @skip_if_no_pandas
     def test_write_dataframe(self):

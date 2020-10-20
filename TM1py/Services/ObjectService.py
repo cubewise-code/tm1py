@@ -51,3 +51,7 @@ class ObjectService:
     @property
     def version(self) -> str:
         return self._rest.version
+
+    @property
+    def is_admin(self) -> bool:
+        return self._rest.is_admin

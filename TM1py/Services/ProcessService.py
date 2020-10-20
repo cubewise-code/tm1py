@@ -10,7 +10,7 @@ from TM1py.Exceptions.Exceptions import TM1pyRestException
 from TM1py.Objects.Process import Process
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import format_url
+from TM1py.Utils import format_url, require_admin
 
 
 class ProcessService(ObjectService):
@@ -242,6 +242,7 @@ class ProcessService(ObjectService):
             "Filename"]
         return success, status, error_log_file
 
+    @require_admin
     def execute_ti_code(self, lines_prolog: Iterable[str], lines_epilog: Iterable[str] = None, **kwargs) -> Response:
         """ Execute lines of code on the TM1 Server
 

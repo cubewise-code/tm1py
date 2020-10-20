@@ -12,7 +12,7 @@ from requests import Response
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import format_url
-from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict
+from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, require_admin
 
 
 def odata_track_changes_header(func):
@@ -75,6 +75,7 @@ class ServerService(ObjectService):
         self.mlog_last_delta_request = response.text[response.text.rfind("MessageLogEntries/!delta('"):-2]
         return response.json()['value']
 
+    @require_admin
     def get_message_log_entries(self, reverse: bool = True, since: datetime = None,
                                 until: datetime = None, top: int = None, logger: str = None,
                                 level: str = None, msg_contains: Iterable = None, **kwargs) -> Dict:
@@ -139,6 +140,7 @@ class ServerService(ObjectService):
         timestamp_utc = timestamp.astimezone(pytz.utc)
         return timestamp_utc
 
+    @require_admin
     def get_transaction_log_entries(self, reverse: bool = True, user: str = None, cube: str = None,
                                     since: datetime = None, until: datetime = None, top: int = None, **kwargs) -> Dict:
         """
@@ -176,6 +178,7 @@ class ServerService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return response.json()['value']
 
+    @require_admin
     def get_last_process_message_from_messagelog(self, process_name: str, **kwargs) -> Optional[str]:
         """ Get the latest message log entry for a process
 
@@ -223,6 +226,7 @@ class ServerService(ObjectService):
         del config["@odata.context"]
         return config
 
+    @require_admin
     def get_static_configuration(self, **kwargs) -> Dict:
         """ Read TM1 config settings as dictionary from TM1 Server
 
@@ -233,6 +237,7 @@ class ServerService(ObjectService):
         del config["@odata.context"]
         return config
 
+    @require_admin
     def get_active_configuration(self, **kwargs) -> Dict:
         """ Read effective(!) TM1 config settings as dictionary from TM1 Server
 
@@ -243,6 +248,7 @@ class ServerService(ObjectService):
         del config["@odata.context"]
         return config
 
+    @require_admin
     def update_static_configuration(self, configuration: Dict) -> Response:
         """ Update the .cfg file and triggers TM1 to re-read the file.
 
@@ -252,18 +258,21 @@ class ServerService(ObjectService):
         url = '/api/v1/StaticConfiguration'
         return self._rest.PATCH(url, json.dumps(configuration))
 
+    @require_admin
     def save_data(self, **kwargs) -> Response:
         from TM1py.Services import ProcessService
         ti = "SaveDataAll;"
         process_service = ProcessService(self._rest)
         return process_service.execute_ti_code(ti, **kwargs)
 
+    @require_admin
     def start_performance_monitor(self):
         config = {
             "Administration": {"PerformanceMonitorOn": True}
         }
         self.update_static_configuration(config)
 
+    @require_admin
     def stop_performance_monitor(self):
         config = {
             "Administration": {"PerformanceMonitorOn": False}
