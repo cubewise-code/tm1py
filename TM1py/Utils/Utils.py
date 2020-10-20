@@ -4,8 +4,10 @@ import http.client as http_client
 import json
 import re
 import urllib.parse as urlparse
-from typing import Dict, List, Tuple, Iterable, Optional, Generator
+from contextlib import suppress
 from enum import Enum, unique
+from typing import Dict, List, Tuple, Iterable, Optional, Generator
+
 from TM1py.Exceptions.Exceptions import TM1pyVersionException
 
 try:
@@ -706,10 +708,8 @@ class CaseAndSpaceInsensitiveSet(collections.abc.MutableSet):
         self._store[value.lower().replace(" ", "")] = value
 
     def discard(self, value):
-        try:
+        with suppress(KeyError):
             del self._store[value.lower().replace(" ", "")]
-        except KeyError:
-            pass
 
     def copy(self):
         return CaseAndSpaceInsensitiveSet(*self._store.values())
