@@ -26,9 +26,11 @@ class TestSecurityMethods(unittest.TestCase):
         cls.tm1 = TM1Service(**cls.config['tm1srv01'])
 
         cls.user_name = PREFIX + "Us'er1"
+        cls.read_only_user_name = PREFIX + "Read_Only_user"
         cls.user_name_exotic_password = "UserWithExoticPassword"
         cls.enabled = True
         cls.user = User(name=cls.user_name, groups=[], password='TM1py', enabled=cls.enabled)
+        cls.read_only_user = User(name=cls.read_only_user_name, groups=[], password="TM1py", enabled=True)
         cls.group_name1 = PREFIX + "Gro'up1"
         cls.group_name2 = PREFIX + "Group2"
         cls.user.add_group(cls.group_name1)
@@ -44,9 +46,14 @@ class TestSecurityMethods(unittest.TestCase):
         self.tm1.security.create_group(self.group_name1)
         self.tm1.security.create_group(self.group_name2)
         self.tm1.security.create_user(self.user)
+        self.tm1.security.create_user(self.read_only_user)
+        self.tm1.cells.write_values(
+            cube_name="}ClientProperties",
+            cellset_as_dict={(self.read_only_user_name, "ReadOnlyUser"): 1})
 
     def tearDown(self):
         self.tm1.security.delete_user(self.user_name)
+        self.tm1.security.delete_user(self.read_only_user_name)
         self.tm1.security.delete_group(self.group_name1)
         self.tm1.security.delete_group(self.group_name2)
         if self.user_name_exotic_password in self.tm1.security.get_all_user_names():
@@ -371,6 +378,26 @@ class TestSecurityMethods(unittest.TestCase):
 
         tm1 = TM1Service(**self.config['tm1srv01'], impersonate=self.user_name)
         self.assertEqual(self.user_name, tm1.whoami.name)
+
+    def test_get_custom_security_groups(self):
+        custom_groups = self.tm1.security.get_custom_security_groups()
+
+        self.assertNotIn("Admin", CaseAndSpaceInsensitiveSet(*custom_groups))
+        self.assertNotIn("DataAdmin", CaseAndSpaceInsensitiveSet(*custom_groups))
+        self.assertNotIn("SecurityAdmin", CaseAndSpaceInsensitiveSet(*custom_groups))
+        self.assertNotIn("OperationsAdmin", CaseAndSpaceInsensitiveSet(*custom_groups))
+        self.assertNotIn("}tp_Everyone", CaseAndSpaceInsensitiveSet(*custom_groups))
+
+        self.assertIn(self.group_name1, CaseAndSpaceInsensitiveSet(*custom_groups))
+        self.assertIn(self.group_name2, CaseAndSpaceInsensitiveSet(*custom_groups))
+
+        self.assertNotIn("NotExistingGroup", CaseAndSpaceInsensitiveSet(*custom_groups))
+
+    def test_get_read_only_users(self):
+        read_only_users = self.tm1.security.get_read_only_users()
+
+        self.assertEqual(1, len(read_only_users))
+        self.assertEqual(self.read_only_user_name, read_only_users[0])
 
     @classmethod
     def teardown_class(cls):

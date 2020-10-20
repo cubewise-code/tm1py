@@ -8,7 +8,7 @@ from requests import Response
 from TM1py.Objects.User import User
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils.Utils import format_url
+from TM1py.Utils.Utils import format_url, CaseAndSpaceInsensitiveSet
 
 
 class SecurityService(ObjectService):
@@ -206,3 +206,38 @@ class SecurityService(ObjectService):
     def group_exists(self, group_name: str, **kwargs) -> bool:
         url = format_url("/api/v1/Groups('{}')", group_name)
         return self._exists(url, **kwargs)
+
+    def get_custom_security_groups(self, **kwargs) -> List[str]:
+        custom_groups = CaseAndSpaceInsensitiveSet(*self.get_all_groups(**kwargs))
+        custom_groups.discard('Admin')
+        custom_groups.discard('DataAdmin')
+        custom_groups.discard('SecurityAdmin')
+        custom_groups.discard('OperationsAdmin')
+        custom_groups.discard('}tp_Everyone')
+
+        return list(custom_groups)
+
+    def get_read_only_users(self, **kwargs) -> List[str]:
+        read_only_users = list()
+
+        mdx = """
+        SELECT
+        {[}ClientProperties].[ReadOnlyUser]} ON COLUMNS,
+        NON EMPTY {[}Clients].MEMBERS} ON ROWS
+        FROM [}ClientProperties]
+        """
+
+        from TM1py import CellService
+        cell_service = CellService(self._rest)
+
+        users_with_flag = cell_service.execute_mdx_rows_and_values(
+            mdx=mdx,
+            element_unique_names=False,
+            **kwargs)
+
+        for row, values in users_with_flag.items():
+            user = row[0]
+            read_only = values[0]
+            if read_only:
+                read_only_users.append(user)
+        return read_only_users
