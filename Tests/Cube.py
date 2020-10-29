@@ -114,6 +114,27 @@ class TestCubeMethods(unittest.TestCase):
         all_cubes_after = self.tm1.cubes.get_all_names()
         self.assertEqual(len(all_cubes_before) - 1, len(all_cubes_after))
 
+    def test_get_all_names(self):
+        all_cubes_before = self.tm1.cubes.get_all_names()
+        cubes_with_rules = self.tm1.cubes.get_all_names_with_rules()
+        cubes_without_rules = self.tm1.cubes.get_all_names_without_rules()
+
+        self.assertEqual(len(all_cubes_before), len(cubes_with_rules) + len(cubes_without_rules))
+
+        cube_name = self.prefix + "Some_Other_Name"
+        dimension_names = self.tm1.dimensions.get_all_names()[1:3]
+        cube = Cube(cube_name, dimension_names)
+        self.tm1.cubes.create(cube)
+        self.assertEqual(len(cubes_without_rules) + 1, len(self.tm1.cubes.get_all_names_without_rules()))
+        self.assertEqual(len(cubes_with_rules), len(self.tm1.cubes.get_all_names_with_rules()))
+
+        cube.rules = "SKIPCHECK"
+        self.tm1.cubes.update(cube)
+        self.assertEqual(len(cubes_with_rules) + 1, len(self.tm1.cubes.get_all_names_with_rules()))
+        self.assertEqual(len(cubes_without_rules), len(self.tm1.cubes.get_all_names_without_rules()))
+
+        self.tm1.cubes.delete(cube_name)
+
     @skip_if_insufficient_version(version="11.4")
     def test_get_storage_dimension_order(self):
         dimensions = self.tm1.cubes.get_storage_dimension_order(cube_name=self.cube_name)

@@ -146,6 +146,24 @@ class CubeService(ObjectService):
         cubes = list(entry['Name'] for entry in response.json()['value'])
         return cubes
 
+    def get_all_names_with_rules(self, **kwargs) -> List[str]:
+        """ Ask TM1 Server for list of all cube names that have rules
+
+        :return: List of Strings
+        """
+        response = self._rest.GET(url="/api/v1/Cubes?$select=Name,Rules&$filter=Rules ne null", **kwargs)
+        cubes = list(cube['Name'] for cube in response.json()['value'])
+        return cubes
+
+    def get_all_names_without_rules(self, **kwargs) -> List[str]:
+        """ Ask TM1 Server for list of all cube names that do not have rules
+
+        :return: List of Strings
+        """
+        response = self._rest.GET(url="/api/v1/Cubes?$select=Name,Rules&$filter=Rules eq null", **kwargs)
+        cubes = list(cube['Name'] for cube in response.json()['value'])
+        return cubes
+
     def get_dimension_names(self, cube_name: str, skip_sandbox_dimension: bool = True, **kwargs) -> List[str]:
         """ get name of the dimensions of a cube in their correct order
 
