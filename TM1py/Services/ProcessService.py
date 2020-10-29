@@ -80,6 +80,20 @@ class ProcessService(ObjectService):
         processes = list(process['Name'] for process in response.json()['value'])
         return processes
 
+    def create(self, process: Process, **kwargs) -> Response:
+        """ Create a new process on TM1 Server
+
+        :param process: Instance of TM1py.Process class
+        :return: Response
+        """
+        url = "/api/v1/Processes"
+        # Adjust process body if TM1 version is lower than 11 due to change in Process Parameters structure
+        # https://www.ibm.com/developerworks/community/forums/html/topic?id=9188d139-8905-4895-9229-eaaf0e7fa683
+        if int(self.version[0:2]) < 11:
+            process.drop_parameter_types()
+        response = self._rest.POST(url, process.body, **kwargs)
+        return response
+
     def update(self, process: Process, **kwargs) -> Response:
         """ Update an existing Process on TM1 Server
     
@@ -94,19 +108,16 @@ class ProcessService(ObjectService):
         response = self._rest.PATCH(url, process.body, **kwargs)
         return response
 
-    def create(self, process: Process, **kwargs) -> Response:
-        """ Create a new process on TM1 Server
-    
+    def update_or_create(self, process: Process, **kwargs) -> Response:
+        """ Update or Create a Process on TM1 Server
+
         :param process: Instance of TM1py.Process class
         :return: Response
         """
-        url = "/api/v1/Processes"
-        # Adjust process body if TM1 version is lower than 11 due to change in Process Parameters structure
-        # https://www.ibm.com/developerworks/community/forums/html/topic?id=9188d139-8905-4895-9229-eaaf0e7fa683
-        if int(self.version[0:2]) < 11:
-            process.drop_parameter_types()
-        response = self._rest.POST(url, process.body, **kwargs)
-        return response
+        if self.exists(name=process.name, **kwargs):
+            return self.update(process=process, **kwargs)
+
+        return self.create(process=process, **kwargs)
 
     def delete(self, name: str, **kwargs) -> Response:
         """ Delete a process in TM1

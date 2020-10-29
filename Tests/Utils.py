@@ -291,6 +291,14 @@ class TestUtilsMethods(unittest.TestCase):
         seconds = Utils.get_seconds_from_duration(elapsed_time)
         self.assertEqual(242, seconds)
 
+    def test_get_tm1_time_value_now(self):
+        current_time_from_excel_serial_date = Utils.get_tm1_time_value_now(use_excel_serial_date=True)
+        current_time_from_tm1_serial_date = Utils.get_tm1_time_value_now(use_excel_serial_date=False)
+
+        self.assertIsInstance(current_time_from_excel_serial_date, float)
+        self.assertIsInstance(current_time_from_tm1_serial_date, float)
+        self.assertGreater(current_time_from_excel_serial_date, current_time_from_tm1_serial_date)
+
     def test_extract_cell_updateable_property_rule_is_applied_true(self):
         value = 268435716
         self.assertTrue(extract_cell_updateable_property(

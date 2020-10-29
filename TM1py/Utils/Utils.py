@@ -521,6 +521,21 @@ def get_seconds_from_duration(time_str: str) -> int:
     return seconds
 
 
+def get_tm1_time_value_now(use_excel_serial_date: bool = False) -> float:
+    """
+    This function can be used to replicate TM1's NOW function
+    to return current date/time value in serial number format.
+    :param use_excel_serial_date: Boolean
+    :return: serial number
+    """
+    from datetime import datetime
+    # timestamp according to tm1
+    start_datetime = datetime(1899, 12, 30) if use_excel_serial_date else datetime(1960, 1, 1)
+    current_datetime = datetime.now()
+    delta = current_datetime - start_datetime
+    return delta.days + (delta.seconds / 86400)
+
+
 def add_url_parameters(url, **kwargs: str) -> str:
     """ Append parameters to url string passed in kwargs
     :param url: str
