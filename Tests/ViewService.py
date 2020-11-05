@@ -14,7 +14,7 @@ DIMENSION_NAMES = [
 SUBSET_NAME = 'TM1py_Tests_View_Subset'
 
 
-class TestViewMethods(unittest.TestCase):
+class TestViewService(unittest.TestCase):
 
     native_view_name = 'TM1py_Tests_Native_View'
     mdx_view_name = 'TM1py_Tests_Mdx_View'

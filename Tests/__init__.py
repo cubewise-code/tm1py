@@ -8,6 +8,7 @@ from Tests.Element import TestElementMethods
 from Tests.Hierarchy import TestHierarchyMethods
 from Tests.MDXUtils import TestMDXUtils
 from Tests.MonitoringService import TestMonitoringMethods
+from Tests.NativeView import TestNativeView
 from Tests.PowerBiService import TestPowerBiService
 from Tests.Process import TestProcessMethods
 from Tests.RestService import TestRestServiceMethods
@@ -20,7 +21,7 @@ from Tests.SubsetService import TestSubsetService
 from Tests.TIObfuscator import TestTIObfuscatorMethods
 from Tests.TM1pyDict import TestCaseAndSpaceInsensitiveDict, TestCaseAndSpaceInsensitiveSet, TestCaseAndSpaceInsensitiveTuplesDict
 from Tests.Utils import TestUtilsMethods
-from Tests.View import TestViewMethods
+from Tests.ViewService import TestViewService
 
 """ Notes on TM1py Tests
 - specify your instance coordinates in the config.ini file
