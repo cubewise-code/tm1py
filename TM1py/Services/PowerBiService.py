@@ -24,10 +24,26 @@ class PowerBiService:
 
     @require_pandas
     def execute_mdx(self, mdx, **kwargs) -> 'pd.DataFrame':
+        """
+        Execute a single mdx command
+
+        Args:
+            self: (todo): write your description
+            mdx: (str): write your description
+        """
         return self.cells.execute_mdx_dataframe_shaped(mdx, **kwargs)
 
     @require_pandas
     def execute_view(self, cube_name, view_name, private, **kwargs) -> 'pd.DataFrame':
+        """
+        Execute view in - based view.
+
+        Args:
+            self: (todo): write your description
+            cube_name: (str): write your description
+            view_name: (str): write your description
+            private: (bool): write your description
+        """
         return self.cells.execute_view_dataframe_shaped(cube_name, view_name, private, **kwargs)
 
     @require_pandas

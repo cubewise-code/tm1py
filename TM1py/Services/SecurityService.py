@@ -17,12 +17,33 @@ class SecurityService(ObjectService):
     """
 
     def __init__(self, rest: RestService):
+        """
+        Initialize the service.
+
+        Args:
+            self: (todo): write your description
+            rest: (todo): write your description
+        """
         super().__init__(rest)
 
     def determine_actual_user_name(self, user_name: str, **kwargs) -> str:
+        """
+        Determine the actual user name.
+
+        Args:
+            self: (todo): write your description
+            user_name: (str): write your description
+        """
         return self.determine_actual_object_name(object_class="Users", object_name=user_name, **kwargs)
 
     def determine_actual_group_name(self, group_name: str, **kwargs) -> str:
+        """
+        Returns the actual group name.
+
+        Args:
+            self: (todo): write your description
+            group_name: (str): write your description
+        """
         return self.determine_actual_object_name(object_class="Groups", object_name=group_name, **kwargs)
 
     def create_user(self, user: User, **kwargs) -> Response:
@@ -194,20 +215,46 @@ class SecurityService(ObjectService):
         return groups
 
     def security_refresh(self, **kwargs) -> Response:
+        """
+        Refresh a process.
+
+        Args:
+            self: (todo): write your description
+        """
         from TM1py.Services import ProcessService
         ti = "SecurityRefresh;"
         process_service = ProcessService(self._rest)
         return process_service.execute_ti_code(ti, **kwargs)
 
     def user_exists(self, user_name: str, **kwargs) -> bool:
+        """
+        Returns true if the user exists.
+
+        Args:
+            self: (todo): write your description
+            user_name: (str): write your description
+        """
         url = format_url("/api/v1/Users('{}')", user_name)
         return self._exists(url, **kwargs)
 
     def group_exists(self, group_name: str, **kwargs) -> bool:
+        """
+        Returns true if group exists.
+
+        Args:
+            self: (todo): write your description
+            group_name: (str): write your description
+        """
         url = format_url("/api/v1/Groups('{}')", group_name)
         return self._exists(url, **kwargs)
 
     def get_custom_security_groups(self, **kwargs) -> List[str]:
+        """
+        Returns a list of security groups.
+
+        Args:
+            self: (todo): write your description
+        """
         custom_groups = CaseAndSpaceInsensitiveSet(*self.get_all_groups(**kwargs))
         custom_groups.discard('Admin')
         custom_groups.discard('DataAdmin')
@@ -218,6 +265,12 @@ class SecurityService(ObjectService):
         return list(custom_groups)
 
     def get_read_only_users(self, **kwargs) -> List[str]:
+        """
+        Returns a list of read only
+
+        Args:
+            self: (todo): write your description
+        """
         read_only_users = list()
 
         mdx = """

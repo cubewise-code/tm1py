@@ -68,6 +68,12 @@ class TestChoreMethods(unittest.TestCase):
 
     @classmethod
     def setUp(cls):
+        """
+        Sets the task sets the same time between the task.
+
+        Args:
+            cls: (todo): write your description
+        """
         # create chores
         c1 = Chore(name=CHORE_NAME1,
                    start_time=ChoreStartTime(cls.start_time.year, cls.start_time.month, cls.start_time.day,
@@ -97,6 +103,12 @@ class TestChoreMethods(unittest.TestCase):
 
     @classmethod
     def tearDown(cls):
+        """
+        Removes the next canvas.
+
+        Args:
+            cls: (todo): write your description
+        """
         if cls.tm1.chores.exists(CHORE_NAME1):
             cls.tm1.chores.delete(CHORE_NAME1)
         if cls.tm1.chores.exists(CHORE_NAME2):
@@ -108,6 +120,12 @@ class TestChoreMethods(unittest.TestCase):
 
     @skip_if_insufficient_version(version="11.7.00002.1")
     def test_create_chore_with_dst_multi_commit(self):
+        """
+        Initialize the dstore.
+
+        Args:
+            self: (todo): write your description
+        """
         # create chores
         c4 = Chore(name=CHORE_NAME4,
                    start_time=ChoreStartTime(self.start_time.year, self.start_time.month, self.start_time.day,
@@ -137,6 +155,12 @@ class TestChoreMethods(unittest.TestCase):
             self.assertEqual(task1, task2)
 
     def test_create_chore_with_dst_single_commit(self):
+        """
+        Initialize the dstore.
+
+        Args:
+            self: (todo): write your description
+        """
         # create chores
         c4 = Chore(name=CHORE_NAME4,
                    start_time=ChoreStartTime(self.start_time.year, self.start_time.month, self.start_time.day,
@@ -166,6 +190,12 @@ class TestChoreMethods(unittest.TestCase):
 
 
     def test_get_chore(self):
+        """
+        Compute the frequency of the task.
+
+        Args:
+            self: (todo): write your description
+        """
         c1 = self.tm1.chores.get(CHORE_NAME1)
         # check all properties
         self.assertEqual(c1._start_time._datetime, self.start_time.replace(microsecond=0))
@@ -195,10 +225,22 @@ class TestChoreMethods(unittest.TestCase):
             self.assertEqual(task1, task2)
 
     def test_get_chore_without_tasks(self):
+        """
+        Get the test test tasks.
+
+        Args:
+            self: (todo): write your description
+        """
         c3 = self.tm1.chores.get(chore_name=CHORE_NAME3)
         self.assertFalse(len(c3.tasks))
 
     def test_get_all(self):
+        """
+        Get all scores for all scores.
+
+        Args:
+            self: (todo): write your description
+        """
         all_chores = self.tm1.chores.get_all()
         # only check if names are returned
         self.assertIn(CHORE_NAME1, (c.name for c in all_chores))
@@ -206,12 +248,24 @@ class TestChoreMethods(unittest.TestCase):
         self.assertIn(CHORE_NAME3, (c.name for c in all_chores))
 
     def test_get_all_names(self):
+        """
+        Get all test names of all chore names.
+
+        Args:
+            self: (todo): write your description
+        """
         all_chore_names = self.tm1.chores.get_all_names()
         self.assertIn(CHORE_NAME1, all_chore_names)
         self.assertIn(CHORE_NAME2, all_chore_names)
         self.assertIn(CHORE_NAME3, all_chore_names)
 
     def test_update_chore_dst(self):
+        """
+        Generate a chore.
+
+        Args:
+            self: (todo): write your description
+        """
         # get chore
         c = self.tm1.chores.get(CHORE_NAME1)
         # update all properties
@@ -260,6 +314,12 @@ class TestChoreMethods(unittest.TestCase):
             self.assertEqual(task1, task2)
 
     def test_update_active_chore(self):
+        """
+        Updates the current test.
+
+        Args:
+            self: (todo): write your description
+        """
         self.tm1.chores.activate(CHORE_NAME1)
 
         c = self.tm1.chores.get(CHORE_NAME1)
@@ -272,6 +332,12 @@ class TestChoreMethods(unittest.TestCase):
         self.assertEqual(c.execution_mode, Chore.MULTIPLE_COMMIT)
 
     def test_update_chore_without_tasks(self):
+        """
+        Generate a randomxt.
+
+        Args:
+            self: (todo): write your description
+        """
         # get chore
         c = self.tm1.chores.get(CHORE_NAME1)
         # update all properties
@@ -305,6 +371,12 @@ class TestChoreMethods(unittest.TestCase):
         self.assertEqual(int(c._frequency._minutes), int(frequency_minutes))
 
     def test_update_chore_add_tasks(self):
+        """
+        Generate a random pillar.
+
+        Args:
+            self: (todo): write your description
+        """
         # get chore
         c = self.tm1.chores.get(CHORE_NAME1)
         # update all properties
@@ -348,6 +420,12 @@ class TestChoreMethods(unittest.TestCase):
             self.assertEqual(task1, task2)
 
     def test_update_chore_remove_tasks(self):
+        """
+        Perform the random test tasks.
+
+        Args:
+            self: (todo): write your description
+        """
         # get chore
         c = self.tm1.chores.get(CHORE_NAME1)
         # update all properties
@@ -389,22 +467,46 @@ class TestChoreMethods(unittest.TestCase):
             self.assertEqual(task1, task2)
 
     def test_activate(self):
+        """
+        Activate the high level.
+
+        Args:
+            self: (todo): write your description
+        """
         chore = self.tm1.chores.get(CHORE_NAME1)
         if chore.active:
             self.tm1.chores.deactivate(CHORE_NAME1)
         self.tm1.chores.activate(CHORE_NAME1)
 
     def test_deactivate(self):
+        """
+        Deactivate the current channel.
+
+        Args:
+            self: (todo): write your description
+        """
         chore = self.tm1.chores.get(CHORE_NAME1)
         if not chore.active:
             self.tm1.chores.activate(CHORE_NAME1)
         self.tm1.chores.deactivate(CHORE_NAME1)
 
     def test_execute_chore(self):
+        """
+        Executes the test test.
+
+        Args:
+            self: (todo): write your description
+        """
         response = self.tm1.chores.execute_chore(CHORE_NAME1)
         self.assertTrue(response.ok)
 
     def test_exists(self):
+        """
+        Check if the target exists.
+
+        Args:
+            self: (todo): write your description
+        """
         self.assertTrue(self.tm1.chores.exists(CHORE_NAME1))
         self.assertTrue(self.tm1.chores.exists(CHORE_NAME2))
         self.assertTrue(self.tm1.chores.exists(CHORE_NAME3))
@@ -412,6 +514,12 @@ class TestChoreMethods(unittest.TestCase):
 
     @classmethod
     def teardown_class(cls):
+        """
+        Teardown the class.
+
+        Args:
+            cls: (todo): write your description
+        """
         cls.tm1.processes.delete(PROCESS_NAME1)
         cls.tm1.processes.delete(PROCESS_NAME2)
         cls.tm1.logout()

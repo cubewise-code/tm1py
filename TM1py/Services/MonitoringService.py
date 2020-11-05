@@ -15,6 +15,13 @@ class MonitoringService(ObjectService):
     """
 
     def __init__(self, rest: RestService):
+        """
+        Initialize the service.
+
+        Args:
+            self: (todo): write your description
+            rest: (todo): write your description
+        """
         super().__init__(rest)
 
     def get_threads(self, **kwargs) -> List:
@@ -38,6 +45,12 @@ class MonitoringService(ObjectService):
         return response
 
     def cancel_all_running_threads(self, **kwargs) -> list:
+        """
+        Cancel all threads in the current thread.
+
+        Args:
+            self: (todo): write your description
+        """
         running_threads = self.get_threads(**kwargs)
         canceled_threads = list()
         for thread in running_threads:
@@ -84,6 +97,14 @@ class MonitoringService(ObjectService):
         return response
 
     def get_sessions(self, include_user: bool = True, include_threads: bool = True, **kwargs) -> List:
+        """
+        Returns a list of threads.
+
+        Args:
+            self: (todo): write your description
+            include_user: (str): write your description
+            include_threads: (bool): write your description
+        """
         url = "/api/v1/Sessions"
         if include_user or include_threads:
             expands = list()
@@ -97,6 +118,12 @@ class MonitoringService(ObjectService):
         return response.json()["value"]
 
     def disconnect_all_users(self, **kwargs) -> list:
+        """
+        Disconnect all active users.
+
+        Args:
+            self: (todo): write your description
+        """
         current_user = self.get_current_user(**kwargs)
         active_users = self.get_active_users(**kwargs)
         disconnected_users = list()
@@ -107,10 +134,23 @@ class MonitoringService(ObjectService):
         return disconnected_users
 
     def close_session(self, session_id, **kwargs) -> Response:
+        """
+        Closes a session.
+
+        Args:
+            self: (todo): write your description
+            session_id: (str): write your description
+        """
         url = format_url(f"/api/v1/Sessions('{session_id}')/tm1.Close")
         return self._rest.POST(url, **kwargs)
 
     def close_all_sessions(self, **kwargs) -> list:
+        """
+        Closes all sessions.
+
+        Args:
+            self: (todo): write your description
+        """
         current_user = self.get_current_user(**kwargs)
         sessions = self.get_sessions(**kwargs)
         closed_sessions = list()
@@ -128,6 +168,12 @@ class MonitoringService(ObjectService):
         return closed_sessions
 
     def get_current_user(self, **kwargs):
+        """
+        Return the current user
+
+        Args:
+            self: (todo): write your description
+        """
         from TM1py import SecurityService
         security_service = SecurityService(self._rest)
         return security_service.get_current_user(**kwargs)

@@ -20,10 +20,23 @@ class Element(TM1Object):
         CONSOLIDATED = 3
 
         def __str__(self):
+            """
+            Return a string representation of this object.
+
+            Args:
+                self: (todo): write your description
+            """
             return self.name.capitalize()
 
         @classmethod
         def _missing_(cls, value: str):
+            """
+            Returns true if any missing value.
+
+            Args:
+                cls: (todo): write your description
+                value: (str): write your description
+            """
             for member in cls:
                 if member.name.lower() == value.replace(" ", "").lower():
                     return member
@@ -32,6 +45,17 @@ class Element(TM1Object):
 
     def __init__(self, name, element_type: Union[Types, str], attributes: List[str] = None, unique_name: str = None,
                  index: int = None):
+        """
+        Initialize an element.
+
+        Args:
+            self: (todo): write your description
+            name: (str): write your description
+            element_type: (str): write your description
+            attributes: (list): write your description
+            unique_name: (str): write your description
+            index: (int): write your description
+        """
         self._name = name
         self._unique_name = unique_name
         self._index = index
@@ -41,6 +65,12 @@ class Element(TM1Object):
 
     @staticmethod
     def from_dict(element_as_dict: Dict) -> 'Element':
+        """
+        Create an element from a dictionary.
+
+        Args:
+            element_as_dict: (dict): write your description
+        """
         return Element(name=element_as_dict['Name'],
                        unique_name=element_as_dict['UniqueName'],
                        index=element_as_dict['Index'],
@@ -49,41 +79,103 @@ class Element(TM1Object):
 
     @property
     def name(self) -> str:
+        """
+        Returns the name of this node.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._name
 
     @name.setter
     def name(self, value: str):
+        """
+        Set the name of the message
+
+        Args:
+            self: (todo): write your description
+            value: (str): write your description
+        """
         self._name = value
 
     @property
     def unique_name(self) -> str:
+        """
+        Returns the unique name.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._unique_name
 
     @property
     def index(self) -> int:
+        """
+        Returns the index of the index.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._index
 
     @property
     def element_attributes(self) -> List[str]:
+        """
+        The list of : class attributes of this element.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._attributes
 
     @property
     def element_type(self) -> Types:
+        """
+        Return the type : class.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._element_type
 
     @element_type.setter
     def element_type(self, value: Union[Types, str]):
+        """
+        Set the type of the element.
+
+        Args:
+            self: (todo): write your description
+            value: (todo): write your description
+        """
         self._element_type = Element.Types(value)
 
     @property
     def body(self) -> str:
+        """
+        Returns the body of the request.
+
+        Args:
+            self: (todo): write your description
+        """
         return json.dumps(self._construct_body())
 
     @property
     def body_as_dict(self) -> Dict:
+        """
+        Return the body as a dictionary.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._construct_body()
 
     def _construct_body(self) -> Dict:
+        """
+        Constructs the body.
+
+        Args:
+            self: (todo): write your description
+        """
         body_as_dict = collections.OrderedDict()
         body_as_dict['Name'] = self._name
         body_as_dict['Type'] = str(self._element_type)

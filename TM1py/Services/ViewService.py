@@ -20,6 +20,13 @@ class ViewService(ObjectService):
     """
 
     def __init__(self, rest: RestService):
+        """
+        Initialize the service.
+
+        Args:
+            self: (todo): write your description
+            rest: (todo): write your description
+        """
         super().__init__(rest)
 
     def create(self, view: Union[MDXView, NativeView], private: bool = False, **kwargs) -> Response:
@@ -62,6 +69,15 @@ class ViewService(ObjectService):
         return tuple(view_types.values())
 
     def get(self, cube_name: str, view_name: str, private: bool = False, **kwargs) -> View:
+        """
+        Get cube by name.
+
+        Args:
+            self: (todo): write your description
+            cube_name: (str): write your description
+            view_name: (str): write your description
+            private: (todo): write your description
+        """
         view_type = "PrivateViews" if private else "Views"
         url = format_url("/api/v1/Cubes('{}')/{}('{}')?$expand=*", cube_name, view_type, view_name)
         response = self._rest.GET(url, **kwargs)

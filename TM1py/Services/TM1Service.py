@@ -12,6 +12,12 @@ class TM1Service:
     """
 
     def __init__(self, **kwargs):
+        """
+        Initialize the service
+
+        Args:
+            self: (todo): write your description
+        """
         self._tm1_rest = RestService(**kwargs)
 
         # instantiate all Services
@@ -33,31 +39,84 @@ class TM1Service:
 
         self.sandboxes = SandboxService(self._tm1_rest)
     def logout(self, **kwargs):
+        """
+        Logout of the logout.
+
+        Args:
+            self: (todo): write your description
+        """
         self._tm1_rest.logout(**kwargs)
 
     def __enter__(self):
+        """
+        Decor function.
+
+        Args:
+            self: (todo): write your description
+        """
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
+        """
+        Logs the given exception.
+
+        Args:
+            self: (todo): write your description
+            exception_type: (todo): write your description
+            exception_value: (todo): write your description
+            traceback: (todo): write your description
+        """
         self.logout()
 
     @property
     def whoami(self):
+        """
+        Return the current whoami.
+
+        Args:
+            self: (todo): write your description
+        """
         return self.security.get_current_user()
 
     @property
     def version(self):
+        """
+        Access the idle version
+
+        Args:
+            self: (todo): write your description
+        """
         return self._tm1_rest.version
 
     @property
     def connection(self):
+        """
+        Gets the connection.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._tm1_rest
 
     def save_to_file(self, file_name):
+        """
+        Saves the object to a pickle file.
+
+        Args:
+            self: (todo): write your description
+            file_name: (str): write your description
+        """
         with open(file_name, 'wb') as file:
             pickle.dump(self, file)
 
     @classmethod
     def restore_from_file(cls, file_name):
+        """
+        Restore a pickle file. pickle file.
+
+        Args:
+            cls: (todo): write your description
+            file_name: (str): write your description
+        """
         with open(file_name, 'rb') as file:
             return pickle.load(file)

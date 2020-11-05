@@ -15,6 +15,13 @@ class SandboxService(ObjectService):
     """
 
     def __init__(self, rest: RestService):
+        """
+        Initialize the service.
+
+        Args:
+            self: (todo): write your description
+            rest: (todo): write your description
+        """
         super().__init__(rest)
 
     def get(self, sandbox_name: str, **kwargs) -> Sandbox:

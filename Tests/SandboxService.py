@@ -22,6 +22,12 @@ class TestSandboxService(unittest.TestCase):
 
     @classmethod
     def setUp(cls):
+        """
+        Creates the configuration file.
+
+        Args:
+            cls: (todo): write your description
+        """
 
         # Connection to TM1
         cls.config = configparser.ConfigParser()
@@ -50,24 +56,48 @@ class TestSandboxService(unittest.TestCase):
             cls.tm1.sandboxes.create(Sandbox(name=cls.sandbox_name1, include_in_sandbox_dimension=True))
 
     def test_get_sandbox(self):
+        """
+        Get the test boxes.
+
+        Args:
+            self: (todo): write your description
+        """
         sandbox = self.tm1.sandboxes.get(self.sandbox_name1)
 
         self.assertEqual(self.sandbox_name1, sandbox.name)
         self.assertTrue(True, sandbox.include_in_sandbox_dimension)
 
     def test_get_all_names(self):
+        """
+        Get all the names of all names in - names
+
+        Args:
+            self: (todo): write your description
+        """
         sandbox_names = self.tm1.sandboxes.get_all_names()
 
         self.assertEqual(1, len(sandbox_names))
         self.assertEqual(sandbox_names[0], self.sandbox_name1)
 
     def test_get_all(self):
+        """
+        Test for all the test boxes of all boxes
+
+        Args:
+            self: (todo): write your description
+        """
         sandboxes = self.tm1.sandboxes.get_all()
 
         self.assertEqual(1, len(sandboxes))
         self.assertEqual(sandboxes[0], Sandbox(self.sandbox_name1, True))
 
     def test_update_sandbox(self):
+        """
+        Updates the test and updates
+
+        Args:
+            self: (todo): write your description
+        """
         sandbox = self.tm1.sandboxes.get(self.sandbox_name1)
         self.assertEqual(self.sandbox_name1, sandbox.name)
         self.assertTrue(sandbox.include_in_sandbox_dimension)
@@ -80,11 +110,23 @@ class TestSandboxService(unittest.TestCase):
         self.assertFalse(sandbox.include_in_sandbox_dimension)
 
     def test_exists(self):
+        """
+        Check if the test exists.
+
+        Args:
+            self: (todo): write your description
+        """
         exists = self.tm1.sandboxes.exists(self.sandbox_name1)
 
         self.assertTrue(exists)
 
     def test_delete_sandbox(self):
+        """
+        Deletes all the game.
+
+        Args:
+            self: (todo): write your description
+        """
         sandbox2 = Sandbox(self.sandbox_name2, True)
         self.tm1.sandboxes.create(sandbox2)
 
@@ -94,6 +136,12 @@ class TestSandboxService(unittest.TestCase):
         self.assertFalse(exists)
 
     def test_publish(self):
+        """
+        Publish the mdx1 to the specified by this method.
+
+        Args:
+            self: (todo): write your description
+        """
         mdx = MdxBuilder.from_cube(self.cube_name).add_member_tuple_to_columns(
             Member.of(self.dimension_names[0], "Element1"),
             Member.of(self.dimension_names[1], "Element1"),
@@ -114,6 +162,12 @@ class TestSandboxService(unittest.TestCase):
         self.assertEqual(1, values[0])
 
     def test_reset(self):
+        """
+        Reset the mdx.
+
+        Args:
+            self: (todo): write your description
+        """
         mdx = MdxBuilder.from_cube(self.cube_name).add_member_tuple_to_columns(
             Member.of(self.dimension_names[0], "Element1"),
             Member.of(self.dimension_names[1], "Element1"),
@@ -134,6 +188,12 @@ class TestSandboxService(unittest.TestCase):
         self.assertEqual(None, values[0])
 
     def test_merge_with_clean_after(self):
+        """
+        Merge two tables that have the same as the database.
+
+        Args:
+            self: (todo): write your description
+        """
         mdx = MdxBuilder.from_cube(self.cube_name).add_member_tuple_to_columns(
             Member.of(self.dimension_names[0], "Element1"),
             Member.of(self.dimension_names[1], "Element1"),
@@ -160,6 +220,12 @@ class TestSandboxService(unittest.TestCase):
         self.assertEqual(None, values[0])
 
     def test_merge_without_clean_after(self):
+        """
+        Merge the mdx1 row.
+
+        Args:
+            self: (todo): write your description
+        """
         mdx = MdxBuilder.from_cube(self.cube_name).add_member_tuple_to_columns(
             Member.of(self.dimension_names[0], "Element1"),
             Member.of(self.dimension_names[1], "Element1"),
@@ -187,6 +253,12 @@ class TestSandboxService(unittest.TestCase):
 
     @classmethod
     def tearDown(cls):
+        """
+        Tear down dimension from the database.
+
+        Args:
+            cls: (todo): write your description
+        """
         for sandbox_name in [cls.sandbox_name1, cls.sandbox_name2]:
             if cls.tm1.sandboxes.exists(sandbox_name):
                 cls.tm1.sandboxes.delete(sandbox_name)

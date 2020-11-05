@@ -22,6 +22,12 @@ def deactivate_activate(func):
 
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
+        """
+        Decorator to run ().
+
+        Args:
+            self: (todo): write your description
+        """
         # chore (type Chore) or chore_name (type str) is passed as first arg or kwargs
         if 'chore' in kwargs:
             chore = kwargs.get('chore').name
@@ -67,6 +73,13 @@ class ChoreService(ObjectService):
     """
 
     def __init__(self, rest: RestService):
+        """
+        Initialize the service.
+
+        Args:
+            self: (todo): write your description
+            rest: (todo): write your description
+        """
         super().__init__(rest)
 
     def get(self, chore_name: str, **kwargs) -> Chore:
@@ -159,6 +172,13 @@ class ChoreService(ObjectService):
             self.set_local_start_time(chore.name, chore.start_time.datetime)
 
     def update_or_create(self, chore: Chore, **kwargs) -> Response:
+        """
+        Creates a chore.
+
+        Args:
+            self: (todo): write your description
+            chore: (todo): write your description
+        """
         if self.exists(chore_name=chore.name, **kwargs):
             return self.update(chore, **kwargs)
 

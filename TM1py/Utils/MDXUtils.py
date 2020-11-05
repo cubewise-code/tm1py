@@ -10,6 +10,16 @@ class DimensionSelection:
     ITERABLE = 3
 
     def __init__(self, dimension_name, elements=None, subset=None, expression=None):
+        """
+        Create a new subset.
+
+        Args:
+            self: (todo): write your description
+            dimension_name: (str): write your description
+            elements: (todo): write your description
+            subset: (todo): write your description
+            expression: (str): write your description
+        """
         warnings.warn(
             f"class DimensionSelection will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
             DeprecationWarning,
@@ -31,6 +41,14 @@ class DimensionSelection:
 
     @staticmethod
     def determine_selection_type(elements=None, subset=None, expression=None):
+        """
+        Determine the type of a given selection.
+
+        Args:
+            elements: (todo): write your description
+            subset: (todo): write your description
+            expression: (todo): write your description
+        """
         warnings.warn(
             f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
             DeprecationWarning,
@@ -149,6 +167,12 @@ def read_dimension_composition_from_mdx(mdx):
 
 
 def read_dimension_composition_from_mdx_set_or_tuple(mdx):
+    """
+    Read the composition of a composition.
+
+    Args:
+        mdx: (str): write your description
+    """
     warnings.warn(
         f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
         DeprecationWarning,
@@ -169,6 +193,12 @@ def read_dimension_composition_from_mdx_set_or_tuple(mdx):
 
 
 def read_dimension_composition_from_mdx_set(mdx):
+    """
+    Read a list of the composition from a list of mdx.
+
+    Args:
+        mdx: (str): write your description
+    """
     warnings.warn(
         f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
         DeprecationWarning,
@@ -183,6 +213,12 @@ def read_dimension_composition_from_mdx_set(mdx):
 
 
 def read_dimension_composition_from_mdx_tuple(mdx):
+    """
+    Reads a list from a member.
+
+    Args:
+        mdx: (str): write your description
+    """
     warnings.warn(
         f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
         DeprecationWarning,
@@ -199,6 +235,12 @@ def read_dimension_composition_from_mdx_tuple(mdx):
 
 
 def split_mdx(mdx):
+    """
+    Split markdown text into two columns.
+
+    Args:
+        mdx: (str): write your description
+    """
     warnings.warn(
         f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
         DeprecationWarning,
@@ -224,6 +266,14 @@ def split_mdx(mdx):
 
 
 def _find_case_and_space_insensitive_first_occurrence(text, pattern_start=None, pattern_end=None):
+    """
+    Find the index and last occurrence of the text.
+
+    Args:
+        text: (str): write your description
+        pattern_start: (str): write your description
+        pattern_end: (str): write your description
+    """
     warnings.warn(
         f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
         DeprecationWarning,

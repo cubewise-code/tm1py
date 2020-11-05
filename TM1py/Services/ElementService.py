@@ -17,9 +17,25 @@ class ElementService(ObjectService):
     """
 
     def __init__(self, rest: RestService):
+        """
+        Initialize the service.
+
+        Args:
+            self: (todo): write your description
+            rest: (todo): write your description
+        """
         super().__init__(rest)
 
     def get(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> Element:
+        """
+        Returns a single dimension.
+
+        Args:
+            self: (todo): write your description
+            dimension_name: (str): write your description
+            hierarchy_name: (str): write your description
+            element_name: (str): write your description
+        """
         url = format_url(
             "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')?$expand=*",
             dimension_name, hierarchy_name, element_name)
@@ -27,6 +43,15 @@ class ElementService(ObjectService):
         return Element.from_dict(response.json())
 
     def create(self, dimension_name: str, hierarchy_name: str, element: Element, **kwargs) -> Response:
+        """
+        Create a new element.
+
+        Args:
+            self: (int): write your description
+            dimension_name: (str): write your description
+            hierarchy_name: (str): write your description
+            element: (todo): write your description
+        """
         url = format_url(
             "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements",
             dimension_name,
@@ -34,6 +59,15 @@ class ElementService(ObjectService):
         return self._rest.POST(url, element.body, **kwargs)
 
     def update(self, dimension_name: str, hierarchy_name: str, element: Element, **kwargs) -> Response:
+        """
+        Updates this component.
+
+        Args:
+            self: (todo): write your description
+            dimension_name: (str): write your description
+            hierarchy_name: (str): write your description
+            element: (todo): write your description
+        """
         url = format_url(
             "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
             dimension_name,
@@ -42,6 +76,15 @@ class ElementService(ObjectService):
         return self._rest.PATCH(url, element.body, **kwargs)
 
     def exists(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> bool:
+        """
+        Returns true if the given dimension exists.
+
+        Args:
+            self: (todo): write your description
+            dimension_name: (str): write your description
+            hierarchy_name: (str): write your description
+            element_name: (str): write your description
+        """
         url = format_url(
             "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
             dimension_name,
@@ -50,6 +93,15 @@ class ElementService(ObjectService):
         return self._exists(url, **kwargs)
 
     def delete(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> Response:
+        """
+        Deletes a dimension.
+
+        Args:
+            self: (todo): write your description
+            dimension_name: (str): write your description
+            hierarchy_name: (str): write your description
+            element_name: (str): write your description
+        """
         url = format_url(
             "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
             dimension_name,
@@ -58,6 +110,14 @@ class ElementService(ObjectService):
         return self._rest.DELETE(url, **kwargs)
 
     def get_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[Element]:
+        """
+        Returns a list elements.
+
+        Args:
+            self: (todo): write your description
+            dimension_name: (str): write your description
+            hierarchy_name: (str): write your description
+        """
         url = format_url(
             "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*",
             dimension_name,
@@ -66,6 +126,14 @@ class ElementService(ObjectService):
         return [Element.from_dict(element) for element in response.json()["value"]]
 
     def get_leaf_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[Element]:
+        """
+        Returns a list of leaf elements.
+
+        Args:
+            self: (todo): write your description
+            dimension_name: (str): write your description
+            hierarchy_name: (str): write your description
+        """
         url = format_url(
             "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*&$filter=Type ne 3",
             dimension_name,
@@ -74,6 +142,14 @@ class ElementService(ObjectService):
         return [Element.from_dict(element) for element in response.json()["value"]]
 
     def get_leaf_element_names(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
+        """
+        Returns a list of leaf leaf names.
+
+        Args:
+            self: (todo): write your description
+            dimension_name: (str): write your description
+            hierarchy_name: (str): write your description
+        """
         url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Type ne 3",
                          dimension_name,
                          hierarchy_name)
@@ -95,6 +171,14 @@ class ElementService(ObjectService):
         return [e["Name"] for e in response.json()['value']]
 
     def get_number_of_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> int:
+        """
+        Returns the number of elements matching the specified dimension_name.
+
+        Args:
+            self: (todo): write your description
+            dimension_name: (str): write your description
+            hierarchy_name: (str): write your description
+        """
         url = format_url(
             "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements/$count",
             dimension_name,
@@ -103,6 +187,14 @@ class ElementService(ObjectService):
         return int(response.text)
 
     def get_number_of_consolidated_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> int:
+        """
+        Returns the number of elements in the number.
+
+        Args:
+            self: (todo): write your description
+            dimension_name: (str): write your description
+            hierarchy_name: (str): write your description
+        """
         url = format_url(
             "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements/$count?$filter=Type eq 3",
             dimension_name,
@@ -111,6 +203,14 @@ class ElementService(ObjectService):
         return int(response.text)
 
     def get_number_of_leaf_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> int:
+        """
+        Returns the number of leaf elements.
+
+        Args:
+            self: (todo): write your description
+            dimension_name: (str): write your description
+            hierarchy_name: (str): write your description
+        """
         url = format_url(
             "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements/$count?$filter=Type ne 3",
             dimension_name,
@@ -263,6 +363,15 @@ class ElementService(ObjectService):
         return result_set
 
     def get_level_names(self, dimension_name: str, hierarchy_name: str, descending: bool = True, **kwargs) -> List[str]:
+        """
+        Returns a list of all hierarchy.
+
+        Args:
+            self: (todo): write your description
+            dimension_name: (str): write your description
+            hierarchy_name: (str): write your description
+            descending: (str): write your description
+        """
         url = format_url(
             "/api/v1/Dimensions('{}')/Hierarchies('{}')/Levels?$select=Name",
             dimension_name,
@@ -274,12 +383,29 @@ class ElementService(ObjectService):
             return [level["Name"] for level in response.json()["value"]]
 
     def get_levels_count(self, dimension_name: str, hierarchy_name: str, **kwargs) -> int:
+        """
+        Returns the number of levels in the hierarchy.
+
+        Args:
+            self: (todo): write your description
+            dimension_name: (str): write your description
+            hierarchy_name: (str): write your description
+        """
         url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')/Levels/$count", dimension_name, hierarchy_name)
         response = self._rest.GET(url, **kwargs)
         return int(response.text)
 
     def get_element_types(self, dimension_name: str, hierarchy_name: str,
                           skip_consolidations: bool = False, **kwargs) -> CaseAndSpaceInsensitiveDict:
+        """
+        Returns a list of types. dimension.
+
+        Args:
+            self: (todo): write your description
+            dimension_name: (str): write your description
+            hierarchy_name: (str): write your description
+            skip_consolidations: (str): write your description
+        """
         url = format_url(
             "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name,Type{}",
             dimension_name,
@@ -293,14 +419,36 @@ class ElementService(ObjectService):
         return result
 
     def attribute_cube_exists(self, dimension_name: str, **kwargs) -> bool:
+        """
+        Returns true if an attribute exists.
+
+        Args:
+            self: (todo): write your description
+            dimension_name: (str): write your description
+        """
         url = format_url("/api/v1/Cubes('{}')", self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name)
         return self._exists(url, **kwargs)
 
     def _retrieve_mdx_rows_and_cell_values_as_string_set(self, mdx: str, exclude_empty_cells=True, **kwargs):
+        """
+        Retrieve a set of the values in a set.
+
+        Args:
+            self: (todo): write your description
+            mdx: (todo): write your description
+            exclude_empty_cells: (bool): write your description
+        """
         from TM1py import CellService
         return CellService(self._rest).execute_mdx_rows_and_values_string_set(mdx, exclude_empty_cells, **kwargs)
 
     def _retrieve_mdx_rows_and_values(self, mdx: str, **kwargs):
+        """
+        Retrieve all rows and values from a set of the specified rows.
+
+        Args:
+            self: (todo): write your description
+            mdx: (todo): write your description
+        """
         from TM1py import CellService
         return CellService(self._rest).execute_mdx_rows_and_values(mdx, **kwargs)
 
@@ -425,6 +573,12 @@ class ElementService(ObjectService):
 
         # recursive function to parse consolidation_tree
         def get_members(element):
+            """
+            Return a list of member.
+
+            Args:
+                element: (str): write your description
+            """
             if element["Type"] == "Numeric":
                 members.append(element["Name"])
             elif element["Type"] == "Consolidated":

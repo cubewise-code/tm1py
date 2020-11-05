@@ -23,6 +23,14 @@ class ObjectService:
         self._rest = rest_service
 
     def determine_actual_object_name(self, object_class: str, object_name: str, **kwargs) -> str:
+        """
+        Determine the object s name.
+
+        Args:
+            self: (todo): write your description
+            object_class: (todo): write your description
+            object_name: (str): write your description
+        """
         url = format_url(
             "/api/v1/{}?$filter=tolower(replace(Name, ' ', '')) eq '{}'",
             object_class,
@@ -50,4 +58,10 @@ class ObjectService:
 
     @property
     def version(self) -> str:
+        """
+        Returns the rest api version
+
+        Args:
+            self: (todo): write your description
+        """
         return self._rest.version

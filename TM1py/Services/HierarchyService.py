@@ -22,6 +22,13 @@ class HierarchyService(ObjectService):
     EDGES_WORKAROUND_VERSIONS = ('11.0.002', '11.0.003', '11.1.000')
 
     def __init__(self, rest: RestService):
+        """
+        Initialize the service
+
+        Args:
+            self: (todo): write your description
+            rest: (todo): write your description
+        """
         super().__init__(rest)
         self.subsets = SubsetService(rest)
         self.elements = ElementService(rest)
@@ -110,10 +117,26 @@ class HierarchyService(ObjectService):
         return self._exists(url, **kwargs)
 
     def delete(self, dimension_name: str, hierarchy_name: str, **kwargs) -> Response:
+        """
+        Create a dimension.
+
+        Args:
+            self: (todo): write your description
+            dimension_name: (str): write your description
+            hierarchy_name: (str): write your description
+        """
         url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')", dimension_name, hierarchy_name)
         return self._rest.DELETE(url, **kwargs)
 
     def get_hierarchy_summary(self, dimension_name: str, hierarchy_name: str, **kwargs) -> Dict[str, int]:
+        """
+        Return a hierarchy of the hierarchy.
+
+        Args:
+            self: (todo): write your description
+            dimension_name: (str): write your description
+            hierarchy_name: (str): write your description
+        """
         hierarchy_properties = ("Elements", "Edges", "ElementAttributes", "Members", "Levels")
         url = format_url(
             "/api/v1/Dimensions('{}')/Hierarchies('{}')?$expand=Edges/$count,Elements/$count,"
@@ -203,6 +226,14 @@ class HierarchyService(ObjectService):
             **kwargs)
 
     def remove_all_edges(self, dimension_name: str, hierarchy_name: str = None, **kwargs) -> Response:
+        """
+        Removes edges from a group.
+
+        Args:
+            self: (todo): write your description
+            dimension_name: (str): write your description
+            hierarchy_name: (str): write your description
+        """
         if not hierarchy_name:
             hierarchy_name = dimension_name
         url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')", dimension_name, hierarchy_name)

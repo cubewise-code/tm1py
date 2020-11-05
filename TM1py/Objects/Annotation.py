@@ -19,6 +19,22 @@ class Annotation(TM1Object):
                  comment_type: str = 'ANNOTATION', annotation_id: str = None,
                  text: str = '', creator: str = None, created: str = None, last_updated_by: str = None,
                  last_updated: str = None):
+        """
+        Initialize a comment.
+
+        Args:
+            self: (todo): write your description
+            comment_value: (str): write your description
+            object_name: (str): write your description
+            dimensional_context: (int): write your description
+            comment_type: (str): write your description
+            annotation_id: (str): write your description
+            text: (str): write your description
+            creator: (todo): write your description
+            created: (todo): write your description
+            last_updated_by: (str): write your description
+            last_updated: (todo): write your description
+        """
         self._id = annotation_id
         self._text = text
         self._creator = creator
@@ -54,42 +70,103 @@ class Annotation(TM1Object):
 
     @property
     def body(self) -> str:
+        """
+        Return the body of the request.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._construct_body()
 
     @property
     def comment_value(self) -> str:
+        """
+        Return the comment value.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._comment_value
 
     @property
     def text(self) -> str:
+        """
+        Return the text.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._text
 
     @property
     def dimensional_context(self) -> List[str]:
+        """
+        Return the current : class.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._dimensional_context
 
     @property
     def created(self) -> str:
+        """
+        Returns the created : class.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._created
 
     @property
     def object_name(self) -> str:
+        """
+        Returns the name of the object.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._object_name
 
     @property
     def last_updated(self) -> str:
+        """
+        Returns the last changes.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._last_updated
 
     @property
     def last_updated_by(self) -> str:
+        """
+        Returns the last updated changes.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._last_updated_by
 
     @comment_value.setter
     def comment_value(self, value: str):
+        """
+        Set the comment value.
+
+        Args:
+            self: (todo): write your description
+            value: (todo): write your description
+        """
         self._comment_value = value
 
     @property
     def id(self) -> str:
+        """
+        Returns the id of the entity.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._id
 
     def move(self, dimension_order: Iterable[str], dimension: str, target_element: str, source_element: str = None):

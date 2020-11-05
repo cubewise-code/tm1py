@@ -27,44 +27,100 @@ class Cube(TM1Object):
 
     @property
     def name(self) -> str:
+        """
+        Returns the name of this node.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._name
 
     @property
     def dimensions(self) -> List[str]:
+        """
+        The dimension : class.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._dimensions
 
     @dimensions.setter
     def dimensions(self, value: List[str]):
+        """
+        Gets / sets the dimensions
+
+        Args:
+            self: (todo): write your description
+            value: (str): write your description
+        """
         self._dimensions = value
 
     @property
     def has_rules(self) -> bool:
+        """
+        Returns true if the rules are present.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._rules:
             return True
         return False
 
     @property
     def rules(self) -> Rules:
+        """
+        Return the rules. rules.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._rules
 
     @rules.setter
     def rules(self, value: Rules):
+        """
+        Set rules
+
+        Args:
+            self: (todo): write your description
+            value: (todo): write your description
+        """
         self._rules = value
 
     @property
     def skipcheck(self) -> bool:
+        """
+        Returns true if the rules should be skipped.
+
+        Args:
+            self: (todo): write your description
+        """
         if self.has_rules:
             return self.rules.skipcheck
         return False
 
     @property
     def undefvals(self) -> bool:
+        """
+        Undefvals.
+
+        Args:
+            self: (todo): write your description
+        """
         if self.has_rules:
             return self.rules.undefvals
         return False
 
     @property
     def feedstrings(self) -> bool:
+        """
+        Returns true if the feedstrings is feedstrings.
+
+        Args:
+            self: (todo): write your description
+        """
         if self.has_rules:
             return self.rules.feedstrings
         return False
@@ -93,6 +149,12 @@ class Cube(TM1Object):
 
     @property
     def body(self) -> str:
+        """
+        Return the body of the request.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._construct_body()
 
     def _construct_body(self) -> str:

@@ -69,6 +69,12 @@ class TestServerMethods(unittest.TestCase):
         cls.tm1.processes.create(cls.process2)
 
     def test_get_server_name(self):
+        """
+        Get the server name.
+
+        Args:
+            self: (todo): write your description
+        """
         server_name = self.tm1.server.get_server_name()
         self.assertIsInstance(server_name, str)
         self.assertGreater(len(server_name), 0)
@@ -77,16 +83,34 @@ class TestServerMethods(unittest.TestCase):
         self.assertEqual(server_name, active_configuration["ServerName"])
 
     def test_get_product_version(self):
+        """
+        Get the product version of the product.
+
+        Args:
+            self: (todo): write your description
+        """
         product_version = self.tm1.server.get_product_version()
         self.assertIsInstance(product_version, str)
         self.assertGreater(len(product_version), 0)
         self.assertGreaterEqual(int(product_version[0:2]), 10)
 
     def test_get_admin_host(self):
+        """
+        Get the test host.
+
+        Args:
+            self: (todo): write your description
+        """
         admin_host = self.tm1.server.get_admin_host()
         self.assertIsInstance(admin_host, str)
 
     def test_get_data_directory(self):
+        """
+        Get the data directory.
+
+        Args:
+            self: (todo): write your description
+        """
         data_directory = self.tm1.server.get_data_directory()
         self.assertIsInstance(data_directory, str)
         self.assertGreater(len(data_directory), 0)
@@ -95,6 +119,12 @@ class TestServerMethods(unittest.TestCase):
         self.assertEqual(data_directory, active_configuration["Administration"]["DataBaseDirectory"])
 
     def test_get_static_configuration(self):
+        """
+        Sets static configuration.
+
+        Args:
+            self: (todo): write your description
+        """
         static_configuration = self.tm1.server.get_static_configuration()
         self.assertIsInstance(static_configuration, dict)
         self.assertIn("ServerName", static_configuration)
@@ -104,12 +134,24 @@ class TestServerMethods(unittest.TestCase):
         self.assertIn("Performance", static_configuration)
 
     def test_get_active_configuration(self):
+        """
+        Get active configuration.
+
+        Args:
+            self: (todo): write your description
+        """
         active_configuration = self.tm1.server.get_active_configuration()
         self.assertEqual(
             int(self.tm1._tm1_rest._port),
             int(active_configuration["Access"]["HTTP"]["Port"]))
 
     def test_update_static_configuration(self):
+        """
+        Update static configuration.
+
+        Args:
+            self: (todo): write your description
+        """
         for new_mtq_threads in (4, 8):
             config_changes = {
                 "Performance": {
@@ -128,6 +170,12 @@ class TestServerMethods(unittest.TestCase):
 
     @unittest.skip("Doesn't work sometimes")
     def test_get_last_process_message_from_message_log(self):
+        """
+        Get the last message received message queue
+
+        Args:
+            self: (todo): write your description
+        """
         try:
             self.tm1.processes.execute(self.process_name1)
         except TM1pyRestException as e:
@@ -149,6 +197,12 @@ class TestServerMethods(unittest.TestCase):
         self.assertFalse(regex.search(log_entry))
 
     def test_get_last_transaction_log_entries(self):
+        """
+        Get the last log entries in - memory.
+
+        Args:
+            self: (todo): write your description
+        """
         self.tm1.processes.execute_ti_code(lines_prolog="CubeSetLogChanges('{}', {});".format(self.cube_name, 1))
 
         tmstp = datetime.datetime.utcnow()
@@ -209,6 +263,12 @@ class TestServerMethods(unittest.TestCase):
             self.assertAlmostEqual(v1, v2, delta=0.000000001)
 
     def test_get_transaction_log_entries_from_today(self):
+        """
+        Get entries from the transaction.
+
+        Args:
+            self: (todo): write your description
+        """
         # get datetime from today at 00:00:00
         today = datetime.datetime.combine(datetime.date.today(), datetime.time(0, 0))
         entries = self.tm1.server.get_transaction_log_entries(reverse=True, since=today)
@@ -221,6 +281,12 @@ class TestServerMethods(unittest.TestCase):
             self.assertTrue(entry_date == today_date)
 
     def test_get_transaction_log_entries_until_yesterday(self):
+        """
+        Get a log entries from the database.
+
+        Args:
+            self: (todo): write your description
+        """
         # get datetime until yesterday at 00:00:00
         yesterday = datetime.datetime.combine(datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
         entries = self.tm1.server.get_transaction_log_entries(reverse=True, until=yesterday)
@@ -236,6 +302,12 @@ class TestServerMethods(unittest.TestCase):
             self.assertTrue(entry_date <= yesterdays_date)
 
     def test_get_message_log_entries_from_today(self):
+        """
+        Get log entries from the log entries.
+
+        Args:
+            self: (todo): write your description
+        """
         # get datetime from today at 00:00:00
         today = datetime.datetime.combine(datetime.date.today(), datetime.time(0, 0))
         entries = self.tm1.server.get_message_log_entries(reverse=True, since=today)
@@ -248,6 +320,12 @@ class TestServerMethods(unittest.TestCase):
             self.assertTrue(entry_date == today_date)
 
     def test_get_message_log_entries_until_yesterday(self):
+        """
+        Get log entries that log entries that were logged.
+
+        Args:
+            self: (todo): write your description
+        """
         # get datetime until yesterday at 00:00:00
         yesterday = datetime.datetime.combine(datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
 
@@ -264,6 +342,12 @@ class TestServerMethods(unittest.TestCase):
             self.assertTrue(entry_date <= yesterdays_date)
 
     def test_get_message_log_entries_only_yesterday(self):
+        """
+        Get the message log log entries in the log.
+
+        Args:
+            self: (todo): write your description
+        """
         # get datetime only yesterday at 00:00:00
         yesterday = datetime.datetime.combine(datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
         today = datetime.datetime.combine(datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
@@ -276,6 +360,12 @@ class TestServerMethods(unittest.TestCase):
             self.assertTrue(entry_date == yesterdays_date)
 
     def test_session_context_default(self):
+        """
+        Return the session configuration.
+
+        Args:
+            self: (todo): write your description
+        """
         threads = self.tm1.monitoring.get_threads()
         for thread in threads:
             if "GET /api/v1/Threads" in thread["Function"] and thread["Name"] == self.config['tm1srv01']['user']:
@@ -284,6 +374,12 @@ class TestServerMethods(unittest.TestCase):
         raise Exception("Did not find my own Thread")
 
     def test_session_context_custom(self):
+        """
+        Return a custom session instance that session
+
+        Args:
+            self: (todo): write your description
+        """
         app_name = "Some Application"
         with TM1Service(**self.config['tm1srv01'], session_context=app_name) as tm1:
             threads = tm1.monitoring.get_threads()
@@ -295,6 +391,12 @@ class TestServerMethods(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        """
+        Tear tear class from the class name.
+
+        Args:
+            cls: (todo): write your description
+        """
         cls.tm1.cubes.delete(cls.cube_name)
         cls.tm1.dimensions.delete(cls.dimension_name1)
         cls.tm1.dimensions.delete(cls.dimension_name2)
