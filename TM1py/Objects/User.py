@@ -17,10 +17,23 @@ class UserType(Enum):
     OperationsAdmin = 4
 
     def __str__(self):
+        """
+        Return the string representation of this object.
+
+        Args:
+            self: (todo): write your description
+        """
         return self.name
 
     @classmethod
     def _missing_(cls, value: str):
+        """
+        Returns true if any missing value.
+
+        Args:
+            cls: (todo): write your description
+            value: (str): write your description
+        """
         for member in cls:
             if member.name.lower() == value.replace(" ", "").lower():
                 return member
@@ -35,6 +48,18 @@ class User(TM1Object):
 
     def __init__(self, name: str, groups: Iterable[str], friendly_name: Optional[str] = None,
                  password: Optional[str] = None, user_type: Union[UserType, str] = None, enabled: bool = None):
+        """
+        Initializes a new groups.
+
+        Args:
+            self: (todo): write your description
+            name: (str): write your description
+            groups: (list): write your description
+            friendly_name: (str): write your description
+            password: (str): write your description
+            user_type: (str): write your description
+            enabled: (bool): write your description
+        """
         self._name = name
         self._groups = CaseAndSpaceInsensitiveSet(*groups)
         self._friendly_name = friendly_name
@@ -58,51 +83,128 @@ class User(TM1Object):
 
     @property
     def name(self) -> str:
+        """
+        Returns the name of this node.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._name
 
     @property
     def user_type(self) -> UserType:
+        """
+        Returns the type of the user.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._user_type
 
     @property
     def friendly_name(self) -> str:
+        """
+        The name of the node.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._friendly_name
 
     @property
     def password(self) -> str:
+        """
+        Get the password.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._password:
             return self._password
 
     @property
     def is_admin(self) -> bool:
+        """
+        Returns true if the user is admin.
+
+        Args:
+            self: (todo): write your description
+        """
         return 'ADMIN' in self.groups
 
     @property
     def groups(self) -> List[str]:
+        """
+        List of groups list of groups.
+
+        Args:
+            self: (todo): write your description
+        """
         return [group for group in self._groups]
 
     @property
     def enabled(self) -> bool:
+        """
+        Returns true if enabled enabled enabled false otherwise.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._enabled
 
     @name.setter
     def name(self, value: str):
+        """
+        Set the name of the message
+
+        Args:
+            self: (todo): write your description
+            value: (str): write your description
+        """
         self._name = value
 
     @friendly_name.setter
     def friendly_name(self, value: str):
+        """
+        The name of the name
+
+        Args:
+            self: (todo): write your description
+            value: (str): write your description
+        """
         self._friendly_name = value
 
     @password.setter
     def password(self, value: str):
+        """
+        Set the password
+
+        Args:
+            self: (todo): write your description
+            value: (str): write your description
+        """
         self._password = value
 
     @enabled.setter
     def enabled(self, value: Union[bool, None]):
+        """
+        Gets / sets the enabled state.
+
+        Args:
+            self: (todo): write your description
+            value: (str): write your description
+        """
         self._enabled = value
 
     @user_type.setter
     def user_type(self, value: Union[str, UserType]):
+        """
+        Adds a user type.
+
+        Args:
+            self: (todo): write your description
+            value: (todo): write your description
+        """
         if not isinstance(value, str) and not isinstance(value, UserType):
             raise ValueError("argument 'user_type' must be of type str or UserType")
 
@@ -112,9 +214,23 @@ class User(TM1Object):
             self.add_group(str(self._user_type))
 
     def add_group(self, group_name: str):
+        """
+        Add a new group to the list.
+
+        Args:
+            self: (todo): write your description
+            group_name: (str): write your description
+        """
         self._groups.add(group_name)
 
     def remove_group(self, group_name: str):
+        """
+        Removes a group from the group.
+
+        Args:
+            self: (todo): write your description
+            group_name: (str): write your description
+        """
         self._groups.discard(group_name)
 
     @classmethod
@@ -142,6 +258,12 @@ class User(TM1Object):
 
     @property
     def body(self) -> str:
+        """
+        Return the body.
+
+        Args:
+            self: (todo): write your description
+        """
         return self.construct_body()
 
     def construct_body(self) -> str:

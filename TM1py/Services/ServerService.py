@@ -24,6 +24,12 @@ def odata_track_changes_header(func):
 
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
+        """
+        Decorator that adds http requests.
+
+        Args:
+            self: (todo): write your description
+        """
         # Add header
         self._rest.add_http_header("Prefer", "odata.track-changes")
         # Do stuff
@@ -41,12 +47,26 @@ class ServerService(ObjectService):
     """
 
     def __init__(self, rest: RestService):
+        """
+        Initialize the service.
+
+        Args:
+            self: (todo): write your description
+            rest: (todo): write your description
+        """
         super().__init__(rest)
         self.tlog_last_delta_request = None
         self.mlog_last_delta_request = None
 
     @odata_track_changes_header
     def initialize_transaction_log_delta_requests(self, filter=None, **kwargs):
+        """
+        Initialize the request log.
+
+        Args:
+            self: (todo): write your description
+            filter: (todo): write your description
+        """
         url = "/api/v1/TransactionLogEntries"
         if filter:
             url += "?$filter={}".format(filter)
@@ -56,12 +76,25 @@ class ServerService(ObjectService):
 
     @odata_track_changes_header
     def execute_transaction_log_delta_request(self, **kwargs) -> Dict:
+        """
+        Execute a request.
+
+        Args:
+            self: (todo): write your description
+        """
         response = self._rest.GET(url="/api/v1/" + self.tlog_last_delta_request, **kwargs)
         self.tlog_last_delta_request = response.text[response.text.rfind("TransactionLogEntries/!delta('"):-2]
         return response.json()['value']
 
     @odata_track_changes_header
     def initialize_message_log_delta_requests(self, filter=None, **kwargs):
+        """
+        Initialize the message log messages.
+
+        Args:
+            self: (todo): write your description
+            filter: (str): write your description
+        """
         url = "/api/v1/MessageLogEntries"
         if filter:
             url += "?$filter={}".format(filter)
@@ -71,6 +104,12 @@ class ServerService(ObjectService):
 
     @odata_track_changes_header
     def execute_message_log_delta_request(self, **kwargs) -> Dict:
+        """
+        Execute a request.
+
+        Args:
+            self: (todo): write your description
+        """
         response = self._rest.GET(url="/api/v1/" + self.mlog_last_delta_request, **kwargs)
         self.mlog_last_delta_request = response.text[response.text.rfind("MessageLogEntries/!delta('"):-2]
         return response.json()['value']
@@ -134,6 +173,12 @@ class ServerService(ObjectService):
 
     @staticmethod
     def utc_localize_time(timestamp):
+        """
+        Localize utc datetime.
+
+        Args:
+            timestamp: (todo): write your description
+        """
         timestamp = pytz.utc.localize(timestamp)
         timestamp_utc = timestamp.astimezone(pytz.utc)
         return timestamp_utc
@@ -209,14 +254,32 @@ class ServerService(ObjectService):
         return self._rest.GET(url, **kwargs).text
 
     def get_admin_host(self, **kwargs) -> str:
+        """
+        Returns a : class.
+
+        Args:
+            self: (todo): write your description
+        """
         url = '/api/v1/Configuration/AdminHost/$value'
         return self._rest.GET(url, **kwargs).text
 
     def get_data_directory(self, **kwargs) -> str:
+        """
+        Send a get request.
+
+        Args:
+            self: (todo): write your description
+        """
         url = '/api/v1/Configuration/DataBaseDirectory/$value'
         return self._rest.GET(url, **kwargs).text
 
     def get_configuration(self, **kwargs) -> Dict:
+        """
+        Returns a dictionary of configuration.
+
+        Args:
+            self: (todo): write your description
+        """
         url = '/api/v1/Configuration'
         config = self._rest.GET(url, **kwargs).json()
         del config["@odata.context"]
@@ -252,6 +315,12 @@ class ServerService(ObjectService):
         return self._rest.PATCH(url, json.dumps(configuration))
 
     def save_data(self, **kwargs) -> Response:
+        """
+        Save data to the service
+
+        Args:
+            self: (todo): write your description
+        """
         from TM1py.Services import ProcessService
         ti = "SaveDataAll;"
         process_service = ProcessService(self._rest)

@@ -10,6 +10,12 @@ def skip_if_no_pandas(func):
 
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
+        """
+        Wrap the wrapped function.
+
+        Args:
+            self: (todo): write your description
+        """
         try:
             import pandas
 
@@ -26,8 +32,20 @@ def skip_if_insufficient_version(version):
     """
 
     def wrap(func):
+        """
+        Wrap the wrapped function as a decorator.
+
+        Args:
+            func: (callable): write your description
+        """
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
+            """
+            Decorator to ensure that the version is_version
+
+            Args:
+                self: (todo): write your description
+            """
             if not verify_version(required_version=version, version=self.tm1.version):
                 return self.skipTest(
                     f"Function '{ func.__name__, }' requires TM1 server version >= '{ version }'"

@@ -115,6 +115,12 @@ class TestTIObfuscatorMethods(unittest.TestCase):
                     cls.tm1.processes.create(process)
 
     def test_split_into_statements(self):
+        """
+        Split the code into a list of the code.
+
+        Args:
+            self: (todo): write your description
+        """
         code = (
             "sText1 = 'abcdefgh';\r\n"
             " nElem = 2;\r\n"
@@ -129,6 +135,12 @@ class TestTIObfuscatorMethods(unittest.TestCase):
         self.assertEqual(len(statements), 4)
 
     def test_expand(self):
+        """
+        Perform a new process.
+
+        Args:
+            self: (todo): write your description
+        """
         if self.tm1.processes.exists(self.expand_process_name_obf):
             self.tm1.processes.delete(self.expand_process_name_obf)
         process = self.tm1.processes.get(self.expand_process_name)
@@ -139,6 +151,12 @@ class TestTIObfuscatorMethods(unittest.TestCase):
         self.tm1.processes.execute(process_obf.name, {})
 
     def test_remove_generated_code(self):
+        """
+        Removes the test code.
+
+        Args:
+            self: (todo): write your description
+        """
         code = (
             "#****Begin: Generated Statements***\r\n"
             "DIMENSIONELEMENTINSERT('Employee','',V1,'s');\r\n"
@@ -157,6 +175,12 @@ class TestTIObfuscatorMethods(unittest.TestCase):
         self.assertIn("sText = 'test';", code)
 
     def test_obfuscate_code(self):
+        """
+        Test if the code exists.
+
+        Args:
+            self: (todo): write your description
+        """
         if self.tm1.processes.exists(self.process_name_obf):
             self.tm1.processes.delete(self.process_name_obf)
         process_obf = TIObfuscator.obfuscate_process(
@@ -165,6 +189,12 @@ class TestTIObfuscatorMethods(unittest.TestCase):
         self.tm1.processes.create(process_obf)
 
     def test_bedrock_clone_dim(self):
+        """
+        Clone the dimension of the dimension.
+
+        Args:
+            self: (todo): write your description
+        """
         if self.tm1.processes.exists("Bedrock.Dim.Clone.Obf"):
             self.tm1.processes.delete("Bedrock.Dim.Clone.Obf")
 
@@ -184,6 +214,12 @@ class TestTIObfuscatorMethods(unittest.TestCase):
         self.tm1.processes.execute("Bedrock.Dim.Clone.Obf", parameters)
 
     def test_bedrock_clone_cube(self):
+        """
+        Test if a cube.
+
+        Args:
+            self: (todo): write your description
+        """
         if self.tm1.processes.exists("Bedrock.Cube.Clone.Obf"):
             self.tm1.processes.delete("Bedrock.Cube.Clone.Obf")
 
@@ -206,6 +242,12 @@ class TestTIObfuscatorMethods(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        """
+        This method is called when a tear class is deleted.
+
+        Args:
+            cls: (todo): write your description
+        """
         # delete all the stuff
         if cls.tm1.processes.exists(cls.expand_process_name):
             cls.tm1.processes.delete(cls.expand_process_name)

@@ -19,6 +19,13 @@ class CubeService(ObjectService):
     """
 
     def __init__(self, rest: RestService):
+        """
+        Initialize the service
+
+        Args:
+            self: (todo): write your description
+            rest: (todo): write your description
+        """
         # to avoid Circular dependency of modules
         from TM1py.Services.AnnotationService import AnnotationService
         super().__init__(rest)
@@ -47,6 +54,13 @@ class CubeService(ObjectService):
         return cube
 
     def get_last_data_update(self, cube_name: str, **kwargs) -> str:
+        """
+        Returns the last cube data
+
+        Args:
+            self: (todo): write your description
+            cube_name: (str): write your description
+        """
         url = format_url("/api/v1/Cubes('{}')/LastDataUpdate/$value", cube_name)
         response = self._rest.GET(url=url, **kwargs)
         return response.text
@@ -82,6 +96,12 @@ class CubeService(ObjectService):
         return cubes
 
     def get_number_of_cubes(self, **kwargs) -> int:
+        """
+        Returns a single gist.
+
+        Args:
+            self: (todo): write your description
+        """
         url = format_url(
             "/api/v1/Cubes/$count")
         response = self._rest.GET(url, **kwargs)

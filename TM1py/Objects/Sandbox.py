@@ -23,18 +23,44 @@ class Sandbox(TM1Object):
 
     @property
     def name(self) -> str:
+        """
+        Returns the name of this node.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._name
 
     @name.setter
     def name(self, value: str):
+        """
+        Set the name of the message
+
+        Args:
+            self: (todo): write your description
+            value: (str): write your description
+        """
         self._name = value
 
     @property
     def include_in_sandbox_dimension(self) -> bool:
+        """
+        The number of dimension in this dimension.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._include_in_sandbox_dimension
 
     @include_in_sandbox_dimension.setter
     def include_in_sandbox_dimension(self, value: bool):
+        """
+        Set the dimension of the same.
+
+        Args:
+            self: (todo): write your description
+            value: (str): write your description
+        """
         self._include_in_sandbox_dimension = value
 
     @classmethod
@@ -61,6 +87,12 @@ class Sandbox(TM1Object):
 
     @property
     def body(self) -> str:
+        """
+        Return the body of the request.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._construct_body()
 
     def _construct_body(self) -> str:

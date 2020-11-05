@@ -16,6 +16,13 @@ class SubsetService(ObjectService):
     """
 
     def __init__(self, rest: RestService):
+        """
+        Initialize a new service.
+
+        Args:
+            self: (todo): write your description
+            rest: (todo): write your description
+        """
         super().__init__(rest)
         self._process_service = ProcessService(rest)
 
@@ -171,6 +178,16 @@ class SubsetService(ObjectService):
 
     def delete_elements_from_static_subset(self, dimension_name: str, hierarchy_name: str, subset_name: str,
                                            private: bool, **kwargs) -> Response:
+        """
+        R delete static elements from a static subset.
+
+        Args:
+            self: (todo): write your description
+            dimension_name: (str): write your description
+            hierarchy_name: (str): write your description
+            subset_name: (str): write your description
+            private: (str): write your description
+        """
         subsets = "PrivateSubsets" if private else "Subsets"
         url = format_url(
             "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')/Elements/$ref",

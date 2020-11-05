@@ -26,22 +26,52 @@ class ViewAxisSelection(TM1Object):
 
     @property
     def subset(self) -> Union[Subset, AnonymousSubset]:
+        """
+        Return the set of subset.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._subset
 
     @property
     def dimension_name(self) -> str:
+        """
+        Return the name of the dimension.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._dimension_name
 
     @property
     def hierarchy_name(self) -> str:
+        """
+        Returns the hierarchy name.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._hierarchy_name
 
     @property
     def body(self) -> str:
+        """
+        Return the body of the message.
+
+        Args:
+            self: (todo): write your description
+        """
         return json.dumps(self._construct_body(), ensure_ascii=False)
 
     @property
     def body_as_dict(self) -> Dict:
+        """
+        Return the body as a dictionary.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._construct_body()
 
     def _construct_body(self) -> Dict:
@@ -67,6 +97,15 @@ class ViewTitleSelection:
     """
 
     def __init__(self, dimension_name: str, subset: Union[AnonymousSubset, Subset], selected: str):
+        """
+        Init a new subset.
+
+        Args:
+            self: (todo): write your description
+            dimension_name: (str): write your description
+            subset: (todo): write your description
+            selected: (str): write your description
+        """
         self._dimension_name = dimension_name
         self._hierarchy_name = dimension_name
         self._subset = subset
@@ -74,22 +113,52 @@ class ViewTitleSelection:
 
     @property
     def subset(self) -> Union[Subset, AnonymousSubset]:
+        """
+        Return the set of subset.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._subset
 
     @property
     def dimension_name(self) -> str:
+        """
+        Return the name of the dimension.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._dimension_name
 
     @property
     def hierarchy_name(self) -> str:
+        """
+        Returns the hierarchy name.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._hierarchy_name
 
     @property
     def selected(self) -> str:
+        """
+        Returns the selected item.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._selected
 
     @property
     def body(self) -> str:
+        """
+        Return the body of the message.
+
+        Args:
+            self: (todo): write your description
+        """
         return json.dumps(self._construct_body(), ensure_ascii=False)
 
     def _construct_body(self) -> Dict:

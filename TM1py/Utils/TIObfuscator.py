@@ -39,6 +39,12 @@ keywords = ["datasourcenameforserver",
 
 
 def get_all_defined_variables(code):
+    """
+    Get all variables in code.
+
+    Args:
+        code: (str): write your description
+    """
     variables = []
 
     # regular expression to get defined variables :
@@ -57,6 +63,12 @@ def get_all_defined_variables(code):
 
 
 def generate_unique_string(code):
+    """
+    Generate a random string.
+
+    Args:
+        code: (str): write your description
+    """
     code_slim = code.replace(' ', '').lower()
     unique_string = 'tm1py'
     while True:
@@ -86,6 +98,12 @@ def remove_generated_code(code):
 
 
 def remove_comment_lines(code):
+    """
+    Removes comment lines from the code.
+
+    Args:
+        code: (str): write your description
+    """
     code = '\r\n'.join([line if len(line.strip()) > 0 and line.strip()[0] != '#' else ''
                         for line
                         in code.split('\r\n')])
@@ -93,6 +111,14 @@ def remove_comment_lines(code):
 
 
 def obfuscate_code(code, variable_mapping, unique_string):
+    """
+    Obfuscate code in - code_mapping.
+
+    Args:
+        code: (str): write your description
+        variable_mapping: (dict): write your description
+        unique_string: (str): write your description
+    """
     new_code = ''
 
     # Remove Generated Code from CodeTab
@@ -162,6 +188,13 @@ def obfuscate_code(code, variable_mapping, unique_string):
 
 
 def obfuscate_process(process, new_name=None):
+    """
+    Obfuscate a new code.
+
+    Args:
+        process: (todo): write your description
+        new_name: (str): write your description
+    """
     # Hard variables : keywords, parameters
     hard_variables = [keyword.lower() for keyword in keywords] + \
                      [param['Name'].lower() for param in process.parameters] + \

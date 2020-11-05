@@ -56,6 +56,12 @@ class TestViewMethods(unittest.TestCase):
         cls.tm1.cells.write_values(CUBE_NAME, cellset)
 
     def setUp(self):
+        """
+        Sets the subset for this view.
+
+        Args:
+            self: (todo): write your description
+        """
         for private in (True, False):
             # create instance of native View
             native_view = NativeView(
@@ -119,6 +125,12 @@ class TestViewMethods(unittest.TestCase):
                 private=private)
 
     def test_view_exists(self):
+        """
+        Test if a view exists.
+
+        Args:
+            self: (todo): write your description
+        """
         for private in (True, False):
             self.assertTrue(self.tm1.cubes.views.exists(
                 cube_name=CUBE_NAME,
@@ -140,6 +152,12 @@ class TestViewMethods(unittest.TestCase):
         self.assertTrue(exists_as_public)
 
     def test_get_all_views(self):
+        """
+        Get all views in the database.
+
+        Args:
+            self: (todo): write your description
+        """
         private_views, public_views = self.tm1.cubes.views.get_all(CUBE_NAME)
         self.assertGreater(len(public_views + private_views), 0)
 
@@ -148,6 +166,12 @@ class TestViewMethods(unittest.TestCase):
         self.assertEqual(len(private_views), len(private_view_names))
 
     def test_get_native_view(self):
+        """
+        Get the native native python datatrix object.
+
+        Args:
+            self: (todo): write your description
+        """
         for private in (True, False):
             # generic get
             view = self.tm1.cubes.views.get(
@@ -167,6 +191,12 @@ class TestViewMethods(unittest.TestCase):
             self.assertEqual(view, native_view)
 
     def test_get_mdx_view(self):
+        """
+        Get the view of the view
+
+        Args:
+            self: (todo): write your description
+        """
         for private in (True, False):
             # generic get
             view = self.tm1.cubes.views.get(
@@ -186,6 +216,12 @@ class TestViewMethods(unittest.TestCase):
             self.assertEqual(view, mdx_view)
 
     def test_execute_view(self):
+        """
+        Executes the view
+
+        Args:
+            self: (todo): write your description
+        """
         for private in (True, False):
             data_nv = self.tm1.cubes.cells.execute_view(
                 cube_name=CUBE_NAME,
@@ -203,6 +239,12 @@ class TestViewMethods(unittest.TestCase):
 
     # fails sometimes because PrivateMDXViews cant be updated in FP < 5.
     def test_update_nativeview(self):
+        """
+        Updates the native native native native native native native native datatype.
+
+        Args:
+            self: (todo): write your description
+        """
         for private in (True, False):
             # get native view
             native_view_original = self.tm1.cubes.views.get_native_view(
@@ -241,6 +283,12 @@ class TestViewMethods(unittest.TestCase):
             self.assertNotEqual(sum_original, sum_updated)
 
     def test_update_mdxview(self):
+        """
+        Update the mdxview
+
+        Args:
+            self: (todo): write your description
+        """
         for private in (True, False):
             # Get mdx view
             mdx_view_original = self.tm1.cubes.views.get_mdx_view(
@@ -276,12 +324,24 @@ class TestViewMethods(unittest.TestCase):
             self.assertNotEqual(sum_mdx_original, sum_mdx_updated)
 
     def tearDown(self):
+        """
+        Tear down the view.
+
+        Args:
+            self: (todo): write your description
+        """
         for private in (True, False):
             self.tm1.cubes.views.delete(cube_name=CUBE_NAME, view_name=self.native_view_name, private=private)
             self.tm1.cubes.views.delete(cube_name=CUBE_NAME, view_name=self.mdx_view_name, private=private)
 
     @classmethod
     def teardown_class(cls):
+        """
+        Teardown class.
+
+        Args:
+            cls: (todo): write your description
+        """
         cls.tm1.cubes.delete(CUBE_NAME)
         for dimension_name in DIMENSION_NAMES:
             cls.tm1.dimensions.delete(dimension_name)

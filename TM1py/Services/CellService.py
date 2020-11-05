@@ -37,6 +37,13 @@ def tidy_cellset(func):
 
     @functools.wraps(func)
     def wrapper(self, cellset_id, *args, **kwargs):
+        """
+        Decor for : meth : cellset.
+
+        Args:
+            self: (todo): write your description
+            cellset_id: (str): write your description
+        """
         try:
             return func(self, cellset_id, *args, **kwargs)
 
@@ -60,6 +67,12 @@ def manage_transaction_log(func):
 
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
+        """
+        Decorator for a transaction.
+
+        Args:
+            self: (todo): write your description
+        """
         if "cube_name" in kwargs:
             cube_name = kwargs["cube_name"]
         elif "mdx" in kwargs:
@@ -1666,6 +1679,13 @@ class CellService(ObjectService):
         return self._rest.DELETE(url, **kwargs)
 
     def transaction_log_is_active(self, cube_name: str) -> bool:
+        """
+        Checks if the transaction is active.
+
+        Args:
+            self: (todo): write your description
+            cube_name: (str): write your description
+        """
         mdx = f"""
         SELECT {{[}}Cubes].[{cube_name}]}} ON 0, {{[}}CubeProperties].[LOGGING]}} ON 1 FROM [}}CubeProperties]
         """
@@ -1710,6 +1730,17 @@ class CellService(ObjectService):
 
     def get_view_content(self, cube_name: str, view_name: str, cell_properties: Iterable[str] = None,
                          private: bool = False, top: int = None):
+        """
+        Get the content of a view.
+
+        Args:
+            self: (todo): write your description
+            cube_name: (str): write your description
+            view_name: (str): write your description
+            cell_properties: (str): write your description
+            private: (todo): write your description
+            top: (str): write your description
+        """
         warnings.simplefilter('always', PendingDeprecationWarning)
         warnings.warn(
             "Function deprecated. Use execute_view instead.",

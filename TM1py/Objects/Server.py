@@ -10,6 +10,13 @@ class Server:
             no methods so far
     """
     def __init__(self, server_as_dict: Dict):
+        """
+        Initialize a new connection.
+
+        Args:
+            self: (todo): write your description
+            server_as_dict: (dict): write your description
+        """
         self.name = server_as_dict['Name']
         self.ip_address = server_as_dict['IPAddress']
         self.ip_v6_address = server_as_dict['IPv6Address']

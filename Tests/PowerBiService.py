@@ -152,6 +152,13 @@ class TestPowerBiService(unittest.TestCase):
 
 #    @skip_if_no_pandas
     def add_unbalanced_hierarchy(self, hierarchy_name):
+        """
+        R add a static hierarchy.
+
+        Args:
+            self: (todo): write your description
+            hierarchy_name: (str): write your description
+        """
         dimension = self.tm1.dimensions.get(DIMENSION_NAME)
         # other hierarchy
         hierarchy = Hierarchy(name=hierarchy_name, dimension_name=DIMENSION_NAME)
@@ -168,6 +175,12 @@ class TestPowerBiService(unittest.TestCase):
 
     @skip_if_no_pandas
     def test_execute_mdx(self):
+        """
+        Executes the test results of the test series.
+
+        Args:
+            self: (todo): write your description
+        """
         mdx = MDX_TEMPLATE.format(
             rows="{[" + DIMENSION_NAMES[0] + "].[Element1], [" + DIMENSION_NAMES[0] + "].[Element2]}",
             columns="{[" + DIMENSION_NAMES[1] + "].[Element1], [" + DIMENSION_NAMES[1] + "].[Element2]}",
@@ -188,6 +201,12 @@ class TestPowerBiService(unittest.TestCase):
 
     @skip_if_no_pandas
     def test_execute_view(self):
+        """
+        Execute the view of the view
+
+        Args:
+            self: (todo): write your description
+        """
         mdx = MDX_TEMPLATE.format(
             rows="{[" + DIMENSION_NAMES[0] + "].[Element1], [" + DIMENSION_NAMES[0] + "].[Element2]}",
             columns="{[" + DIMENSION_NAMES[1] + "].[Element1], [" + DIMENSION_NAMES[1] + "].[Element2]}",
@@ -211,6 +230,12 @@ class TestPowerBiService(unittest.TestCase):
 
     @skip_if_no_pandas
     def test_get_member_properties_default(self):
+        """
+        Returns the properties of the properties object.
+
+        Args:
+            self: (todo): write your description
+        """
         members = self.tm1.power_bi.get_member_properties(
             dimension_name=DIMENSION_NAME,
             hierarchy_name=DIMENSION_NAME,
@@ -238,6 +263,12 @@ class TestPowerBiService(unittest.TestCase):
 
     @skip_if_no_pandas
     def test_get_member_properties_attributes(self):
+        """
+        Returns a list of the properties of the table.
+
+        Args:
+            self: (todo): write your description
+        """
         members = self.tm1.power_bi.get_member_properties(
             dimension_name=DIMENSION_NAME,
             hierarchy_name=DIMENSION_NAME,
@@ -265,6 +296,12 @@ class TestPowerBiService(unittest.TestCase):
 
     @skip_if_no_pandas
     def test_get_member_properties_no_attributes(self):
+        """
+        Returns the properties of the table properties.
+
+        Args:
+            self: (todo): write your description
+        """
         members = self.tm1.power_bi.get_member_properties(
             dimension_name=DIMENSION_NAME,
             hierarchy_name=DIMENSION_NAME,
@@ -292,6 +329,12 @@ class TestPowerBiService(unittest.TestCase):
 
     @skip_if_no_pandas
     def test_get_member_properties_member_selection(self):
+        """
+        Determine the properties of the table.
+
+        Args:
+            self: (todo): write your description
+        """
         members = self.tm1.power_bi.get_member_properties(
             dimension_name=DIMENSION_NAME,
             hierarchy_name=DIMENSION_NAME,
@@ -319,6 +362,12 @@ class TestPowerBiService(unittest.TestCase):
 
     @skip_if_no_pandas
     def test_get_member_properties_skip_parents(self):
+        """
+        Determine the properties of the same
+
+        Args:
+            self: (todo): write your description
+        """
         members = self.tm1.power_bi.get_member_properties(
             dimension_name=DIMENSION_NAME,
             hierarchy_name=DIMENSION_NAME,
@@ -348,6 +397,12 @@ class TestPowerBiService(unittest.TestCase):
     # alternate hierarchies cause issues. must be addressed.
     @unittest.skip
     def test_get_member_properties_unbalanced(self):
+        """
+        Determine properties tomodels in - member.
+
+        Args:
+            self: (todo): write your description
+        """
         hierarchy_name = "Unbalanced Hierarchy"
         self.add_unbalanced_hierarchy(hierarchy_name=hierarchy_name)
 
@@ -364,6 +419,12 @@ class TestPowerBiService(unittest.TestCase):
 
     @skip_if_no_pandas
     def test_get_member_properties_include_consolidations(self):
+        """
+        Determine properties
+
+        Args:
+            self: (todo): write your description
+        """
         members = self.tm1.power_bi.get_member_properties(
             dimension_name=DIMENSION_NAME,
             hierarchy_name=DIMENSION_NAME,
@@ -401,6 +462,12 @@ class TestPowerBiService(unittest.TestCase):
 
     @skip_if_no_pandas
     def test_get_member_properties_member_selection_and_attributes(self):
+        """
+        Deter properties of the table properties
+
+        Args:
+            self: (todo): write your description
+        """
         members = self.tm1.power_bi.get_member_properties(
             dimension_name=DIMENSION_NAME,
             hierarchy_name=DIMENSION_NAME,
@@ -428,6 +495,12 @@ class TestPowerBiService(unittest.TestCase):
 
     @skip_if_no_pandas
     def test_get_member_properties_member_iterable_selection_and_attributes(self):
+        """
+        Returns the properties of the properties of the properties
+
+        Args:
+            self: (todo): write your description
+        """
         members = self.tm1.power_bi.get_member_properties(
             dimension_name=DIMENSION_NAME,
             hierarchy_name=DIMENSION_NAME,
@@ -455,6 +528,12 @@ class TestPowerBiService(unittest.TestCase):
 
     @skip_if_no_pandas
     def test_get_member_properties_member_iterable_selection_and_custom_parent_names(self):
+        """
+        Returns a list of properties
+
+        Args:
+            self: (todo): write your description
+        """
         members = self.tm1.power_bi.get_member_properties(
             dimension_name=DIMENSION_NAME,
             hierarchy_name=DIMENSION_NAME,
@@ -483,6 +562,12 @@ class TestPowerBiService(unittest.TestCase):
 
     @skip_if_no_pandas
     def test_get_member_properties_iterable_and_skip_consolidations(self):
+        """
+        Returns a list of all the properties
+
+        Args:
+            self: (todo): write your description
+        """
         members = self.tm1.power_bi.get_member_properties(
             dimension_name=DIMENSION_NAME,
             hierarchy_name=DIMENSION_NAME,
@@ -506,6 +591,12 @@ class TestPowerBiService(unittest.TestCase):
 
     @skip_if_no_pandas
     def test_get_member_properties_member_skip_parents_skip_attributes(self):
+        """
+        Determine which properties of the same
+
+        Args:
+            self: (todo): write your description
+        """
         members = self.tm1.power_bi.get_member_properties(
             dimension_name=DIMENSION_NAME,
             hierarchy_name=DIMENSION_NAME,
@@ -535,6 +626,12 @@ class TestPowerBiService(unittest.TestCase):
     # Delete Cube and Dimensions
     @classmethod
     def teardown_class(cls):
+        """
+        Teardown class.
+
+        Args:
+            cls: (todo): write your description
+        """
         cls.tm1.cubes.delete(CUBE_NAME)
         for dimension_name in DIMENSION_NAMES:
             cls.tm1.dimensions.delete(dimension_name)
