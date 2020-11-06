@@ -31,7 +31,7 @@ TM1py offers handy features to interact with TM1 from Python, such as
 Requirements
 =======================
 
-- python (3.5 or higher)
+- python (3.8 or higher)
 - requests
 - requests_negotiate_sspi
 - TM1 11 
