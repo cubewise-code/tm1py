@@ -12,7 +12,7 @@ from TM1py.Utils.Utils import CaseAndSpaceInsensitiveSet
 PREFIX = "TM1py_Tests_"
 
 
-class TestSecurityMethods(unittest.TestCase):
+class TestSecurityService(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -398,6 +398,17 @@ class TestSecurityMethods(unittest.TestCase):
 
         self.assertEqual(1, len(read_only_users))
         self.assertEqual(self.read_only_user_name, read_only_users[0])
+
+    def test_update_user_password(self):
+        self.tm1.security.update_user_password(user_name=self.user.name, password="new_password123")
+        
+        with TM1Service(
+                user=self.user.name,
+                password="new_password123",
+                base_url=self.tm1._tm1_rest._base_url,
+                ssl=self.tm1._tm1_rest._ssl) as _:
+            # if no exception. Login was successful
+            pass
 
     @classmethod
     def teardown_class(cls):

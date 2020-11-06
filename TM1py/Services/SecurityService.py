@@ -78,6 +78,11 @@ class SecurityService(ObjectService):
         url = format_url("/api/v1/Users('{}')", user.name)
         return self._rest.PATCH(url, user.body, **kwargs)
 
+    def update_user_password(self, user_name: str, password: str, **kwargs) -> Response:
+        url = format_url("/api/v1/Users('{}')", user_name)
+        body = {"Password": password}
+        return self._rest.PATCH(url, json.dumps(body), **kwargs)
+
     def delete_user(self, user_name: str, **kwargs) -> Response:
         """ Delete user on TM1 Server
 

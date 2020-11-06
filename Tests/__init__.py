@@ -13,7 +13,7 @@ from Tests.Process import TestProcessMethods
 from Tests.RestService import TestRestServiceMethods
 from Tests.Sandbox import TestSandboxMethods
 from Tests.SandboxService import TestSandboxService
-from Tests.Security import TestSecurityMethods
+from Tests.Security import TestSecurityService
 from Tests.Server import TestServerMethods
 from Tests.Subset import TestSubsetMethods
 from Tests.SubsetService import TestSubsetService
