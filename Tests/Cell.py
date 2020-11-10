@@ -968,7 +968,7 @@ class TestCellMethods(unittest.TestCase):
 
         # check if coordinates are the same
         self.assertTrue(coordinates.issubset(self.target_coordinates))
-        values = [float(record.split(',')[3])
+        values = [float(record.split(',')[4])
                   for record
                   in records if record != '']
 
@@ -977,7 +977,7 @@ class TestCellMethods(unittest.TestCase):
             self.total_value,
             sum(values))
 
-    def test_execute_mdx_csv_row_only(self):
+    def test_execute_mdx_csv_column_only(self):
         mdx = """SELECT
                     NON EMPTY {[TM1PY_TESTS_CELL_DIMENSION1].[TM1PY_TESTS_CELL_DIMENSION1].MEMBERS} * 
                     {[TM1PY_TESTS_CELL_DIMENSION2].[TM1PY_TESTS_CELL_DIMENSION2].MEMBERS} * 
@@ -1166,7 +1166,7 @@ class TestCellMethods(unittest.TestCase):
             sum(values))
 
     @skip_if_no_pandas
-    def test_execute_mdx_dataframe_row_only(self):
+    def test_execute_mdx_dataframe_column_only(self):
         mdx = """SELECT
                     NON EMPTY {[TM1PY_TESTS_CELL_DIMENSION1].[TM1PY_TESTS_CELL_DIMENSION1].MEMBERS} * 
                     {[TM1PY_TESTS_CELL_DIMENSION2].[TM1PY_TESTS_CELL_DIMENSION2].MEMBERS} * 
@@ -1667,7 +1667,7 @@ class TestCellMethods(unittest.TestCase):
 
         # check if coordinates are the same
         self.assertTrue(coordinates.issubset(self.target_coordinates))
-        values = [float(record.split(',')[3]) for record in records if record != '']
+        values = [float(record.split(',')[4]) for record in records if record != '']
 
         # check if sum of retrieved values is sum of written values
         self.assertEqual(self.total_value, sum(values))
