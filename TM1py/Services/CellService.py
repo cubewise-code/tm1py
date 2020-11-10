@@ -85,12 +85,12 @@ def manage_transaction_log(func):
 
 class CellService(ObjectService):
     """ Service to handle Read and Write operations to TM1 cubes
-    
+
     """
 
     def __init__(self, tm1_rest: RestService):
         """
-        
+
         :param tm1_rest: instance of RestService
         """
         super().__init__(tm1_rest)
@@ -98,7 +98,7 @@ class CellService(ObjectService):
     def get_value(self, cube_name: str, element_string: str, dimensions: List[str] = None, sandbox_name: str = None,
                   **kwargs) -> Union[str, float]:
         """ Element_String describes the Dimension-Hierarchy-Element arrangement
-            
+
         :param cube_name: Name of the cube
         :param element_string: "Hierarchy1::Element1 && Hierarchy2::Element4, Element9, Element2"
             - Dimensions are not specified! They are derived from the position.
@@ -435,21 +435,21 @@ class CellService(ObjectService):
         """ Significantly faster than write_values function
 
         Cellset gets created according to MDX Expression. For instance:
-        [[61, 29 ,13], 
-        [42, 54, 15], 
+        [[61, 29 ,13],
+        [42, 54, 15],
         [17, 28, 81]]
-        
-        Each value in the cellset can be addressed through its position: The ordinal integer value. 
+
+        Each value in the cellset can be addressed through its position: The ordinal integer value.
         Ordinal-enumeration goes from top to bottom from left to right
         Number 61 has Ordinal 0, 29 has Ordinal 1, etc.
 
-        The order of the iterable determines the insertion point in the cellset. 
+        The order of the iterable determines the insertion point in the cellset.
         For instance:
         [91, 85, 72, 68, 51, 42, 35, 28, 11]
 
         would lead to:
-        [[91, 85 ,72], 
-        [68, 51, 42], 
+        [[91, 85 ,72],
+        [68, 51, 42],
         [35, 28, 11]]
 
         When writing large datasets into TM1 Cubes it can be convenient to call this function asynchronously.
@@ -474,7 +474,7 @@ class CellService(ObjectService):
 
         Number of values must match the number of cells in the cellset
 
-        :param cellset_id: 
+        :param cellset_id:
         :param values: iterable with Numeric and String values
         :param sandbox_name: str
         :return:
@@ -496,7 +496,7 @@ class CellService(ObjectService):
         """ Execute MDX and return the cells with their properties
 
         :param mdx: MDX Query, as string
-        :param cell_properties: properties to be queried from the cell. E.g. Value, Ordinal, RuleDerived, ... 
+        :param cell_properties: properties to be queried from the cell. E.g. Value, Ordinal, RuleDerived, ...
         :param top: Int, number of cells to return (counting from top)
         :param skip: Int, number of cells to skip (counting from top)
         :param skip_contexts: skip elements from titles / contexts in response
@@ -655,7 +655,7 @@ class CellService(ObjectService):
             **kwargs)
 
     def execute_mdx_values(self, mdx: str, sandbox_name: str = None, **kwargs) -> List[Union[str, float]]:
-        """ Optimized for performance. Query only raw cell values. 
+        """ Optimized for performance. Query only raw cell values.
         Coordinates are omitted !
 
         :param mdx: a valid MDX Query
@@ -961,7 +961,7 @@ class CellService(ObjectService):
                                **kwargs) -> int:
         """ Execute cube view in order to understand how many cells are in a cellset.
         Only return number of cells in the cellset. FAST!
-        
+
         :param cube_name: String, name of the cube
         :param view_name: String, name of the view
         :param private: True (private) or False (public)
@@ -1393,10 +1393,14 @@ class CellService(ObjectService):
         cube = response_json["Cube"]["Name"]
 
         rows, titles, columns = [], [], []
-        if response_json["Axes"][0]["Hierarchies"]:
-            columns = [hierarchy["UniqueName"] for hierarchy in response_json["Axes"][0]["Hierarchies"]]
-        if response_json["Axes"][1]["Hierarchies"]:
-            rows = [hierarchy["UniqueName"] for hierarchy in response_json["Axes"][1]["Hierarchies"]]
+        if len(response_json["Axes"]) == 1:
+            if response_json["Axes"][0]["Hierarchies"]:
+                rows = [hierarchy["UniqueName"] for hierarchy in response_json["Axes"][0]["Hierarchies"]]
+        else:
+            if response_json["Axes"][0]["Hierarchies"]:
+                columns = [hierarchy["UniqueName"] for hierarchy in response_json["Axes"][0]["Hierarchies"]]
+            if response_json["Axes"][1]["Hierarchies"]:
+                rows = [hierarchy["UniqueName"] for hierarchy in response_json["Axes"][1]["Hierarchies"]]
         if len(response_json["Axes"]) > 2:
             titles = [hierarchy["UniqueName"] for hierarchy in response_json["Axes"][2]["Hierarchies"]]
         return cube, titles, rows, columns
@@ -1716,7 +1720,7 @@ class CellService(ObjectService):
             PendingDeprecationWarning
         )
         warnings.simplefilter('default', PendingDeprecationWarning)
-        return self.execute_view(cube_name, view_name, cell_properties, private, top)
+        return self.execute_view(cube_name, view_name, private, cell_properties, top)
 
     @staticmethod
     def _extract_string_set_from_rows_and_values(
