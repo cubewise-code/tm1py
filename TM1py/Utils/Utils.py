@@ -233,12 +233,14 @@ def build_csv_from_cellset_dict(
         ordinal = cell.get("Ordinal", ordinal)
 
         csv_entry = []
-        if row_axis:
+        if row_axis and column_axis:
             index_rows = ordinal // row_axis['Cardinality'] % column_axis['Cardinality']
             csv_entry.extend(extract_element_names_from_members(column_axis['Tuples'][index_rows]['Members']))
-        if column_axis:
             index_columns = ordinal % row_axis['Cardinality']
             csv_entry.extend(extract_element_names_from_members(row_axis['Tuples'][index_columns]['Members']))
+        if row_axis:
+            index_rows = ordinal % row_axis['Cardinality']
+            csv_entry.extend(extract_element_names_from_members(row_axis['Tuples'][index_rows]['Members']))
 
         csv_entry.append(str(cell["Value"] or ""))
 
