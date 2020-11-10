@@ -105,7 +105,7 @@ def case_and_space_insensitive_equals(item1: str, item2: str) -> bool:
     return lower_and_drop_spaces(item1) == lower_and_drop_spaces(item2)
 
 
-def extract_axes_from_cellset(raw_cellset_as_dict: Dict) -> Tuple[Any, Any, Any]:
+def extract_axes_from_cellset(raw_cellset_as_dict: Dict) -> Tuple[Any, ...]:
     raw_axes = raw_cellset_as_dict['Axes']
 
     axes = list()
@@ -226,21 +226,21 @@ def build_csv_from_cellset_dict(
          in row_dimensions + column_dimensions] +
         ["Value"]))
 
-    row_axis, column_axis, _ = extract_axes_from_cellset(raw_cellset_as_dict=raw_cellset_as_dict)
+    column_axis, row_axis, _ = extract_axes_from_cellset(raw_cellset_as_dict=raw_cellset_as_dict)
 
     for ordinal, cell in enumerate(cells[:top or len(cells)]):
         # if skip is used in execution we must use the original ordinal from the cell, if not we can simply enumerate
         ordinal = cell.get("Ordinal", ordinal)
 
         csv_entry = []
-        if row_axis and column_axis:
-            index_rows = ordinal // row_axis['Cardinality'] % column_axis['Cardinality']
-            csv_entry.extend(extract_element_names_from_members(column_axis['Tuples'][index_rows]['Members']))
-            index_columns = ordinal % row_axis['Cardinality']
-            csv_entry.extend(extract_element_names_from_members(row_axis['Tuples'][index_columns]['Members']))
-        if row_axis:
-            index_rows = ordinal % row_axis['Cardinality']
+        if column_axis and row_axis:
+            index_rows = ordinal // column_axis['Cardinality'] % row_axis['Cardinality']
             csv_entry.extend(extract_element_names_from_members(row_axis['Tuples'][index_rows]['Members']))
+            index_columns = ordinal % column_axis['Cardinality']
+            csv_entry.extend(extract_element_names_from_members(column_axis['Tuples'][index_columns]['Members']))
+        if column_axis:
+            index_rows = ordinal % column_axis['Cardinality']
+            csv_entry.extend(extract_element_names_from_members(column_axis['Tuples'][index_rows]['Members']))
 
         csv_entry.append(str(cell["Value"] or ""))
 

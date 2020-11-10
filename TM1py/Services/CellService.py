@@ -1395,7 +1395,7 @@ class CellService(ObjectService):
         rows, titles, columns = [], [], []
         if len(response_json["Axes"]) == 1:
             if response_json["Axes"][0]["Hierarchies"]:
-                rows = [hierarchy["UniqueName"] for hierarchy in response_json["Axes"][0]["Hierarchies"]]
+                columns = [hierarchy["UniqueName"] for hierarchy in response_json["Axes"][0]["Hierarchies"]]
         else:
             if response_json["Axes"][0]["Hierarchies"]:
                 columns = [hierarchy["UniqueName"] for hierarchy in response_json["Axes"][0]["Hierarchies"]]
