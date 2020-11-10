@@ -531,6 +531,32 @@ class TestCellMethods(unittest.TestCase):
             MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1])) \
             .add_hierarchy_set_to_column_axis(
             MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
+            .to_mdx()
+
+        data = self.tm1.cubes.cells.execute_mdx(mdx)
+        # Check if total value is the same AND coordinates are the same. Handle None
+        self.assertEqual(
+            self.total_value, sum(v["Value"] for v in data.values() if v["Value"])
+        )
+
+        for coordinates in data.keys():
+            self.assertEqual(len(coordinates), 3)
+            self.assertIn("[TM1py_Tests_Cell_Dimension1].", coordinates[0])
+            self.assertIn("[TM1py_Tests_Cell_Dimension2].", coordinates[1])
+            self.assertIn("[TM1py_Tests_Cell_Dimension3].", coordinates[2])
+
+    def test_execute_mdx_with_empty_rows(self):
+        # write cube content
+        self.tm1.cubes.cells.write_values(self.cube_name, self.cellset)
+
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .columns_non_empty() \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0])) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1])) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
             .rows_non_empty() \
             .add_hierarchy_set_to_row_axis(MdxHierarchySet.from_str("", "", "{}")) \
             .to_mdx()
@@ -547,7 +573,7 @@ class TestCellMethods(unittest.TestCase):
             self.assertIn("[TM1py_Tests_Cell_Dimension2].", coordinates[1])
             self.assertIn("[TM1py_Tests_Cell_Dimension3].", coordinates[2])
 
-    def test_execute_mdx_without_columns(self):
+    def test_execute_mdx_with_empty_columns(self):
         # write cube content
         self.tm1.cubes.cells.write_values(self.cube_name, self.cellset)
 
