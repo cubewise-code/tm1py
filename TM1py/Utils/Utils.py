@@ -6,7 +6,7 @@ import re
 import urllib.parse as urlparse
 from contextlib import suppress
 from enum import Enum, unique
-from typing import Dict, List, Tuple, Iterable, Optional, Generator
+from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator
 
 from TM1py.Exceptions.Exceptions import TM1pyVersionException
 
@@ -105,12 +105,20 @@ def case_and_space_insensitive_equals(item1: str, item2: str) -> bool:
     return lower_and_drop_spaces(item1) == lower_and_drop_spaces(item2)
 
 
-def extract_axes_from_cellset(raw_cellset_as_dict: Dict) -> Tuple:
-    axes = raw_cellset_as_dict['Axes']
-    row_axis = axes[0] if axes[0] and "Tuples" in axes[0] and len(axes[0]["Tuples"]) > 0 else None
-    column_axis = axes[1] if axes[1] and "Tuples" in axes[1] and len(axes[1]["Tuples"]) > 0 else None
-    title_axis = axes[2] if len(axes) > 2 and axes[2] and "Tuples" in axes[2] and len(axes[2]["Tuples"]) > 0 else None
-    return row_axis, column_axis, title_axis
+def extract_axes_from_cellset(raw_cellset_as_dict: Dict) -> Tuple[Any, Any, Any]:
+    raw_axes = raw_cellset_as_dict['Axes']
+
+    axes = list()
+
+    for axis in raw_axes:
+        if axis and 'Tuples' in axis and len(axis['Tuples']) > 0:
+            axes.append(axis)
+
+    # extend with None to assure 3 entries
+    while len(axes) < 3:
+        axes += [None]
+
+    return tuple(axes)
 
 
 def extract_unique_names_from_members(members: Iterable[Dict]) -> List[str]:
@@ -165,7 +173,7 @@ def build_content_from_cellset_dict(
     cube_dimensions = [dim['Name'] for dim in raw_cellset_as_dict['Cube']['Dimensions']]
 
     cells = raw_cellset_as_dict['Cells']
-    row_axis, column_axis, title_axis = extract_axes_from_cellset(raw_cellset_as_dict=raw_cellset_as_dict)
+    axis0, axis1, title_axis = extract_axes_from_cellset(raw_cellset_as_dict=raw_cellset_as_dict)
 
     content_as_dict = CaseAndSpaceInsensitiveTuplesDict()
     for ordinal, cell in enumerate(cells[:top or len(cells)]):
@@ -173,14 +181,17 @@ def build_content_from_cellset_dict(
         ordinal = cell.get("Ordinal", ordinal)
 
         coordinates = []
-        if row_axis:
-            index_rows = ordinal // row_axis['Cardinality'] % column_axis['Cardinality']
-            coordinates.extend(extract_unique_names_from_members(column_axis['Tuples'][index_rows]['Members']))
+        if axis1:
+            index_rows = ordinal // axis0['Cardinality'] % axis1.get('Cardinality')
+            coordinates.extend(extract_unique_names_from_members(axis1['Tuples'][index_rows]['Members']))
+
         if title_axis:
             coordinates.extend(extract_unique_names_from_members(title_axis['Tuples'][0]['Members']))
-        if column_axis:
-            index_columns = ordinal % row_axis['Cardinality']
-            coordinates.extend(extract_unique_names_from_members(row_axis['Tuples'][index_columns]['Members']))
+
+        if axis0:
+            index_columns = ordinal % axis0['Cardinality']
+            coordinates.extend(extract_unique_names_from_members(axis0['Tuples'][index_columns]['Members']))
+
         coordinates = sort_coordinates(cube_dimensions, coordinates)
         content_as_dict[coordinates] = cell
     return content_as_dict
