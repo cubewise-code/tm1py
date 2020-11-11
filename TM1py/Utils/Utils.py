@@ -238,7 +238,7 @@ def build_csv_from_cellset_dict(
             csv_entry.extend(extract_element_names_from_members(row_axis['Tuples'][index_rows]['Members']))
             index_columns = ordinal % column_axis['Cardinality']
             csv_entry.extend(extract_element_names_from_members(column_axis['Tuples'][index_columns]['Members']))
-        if column_axis:
+        elif column_axis:
             index_rows = ordinal % column_axis['Cardinality']
             csv_entry.extend(extract_element_names_from_members(column_axis['Tuples'][index_rows]['Members']))
 
@@ -474,6 +474,7 @@ def build_pandas_dataframe_from_cellset(cellset: Dict, multiindex: bool = True,
     """
     try:
         cellset_clean = {}
+        coordinates = []
         for coordinates, cell in cellset.items():
             element_names = element_names_from_element_unique_names(coordinates)
             cellset_clean[element_names] = cell['Value'] if cell else None
