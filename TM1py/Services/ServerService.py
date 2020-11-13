@@ -2,9 +2,9 @@
 
 import functools
 import json
+from collections.abc import Iterable
 from datetime import datetime
 from typing import Dict, Optional
-from collections.abc import Iterable
 
 import pytz
 from requests import Response
@@ -112,7 +112,8 @@ class ServerService(ObjectService):
                 log_filters.append(format_url("Logger eq '{}'", logger))
 
             if level:
-                level_dict = CaseAndSpaceInsensitiveDict({'ERROR': 1, 'WARNING': 2, 'INFO': 3, 'DEBUG': 4, 'UNKNOWN': 5})
+                level_dict = CaseAndSpaceInsensitiveDict(
+                    {'ERROR': 1, 'WARNING': 2, 'INFO': 3, 'DEBUG': 4, 'UNKNOWN': 5})
                 level_index = level_dict.get(level)
                 if level_index:
                     log_filters.append("Level eq {}".format(level_index))
@@ -256,3 +257,15 @@ class ServerService(ObjectService):
         ti = "SaveDataAll;"
         process_service = ProcessService(self._rest)
         return process_service.execute_ti_code(ti, **kwargs)
+
+    def start_performance_monitor(self):
+        config = {
+            "Administration": {"PerformanceMonitorOn": True}
+        }
+        self.update_static_configuration(config)
+
+    def stop_performance_monitor(self):
+        config = {
+            "Administration": {"PerformanceMonitorOn": False}
+        }
+        self.update_static_configuration(config)
