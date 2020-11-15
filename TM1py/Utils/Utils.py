@@ -845,7 +845,9 @@ def cell_is_updateable(cell: dict) -> bool:
     :param cell: dict cell including Updateable property
     :return: bool
     """
-    if cell.get("Updateable"):
-        bit = extract_cell_updateable_property(cell["Updateable"], CellUpdateableProperty.CELL_IS_NOT_UPDATEABLE)
-        updateable = not bit
-        return updateable
+    if "Updateable" not in cell:
+        raise ValueError("cell dictionary must contain key 'Updateable'")
+
+    bit = extract_cell_updateable_property(cell["Updateable"], CellUpdateableProperty.CELL_IS_NOT_UPDATEABLE)
+    updateable = not bit
+    return updateable

@@ -1268,6 +1268,8 @@ class CellService(ObjectService):
 
         if skip_rule_derived_cells:
             cell_properties.append("RuleDerived")
+            # necessary due to bug in TM1 11.8: If only RuleDerived is retrieved it occasionally produces wrong results
+            cell_properties.append("Updateable")
 
         if skip_consolidated_cells:
             cell_properties.append("Consolidated")
