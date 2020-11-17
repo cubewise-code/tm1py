@@ -4,7 +4,9 @@ from Tests.Cell import TestCellMethods
 from Tests.Chore import TestChoreMethods
 from Tests.Cube import TestCubeMethods
 from Tests.Dimension import TestDimensionMethods
-from Tests.Element import TestElementMethods
+from Tests.Element import TestElement
+from Tests.ElementAttribute import TestElementAttribute
+from Tests.ElementService import TestElementService
 from Tests.Hierarchy import TestHierarchyMethods
 from Tests.MDXUtils import TestMDXUtils
 from Tests.MonitoringService import TestMonitoringMethods

@@ -6,6 +6,7 @@ from TM1py.Objects import Dimension, Hierarchy, Element
 from TM1py.Objects import ElementAttribute
 from TM1py.Services import TM1Service
 
+
 class TestDimensionMethods(unittest.TestCase):
 
     @classmethod
@@ -23,7 +24,6 @@ class TestDimensionMethods(unittest.TestCase):
         cls.dimension_name = cls.prefix + "Some_Dimension"
         cls.hierarchy_name = cls.dimension_name
         cls.dimension_name_with_multi_hierarchy = cls.prefix + "Dimension_With_Multiple_Hierarchies"
-
 
     @classmethod
     def setUp(cls):
@@ -273,6 +273,7 @@ class TestDimensionMethods(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.tm1.logout()
+
 
 if __name__ == '__main__':
     unittest.main()

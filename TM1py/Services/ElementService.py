@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
-from typing import List, Union, Iterable, Optional
+from typing import List, Union, Iterable, Optional, Dict, Tuple
 
 from requests import Response
 
@@ -59,11 +59,20 @@ class ElementService(ObjectService):
 
     def get_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[Element]:
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*",
+            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?select=Name,Type",
             dimension_name,
             hierarchy_name)
         response = self._rest.GET(url, **kwargs)
         return [Element.from_dict(element) for element in response.json()["value"]]
+
+    def get_edges(self, dimension_name: str, hierarchy_name: str, **kwargs) -> Dict[Tuple[str, str], int]:
+        url = format_url(
+            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Edges?select=ParentName,ComponentName,Weight",
+            dimension_name,
+            hierarchy_name)
+        response = self._rest.GET(url, **kwargs)
+
+        return {(edge["ParentName"], edge["ComponentName"]): edge["Weight"] for edge in response.json()["value"]}
 
     def get_leaf_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[Element]:
         url = format_url(
@@ -81,7 +90,7 @@ class ElementService(ObjectService):
         return [e["Name"] for e in response.json()['value']]
 
     def get_element_names(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
-        """ Get all elementnames
+        """ Get all element names
 
         :param dimension_name:
         :param hierarchy_name:
@@ -487,3 +496,49 @@ class ElementService(ObjectService):
         response = self._rest.POST(url, json.dumps(payload, ensure_ascii=False), **kwargs)
         raw_dict = response.json()
         return [tuples['Members'] for tuples in raw_dict['Tuples']]
+
+    def add_edges(self, dimension_name: str, hierarchy_name: str = None, edges: Dict[Tuple[str, str], int] = None,
+                  **kwargs) -> Response:
+        """ Add Edges to hierarchy. Fails if one edge already exists.
+
+        :param dimension_name:
+        :param hierarchy_name:
+        :param edges:
+        :return:
+        """
+        if not hierarchy_name:
+            hierarchy_name = dimension_name
+
+        url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')/Edges", dimension_name, hierarchy_name)
+        body = [{"ParentName": parent, "ComponentName": component, "Weight": float(weight)}
+                for (parent, component), weight
+                in edges.items()]
+
+        return self._rest.POST(url=url, data=json.dumps(body), **kwargs)
+
+    def add_elements(self, dimension_name: str, hierarchy_name: str, elements: List[Element], **kwargs):
+        """ Add elements to hierarchy. Fails if one element already exists.
+
+        :param dimension_name:
+        :param hierarchy_name:
+        :param elements:
+        :return:
+        """
+        url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements", dimension_name, hierarchy_name)
+        body = [element.body_as_dict for element in elements]
+
+        return self._rest.POST(url=url, data=json.dumps(body), **kwargs)
+
+    def add_element_attributes(self, dimension_name: str, hierarchy_name: str,
+                               element_attributes: List[ElementAttribute], **kwargs):
+        """ Add element attributes to hierarchy. Fails if one element attribute already exists.
+
+        :param dimension_name:
+        :param hierarchy_name:
+        :param element_attributes:
+        :return:
+        """
+        url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')/ElementAttributes", dimension_name, hierarchy_name)
+        body = [element_attribute.body_as_dict for element_attribute in element_attributes]
+
+        return self._rest.POST(url=url, data=json.dumps(body), **kwargs)
