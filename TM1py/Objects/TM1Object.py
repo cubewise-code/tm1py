@@ -12,6 +12,9 @@ class TM1Object:
     def body(self):
         pass
 
+    def __hash__(self):
+        return hash(self.body)
+
     def __str__(self):
         return self.body
 
