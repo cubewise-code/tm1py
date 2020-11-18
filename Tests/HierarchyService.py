@@ -12,7 +12,7 @@ DIMENSION_NAME = DIMENSION_PREFIX + "Some_Name"
 SUBSET_NAME = DIMENSION_PREFIX + "Some_Subset"
 
 
-class TestHierarchyMethods(unittest.TestCase):
+class TestHierarchyService(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):

@@ -14,7 +14,7 @@ from .TestUtils import skip_if_insufficient_version
 PROCESS_PREFIX = 'TM1py_Tests_'
 
 
-class TestProcessMethods(unittest.TestCase):
+class TestProcessService(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):

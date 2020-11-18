@@ -401,7 +401,7 @@ class TestSecurityService(unittest.TestCase):
 
     def test_update_user_password(self):
         self.tm1.security.update_user_password(user_name=self.user.name, password="new_password123")
-        
+
         with TM1Service(
                 user=self.user.name,
                 password="new_password123",

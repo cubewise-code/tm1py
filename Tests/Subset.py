@@ -5,7 +5,7 @@ from TM1py.Objects import AnonymousSubset, Element, Subset
 PREFIX = "TM1py_Tests_Subset_"
 
 
-class TestSubsetMethods(unittest.TestCase):
+class TestSubset(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):

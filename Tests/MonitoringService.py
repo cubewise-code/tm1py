@@ -8,7 +8,7 @@ from TM1py.Utils import case_and_space_insensitive_equals
 PREFIX = "TM1py_Tests_MonitoringService_"
 
 
-class TestMonitoringMethods(unittest.TestCase):
+class TestMonitoringService(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
