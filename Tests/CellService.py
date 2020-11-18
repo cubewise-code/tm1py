@@ -130,7 +130,7 @@ class TestCellService(unittest.TestCase):
         # For tests on string related methods
         cls.build_string_cube()
 
-        cls.build_assets_for_relative_proportional_spread_tests()
+        cls.build_assets_for_relative_proportional_spread()
 
     @classmethod
     def setUp(cls):
@@ -229,7 +229,7 @@ class TestCellService(unittest.TestCase):
                 cls.tm1.dimensions.delete(dimension_name=dimension_name)
 
     @classmethod
-    def build_assets_for_relative_proportional_spread_tests(cls):
+    def build_assets_for_relative_proportional_spread(cls):
         for dimension_name in (cls.dimension_rps1_name, cls.dimension_rps2_name):
             dimension = Dimension(dimension_name)
             hierarchy = Hierarchy(dimension_name, dimension_name)
@@ -250,7 +250,7 @@ class TestCellService(unittest.TestCase):
             cls.tm1.processes.execute_ti_code("CubeClearData('" + cube_name + "');")
 
     @classmethod
-    def remove_assets_for_relative_proportional_spread_tests(cls):
+    def remove_assets_for_relative_proportional_spread(cls):
         for cube_name in (cls.cube_rps1_name, cls.cube_rps2_name):
             if cls.tm1.cubes.exists(cube_name):
                 cls.tm1.cubes.delete(cube_name=cube_name)
@@ -2333,7 +2333,7 @@ class TestCellService(unittest.TestCase):
         cls.remove_cube_with_consolidations()
         for dimension_name in cls.dimension_names:
             cls.tm1.dimensions.delete(dimension_name)
-        cls.remove_assets_for_relative_proportional_spread_tests()
+        cls.remove_assets_for_relative_proportional_spread()
 
         if cls.tm1.sandboxes.exists(cls.sandbox_name):
             cls.tm1.sandboxes.delete(cls.sandbox_name)
