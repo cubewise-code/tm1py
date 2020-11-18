@@ -7,7 +7,7 @@ from TM1py.Objects import ElementAttribute
 from TM1py.Services import TM1Service
 
 
-class TestDimensionMethods(unittest.TestCase):
+class TestDimensionService(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):

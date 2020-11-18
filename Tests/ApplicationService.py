@@ -28,7 +28,7 @@ DIMENSION_NAMES = [
     PREFIX + 'Dimension3']
 
 
-class TestApplicationMethods(unittest.TestCase):
+class TestApplicationService(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:

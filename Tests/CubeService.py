@@ -7,10 +7,10 @@ from TM1py import Element, Hierarchy, Dimension
 from TM1py.Objects import Cube
 from TM1py.Objects import Rules
 from TM1py.Services import TM1Service
-
 from .TestUtils import skip_if_insufficient_version
 
-class TestCubeMethods(unittest.TestCase):
+
+class TestCubeService(unittest.TestCase):
 
     @classmethod
     def setUp(cls):
@@ -19,7 +19,7 @@ class TestCubeMethods(unittest.TestCase):
         cls.config = configparser.ConfigParser()
         cls.config.read(Path(__file__).parent.joinpath('config.ini'))
         cls.tm1 = TM1Service(**cls.config['tm1srv01'])
-        
+
         cls.prefix = "TM1py_Tests_Cube_"
 
         cls.cube_name = cls.prefix + "some_name"

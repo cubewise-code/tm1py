@@ -16,7 +16,7 @@ from TM1py.Services import TM1Service
 PREFIX = "TM1py_Tests_Server_"
 
 
-class TestServerMethods(unittest.TestCase):
+class TestServerService(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -35,7 +35,6 @@ class TestServerMethods(unittest.TestCase):
         cls.cube_name = PREFIX + "Cube1"
         cls.process_name1 = PREFIX + "Process1"
         cls.process_name2 = PREFIX + "Process2"
-
 
         # create a simple cube with dimensions to test transactionlog methods
         if not cls.tm1.dimensions.exists(cls.dimension_name1):

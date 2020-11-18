@@ -8,7 +8,6 @@ from pathlib import Path
 
 from TM1py.Objects import Chore, ChoreStartTime, ChoreFrequency, ChoreTask, Process
 from TM1py.Services import TM1Service
-
 from .TestUtils import skip_if_insufficient_version
 
 # Hard stuff for this test
@@ -21,8 +20,7 @@ CHORE_NAME3 = PREFIX + "Chore3"
 CHORE_NAME4 = PREFIX + "Chore4"
 
 
-class TestChoreMethods(unittest.TestCase):
- 
+class TestChoreService(unittest.TestCase):
     start_time = None
     frequency = None
     tasks = None
@@ -33,11 +31,11 @@ class TestChoreMethods(unittest.TestCase):
         Establishes a connection to TM1 and creates objects to use across all tests
         """
 
-         # Connection to TM1
+        # Connection to TM1
         cls.config = configparser.ConfigParser()
         cls.config.read(Path(__file__).parent.joinpath('config.ini'))
         cls.tm1 = TM1Service(**cls.config['tm1srv01'])
-        
+
         # create processes
         p1 = Process(name=PROCESS_NAME1)
         p1.add_parameter('pRegion', 'pRegion (String)', value='US')
@@ -163,7 +161,6 @@ class TestChoreMethods(unittest.TestCase):
         self.assertEqual(c4._frequency._seconds, str(self.frequency_seconds).zfill(2))
         for task1, task2 in zip(self.tasks, c4._tasks):
             self.assertEqual(task1, task2)
-
 
     def test_get_chore(self):
         c1 = self.tm1.chores.get(CHORE_NAME1)
