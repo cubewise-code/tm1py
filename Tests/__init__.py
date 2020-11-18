@@ -20,7 +20,6 @@ from Tests.SecurityService import TestSecurityService
 from Tests.ServerService import TestServerService
 from Tests.Subset import TestSubset
 from Tests.SubsetService import TestSubsetService
-from Tests.TIObfuscator import TestTIObfuscatorMethods
 from Tests.TM1pyDict import TestCaseAndSpaceInsensitiveDict, TestCaseAndSpaceInsensitiveSet, TestCaseAndSpaceInsensitiveTuplesDict
 from Tests.Utils import TestUtilsMethods
 from Tests.ViewService import TestViewService
