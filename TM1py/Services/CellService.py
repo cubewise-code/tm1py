@@ -8,9 +8,6 @@ from collections import OrderedDict
 from io import StringIO
 from typing import List, Union, Dict, Iterable, Tuple
 
-from mdxpy import MdxHierarchySet, MdxBuilder, Member
-from requests import Response
-
 from TM1py.Exceptions.Exceptions import TM1pyException
 from TM1py.Objects.MDXView import MDXView
 from TM1py.Objects.Process import Process
@@ -22,6 +19,8 @@ from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_nam
     CaseAndSpaceInsensitiveDict, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, abbreviate_mdx, \
     build_csv_from_cellset_dict, require_version, require_pandas, build_cellset_from_pandas_dataframe, \
     case_and_space_insensitive_equals, get_cube, resembles_mdx, require_admin
+from mdxpy import MdxHierarchySet, MdxBuilder, Member
+from requests import Response
 
 try:
     import pandas as pd
@@ -416,28 +415,30 @@ class CellService(ObjectService):
             raise NotImplementedError("Function does not support writing to sandboxes yet")
 
         successes = list()
-        lines = list()
+        statements = list()
 
         function_str = f"{'CellIncrementN(' if increment else 'CellPutN('}"
         for coordinates, value in cellset_as_dict.items():
             value_str = f'{value}' if isinstance(value, str) else str(value)
 
-            line = "".join([
+            statement = "".join([
                 function_str,
                 value_str,
                 f",'{cube_name}',",
                 ",".join(f"'{element}'" for element in coordinates),
                 ");"])
-            lines.append(line)
+            statements.append(statement)
 
-        for n, line in enumerate(lines):
+        chunk = list()
+        for n, statement in enumerate(statements):
+            chunk.append(statement)
             if n > 0 and n % Process.MAX_STATEMENTS == 0:
-                process = Process(name="", prolog_procedure="".join(lines))
+                process = Process(name="", prolog_procedure="\r".join(chunk))
                 success, _, _ = self.execute_unbound_process(process, **kwargs)
                 successes.append(success)
-                lines = list()
+                chunk = list()
 
-        process = Process(name="", prolog_procedure="".join(lines))
+        process = Process(name="", prolog_procedure="\r".join(chunk))
         success, _, _ = self.execute_unbound_process(process, **kwargs)
         successes.append(success)
 
