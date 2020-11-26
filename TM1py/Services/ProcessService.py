@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import json
+import time
 import uuid
 from typing import List, Dict, Tuple, Iterable
 
@@ -301,3 +302,36 @@ class ProcessService(ObjectService):
             # response is plain text - due to entity type Edm.Stream
             response = self._rest.GET(url=url, **kwargs)
             return response
+
+    def debug_process(self, process_name: str, timeout: float = None, **kwargs) -> Dict:
+        raw_url = "/api/v1/Processes('{}')/tm1.Debug?$expand=Breakpoints," \
+                  "Thread,CallStack($expand=Variables,Process($select=Name))"
+        url = format_url(raw_url, process_name)
+
+        parameters = dict()
+        if kwargs:
+            parameters = {"Parameters": []}
+            for parameter_name, parameter_value in kwargs.items():
+                parameters["Parameters"].append({"Name": parameter_name, "Value": parameter_value})
+
+        response = self._rest.POST(
+            url,
+            data=json.dumps(parameters, ensure_ascii=False),
+            timeout=timeout,
+            **kwargs)
+        return response.json()
+
+    def debug_step_over(self, debug_id: str, **kwargs) -> Dict:
+        url = format_url("/api/v1/ProcessDebugContexts('{}')/tm1.StepOver", debug_id)
+        self._rest.POST(url, **kwargs)
+
+        # digest time  necessary for TM1 <= 11.8
+        # ToDo: remove in later versions of TM1 once issue in TM1 server is resolved
+        time.sleep(0.1)
+
+        raw_url = "/api/v1/ProcessDebugContexts('{}')?$expand=Breakpoints," \
+                  "Thread,CallStack($expand=Variables,Process($select=Name))"
+        url = format_url(raw_url, debug_id)
+        response = self._rest.GET(url, **kwargs)
+
+        return response.json()
