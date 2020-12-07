@@ -142,6 +142,19 @@ class Hierarchy(TM1Object):
 
         self._elements[element_name] = Element(name=element_name, element_type=element_type)
 
+    def add_component(self, parent_name: str, component_name: str, weight: int):
+        if parent_name not in self._elements:
+            raise ValueError(f"Parent '{parent_name}' does not exist in hierarchy")
+        if self._elements[parent_name].element_type != Element.Types.CONSOLIDATED:
+            raise ValueError(f"Parent '{parent_name}' is not of type 'Consolidated'")
+
+        if component_name not in self.elements:
+            self.add_element(component_name, 'Numeric')
+        elif self._elements[component_name].element_type == Element.Types.STRING:
+            raise ValueError(f"Component '{component_name}' must not be of type 'String'")
+
+        self.add_edge(parent_name, component_name, weight)
+
     def update_element(self, element_name: str, element_type: Union[str, Element.Types]):
         self._elements[element_name].element_type = element_type
 
