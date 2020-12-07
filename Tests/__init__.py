@@ -8,6 +8,7 @@ from Tests.Element import TestElement
 from Tests.ElementAttribute import TestElementAttribute
 from Tests.ElementService import TestElementService
 from Tests.HierarchyService import TestHierarchyService
+from Tests.Hierarchy import TestHierarchy
 from Tests.MDXUtils import TestMDXUtils
 from Tests.MonitoringService import TestMonitoringService
 from Tests.NativeView import TestNativeView
