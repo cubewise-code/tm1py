@@ -422,11 +422,11 @@ class CellService(ObjectService):
             # number strings must not exceed float range
             if isinstance(value, str):
                 try:
-                    value_str = f'{str(float(value))}'
+                    value_str = f'{float(value)}'
                 except ValueError:
                     value_str = f'{value}'
             else:
-                value_str = str(value)
+                value_str = str(float(value))
 
             statement = "".join([
                 function_str,
