@@ -419,7 +419,14 @@ class CellService(ObjectService):
 
         function_str = f"{'CellIncrementN(' if increment else 'CellPutN('}"
         for coordinates, value in cellset_as_dict.items():
-            value_str = f'{value}' if isinstance(value, str) else str(value)
+            # number strings must not exceed float range
+            if isinstance(value, str):
+                try:
+                    value_str = f'{str(float(value))}'
+                except ValueError:
+                    value_str = f'{value}'
+            else:
+                value_str = str(value)
 
             statement = "".join([
                 function_str,
