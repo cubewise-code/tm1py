@@ -15,6 +15,7 @@ class TestHierarchy(unittest.TestCase):
 
     def test_add_component_component_existing(self):
         hierarchy = Hierarchy(name="NotRelevant", dimension_name="NotRelevant")
+        hierarchy.add_element(element_name="c1", element_type="Consolidated")
         hierarchy.add_element(element_name="e1", element_type="Numeric")
         hierarchy.add_component(parent_name="c1", component_name="e1", weight=1)
 
