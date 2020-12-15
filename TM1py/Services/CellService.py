@@ -410,7 +410,7 @@ class CellService(ObjectService):
     @require_admin
     @manage_transaction_log
     def write_through_unbound_process(self, cube_name: str, cellset_as_dict: Dict, increment: bool = False,
-                                      sandbox_name: str = None, **kwargs):
+                                      sandbox_name: str = None, precision=8, **kwargs):
         if sandbox_name:
             raise NotImplementedError("Function does not support writing to sandboxes yet")
 
@@ -422,11 +422,11 @@ class CellService(ObjectService):
             # number strings must not exceed float range
             if isinstance(value, str):
                 try:
-                    value_str = f'{float(value)}'
+                    value_str = format(float(value), f'.{precision}f')
                 except ValueError:
                     value_str = f'{value}'
             else:
-                value_str = str(float(value))
+                value_str = format(value, f'.{precision}f')
 
             statement = "".join([
                 function_str,
