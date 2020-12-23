@@ -274,6 +274,23 @@ class TestServerService(unittest.TestCase):
             yesterdays_date = datetime.date.today() - timedelta(days=1)
             self.assertTrue(entry_date == yesterdays_date)
 
+    def test_get_message_log_with_contains_filter(self):
+
+        wildcards = ['TM1 Server is ready', 'admin host']
+
+        entries = self.tm1.server.get_message_log_entries(reverse=True, msg_contains= wildcards)
+
+        for entry in entries:
+            message = entry['Message']
+            if wildcards[0] in message:
+                self.assertIn(wildcards[0], message)
+            if wildcards[0] not in message:
+                self.assertNotIn(wildcards[0], message)
+            if wildcards[1].upper() in message.upper():
+                self.assertIn(wildcards[1].upper(), message.upper())
+            if wildcards[1] not in message:
+                self.assertNotIn(wildcards[1], message)
+
     def test_session_context_default(self):
         threads = self.tm1.monitoring.get_threads()
         for thread in threads:
