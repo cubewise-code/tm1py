@@ -121,10 +121,11 @@ class ServerService(ObjectService):
 
             if msg_contains:
                 if isinstance(msg_contains, str):
-                    log_filters.append(format_url("contains(Message,'{}')", msg_contains))
+                    log_filters.append(format_url("contains(toupper(Message),toupper('{}'))", msg_contains))
                 else:
-                    msg_filters = [format_url("contains(Message,'{}')", wildcard) for wildcard in msg_contains]
-                    log_filters.append("({})".format(" and ".join(msg_filters)))
+                    msg_filters = [format_url("contains(toupper(Message),toupper('{}'))", wildcard) 
+                                   for wildcard in msg_contains]
+                    log_filters.append("({})".format(" or ".join(msg_filters)))
 
             url += "&$filter={}".format(" and ".join(log_filters))
 
