@@ -87,6 +87,13 @@ class CubeService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return int(response.text)
 
+    def get_measure_dimension(self, cube_name: str, **kwargs) -> str:
+        url = format_url(
+            "/api/v1/Cubes('{}')/Dimensions?$select=Name",
+            cube_name)
+        response = self._rest.GET(url, **kwargs)
+        return response.json()['value'][-1]['Name']
+
     def update(self, cube: Cube, **kwargs) -> Response:
         """ Update existing cube on TM1 Server
 
