@@ -224,8 +224,7 @@ class CellService(ObjectService):
         :param kwargs: keyword argument pairs of dimension names and mdx set expressions
         :return:
         """
-        from TM1py import CubeService
-        cube_service = CubeService(self._rest)
+        cube_service = self.get_cube_service()
         dimension_names = CaseAndSpaceInsensitiveSet(*cube_service.get_dimension_names(cube_name=cube))
         dimension_expression_pairs = CaseAndSpaceInsensitiveDict()
 
@@ -417,16 +416,35 @@ class CellService(ObjectService):
         successes = list()
         statements = list()
 
-        function_str = f"{'CellIncrementN(' if increment else 'CellPutN('}"
+        cube_service = self.get_cube_service()
+        element_service = self.get_element_service()
+
+        measure_dimension = cube_service.get_measure_dimension(cube_name=cube_name)
+
+        measure_dimension_elements = element_service.get_element_types(
+            dimension_name=measure_dimension,
+            hierarchy_name=measure_dimension,
+            skip_consolidations=False)
+
         for coordinates, value in cellset_as_dict.items():
-            # number strings must not exceed float range
-            if isinstance(value, str):
-                try:
-                    value_str = format(float(value), f'.{precision}f')
-                except ValueError:
-                    value_str = f'{value}'
+            # use default 'Numeric' so that not existing elements trigger minor error during TI execution
+            element_type = measure_dimension_elements.get(coordinates[-1], 'Numeric')
+
+            if element_type == 'String':
+                function_str = 'CellPutS('
+                value_str = f"'{value}'"
+
+            # by default assume numeric, to trigger minor errors on write operations to C elements
             else:
-                value_str = format(value, f'.{precision}f')
+                function_str = "CellIncrementN(" if increment else "CellPutN("
+                # number strings must not exceed float range
+                if isinstance(value, str):
+                    try:
+                        value_str = format(float(value), f'.{precision}f')
+                    except ValueError:
+                        value_str = f'{value}'
+                else:
+                    value_str = format(value, f'.{precision}f')
 
             statement = "".join([
                 function_str,
@@ -451,6 +469,14 @@ class CellService(ObjectService):
 
         if not all(successes):
             raise TM1pyException(f"{len(successes) - sum(successes)} out of {len(successes)} unbound processes failed")
+
+    def get_element_service(self):
+        from TM1py import ElementService
+        return ElementService(self._rest)
+
+    def get_cube_service(self):
+        from TM1py import CubeService
+        return CubeService(self._rest)
 
     def execute_unbound_process(self, process: Process, **kwargs) -> Tuple[bool, str, str]:
         from TM1py import ProcessService

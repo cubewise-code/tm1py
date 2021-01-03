@@ -185,6 +185,11 @@ class TestCubeService(unittest.TestCase):
         errors = self.tm1.cubes.check_rules(cube_name=self.cube_name)
         self.assertEqual(1, len(errors))
 
+    def test_get_measure_dimension(self):
+        measure_dimension = self.tm1.cubes.get_measure_dimension(self.cube_name)
+
+        self.assertEqual(self.dimension_names[-1], measure_dimension)
+
     @classmethod
     def tearDown(cls):
         cls.tm1.cubes.delete(cls.cube_name)
