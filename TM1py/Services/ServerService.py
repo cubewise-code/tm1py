@@ -78,7 +78,8 @@ class ServerService(ObjectService):
     @require_admin
     def get_message_log_entries(self, reverse: bool = True, since: datetime = None,
                                 until: datetime = None, top: int = None, logger: str = None,
-                                level: str = None, msg_contains: Iterable = None, **kwargs) -> Dict:
+                                level: str = None, msg_contains: Iterable = None, msg_contains_operator: str = 'and',
+                                **kwargs) -> Dict:
         """
         :param reverse: Boolean
         :param since: of type datetime. If it doesn't have tz information, UTC is assumed.
@@ -87,10 +88,15 @@ class ServerService(ObjectService):
         :param logger: string, eg TM1.Server, TM1.Chore, TM1.Mdx.Interface, TM1.Process
         :param level: string, ERROR, WARNING, INFO, DEBUG, UNKNOWN
         :param msg_contains: iterable, find substring in log message; list of substrings will be queried as AND statement
+        :param msg_contains_operator: 'and' or 'or'
 
         :param kwargs:
         :return: Dict of server log
         """
+        msg_contains_operator = msg_contains_operator.strip().lower()
+        if msg_contains_operator not in ("and", "or"):
+            raise ValueError("'msg_contains_operator' must be either 'AND' or 'OR'")
+
         reverse = 'desc' if reverse else 'asc'
         url = '/api/v1/MessageLogEntries?$orderby=TimeStamp {}'.format(reverse)
 
@@ -123,9 +129,9 @@ class ServerService(ObjectService):
                 if isinstance(msg_contains, str):
                     log_filters.append(format_url("contains(toupper(Message),toupper('{}'))", msg_contains))
                 else:
-                    msg_filters = [format_url("contains(toupper(Message),toupper('{}'))", wildcard) 
+                    msg_filters = [format_url("contains(toupper(Message),toupper('{}'))", wildcard)
                                    for wildcard in msg_contains]
-                    log_filters.append("({})".format(" or ".join(msg_filters)))
+                    log_filters.append("({})".format(f" {msg_contains_operator} ".join(msg_filters)))
 
             url += "&$filter={}".format(" and ".join(log_filters))
 
