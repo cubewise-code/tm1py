@@ -16,6 +16,7 @@ Usage:
 
 # __init__ can hoist attributes from submodules into higher namespaces for convenience
 
+from TM1py.Services.GitService import GitService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.TM1Service import TM1Service
