@@ -274,22 +274,71 @@ class TestServerService(unittest.TestCase):
             yesterdays_date = datetime.date.today() - timedelta(days=1)
             self.assertTrue(entry_date == yesterdays_date)
 
-    def test_get_message_log_with_contains_filter(self):
+    def test_get_message_log_with_contains_single(self):
+        wildcards = ['TM1 Server is READY']
 
-        wildcards = ['TM1 Server is ready', 'admin host']
+        entries = self.tm1.server.get_message_log_entries(
+            reverse=True,
+            msg_contains=wildcards,
+            msg_contains_operator="AND")
 
-        entries = self.tm1.server.get_message_log_entries(reverse=True, msg_contains= wildcards)
+        self.assertGreater(len(entries), 1)
 
         for entry in entries:
-            message = entry['Message']
-            if wildcards[0] in message:
-                self.assertIn(wildcards[0], message)
-            if wildcards[0] not in message:
-                self.assertNotIn(wildcards[0], message)
-            if wildcards[1].upper() in message.upper():
-                self.assertIn(wildcards[1].upper(), message.upper())
-            if wildcards[1] not in message:
-                self.assertNotIn(wildcards[1], message)
+            message = entry['Message'].upper().replace(' ', '')
+
+            self.assertIn(wildcards[0].upper().replace(' ', ''), message)
+
+    def test_get_message_log_with_contains_filter_and(self):
+
+        wildcards = ['TM1 Server is ready', 'elapsed time']
+
+        entries = self.tm1.server.get_message_log_entries(
+            reverse=True,
+            msg_contains=wildcards,
+            msg_contains_operator="AND")
+
+        self.assertGreater(len(entries), 1)
+
+        for entry in entries:
+            message = entry['Message'].upper().replace(' ', '')
+
+            self.assertIn(wildcards[0].upper().replace(' ', ''), message)
+            self.assertIn(wildcards[1].upper().replace(' ', ''), message)
+
+    def test_get_message_log_with_contains_filter_or_1(self):
+
+        wildcards = ['TM1 Server is ready', 'invalid entry']
+
+        entries = self.tm1.server.get_message_log_entries(
+            reverse=True,
+            msg_contains=wildcards,
+            msg_contains_operator="OR")
+
+        self.assertGreater(len(entries), 1)
+
+        for entry in entries:
+            message = entry['Message'].upper().replace(' ', '')
+
+            self.assertIn(wildcards[0].upper().replace(' ', ''), message)
+            self.assertNotIn(wildcards[1].upper().replace(' ', ''), message)
+
+    def test_get_message_log_with_contains_filter_or_2(self):
+
+        wildcards = ['invalid entry', 'elapsed time']
+
+        entries = self.tm1.server.get_message_log_entries(
+            reverse=True,
+            msg_contains=wildcards,
+            msg_contains_operator="OR")
+
+        self.assertGreater(len(entries), 1)
+
+        for entry in entries:
+            message = entry['Message'].upper().replace(' ', '')
+
+            self.assertNotIn(wildcards[0].upper().replace(' ', ''), message)
+            self.assertIn(wildcards[1].upper().replace(' ', ''), message)
 
     def test_session_context_default(self):
         threads = self.tm1.monitoring.get_threads()
