@@ -400,9 +400,9 @@ class TestCellService(unittest.TestCase):
 
         query = MdxBuilder.from_cube(self.cube_with_consolidations_name)
         query.add_member_tuple_to_columns(
-            f"[{self.dimension_names[0]}].[Element 1]",
-            f"[{self.dimension_names[1]}].[Element 4]",
-            f"[{self.dimension_names[2]}].[Element 6]")
+            f"[{self.dimensions_with_consolidations_names[0]}].[Element 1]",
+            f"[{self.dimensions_with_consolidations_names[1]}].[Element 4]",
+            f"[{self.dimensions_with_consolidations_names[2]}].[Element 6]")
 
         self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [5])
 
@@ -1601,7 +1601,6 @@ class TestCellService(unittest.TestCase):
                 Member.of(self.dimension_names[1], "Element1"),
                 Member.of(self.dimension_names[1], "Element2"),
                 Member.of(self.dimension_names[1], "Element3")])) \
-                .where(Member.of(self.dimension_names[2], "Element1")) \
                 .to_mdx()
 
             view = MDXView(cube_name=self.cube_name, view_name=view_name, MDX=mdx)
@@ -1634,7 +1633,6 @@ class TestCellService(unittest.TestCase):
                 Member.of(self.dimension_names[2], "Element1"),
                 Member.of(self.dimension_names[2], "Element2"),
                 Member.of(self.dimension_names[2], "Element3")])) \
-                .where(Member.of(self.dimension_names[2], "Element1")) \
                 .to_mdx()
 
             view = MDXView(cube_name=self.cube_name, view_name=view_name, MDX=mdx)

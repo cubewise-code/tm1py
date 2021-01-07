@@ -70,7 +70,7 @@ class TestChoreService(unittest.TestCase):
         c1 = Chore(name=CHORE_NAME1,
                    start_time=ChoreStartTime(cls.start_time.year, cls.start_time.month, cls.start_time.day,
                                              cls.start_time.hour, cls.start_time.minute, cls.start_time.second),
-                   dst_sensitivity=False,
+                   dst_sensitivity=True,
                    active=True,
                    execution_mode=Chore.MULTIPLE_COMMIT,
                    frequency=cls.frequency,
@@ -80,7 +80,7 @@ class TestChoreService(unittest.TestCase):
         c2 = Chore(name=CHORE_NAME2,
                    start_time=ChoreStartTime(cls.start_time.year, cls.start_time.month, cls.start_time.day,
                                              cls.start_time.hour, cls.start_time.minute, cls.start_time.second),
-                   dst_sensitivity=False,
+                   dst_sensitivity=True,
                    active=False,
                    execution_mode=Chore.SINGLE_COMMIT,
                    frequency=cls.frequency,
@@ -168,7 +168,7 @@ class TestChoreService(unittest.TestCase):
         self.assertEqual(c1._start_time._datetime, self.start_time.replace(microsecond=0))
         self.assertEqual(c1._name, CHORE_NAME1)
         self.assertEqual(c1.active, True)
-        self.assertEqual(c1._dst_sensitivity, False)
+        self.assertEqual(c1._dst_sensitivity, True)
         self.assertEqual(c1._execution_mode, Chore.MULTIPLE_COMMIT)
         self.assertEqual(c1._frequency._days, str(self.frequency_days).zfill(2))
         self.assertEqual(c1._frequency._hours, str(self.frequency_hours).zfill(2))
@@ -182,7 +182,7 @@ class TestChoreService(unittest.TestCase):
         self.assertEqual(c2._start_time._datetime, self.start_time.replace(microsecond=0))
         self.assertEqual(c2._name, CHORE_NAME2)
         self.assertEqual(c2.active, False)
-        self.assertEqual(c2._dst_sensitivity, False)
+        self.assertEqual(c2._dst_sensitivity, True)
         self.assertEqual(c2._execution_mode, Chore.SINGLE_COMMIT)
         self.assertEqual(c2._frequency._days, str(self.frequency_days).zfill(2))
         self.assertEqual(c2._frequency._hours, str(self.frequency_hours).zfill(2))
@@ -276,6 +276,7 @@ class TestChoreService(unittest.TestCase):
         start_time = datetime.now()
         c._start_time = ChoreStartTime(start_time.year, start_time.month, start_time.day,
                                        start_time.hour, start_time.minute, start_time.second)
+        c.dst_sensitivity = True
         # update frequency
         frequency_days = int(random.uniform(0, 355))
         frequency_hours = int(random.uniform(0, 23))
@@ -294,7 +295,7 @@ class TestChoreService(unittest.TestCase):
         c = self.tm1.chores.get(chore_name=CHORE_NAME1)
         self.assertEqual(c._start_time._datetime.replace(microsecond=0), start_time.replace(microsecond=0))
         self.assertEqual(c._name, CHORE_NAME1)
-        self.assertEqual(c._dst_sensitivity, False)
+        self.assertEqual(c._dst_sensitivity, True)
         self.assertEqual(c._active, False)
         self.assertEqual(c._execution_mode, Chore.SINGLE_COMMIT)
         self.assertEqual(int(c._frequency._days), int(frequency_days))
@@ -309,6 +310,7 @@ class TestChoreService(unittest.TestCase):
         start_time = datetime.now()
         c._start_time = ChoreStartTime(start_time.year, start_time.month, start_time.day,
                                        start_time.hour, start_time.minute, start_time.second)
+        c.dst_sensitivity = True
         # update frequency
         frequency_days = int(random.uniform(0, 355))
         frequency_hours = int(random.uniform(0, 23))
@@ -332,7 +334,7 @@ class TestChoreService(unittest.TestCase):
         c = self.tm1.chores.get(chore_name=CHORE_NAME1)
         self.assertEqual(c._start_time._datetime.replace(microsecond=0), start_time.replace(microsecond=0))
         self.assertEqual(c._name, CHORE_NAME1)
-        self.assertEqual(c._dst_sensitivity, False)
+        self.assertEqual(c._dst_sensitivity, True)
         self.assertEqual(c._active, False)
         self.assertEqual(c._execution_mode, Chore.SINGLE_COMMIT)
         self.assertEqual(int(c._frequency._days), int(frequency_days))
@@ -352,6 +354,7 @@ class TestChoreService(unittest.TestCase):
         start_time = datetime.now()
         c._start_time = ChoreStartTime(start_time.year, start_time.month, start_time.day,
                                        start_time.hour, start_time.minute, start_time.second)
+        c.dst_sensitivity = True
         # update frequency
         frequency_days = int(random.uniform(0, 355))
         frequency_hours = int(random.uniform(0, 23))
@@ -373,7 +376,7 @@ class TestChoreService(unittest.TestCase):
         c = self.tm1.chores.get(chore_name=CHORE_NAME1)
         self.assertEqual(c._start_time._datetime.replace(microsecond=0), start_time.replace(microsecond=0))
         self.assertEqual(c._name, CHORE_NAME1)
-        self.assertEqual(c._dst_sensitivity, False)
+        self.assertEqual(c._dst_sensitivity, True)
         self.assertEqual(c._active, False)
         self.assertEqual(c._execution_mode, Chore.SINGLE_COMMIT)
         self.assertEqual(int(c._frequency._days), int(frequency_days))
