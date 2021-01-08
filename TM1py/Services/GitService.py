@@ -72,11 +72,9 @@ class GitService(ObjectService):
         if config is not None:
             body['Config'] = config
         
-        for key, value in kwargs.items():
-            body[key] = value
-
         body_json = json.dumps(body)
-        response = self._rest.POST(url=url, data=body_json)
+        response = self._rest.POST(url=url, data=body_json, **kwargs)
+
         return self.from_json(response.json())
 
     def git_uninit(self, force=False):
@@ -110,11 +108,8 @@ class GitService(ObjectService):
         if passphrase is not None:
             body['Passphrase'] = passphrase
         
-        for key, value in kwargs.items():
-            body[key] = value
-
         body_json = json.dumps(body)
-        response = self._rest.POST(url=url, data=body_json)
+        response = self._rest.POST(url=url, data=body_json, **kwargs)
 
         return self.from_json(response.json())
 
@@ -162,11 +157,8 @@ class GitService(ObjectService):
         if passphrase is not None:
             body['Passphrase'] = passphrase
 
-        for key, value in kwargs.items():
-            body[key] = value
-
         body_json = json.dumps(body)
-        response = self._rest.POST(url=url, data=body_json)
+        response = self._rest.POST(url=url, data=body_json, **kwargs)
 
         if execute:
             plan_id = json.loads(response.content).get('ID')
@@ -204,11 +196,8 @@ class GitService(ObjectService):
         if passphrase is not None:
             body['Passphrase'] = passphrase
 
-        for key, value in kwargs.items():
-            body[key] = value
-
         body_json = json.dumps(body)
-        response = self._rest.POST(url=url, data=body_json)
+        response = self._rest.POST(url=url, data=body_json, **kwargs)
 
         if execute:
             plan_id = json.loads(response.content).get('ID')
