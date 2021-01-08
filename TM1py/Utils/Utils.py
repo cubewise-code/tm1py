@@ -1,15 +1,64 @@
 import collections
+import functools
 import http.client as http_client
 import json
-from typing import Dict, List, Tuple, Iterable, Optional, Generator
+import re
+import urllib.parse as urlparse
+from contextlib import suppress
+from enum import Enum, unique
+from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator
 
-import pandas as pd
+from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminException
+
+try:
+    import pandas as pd
+
+    _has_pandas = True
+except ImportError:
+    _has_pandas = False
+
+
+def require_admin(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if not self.is_admin:
+            raise TM1pyNotAdminException(func.__name__)
+        return func(self, *args, **kwargs)
+
+    return wrapper
+
+
+def require_version(version):
+    """ Higher order function to check required version for TM1py function
+    """
+
+    def wrap(func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            if not verify_version(required_version=version, version=self.version):
+                raise TM1pyVersionException(func.__name__, version)
+            return func(self, *args, **kwargs)
+
+        return wrapper
+
+    return wrap
+
+
+def require_pandas(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        try:
+            import pandas
+            return func(self, *args, **kwargs)
+        except ImportError:
+            raise ImportError(f"Function '{func.__name__}' requires pandas")
+
+    return wrapper
 
 
 def get_all_servers_from_adminhost(adminhost='localhost') -> List:
     from TM1py.Objects import Server
     """ Ask Adminhost for TM1 Servers
-
     :param adminhost: IP or DNS Alias of the adminhost
     :return: List of Servers (instances of the TM1py.Server class)
     """
@@ -26,34 +75,60 @@ def get_all_servers_from_adminhost(adminhost='localhost') -> List:
     return servers
 
 
+def build_url_friendly_object_name(object_name: str) -> str:
+    return object_name.replace("'", "''").replace('%', '%25').replace('#', '%23')
+
+
 def format_url(url, *args: str, **kwargs: str) -> str:
     """ build url and escape single quotes in args and kwargs
-
     :param url: url with {} placeholders
     :param args: arguments to placeholders
     :return:
     """
-    args = [arg.replace("'", "''") if isinstance(arg, str) else arg
+    args = [build_url_friendly_object_name(arg) if isinstance(arg, str) else arg
             for arg
             in args]
 
-    kwargs = {key: value.replace("'", "''") if isinstance(value, str) else value
+    kwargs = {key: build_url_friendly_object_name(value) if isinstance(value, str) else value
               for key, value
               in kwargs.items()}
 
     return url.format(*args, **kwargs)
 
 
+def abbreviate_mdx(mdx: str, size=100) -> str:
+    if len(mdx) < size:
+        return mdx
+    else:
+        return mdx[:size] + "..."
+
+
+def integerize_version(version: str) -> int:
+    return int(version[0:4].replace(".", ""))
+
+
+def verify_version(required_version: str, version: str) -> bool:
+    return integerize_version(version) >= integerize_version(required_version)
+
+
 def case_and_space_insensitive_equals(item1: str, item2: str) -> bool:
     return lower_and_drop_spaces(item1) == lower_and_drop_spaces(item2)
 
 
-def extract_axes_from_cellset(raw_cellset_as_dict: Dict) -> Tuple:
-    axes = raw_cellset_as_dict['Axes']
-    row_axis = axes[0] if axes[0] and "Tuples" in axes[0] and len(axes[0]["Tuples"]) > 0 else None
-    column_axis = axes[1] if axes[1] and "Tuples" in axes[1] and len(axes[1]["Tuples"]) > 0 else None
-    title_axis = axes[2] if len(axes) > 2 and axes[2] and "Tuples" in axes[2] and len(axes[2]["Tuples"]) > 0 else None
-    return row_axis, column_axis, title_axis
+def extract_axes_from_cellset(raw_cellset_as_dict: Dict) -> Tuple[Any, ...]:
+    raw_axes = raw_cellset_as_dict['Axes']
+
+    axes = list()
+
+    for axis in raw_axes:
+        if axis and 'Tuples' in axis and len(axis['Tuples']) > 0:
+            axes.append(axis)
+
+    # extend with None to assure 3 entries
+    while len(axes) < 3:
+        axes += [None]
+
+    return tuple(axes)
 
 
 def extract_unique_names_from_members(members: Iterable[Dict]) -> List[str]:
@@ -63,11 +138,25 @@ def extract_unique_names_from_members(members: Iterable[Dict]) -> List[str]:
     {'UniqueName': '[dim2].[dim2].[elem3]', 'Element': {'UniqueName': '[dim2].[dim2].[elem3]'}}]
     out:
     ["[dim1].[dim1].[elem1]", "[dim2].[dim2].[elem3]"]
-
     :param members: dictionary
     :return: list of unique names
     """
     return [m['Element']['UniqueName'] if 'Element' in m and m['Element'] else m['UniqueName']
+            for m
+            in members]
+
+
+def extract_element_names_from_members(members: Iterable[Dict]) -> List[str]:
+    """ Extract list of unique names from part of the cellset response
+    in:
+    [{'UniqueName': '[dim1].[dim1].[elem1]', 'Element': {'UniqueName': '[dim1].[dim1].[elem1]'}},
+    {'UniqueName': '[dim2].[dim2].[elem3]', 'Element': {'UniqueName': '[dim2].[dim2].[elem3]'}}]
+    out:
+    ["elem1", "elem3"]
+    :param members: dictionary
+    :return: list of unique names
+    """
+    return [m['Element']['Name'] if 'Element' in m and m['Element'] else m['Name']
             for m
             in members]
 
@@ -83,45 +172,101 @@ def sort_coordinates(cube_dimensions: Iterable[str], unsorted_coordinates: Itera
     return tuple(sorted_coordinates)
 
 
-def build_content_from_cellset(
+def build_content_from_cellset_dict(
         raw_cellset_as_dict: Dict,
         top: Optional[int] = None) -> 'CaseAndSpaceInsensitiveTuplesDict':
     """ transform raw cellset data into concise dictionary
-
     :param raw_cellset_as_dict:
-    :param top: Maximum Number of cells
+    :param top: Int, number of cells to return (counting from top)
     :return:
     """
     cube_dimensions = [dim['Name'] for dim in raw_cellset_as_dict['Cube']['Dimensions']]
 
     cells = raw_cellset_as_dict['Cells']
-    row_axis, column_axis, title_axis = extract_axes_from_cellset(raw_cellset_as_dict=raw_cellset_as_dict)
+    axis0, axis1, title_axis = extract_axes_from_cellset(raw_cellset_as_dict=raw_cellset_as_dict)
 
     content_as_dict = CaseAndSpaceInsensitiveTuplesDict()
     for ordinal, cell in enumerate(cells[:top or len(cells)]):
+        # if skip is used in execution we must use the original ordinal from the cell, if not we can simply enumerate
+        ordinal = cell.get("Ordinal", ordinal)
+
         coordinates = []
-        if row_axis:
-            index_rows = ordinal // row_axis['Cardinality'] % column_axis['Cardinality']
-            coordinates.extend(extract_unique_names_from_members(column_axis['Tuples'][index_rows]['Members']))
+        if axis1:
+            index_rows = ordinal // axis0['Cardinality'] % axis1.get('Cardinality')
+            coordinates.extend(extract_unique_names_from_members(axis1['Tuples'][index_rows]['Members']))
+
         if title_axis:
             coordinates.extend(extract_unique_names_from_members(title_axis['Tuples'][0]['Members']))
-        if column_axis:
-            index_columns = ordinal % row_axis['Cardinality']
-            coordinates.extend(extract_unique_names_from_members(row_axis['Tuples'][index_columns]['Members']))
+
+        if axis0:
+            index_columns = ordinal % axis0['Cardinality']
+            coordinates.extend(extract_unique_names_from_members(axis0['Tuples'][index_columns]['Members']))
+
         coordinates = sort_coordinates(cube_dimensions, coordinates)
         content_as_dict[coordinates] = cell
     return content_as_dict
 
 
+def build_csv_from_cellset_dict(
+        row_dimensions: List[str],
+        column_dimensions: List[str],
+        raw_cellset_as_dict: Dict,
+        top: Optional[int] = None,
+        line_separator="\r\n",
+        value_separator=",") -> str:
+    """ transform raw cellset data into concise dictionary
+    :param column_dimensions:
+    :param row_dimensions:
+    :param raw_cellset_as_dict:
+    :param top: Maximum Number of cells
+    :param line_separator:
+    :param value_separator:
+    :return:
+    """
+
+    cells = raw_cellset_as_dict['Cells']
+    # empty cellsets produce "" in order to be compliant with previous implementation that used `/Content` API endpoint
+    if len(cells) == 0:
+        return ""
+
+    csv_entries = list()
+    csv_entries.append(value_separator.join(
+        [dimension_name_from_element_unique_name(dimension)
+         for dimension
+         in row_dimensions + column_dimensions] +
+        ["Value"]))
+
+    column_axis, row_axis, _ = extract_axes_from_cellset(raw_cellset_as_dict=raw_cellset_as_dict)
+
+    for ordinal, cell in enumerate(cells[:top or len(cells)]):
+        # if skip is used in execution we must use the original ordinal from the cell, if not we can simply enumerate
+        ordinal = cell.get("Ordinal", ordinal)
+
+        csv_entry = []
+        if column_axis and row_axis:
+            index_rows = ordinal // column_axis['Cardinality'] % row_axis['Cardinality']
+            csv_entry.extend(extract_element_names_from_members(row_axis['Tuples'][index_rows]['Members']))
+            index_columns = ordinal % column_axis['Cardinality']
+            csv_entry.extend(extract_element_names_from_members(column_axis['Tuples'][index_columns]['Members']))
+        elif column_axis:
+            index_rows = ordinal % column_axis['Cardinality']
+            csv_entry.extend(extract_element_names_from_members(column_axis['Tuples'][index_rows]['Members']))
+
+        csv_entry.append(str(cell["Value"] or ""))
+
+        csv_entries.append(value_separator.join(csv_entry))
+
+    return line_separator.join(csv_entries)
+
+
 def build_ui_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precision: int):
     """ Transform raw 1,2 or 3-dimension cellset data into concise dictionary
-
     * Useful for grids or charting libraries that want an array of cell values per row
     * Returns 3-dimensional cell structure for tabbed grids or multiple charts
     * Rows and pages are dicts, addressable by their name. Proper order of rows can be obtained in headers[1]
     * Example 'cells' return format:
-        'cells': { 
-            '10100': { 
+        'cells': {
+            '10100': {
                 'Net Operating Income': [ 19832724.72429739,
                                           20365654.788303416,
                                           20729201.329183243,
@@ -130,7 +275,7 @@ def build_ui_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precision: int
                              29512482.207418434,
                              29913730.038971487,
                              29563345.9542385]},
-            '10200': { 
+            '10200': {
                 'Net Operating Income': [ 9853293.623709997,
                                            10277650.763958748,
                                            10466934.096533755,
@@ -140,8 +285,6 @@ def build_ui_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precision: int
                              14502421.63,
                              14321501.940000001]}
         },
-
-
     :param raw_cellset_as_dict: raw data from TM1
     :param value_precision: Integer (optional) specifying number of decimal places to return
     :return: dict : { titles: [], headers: [axis][], cells: { Page0: { Row0: { [row values], Row1: [], ...}, ...}, ...} }
@@ -150,6 +293,7 @@ def build_ui_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precision: int
     titles = header_map['titles']
     headers = header_map['headers']
     cardinality = header_map['cardinality']
+    value_format_string = ""
 
     if value_precision:
         value_format_string = "{{0:.{}f}}".format(value_precision)
@@ -176,23 +320,22 @@ def build_ui_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precision: int
 
 def build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precision: int = None):
     """ Transform raw 1,2 or 3-dimension cellset data into dygraph-friendly format
-
     * Useful for grids or charting libraries that want an array of cell values per column
     * Returns 3-dimensional cell structure for tabbed grids or multiple charts
     * Example 'cells' return format:
-        'cells': { 
-            '10100': [ 
+        'cells': {
+            '10100': [
                 ['Q1-2004', 28981046.50724231, 19832724.72429739],
                 ['Q2-2004', 29512482.207418434, 20365654.788303416],
                 ['Q3-2004', 29913730.038971487, 20729201.329183243],
                 ['Q4-2004', 29563345.9542385, 20480205.20121749]],
-            '10200': [ 
+            '10200': [
                 ['Q1-2004', 13888143.710000003, 9853293.623709997],
                 ['Q2-2004', 14300216.43, 10277650.763958748],
                 ['Q3-2004', 14502421.63, 10466934.096533755],
                 ['Q4-2004', 14321501.940000001, 10333095.839474997]]
         },
-    
+
     :param raw_cellset_as_dict: raw data from TM1
     :param value_precision: Integer (optional) specifying number of decimal places to return
     :return: dict : { titles: [], headers: [axis][], cells: { Page0: [  [column name, column values], [], ... ], ...} }
@@ -201,6 +344,7 @@ def build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precis
     titles = header_map['titles']
     headers = header_map['headers']
     cardinality = header_map['cardinality']
+    value_format_string = ""
 
     if value_precision:
         value_format_string = "{{0:.{}f}}".format(value_precision)
@@ -227,17 +371,13 @@ def build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precis
 
 def build_headers_from_cellset(raw_cellset_as_dict: Dict, force_header_dimensionality: int = 1) -> Dict:
     """ Extract dimension headers from cellset into dictionary of titles (slicers) and headers (row,column,page)
-    * Title dimensions are in a single list of dicts 
+    * Title dimensions are in a single list of dicts
     * Header dimensions are a 2-dimensional list of the element dicts
-
       * The first dimension in the header list is the axis
       * The second dimension is the list of elements on the axis
-
     * Dict format: {'name': 'element or compound name', 'members': [ {dict of dimension properties}, ... ] }
-
       * Stacked headers on an axis will have a compount 'name' created by joining the member's 'Name' properties with a '/'
       * Stacked headers will each be listed in the 'memebers' list; Single-element headers will only have one element in list
-
     :param raw_cellset_as_dict: raw data from TM1
     :param force_header_dimensionality: An optional integer (1,2 or 3) to force headers array to be at least that long
     :return: dict : { titles: [ { 'name': 'xx', 'members': {} } ], headers: [axis][ { 'name': 'xx', 'members': {} } ] }
@@ -278,7 +418,6 @@ def build_headers_from_cellset(raw_cellset_as_dict: Dict, force_header_dimension
 def dimension_hierarchy_element_tuple_from_unique_name(element_unique_name: str) -> Tuple[str, str, str]:
     """ Extract dimension name, hierarchy name and element name from element unique name.
     Works with explicit and implicit hierarchy references.
-
     :param element_unique_name: e.g. [d1].[e1] or [d1].[leaves].[e1]
     :return: tuple of dimension name, hierarchy name, element name
     """
@@ -304,7 +443,6 @@ def element_name_from_element_unique_name(element_unique_name: str) -> str:
 
 def element_names_from_element_unique_names(element_unique_names: Iterable[str]) -> Tuple[str]:
     """ Get tuple of simple element names from the full element unique names
-
     :param element_unique_names: tuple of element unique names ([dim1].[hier1].[elem1], ... )
     :return: tuple of element names: (elem1, elem2, ... )
     """
@@ -318,10 +456,10 @@ def build_element_unique_names(
         element_names: Iterable[str],
         hierarchy_names: Optional[Iterable[str]] = None) -> Generator:
     """ Create tuple of unique names from dimension, hierarchy and elements
-    
-    :param dimension_names: 
-    :param element_names: 
-    :param hierarchy_names: 
+
+    :param dimension_names:
+    :param element_names:
+    :param hierarchy_names:
     :return: Generator
     """
     if not hierarchy_names:
@@ -334,17 +472,19 @@ def build_element_unique_names(
                 in zip(dimension_names, hierarchy_names, element_names))
 
 
+@require_pandas
 def build_pandas_dataframe_from_cellset(cellset: Dict, multiindex: bool = True,
-                                        sort_values: bool = True) -> pd.DataFrame:
+                                        sort_values: bool = True) -> 'pd.DataFrame':
     """
-    
-    :param cellset: 
+
+    :param cellset:
     :param multiindex: True or False
     :param sort_values: Boolean to control sorting in result DataFrame
-    :return: 
+    :return:
     """
     try:
         cellset_clean = {}
+        coordinates = []
         for coordinates, cell in cellset.items():
             element_names = element_names_from_element_unique_names(coordinates)
             cellset_clean[element_names] = cell['Value'] if cell else None
@@ -371,17 +511,18 @@ def build_pandas_dataframe_from_cellset(cellset: Dict, multiindex: bool = True,
         raise ValueError(message)
 
 
-def build_cellset_from_pandas_dataframe(df: pd.DataFrame) -> 'CaseAndSpaceInsensitiveTuplesDict':
+@require_pandas
+def build_cellset_from_pandas_dataframe(df: 'pd.DataFrame') -> 'CaseAndSpaceInsensitiveTuplesDict':
     """
-    
+
     :param df: a Pandas Dataframe, with dimension-column mapping in correct order. As created in build_pandas_dataframe_from_cellset
     :return: a CaseAndSpaceInsensitiveTuplesDict
     """
     if isinstance(df.index, pd.MultiIndex):
         df.reset_index(inplace=True)
     cellset = CaseAndSpaceInsensitiveTuplesDict()
-    split = df.to_dict(orient='split')
-    for row in split['data']:
+    split = df.to_numpy().tolist()
+    for row in split:
         cellset[tuple(row[0:-1])] = row[-1]
     return cellset
 
@@ -390,23 +531,70 @@ def lower_and_drop_spaces(item: str) -> str:
     return item.replace(" ", "").lower()
 
 
-class CaseAndSpaceInsensitiveDict(collections.MutableMapping):
+def get_seconds_from_duration(time_str: str) -> int:
+    """
+    This function will convert the TM1 time to seconds
+    :param time_str: P0DT00H01M43S
+    :return: int
+    """
+    import re
+    pattern = re.compile('\w(\d+)\w\w(\d+)\w(\d+)\w(\d+)\w')
+    matches = pattern.search(time_str)
+    d, h, m, s = matches.groups()
+    seconds = (int(d) * 86400) + (int(h) * 3600) + (int(m) * 60) + int(s)
+    return seconds
+
+
+def get_tm1_time_value_now(use_excel_serial_date: bool = False) -> float:
+    """
+    This function can be used to replicate TM1's NOW function
+    to return current date/time value in serial number format.
+    :param use_excel_serial_date: Boolean
+    :return: serial number
+    """
+    from datetime import datetime
+    # timestamp according to tm1
+    start_datetime = datetime(1899, 12, 30) if use_excel_serial_date else datetime(1960, 1, 1)
+    current_datetime = datetime.now()
+    delta = current_datetime - start_datetime
+    return delta.days + (delta.seconds / 86400)
+
+
+def add_url_parameters(url, **kwargs: str) -> str:
+    """ Append parameters to url string passed in kwargs
+    :param url: str
+    :param kwargs: key:value pairs of url parameters. For example, {'$select':'Name'}
+    :return: str
+    """
+    parameters = []
+    for key, value in kwargs.items():
+        if value is not None:
+            value = value.replace("'", "''") if isinstance(value, str) else value
+            parameters.append(key + "=" + value)
+
+    url_parts = list(urlparse.urlparse(url))
+    query_part = url_parts[4]
+    if query_part:
+        query_part += "&"
+    query_part += "&".join(parameters)
+
+    url_parts[4] = query_part
+    return urlparse.urlunparse(url_parts)
+
+
+class CaseAndSpaceInsensitiveDict(collections.abc.MutableMapping):
     """A case-and-space-insensitive dict-like object with String keys.
-
     Implements all methods and operations of
-    ``collections.MutableMapping`` as well as dict's ``copy``. Also
+    ``collections.abc.MutableMapping`` as well as dict's ``copy``. Also
     provides ``adjusted_items``, ``adjusted_keys``.
-
     All keys are expected to be strings. The structure remembers the
     case of the last key to be set, and ``iter(instance)``,
     ``keys()``, ``items()``, ``iterkeys()``, and ``iteritems()``
-    will contain case-sensitive keys. 
-
+    will contain case-sensitive keys.
     However, querying and contains testing is case insensitive:
         elements = TM1pyElementsDictionary()
         elements['Travel Expenses'] = 100
         elements['travelexpenses'] == 100 # True
-
     Entries are ordered
     """
 
@@ -450,7 +638,7 @@ class CaseAndSpaceInsensitiveDict(collections.MutableMapping):
         )
 
     def __eq__(self, other):
-        if isinstance(other, collections.Mapping):
+        if isinstance(other, collections.abc.Mapping):
             other = CaseAndSpaceInsensitiveDict(other)
         else:
             return NotImplemented
@@ -465,24 +653,20 @@ class CaseAndSpaceInsensitiveDict(collections.MutableMapping):
         return str(dict(self.items()))
 
 
-class CaseAndSpaceInsensitiveTuplesDict(collections.MutableMapping):
+class CaseAndSpaceInsensitiveTuplesDict(collections.abc.MutableMapping):
     """A case-and-space-insensitive dict-like object with String-Tuples Keys.
-
     Implements all methods and operations of
-    ``collections.MutableMapping`` as well as dict's ``copy``. Also
+    ``collections.abc.MutableMapping`` as well as dict's ``copy``. Also
     provides ``adjusted_items``, ``adjusted_keys``.
-
     All keys are expected to be tuples of strings. The structure remembers the
     case of the last key to be set, and ``iter(instance)``,
     ``keys()``, ``items()``, ``iterkeys()``, and ``iteritems()``
-    will contain case-sensitive keys. 
-
+    will contain case-sensitive keys.
     However, querying and contains testing is case insensitive:
         data = CaseAndSpaceInsensitiveTuplesDict()
         data[('[Business Unit].[UK]', '[Scenario].[Worst Case]')] = 1000
         data[('[BusinessUnit].[UK]', '[Scenario].[worstcase]')] == 1000 # True
         data[('[Business Unit].[UK]', '[Scenario].[Worst Case]')] == 1000 # True
-
     Entries are ordered
     """
 
@@ -526,7 +710,7 @@ class CaseAndSpaceInsensitiveTuplesDict(collections.MutableMapping):
         )
 
     def __eq__(self, other):
-        if isinstance(other, collections.Mapping):
+        if isinstance(other, collections.abc.Mapping):
             other = CaseAndSpaceInsensitiveTuplesDict(other)
         else:
             return NotImplemented
@@ -541,7 +725,7 @@ class CaseAndSpaceInsensitiveTuplesDict(collections.MutableMapping):
         return str(dict(self.items()))
 
 
-class CaseAndSpaceInsensitiveSet(collections.MutableSet):
+class CaseAndSpaceInsensitiveSet(collections.abc.MutableSet):
     def __init__(self, *values):
         self._store = {}
         for v in values:
@@ -563,10 +747,8 @@ class CaseAndSpaceInsensitiveSet(collections.MutableSet):
         self._store[value.lower().replace(" ", "")] = value
 
     def discard(self, value):
-        try:
+        with suppress(KeyError):
             del self._store[value.lower().replace(" ", "")]
-        except KeyError:
-            pass
 
     def copy(self):
         return CaseAndSpaceInsensitiveSet(*self._store.values())
@@ -575,9 +757,107 @@ class CaseAndSpaceInsensitiveSet(collections.MutableSet):
         return str(self._store)
 
     def __eq__(self, other):
-        if isinstance(other, collections.MutableSet):
+        if isinstance(other, collections.abc.MutableSet):
             other = CaseAndSpaceInsensitiveSet(*other)
         else:
             return NotImplemented
         # Compare insensitively
         return set(self._store.keys()) == set(other._store.keys())
+
+    def __sub__(self, other):
+        result = self.copy()
+        for entry in other:
+            result.discard(entry)
+        return result
+
+
+def get_dimensions_from_where_clause(mdx: str) -> List[str]:
+    mdx = mdx.replace(" ", "").upper()
+    if "WHERE(" not in mdx:
+        return []
+
+    where = mdx[mdx.rfind("WHERE(") + 6:-1]
+    unique_names = where.split(",")
+    return [dimension_name_from_element_unique_name(unique_name) for unique_name in unique_names]
+
+
+def get_cube(mdx: str) -> str:
+    # replace tabs, line breaks, spaces
+    mdx = re.sub(r'\s+', '', mdx)
+
+    # happy case: cube name in square brackets
+    pattern = r"(?s)(?i)FROM\[(.*?)\]"
+    search_result = re.search(pattern, mdx)
+    if search_result:
+        return search_result.group(1)
+
+    # cut off where
+    pattern = r"(?s)(?i).*SELECT.*ON.*FROM.*WHERE\(.*"
+    if re.search(pattern=pattern, string=mdx):
+        # part before where
+        mdx = re.split(r"(?s)(?i)WHERE\(.*", mdx)[0]
+
+    # part after from
+    cube = re.split(r"(?s)(?i)FROM", mdx)[-1]
+
+    return cube
+
+
+def resembles_mdx(mdx: str) -> bool:
+    pattern = r"(?s)(?i).*SELECT.*ON.*FROM.*"
+    if re.search(pattern=pattern, string=mdx):
+        return True
+    return False
+
+
+def wrap_in_curly_braces(expression: str) -> str:
+    """ Put curly braces around a string
+    :param expression:
+    :return:
+    """
+    return "".join(["{" if not expression.startswith("{") else "",
+                    expression,
+                    "}" if not expression.endswith("}") else ""])
+
+
+@unique
+class CellUpdateableProperty(Enum):
+    SECURITY_RESTRICTED = 1
+    UPDATE_CUBE_APPLICABLE = 2
+    RULE_IS_APPLIED = 3
+    PICKLIST_EXISTS = 4
+    SANDBOX_VALUE_IS_DIFFERENT_TO_BASE = 5
+    NO_SPREADING_HOLD = 9
+    LEAF_HOLD = 10
+    CONSOLIDATION_SPREADING_HOLD = 11
+    TEMPORARY_SPREADING_HOLD = 12
+    CELL_IS_NOT_UPDATEABLE = 29
+
+
+def extract_cell_updateable_property(decimal_value: int, cell_property: CellUpdateableProperty) -> bool:
+    """ Function converts passed decimal (integer) value to binary
+    and extracts specified (cell_property) bit counting from the right.
+    It will return TRUE if bit is set, and FALSE if bit is not set
+    Each cell has 'Updateable' property - a decimal value, which needs to be converted to binary to get information
+    about the cell
+
+    :param decimal_value: int Decimal number
+    :param cell_property: CellUpdateableProperty enum property to extract from decimal value
+    :return: bool
+
+    """
+    bit = (decimal_value & (1 << cell_property.value - 1)) != 0
+    return bit
+
+
+def cell_is_updateable(cell: dict) -> bool:
+    """ Function checks if the cell can be updated
+    :param cell: dict cell including Updateable property
+    :return: bool
+    """
+    if "Updateable" not in cell:
+        raise ValueError("cell dictionary must contain key 'Updateable'")
+
+    bit = extract_cell_updateable_property(cell["Updateable"], CellUpdateableProperty.CELL_IS_NOT_UPDATEABLE)
+    updateable = not bit
+    return updateable

@@ -33,3 +33,7 @@ class View(TM1Object):
     @name.setter
     def name(self, value: str):
         self._name = value
+
+    @property
+    def mdx(self):
+        raise NotImplementedError

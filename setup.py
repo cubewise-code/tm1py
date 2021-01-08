@@ -1,6 +1,6 @@
 from setuptools import setup
 
-SCHEDULE_VERSION = '1.4.1'
+SCHEDULE_VERSION = '1.6.0'
 SCHEDULE_DOWNLOAD_URL = (
         'https://github.com/Cubewise-code/TM1py/tarball/' + SCHEDULE_VERSION
 )
@@ -27,15 +27,18 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Natural Language :: English',
     ],
     install_requires=[
         'requests',
-        'pandas',
         'pytz',
-        'requests_negotiate_sspi;platform_system=="Windows"'],
-    python_requires='>=3.5',
+        'requests_negotiate_sspi;platform_system=="Windows"',
+        'mdxpy'],
+    extras_require={
+        "pandas": ["pandas"]
+    },
+    python_requires='>=3.7',
 )

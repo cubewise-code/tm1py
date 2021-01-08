@@ -3,6 +3,8 @@
 import json
 from typing import Optional, Iterable, List, Union, Dict
 
+from mdxpy import MdxBuilder, MdxHierarchySet, Member
+
 from TM1py.Objects.Axis import ViewAxisSelection, ViewTitleSelection
 from TM1py.Objects.Subset import Subset, AnonymousSubset
 from TM1py.Objects.View import View
@@ -46,6 +48,14 @@ class NativeView(View):
         return self._columns
 
     @property
+    def titles(self) -> List[ViewTitleSelection]:
+        return self._titles
+
+    @property
+    def mdx(self):
+        return self.as_MDX
+
+    @property
     def MDX(self) -> str:
         return self.as_MDX
 
@@ -58,56 +68,46 @@ class NativeView(View):
 
         :return: String, the MDX Query
         """
-        mdx = 'SELECT '
-        for i, axe in enumerate((self._rows, self._columns)):
-            for j, axis_selection in enumerate(axe):
+        if not self.columns:
+            raise ValueError("Column selection must not be empty")
+
+        query = MdxBuilder.from_cube(self.cube)
+        if self._suppress_empty_rows:
+            query.rows_non_empty()
+
+        if self.suppress_empty_columns:
+            query.columns_non_empty()
+
+        axes = [self.columns]
+        if self.rows:
+            axes.append(self.rows)
+
+        for axis_id, axis in enumerate(axes):
+            for axis_selection in axis:
                 subset = axis_selection.subset
+
                 if isinstance(subset, AnonymousSubset):
                     if subset.expression is not None:
-                        if j == 0:
-                            if self.suppress_empty_rows:
-                                mdx += 'NON EMPTY '
-                            mdx += subset.expression
-                        else:
-                            mdx += '*' + subset.expression
+                        mdx_hierarchy_set = MdxHierarchySet.from_str(
+                            dimension=subset.dimension_name,
+                            hierarchy=subset.hierarchy_name,
+                            mdx=subset.expression)
+
                     else:
-                        elements_as_unique_names = ['[' + axis_selection.dimension_name + '].[' + elem + ']'
-                                                    for elem
-                                                    in subset.elements]
-                        mdx_set = '{' + ','.join(elements_as_unique_names) + '}'
-                        if j == 0:
-                            if self.suppress_empty_columns:
-                                mdx += 'NON EMPTY '
-                            mdx += mdx_set
-                        else:
-                            mdx += '*' + mdx_set
+                        members = [Member.of(subset.dimension_name, element) for element in subset.elements]
+                        mdx_hierarchy_set = MdxHierarchySet.members(members)
+
                 else:
-                    mdx_set = 'TM1SubsetToSet([{}],"{}")'.format(axis_selection.dimension_name, subset.name)
-                    if j == 0:
-                        if self.suppress_empty_columns:
-                            mdx += 'NON EMPTY '
-                        mdx += mdx_set
-                    else:
-                        mdx += '*' + mdx_set
+                    mdx_hierarchy_set = MdxHierarchySet.tm1_subset_to_set(
+                        dimension=axis_selection.dimension_name,
+                        hierarchy=axis_selection.hierarchy_name,
+                        subset=subset.name)
+                query.add_hierarchy_set_to_axis(axis=axis_id, mdx_hierarchy_set=mdx_hierarchy_set)
 
-            if i == 0:
-                if len(self._rows) > 0:
-                    mdx += ' on {}, '.format('ROWS')
-            else:
-                mdx += ' on {} '.format('COLUMNS')
+        for title in self._titles:
+            query.add_member_to_where(Member.of(title.dimension_name, title.selected))
 
-        # append the FROM statement
-        mdx += ' FROM [' + self._cube + '] '
-
-        # itarate through titles - append the WHERE statement
-        if len(self._titles) > 0:
-            unique_names = []
-            for title_selection in self._titles:
-                dimension_name = title_selection.dimension_name
-                selection = title_selection.selected
-                unique_names.append('[' + dimension_name + '].[' + selection + ']')
-            mdx += 'WHERE (' + ','.join(unique_names) + ') '
-        return mdx
+        return query.to_mdx()
 
     @property
     def suppress_empty_cells(self) -> bool:
@@ -224,7 +224,7 @@ class NativeView(View):
                 subset = AnonymousSubset.from_dict(selection['Subset'])
             else:
                 subset = Subset.from_dict(selection['Subset'])
-            selected = selection['Selected']['Name']
+            selected = selection['Selected']['Name'] if selection['Selected'] else ""
             titles.append(ViewTitleSelection(dimension_name=subset.dimension_name,
                                              subset=subset, selected=selected))
         for i, axe in enumerate([view_as_dict['Columns'], view_as_dict['Rows']]):

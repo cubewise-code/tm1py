@@ -1,18 +1,29 @@
-from Tests.Annotation import TestAnnotationMethods
-from Tests.Cell import TestDataMethods
-from Tests.Chore import TestChoreMethods
-from Tests.Cube import TestCubeMethods
-from Tests.Dimension import TestDimensionMethods
-from Tests.Element import TestElementMethods
-from Tests.Hierarchy import TestHierarchyMethods
-from Tests.Other import TestOtherMethods
+from Tests.AnnotationService import TestAnnotationService
+from Tests.ApplicationService import TestApplicationService
+from Tests.CellService import TestCellService
+from Tests.ChoreService import TestChoreService
+from Tests.CubeService import TestCubeService
+from Tests.DimensionService import TestDimensionService
+from Tests.Element import TestElement
+from Tests.ElementAttribute import TestElementAttribute
+from Tests.ElementService import TestElementService
+from Tests.HierarchyService import TestHierarchyService
+from Tests.Hierarchy import TestHierarchy
+from Tests.MDXUtils import TestMDXUtils
+from Tests.MonitoringService import TestMonitoringService
+from Tests.NativeView import TestNativeView
 from Tests.PowerBiService import TestPowerBiService
-from Tests.Process import TestProcessMethods
-from Tests.Security import TestSecurityMethods
-from Tests.Server import TestServerMethods
-from Tests.Subset import TestSubsetMethods
-from Tests.Utils import TestTIObfuscatorMethods, TestMDXUtils
-from Tests.View import TestViewMethods
+from Tests.ProcessService import TestProcessService
+from Tests.RestService import TestRestService
+from Tests.Sandbox import TestSandboxMethods
+from Tests.SandboxService import TestSandboxService
+from Tests.SecurityService import TestSecurityService
+from Tests.ServerService import TestServerService
+from Tests.Subset import TestSubset
+from Tests.SubsetService import TestSubsetService
+from Tests.TM1pyDict import TestCaseAndSpaceInsensitiveDict, TestCaseAndSpaceInsensitiveSet, TestCaseAndSpaceInsensitiveTuplesDict
+from Tests.Utils import TestUtilsMethods
+from Tests.ViewService import TestViewService
 
 """ Notes on TM1py Tests
 - specify your instance coordinates in the config.ini file

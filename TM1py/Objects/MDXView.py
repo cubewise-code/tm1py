@@ -15,15 +15,23 @@ class MDXView(View):
 
     def __init__(self, cube_name: str, view_name: str, MDX: str):
         View.__init__(self, cube_name, view_name)
-        self._MDX = MDX
+        self._mdx = MDX
+
+    @property
+    def mdx(self):
+        return self._mdx
+
+    @mdx.setter
+    def mdx(self, value: str):
+        self._mdx = value
 
     @property
     def MDX(self) -> str:
-        return self._MDX
+        return self._mdx
 
     @MDX.setter
     def MDX(self, value: str):
-        self._MDX = value
+        self._mdx = value
 
     @property
     def body(self) -> str:
@@ -44,5 +52,5 @@ class MDXView(View):
         mdx_view_as_dict = collections.OrderedDict()
         mdx_view_as_dict['@odata.type'] = 'ibm.tm1.api.v1.MDXView'
         mdx_view_as_dict['Name'] = self._name
-        mdx_view_as_dict['MDX'] = self._MDX
+        mdx_view_as_dict['MDX'] = self._mdx
         return json.dumps(mdx_view_as_dict, ensure_ascii=False)

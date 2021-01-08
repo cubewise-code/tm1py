@@ -1,393 +1,175 @@
-import configparser
-from pathlib import Path
 import unittest
 
-from TM1py.Objects import Dimension, Hierarchy, Subset, ElementAttribute, Element
-from TM1py.Services import TM1Service
-
-config = configparser.ConfigParser()
-config.read(Path(__file__).parent.joinpath('config.ini'))
+from TM1py.Objects import AnonymousSubset, Element, Subset
 
 PREFIX = "TM1py_Tests_Subset_"
 
 
-class TestSubsetMethods(unittest.TestCase):
-    tm1 = None
+class TestSubset(unittest.TestCase):
 
-    # Check if Dimensions exists. If not create it
     @classmethod
-    def setup_class(cls):
-        cls.tm1 = TM1Service(**config['tm1srv01'])
+    def setUpClass(cls):
+        """
+        Create any class scoped fixtures here.
+        """
 
-        # Define Names
-        cls.dimension_name = PREFIX + "Dimension"
-        cls.subset_name_static = PREFIX + "static"
-        cls.subset_name_dynamic = PREFIX + "dynamic"
+        cls.dimension_name = PREFIX + "dimension"
+        cls.hierarchy_name = PREFIX + "hierarchy"
+        cls.subset_name_static = PREFIX + "static_subset"
+        cls.subset_name_dynamic = PREFIX + "dynamic_subset"
+        cls.subset_name_minimal = PREFIX + "minimal_subset"
+        cls.subset_name_complete = PREFIX + "complete_subset"
+        cls.subset_name_alias = PREFIX + "alias_subset"
+        cls.subset_name_anon = PREFIX + "anon_subset"
+        cls.element_name = PREFIX + "element"
+
+        cls.subset_dict = {
+            "Name": "dict_subset",
+            "UniqueName": f"[{cls.dimension_name}]",
+            "Hierarchy": {
+                "Name": f"{cls.hierarchy_name}"
+            },
+            "Alias": "dict_subset" + "_alias",
+            "Elements": [
+                {
+                    "Name": "x"
+                },
+                {
+                    "Name": "y"
+                },
+                {
+                    "Name": "z"
+                }
+            ],
+            "Expression": ""
+        }
+
+        cls.subset_json = '''
+        {
+            "Name": "json_subset",
+            "UniqueName" : "json_subset",
+            "Hierarchy": {
+                "Name": "json_subset"
+            },
+            "Alias": "json_subset_alias",
+            "Elements" : [
+                {
+                    "Name" : "xoy"
+                },
+                {
+                    "Name": "o"
+                },
+                {
+                    "Name": "xxx"
+                }            
+            ],
+            "Expression" : ""
+        }
+        '''
 
     def setUp(self):
-        # Instantiate Subsets
+        """
+        Instantiate subsets that will be available to all tests.
+        """
+
         self.static_subset = Subset(
             dimension_name=self.dimension_name,
             subset_name=self.subset_name_static,
             elements=['USD', 'EUR', 'NZD', 'Dum\'my'])
+
         self.dynamic_subset = Subset(
             dimension_name=self.dimension_name,
             subset_name=self.subset_name_dynamic,
             expression='{ HIERARCHIZE( {TM1SUBSETALL( [' + self.dimension_name + '] )} ) }')
 
-        elements = [Element('USD', 'Numeric'),
-                    Element('EUR', 'Numeric'),
-                    Element('JPY', 'Numeric'),
-                    Element('CNY', 'Numeric'),
-                    Element('GBP', 'Numeric'),
-                    Element('NZD', 'Numeric'),
-                    Element('Dum\'my', 'Numeric')]
-        element_attributes = [ElementAttribute('Currency Name', 'String')]
-        h = Hierarchy(self.dimension_name, self.dimension_name, elements, element_attributes)
-        d = Dimension(self.dimension_name, hierarchies=[h])
-        self.tm1.dimensions.create(d)
+        # subset constructed from only the mandatory arguments
+        self.minimal_subset = Subset(
+            dimension_name=self.dimension_name,
+            subset_name=self.subset_name_minimal
+        )
 
-        for private in (True, False):
-            self.tm1.dimensions.subsets.create(
-                subset=self.static_subset,
-                private=private)
-            self.tm1.dimensions.subsets.create(
-                subset=self.dynamic_subset,
-                private=private)
+        # a static subset constructed with optional arguments
+        self.complete_subset = Subset(
+            dimension_name=self.dimension_name,
+            subset_name=self.subset_name_complete,
+            hierarchy_name=self.hierarchy_name,
+            alias=self.subset_name_alias,
+            elements=["a", "b", "c"]
+        )
+
+        # an instance of the AnonymoustSubset subclass
+        self.anon_subset = AnonymousSubset(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            elements=["x", "y", "z"]
+        )
 
     def tearDown(self):
-        self.tm1.dimensions.delete(self.dimension_name)
+        """
+        Remove any artifacts created.
+        """
+        # nothing required here, all objects will be reset by setUp
+        pass
 
     def test_is_dynamic(self):
-        subset = self.tm1.dimensions.subsets.get(
-            subset_name=self.dynamic_subset.name,
-            dimension_name=self.dynamic_subset.dimension_name,
-            private=False)
-        self.assertTrue(subset.is_dynamic)
-        self.assertFalse(subset.is_static)
+        self.assertTrue(self.dynamic_subset.is_dynamic)
+        self.assertFalse(self.static_subset.is_dynamic)
+        self.assertFalse(self.minimal_subset.is_dynamic)
+        self.assertFalse(self.complete_subset.is_dynamic)
+        self.assertFalse(self.anon_subset.is_dynamic)
 
     def test_is_static(self):
-        subset = self.tm1.dimensions.subsets.get(
-            subset_name=self.static_subset.name,
-            dimension_name=self.static_subset.dimension_name,
-            private=False)
-        self.assertTrue(subset.is_static)
-        self.assertFalse(subset.is_dynamic)
+        self.assertFalse(self.dynamic_subset.is_static)
+        self.assertTrue(self.static_subset.is_static)
+        self.assertTrue(self.minimal_subset.is_static)
+        self.assertTrue(self.complete_subset.is_static)
+        self.assertTrue(self.anon_subset.is_static)
 
-    def test_create_and_delete_subset_static_private(self):
-        private = True
-        static_subset = Subset(
-            dimension_name=self.dimension_name,
-            subset_name="subset1",
-            elements=['USD', 'EUR', 'NZD', 'Dum\'my'])
+    def test_from_json(self):
+        s = Subset.from_json(self.subset_json)
+        self.assertEqual(s.name, "json_subset")
+        self.assertEqual(s.elements, ["xoy", "o", "xxx"])
 
-        response = self.tm1.dimensions.subsets.create(
-            subset=static_subset,
-            private=private)
-        self.assertTrue(response.ok)
+    def test_from_dict(self):
+        s = Subset.from_dict(self.subset_dict)
+        self.assertEqual(s.name, "dict_subset")
+        self.assertEqual(s.elements, ["x", "y", "z"])
 
-        response = self.tm1.dimensions.hierarchies.subsets.delete(
-            dimension_name=self.dimension_name,
-            subset_name=static_subset.name,
-            private=private)
-        self.assertTrue(response.ok)
+    def test_add_elements(self):
+        self.static_subset.add_elements(["AUD", "CHF"])
+        self.assertIn("AUD", self.static_subset.elements)
+        self.assertIn("CHF", self.static_subset.elements)
 
-    def test_create_and_delete_subset_dynamic_private(self):
-        private = True
-        dynamic_subset = Subset(
-            dimension_name=self.dimension_name,
-            subset_name="subset2",
-            expression='{ HIERARCHIZE( {TM1SUBSETALL( [' + self.dimension_name + '] )} ) }')
+    def test_anonymous_subset(self):
+        self.assertEqual(self.anon_subset.name, "")
 
-        response = self.tm1.dimensions.subsets.create(
-            subset=dynamic_subset,
-            private=private)
-        self.assertTrue(response.ok)
+    def test_property_setters(self):
+        self.minimal_subset.elements = ["1", "2", "3"]
+        self.assertEqual(self.minimal_subset.elements, ["1", "2", "3"])
 
-        response = self.tm1.dimensions.hierarchies.subsets.delete(
-            dimension_name=self.dimension_name,
-            subset_name=dynamic_subset.name,
-            private=private)
-        self.assertTrue(response.ok)
+    def test_property_getters(self):
+        self.assertEqual(self.complete_subset.name, self.subset_name_complete)
+        self.assertEqual(self.dynamic_subset.name, self.subset_name_dynamic)
+        self.assertEqual(self.static_subset.dimension_name,
+                         self.dimension_name)
+        self.assertEqual(self.minimal_subset.elements, [])
+        self.assertIn("a", self.complete_subset.elements)
 
-    def test_create_and_delete_static_subset_public(self):
-        private = False
-        static_subset = Subset(
-            dimension_name=self.dimension_name,
-            subset_name="subset1",
-            elements=['USD', 'EUR', 'NZD', 'Dum\'my'])
-
-        response = self.tm1.dimensions.subsets.create(
-            subset=static_subset,
-            private=private)
-        self.assertTrue(response.ok)
-
-        response = self.tm1.dimensions.hierarchies.subsets.delete(
-            dimension_name=self.dimension_name,
-            subset_name=static_subset.name,
-            private=private)
-        self.assertTrue(response.ok)
-
-    def test_create_and_delete_dynamic_subset_public(self):
-        private = False
-
-        dynamic_subset = Subset(
-            dimension_name=self.dimension_name,
-            subset_name="subset2",
-            expression='{ HIERARCHIZE( {TM1SUBSETALL( [' + self.dimension_name + '] )} ) }')
-
-        response = self.tm1.dimensions.subsets.create(
-            subset=dynamic_subset,
-            private=private)
-        self.assertTrue(response.ok)
-
-        response = self.tm1.dimensions.hierarchies.subsets.delete(
-            dimension_name=self.dimension_name,
-            subset_name=dynamic_subset.name,
-            private=private)
-        self.assertTrue(response.ok)
-
-    def test_exists_private(self):
-        private = True
-        self.assertTrue(self.tm1.dimensions.subsets.exists(
-            subset_name=self.static_subset.name,
-            dimension_name=self.dimension_name,
-            private=private
-        ))
-        self.assertTrue(self.tm1.dimensions.subsets.exists(
-            subset_name=self.dynamic_subset.name,
-            dimension_name=self.dimension_name,
-            private=private
-        ))
-        self.assertFalse(self.tm1.dimensions.subsets.exists(
-            subset_name="wrong",
-            dimension_name=self.dimension_name,
-            private=private
-        ))
-
-    def test_exists_public(self):
-        private = False
-        self.assertTrue(self.tm1.dimensions.subsets.exists(
-            subset_name=self.static_subset.name,
-            dimension_name=self.dimension_name,
-            private=private
-        ))
-        self.assertTrue(self.tm1.dimensions.subsets.exists(
-            subset_name=self.dynamic_subset.name,
-            dimension_name=self.dimension_name,
-            private=private
-        ))
-        self.assertFalse(self.tm1.dimensions.subsets.exists(
-            subset_name="wrong",
-            dimension_name=self.dimension_name,
-            private=private
-        ))
-
-    def test_get_subset_private(self):
-        private = True
-        s = self.tm1.dimensions.hierarchies.subsets.get(
-            dimension_name=self.dimension_name,
-            subset_name=self.subset_name_static,
-            private=private)
-        self.assertEqual(self.static_subset, s)
-        s = self.tm1.dimensions.hierarchies.subsets.get(
-            dimension_name=self.dimension_name,
-            subset_name=self.subset_name_dynamic,
-            private=private)
-        self.assertEqual(self.dynamic_subset, s)
-
-    def test_get_subset_public(self):
-        private = False
-        s = self.tm1.dimensions.hierarchies.subsets.get(
-            dimension_name=self.dimension_name,
-            subset_name=self.subset_name_static,
-            private=private)
-        self.assertEqual(self.static_subset, s)
-        s = self.tm1.dimensions.hierarchies.subsets.get(
-            dimension_name=self.dimension_name,
-            subset_name=self.subset_name_dynamic,
-            private=private)
-        self.assertEqual(self.dynamic_subset, s)
-
-    def test_update_subset_static_private(self):
-        private = True
-        # Get static subset
-        s = self.tm1.dimensions.hierarchies.subsets.get(
-            dimension_name=self.dimension_name,
-            subset_name=self.subset_name_static,
-            private=private)
-        # Check before update
-        self.assertEqual(self.static_subset, s)
-
-        s.add_elements(['NZD'])
-        # Update it
-        self.tm1.dimensions.hierarchies.subsets.update(s, private=private)
-        # Get it again
-        s = self.tm1.dimensions.hierarchies.subsets.get(
-            dimension_name=self.dimension_name,
-            subset_name=self.subset_name_static,
-            private=private)
-        # Check after update
-        self.assertEquals(len(s.elements), 5)
-        self.assertNotEqual(self.static_subset, s)
-
-    def test_update_subset_dynamic_private(self):
-        private = True
-        # Get dynamic subset
-        s = self.tm1.dimensions.hierarchies.subsets.get(
-            dimension_name=self.dimension_name,
-            subset_name=self.subset_name_dynamic,
-            private=private)
-        # Check before update
-        self.assertEqual(self.dynamic_subset, s)
-
-        s.expression = '{{ [{}].[EUR], [{}].[USD] }})'.format(
-            self.dimension_name,
-            self.dimension_name)
-        # Update it
-        self.tm1.dimensions.hierarchies.subsets.update(
-            subset=s,
-            private=private)
-        # Get it again
-        s = self.tm1.dimensions.hierarchies.subsets.get(
-            dimension_name=self.dimension_name,
-            subset_name=self.subset_name_dynamic,
-            private=private)
-        # Check after update
-        self.assertEquals(
-            s.expression,
-            '{{ [{}].[EUR], [{}].[USD] }})'.format(self.dimension_name, self.dimension_name))
-
-        self.assertNotEqual(self.dynamic_subset, s)
-
-    def test_update_subset_static_public(self):
-        private = False
-        # Get static subset
-        subset = self.tm1.dimensions.hierarchies.subsets.get(
-            dimension_name=self.dimension_name,
-            subset_name=self.subset_name_static,
-            private=private)
-        # Check before update
-        self.assertEqual(self.static_subset, subset)
-
-        subset.add_elements(['NZD'])
-        # Update it
-        self.tm1.dimensions.hierarchies.subsets.update(subset, private=private)
-        # Get it again
-        subset = self.tm1.dimensions.hierarchies.subsets.get(
-            dimension_name=self.dimension_name,
-            subset_name=self.subset_name_static,
-            private=private)
-        # Check after update
-        self.assertEquals(len(subset.elements), 5)
-        self.assertNotEqual(self.static_subset, subset)
-
-    def test_update_subset_dynamic_public(self):
-        private = False
-        # Get dynamic subset
-        subset = self.tm1.dimensions.hierarchies.subsets.get(
-            dimension_name=self.dimension_name,
-            subset_name=self.subset_name_dynamic,
-            private=private)
-        # Check before update
-        self.assertEqual(self.dynamic_subset, subset)
-
-        subset.expression = '{{ [{}].[EUR], [{}].[USD] }})'.format(
-            self.dimension_name,
-            self.dimension_name)
-        # Update it
-        self.tm1.dimensions.hierarchies.subsets.update(
-            subset=subset,
-            private=private)
-        # Get it again
-        subset = self.tm1.dimensions.hierarchies.subsets.get(
-            dimension_name=self.dimension_name,
-            subset_name=self.subset_name_dynamic,
-            private=private)
-        # Check after update
-        self.assertEquals(
-            subset.expression,
-            '{{ [{}].[EUR], [{}].[USD] }})'.format(self.dimension_name, self.dimension_name))
-
-        self.assertNotEqual(self.dynamic_subset, subset)
-
-    def test_get_all_names_private(self):
-        private = True
-        subset_names = self.tm1.dimensions.subsets.get_all_names(
-            dimension_name=self.dimension_name,
-            hierarchy_name=self.dimension_name,
-            private=private)
-        self.assertIn(self.subset_name_dynamic, subset_names)
-        self.assertIn(self.subset_name_static, subset_names)
-
-    def test_get_all_names_public(self):
-        private = False
-        subset_names = self.tm1.dimensions.subsets.get_all_names(
-            dimension_name=self.dimension_name,
-            hierarchy_name=self.dimension_name,
-            private=private)
-        self.assertIn(self.subset_name_dynamic, subset_names)
-        self.assertIn(self.subset_name_static, subset_names)
-
-    def test_delete_elements_from_static_subset_public(self):
-        private = False
-        static_subset = Subset(
-            dimension_name=self.dimension_name,
-            subset_name="subset1",
-            elements=['USD', 'EUR', 'NZD', 'Dum\'my'])
-        self.tm1.dimensions.subsets.create(
-            subset=static_subset,
-            private=private)
-        subset = self.tm1.dimensions.subsets.get(
-            dimension_name=static_subset.dimension_name,
-            hierarchy_name=static_subset.hierarchy_name,
-            subset_name=static_subset.name,
-            private=private)
-        self.assertEqual(len(subset.elements), 4)
-
-        self.tm1.dimensions.subsets.delete_elements_from_static_subset(
-            dimension_name=static_subset.dimension_name,
-            hierarchy_name=static_subset.hierarchy_name,
-            subset_name=static_subset.name,
-            private=private)
-        subset = self.tm1.dimensions.subsets.get(
-            dimension_name=static_subset.dimension_name,
-            hierarchy_name=static_subset.hierarchy_name,
-            subset_name=static_subset.name,
-            private=private)
-        self.assertEqual(len(subset.elements), 0)
-
-    def test_delete_elements_from_static_subset_private(self):
-        private = True
-        static_subset = Subset(
-            dimension_name=self.dimension_name,
-            subset_name="subset1",
-            elements=['USD', 'EUR', 'NZD', 'Dum\'my'])
-        self.tm1.dimensions.subsets.create(
-            subset=static_subset,
-            private=private)
-        subset = self.tm1.dimensions.subsets.get(
-            dimension_name=static_subset.dimension_name,
-            hierarchy_name=static_subset.hierarchy_name,
-            subset_name=static_subset.name,
-            private=private)
-        self.assertEqual(len(subset.elements), 4)
-
-        self.tm1.dimensions.subsets.delete_elements_from_static_subset(
-            dimension_name=static_subset.dimension_name,
-            hierarchy_name=static_subset.hierarchy_name,
-            subset_name=static_subset.name,
-            private=private)
-        subset = self.tm1.dimensions.subsets.get(
-            dimension_name=static_subset.dimension_name,
-            hierarchy_name=static_subset.hierarchy_name,
-            subset_name=static_subset.name,
-            private=private)
-        self.assertEqual(len(subset.elements), 0)
+    def test_subset_equality(self):
+        self.assertNotEqual(self.complete_subset, self.minimal_subset)
+        self.assertNotEqual(self.complete_subset, self.anon_subset)
+        self.assertNotEqual(self.complete_subset, self.static_subset)
+        self.assertNotEqual(self.complete_subset, self.dynamic_subset)
+        static_subset_copy = self.static_subset
+        self.assertEqual(static_subset_copy, self.static_subset)
 
     @classmethod
-    def teardown_class(cls):
-        cls.tm1.logout()
+    def tearDownClass(cls):
+        """
+        Tear down anything as required
+        """
+        # nothing to do here
+        pass
 
 
 if __name__ == '__main__':

@@ -1,29 +1,29 @@
 # -*- coding: utf-8 -*-
 import functools
-import sys
+import time
 import warnings
 from base64 import b64encode, b64decode
-from typing import Union, Dict, Tuple
+from http.client import HTTPResponse
+from io import BytesIO
+from typing import Union, Dict, Tuple, Optional
 
 import requests
+import urllib3
 from requests import Timeout, Response
 from requests.adapters import HTTPAdapter
 
 # SSO not supported for Linux
 from TM1py.Exceptions.Exceptions import TM1pyTimeout
+from TM1py.Utils import case_and_space_insensitive_equals, CaseAndSpaceInsensitiveSet
 
 try:
     from requests_negotiate_sspi import HttpNegotiateAuth
 except ImportError:
     warnings.warn("requests_negotiate_sspi failed to import. SSO will not work", ImportWarning)
 
-from TM1py.Exceptions import TM1pyException
+from TM1py.Exceptions import TM1pyRestException
 
-# import Http-Client depending on python version
-if sys.version[0] == '2':
-    import httplib as http_client
-else:
-    import http.client as http_client
+import http.client as http_client
 
 
 def httpmethod(func):
@@ -34,7 +34,7 @@ def httpmethod(func):
     """
 
     @functools.wraps(func)
-    def wrapper(self, url: str, data: str = '', encoding='utf-8', **kwargs):
+    def wrapper(self, url: str, data: str = '', encoding='utf-8', async_requests_mode: Optional[bool] = None, **kwargs):
         # url encoding
         url, data = self._url_and_body(
             url=url,
@@ -42,9 +42,40 @@ def httpmethod(func):
             encoding=encoding)
         # execute request
         try:
-            response = func(self, url, data, **kwargs)
+            # determine async_requests_mode
+            if async_requests_mode is None:
+                async_requests_mode = self._async_requests_mode
+
+            if not async_requests_mode:
+                response = func(self, url, data, **kwargs)
+
+            else:
+                additional_header = {'Prefer': 'respond-async'}
+                http_headers = kwargs.get('headers', dict())
+                http_headers.update(additional_header)
+                kwargs['headers'] = http_headers
+                response = func(self, url, data, **kwargs)
+                self.verify_response(response=response)
+
+                if 'Location' not in response.headers or "'" not in response.headers['Location']:
+                    raise ValueError(f"Failed to retrieve async_id from request {func.__name__} '{url}'")
+                async_id = response.headers.get('Location').split("'")[1]
+
+                for wait in RestService.wait_time_generator(kwargs.get('timeout', self._timeout)):
+                    response = self.retrieve_async_response(async_id)
+                    if response.status_code in [200, 201]:
+                        break
+                    time.sleep(wait)
+
+                # all wait times consumed and still no 200
+                if response.status_code not in [200, 201]:
+                    raise TM1pyTimeout(method=func.__name__, url=url, timeout=kwargs['timeout'])
+
+                response = self.build_response_from_raw_bytes(response.content)
+
             # verify
             self.verify_response(response=response)
+
             # response encoding
             response.encoding = encoding
             return response
@@ -89,22 +120,48 @@ class RestService:
         :param session_id: String - TM1SessionId e.g. q7O6e1w49AixeuLVxJ1GZg
         :param session_context: String - Name of the Application. Controls "Context" column in Arc / TM1top.
         If None, use default: TM1py
-        :param verify: path to .cer file or 'False' / False (if no ssl verification is required)
+        :param verify: path to .cer file or 'True' / True / 'False' / False (if no ssl verification is required)
         :param logging: boolean - switch on/off verbose http logging into sys.stdout
         :param timeout: Float - Number of seconds that the client will wait to receive the first byte.
+        :param async_requests_mode: changes internal REST execution mode to avoid 60s timeout on IBM cloud
         :param connection_pool_size - In a multithreaded environment, you should set this value to a
         higher number, such as the number of threads
+        :param integrated_login: True for IntegratedSecurityMode3
+        :param integrated_login_domain: NT Domain name.
+                Default: '.' for local account. 
+        :param integrated_login_service: Kerberos Service type for remote Service Principal Name.
+                Default: 'HTTP' 
+        :param integrated_login_host: Host name for Service Principal Name.
+                Default: Extracted from request URI
+        :param integrated_login_delegate: Indicates that the user's credentials are to be delegated to the server.
+                Default: False
+        :param impersonate: Name of user to impersonate
         """
         self._ssl = self.translate_to_boolean(kwargs['ssl'])
         self._address = kwargs.get('address', None)
         self._port = kwargs.get('port', None)
         self._verify = False
         self._timeout = None if kwargs.get('timeout', None) is None else float(kwargs.get('timeout'))
+        self._async_requests_mode = self.translate_to_boolean(kwargs.get('async_requests_mode', False))
+        # populated on the fly
+        if "user" in kwargs:
+            self._is_admin = True if case_and_space_insensitive_equals(kwargs.get("user"), "ADMIN") else None
+        else:
+            self._is_admin = None
 
         if 'verify' in kwargs:
             if isinstance(kwargs['verify'], str):
-                if kwargs['verify'].upper() != 'FALSE':
+                if kwargs['verify'].upper() == 'FALSE':
+                    self._verify = False
+                elif kwargs['verify'].upper() == 'TRUE':
+                    self._verify = True
+                # path to .cer file
+                else:
                     self._verify = kwargs.get('verify')
+            elif isinstance(kwargs['verify'], bool):
+                self._verify = kwargs['verify']
+            else:
+                raise ValueError("verify argument must be of type str or bool")
 
         if 'base_url' in kwargs:
             self._base_url = kwargs['base_url']
@@ -124,14 +181,22 @@ class RestService:
         self._s = requests.session()
         if "session_id" in kwargs:
             self._s.cookies.set("TM1SessionId", kwargs["session_id"])
-            self.set_version()
         else:
             self._start_session(
                 user=kwargs.get("user", None),
                 password=kwargs.get("password", None),
                 namespace=kwargs.get("namespace", None),
                 gateway=kwargs.get("gateway", None),
-                decode_b64=self.translate_to_boolean(kwargs.get("decode_b64", False)))
+                decode_b64=self.translate_to_boolean(kwargs.get("decode_b64", False)),
+                integrated_login=self.translate_to_boolean(kwargs.get("integrated_login", False)),
+                integrated_login_domain=kwargs.get("integrated_login_domain"),
+                integrated_login_service=kwargs.get("integrated_login_service"),
+                integrated_login_host=kwargs.get("integrated_login_host"),
+                integrated_login_delegate=kwargs.get("integrated_login_delegate"),
+                impersonate=kwargs.get("impersonate", None))
+
+        if not self._version:
+            self.set_version()
 
         # manage connection pool
         if "connection_pool_size" in kwargs:
@@ -241,28 +306,45 @@ class RestService:
         # Easier to ask for forgiveness than permission
         try:
             # ProductVersion >= TM1 10.2.2 FP 6
-            self.POST('/api/v1/ActiveSession/tm1.Close', '', headers={"Connection": "close"}, timeout=timeout, **kwargs)
-        except TM1pyException:
+            self.POST('/api/v1/ActiveSession/tm1.Close', '', headers={"Connection": "close"}, timeout=timeout,
+                      async_requests_mode=False, **kwargs)
+        except TM1pyRestException:
             # ProductVersion < TM1 10.2.2 FP 6
             self.POST('/api/logout', '', headers={"Connection": "close"}, timeout=timeout, **kwargs)
         finally:
             self._s.close()
 
     def _start_session(self, user: str, password: str, decode_b64: bool = False, namespace: str = None,
-                       gateway: str = None):
+                       gateway: str = None, integrated_login: bool = None, integrated_login_domain: str = None,
+                       integrated_login_service: str = None, integrated_login_host: str = None,
+                       integrated_login_delegate: bool = None, impersonate: str = None):
         """ perform a simple GET request (Ask for the TM1 Version) to start a session
         """
+        # Authorization with integrated_login
+        if integrated_login:
+            self._s.auth = HttpNegotiateAuth(
+                domain=integrated_login_domain,
+                service=integrated_login_service,
+                host=integrated_login_host,
+                delegate=integrated_login_delegate)
+
         # Authorization [Basic, CAM] through Headers
-        token = self._build_authorization_token(
-            user,
-            self.b64_decode_password(password) if decode_b64 else password,
-            namespace,
-            gateway,
-            self._verify)
-        self.add_http_header('Authorization', token)
+        else:
+            token = self._build_authorization_token(
+                user,
+                self.b64_decode_password(password) if decode_b64 else password,
+                namespace,
+                gateway,
+                self._verify)
+            self.add_http_header('Authorization', token)
+
         url = '/api/v1/Configuration/ProductVersion/$value'
         try:
-            response = self.GET(url=url)
+            additional_headers = dict()
+            if impersonate:
+                additional_headers["TM1-Impersonate"] = impersonate
+
+            response = self.GET(url=url, headers=additional_headers)
             self._version = response.text
         finally:
             # After we have session cookie, drop the Authorization Header
@@ -272,7 +354,7 @@ class RestService:
         """ create proper url and payload
         """
         url = self._base_url + url
-        url = url.replace(' ', '%20').replace('#', '%23')
+        url = url.replace(' ', '%20')
         if isinstance(data, str):
             data = data.encode(encoding)
         return url, data
@@ -298,6 +380,16 @@ class RestService:
         return self._version
 
     @property
+    def is_admin(self) -> bool:
+        if self._is_admin is None:
+            response = self.GET("/api/v1/ActiveUser/Groups")
+            self._is_admin = "ADMIN" in CaseAndSpaceInsensitiveSet(
+                *[group["Name"] for group in response.json()["value"]])
+
+        return self._is_admin
+
+
+    @property
     def session_id(self) -> str:
         return self._s.cookies["TM1SessionId"]
 
@@ -310,9 +402,9 @@ class RestService:
         if isinstance(value, bool) or isinstance(value, int):
             return bool(value)
         elif isinstance(value, str):
-            return value.lower() == 'true'
+            return value.replace(" ", "").lower() == 'true'
         else:
-            raise ValueError("Invalid argument: " + value + ". Needs to be of type boolean or string")
+            raise ValueError("Invalid argument: '" + value + "'. Must be to be of type 'bool' or 'str'")
 
     @staticmethod
     def b64_decode_password(encrypted_password: str) -> str:
@@ -332,10 +424,10 @@ class RestService:
             TM1pyException, raises TM1pyException when Code is not 200, 204 etc.
         """
         if not response.ok:
-            raise TM1pyException(response.text,
-                                 status_code=response.status_code,
-                                 reason=response.reason,
-                                 headers=response.headers)
+            raise TM1pyRestException(response.text,
+                                     status_code=response.status_code,
+                                     reason=response.reason,
+                                     headers=response.headers)
 
     @staticmethod
     def _build_authorization_token(user: str, password: str, namespace: str = None, gateway: str = None,
@@ -383,9 +475,57 @@ class RestService:
     def get_http_header(self, key: str) -> str:
         return self._headers[key]
 
-    def add_http_header(self, key: str, value: str) -> str:
+    def add_http_header(self, key: str, value: str):
         self._headers[key] = value
 
-    def remove_http_header(self, key: str) -> str:
+    def remove_http_header(self, key: str):
         if key in self._headers:
             self._headers.pop(key)
+
+    def retrieve_async_response(self, async_id: str, **kwargs) -> Response:
+        url = self._base_url + f"/api/v1/_async('{async_id}')"
+        return self._s.get(url, **kwargs)
+
+    @staticmethod
+    def urllib3_response_from_bytes(data: bytes) -> HTTPResponse:
+        sock = BytesIOSocket(data)
+
+        response = HTTPResponse(sock)
+        response.begin()
+
+        return urllib3.HTTPResponse.from_httplib(response)
+
+    @staticmethod
+    def build_response_from_raw_bytes(data: bytes) -> Response:
+        urllib_response = RestService.urllib3_response_from_bytes(data)
+
+        adapter = HTTPAdapter()
+        requests_response = adapter.build_response(requests.PreparedRequest(), urllib_response)
+        # actual content of response needs to be set explicitly
+        requests_response._content = urllib_response.data
+
+        return requests_response
+
+    @staticmethod
+    def wait_time_generator(timeout: int):
+        yield 0.1
+        yield 0.3
+        yield 0.6
+        if timeout:
+            for _ in range(1, timeout):
+                yield 1
+        else:
+            while True:
+                yield 1
+
+
+class BytesIOSocket:
+    """ used in urllib3_response_from_bytes method to construct urllib3 response from raw bytes
+
+    """
+
+    def __init__(self, content: bytes):
+        self.handle = BytesIO(content)
+
+    def makefile(self, mode) -> BytesIO:
+        return self.handle

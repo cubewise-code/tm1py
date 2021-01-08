@@ -4,7 +4,7 @@ from typing import Dict, Tuple, List, Optional
 
 from requests import Response
 
-from TM1py.Objects import Hierarchy
+from TM1py.Objects import Hierarchy, Element, ElementAttribute
 from TM1py.Services.ElementService import ElementService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
@@ -82,7 +82,7 @@ class HierarchyService(ObjectService):
         responses.append(self._rest.PATCH(url, json.dumps(hierarchy_body), **kwargs))
 
         # 2. Update Attributes
-        responses.append(self._update_element_attributes(hierarchy=hierarchy, **kwargs))
+        responses.append(self.update_element_attributes(hierarchy=hierarchy, **kwargs))
 
         # Workaround EDGES
         if self.version[0:8] in self.EDGES_WORKAROUND_VERSIONS:
@@ -126,7 +126,7 @@ class HierarchyService(ObjectService):
                 for hierarchy_property
                 in hierarchy_properties}
 
-    def _update_element_attributes(self, hierarchy: Hierarchy, **kwargs):
+    def update_element_attributes(self, hierarchy: Hierarchy, **kwargs):
         """ Update the elementattributes of a hierarchy
 
         :param hierarchy: Instance of TM1py.Hierarchy
@@ -211,23 +211,58 @@ class HierarchyService(ObjectService):
         }
         return self._rest.PATCH(url=url, data=json.dumps(body), **kwargs)
 
+    def remove_edges_under_consolidation(self, dimension_name: str, hierarchy_name: str,
+                                         consolidation_element: str, **kwargs) -> List[Response]:
+        """
+        :param dimension_name: Name of the dimension
+        :param hierarchy_name: Name of the hierarchy
+        :param consolidation_element: Name of the Consolidated element
+        :return: response
+        """
+        hierarchy = self.get(dimension_name, hierarchy_name)
+        from TM1py.Services import ElementService
+        element_service = ElementService(self._rest)
+        elements_under_consolidations = element_service.get_members_under_consolidation(dimension_name, hierarchy_name,
+                                                                                        consolidation_element)
+        elements_under_consolidations.append(consolidation_element)
+        remove_edges = []
+        for (parent, component) in hierarchy.edges:
+            if parent in elements_under_consolidations and component in elements_under_consolidations:
+                remove_edges.append((parent, component))
+        hierarchy.remove_edges(remove_edges)
+        return self.update(hierarchy, **kwargs)
+
     def add_edges(self, dimension_name: str, hierarchy_name: str = None, edges: Dict[Tuple[str, str], int] = None,
                   **kwargs) -> Response:
-        """ Add Edges to hierarchy. Fails if any edge already exists.
+        """ Add Edges to hierarchy. Fails if one edge already exists.
 
         :param dimension_name:
         :param hierarchy_name:
         :param edges:
         :return:
         """
-        if not hierarchy_name:
-            hierarchy_name = dimension_name
-        url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')/Edges", dimension_name, hierarchy_name)
-        body = [{"ParentName": parent, "ComponentName": component, "Weight": float(weight)}
-                for (parent, component), weight
-                in edges.items()]
+        return self.elements.add_edges(dimension_name, hierarchy_name, edges, **kwargs)
 
-        return self._rest.POST(url=url, data=json.dumps(body), **kwargs)
+    def add_elements(self, dimension_name: str, hierarchy_name: str, elements: List[Element], **kwargs):
+        """ Add elements to hierarchy. Fails if one element already exists.
+
+        :param dimension_name:
+        :param hierarchy_name:
+        :param elements:
+        :return:
+        """
+        return self.elements.add_elements(dimension_name, hierarchy_name, elements, **kwargs)
+
+    def add_element_attributes(self, dimension_name: str, hierarchy_name: str,
+                               element_attributes: List[ElementAttribute], **kwargs):
+        """ Add element attributes to hierarchy. Fails if one element attribute already exists.
+
+        :param dimension_name:
+        :param hierarchy_name:
+        :param element_attributes:
+        :return:
+        """
+        return self.elements.add_element_attributes(dimension_name, hierarchy_name, element_attributes, **kwargs)
 
     def is_balanced(self, dimension_name: str, hierarchy_name: str, **kwargs):
         """ Check if hierarchy is balanced

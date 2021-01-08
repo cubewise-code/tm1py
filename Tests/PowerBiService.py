@@ -1,13 +1,12 @@
 import configparser
-import os
 import unittest
-
-import pandas as pd
-from numpy import NaN
+from pathlib import Path
 
 from TM1py import MDXView
-from TM1py.Objects import Cube, Dimension, Element, Hierarchy, NativeView, AnonymousSubset, ElementAttribute
+from TM1py.Objects import Cube, Dimension, Element, Hierarchy, ElementAttribute
 from TM1py.Services import TM1Service
+
+from .TestUtils import skip_if_no_pandas
 
 # Hard coded stuff
 PREFIX = 'TM1py_Tests_PowerBiService_'
@@ -56,19 +55,20 @@ SELECT
 FROM {cube}
 """
 
-config = configparser.ConfigParser()
-config.read(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.ini'))
-
 
 class TestPowerBiService(unittest.TestCase):
-    tm1 = None
 
-    # Setup Cubes, Dimensions and Subsets
     @classmethod
-    def setup_class(cls):
-        # Connection to TM1
-        cls.tm1 = TM1Service(**config['tm1srv01'])
+    def setUpClass(cls):
+        """
+        Establishes a connection to TM1 and creates TM! objects to use across all tests
+        """
 
+        # Connection to TM1
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
+        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        
         # generate random coordinates
         cls.target_coordinates = list(zip(('Element ' + str(e) for e in range(1, 100)),
                                           ('Element ' + str(e) for e in range(1, 100)),
@@ -150,6 +150,7 @@ class TestPowerBiService(unittest.TestCase):
         cls.tm1.cubes.cells.write_value('1990/91', '}ElementAttributes_' + DIMENSION_NAME, ('1991', 'Financial Year'))
         cls.tm1.cubes.cells.write_value('1991/92', '}ElementAttributes_' + DIMENSION_NAME, ('1992', 'Financial Year'))
 
+#    @skip_if_no_pandas
     def add_unbalanced_hierarchy(self, hierarchy_name):
         dimension = self.tm1.dimensions.get(DIMENSION_NAME)
         # other hierarchy
@@ -165,6 +166,7 @@ class TestPowerBiService(unittest.TestCase):
 
         self.tm1.dimensions.update(dimension)
 
+    @skip_if_no_pandas
     def test_execute_mdx(self):
         mdx = MDX_TEMPLATE.format(
             rows="{[" + DIMENSION_NAMES[0] + "].[Element1], [" + DIMENSION_NAMES[0] + "].[Element2]}",
@@ -184,6 +186,7 @@ class TestPowerBiService(unittest.TestCase):
             tuple(element1.values[0]),
             ("Element 1", "1.0", None))
 
+    @skip_if_no_pandas
     def test_execute_view(self):
         mdx = MDX_TEMPLATE.format(
             rows="{[" + DIMENSION_NAMES[0] + "].[Element1], [" + DIMENSION_NAMES[0] + "].[Element2]}",
@@ -206,6 +209,7 @@ class TestPowerBiService(unittest.TestCase):
             tuple(element1.values[0]),
             ("Element 1", "1.0", None))
 
+    @skip_if_no_pandas
     def test_get_member_properties_default(self):
         members = self.tm1.power_bi.get_member_properties(
             dimension_name=DIMENSION_NAME,
@@ -232,6 +236,7 @@ class TestPowerBiService(unittest.TestCase):
             tuple(year_1992.values[0]),
             ("1992", "Numeric", "1991", "", "1991/92", "Total Years", "All Consolidations"))
 
+    @skip_if_no_pandas
     def test_get_member_properties_attributes(self):
         members = self.tm1.power_bi.get_member_properties(
             dimension_name=DIMENSION_NAME,
@@ -258,6 +263,7 @@ class TestPowerBiService(unittest.TestCase):
             tuple(year_1992.values[0]),
             ("1992", "Numeric", "1991", "Total Years", "All Consolidations"))
 
+    @skip_if_no_pandas
     def test_get_member_properties_no_attributes(self):
         members = self.tm1.power_bi.get_member_properties(
             dimension_name=DIMENSION_NAME,
@@ -284,6 +290,7 @@ class TestPowerBiService(unittest.TestCase):
             tuple(year_1992.values[0]),
             ("1992", "Numeric", "Total Years", "All Consolidations"))
 
+    @skip_if_no_pandas
     def test_get_member_properties_member_selection(self):
         members = self.tm1.power_bi.get_member_properties(
             dimension_name=DIMENSION_NAME,
@@ -310,6 +317,7 @@ class TestPowerBiService(unittest.TestCase):
             tuple(year_1992.values[0]),
             ("1992", "Numeric", "1991", "", "1991/92", "Total Years", "All Consolidations"))
 
+    @skip_if_no_pandas
     def test_get_member_properties_skip_parents(self):
         members = self.tm1.power_bi.get_member_properties(
             dimension_name=DIMENSION_NAME,
@@ -354,6 +362,7 @@ class TestPowerBiService(unittest.TestCase):
             tuple(members.columns),
             (DIMENSION_NAME, "Type", "Previous Year", "Next Year", "Financial Year", "level001", "level000"))
 
+    @skip_if_no_pandas
     def test_get_member_properties_include_consolidations(self):
         members = self.tm1.power_bi.get_member_properties(
             dimension_name=DIMENSION_NAME,
@@ -390,6 +399,7 @@ class TestPowerBiService(unittest.TestCase):
             tuple(row.values[0]),
             ("1992", "Numeric", "1991", "", "1991/92", "Total Years", "All Consolidations"))
 
+    @skip_if_no_pandas
     def test_get_member_properties_member_selection_and_attributes(self):
         members = self.tm1.power_bi.get_member_properties(
             dimension_name=DIMENSION_NAME,
@@ -416,6 +426,7 @@ class TestPowerBiService(unittest.TestCase):
             tuple(row.values[0]),
             ("1990", "Numeric", "1989", "1989/90", "Total Years", "All Consolidations"))
 
+    @skip_if_no_pandas
     def test_get_member_properties_member_iterable_selection_and_attributes(self):
         members = self.tm1.power_bi.get_member_properties(
             dimension_name=DIMENSION_NAME,
@@ -442,6 +453,7 @@ class TestPowerBiService(unittest.TestCase):
             tuple(row.values[0]),
             ("1990", "Numeric", "1989", "1989/90", "Total Years", "All Consolidations"))
 
+    @skip_if_no_pandas
     def test_get_member_properties_member_iterable_selection_and_custom_parent_names(self):
         members = self.tm1.power_bi.get_member_properties(
             dimension_name=DIMENSION_NAME,
@@ -469,6 +481,7 @@ class TestPowerBiService(unittest.TestCase):
             tuple(row.values[0]),
             ("1990", "Numeric", "1989", "1989/90", "Total Years", "All Consolidations"))
 
+    @skip_if_no_pandas
     def test_get_member_properties_iterable_and_skip_consolidations(self):
         members = self.tm1.power_bi.get_member_properties(
             dimension_name=DIMENSION_NAME,
@@ -490,6 +503,34 @@ class TestPowerBiService(unittest.TestCase):
         self.assertEqual(
             tuple(row.values[0]),
             ("1989", "Numeric", "1988", "1988/89", "Total Years", "All Consolidations"))
+
+    @skip_if_no_pandas
+    def test_get_member_properties_member_skip_parents_skip_attributes(self):
+        members = self.tm1.power_bi.get_member_properties(
+            dimension_name=DIMENSION_NAME,
+            hierarchy_name=DIMENSION_NAME,
+            member_selection=f"{{ [{DIMENSION_NAME}].[1989], [{DIMENSION_NAME}].[1990] }}",
+            skip_parents=True,
+            skip_consolidations=True,
+            attributes=[])
+
+        self.assertEqual(
+            tuple(members.columns),
+            (DIMENSION_NAME, "Type"))
+
+        self.assertEqual(
+            tuple(members[DIMENSION_NAME]),
+            ("1989", "1990"))
+
+        row = members.loc[members[DIMENSION_NAME] == "1989"]
+        self.assertEqual(
+            tuple(row.values[0]),
+            ("1989", "Numeric"))
+
+        row = members.loc[members[DIMENSION_NAME] == "1990"]
+        self.assertEqual(
+            tuple(row.values[0]),
+            ("1990", "Numeric"))
 
     # Delete Cube and Dimensions
     @classmethod

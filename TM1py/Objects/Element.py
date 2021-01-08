@@ -3,9 +3,10 @@
 import collections
 import json
 from enum import Enum
-from typing import Union, Iterable, Dict, List
+from typing import Union, Dict, List
 
 from TM1py.Objects.TM1Object import TM1Object
+from TM1py.Utils import case_and_space_insensitive_equals
 
 
 class Element(TM1Object):
@@ -28,7 +29,7 @@ class Element(TM1Object):
                 if member.name.lower() == value.replace(" ", "").lower():
                     return member
             # default
-            raise ValueError("Invalid element type=" + value)
+            raise ValueError(f"Invalid element type: '{value}'")
 
     def __init__(self, name, element_type: Union[Types, str], attributes: List[str] = None, unique_name: str = None,
                  index: int = None):
@@ -42,10 +43,10 @@ class Element(TM1Object):
     @staticmethod
     def from_dict(element_as_dict: Dict) -> 'Element':
         return Element(name=element_as_dict['Name'],
-                       unique_name=element_as_dict['UniqueName'],
-                       index=element_as_dict['Index'],
+                       unique_name=element_as_dict.get('UniqueName', None),
+                       index=element_as_dict.get('Index', None),
                        element_type=element_as_dict['Type'],
-                       attributes=element_as_dict['Attributes'])
+                       attributes=element_as_dict.get('Attributes', None))
 
     @property
     def name(self) -> str:
@@ -88,3 +89,12 @@ class Element(TM1Object):
         body_as_dict['Name'] = self._name
         body_as_dict['Type'] = str(self._element_type)
         return body_as_dict
+
+    def __eq__(self, other: 'Element'):
+        return all([
+            isinstance(other, Element),
+            case_and_space_insensitive_equals(self.name, other.name),
+            self.element_type == other.element_type])
+
+    def __hash__(self):
+        return super().__hash__()

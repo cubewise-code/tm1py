@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-
 import json
 import warnings
 from typing import List
 
 from requests import Response
 
-from TM1py.Exceptions import TM1pyException
+from TM1py.Exceptions.Exceptions import TM1pyException
 from TM1py.Objects.Dimension import Dimension
 from TM1py.Services.HierarchyService import HierarchyService
 from TM1py.Services.ObjectService import ObjectService
@@ -43,7 +42,7 @@ class DimensionService(ObjectService):
             # Create ElementAttributes
             for hierarchy in dimension:
                 if not case_and_space_insensitive_equals(hierarchy.name, "Leaves"):
-                    self.hierarchies.update(hierarchy, **kwargs)
+                    self.hierarchies.update_element_attributes(hierarchy, **kwargs)
         except TM1pyException as e:
             # undo everything if problem in step 1 or 2
             if self.exists(dimension.name, **kwargs):
@@ -68,7 +67,8 @@ class DimensionService(ObjectService):
         :return: None
         """
         # delete hierarchies that have been removed from the dimension object
-        hierarchies_to_be_removed = CaseAndSpaceInsensitiveSet(*self.hierarchies.get_all_names(dimension.name, **kwargs))
+        hierarchies_to_be_removed = CaseAndSpaceInsensitiveSet(
+            *self.hierarchies.get_all_names(dimension.name, **kwargs))
         for hierarchy in dimension.hierarchy_names:
             hierarchies_to_be_removed.discard(hierarchy)
 
@@ -90,9 +90,9 @@ class DimensionService(ObjectService):
         :return:
         """
         if self.exists(dimension_name=dimension.name, **kwargs):
-            return self.update(dimension=dimension)
+            self.update(dimension=dimension, **kwargs)
         else:
-            return self.create(dimension=dimension)
+            self.create(dimension=dimension, **kwargs)
 
     def delete(self, dimension_name: str, **kwargs) -> Response:
         """ Delete a dimension
@@ -120,6 +120,14 @@ class DimensionService(ObjectService):
         response = self._rest.GET(url='/api/v1/Dimensions?$select=Name', **kwargs)
         dimension_names = list(entry['Name'] for entry in response.json()['value'])
         return dimension_names
+
+    def get_number_of_dimensions(self, **kwargs) -> int:
+        """Ask TM1 Server for the total number of dimensions
+
+        :return: Number of dimensions
+        """
+        response = self._rest.GET(url='/api/v1/Dimensions/$count', **kwargs)
+        return int(response.text)
 
     def execute_mdx(self, dimension_name: str, mdx: str, **kwargs) -> List:
         """ Execute MDX against Dimension. 

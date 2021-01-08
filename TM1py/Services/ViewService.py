@@ -5,7 +5,7 @@ from typing import List, Tuple, Union
 
 from requests import Response
 
-from TM1py.Exceptions.Exceptions import TM1pyException
+from TM1py.Exceptions.Exceptions import TM1pyRestException
 from TM1py.Objects import View
 from TM1py.Objects.MDXView import MDXView
 from TM1py.Objects.NativeView import NativeView
@@ -56,7 +56,7 @@ class ViewService(ObjectService):
                 url = format_url(url_template, cube_name, view_type, view_name)
                 self._rest.GET(url, **kwargs)
                 view_types[view_type] = True
-            except TM1pyException as e:
+            except TM1pyRestException as e:
                 if e.status_code != 404:
                     raise e
         return tuple(view_types.values())
@@ -178,6 +178,19 @@ class ViewService(ObjectService):
         url = format_url("/api/v1/Cubes('{}')/{}('{}')", view.cube, view_type, view.name)
         response = self._rest.PATCH(url, view.body, **kwargs)
         return response
+
+    def update_or_create(self, view: Union[MDXView, NativeView], private: bool = False, **kwargs) -> Response:
+        """ update if exists, else create
+
+        :param view:
+        :param private:
+        :param kwargs:
+        :return:
+        """
+        if self.exists(view.cube, view.name, private=private, **kwargs):
+            return self.update(view, private=private, **kwargs)
+
+        return self.create(view, private=private, **kwargs)
 
     def delete(self, cube_name: str, view_name: str, private: bool = False, **kwargs) -> Response:
         """ Delete an existing view (MDXView or NativeView) on the TM1 Server

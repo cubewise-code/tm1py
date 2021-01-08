@@ -168,7 +168,7 @@ class ApplicationService(ObjectService):
 
         if application.application_type == ApplicationTypes.DOCUMENT:
             url = format_url(
-                "/api/v1/Contents('Applications'){" + mid + "}/" + contents + "('{name}.blob')/Document/Content",
+                "/api/v1/Contents('Applications')" + mid + "/" + contents + "('{name}.blob')/Document/Content",
                 name=application.name)
             response = self._rest.PUT(url, application.content, headers=self.BINARY_HTTP_HEADER, **kwargs)
 

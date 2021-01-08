@@ -10,7 +10,7 @@ from TM1py.Services.CellService import CellService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.ViewService import ViewService
-from TM1py.Utils import format_url
+from TM1py.Utils import format_url, require_version, require_admin
 
 
 class CubeService(ObjectService):
@@ -48,7 +48,8 @@ class CubeService(ObjectService):
 
     def get_last_data_update(self, cube_name: str, **kwargs) -> str:
         url = format_url("/api/v1/Cubes('{}')/LastDataUpdate/$value", cube_name)
-        return self._rest.GET(url, **kwargs)
+        response = self._rest.GET(url=url, **kwargs)
+        return response.text
 
     def get_all(self, **kwargs) -> List[Cube]:
         """ get all cubes from TM1 Server as TM1py.Cube instances
@@ -80,6 +81,19 @@ class CubeService(ObjectService):
         cubes = [Cube.from_dict(cube_as_dict=cube) for cube in response.json()['value']]
         return cubes
 
+    def get_number_of_cubes(self, **kwargs) -> int:
+        url = format_url(
+            "/api/v1/Cubes/$count")
+        response = self._rest.GET(url, **kwargs)
+        return int(response.text)
+
+    def get_measure_dimension(self, cube_name: str, **kwargs) -> str:
+        url = format_url(
+            "/api/v1/Cubes('{}')/Dimensions?$select=Name",
+            cube_name)
+        response = self._rest.GET(url, **kwargs)
+        return response.json()['value'][-1]['Name']
+
     def update(self, cube: Cube, **kwargs) -> Response:
         """ Update existing cube on TM1 Server
 
@@ -95,7 +109,7 @@ class CubeService(ObjectService):
         :param cube:
         :return:
         """
-        if self.exists(cube_name=cube.name):
+        if self.exists(cube_name=cube.name, **kwargs):
             return self.update(cube=cube, **kwargs)
 
         return self.create(cube=cube, **kwargs)
@@ -107,8 +121,12 @@ class CubeService(ObjectService):
         :return: response
         """
         url = format_url("/api/v1/Cubes('{}')/tm1.CheckRules", cube_name)
-        return self._rest.POST(url, **kwargs)
 
+        response = self._rest.POST(url, **kwargs)
+        errors = response.json()["value"]
+        return errors
+
+    @require_admin
     def delete(self, cube_name: str, **kwargs) -> Response:
         """ Delete a cube in TM1
 
@@ -118,14 +136,14 @@ class CubeService(ObjectService):
         url = format_url("/api/v1/Cubes('{}')", cube_name)
         return self._rest.DELETE(url, **kwargs)
 
-    def exists(self, cube_name: str) -> bool:
+    def exists(self, cube_name: str, **kwargs) -> bool:
         """ Check if a cube exists. Return boolean.
 
         :param cube_name: 
         :return: Boolean 
         """
         url = format_url("/api/v1/Cubes('{}')", cube_name)
-        return self._exists(url)
+        return self._exists(url, **kwargs)
 
     def get_all_names(self, **kwargs) -> List[str]:
         """ Ask TM1 Server for list of all cube names
@@ -134,6 +152,24 @@ class CubeService(ObjectService):
         """
         response = self._rest.GET(url='/api/v1/Cubes?$select=Name', **kwargs)
         cubes = list(entry['Name'] for entry in response.json()['value'])
+        return cubes
+
+    def get_all_names_with_rules(self, **kwargs) -> List[str]:
+        """ Ask TM1 Server for list of all cube names that have rules
+
+        :return: List of Strings
+        """
+        response = self._rest.GET(url="/api/v1/Cubes?$select=Name,Rules&$filter=Rules ne null", **kwargs)
+        cubes = list(cube['Name'] for cube in response.json()['value'])
+        return cubes
+
+    def get_all_names_without_rules(self, **kwargs) -> List[str]:
+        """ Ask TM1 Server for list of all cube names that do not have rules
+
+        :return: List of Strings
+        """
+        response = self._rest.GET(url="/api/v1/Cubes?$select=Name,Rules&$filter=Rules eq null", **kwargs)
+        cubes = list(cube['Name'] for cube in response.json()['value'])
         return cubes
 
     def get_dimension_names(self, cube_name: str, skip_sandbox_dimension: bool = True, **kwargs) -> List[str]:
@@ -150,6 +186,7 @@ class CubeService(ObjectService):
             return dimension_names[1:]
         return dimension_names
 
+    @require_version(version="11.4")
     def get_storage_dimension_order(self, cube_name: str, **kwargs) -> List[str]:
         """ Get the storage dimension order of a cube
 
@@ -160,20 +197,25 @@ class CubeService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return [dimension["Name"] for dimension in response.json()["value"]]
 
-    def update_storage_dimension_order(self, cube_name: str, dimension_names: Iterable[str]) -> Response:
+    @require_admin
+    @require_version(version="11.4")
+    def update_storage_dimension_order(self, cube_name: str, dimension_names: Iterable[str]) -> float:
         """ Update the storage dimension order of a cube
 
         :param cube_name:
         :param dimension_names:
-        :return:
+        :return:  Float: -23.076489699337078 (percent change in memory usage)
         """
         url = format_url("/api/v1/Cubes('{}')/tm1.ReorderDimensions", cube_name)
         payload = dict()
         payload['Dimensions@odata.bind'] = [format_url("Dimensions('{}')", dimension)
                                             for dimension
                                             in dimension_names]
-        return self._rest.POST(url=url, data=json.dumps(payload))
+        response = self._rest.POST(url=url, data=json.dumps(payload))
+        return response.json()["value"]
 
+    @require_admin
+    @require_version(version="11.6")
     def load(self, cube_name: str, **kwargs) -> Response:
         """ Load the cube into memory on the server
 
@@ -183,6 +225,8 @@ class CubeService(ObjectService):
         url = format_url("/api/v1/Cubes('{}')/tm1.Load", cube_name)
         return self._rest.POST(url=url, **kwargs)
 
+    @require_admin
+    @require_version(version="11.6")
     def unload(self, cube_name: str, **kwargs) -> Response:
         """ Unload the cube from memory
 
@@ -190,6 +234,24 @@ class CubeService(ObjectService):
         :return:
         """
         url = format_url("/api/v1/Cubes('{}')/tm1.Unload", cube_name)
+        return self._rest.POST(url=url, **kwargs)
+
+    def lock(self, cube_name: str, **kwargs) -> Response:
+        """ Locks the cube to prevent any users from modifying it
+
+        :param cube_name:
+        :return:
+        """
+        url = format_url("/api/v1/Cubes('{}')/tm1.Lock", cube_name)
+        return self._rest.POST(url=url, **kwargs)
+
+    def unlock(self, cube_name: str, **kwargs) -> Response:
+        """ Unlocks the cube to allow modifications
+
+        :param cube_name:
+        :return:
+        """
+        url = format_url("/api/v1/Cubes('{}')/tm1.Unlock", cube_name)
         return self._rest.POST(url=url, **kwargs)
 
     def get_random_intersection(self, cube_name: str, unique_names: bool = False) -> List[str]:

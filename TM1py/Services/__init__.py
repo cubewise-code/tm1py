@@ -10,8 +10,9 @@ from TM1py.Services.MonitoringService import MonitoringService
 from TM1py.Services.PowerBiService import PowerBiService
 from TM1py.Services.ProcessService import ProcessService
 from TM1py.Services.RestService import RestService
+from TM1py.Services.SandboxService import SandboxService
 from TM1py.Services.SecurityService import SecurityService
 from TM1py.Services.ServerService import ServerService
 from TM1py.Services.SubsetService import SubsetService
-from TM1py.Services.TM1Service import TM1Service
 from TM1py.Services.ViewService import ViewService
+from TM1py.Services.TM1Service import TM1Service

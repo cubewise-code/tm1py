@@ -5,7 +5,7 @@ import datetime
 from TM1py.Objects.TM1Object import TM1Object
 
 
-class ChoreStartTime(TM1Object):
+class ChoreStartTime:
     """ Utility class to handle time representation for Chore Start Time
         
     """
@@ -24,7 +24,7 @@ class ChoreStartTime(TM1Object):
 
     @classmethod
     def from_string(cls, start_time_string: str) -> 'ChoreStartTime':
-        # f to handle strange timestamp 2016-09-25T20:25Z instead of common 2016-09-25T20:25:01Z
+        # f to handle strange timestamp 2016-09-25T20:25Z instead of common 2016-09-25T20:25:00Z
         f = lambda x: int(x) if x else 0
         return cls(year=f(start_time_string[0:4]),
                    month=f(start_time_string[5:7]),
@@ -35,7 +35,15 @@ class ChoreStartTime(TM1Object):
 
     @property
     def start_time_string(self) -> str:
-        return self._datetime.strftime("%Y-%m-%dT%H:%M:%SZ")
+        # produce timestamp 2016-09-25T20:25Z instead of common 2016-09-25T20:25:00Z
+        if not self._datetime.second:
+            return self._datetime.strftime("%Y-%m-%dT%H:%MZ")
+        else:
+            return self._datetime.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    @property
+    def datetime(self) -> datetime:
+        return self._datetime
 
     def __str__(self):
         return self.start_time_string

@@ -96,6 +96,44 @@ class SubsetService(ObjectService):
             subset.dimension_name, subset.hierarchy_name, subsets, subset.name)
         return self._rest.PATCH(url=url, data=subset.body, **kwargs)
 
+    def make_static(self, subset_name: str, dimension_name: str, hierarchy_name: str = None,
+                    private: bool = False) -> Response:
+        """ convert a dynamic subset into static subset on the TM1 Server
+        :param subset_name: String, name of the subset
+        :param dimension_name: String, name of the dimension
+        :param hierarchy_name: String, name of the hierarchy
+        :param private: Boolean
+        :return: response
+        """
+        import json
+        from collections import OrderedDict
+        hierarchy_name = hierarchy_name if hierarchy_name else dimension_name
+        payload = OrderedDict()
+        payload['Name'] = subset_name
+        payload['MakePrivate'] = True if private else False
+        payload['MakeStatic'] = True
+        subsets = "PrivateSubsets" if private else "Subsets"
+        url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')/tm1.SaveAs", dimension_name,
+                         hierarchy_name, subsets, subset_name)
+        return self._rest.POST(url=url, data=json.dumps(payload))
+
+    def update_or_create(self, subset: Subset, private: bool = False, **kwargs) -> Response:
+        """ update if exists else create
+
+        :param subset:
+        :param private:
+        :return:
+        """
+        if self.exists(
+                subset_name=subset.name,
+                dimension_name=subset.dimension_name,
+                hierarchy_name=subset.hierarchy_name,
+                private=private,
+                **kwargs):
+            return self.update(subset=subset, private=private, **kwargs)
+
+        return self.create(subset=subset, private=private, **kwargs)
+
     def delete(self, subset_name: str, dimension_name: str, hierarchy_name: str = None,
                private: bool = False, **kwargs) -> Response:
         """ Delete an existing subset on the TM1 Server
@@ -138,3 +176,29 @@ class SubsetService(ObjectService):
             "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')/Elements/$ref",
             dimension_name, hierarchy_name, subsets, subset_name)
         return self._rest.DELETE(url=url, **kwargs)
+
+    def get_element_names(self, dimension_name: str, hierarchy_name: str, subset_name: str, private: bool = False,
+                          **kwargs):
+        """ Get elements from existing (dynamic or static) subset
+
+        :param dimension_name:
+        :param hierarchy_name:
+        :param subset_name:
+        :param private:
+        :param kwargs:
+        :return:
+        """
+        subset = self.get(subset_name, dimension_name, hierarchy_name, private=private, **kwargs)
+        if subset.is_static:
+            return subset.elements
+
+        mdx = subset.expression
+        from TM1py import ElementService
+        element_service = ElementService(self._rest)
+        tuples = element_service.execute_set_mdx(
+            mdx=mdx,
+            member_properties=["Name"],
+            element_properties=None,
+            parent_properties=None,
+            **kwargs)
+        return [entry[0]["Name"] for entry in tuples]

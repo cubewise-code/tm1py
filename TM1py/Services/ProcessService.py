@@ -6,11 +6,11 @@ from typing import List, Dict, Tuple, Iterable
 
 from requests import Response
 
-from TM1py.Exceptions import TM1pyException
+from TM1py.Exceptions.Exceptions import TM1pyRestException
 from TM1py.Objects.Process import Process
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import format_url
+from TM1py.Utils import format_url, require_admin
 
 
 class ProcessService(ObjectService):
@@ -80,6 +80,20 @@ class ProcessService(ObjectService):
         processes = list(process['Name'] for process in response.json()['value'])
         return processes
 
+    def create(self, process: Process, **kwargs) -> Response:
+        """ Create a new process on TM1 Server
+
+        :param process: Instance of TM1py.Process class
+        :return: Response
+        """
+        url = "/api/v1/Processes"
+        # Adjust process body if TM1 version is lower than 11 due to change in Process Parameters structure
+        # https://www.ibm.com/developerworks/community/forums/html/topic?id=9188d139-8905-4895-9229-eaaf0e7fa683
+        if int(self.version[0:2]) < 11:
+            process.drop_parameter_types()
+        response = self._rest.POST(url, process.body, **kwargs)
+        return response
+
     def update(self, process: Process, **kwargs) -> Response:
         """ Update an existing Process on TM1 Server
     
@@ -94,19 +108,16 @@ class ProcessService(ObjectService):
         response = self._rest.PATCH(url, process.body, **kwargs)
         return response
 
-    def create(self, process: Process, **kwargs) -> Response:
-        """ Create a new process on TM1 Server
-    
+    def update_or_create(self, process: Process, **kwargs) -> Response:
+        """ Update or Create a Process on TM1 Server
+
         :param process: Instance of TM1py.Process class
         :return: Response
         """
-        url = "/api/v1/Processes"
-        # Adjust process body if TM1 version is lower than 11 due to change in Process Parameters structure
-        # https://www.ibm.com/developerworks/community/forums/html/topic?id=9188d139-8905-4895-9229-eaaf0e7fa683
-        if int(self.version[0:2]) < 11:
-            process.drop_parameter_types()
-        response = self._rest.POST(url, process.body, **kwargs)
-        return response
+        if self.exists(name=process.name, **kwargs):
+            return self.update(process=process, **kwargs)
+
+        return self.create(process=process, **kwargs)
 
     def delete(self, name: str, **kwargs) -> Response:
         """ Delete a process in TM1
@@ -176,7 +187,7 @@ class ProcessService(ObjectService):
                 parameters = {}
         return self._rest.POST(url=url, data=json.dumps(parameters, ensure_ascii=False), timeout=timeout, **kwargs)
 
-    def execute_process_with_return(self, process: Process, **kwargs):
+    def execute_process_with_return(self, process: Process, **kwargs) -> Tuple[bool, str, str]:
         """
         Run unbound TI code directly
         :param process: a TI Process Object
@@ -231,6 +242,7 @@ class ProcessService(ObjectService):
             "Filename"]
         return success, status, error_log_file
 
+    @require_admin
     def execute_ti_code(self, lines_prolog: Iterable[str], lines_epilog: Iterable[str] = None, **kwargs) -> Response:
         """ Execute lines of code on the TM1 Server
 
@@ -245,7 +257,7 @@ class ProcessService(ObjectService):
         self.create(p, **kwargs)
         try:
             return self.execute(process_name, **kwargs)
-        except TM1pyException as e:
+        except TM1pyRestException as e:
             raise e
         finally:
             self.delete(process_name, **kwargs)

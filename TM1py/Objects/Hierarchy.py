@@ -40,7 +40,7 @@ class Hierarchy(TM1Object):
             dimension_name: str,
             elements: Optional[Iterable['Element']] = None,
             element_attributes: Optional[Iterable['ElementAttribute']] = None,
-            edges: Optional['CaseAndSpaceInsensitiveTuplesDict'] = None,
+            edges: Optional['Dict'] = None,
             subsets: Optional[Iterable[str]] = None,
             structure: Optional[int] = None,
             default_member: Optional[str] = None):
@@ -142,6 +142,19 @@ class Hierarchy(TM1Object):
 
         self._elements[element_name] = Element(name=element_name, element_type=element_type)
 
+    def add_component(self, parent_name: str, component_name: str, weight: int):
+        if parent_name not in self._elements:
+            raise ValueError(f"Parent '{parent_name}' does not exist in hierarchy")
+        if self._elements[parent_name].element_type != Element.Types.CONSOLIDATED:
+            raise ValueError(f"Parent '{parent_name}' is not of type 'Consolidated'")
+
+        if component_name not in self.elements:
+            self.add_element(component_name, 'Numeric')
+        elif self._elements[component_name].element_type == Element.Types.STRING:
+            raise ValueError(f"Component '{component_name}' must not be of type 'String'")
+
+        self.add_edge(parent_name, component_name, weight)
+
     def update_element(self, element_name: str, element_type: Union[str, Element.Types]):
         self._elements[element_name].element_type = element_type
 
@@ -150,6 +163,10 @@ class Hierarchy(TM1Object):
             return
         del self._elements[element_name]
         self.remove_edges_related_to_element(element_name=element_name)
+
+    def remove_all_elements(self):
+        self._elements = CaseAndSpaceInsensitiveDict()
+        self.remove_all_edges()
 
     def add_edge(self, parent: str, component: str, weight: int):
         self._edges[(parent, component)] = weight
@@ -164,6 +181,9 @@ class Hierarchy(TM1Object):
     def remove_edges(self, edges: Iterable[Tuple[str, str]]):
         for edge in edges:
             self.remove_edge(*edge)
+
+    def remove_all_edges(self):
+        self._edges = CaseAndSpaceInsensitiveTuplesDict()
 
     def remove_edges_related_to_element(self, element_name: str):
         element_name_adjusted = lower_and_drop_spaces(element_name)
