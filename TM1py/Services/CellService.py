@@ -411,7 +411,15 @@ class CellService(ObjectService):
     def write_through_unbound_process(self, cube_name: str, cellset_as_dict: Dict, increment: bool = False,
                                       sandbox_name: str = None, precision=8, **kwargs):
         if sandbox_name:
-            raise NotImplementedError("Function does not support writing to sandboxes yet")
+            enable_sandbox = f"IF(ServerSandboxExists('{sandbox_name}')=1); " \
+                             f"ServerActiveSandboxSet('{sandbox_name}'); " \
+                             f"SetUseActiveSandboxProperty(1); " \
+                             f"ELSE; " \
+                             f"LOGOUTPUT('ERROR', 'Sandbox {sandbox_name} not found'); " \
+                             f"PROCESSERROR; " \
+                             f"ENDIF;"
+        else:
+            enable_sandbox = "# Running on Base Data"
 
         successes = list()
         statements = list()
@@ -458,14 +466,17 @@ class CellService(ObjectService):
         for n, statement in enumerate(statements):
             chunk.append(statement)
             if n > 0 and n % Process.MAX_STATEMENTS == 0:
-                process = Process(name="", prolog_procedure="\r".join(chunk))
+                process = Process(name="", prolog_procedure = enable_sandbox, epilog_procedure="\r".join(chunk))
                 success, _, _ = self.execute_unbound_process(process, **kwargs)
                 successes.append(success)
                 chunk = list()
 
-        process = Process(name="", prolog_procedure="\r".join(chunk))
+        process = Process(name="", prolog_procedure = enable_sandbox, epilog_procedure="\r".join(chunk))
         success, _, _ = self.execute_unbound_process(process, **kwargs)
         successes.append(success)
+
+        if not all(successes):
+            raise TM1pyException(f"{len(successes) - sum(successes)} out of {len(successes)} unbound processes failed")
 
         if not all(successes):
             raise TM1pyException(f"{len(successes) - sum(successes)} out of {len(successes)} unbound processes failed")
