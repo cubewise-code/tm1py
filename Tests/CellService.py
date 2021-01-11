@@ -348,6 +348,19 @@ class TestCellService(unittest.TestCase):
 
         self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [719])
 
+    def test_write_through_unbound_process_sandbox(self):
+        cells = dict()
+        cells["Element 1", "Element4", "Element9"] = 7192
+        self.tm1.cubes.cells.write_through_unbound_process(self.cube_name, cells, sandbox_name=self.sandbox_name)
+
+        query = MdxBuilder.from_cube(self.cube_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[Element 1]",
+            f"[{self.dimension_names[1]}].[Element 4]",
+            f"[{self.dimension_names[2]}].[Element 9]")
+
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx(), sandbox_name=self.sandbox_name), [7192])
+
     def test_write_through_unbound_process_long_digit_as_str(self):
         cells = dict()
         cells["Element 1", "Element4", "Element9"] = '10000.123456789123456789123456789'

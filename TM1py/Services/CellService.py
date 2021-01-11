@@ -8,19 +8,21 @@ from collections import OrderedDict
 from io import StringIO
 from typing import List, Union, Dict, Iterable, Tuple
 
+from mdxpy import MdxHierarchySet, MdxBuilder, Member
+from requests import Response
+
 from TM1py.Exceptions.Exceptions import TM1pyException
 from TM1py.Objects.MDXView import MDXView
 from TM1py.Objects.Process import Process
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
+from TM1py.Services.SandboxService import SandboxService
 from TM1py.Services.ViewService import ViewService
 from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url, add_url_parameters
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
     CaseAndSpaceInsensitiveDict, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, abbreviate_mdx, \
     build_csv_from_cellset_dict, require_version, require_pandas, build_cellset_from_pandas_dataframe, \
     case_and_space_insensitive_equals, get_cube, resembles_mdx, require_admin
-from mdxpy import MdxHierarchySet, MdxBuilder, Member
-from requests import Response
 
 try:
     import pandas as pd
@@ -411,7 +413,12 @@ class CellService(ObjectService):
     def write_through_unbound_process(self, cube_name: str, cellset_as_dict: Dict, increment: bool = False,
                                       sandbox_name: str = None, precision=8, **kwargs):
         if sandbox_name:
-            raise NotImplementedError("Function does not support writing to sandboxes yet")
+            if not self.sandbox_exists(sandbox_name):
+                raise ValueError(f"Sandbox '{sandbox_name}' does not exist")
+
+            enable_sandbox = f"ServerActiveSandboxSet('{sandbox_name}');SetUseActiveSandboxProperty(1);"
+        else:
+            enable_sandbox = f"ServerActiveSandboxSet('');SetUseActiveSandboxProperty(0);"
 
         successes = list()
         statements = list()
@@ -457,13 +464,19 @@ class CellService(ObjectService):
         chunk = list()
         for n, statement in enumerate(statements):
             chunk.append(statement)
-            if n > 0 and n % Process.MAX_STATEMENTS == 0:
-                process = Process(name="", prolog_procedure="\r".join(chunk))
+            if n > 0 and n % (Process.MAX_STATEMENTS * 2) == 0:
+                process = Process(
+                    name="",
+                    prolog_procedure=enable_sandbox + "\r".join(chunk[:Process.MAX_STATEMENTS]),
+                    epilog_procedure="\r".join(chunk[Process.MAX_STATEMENTS:]))
                 success, _, _ = self.execute_unbound_process(process, **kwargs)
                 successes.append(success)
                 chunk = list()
 
-        process = Process(name="", prolog_procedure="\r".join(chunk))
+        process = Process(
+            name="",
+            prolog_procedure=enable_sandbox + "\r".join(chunk[:Process.MAX_STATEMENTS]),
+            epilog_procedure="\r".join(chunk[Process.MAX_STATEMENTS:]))
         success, _, _ = self.execute_unbound_process(process, **kwargs)
         successes.append(success)
 
@@ -1832,3 +1845,7 @@ class CellService(ObjectService):
                     if cell_value or not exclude_empty_cells:
                         result_set.add(cell_value)
         return result_set
+
+    def sandbox_exists(self, sandbox_name) -> bool:
+        sandbox_service = SandboxService(self._rest)
+        return sandbox_service.exists(sandbox_name)
