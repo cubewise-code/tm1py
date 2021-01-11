@@ -248,12 +248,13 @@ class CellService(ObjectService):
 
     @require_admin
     @require_version(version="11.7")
-    def clear_with_mdx(self, cube: str, mdx: str, **kwargs):
+    def clear_with_mdx(self, cube: str, mdx: str, sandbox_name: str = None, **kwargs):
         """ clear a slice in a cube based on an MDX query.
         Function requires admin permissions, since TM1py uses an unbound TI with a `ViewZeroOut` statement.
 
         :param cube: name of the cube
         :param mdx: a valid MDX query
+        :param sandbox_name: a valid existing sandbox for the current user
         :param kwargs:
         :return:
         """
@@ -261,13 +262,22 @@ class CellService(ObjectService):
         process_service = ProcessService(self._rest)
         view_service = ViewService(self._rest)
 
+        if sandbox_name:
+            if not self.sandbox_exists(sandbox_name):
+                raise ValueError(f"Sandbox '{sandbox_name}' does not exist")
+
+            enable_sandbox = f"ServerActiveSandboxSet('{sandbox_name}');SetUseActiveSandboxProperty(1);"
+        else:
+            enable_sandbox = f"ServerActiveSandboxSet('');SetUseActiveSandboxProperty(0);"
+
         view_name = "".join(['}TM1py', str(uuid.uuid4())])
         view_service.create(MDXView(cube_name=cube, view_name=view_name, MDX=mdx))
 
         try:
             code = f"ViewZeroOut('{cube}','{view_name}');"
             process = Process(name="")
-            process.prolog_procedure = code
+            process.prolog_procedure = enable_sandbox
+            process.epilog_procedure = code
 
             success, _, _ = self.execute_unbound_process(process, **kwargs)
             if not success:
