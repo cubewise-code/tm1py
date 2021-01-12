@@ -83,6 +83,26 @@ def manage_transaction_log(func):
 
     return wrapper
 
+def manage_changeset(func):
+    """ Control the start and end of change sets which goups write events together in the TM1 transaction log.
+
+    Decorated function working with all non-TI based writing methods
+    """
+
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if not kwargs.get("use_changeset", False):
+            try:
+                changeset = self.begin_changeset()
+                kwargs["changeset"]=changeset
+                return func(self, *args, **kwargs)
+            finally:
+                self.end_changeset(changeset)
+        else:
+            return func(self, *args, **kwargs)
+
+    return wrapper
+
 
 class CellService(ObjectService):
     """ Service to handle Read and Write operations to TM1 cubes
@@ -312,9 +332,11 @@ class CellService(ObjectService):
         dimensions = cube_service.get_dimension_names(cube_name, True, **kwargs)
         return dimensions
 
+
     @require_pandas
     def write_dataframe(self, cube_name: str, data: 'pd.DataFrame', dimensions: Iterable[str] = None,
                         sandbox_name: str = None,
+                        use_changeset: bool = True,
                         **kwargs) -> Response:
         """
         Function expects same shape as `execute_mdx_dataframe` returns.
@@ -340,7 +362,7 @@ class CellService(ObjectService):
         cells = build_cellset_from_pandas_dataframe(data)
 
         return self.write_values(cube_name=cube_name, cellset_as_dict=cells, dimensions=dimensions,
-                                 sandbox_name=sandbox_name, **kwargs)
+                                 sandbox_name=sandbox_name, use_changeset=use_changeset, **kwargs)
 
     def write_value(self, value: Union[str, float], cube_name: str, element_tuple: Iterable,
                     dimensions: Iterable[str] = None, sandbox_name: str = None, **kwargs) -> Response:
@@ -367,9 +389,10 @@ class CellService(ObjectService):
         data = json.dumps(body_as_dict, ensure_ascii=False)
         return self._rest.POST(url=url, data=data, **kwargs)
 
+
     def write(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None, increment: bool = False,
               deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
-              sandbox_name: str = None, use_ti=False, **kwargs):
+              sandbox_name: str = None, use_ti=False, use_changeset: bool=True, **kwargs):
         """ Write values to a cube
 
         Same signature as `write_values` method, but faster since it uses `write_values_through_cellset`
@@ -416,6 +439,7 @@ class CellService(ObjectService):
             deactivate_transaction_log=deactivate_transaction_log,
             reactivate_transaction_log=reactivate_transaction_log,
             sandbox_name=sandbox_name,
+            use_changeset=True,
             **kwargs)
 
     @require_admin
@@ -508,9 +532,10 @@ class CellService(ObjectService):
 
         return process_service.execute_process_with_return(process, **kwargs)
 
+    @manage_changeset
     @manage_transaction_log
     def write_values(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None,
-                     sandbox_name: str = None, **kwargs) -> Response:
+                     sandbox_name: str = None, use_changeset:bool = True, **kwargs) -> Response:
         """ Write values to a cube
 
         For cellsets with > 1000 cells look into `write` or `write_values_through_cellset`
@@ -526,6 +551,7 @@ class CellService(ObjectService):
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name, **kwargs)
         url = format_url("/api/v1/Cubes('{}')/tm1.Update", cube_name)
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
+        url = add_url_parameters(url, **{"!ChangeSet":kwargs.get('changeset')})
 
         updates = []
         for element_tuple, value in cellset_as_dict.items():
@@ -542,9 +568,10 @@ class CellService(ObjectService):
         updates = '[' + ','.join(updates) + ']'
         return self._rest.POST(url=url, data=updates, **kwargs)
 
+
     @manage_transaction_log
     def write_values_through_cellset(self, mdx: str, values: Iterable, increment: bool = False,
-                                     sandbox_name: str = None, **kwargs) -> Response:
+                                     sandbox_name: str = None, use_changeset: bool = True, **kwargs) -> Response:
         """ Significantly faster than write_values function
 
         Cellset gets created according to MDX Expression. For instance:
@@ -579,10 +606,11 @@ class CellService(ObjectService):
             current_values = self.extract_cellset_values(cellset_id, delete_cellset=False, **kwargs)
             values = (x + (y or None) for x, y in zip(values, current_values))
 
-        return self.update_cellset(cellset_id=cellset_id, values=values, sandbox_name=sandbox_name, **kwargs)
+        return self.update_cellset(cellset_id=cellset_id, values=values, sandbox_name=sandbox_name, use_changeset=use_changeset, **kwargs)
 
+    @manage_changeset
     @tidy_cellset
-    def update_cellset(self, cellset_id: str, values: Iterable, sandbox_name: str = None, **kwargs) -> Response:
+    def update_cellset(self, cellset_id: str, values: Iterable, sandbox_name: str = None, use_changeset: bool = True, **kwargs) -> Response:
         """ Write values into cellset
 
         Number of values must match the number of cells in the cellset
@@ -594,6 +622,7 @@ class CellService(ObjectService):
         """
         url = format_url("/api/v1/Cellsets('{}')/Cells", cellset_id)
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
+        url = add_url_parameters(url, **{"!ChangeSet": kwargs.get("changeset")})
         data = []
         for o, value in enumerate(values):
             data.append({
@@ -1773,16 +1802,9 @@ class CellService(ObjectService):
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         return self._rest.POST(url=url, **kwargs).json()['ID']
 
-    def delete_cellset(self, cellset_id: str, sandbox_name: str = None, **kwargs) -> Response:
-        """ Delete a cellset
 
-        :param cellset_id:
-        :param sandbox_name: str
-        :return:
-        """
-        url = "/api/v1/Cellsets('{}')".format(cellset_id)
-        url = add_url_parameters(url, **{"!sandbox": sandbox_name})
-        return self._rest.DELETE(url, **kwargs)
+
+
 
     def transaction_log_is_active(self, cube_name: str) -> bool:
         mdx = f"""
@@ -1800,7 +1822,9 @@ class CellService(ObjectService):
         updates = {}
         for cube_name in args:
             updates[(cube_name, "Logging")] = "NO"
-        return self.write_values(cube_name="}CubeProperties", cellset_as_dict=updates, **kwargs)
+        return self.write_values(cube_name="}CubeProperties", cellset_as_dict=updates, use_changeset= False, **kwargs)
+
+
 
     def activate_transactionlog(self, *args: str, **kwargs) -> Response:
         """ Activate Transactionlog for one or many cubes
@@ -1811,7 +1835,40 @@ class CellService(ObjectService):
         updates = {}
         for cube_name in args:
             updates[(cube_name, "Logging")] = "YES"
-        return self.write_values(cube_name="}CubeProperties", cellset_as_dict=updates, **kwargs)
+        return self.write_values(cube_name="}CubeProperties", cellset_as_dict=updates, use_changeset= False, **kwargs)
+
+    def begin_changeset(self) -> str:
+        """ begin a change set
+
+        :return: Change set ID
+        """
+
+        url = "/api/v1/BeginChangeSet"
+        return self._rest.POST(url).json()['value']
+        return change_set_id
+
+    def end_changeset(self, change_set: str) -> Response:
+        """end a change set
+
+        :return: Change set ID
+        """
+
+        url = "/api/v1/EndChangeSet"
+        data = {"ChangeSetID":change_set}
+        return self._rest.POST(url, data=json.dumps(data, ensure_ascii=False))
+        return response
+
+    def delete_cellset(self, cellset_id: str, sandbox_name: str = None, **kwargs) -> Response:
+        """ Delete a cellset
+
+        :param cellset_id:
+        :param sandbox_name: str
+        :return:
+        """
+        url = "/api/v1/Cellsets('{}')".format(cellset_id)
+        url = add_url_parameters(url, **{"!sandbox": sandbox_name})
+        return self._rest.DELETE(url, **kwargs)
+
 
     def get_cellset_cells_count(self, mdx: str) -> int:
         """ Execute MDX in order to understand how many cells are in a cellset
