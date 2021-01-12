@@ -7,7 +7,7 @@ import unittest
 from datetime import timedelta
 from pathlib import Path
 
-import dateutil
+from dateutil import parser
 
 from TM1py.Exceptions import TM1pyRestException
 from TM1py.Objects import Cube, Dimension, Hierarchy, Process
@@ -213,7 +213,7 @@ class TestServerService(unittest.TestCase):
         entries = self.tm1.server.get_transaction_log_entries(reverse=True, since=today)
         self.assertTrue(len(entries) > 0)
         for entry in entries:
-            entry_timestamp = dateutil.parser.parse(entry['TimeStamp'])
+            entry_timestamp = parser.parse(entry['TimeStamp'])
             # all the entries should have today's date
             entry_date = entry_timestamp.date()
             today_date = datetime.date.today()
@@ -229,7 +229,7 @@ class TestServerService(unittest.TestCase):
             if entry['TimeStamp'] == '0000-00-00T00:00Z':
                 continue
 
-            entry_timestamp = dateutil.parser.parse(entry['TimeStamp'])
+            entry_timestamp = parser.parse(entry['TimeStamp'])
             entry_date = entry_timestamp.date()
             yesterdays_date = datetime.date.today() - timedelta(days=1)
             self.assertTrue(entry_date <= yesterdays_date)
@@ -240,7 +240,7 @@ class TestServerService(unittest.TestCase):
         entries = self.tm1.server.get_message_log_entries(reverse=True, since=today)
 
         for entry in entries:
-            entry_timestamp = dateutil.parser.parse(entry['TimeStamp'])
+            entry_timestamp = parser.parse(entry['TimeStamp'])
             # all the entries should have today's date
             entry_date = entry_timestamp.date()
             today_date = datetime.date.today()
@@ -257,7 +257,7 @@ class TestServerService(unittest.TestCase):
             if entry['TimeStamp'] == '0000-00-00T00:00Z':
                 continue
 
-            entry_timestamp = dateutil.parser.parse(entry['TimeStamp'])
+            entry_timestamp = parser.parse(entry['TimeStamp'])
             entry_date = entry_timestamp.date()
             yesterdays_date = datetime.date.today() - timedelta(days=1)
             self.assertTrue(entry_date <= yesterdays_date)
@@ -269,7 +269,7 @@ class TestServerService(unittest.TestCase):
 
         entries = self.tm1.server.get_message_log_entries(reverse=True, since=yesterday, until=today)
         for entry in entries:
-            entry_timestamp = dateutil.parser.parse(entry['TimeStamp'])
+            entry_timestamp = parser.parse(entry['TimeStamp'])
             entry_date = entry_timestamp.date()
             yesterdays_date = datetime.date.today() - timedelta(days=1)
             self.assertTrue(entry_date == yesterdays_date)
