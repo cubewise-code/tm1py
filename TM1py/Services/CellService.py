@@ -18,7 +18,6 @@ from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.SandboxService import SandboxService
 from TM1py.Services.ViewService import ViewService
-from TM1py.Services.ProcessService import ProcessService
 from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url, add_url_parameters
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
     CaseAndSpaceInsensitiveDict, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, abbreviate_mdx, \
