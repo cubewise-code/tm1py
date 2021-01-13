@@ -439,7 +439,8 @@ class CellService(ObjectService):
 
             if element_type == 'String':
                 function_str = 'CellPutS('
-                value_str = f"'{value}'"
+                value_str = value.replace("'", "''")
+                value_str = f"'{value_str}'"
 
             # by default assume numeric, to trigger minor errors on write operations to C elements
             else:
@@ -457,7 +458,7 @@ class CellService(ObjectService):
                 function_str,
                 value_str,
                 f",'{cube_name}',",
-                ",".join(f"'{element}'" for element in coordinates),
+                ",".join("'" + element.replace("'", "''") + "'" for element in coordinates),
                 ");"])
             statements.append(statement)
 
