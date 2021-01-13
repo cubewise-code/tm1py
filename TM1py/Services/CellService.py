@@ -526,7 +526,7 @@ class CellService(ObjectService):
                     dim, dim, elem)
                 for dim, elem
                 in zip(dimensions, element_tuple)]
-            body_as_dict["Value"] = str(value) if value else ""
+            body_as_dict["Value"] = value if value else ""
             updates.append(json.dumps(body_as_dict, ensure_ascii=False))
         updates = '[' + ','.join(updates) + ']'
         return self._rest.POST(url=url, data=updates, **kwargs)
