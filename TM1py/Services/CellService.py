@@ -18,6 +18,7 @@ from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.SandboxService import SandboxService
 from TM1py.Services.ViewService import ViewService
+from TM1py.Services.ProcessService import ProcessService
 from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url, add_url_parameters
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
     CaseAndSpaceInsensitiveDict, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, abbreviate_mdx, \
@@ -340,7 +341,7 @@ class CellService(ObjectService):
                         sandbox_name: str = None,
                         use_ti: bool = False,
                         use_changeset: bool = True,
-                        **kwargs) -> Response:
+                        **kwargs) -> Tuple[bool, list, str]:
         '''
         Function expects same shape as `execute_mdx_dataframe` returns.
         Column order must match dimensions in the target cube with an additional column for the values.
@@ -355,7 +356,7 @@ class CellService(ObjectService):
         :param use_ti:
         :param use_changeset:
         :param kwargs:
-        :return:
+        :return: Success: bool, Messages: list, ChangeSet: str
         '''
         if not isinstance(data, pd.DataFrame):
             raise ValueError("argument 'data' must of type DataFrame")
@@ -407,7 +408,7 @@ class CellService(ObjectService):
 
     def write(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None, increment: bool = False,
               deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
-              sandbox_name: str = None, use_ti=False, use_changeset: bool=True, **kwargs):
+              sandbox_name: str = None, use_ti=False, use_changeset: bool=True, **kwargs) -> Tuple[bool, list, str]:
         """ Write values to a cube
 
         Same signature as `write_values` method, but faster since it uses `write_values_through_cellset`
@@ -424,8 +425,9 @@ class CellService(ObjectService):
         :param reactivate_transaction_log: reactivate after writing
         :param sandbox_name: str
         :param use_ti: Use unbound process to write. Requires admin permissions. causes massive performance improvement.
-        :return:
+        :return: Success: bool, Message: list, ChangeSet: str
         """
+
         if use_ti:
             if use_changeset:
                 raise TM1pyException("Writeback via unbound TI processes do not support changesets")
@@ -449,20 +451,30 @@ class CellService(ObjectService):
             values.append(value)
         mdx = query.to_mdx()
 
-        self.write_values_through_cellset(
+        return self.write_values_through_cellset(
             mdx=mdx,
             values=values,
             increment=increment,
             deactivate_transaction_log=deactivate_transaction_log,
             reactivate_transaction_log=reactivate_transaction_log,
             sandbox_name=sandbox_name,
-            use_changeset=True,
+            use_changeset=use_changeset,
             **kwargs)
 
     @require_admin
     @manage_transaction_log
     def write_through_unbound_process(self, cube_name: str, cellset_as_dict: Dict, increment: bool = False,
-                                      sandbox_name: str = None, precision=8, **kwargs):
+                                      sandbox_name: str = None, precision=8, **kwargs) -> Tuple[bool, list, str]:
+        '''
+        Writes data back to TM1 via an unbound TI process
+        :param cube_name:
+        :param cellset_as_dict:
+        :param increment:
+        :param sandbox_name:
+        :param precision:
+        :param kwargs:
+        :return: Success: bool, Messages: list, ChangeSet: None
+        '''
         if sandbox_name:
             if not self.sandbox_exists(sandbox_name):
                 raise ValueError(f"Sandbox '{sandbox_name}' does not exist")
@@ -473,6 +485,8 @@ class CellService(ObjectService):
 
         successes = list()
         statements = list()
+        messages = list()
+        changeset = None
 
         cube_service = self.get_cube_service()
         element_service = self.get_element_service()
@@ -488,9 +502,10 @@ class CellService(ObjectService):
             # use default 'Numeric' so that not existing elements trigger minor error during TI execution
             element_type = measure_dimension_elements.get(coordinates[-1], 'Numeric')
 
-            if element_type == 'String':
+            if element_type == 'String' or isinstance(value, str):
                 function_str = 'CellPutS('
                 value_str = f"'{value}'"
+
 
             # by default assume numeric, to trigger minor errors on write operations to C elements
             else:
@@ -520,19 +535,25 @@ class CellService(ObjectService):
                     name="",
                     prolog_procedure=enable_sandbox + "\r".join(chunk[:Process.MAX_STATEMENTS]),
                     epilog_procedure="\r".join(chunk[Process.MAX_STATEMENTS:]))
-                success, _, _ = self.execute_unbound_process(process, **kwargs)
+                success, status,error_log_file = self.execute_unbound_process(process, **kwargs)
                 successes.append(success)
+                if error_log_file:
+                    message = self.get_error_log_file_content(file_name=error_log_file)
+                    messages.append(message)
+
                 chunk = list()
 
         process = Process(
             name="",
             prolog_procedure=enable_sandbox + "\r".join(chunk[:Process.MAX_STATEMENTS]),
             epilog_procedure="\r".join(chunk[Process.MAX_STATEMENTS:]))
-        success, _, _ = self.execute_unbound_process(process, **kwargs)
+        success, status, error_log_file = self.execute_unbound_process(process, **kwargs)
         successes.append(success)
+        if error_log_file:
+            message = self.get_error_log_file_content(file_name=error_log_file)
+            messages.append(message)
 
-        if not all(successes):
-            raise TM1pyException(f"{len(successes) - sum(successes)} out of {len(successes)} unbound processes failed")
+        return all(successes), messages, changeset
 
     def get_element_service(self):
         from TM1py import ElementService
@@ -547,6 +568,12 @@ class CellService(ObjectService):
         process_service = ProcessService(self._rest)
 
         return process_service.execute_process_with_return(process, **kwargs)
+
+    def get_error_log_file_content(self, file_name: str, **kwargs) -> str:
+        from TM1py import ProcessService
+        process_service = ProcessService(self._rest)
+
+        return process_service.get_error_log_file_content(file_name, **kwargs)
 
 
     @manage_transaction_log
@@ -585,10 +612,10 @@ class CellService(ObjectService):
         updates = '[' + ','.join(updates) + ']'
         return self._rest.POST(url=url, data=updates, **kwargs)
 
-
+    @manage_changeset
     @manage_transaction_log
     def write_values_through_cellset(self, mdx: str, values: Iterable, increment: bool = False,
-                                     sandbox_name: str = None, use_changeset: bool = True, **kwargs) -> Response:
+                                     sandbox_name: str = None, use_changeset: bool = True, **kwargs) -> Tuple[bool, list, str]:
         """ Significantly faster than write_values function
 
         Cellset gets created according to MDX Expression. For instance:
@@ -615,19 +642,29 @@ class CellService(ObjectService):
         :param values: List of values. The Order of the List/ Iterable determines the insertion point in the cellset.
         :param increment: increment or update cells
         :param sandbox_name: str
-        :return:
+        :return: Success: bool, Messages: list, Changeset: str
         """
-        cellset_id = self.create_cellset(mdx=mdx, sandbox_name=sandbox_name, **kwargs)
 
-        if increment:
-            current_values = self.extract_cellset_values(cellset_id, delete_cellset=False, **kwargs)
-            values = (x + (y or None) for x, y in zip(values, current_values))
+        changeset = kwargs.get("changeset")
+        try:
+            cellset_id = self.create_cellset(mdx=mdx, sandbox_name=sandbox_name, **kwargs)
+            if increment:
+                current_values = self.extract_cellset_values(cellset_id, delete_cellset=False, **kwargs)
+                values = (x + (y or None) for x, y in zip(values, current_values))
+            response = self.update_cellset(cellset_id=cellset_id, values=values, sandbox_name=sandbox_name, **kwargs)
+            success = response.ok
+            messages = None
+        except TM1pyException as e:
+            success = False
+            messages = [str(e)]
+        finally:
+            return success, messages, changeset
 
-        return self.update_cellset(cellset_id=cellset_id, values=values, sandbox_name=sandbox_name, use_changeset=use_changeset, **kwargs)
 
-    @manage_changeset
+
+
     @tidy_cellset
-    def update_cellset(self, cellset_id: str, values: Iterable, sandbox_name: str = None, use_changeset: bool = True, **kwargs) -> Response:
+    def update_cellset(self, cellset_id: str, values: Iterable, sandbox_name: str = None, changeset: str = None, **kwargs) -> Response:
         """ Write values into cellset
 
         Number of values must match the number of cells in the cellset
@@ -637,16 +674,21 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return:
         """
+
         url = format_url("/api/v1/Cellsets('{}')/Cells", cellset_id)
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
-        url = add_url_parameters(url, **{"!ChangeSet": kwargs.get("changeset")})
+        url = add_url_parameters(url, **{"!ChangeSet": changeset})
         data = []
         for o, value in enumerate(values):
             data.append({
                 "Ordinal": o,
                 "Value": value
             })
+
         return self._rest.PATCH(url, json.dumps(data, ensure_ascii=False), **kwargs)
+
+
+
 
     def execute_mdx(self, mdx: str, cell_properties: List[str] = None, top: int = None, skip_contexts: bool = False,
                     skip: int = None, skip_zeros: bool = False, skip_consolidated_cells: bool = False,
@@ -1865,6 +1907,17 @@ class CellService(ObjectService):
         """
 
         url = "/api/v1/EndChangeSet"
+        data = {"ChangeSetID":change_set}
+        return self._rest.POST(url, data=json.dumps(data, ensure_ascii=False))
+        return response
+
+    def undo_changeset(self, change_set: str) -> Response:
+        """undo a changeset. Similar to rolling back transactions.
+
+        :return: Change set ID
+        """
+
+        url = "/api/v1/UndoChangeSet"
         data = {"ChangeSetID":change_set}
         return self._rest.POST(url, data=json.dumps(data, ensure_ascii=False))
         return response
