@@ -22,7 +22,7 @@ from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url, add_url_p
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
     CaseAndSpaceInsensitiveDict, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, abbreviate_mdx, \
     build_csv_from_cellset_dict, require_version, require_pandas, build_cellset_from_pandas_dataframe, \
-    case_and_space_insensitive_equals, get_cube, resembles_mdx, require_admin
+    case_and_space_insensitive_equals, get_cube, resembles_mdx, require_admin, lower_and_drop_spaces
 
 try:
     import pandas as pd
@@ -412,13 +412,19 @@ class CellService(ObjectService):
     @manage_transaction_log
     def write_through_unbound_process(self, cube_name: str, cellset_as_dict: Dict, increment: bool = False,
                                       sandbox_name: str = None, precision=8, **kwargs):
+        cube_name = lower_and_drop_spaces(cube_name)
         if sandbox_name:
+            if cube_name.startswith("}elementattributes_"):
+                raise ValueError("Sandbox must not be used in }ElementAttributes cube")
             if not self.sandbox_exists(sandbox_name):
                 raise ValueError(f"Sandbox '{sandbox_name}' does not exist")
 
             enable_sandbox = f"ServerActiveSandboxSet('{sandbox_name}');SetUseActiveSandboxProperty(1);"
         else:
-            enable_sandbox = f"ServerActiveSandboxSet('');SetUseActiveSandboxProperty(0);"
+            if cube_name.startswith("}elementattributes_"):
+                enable_sandbox = ""
+            else:
+                enable_sandbox = f"ServerActiveSandboxSet('');SetUseActiveSandboxProperty(0);"
 
         successes = list()
         statements = list()
@@ -476,7 +482,8 @@ class CellService(ObjectService):
         process = Process(
             name="",
             prolog_procedure=enable_sandbox + "\r".join(chunk[:Process.MAX_STATEMENTS]),
-            epilog_procedure="\r".join(chunk[Process.MAX_STATEMENTS:]))
+            epilog_procedure="\r".join(chunk[Process.MAX_STATEMENTS:]),
+            has_security_access=True)
         success, _, _ = self.execute_unbound_process(process, **kwargs)
         successes.append(success)
 

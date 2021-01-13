@@ -403,6 +403,19 @@ class TestCellService(unittest.TestCase):
 
         self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [8])
 
+    def test_write_through_unbound_process_to_element_attributes(self):
+        cells = dict()
+        cells["Element 1", "Attr1"] = "ABC123"
+
+        self.tm1.cells.write_through_unbound_process(
+            cube_name=f"}}ElementAttributes_{self.dimension_names[0]}",
+            cellset_as_dict=cells)
+
+        query = MdxBuilder.from_cube(f"}}ElementAttributes_{self.dimension_names[0]}")
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[Element1]", f"[}}ElementAttributes_{self.dimension_names[0]}].[Attr1]")
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), ["ABC123"])
+
     def test_write_through_unbound_process_to_not_existing_element(self):
         cells = dict()
         cells["Element 1", "Element4", "element6"] = 5
