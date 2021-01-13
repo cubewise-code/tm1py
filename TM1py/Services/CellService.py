@@ -51,7 +51,6 @@ def tidy_cellset(func):
 
     return wrapper
 
-
 def manage_transaction_log(func):
     """ Control state of transaction log during and after write operation for a given cube through:
     `deactivate_transaction_log` and `reactivate_transaction_log`.
@@ -91,7 +90,7 @@ def manage_changeset(func):
 
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
-        if not kwargs.get("use_changeset", False):
+        if kwargs.get("use_changeset", False):
             try:
                 changeset = self.begin_changeset()
                 kwargs["changeset"]=changeset
@@ -335,21 +334,29 @@ class CellService(ObjectService):
 
     @require_pandas
     def write_dataframe(self, cube_name: str, data: 'pd.DataFrame', dimensions: Iterable[str] = None,
+                        increment: bool = False,
+                        deactivate_transaction_log: bool = False,
+                        reactivate_transaction_log: bool = False,
                         sandbox_name: str = None,
+                        use_ti: bool = False,
                         use_changeset: bool = True,
                         **kwargs) -> Response:
-        """
+        '''
         Function expects same shape as `execute_mdx_dataframe` returns.
         Column order must match dimensions in the target cube with an additional column for the values.
         Column names are not relevant.
-
         :param cube_name:
-        :param data:
+        :param data: Pandas Data Frame
         :param dimensions:
-        :param sandbox_name: str
+        :param increment:
+        :param deactivate_transaction_log:
+        :param reactivate_transaction_log:
+        :param sandbox_name:
+        :param use_ti:
+        :param use_changeset:
         :param kwargs:
         :return:
-        """
+        '''
         if not isinstance(data, pd.DataFrame):
             raise ValueError("argument 'data' must of type DataFrame")
 
@@ -361,8 +368,16 @@ class CellService(ObjectService):
 
         cells = build_cellset_from_pandas_dataframe(data)
 
-        return self.write_values(cube_name=cube_name, cellset_as_dict=cells, dimensions=dimensions,
-                                 sandbox_name=sandbox_name, use_changeset=use_changeset, **kwargs)
+        return self.write(cube_name=cube_name,
+                          cellset_as_dict=cells,
+                          dimensions=dimensions,
+                          increment=increment,
+                          deactivate_transaction_log=deactivate_transaction_log,
+                          reactivate_transaction_log=reactivate_transaction_log,
+                          sandbox_name=sandbox_name,
+                          use_ti=use_ti,
+                          use_changeset=use_changeset
+                          , **kwargs)
 
     def write_value(self, value: Union[str, float], cube_name: str, element_tuple: Iterable,
                     dimensions: Iterable[str] = None, sandbox_name: str = None, **kwargs) -> Response:
@@ -412,6 +427,8 @@ class CellService(ObjectService):
         :return:
         """
         if use_ti:
+            if use_changeset:
+                raise TM1pyException("Writeback via unbound TI processes do not support changesets")
             return self.write_through_unbound_process(
                 cube_name=cube_name,
                 cellset_as_dict=cellset_as_dict,
@@ -531,10 +548,10 @@ class CellService(ObjectService):
 
         return process_service.execute_process_with_return(process, **kwargs)
 
-    @manage_changeset
+
     @manage_transaction_log
     def write_values(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None,
-                     sandbox_name: str = None, use_changeset:bool = True, **kwargs) -> Response:
+                     sandbox_name: str = None, **kwargs) -> Response:
         """ Write values to a cube
 
         For cellsets with > 1000 cells look into `write` or `write_values_through_cellset`
@@ -546,11 +563,12 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return: Response
         """
+        warnings.warn("Function Deprecated as of TM1py 1.6; Please Use the Write Function", DeprecationWarning, stacklevel=2)
+
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name, **kwargs)
         url = format_url("/api/v1/Cubes('{}')/tm1.Update", cube_name)
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
-        url = add_url_parameters(url, **{"!ChangeSet":kwargs.get('changeset')})
 
         updates = []
         for element_tuple, value in cellset_as_dict.items():
@@ -805,6 +823,7 @@ class CellService(ObjectService):
         """
         cellset_id = self.create_cellset(mdx=mdx, sandbox_name=sandbox_name, **kwargs)
         return self.extract_cellset_values(cellset_id, delete_cellset=True, sandbox_name=sandbox_name, **kwargs)
+
 
     def execute_view_values(self, cube_name: str, view_name: str, private: bool = False, sandbox_name: str = None,
                             **kwargs) -> List[Union[str, float]]:
@@ -1801,10 +1820,6 @@ class CellService(ObjectService):
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         return self._rest.POST(url=url, **kwargs).json()['ID']
 
-
-
-
-
     def transaction_log_is_active(self, cube_name: str) -> bool:
         mdx = f"""
         SELECT {{[}}Cubes].[{cube_name}]}} ON 0, {{[}}CubeProperties].[LOGGING]}} ON 1 FROM [}}CubeProperties]
@@ -1818,12 +1833,9 @@ class CellService(ObjectService):
         :param args: one or many cube names
         :return:
         """
-        updates = {}
-        for cube_name in args:
-            updates[(cube_name, "Logging")] = "NO"
-        return self.write_values(cube_name="}CubeProperties", cellset_as_dict=updates, use_changeset= False, **kwargs)
-
-
+        value = "NO"
+        element_tuple = (args[0], "Logging")
+        return self.write_value(value=value, cube_name="}CubeProperties",element_tuple=element_tuple, **kwargs)
 
     def activate_transactionlog(self, *args: str, **kwargs) -> Response:
         """ Activate Transactionlog for one or many cubes
@@ -1831,10 +1843,10 @@ class CellService(ObjectService):
         :param args: one or many cube names
         :return:
         """
-        updates = {}
-        for cube_name in args:
-            updates[(cube_name, "Logging")] = "YES"
-        return self.write_values(cube_name="}CubeProperties", cellset_as_dict=updates, use_changeset= False, **kwargs)
+
+        value = "YES"
+        element_tuple = (args[0], "Logging")
+        return self.write_value(value=value, cube_name="}CubeProperties",element_tuple=element_tuple, **kwargs)
 
     def begin_changeset(self) -> str:
         """ begin a change set
@@ -1867,7 +1879,6 @@ class CellService(ObjectService):
         url = "/api/v1/Cellsets('{}')".format(cellset_id)
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         return self._rest.DELETE(url, **kwargs)
-
 
     def get_cellset_cells_count(self, mdx: str) -> int:
         """ Execute MDX in order to understand how many cells are in a cellset
