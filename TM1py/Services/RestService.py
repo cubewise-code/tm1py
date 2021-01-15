@@ -198,6 +198,8 @@ class RestService:
         if not self._version:
             self.set_version()
 
+        self._sandboxing_disabled = None
+
         # manage connection pool
         if "connection_pool_size" in kwargs:
             self._manage_http_connection_pool(kwargs.get("connection_pool_size"))
@@ -388,6 +390,13 @@ class RestService:
 
         return self._is_admin
 
+    @property
+    def sandboxing_disabled(self):
+        if self._sandboxing_disabled is None:
+            value = self.GET("/api/v1/ActiveConfiguration/Administration/DisableSandboxing/$value")
+            self._sandboxing_disabled = value
+
+        return self._sandboxing_disabled
 
     @property
     def session_id(self) -> str:

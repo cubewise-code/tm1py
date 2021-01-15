@@ -5,7 +5,8 @@ from pathlib import Path
 from mdxpy import CalculatedMember, MdxBuilder, MdxHierarchySet, Member
 
 from TM1py import Sandbox
-from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyVersionException
+from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyVersionException, TM1pyWritePartialFailureException, \
+    TM1pyWriteFailureException
 from TM1py.Objects import (AnonymousSubset, Cube, Dimension, Element,
                            ElementAttribute, Hierarchy, MDXView, NativeView)
 from TM1py.Services import TM1Service
@@ -297,7 +298,7 @@ class TestCellService(unittest.TestCase):
 
     def test_write_use_ti(self):
         cells = {("Element 1", "Element4", "Element9"): 1234}
-        self.tm1.cubes.cells.write(self.cube_name, cells, use_ti=True)
+        self.tm1.cubes.cells.write(self.cube_name, cells, use_ti=True, use_changeset=False)
 
         query = MdxBuilder.from_cube(self.cube_name)
         query.add_member_tuple_to_columns(
@@ -392,7 +393,7 @@ class TestCellService(unittest.TestCase):
         cells["Element 1", "Element4", "TOTAL_" + self.dimensions_with_consolidations_names[2]] = 5
         cells["Element 1", "Element4", "Element3"] = 8
 
-        with self.assertRaises(TM1pyException):
+        with self.assertRaises(TM1pyWritePartialFailureException):
             self.tm1.cubes.cells.write_through_unbound_process(self.cube_with_consolidations_name, cells)
 
         query = MdxBuilder.from_cube(self.cube_with_consolidations_name)
@@ -408,7 +409,7 @@ class TestCellService(unittest.TestCase):
         cells["Element 1", "Element4", "element6"] = 5
         cells["Element 1", "Element4", "Not Existing Element"] = 8
 
-        with self.assertRaises(TM1pyException):
+        with self.assertRaises(TM1pyWritePartialFailureException):
             self.tm1.cubes.cells.write_through_unbound_process(self.cube_with_consolidations_name, cells)
 
         query = MdxBuilder.from_cube(self.cube_with_consolidations_name)
@@ -418,6 +419,87 @@ class TestCellService(unittest.TestCase):
             f"[{self.dimensions_with_consolidations_names[2]}].[Element 6]")
 
         self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [5])
+
+    def test_write_through_unbound_process_write_failure_exception(self):
+        cells = dict()
+        cells["Element 1", "Element4", "Not Existing Element 1"] = "Text 1"
+        cells["Element 2", "Element8", "Element 9"] = 8
+
+        with self.assertRaises(TM1pyWriteFailureException) as ex:
+            self.tm1.cubes.cells.write_through_unbound_process(self.cube_with_consolidations_name, cells)
+        self.assertEqual(ex.exception.statuses, ['Aborted'])
+        self.assertIn(".log", ex.exception.error_log_files[0])
+
+        query = MdxBuilder.from_cube(self.cube_with_consolidations_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimensions_with_consolidations_names[0]}].[Element 2]",
+            f"[{self.dimensions_with_consolidations_names[1]}].[Element 8]",
+            f"[{self.dimensions_with_consolidations_names[2]}].[Element 9]")
+
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [None])
+
+    def test_write_through_unbound_process_write_partial_failure_exception(self):
+        cells = dict()
+        cells["Element 2", "Element8", "Not Existing Element"] = 2
+        cells["Element 2", "Element8", "Element 5"] = 8
+
+        with self.assertRaises(TM1pyWritePartialFailureException) as ex:
+            self.tm1.cubes.cells.write_through_unbound_process(self.cube_with_consolidations_name, cells)
+        self.assertEqual(ex.exception.statuses, ['HasMinorErrors'])
+        self.assertEqual(ex.exception.attempts, 1)
+        self.assertIn(".log", ex.exception.error_log_files[0])
+
+        query = MdxBuilder.from_cube(self.cube_with_consolidations_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimensions_with_consolidations_names[0]}].[Element 2]",
+            f"[{self.dimensions_with_consolidations_names[1]}].[Element 8]",
+            f"[{self.dimensions_with_consolidations_names[2]}].[Element 5]")
+
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [8])
+
+    def test_undo_cellset_write(self):
+        cells = dict()
+        cells["Element 12", "Element 13", "Element 15"] = 3.3
+
+        changeset = self.tm1.cells.write(self.cube_name, cells, use_changeset=True)
+
+        query = MdxBuilder.from_cube(self.cube_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[Element 12]",
+            f"[{self.dimension_names[1]}].[Element 13]",
+            f"[{self.dimension_names[2]}].[Element 15]")
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [3.3])
+
+        self.tm1.cells.undo_changeset(changeset=changeset)
+
+        query = MdxBuilder.from_cube(self.cube_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[Element 12]",
+            f"[{self.dimension_names[1]}].[Element 13]",
+            f"[{self.dimension_names[2]}].[Element 15]")
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [None])
+
+    def test_undo_cellset_write_values(self):
+        cells = dict()
+        cells["Element 16", "Element 13", "Element 15"] = 3.6
+
+        changeset = self.tm1.cells.write_values(self.cube_name, cells, use_changeset=True)
+
+        query = MdxBuilder.from_cube(self.cube_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[Element 16]",
+            f"[{self.dimension_names[1]}].[Element 13]",
+            f"[{self.dimension_names[2]}].[Element 15]")
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [3.6])
+
+        self.tm1.cells.undo_changeset(changeset=changeset)
+
+        query = MdxBuilder.from_cube(self.cube_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[Element 16]",
+            f"[{self.dimension_names[1]}].[Element 13]",
+            f"[{self.dimension_names[2]}].[Element 15]")
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [None])
 
     def test_write_through_unbound_process_multi_str(self):
         cells = dict()
