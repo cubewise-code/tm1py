@@ -417,9 +417,6 @@ class CellService(ObjectService):
         """
 
         if use_ti:
-            if use_changeset:
-                raise TM1pyException("Writeback via unbound TI processes do not support changesets")
-
             return self.write_through_unbound_process(
                 cube_name=cube_name,
                 cellset_as_dict=cellset_as_dict,
