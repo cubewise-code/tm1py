@@ -497,6 +497,8 @@ class CellService(ObjectService):
                         value_str = format(float(value), f'.{precision}f')
                     except ValueError:
                         value_str = f'{value}'
+                elif value is None:
+                    value_str = '0'
                 else:
                     value_str = format(value, f'.{precision}f')
 
