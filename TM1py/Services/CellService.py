@@ -329,7 +329,7 @@ class CellService(ObjectService):
     def write_dataframe(self, cube_name: str, data: 'pd.DataFrame', dimensions: Iterable[str] = None,
                         increment: bool = False, deactivate_transaction_log: bool = False,
                         reactivate_transaction_log: bool = False, sandbox_name: str = None,
-                        use_ti: bool = False, use_changeset: bool = True, **kwargs) -> str:
+                        use_ti: bool = False, use_changeset: bool = False, **kwargs) -> str:
         """
         Function expects same shape as `execute_mdx_dataframe` returns.
         Column order must match dimensions in the target cube with an additional column for the values.
@@ -342,7 +342,7 @@ class CellService(ObjectService):
         :param reactivate_transaction_log:
         :param sandbox_name:
         :param use_ti:
-        :param use_changeset:
+        :param use_changeset: Enable ChangesetID: True or False
         :param kwargs:
         :return: ChangeSet: str
         """
@@ -395,7 +395,7 @@ class CellService(ObjectService):
 
     def write(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None, increment: bool = False,
               deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
-              sandbox_name: str = None, use_ti=False, use_changeset: bool = True, **kwargs) -> Optional[str]:
+              sandbox_name: str = None, use_ti=False, use_changeset: bool = False, **kwargs) -> Optional[str]:
         """ Write values to a cube
 
         Same signature as `write_values` method, but faster since it uses `write_values_through_cellset`
@@ -412,7 +412,7 @@ class CellService(ObjectService):
         :param reactivate_transaction_log: reactivate after writing
         :param sandbox_name: str
         :param use_ti: Use unbound process to write. Requires admin permissions. causes massive performance improvement.
-        :param use_changeset: True or False
+        :param use_changeset: Enable ChangesetID: True or False
         :return: changeset or None
         """
 
