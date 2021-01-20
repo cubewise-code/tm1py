@@ -388,6 +388,37 @@ class TestCellService(unittest.TestCase):
 
         self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), ['TM1py Test'])
 
+    def test_write_through_unbound_process_attributes(self):
+        cells = dict()
+        cells["element1", "Attr1"] = 'Text 1'
+        cells["element1", "Attr2"] = 1
+        cells["element1", "Attr3"] = 2
+        cells["element2", "Attr1"] = ""
+        cells["element2", "Attr2"] = 0
+        cells["element2", "Attr3"] = None
+        self.tm1.cubes.cells.write_through_unbound_process("}ElementAttributes_" + self.dimension_names[0], cells)
+
+        query = MdxBuilder.from_cube("}ElementAttributes_" + self.dimension_names[0])
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[element1]",
+            f"[}}ElementAttributes_{self.dimension_names[0]}].[Attr1]")
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[element1]",
+            f"[}}ElementAttributes_{self.dimension_names[0]}].[Attr2]")
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[element1]",
+            f"[}}ElementAttributes_{self.dimension_names[0]}].[Attr3]")
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[element2]",
+            f"[}}ElementAttributes_{self.dimension_names[0]}].[Attr1]")
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[element2]",
+            f"[}}ElementAttributes_{self.dimension_names[0]}].[Attr2]")
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[element2]",
+            f"[}}ElementAttributes_{self.dimension_names[0]}].[Attr3]")
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), ['Text 1', 1, 2, "", None, None])
+
     def test_write_through_unbound_process_to_consolidation(self):
         cells = dict()
         cells["Element 1", "Element4", "TOTAL_" + self.dimensions_with_consolidations_names[2]] = 5
