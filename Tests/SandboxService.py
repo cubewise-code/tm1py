@@ -58,14 +58,13 @@ class TestSandboxService(unittest.TestCase):
     def test_get_all_names(self):
         sandbox_names = self.tm1.sandboxes.get_all_names()
 
-        self.assertEqual(1, len(sandbox_names))
-        self.assertEqual(sandbox_names[0], self.sandbox_name1)
+        self.assertGreater(len(sandbox_names), 0)
+        self.assertIn(self.sandbox_name1, sandbox_names)
 
     def test_get_all(self):
         sandboxes = self.tm1.sandboxes.get_all()
 
-        self.assertEqual(1, len(sandboxes))
-        self.assertEqual(sandboxes[0], Sandbox(self.sandbox_name1, True))
+        self.assertGreater(len(sandboxes), 0)
 
     def test_update_sandbox(self):
         sandbox = self.tm1.sandboxes.get(self.sandbox_name1)
