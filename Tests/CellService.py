@@ -998,6 +998,20 @@ class TestCellService(unittest.TestCase):
                 axis["Tuples"][0]["Members"][0]["UniqueName"])
             self.assertNotEqual(dimension_on_axis, self.dimension_names[2])
 
+    def test_execute_mdx_raw_include_hierarchies(self):
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(self.dimension_names[0], "Element1"))) \
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.member(Member.of(self.dimension_names[1], "Element1"))) \
+            .add_member_to_where("[" + self.dimension_names[2] + "].[Element1]").to_mdx()
+
+        raw_response = self.tm1.cubes.cells.execute_mdx_raw(mdx, include_hierarchies=True)
+
+        for axis_counter, axis in enumerate(raw_response['Axes']):
+            hierarchies = axis['Hierarchies']
+
+            self.assertEqual(self.dimension_names[axis_counter], hierarchies[0]['Name'])
+            self.assertEqual(self.dimension_names[axis_counter], hierarchies[0]['Dimension']['Name'])
+
     def test_execute_mdx_rows_and_values_one_cell(self):
         mdx = MdxBuilder.from_cube(self.cube_name) \
             .add_hierarchy_set_to_axis(1, MdxHierarchySet.member(Member.of(self.dimension_names[0], "Element1"))) \
