@@ -769,6 +769,7 @@ class CellService(ObjectService):
             skip_consolidated_cells: bool = False,
             skip_rule_derived_cells: bool = False,
             sandbox_name: str = None,
+            include_hierarchies: bool = False,
             **kwargs) -> Dict:
         """ Execute MDX and return the raw data from TM1
 
@@ -783,6 +784,7 @@ class CellService(ObjectService):
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
         :param sandbox_name: str
+        :param include_hierarchies: retrieve Hierarchies property on Axes
         :return: Raw format from TM1.
         """
         cellset_id = self.create_cellset(mdx=mdx, sandbox_name=sandbox_name, **kwargs)
@@ -799,6 +801,7 @@ class CellService(ObjectService):
             skip_consolidated_cells=skip_consolidated_cells,
             skip_rule_derived_cells=skip_rule_derived_cells,
             sandbox_name=sandbox_name,
+            include_hierarchies=include_hierarchies,
             **kwargs)
 
     def execute_view_raw(
@@ -1445,6 +1448,7 @@ class CellService(ObjectService):
             skip_consolidated_cells: bool = False,
             skip_rule_derived_cells: bool = False,
             sandbox_name: str = None,
+            include_hierarchies: bool = False,
             **kwargs) -> Dict:
         """ Extract full cellset data and return the raw data from TM1
 
@@ -1459,6 +1463,7 @@ class CellService(ObjectService):
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
         :param sandbox_name: str
+        :param include_hierarchies: retrieve Hierarchies property on Axes
         :return: Raw format from TM1.
         """
         if not cell_properties:
@@ -1501,15 +1506,21 @@ class CellService(ObjectService):
 
             filter_cells = " and ".join(filters)
 
+        if include_hierarchies:
+            expand_hierarchies = "Hierarchies($select=Name;$expand=Dimension($select=Name)),"
+        else:
+            expand_hierarchies = ""
+
         url = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
               "Cube($select=Name;$expand=Dimensions($select=Name))," \
-              "Axes({filter_axis}$expand=Tuples($expand=Members({select_member_properties}" \
+              "Axes({filter_axis}$expand={hierarchies}Tuples($expand=Members({select_member_properties}" \
               "{expand_elem_properties}{top_rows})))," \
               "Cells($select={cell_properties}{top_cells}{skip_cells}{filter_cells})" \
             .format(cellset_id=cellset_id,
                     top_rows=f";$top={top}" if top and not skip else "",
                     cell_properties=",".join(cell_properties),
                     filter_axis=filter_axis,
+                    hierarchies=expand_hierarchies,
                     select_member_properties=select_member_properties,
                     expand_elem_properties=expand_elem_properties,
                     top_cells=f";$top={top}" if top else "",
