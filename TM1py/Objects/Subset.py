@@ -170,8 +170,8 @@ class AnonymousSubset(Subset):
 
     """
 
-    def __init__(self, dimension_name: str, hierarchy_name: Optional[str] = None, alias: str = '',
-                 expression: Optional[str] = None, elements: Optional[Iterable[str]] = None):
+    def __init__(self, dimension_name: str, hierarchy_name: Optional[str] = None, expression: Optional[str] = None,
+                 elements: Optional[Iterable[str]] = None, alias: str = ''):
         Subset.__init__(self,
                         dimension_name=dimension_name,
                         hierarchy_name=hierarchy_name if hierarchy_name else dimension_name,
