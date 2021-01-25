@@ -12,7 +12,7 @@ from requests import Response
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import format_url
-from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, require_admin
+from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, require_admin, require_version
 
 
 def odata_track_changes_header(func):
@@ -202,6 +202,7 @@ class ServerService(ObjectService):
         return response.json()['value']
     
     @require_admin
+    @require_version(version="11.6")
     def get_audit_log_entries(self, user: str = None, object_type: str = None, object_name: str = None,
                                     since: datetime = None, until: datetime = None, top: int = None, **kwargs) -> Dict:
         """
