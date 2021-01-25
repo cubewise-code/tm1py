@@ -25,7 +25,7 @@ TM1py offers handy features to interact with TM1 from Python, such as
 - Execute loose statements of TI
 - CRUD features for TM1 objects (cubes, dimensions, subsets, etc.)
 - Query and kill threads
-- Query MessageLog and TransactionLog
+- Query MessageLog, TransactionLog and AuditLog
 - Generate MDX Queries from existing cube views
 
 Requirements
