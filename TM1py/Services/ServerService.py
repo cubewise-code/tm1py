@@ -205,7 +205,6 @@ class ServerService(ObjectService):
     def get_audit_log_entries(self, user: str = None, object_type: str = None, object_name: str = None,
                                     since: datetime = None, until: datetime = None, top: int = None, **kwargs) -> Dict:
         """
-        :param reverse: Boolean
         :param user: UserName
         :param object_type: ObjectType
         :param object_name: ObjectName
