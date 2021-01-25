@@ -61,6 +61,22 @@ class ServerService(ObjectService):
         return response.json()['value']
 
     @odata_track_changes_header
+    def initialize_audit_log_delta_requests(self, filter=None, **kwargs):
+        url = "/api/v1/AuditLogEntries"
+        if filter:
+            url += "?$filter={}".format(filter)
+        response = self._rest.GET(url=url, **kwargs)
+        # Read the next delta-request-url from the response
+        self.tlog_last_delta_request = response.text[response.text.rfind("AuditLogEntries/!delta('"):-2]
+
+    @odata_track_changes_header
+    def execute_audit_log_delta_request(self, **kwargs) -> Dict:
+        response = self._rest.GET(url="/api/v1/" + self.tlog_last_delta_request, **kwargs)
+        self.tlog_last_delta_request = response.text[response.text.rfind("AuditLogEntries/!delta('"):-2]
+        return response.json()['value']    
+    
+    
+    @odata_track_changes_header
     def initialize_message_log_delta_requests(self, filter=None, **kwargs):
         url = "/api/v1/MessageLogEntries"
         if filter:
@@ -168,6 +184,47 @@ class ServerService(ObjectService):
                 log_filters.append(format_url("User eq '{}'", user))
             if cube:
                 log_filters.append(format_url("Cube eq '{}'", cube))
+            if since:
+                # If since doesn't have tz information, UTC is assumed
+                if not since.tzinfo:
+                    since = self.utc_localize_time(since)
+                log_filters.append(format_url("TimeStamp ge {}", since.strftime("%Y-%m-%dT%H:%M:%SZ")))
+            if until:
+                # If until doesn't have tz information, UTC is assumed
+                if not until.tzinfo:
+                    until = self.utc_localize_time(until)
+                log_filters.append(format_url("TimeStamp le {}", until.strftime("%Y-%m-%dT%H:%M:%SZ")))
+            url += "&$filter={}".format(" and ".join(log_filters))
+        # top limit
+        if top:
+            url += '&$top={}'.format(top)
+        response = self._rest.GET(url, **kwargs)
+        return response.json()['value']
+    
+    @require_admin
+    def get_audit_log_entries(self, user: str = None, object_type: str = None, object_name: str = None,
+                                    since: datetime = None, until: datetime = None, top: int = None, **kwargs) -> Dict:
+        """
+        :param reverse: Boolean
+        :param user: UserName
+        :param object_type: ObjectType
+        :param object_name: ObjectName
+        :param since: of type datetime. If it doesn't have tz information, UTC is assumed.
+        :param until: of type datetime. If it doesn't have tz information, UTC is assumed.
+        :param top: int
+        :return:
+        """
+        
+        url = '/api/v1/AuditLogEntries?$expand=AuditDetails'
+        # filter on user, object_type, object_name  and time
+        if user or since or until:
+            log_filters = []
+            if user:
+                log_filters.append(format_url("UserName eq '{}'", user))
+            if object_type:
+                log_filters.append(format_url("ObjectType eq '{}'", object_type))    
+            if object_name:
+                log_filters.append(format_url("ObjectName eq '{}'", object_name))
             if since:
                 # If since doesn't have tz information, UTC is assumed
                 if not since.tzinfo:
