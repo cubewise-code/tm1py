@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 from typing import List
 
-from TM1py.Objects.TM1Object import TM1Object
 
-
-class GitRemote(TM1Object):
+class GitRemote:
     """ Abstraction of GitRemote
     """
 
@@ -25,6 +23,7 @@ class GitRemote(TM1Object):
     @property
     def branches(self) -> List[str]:
         return self._branches
+
     @property
     def tags(self) -> List[str]:
         return self._tags

@@ -4,9 +4,10 @@ from typing import List
 from TM1py.Objects.GitCommit import GitCommit
 
 
-class GitPlan():
+class GitPlan:
     """ Base GitPlan abstraction
     """
+
     def __init__(self, plan_id: str, branch: str, force: bool):
         """ Initialize GitPlan object
         :param plan_id: id of the Plan
@@ -34,7 +35,8 @@ class GitPushPlan(GitPlan):
     """ GitPushPlan abstraction based on GitPlan
     """
 
-    def __init__(self, plan_id: str, branch: str, force: bool, new_branch: str, new_commit: GitCommit, parent_commit: GitCommit, source_files : List[str]):
+    def __init__(self, plan_id: str, branch: str, force: bool, new_branch: str, new_commit: GitCommit,
+                 parent_commit: GitCommit, source_files: List[str]):
         """ Initialize GitPushPlan object
         :param plan_id: id of the PushPlan
         :param branch: current branch to base the pushplan on
@@ -42,7 +44,7 @@ class GitPushPlan(GitPlan):
         :param new_branch: the new branch that will be pushed to
         :param new_commit: GitCommit of the new commit
         :param parent_commit: The current commit in the branch
-        :param soruce_files: list of included files in the push
+        :param source_files: list of included files in the push
         """
         self._new_branch = new_branch
         self._new_commit = new_commit
@@ -74,7 +76,7 @@ class GitPullPlan(GitPlan):
 
     def __init__(self, plan_id: str, branch: str, force: bool, commit: GitCommit, operations: List[str]):
         """ Initialize GitPushPlan object
-        :param pland_id: id of the PullPlan
+        :param plan_id: id of the PullPlan
         :param branch: current branch to base the pullplan on
         :param force: force git context reset
         :param commit: GitCommit of the commit to pull
