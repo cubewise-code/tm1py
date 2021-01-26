@@ -204,7 +204,7 @@ class ServerService(ObjectService):
     @require_admin
     @require_version(version="11.6")
     def get_audit_log_entries(self, user: str = None, object_type: str = None, object_name: str = None,
-                                    since: datetime = None, until: datetime = None, top: int = None, **kwargs) -> Dict:
+                              since: datetime = None, until: datetime = None, top: int = None, **kwargs) -> Dict:
         """
         :param user: UserName
         :param object_type: ObjectType
@@ -217,7 +217,7 @@ class ServerService(ObjectService):
         
         url = '/api/v1/AuditLogEntries?$expand=AuditDetails'
         # filter on user, object_type, object_name  and time
-        if user or since or until:
+        if any([user, object_type, object_name, since, until]):
             log_filters = []
             if user:
                 log_filters.append(format_url("UserName eq '{}'", user))
@@ -341,4 +341,14 @@ class ServerService(ObjectService):
         config = {
             "Administration": {"PerformanceMonitorOn": False}
         }
+        self.update_static_configuration(config)
+
+    @require_admin
+    def activate_audit_log(self):
+        config = {'Administration': {'AuditLog': {'Enable': True}}}
+        self.update_static_configuration(config)
+
+    @require_admin
+    def deactivate_audit_log(self):
+        config = {'Administration': {'AuditLog': {'Enable': False}}}
         self.update_static_configuration(config)
