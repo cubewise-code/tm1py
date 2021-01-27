@@ -51,6 +51,10 @@ class Subset(TM1Object):
     def name(self) -> str:
         return self._subset_name
 
+    @name.setter
+    def name(self, value: str):
+        self._subset_name = value
+
     @property
     def alias(self) -> str:
         return self._alias
