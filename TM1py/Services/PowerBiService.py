@@ -85,7 +85,7 @@ class PowerBiService:
 
             # potential custom parent names
             if not level_names:
-                level_names = self.elements.get_level_names(dimension_name, hierarchy_name)
+                level_names = self.elements.get_level_names(dimension_name, hierarchy_name, descending=True)
 
             for parent in range(1, levels, 1):
                 calculated_members_definition.append(
@@ -125,5 +125,18 @@ class PowerBiService:
         """
 
         df_data = self.execute_mdx(mdx)
+
+        # shift levels to right hand side
+        if not skip_parents:
+            # skip max level (= leaves)
+            level_names = level_names[1:]
+            # iterative approach
+            for _ in level_names:
+                rows_to_shift = df_data[df_data[level_names[-1]] == ''].index
+                if rows_to_shift.empty:
+                    break
+                df_data.iloc[rows_to_shift, -len(level_names):] = df_data.iloc[rows_to_shift, -len(level_names):].shift(1, axis=1)
+            
+            df_data.iloc[:, -len(level_names):] = df_data.iloc[:, -len(level_names):].fillna('')
 
         return pd.merge(df, df_data, on=dimension_name).drop_duplicates()
