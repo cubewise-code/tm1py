@@ -992,7 +992,7 @@ class CellService(ObjectService):
     @require_pandas
     def execute_mdx_dataframe(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
                               skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
-                              sandbox_name: str = None,
+                              sandbox_name: str = None, display_attribute: bool = False,
                               **kwargs) -> 'pd.DataFrame':
         """ Optimized for performance. Get Pandas DataFrame from MDX Query.
 
@@ -1006,13 +1006,15 @@ class CellService(ObjectService):
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
         :param sandbox_name: str
+        :param display_attribute: display first attribute or simple element name
         :return: Pandas Dataframe
         """
         cellset_id = self.create_cellset(mdx, sandbox_name=sandbox_name, **kwargs)
         return self.extract_cellset_dataframe(cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                                               skip_consolidated_cells=skip_consolidated_cells,
                                               skip_rule_derived_cells=skip_rule_derived_cells,
-                                              sandbox_name=sandbox_name, **kwargs)
+                                              sandbox_name=sandbox_name, display_attribute=display_attribute,
+                                              **kwargs)
 
     @require_pandas
     def execute_mdx_dataframe_shaped(self, mdx: str, sandbox_name: str = None, **kwargs) -> 'pd.DataFrame':
@@ -1641,6 +1643,7 @@ class CellService(ObjectService):
             line_separator: str = "\r\n",
             value_separator: str = ",",
             sandbox_name: str = None,
+            display_attribute: bool = False,
             **kwargs) -> str:
         """ Execute cellset and return only the 'Content', in csv format
 
@@ -1653,6 +1656,7 @@ class CellService(ObjectService):
         :param line_separator:
         :param value_separator
         :param sandbox_name: str
+        :param display_attribute: display first attribute or simple element name
         :return: Raw format from TM1.
         """
         _, _, rows, columns = self.extract_cellset_composition(cellset_id, delete_cellset=False,
@@ -1661,9 +1665,13 @@ class CellService(ObjectService):
                                                 skip_contexts=True, skip_zeros=skip_zeros,
                                                 skip_consolidated_cells=skip_consolidated_cells,
                                                 skip_rule_derived_cells=skip_rule_derived_cells,
-                                                delete_cellset=True, sandbox_name=sandbox_name, **kwargs)
+                                                delete_cellset=True, sandbox_name=sandbox_name,
+                                                elem_properties=['Name'],
+                                                member_properties=['Attributes'] if display_attribute else None,
+                                                **kwargs)
         return build_csv_from_cellset_dict(rows, columns, cellset_dict, line_separator=line_separator,
-                                           value_separator=value_separator, top=top)
+                                           value_separator=value_separator, top=top,
+                                           display_attribute=display_attribute)
 
     @require_pandas
     def extract_cellset_dataframe(
@@ -1675,6 +1683,7 @@ class CellService(ObjectService):
             skip_consolidated_cells: bool = False,
             skip_rule_derived_cells: bool = False,
             sandbox_name: str = None,
+            display_attribute: bool = False,
             **kwargs) -> 'pd.DataFrame':
         """ Build pandas data frame from cellset_id
 
@@ -1685,13 +1694,14 @@ class CellService(ObjectService):
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
         :param sandbox_name: str
+        :param display_attribute: display first attribute or simple element name
         :param kwargs:
         :return:
         """
         raw_csv = self.extract_cellset_csv(cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                                            skip_rule_derived_cells=skip_rule_derived_cells,
                                            skip_consolidated_cells=skip_consolidated_cells, value_separator='~',
-                                           sandbox_name=sandbox_name,
+                                           sandbox_name=sandbox_name, display_attribute=display_attribute,
                                            **kwargs)
         if not raw_csv:
             return pd.DataFrame()
