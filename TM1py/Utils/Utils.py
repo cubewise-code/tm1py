@@ -212,8 +212,9 @@ def build_csv_from_cellset_dict(
         column_dimensions: List[str],
         raw_cellset_as_dict: Dict,
         top: Optional[int] = None,
-        line_separator="\r\n",
-        value_separator=",") -> str:
+        line_separator: str = "\r\n",
+        value_separator: str = ",",
+        display_attribute: bool = False) -> str:
     """ transform raw cellset data into concise dictionary
     :param column_dimensions:
     :param row_dimensions:
@@ -221,6 +222,7 @@ def build_csv_from_cellset_dict(
     :param top: Maximum Number of cells
     :param line_separator:
     :param value_separator:
+    :param display_attribute: display first attribute or simple element name
     :return:
     """
 
@@ -245,18 +247,45 @@ def build_csv_from_cellset_dict(
         csv_entry = []
         if column_axis and row_axis:
             index_rows = ordinal // column_axis['Cardinality'] % row_axis['Cardinality']
-            csv_entry.extend(extract_element_names_from_members(row_axis['Tuples'][index_rows]['Members']))
+            element = _build_display_name_from_axis_tuple(
+                members=row_axis['Tuples'][index_rows]['Members'],
+                display_attribute=display_attribute)
+            csv_entry.extend(element)
+
             index_columns = ordinal % column_axis['Cardinality']
-            csv_entry.extend(extract_element_names_from_members(column_axis['Tuples'][index_columns]['Members']))
+            element = _build_display_name_from_axis_tuple(
+                members=column_axis['Tuples'][index_columns]['Members'],
+                display_attribute=display_attribute)
+            csv_entry.extend(element)
+
         elif column_axis:
             index_rows = ordinal % column_axis['Cardinality']
-            csv_entry.extend(extract_element_names_from_members(column_axis['Tuples'][index_rows]['Members']))
+            element = _build_display_name_from_axis_tuple(
+                members=column_axis['Tuples'][index_rows]['Members'],
+                display_attribute=display_attribute)
+            csv_entry.extend(element)
 
         csv_entry.append(str(cell["Value"] or ""))
 
         csv_entries.append(value_separator.join(csv_entry))
 
     return line_separator.join(csv_entries)
+
+
+def _build_display_name_from_axis_tuple(members: Dict, display_attribute: bool = False) -> List[str]:
+    if not display_attribute:
+        return extract_element_names_from_members(members)
+
+    else:
+        display_names = list()
+        for member in members:
+            attribute_values = list(member['Attributes'].values())
+            if not attribute_values or not attribute_values[0]:
+                display_names.append(member['Element']['Name'])
+                continue
+
+            display_names.append(str(attribute_values[0]))
+        return display_names
 
 
 def build_ui_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precision: int):
