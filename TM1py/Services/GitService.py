@@ -13,6 +13,10 @@ from TM1py.Utils.Utils import format_url
 class GitService(ObjectService):
     """ Service to interact with GIT
     """
+    COMMON_PARAMETERS = {'username': 'Username', 'password': 'Password', 'message': 'Message', 'author': 'Author',
+                         'email': 'Email', 'branch': 'Branch', 'new_branch': 'NewBranch', 'force': 'Force',
+                         'public_key': 'PublicKey', 'private_key': 'PrivateKey', 'passphrase': 'Passphrase',
+                         'config': 'Config'}
 
     def __init__(self, rest: RestService):
         super().__init__(rest)
@@ -34,20 +38,9 @@ class GitService(ObjectService):
         url = "/api/v1/GitInit"
         body = {'URL': git_url, 'Deployment': deployment}
 
-        if username is not None:
-            body['Username'] = username
-        if password is not None:
-            body['Password'] = password
-        if public_key is not None:
-            body['PublicKey'] = public_key
-        if private_key is not None:
-            body['PrivateKey'] = private_key
-        if passphrase is not None:
-            body['Passphrase'] = passphrase
-        if force is not None:
-            body['Force'] = force
-        if config is not None:
-            body['Config'] = config
+        for key, value in locals().items():
+            if value is not None and key in self.COMMON_PARAMETERS.keys():
+                body[self.COMMON_PARAMETERS.get(key)] = value
 
         body_json = json.dumps(body)
         response = self._rest.POST(url=url, data=body_json, **kwargs)
@@ -75,16 +68,9 @@ class GitService(ObjectService):
         url = "/api/v1/GitStatus"
         body = {}
 
-        if username is not None:
-            body['Username'] = username
-        if password is not None:
-            body['Password'] = password
-        if public_key is not None:
-            body['PublicKey'] = public_key
-        if private_key is not None:
-            body['PrivateKey'] = private_key
-        if passphrase is not None:
-            body['Passphrase'] = passphrase
+        for key, value in locals().items():
+            if value is not None and key in self.COMMON_PARAMETERS.keys():
+                body[self.COMMON_PARAMETERS.get(key)] = value
 
         response = self._rest.POST(url=url, data=json.dumps(body), **kwargs)
 
@@ -113,28 +99,9 @@ class GitService(ObjectService):
         url = "/api/v1/GitPush"
         body = {}
 
-        if message is not None:
-            body['Message'] = message
-        if author is not None:
-            body['Author'] = author
-        if email is not None:
-            body['Email'] = email
-        if branch is not None:
-            body['Branch'] = branch
-        if new_branch is not None:
-            body['NewBranch'] = new_branch
-        if force is not None:
-            body['Force'] = force
-        if username is not None:
-            body['Username'] = username
-        if password is not None:
-            body['Password'] = password
-        if public_key is not None:
-            body['PublicKey'] = public_key
-        if private_key is not None:
-            body['PrivateKey'] = private_key
-        if passphrase is not None:
-            body['Passphrase'] = passphrase
+        for key, value in locals().items():
+            if value is not None and key in self.COMMON_PARAMETERS.keys():
+                body[self.COMMON_PARAMETERS.get(key)] = value
 
         response = self._rest.POST(url=url, data=json.dumps(body), **kwargs)
 
@@ -160,20 +127,9 @@ class GitService(ObjectService):
         url = "/api/v1/GitPull"
         body = {}
 
-        if branch is not None:
-            body['Branch'] = branch
-        if force is not None:
-            body['Force'] = force
-        if username is not None:
-            body['Username'] = username
-        if password is not None:
-            body['Password'] = password
-        if public_key is not None:
-            body['PublicKey'] = public_key
-        if private_key is not None:
-            body['PrivateKey'] = private_key
-        if passphrase is not None:
-            body['Passphrase'] = passphrase
+        for key, value in locals().items():
+            if value is not None and key in self.COMMON_PARAMETERS.keys():
+                body[self.COMMON_PARAMETERS.get(key)] = value
 
         body_json = json.dumps(body)
         response = self._rest.POST(url=url, data=body_json, **kwargs)
