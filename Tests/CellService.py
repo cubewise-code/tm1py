@@ -79,7 +79,7 @@ class TestCellService(unittest.TestCase):
             if cls.tm1.dimensions.exists(dimension.name):
                 cls.tm1.dimensions.update(dimension)
             else:
-                cls.tm1.dimensions.create(dimension)
+                cls.tm1.dimensions.update_or_create(dimension)
             attribute_cube = "}ElementAttributes_" + dimension_name
             attribute_values = {}
             for element in elements:
@@ -91,7 +91,7 @@ class TestCellService(unittest.TestCase):
         # Build Cube
         cube = Cube(cls.cube_name, cls.dimension_names)
         if not cls.tm1.cubes.exists(cls.cube_name):
-            cls.tm1.cubes.create(cube)
+            cls.tm1.cubes.update_or_create(cube)
 
         # Build cube view
         view = NativeView(
@@ -115,7 +115,7 @@ class TestCellService(unittest.TestCase):
                 dimension_name=cls.dimension_names[2],
                 expression='{[' + cls.dimension_names[2] + '].Members}'))
         if not cls.tm1.cubes.views.exists(cls.cube_name, view.name, private=False):
-            cls.tm1.cubes.views.create(
+            cls.tm1.cubes.views.update_or_create(
                 view=view,
                 private=False)
 
@@ -180,11 +180,11 @@ class TestCellService(unittest.TestCase):
                 hierarchy.add_element(element_name=element_name, element_type="String")
             dimension.add_hierarchy(hierarchy)
             if not cls.tm1.dimensions.exists(dimension.name):
-                cls.tm1.dimensions.create(dimension)
+                cls.tm1.dimensions.update_or_create(dimension)
 
         cube = Cube(name=cls.string_cube_name, dimensions=cls.string_dimension_names)
         if not cls.tm1.cubes.exists(cube.name):
-            cls.tm1.cubes.create(cube)
+            cls.tm1.cubes.update_or_create(cube)
         # zero out cube
         cls.tm1.processes.execute_ti_code("CubeClearData('" + cls.string_cube_name + "');")
 
@@ -200,7 +200,7 @@ class TestCellService(unittest.TestCase):
     def build_cube_with_rules(cls):
         cube = Cube(name=cls.cube_with_rules_name, dimensions=cls.dimension_names)
         cube.rules = f"['{cls.dimension_names[0]}':'Element1'] = N: 1;\r\n"
-        cls.tm1.cubes.create(cube)
+        cls.tm1.cubes.update_or_create(cube)
 
     @classmethod
     def remove_cube_with_rules(cls):
@@ -216,10 +216,10 @@ class TestCellService(unittest.TestCase):
             for element in hierarchy:
                 hierarchy.add_edge(parent="TOTAL_" + dimension_name_target, component=element.name, weight=1)
             hierarchy.add_element("TOTAL_" + dimension_name_target, "Consolidated")
-            cls.tm1.dimensions.create(dimension)
+            cls.tm1.dimensions.update_or_create(dimension)
 
         cube = Cube(name=cls.cube_with_consolidations_name, dimensions=cls.dimensions_with_consolidations_names)
-        cls.tm1.cubes.create(cube)
+        cls.tm1.cubes.update_or_create(cube)
 
     @classmethod
     def remove_cube_with_consolidations(cls):
@@ -241,12 +241,12 @@ class TestCellService(unittest.TestCase):
                 hierarchy.add_edge(parent="c1", component=element_name, weight=1)
             dimension.add_hierarchy(hierarchy)
             if not cls.tm1.dimensions.exists(dimension.name):
-                cls.tm1.dimensions.create(dimension)
+                cls.tm1.dimensions.update_or_create(dimension)
 
         for cube_name in (cls.cube_rps1_name, cls.cube_rps2_name):
             cube = Cube(name=cube_name, dimensions=(cls.dimension_rps1_name, cls.dimension_rps2_name))
             if not cls.tm1.cubes.exists(cube.name):
-                cls.tm1.cubes.create(cube)
+                cls.tm1.cubes.update_or_create(cube)
             # zero out cube
             cls.tm1.processes.execute_ti_code("CubeClearData('" + cube_name + "');")
 
@@ -1507,6 +1507,32 @@ class TestCellService(unittest.TestCase):
             sum(values))
 
     @skip_if_no_pandas
+    def test_execute_mdx_dataframe_include_attributes(self):
+        mdx = """SELECT
+        NON EMPTY 
+        {[TM1PY_TESTS_CELL_DIMENSION1].[TM1PY_TESTS_CELL_DIMENSION1].[Element1]} 
+        PROPERTIES [TM1PY_TESTS_CELL_DIMENSION1].[ATTR1]  ON 0,
+        NON EMPTY
+        {[TM1PY_TESTS_CELL_DIMENSION3].[TM1PY_TESTS_CELL_DIMENSION3].[Element1]} * 
+        {[TM1PY_TESTS_CELL_DIMENSION2].[TM1PY_TESTS_CELL_DIMENSION2].[Element1]} 
+        PROPERTIES [TM1PY_TESTS_CELL_DIMENSION2].[ATTR2], [TM1PY_TESTS_CELL_DIMENSION3].[ATTR3] ON 1
+        FROM [TM1PY_TESTS_CELL_CUBE]
+        """
+
+        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, include_attributes=True)
+
+        expected = {
+            'TM1py_Tests_Cell_Dimension3': {0: 'Element 1'},
+            'Attr3': {0: '3'},
+            'TM1py_Tests_Cell_Dimension2': {0: 'Element 1'},
+            'Attr2': {0: '2'},
+            'TM1py_Tests_Cell_Dimension1': {0: 'Element 1'},
+            'Attr1': {0: 'TM1py'},
+            'Value': {0: 1.0}}
+        self.assertEqual(expected, df.to_dict())
+
+
+    @skip_if_no_pandas
     def test_execute_mdx_dataframe_pivot(self):
         mdx = MdxBuilder.from_cube(self.cube_name) \
             .add_hierarchy_set_to_row_axis(
@@ -1625,7 +1651,7 @@ class TestCellService(unittest.TestCase):
 
         view_name = "some view"
         view = MDXView(cube_name=self.string_cube_name, view_name=view_name, MDX=mdx)
-        self.tm1.cubes.views.create(view, private=False)
+        self.tm1.cubes.views.update_or_create(view, private=False)
 
         elements_and_string_values = self.tm1.cubes.cells.execute_view_rows_and_values_string_set(
             cube_name=self.string_cube_name,
@@ -1681,7 +1707,7 @@ class TestCellService(unittest.TestCase):
                     dimension_name=self.dimension_names[2],
                     expression='{[' + self.dimension_names[2] + '].Members}'),
                 selection="Element 1")
-            self.tm1.cubes.views.create(
+            self.tm1.cubes.views.update_or_create(
                 view=view,
                 private=False)
 
@@ -1715,7 +1741,7 @@ class TestCellService(unittest.TestCase):
                 .to_mdx()
 
             view = MDXView(cube_name=self.cube_name, view_name=view_name, MDX=mdx)
-            self.tm1.cubes.views.create(view, False)
+            self.tm1.cubes.views.update_or_create(view, False)
 
         data = self.tm1.cubes.cells.execute_view_rows_and_values(
             cube_name=self.cube_name,
@@ -1744,7 +1770,7 @@ class TestCellService(unittest.TestCase):
                 .to_mdx()
 
             view = MDXView(cube_name=self.cube_name, view_name=view_name, MDX=mdx)
-            self.tm1.cubes.views.create(view, False)
+            self.tm1.cubes.views.update_or_create(view, False)
 
         data = self.tm1.cubes.cells.execute_view_rows_and_values(
             cube_name=self.cube_name,
@@ -1776,7 +1802,7 @@ class TestCellService(unittest.TestCase):
                 .to_mdx()
 
             view = MDXView(cube_name=self.cube_name, view_name=view_name, MDX=mdx)
-            self.tm1.cubes.views.create(view, False)
+            self.tm1.cubes.views.update_or_create(view, False)
 
         data = self.tm1.cubes.cells.execute_view_rows_and_values(
             cube_name=self.cube_name,
@@ -1816,7 +1842,7 @@ class TestCellService(unittest.TestCase):
                     dimension_name=self.dimension_names[2],
                     expression='{[' + self.dimension_names[2] + '].Members}'),
                 selection="Element 1")
-            self.tm1.cubes.views.create(
+            self.tm1.cubes.views.update_or_create(
                 view=view,
                 private=False)
 
@@ -2070,7 +2096,7 @@ class TestCellService(unittest.TestCase):
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[2],
                 expression='{ HEAD ( {[' + self.dimension_names[2] + '].Members}, 10 ) }'))
-        self.tm1.cubes.views.create(view, private=False)
+        self.tm1.cubes.views.update_or_create(view, private=False)
 
         pivot = self.tm1.cubes.cells.execute_view_dataframe_pivot(
             cube_name=self.cube_name,
@@ -2100,7 +2126,7 @@ class TestCellService(unittest.TestCase):
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[2],
                 expression='{ HEAD ( {[' + self.dimension_names[2] + '].Members}, 10 ) }'))
-        self.tm1.cubes.views.create(
+        self.tm1.cubes.views.update_or_create(
             view=view,
             private=False)
 
@@ -2133,7 +2159,7 @@ class TestCellService(unittest.TestCase):
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[2],
                 elements=("Element 1",)))
-        self.tm1.cubes.views.create(view, private=False)
+        self.tm1.cubes.views.update_or_create(view, private=False)
         pivot = self.tm1.cubes.cells.execute_view_dataframe_pivot(
             cube_name=self.cube_name,
             view_name=view_name)
@@ -2148,7 +2174,7 @@ class TestCellService(unittest.TestCase):
             .to_mdx()
 
         view = MDXView(self.cube_name, self.prefix + "MDX_VIEW", mdx)
-        self.tm1.cubes.views.create(
+        self.tm1.cubes.views.update_or_create(
             view=view,
             private=False)
 
