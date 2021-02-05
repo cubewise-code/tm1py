@@ -1017,18 +1017,20 @@ class CellService(ObjectService):
                                               **kwargs)
 
     @require_pandas
-    def execute_mdx_dataframe_shaped(self, mdx: str, sandbox_name: str = None, **kwargs) -> 'pd.DataFrame':
+    def execute_mdx_dataframe_shaped(self, mdx: str, sandbox_name: str = None, display_attribute: bool = False,
+                                     **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cube in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
 
         :param mdx:
         :param sandbox_name: str
+        :param display_attribute: bool, show element name or first attribute from MDX PROPERTIES clause
         :param kwargs:
         :return:
         """
         cellset_id = self.create_cellset(mdx, sandbox_name=sandbox_name)
         return self.extract_cellset_dataframe_shaped(cellset_id, delete_cellset=True, sandbox_name=sandbox_name,
-                                                     **kwargs)
+                                                     display_attribute=display_attribute, **kwargs)
 
     @require_pandas
     def execute_view_dataframe_shaped(self, cube_name: str, view_name: str, private: bool = False,
@@ -1714,24 +1716,36 @@ class CellService(ObjectService):
 
     @tidy_cellset
     @require_pandas
-    def extract_cellset_dataframe_shaped(self, cellset_id: str, sandbox_name: str = None, **kwargs) -> 'pd.DataFrame':
+    def extract_cellset_dataframe_shaped(self, cellset_id: str, sandbox_name: str = None,
+                                         display_attribute: bool = False, **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cellset in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
 
         :param cellset_id
         :param sandbox_name: str
+        :param display_attribute: bool, show element name or first attribute from MDX PROPERTIES clause
         """
         url = "/api/v1/Cellsets('{}')?$expand=" \
               "Axes($filter=Ordinal eq 0 or Ordinal eq 1;$expand=Tuples(" \
-              "$expand=Members($select=Name)),Hierarchies($select=Name))," \
-              "Cells($select=Value)".format(cellset_id)
+              "$expand=Members($select=Name{})),Hierarchies($select=Name))," \
+              "Cells($select=Value)".format(cellset_id, ',Attributes' if display_attribute else '')
+
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url=url, **kwargs)
         response_json = response.json()
-        rows = response_json["Axes"][1]["Tuples"]
-        column_headers = [tupl["Members"][0]["Name"] for tupl in response_json["Axes"][0]["Tuples"]]
-        row_headers = [hierarchy["Name"] for hierarchy in response_json["Axes"][1]["Hierarchies"]]
-        cell_values = [cell["Value"] for cell in response_json["Cells"]]
+
+        column_headers = list()
+        for column_tuple in response_json['Axes'][0]['Tuples']:
+            member = column_tuple['Members'][0]
+            if display_attribute and member['Attributes']:
+                attribute_values = list(member['Attributes'].values())
+                column_headers.append(attribute_values[0])
+            else:
+                column_headers.append(member['Name'])
+
+        rows = response_json['Axes'][1]['Tuples']
+        row_headers = [hierarchy['Name'] for hierarchy in response_json['Axes'][1]['Hierarchies']]
+        cell_values = [cell['Value'] for cell in response_json['Cells']]
 
         headers = row_headers + column_headers
         body = []
@@ -1744,9 +1758,17 @@ class CellService(ObjectService):
         number_cells = len(cell_values)
         number_columns = int(number_cells / number_rows)
 
-        element_names_by_row = [tuple(member["Name"] for member in tupl["Members"])
-                                for tupl
-                                in rows]
+        element_names_by_row = list()
+        for row_tuple in rows:
+            row = list()
+            for member in row_tuple['Members']:
+                if display_attribute and member['Attributes']:
+                    attribute_values = list(member['Attributes'].values())
+                    row.append(attribute_values[0])
+                else:
+                    row.append(member['Name'])
+
+            element_names_by_row.append(tuple(row))
 
         if not number_columns:
             return pd.DataFrame(data=element_names_by_row, columns=headers)
@@ -1915,7 +1937,6 @@ class CellService(ObjectService):
 
         url = "/api/v1/BeginChangeSet"
         return self._rest.POST(url).json()['value']
-        return change_set_id
 
     def end_changeset(self, change_set: str) -> Response:
         """end a change set
