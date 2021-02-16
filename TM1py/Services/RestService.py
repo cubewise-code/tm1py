@@ -144,8 +144,8 @@ class RestService:
         self._timeout = None if kwargs.get('timeout', None) is None else float(kwargs.get('timeout'))
         self._async_requests_mode = self.translate_to_boolean(kwargs.get('async_requests_mode', False))
         # populated on the fly
-        if "user" in kwargs:
-            self._is_admin = True if case_and_space_insensitive_equals(kwargs.get("user"), "ADMIN") else None
+        if kwargs.get('user'):
+            self._is_admin = True if case_and_space_insensitive_equals(kwargs.get('user'), 'ADMIN') else None
         else:
             self._is_admin = None
 
