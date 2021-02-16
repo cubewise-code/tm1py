@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import functools
+import re
 import time
 import warnings
 from base64 import b64encode, b64decode
@@ -9,7 +10,7 @@ from typing import Union, Dict, Tuple, Optional
 
 import requests
 import urllib3
-from requests import Timeout, Response
+from requests import Timeout, Response, ConnectionError
 from requests.adapters import HTTPAdapter
 
 # SSO not supported for Linux
@@ -81,10 +82,18 @@ def httpmethod(func):
             # response encoding
             response.encoding = encoding
             return response
+
         except Timeout:
             if kwargs.get("cancel_at_timeout", False):
                 self.cancel_running_operation()
             raise TM1pyTimeout(method=func.__name__, url=url, timeout=kwargs['timeout'])
+
+        except ConnectionError as e:
+            # cater for issue in requests library: https://github.com/psf/requests/issues/5430
+            if re.search('Read timed out', str(e), re.IGNORECASE):
+                if kwargs.get("cancel_at_timeout", False):
+                    self.cancel_running_operation()
+                raise TM1pyTimeout(method=func.__name__, url=url, timeout=kwargs['timeout'])
 
     return wrapper
 
