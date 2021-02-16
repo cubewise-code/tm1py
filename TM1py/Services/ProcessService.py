@@ -168,13 +168,14 @@ class ProcessService(ObjectService):
         return syntax_errors
 
     def execute(self, process_name: str, parameters: Dict = None, timeout: float = None,
-                **kwargs) -> Response:
+                cancel_at_timeout: bool = False, **kwargs) -> Response:
         """ Ask TM1 Server to execute a process. Call with parameter names as keyword arguments:
         tm1.processes.execute("Bedrock.Server.Wait", pLegalEntity="UK01")
 
         :param process_name:
         :param parameters: Deprecated! dictionary, e.g. {"Parameters": [ { "Name": "pLegalEntity", "Value": "UK01" }] }
         :param timeout: Number of seconds that the client will wait to receive the first byte.
+        :param cancel_at_timeout: Abort operation in TM1 when timeout is reached
         :return:
         """
         url = format_url("/api/v1/Processes('{}')/tm1.Execute", process_name)
@@ -185,7 +186,8 @@ class ProcessService(ObjectService):
                     parameters["Parameters"].append({"Name": parameter_name, "Value": parameter_value})
             else:
                 parameters = {}
-        return self._rest.POST(url=url, data=json.dumps(parameters, ensure_ascii=False), timeout=timeout, **kwargs)
+        return self._rest.POST(url=url, data=json.dumps(parameters, ensure_ascii=False), timeout=timeout,
+                               cancel_at_timeout=cancel_at_timeout, **kwargs)
 
     def execute_process_with_return(self, process: Process, **kwargs) -> Tuple[bool, str, str]:
         """
@@ -210,7 +212,8 @@ class ProcessService(ObjectService):
             "Filename"]
         return success, status, error_log_file
 
-    def execute_with_return(self, process_name: str, timeout: float = None, **kwargs) -> Tuple[bool, str, str]:
+    def execute_with_return(self, process_name: str, timeout: float = None, cancel_at_timeout: bool = False,
+                            **kwargs) -> Tuple[bool, str, str]:
         """ Ask TM1 Server to execute a process.
         pass process parameters as keyword arguments to this function. E.g:
 
@@ -220,6 +223,7 @@ class ProcessService(ObjectService):
 
         :param process_name: name of the TI process
         :param timeout: Number of seconds that the client will wait to receive the first byte.
+        :param cancel_at_timeout: Abort operation in TM1 when timeout is reached
         :param kwargs: dictionary of process parameters and values
         :return: success (boolean), status (String), error_log_file (String)
         """
@@ -234,6 +238,7 @@ class ProcessService(ObjectService):
             url=url,
             data=json.dumps(parameters, ensure_ascii=False),
             timeout=timeout,
+            cancel_at_timeout=cancel_at_timeout,
             **kwargs)
         execution_summary = response.json()
         success = execution_summary["ProcessExecuteStatusCode"] == "CompletedSuccessfully"

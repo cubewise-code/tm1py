@@ -69,6 +69,8 @@ def httpmethod(func):
 
                 # all wait times consumed and still no 200
                 if response.status_code not in [200, 201]:
+                    if kwargs.get("cancel_at_timeout", False):
+                        self.cancel_async_operation(async_id)
                     raise TM1pyTimeout(method=func.__name__, url=url, timeout=kwargs['timeout'])
 
                 response = self.build_response_from_raw_bytes(response.content)
@@ -80,6 +82,8 @@ def httpmethod(func):
             response.encoding = encoding
             return response
         except Timeout:
+            if kwargs.get("cancel_at_timeout", False):
+                self.cancel_running_operation()
             raise TM1pyTimeout(method=func.__name__, url=url, timeout=kwargs['timeout'])
 
     return wrapper
@@ -494,6 +498,25 @@ class RestService:
     def retrieve_async_response(self, async_id: str, **kwargs) -> Response:
         url = self._base_url + f"/api/v1/_async('{async_id}')"
         return self._s.get(url, **kwargs)
+
+    def cancel_async_operation(self, async_id: str, **kwargs):
+        url = self._base_url + f"/api/v1/_async('{async_id}')"
+        response = self._s.delete(url, **kwargs)
+        self.verify_response(response)
+
+    def cancel_running_operation(self):
+        monitoring_service = self.get_monitoring_service()
+        threads = monitoring_service.get_active_session_threads(exclude_idle=True)
+
+        # if more than one thread is running in session, operation can not be identified unambiguously
+        if not len(threads) == 1:
+            return
+
+        monitoring_service.cancel_thread(threads[0]['ID'])
+
+    def get_monitoring_service(self):
+        from TM1py.Services import MonitoringService
+        return MonitoringService(self)
 
     @staticmethod
     def urllib3_response_from_bytes(data: bytes) -> HTTPResponse:
