@@ -83,6 +83,14 @@ class MonitoringService(ObjectService):
         response = self._rest.POST(url, **kwargs)
         return response
 
+    def get_active_session_threads(self, exclude_idle: bool = True, **kwargs):
+        url = "/api/v1/ActiveSession/Threads?$filter=Function ne 'GET /api/v1/ActiveSession/Threads'"
+        if exclude_idle:
+            url += " and State ne 'Idle'"
+
+        response = self._rest.GET(url, **kwargs)
+        return response.json()['value']
+
     def get_sessions(self, include_user: bool = True, include_threads: bool = True, **kwargs) -> List:
         url = "/api/v1/Sessions"
         if include_user or include_threads:
