@@ -4,8 +4,7 @@ import string
 import unittest
 from pathlib import Path
 
-from TM1py import Cube, Dimension, Element, Hierarchy
-from TM1py.Objects import Annotation
+from TM1py.Objects import Annotation,Cube, Dimension, Element, Hierarchy
 from TM1py.Services import TM1Service
 
 

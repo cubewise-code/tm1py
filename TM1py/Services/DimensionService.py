@@ -73,7 +73,8 @@ class DimensionService(ObjectService):
             hierarchies_to_be_removed.discard(hierarchy)
 
         for hierarchy_name in hierarchies_to_be_removed:
-            self.hierarchies.delete(dimension_name=dimension.name, hierarchy_name=hierarchy_name, **kwargs)
+            if not case_and_space_insensitive_equals(hierarchy_name, "Leaves"):
+                self.hierarchies.delete(dimension_name=dimension.name, hierarchy_name=hierarchy_name, **kwargs)
 
         # update all Hierarchies except for the implicitly maintained 'Leaves' Hierarchy
         for hierarchy in dimension:
