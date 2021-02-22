@@ -32,7 +32,7 @@ class PowerBiService:
 
     @require_pandas
     def get_member_properties(self, dimension_name: str, hierarchy_name: str, member_selection: Iterable = None,
-                              skip_consolidations: bool = True, attributes: Iterable[str] = None,
+                              skip_consolidations: bool = True, attributes: Iterable = None,
                               skip_parents: bool = False, level_names=None,
                               parent_attribute: str = None) -> 'pd.DataFrame':
         """
