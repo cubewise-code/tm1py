@@ -10,7 +10,7 @@ from TM1py.Exceptions.Exceptions import TM1pyRestException
 from TM1py.Objects.Process import Process
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import format_url
+from TM1py.Utils import format_url, require_admin
 
 
 class ProcessService(ObjectService):
@@ -80,6 +80,20 @@ class ProcessService(ObjectService):
         processes = list(process['Name'] for process in response.json()['value'])
         return processes
 
+    def create(self, process: Process, **kwargs) -> Response:
+        """ Create a new process on TM1 Server
+
+        :param process: Instance of TM1py.Process class
+        :return: Response
+        """
+        url = "/api/v1/Processes"
+        # Adjust process body if TM1 version is lower than 11 due to change in Process Parameters structure
+        # https://www.ibm.com/developerworks/community/forums/html/topic?id=9188d139-8905-4895-9229-eaaf0e7fa683
+        if int(self.version[0:2]) < 11:
+            process.drop_parameter_types()
+        response = self._rest.POST(url, process.body, **kwargs)
+        return response
+
     def update(self, process: Process, **kwargs) -> Response:
         """ Update an existing Process on TM1 Server
     
@@ -94,19 +108,16 @@ class ProcessService(ObjectService):
         response = self._rest.PATCH(url, process.body, **kwargs)
         return response
 
-    def create(self, process: Process, **kwargs) -> Response:
-        """ Create a new process on TM1 Server
-    
+    def update_or_create(self, process: Process, **kwargs) -> Response:
+        """ Update or Create a Process on TM1 Server
+
         :param process: Instance of TM1py.Process class
         :return: Response
         """
-        url = "/api/v1/Processes"
-        # Adjust process body if TM1 version is lower than 11 due to change in Process Parameters structure
-        # https://www.ibm.com/developerworks/community/forums/html/topic?id=9188d139-8905-4895-9229-eaaf0e7fa683
-        if int(self.version[0:2]) < 11:
-            process.drop_parameter_types()
-        response = self._rest.POST(url, process.body, **kwargs)
-        return response
+        if self.exists(name=process.name, **kwargs):
+            return self.update(process=process, **kwargs)
+
+        return self.create(process=process, **kwargs)
 
     def delete(self, name: str, **kwargs) -> Response:
         """ Delete a process in TM1
@@ -157,13 +168,14 @@ class ProcessService(ObjectService):
         return syntax_errors
 
     def execute(self, process_name: str, parameters: Dict = None, timeout: float = None,
-                **kwargs) -> Response:
+                cancel_at_timeout: bool = False, **kwargs) -> Response:
         """ Ask TM1 Server to execute a process. Call with parameter names as keyword arguments:
         tm1.processes.execute("Bedrock.Server.Wait", pLegalEntity="UK01")
 
         :param process_name:
         :param parameters: Deprecated! dictionary, e.g. {"Parameters": [ { "Name": "pLegalEntity", "Value": "UK01" }] }
         :param timeout: Number of seconds that the client will wait to receive the first byte.
+        :param cancel_at_timeout: Abort operation in TM1 when timeout is reached
         :return:
         """
         url = format_url("/api/v1/Processes('{}')/tm1.Execute", process_name)
@@ -174,7 +186,8 @@ class ProcessService(ObjectService):
                     parameters["Parameters"].append({"Name": parameter_name, "Value": parameter_value})
             else:
                 parameters = {}
-        return self._rest.POST(url=url, data=json.dumps(parameters, ensure_ascii=False), timeout=timeout, **kwargs)
+        return self._rest.POST(url=url, data=json.dumps(parameters, ensure_ascii=False), timeout=timeout,
+                               cancel_at_timeout=cancel_at_timeout, **kwargs)
 
     def execute_process_with_return(self, process: Process, **kwargs) -> Tuple[bool, str, str]:
         """
@@ -199,7 +212,8 @@ class ProcessService(ObjectService):
             "Filename"]
         return success, status, error_log_file
 
-    def execute_with_return(self, process_name: str, timeout: float = None, **kwargs) -> Tuple[bool, str, str]:
+    def execute_with_return(self, process_name: str, timeout: float = None, cancel_at_timeout: bool = False,
+                            **kwargs) -> Tuple[bool, str, str]:
         """ Ask TM1 Server to execute a process.
         pass process parameters as keyword arguments to this function. E.g:
 
@@ -209,6 +223,7 @@ class ProcessService(ObjectService):
 
         :param process_name: name of the TI process
         :param timeout: Number of seconds that the client will wait to receive the first byte.
+        :param cancel_at_timeout: Abort operation in TM1 when timeout is reached
         :param kwargs: dictionary of process parameters and values
         :return: success (boolean), status (String), error_log_file (String)
         """
@@ -223,6 +238,7 @@ class ProcessService(ObjectService):
             url=url,
             data=json.dumps(parameters, ensure_ascii=False),
             timeout=timeout,
+            cancel_at_timeout=cancel_at_timeout,
             **kwargs)
         execution_summary = response.json()
         success = execution_summary["ProcessExecuteStatusCode"] == "CompletedSuccessfully"
@@ -231,6 +247,7 @@ class ProcessService(ObjectService):
             "Filename"]
         return success, status, error_log_file
 
+    @require_admin
     def execute_ti_code(self, lines_prolog: Iterable[str], lines_epilog: Iterable[str] = None, **kwargs) -> Response:
         """ Execute lines of code on the TM1 Server
 

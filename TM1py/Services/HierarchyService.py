@@ -4,7 +4,7 @@ from typing import Dict, Tuple, List, Optional
 
 from requests import Response
 
-from TM1py.Objects import Hierarchy
+from TM1py.Objects import Hierarchy, Element, ElementAttribute
 from TM1py.Services.ElementService import ElementService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
@@ -211,7 +211,7 @@ class HierarchyService(ObjectService):
         }
         return self._rest.PATCH(url=url, data=json.dumps(body), **kwargs)
 
-    def remove_edges_under_consolidation(self, dimension_name: str,  hierarchy_name: str,
+    def remove_edges_under_consolidation(self, dimension_name: str, hierarchy_name: str,
                                          consolidation_element: str, **kwargs) -> List[Response]:
         """
         :param dimension_name: Name of the dimension
@@ -234,21 +234,35 @@ class HierarchyService(ObjectService):
 
     def add_edges(self, dimension_name: str, hierarchy_name: str = None, edges: Dict[Tuple[str, str], int] = None,
                   **kwargs) -> Response:
-        """ Add Edges to hierarchy. Fails if any edge already exists.
+        """ Add Edges to hierarchy. Fails if one edge already exists.
 
         :param dimension_name:
         :param hierarchy_name:
         :param edges:
         :return:
         """
-        if not hierarchy_name:
-            hierarchy_name = dimension_name
-        url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')/Edges", dimension_name, hierarchy_name)
-        body = [{"ParentName": parent, "ComponentName": component, "Weight": float(weight)}
-                for (parent, component), weight
-                in edges.items()]
+        return self.elements.add_edges(dimension_name, hierarchy_name, edges, **kwargs)
 
-        return self._rest.POST(url=url, data=json.dumps(body), **kwargs)
+    def add_elements(self, dimension_name: str, hierarchy_name: str, elements: List[Element], **kwargs):
+        """ Add elements to hierarchy. Fails if one element already exists.
+
+        :param dimension_name:
+        :param hierarchy_name:
+        :param elements:
+        :return:
+        """
+        return self.elements.add_elements(dimension_name, hierarchy_name, elements, **kwargs)
+
+    def add_element_attributes(self, dimension_name: str, hierarchy_name: str,
+                               element_attributes: List[ElementAttribute], **kwargs):
+        """ Add element attributes to hierarchy. Fails if one element attribute already exists.
+
+        :param dimension_name:
+        :param hierarchy_name:
+        :param element_attributes:
+        :return:
+        """
+        return self.elements.add_element_attributes(dimension_name, hierarchy_name, element_attributes, **kwargs)
 
     def is_balanced(self, dimension_name: str, hierarchy_name: str, **kwargs):
         """ Check if hierarchy is balanced

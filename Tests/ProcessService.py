@@ -13,7 +13,8 @@ from .TestUtils import skip_if_insufficient_version
 
 PROCESS_PREFIX = 'TM1py_Tests_'
 
-class TestProcessMethods(unittest.TestCase):
+
+class TestProcessService(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -102,6 +103,23 @@ class TestProcessMethods(unittest.TestCase):
         cls.tm1.processes.delete(cls.p_view.name)
         cls.tm1.processes.delete(cls.p_odbc.name)
         cls.tm1.processes.delete(cls.p_subset.name)
+
+    def test_update_or_create(self):
+        if self.tm1.processes.exists(self.p_bedrock_server_wait.name):
+            self.tm1.processes.delete(self.p_bedrock_server_wait.name)
+        self.assertFalse(self.tm1.processes.exists(self.p_bedrock_server_wait.name))
+
+        self.tm1.processes.update_or_create(self.p_bedrock_server_wait)
+        self.assertTrue(self.tm1.processes.exists(self.p_bedrock_server_wait.name))
+
+        temp_prolog = self.p_bedrock_server_wait.prolog_procedure
+        self.p_bedrock_server_wait.prolog_procedure += "sleep(10);"
+
+        self.tm1.processes.update_or_create(self.p_bedrock_server_wait)
+        self.assertTrue(self.tm1.processes.exists(self.p_bedrock_server_wait.name))
+
+        self.p_bedrock_server_wait.prolog_procedure = temp_prolog
+        self.tm1.processes.delete(self.p_bedrock_server_wait.name)
 
     def test_execute_process(self):
         if not self.tm1.processes.exists(self.p_bedrock_server_wait.name):

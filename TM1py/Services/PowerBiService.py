@@ -31,9 +31,10 @@ class PowerBiService:
         return self.cells.execute_view_dataframe_shaped(cube_name, view_name, private, **kwargs)
 
     @require_pandas
-    def get_member_properties(self, dimension_name, hierarchy_name, member_selection=None,
-                              skip_consolidations=True, attributes=None, skip_parents=False,
-                              level_names=None) -> 'pd.DataFrame':
+    def get_member_properties(self, dimension_name: str, hierarchy_name: str, member_selection: Iterable = None,
+                              skip_consolidations: bool = True, attributes: Iterable = None,
+                              skip_parents: bool = False, level_names=None,
+                              parent_attribute: str = None) -> 'pd.DataFrame':
         """
 
         :param dimension_name: Name of the dimension
@@ -43,6 +44,7 @@ class PowerBiService:
         :param attributes: Selection of attributes. Iterable. If None retrieve all.
         :param level_names: List of labels for parent columns. If None use level names from TM1.
         :param skip_parents: Boolean Flag to skip parent columns.
+        :param parent_attribute: Attribute to be displayed in parent columns. If None, parent name is used.
         :return: pandas DataFrame
         """
         if not member_selection:
@@ -85,14 +87,15 @@ class PowerBiService:
 
             # potential custom parent names
             if not level_names:
-                level_names = self.elements.get_level_names(dimension_name, hierarchy_name)
+                level_names = self.elements.get_level_names(dimension_name, hierarchy_name, descending=True)
 
             for parent in range(1, levels, 1):
-                calculated_members_definition.append(
-                    f"""
+                name_or_attribute = f"Properties('{parent_attribute}')" if parent_attribute else "Name"
+                member = f"""
                     MEMBER [{self.elements.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_names[parent]}] 
-                    AS [{dimension_name}].CurrentMember.{'Parent.' * parent}Name
-                    """)
+                    AS [{dimension_name}].CurrentMember.{'Parent.' * parent}{name_or_attribute}
+                    """
+                calculated_members_definition.append(member)
 
                 calculated_members_selection.append(
                     f"[{self.elements.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_names[parent]}]")
@@ -125,5 +128,19 @@ class PowerBiService:
         """
 
         df_data = self.execute_mdx(mdx)
+
+        # shift levels to right hand side
+        if not skip_parents:
+            # skip max level (= leaves)
+            level_names = level_names[1:]
+            # iterative approach
+            for _ in level_names:
+                rows_to_shift = df_data[df_data[level_names[-1]] == ''].index
+                if rows_to_shift.empty:
+                    break
+                df_data.iloc[rows_to_shift, -len(level_names):] = df_data.iloc[rows_to_shift, -len(level_names):].shift(
+                    1, axis=1)
+
+            df_data.iloc[:, -len(level_names):] = df_data.iloc[:, -len(level_names):].fillna('')
 
         return pd.merge(df, df_data, on=dimension_name).drop_duplicates()

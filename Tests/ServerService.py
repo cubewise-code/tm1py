@@ -7,7 +7,7 @@ import unittest
 from datetime import timedelta
 from pathlib import Path
 
-import dateutil
+from dateutil import parser
 
 from TM1py.Exceptions import TM1pyRestException
 from TM1py.Objects import Cube, Dimension, Hierarchy, Process
@@ -16,7 +16,7 @@ from TM1py.Services import TM1Service
 PREFIX = "TM1py_Tests_Server_"
 
 
-class TestServerMethods(unittest.TestCase):
+class TestServerService(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -36,7 +36,6 @@ class TestServerMethods(unittest.TestCase):
         cls.process_name1 = PREFIX + "Process1"
         cls.process_name2 = PREFIX + "Process2"
 
-
         # create a simple cube with dimensions to test transactionlog methods
         if not cls.tm1.dimensions.exists(cls.dimension_name1):
             d = Dimension(cls.dimension_name1)
@@ -47,26 +46,28 @@ class TestServerMethods(unittest.TestCase):
                 h.add_element(str(year), 'Numeric')
                 h.add_edge('Total Years', str(year), 1)
             d.add_hierarchy(h)
-            cls.tm1.dimensions.create(d)
+            cls.tm1.dimensions.update_or_create(d)
 
         if not cls.tm1.dimensions.exists(cls.dimension_name2):
             d = Dimension(cls.dimension_name2)
             h = Hierarchy(cls.dimension_name2, cls.dimension_name2)
             h.add_element('Value', 'Numeric')
             d.add_hierarchy(h)
-            cls.tm1.dimensions.create(d)
+            cls.tm1.dimensions.update_or_create(d)
 
         if not cls.tm1.cubes.exists(cls.cube_name):
             cube = Cube(cls.cube_name, [cls.dimension_name1, cls.dimension_name2])
-            cls.tm1.cubes.create(cube)
+            cls.tm1.cubes.update_or_create(cube)
 
         # inject process with ItemReject
         cls.process1 = Process(name=cls.process_name1, prolog_procedure="ItemReject('TM1py Tests');")
-        cls.tm1.processes.create(cls.process1)
+        cls.tm1.processes.update_or_create(cls.process1)
 
-        # inject process that does nothing and runs successfull
+        # inject process that does nothing and runs successful
         cls.process2 = Process(name=cls.process_name2, prolog_procedure="sText = 'text';")
-        cls.tm1.processes.create(cls.process2)
+        cls.tm1.processes.update_or_create(cls.process2)
+
+        cls.tm1.server.activate_audit_log()
 
     def test_get_server_name(self):
         server_name = self.tm1.server.get_server_name()
@@ -214,11 +215,42 @@ class TestServerMethods(unittest.TestCase):
         entries = self.tm1.server.get_transaction_log_entries(reverse=True, since=today)
         self.assertTrue(len(entries) > 0)
         for entry in entries:
-            entry_timestamp = dateutil.parser.parse(entry['TimeStamp'])
+            entry_timestamp = parser.parse(entry['TimeStamp'])
             # all the entries should have today's date
             entry_date = entry_timestamp.date()
             today_date = datetime.date.today()
             self.assertTrue(entry_date == today_date)
+
+    def test_get_audit_log_entries_from_today(self):
+        # get datetime from today at 00:00:00
+        today = datetime.datetime.combine(datetime.date.today(), datetime.time(0, 0))
+        entries = self.tm1.server.get_audit_log_entries(since=today)
+        self.assertTrue(len(entries) > 0)
+        for entry in entries:
+            entry_timestamp = parser.parse(entry['TimeStamp'])
+            # all the entries should have today's date
+            entry_date = entry_timestamp.date()
+            today_date = datetime.date.today()
+            self.assertEqual(today_date, entry_date)
+
+    def test_get_audit_log_entries_object_type_filter(self):
+        # get datetime from today at 00:00:00
+        entries = self.tm1.server.get_audit_log_entries(object_type="Process")
+        self.assertTrue(len(entries) > 0)
+        for entry in entries:
+            self.assertEqual('Process', entry['ObjectType'])
+
+    def test_get_audit_log_entries_object_name_filter(self):
+        # get datetime from today at 00:00:00
+        entries = self.tm1.server.get_audit_log_entries(object_name="SYSTEM")
+        self.assertTrue(len(entries) > 0)
+        for entry in entries:
+            self.assertEqual('SYSTEM', entry['ObjectName'])
+
+    def test_get_audit_log_entries_top(self):
+        # get datetime from today at 00:00:00
+        entries = self.tm1.server.get_audit_log_entries(top=4)
+        self.assertEqual(4, len(entries))
 
     def test_get_transaction_log_entries_until_yesterday(self):
         # get datetime until yesterday at 00:00:00
@@ -230,7 +262,7 @@ class TestServerMethods(unittest.TestCase):
             if entry['TimeStamp'] == '0000-00-00T00:00Z':
                 continue
 
-            entry_timestamp = dateutil.parser.parse(entry['TimeStamp'])
+            entry_timestamp = parser.parse(entry['TimeStamp'])
             entry_date = entry_timestamp.date()
             yesterdays_date = datetime.date.today() - timedelta(days=1)
             self.assertTrue(entry_date <= yesterdays_date)
@@ -241,7 +273,7 @@ class TestServerMethods(unittest.TestCase):
         entries = self.tm1.server.get_message_log_entries(reverse=True, since=today)
 
         for entry in entries:
-            entry_timestamp = dateutil.parser.parse(entry['TimeStamp'])
+            entry_timestamp = parser.parse(entry['TimeStamp'])
             # all the entries should have today's date
             entry_date = entry_timestamp.date()
             today_date = datetime.date.today()
@@ -258,7 +290,7 @@ class TestServerMethods(unittest.TestCase):
             if entry['TimeStamp'] == '0000-00-00T00:00Z':
                 continue
 
-            entry_timestamp = dateutil.parser.parse(entry['TimeStamp'])
+            entry_timestamp = parser.parse(entry['TimeStamp'])
             entry_date = entry_timestamp.date()
             yesterdays_date = datetime.date.today() - timedelta(days=1)
             self.assertTrue(entry_date <= yesterdays_date)
@@ -270,10 +302,76 @@ class TestServerMethods(unittest.TestCase):
 
         entries = self.tm1.server.get_message_log_entries(reverse=True, since=yesterday, until=today)
         for entry in entries:
-            entry_timestamp = dateutil.parser.parse(entry['TimeStamp'])
+            entry_timestamp = parser.parse(entry['TimeStamp'])
             entry_date = entry_timestamp.date()
             yesterdays_date = datetime.date.today() - timedelta(days=1)
             self.assertTrue(entry_date == yesterdays_date)
+
+    def test_get_message_log_with_contains_single(self):
+        wildcards = ['TM1 Server is READY']
+
+        entries = self.tm1.server.get_message_log_entries(
+            reverse=True,
+            msg_contains=wildcards,
+            msg_contains_operator="AND")
+
+        self.assertGreater(len(entries), 1)
+
+        for entry in entries:
+            message = entry['Message'].upper().replace(' ', '')
+
+            self.assertIn(wildcards[0].upper().replace(' ', ''), message)
+
+    def test_get_message_log_with_contains_filter_and(self):
+
+        wildcards = ['TM1 Server is ready', 'elapsed time']
+
+        entries = self.tm1.server.get_message_log_entries(
+            reverse=True,
+            msg_contains=wildcards,
+            msg_contains_operator="AND")
+
+        self.assertGreater(len(entries), 1)
+
+        for entry in entries:
+            message = entry['Message'].upper().replace(' ', '')
+
+            self.assertIn(wildcards[0].upper().replace(' ', ''), message)
+            self.assertIn(wildcards[1].upper().replace(' ', ''), message)
+
+    def test_get_message_log_with_contains_filter_or_1(self):
+
+        wildcards = ['TM1 Server is ready', 'invalid entry']
+
+        entries = self.tm1.server.get_message_log_entries(
+            reverse=True,
+            msg_contains=wildcards,
+            msg_contains_operator="OR")
+
+        self.assertGreater(len(entries), 1)
+
+        for entry in entries:
+            message = entry['Message'].upper().replace(' ', '')
+
+            self.assertIn(wildcards[0].upper().replace(' ', ''), message)
+            self.assertNotIn(wildcards[1].upper().replace(' ', ''), message)
+
+    def test_get_message_log_with_contains_filter_or_2(self):
+
+        wildcards = ['invalid entry', 'elapsed time']
+
+        entries = self.tm1.server.get_message_log_entries(
+            reverse=True,
+            msg_contains=wildcards,
+            msg_contains_operator="OR")
+
+        self.assertGreater(len(entries), 1)
+
+        for entry in entries:
+            message = entry['Message'].upper().replace(' ', '')
+
+            self.assertNotIn(wildcards[0].upper().replace(' ', ''), message)
+            self.assertIn(wildcards[1].upper().replace(' ', ''), message)
 
     def test_session_context_default(self):
         threads = self.tm1.monitoring.get_threads()
@@ -300,6 +398,7 @@ class TestServerMethods(unittest.TestCase):
         cls.tm1.dimensions.delete(cls.dimension_name2)
         cls.tm1.processes.delete(cls.process_name1)
         cls.tm1.processes.delete(cls.process_name2)
+        cls.tm1.server.deactivate_audit_log()
         cls.tm1.logout()
 
 

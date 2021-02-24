@@ -6,7 +6,7 @@ from TM1py import TM1Service
 from TM1py.Services.RestService import RestService
 
 
-class TestRestServiceMethods(unittest.TestCase):
+class TestRestService(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):

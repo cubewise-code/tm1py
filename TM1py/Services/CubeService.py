@@ -10,7 +10,7 @@ from TM1py.Services.CellService import CellService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.ViewService import ViewService
-from TM1py.Utils import format_url, require
+from TM1py.Utils import format_url, require_version, require_admin
 
 
 class CubeService(ObjectService):
@@ -48,7 +48,8 @@ class CubeService(ObjectService):
 
     def get_last_data_update(self, cube_name: str, **kwargs) -> str:
         url = format_url("/api/v1/Cubes('{}')/LastDataUpdate/$value", cube_name)
-        return self._rest.GET(url, **kwargs)
+        response = self._rest.GET(url=url, **kwargs)
+        return response.text
 
     def get_all(self, **kwargs) -> List[Cube]:
         """ get all cubes from TM1 Server as TM1py.Cube instances
@@ -86,6 +87,13 @@ class CubeService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return int(response.text)
 
+    def get_measure_dimension(self, cube_name: str, **kwargs) -> str:
+        url = format_url(
+            "/api/v1/Cubes('{}')/Dimensions?$select=Name",
+            cube_name)
+        response = self._rest.GET(url, **kwargs)
+        return response.json()['value'][-1]['Name']
+
     def update(self, cube: Cube, **kwargs) -> Response:
         """ Update existing cube on TM1 Server
 
@@ -118,6 +126,7 @@ class CubeService(ObjectService):
         errors = response.json()["value"]
         return errors
 
+    @require_admin
     def delete(self, cube_name: str, **kwargs) -> Response:
         """ Delete a cube in TM1
 
@@ -145,6 +154,24 @@ class CubeService(ObjectService):
         cubes = list(entry['Name'] for entry in response.json()['value'])
         return cubes
 
+    def get_all_names_with_rules(self, **kwargs) -> List[str]:
+        """ Ask TM1 Server for list of all cube names that have rules
+
+        :return: List of Strings
+        """
+        response = self._rest.GET(url="/api/v1/Cubes?$select=Name,Rules&$filter=Rules ne null", **kwargs)
+        cubes = list(cube['Name'] for cube in response.json()['value'])
+        return cubes
+
+    def get_all_names_without_rules(self, **kwargs) -> List[str]:
+        """ Ask TM1 Server for list of all cube names that do not have rules
+
+        :return: List of Strings
+        """
+        response = self._rest.GET(url="/api/v1/Cubes?$select=Name,Rules&$filter=Rules eq null", **kwargs)
+        cubes = list(cube['Name'] for cube in response.json()['value'])
+        return cubes
+
     def get_dimension_names(self, cube_name: str, skip_sandbox_dimension: bool = True, **kwargs) -> List[str]:
         """ get name of the dimensions of a cube in their correct order
 
@@ -159,7 +186,7 @@ class CubeService(ObjectService):
             return dimension_names[1:]
         return dimension_names
 
-    @require(version="11.4")
+    @require_version(version="11.4")
     def get_storage_dimension_order(self, cube_name: str, **kwargs) -> List[str]:
         """ Get the storage dimension order of a cube
 
@@ -170,7 +197,8 @@ class CubeService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return [dimension["Name"] for dimension in response.json()["value"]]
 
-    @require(version="11.4")
+    @require_admin
+    @require_version(version="11.4")
     def update_storage_dimension_order(self, cube_name: str, dimension_names: Iterable[str]) -> float:
         """ Update the storage dimension order of a cube
 
@@ -186,7 +214,8 @@ class CubeService(ObjectService):
         response = self._rest.POST(url=url, data=json.dumps(payload))
         return response.json()["value"]
 
-    @require(version="11.6")
+    @require_admin
+    @require_version(version="11.6")
     def load(self, cube_name: str, **kwargs) -> Response:
         """ Load the cube into memory on the server
 
@@ -196,7 +225,8 @@ class CubeService(ObjectService):
         url = format_url("/api/v1/Cubes('{}')/tm1.Load", cube_name)
         return self._rest.POST(url=url, **kwargs)
 
-    @require(version="11.6")
+    @require_admin
+    @require_version(version="11.6")
     def unload(self, cube_name: str, **kwargs) -> Response:
         """ Unload the cube from memory
 

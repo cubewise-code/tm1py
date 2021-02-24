@@ -14,7 +14,7 @@ def skip_if_no_pandas(func):
             import pandas
 
             return func(self, *args, **kwargs)
-        except:
+        except ImportError:
             return self.skipTest(f"Test '{func.__name__}' requires pandas")
 
     return wrapper

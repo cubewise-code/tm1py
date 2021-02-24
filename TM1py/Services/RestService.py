@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import functools
+import re
 import time
 import warnings
 from base64 import b64encode, b64decode
@@ -9,11 +10,12 @@ from typing import Union, Dict, Tuple, Optional
 
 import requests
 import urllib3
-from requests import Timeout, Response
+from requests import Timeout, Response, ConnectionError
 from requests.adapters import HTTPAdapter
 
 # SSO not supported for Linux
 from TM1py.Exceptions.Exceptions import TM1pyTimeout
+from TM1py.Utils import case_and_space_insensitive_equals, CaseAndSpaceInsensitiveSet
 
 try:
     from requests_negotiate_sspi import HttpNegotiateAuth
@@ -68,6 +70,8 @@ def httpmethod(func):
 
                 # all wait times consumed and still no 200
                 if response.status_code not in [200, 201]:
+                    if kwargs.get("cancel_at_timeout", False):
+                        self.cancel_async_operation(async_id)
                     raise TM1pyTimeout(method=func.__name__, url=url, timeout=kwargs['timeout'])
 
                 response = self.build_response_from_raw_bytes(response.content)
@@ -78,8 +82,18 @@ def httpmethod(func):
             # response encoding
             response.encoding = encoding
             return response
+
         except Timeout:
+            if kwargs.get("cancel_at_timeout", False):
+                self.cancel_running_operation()
             raise TM1pyTimeout(method=func.__name__, url=url, timeout=kwargs['timeout'])
+
+        except ConnectionError as e:
+            # cater for issue in requests library: https://github.com/psf/requests/issues/5430
+            if re.search('Read timed out', str(e), re.IGNORECASE):
+                if kwargs.get("cancel_at_timeout", False):
+                    self.cancel_running_operation()
+                raise TM1pyTimeout(method=func.__name__, url=url, timeout=kwargs['timeout'])
 
     return wrapper
 
@@ -119,13 +133,22 @@ class RestService:
         :param session_id: String - TM1SessionId e.g. q7O6e1w49AixeuLVxJ1GZg
         :param session_context: String - Name of the Application. Controls "Context" column in Arc / TM1top.
         If None, use default: TM1py
-        :param verify: path to .cer file or 'False' / False (if no ssl verification is required)
+        :param verify: path to .cer file or 'True' / True / 'False' / False (if no ssl verification is required)
         :param logging: boolean - switch on/off verbose http logging into sys.stdout
         :param timeout: Float - Number of seconds that the client will wait to receive the first byte.
         :param async_requests_mode: changes internal REST execution mode to avoid 60s timeout on IBM cloud
         :param connection_pool_size - In a multithreaded environment, you should set this value to a
         higher number, such as the number of threads
         :param integrated_login: True for IntegratedSecurityMode3
+        :param integrated_login_domain: NT Domain name.
+                Default: '.' for local account. 
+        :param integrated_login_service: Kerberos Service type for remote Service Principal Name.
+                Default: 'HTTP' 
+        :param integrated_login_host: Host name for Service Principal Name.
+                Default: Extracted from request URI
+        :param integrated_login_delegate: Indicates that the user's credentials are to be delegated to the server.
+                Default: False
+        :param impersonate: Name of user to impersonate
         """
         self._ssl = self.translate_to_boolean(kwargs['ssl'])
         self._address = kwargs.get('address', None)
@@ -133,10 +156,20 @@ class RestService:
         self._verify = False
         self._timeout = None if kwargs.get('timeout', None) is None else float(kwargs.get('timeout'))
         self._async_requests_mode = self.translate_to_boolean(kwargs.get('async_requests_mode', False))
+        # populated on the fly
+        if kwargs.get('user'):
+            self._is_admin = True if case_and_space_insensitive_equals(kwargs.get('user'), 'ADMIN') else None
+        else:
+            self._is_admin = None
 
         if 'verify' in kwargs:
             if isinstance(kwargs['verify'], str):
-                if kwargs['verify'].upper() != 'FALSE':
+                if kwargs['verify'].upper() == 'FALSE':
+                    self._verify = False
+                elif kwargs['verify'].upper() == 'TRUE':
+                    self._verify = True
+                # path to .cer file
+                else:
                     self._verify = kwargs.get('verify')
             elif isinstance(kwargs['verify'], bool):
                 self._verify = kwargs['verify']
@@ -168,10 +201,17 @@ class RestService:
                 namespace=kwargs.get("namespace", None),
                 gateway=kwargs.get("gateway", None),
                 decode_b64=self.translate_to_boolean(kwargs.get("decode_b64", False)),
-                integrated_login=self.translate_to_boolean(kwargs.get("integrated_login", False)))
+                integrated_login=self.translate_to_boolean(kwargs.get("integrated_login", False)),
+                integrated_login_domain=kwargs.get("integrated_login_domain"),
+                integrated_login_service=kwargs.get("integrated_login_service"),
+                integrated_login_host=kwargs.get("integrated_login_host"),
+                integrated_login_delegate=kwargs.get("integrated_login_delegate"),
+                impersonate=kwargs.get("impersonate", None))
 
         if not self._version:
             self.set_version()
+
+        self._sandboxing_disabled = None
 
         # manage connection pool
         if "connection_pool_size" in kwargs:
@@ -290,12 +330,18 @@ class RestService:
             self._s.close()
 
     def _start_session(self, user: str, password: str, decode_b64: bool = False, namespace: str = None,
-                       gateway: str = None, integrated_login: bool = None):
+                       gateway: str = None, integrated_login: bool = None, integrated_login_domain: str = None,
+                       integrated_login_service: str = None, integrated_login_host: str = None,
+                       integrated_login_delegate: bool = None, impersonate: str = None):
         """ perform a simple GET request (Ask for the TM1 Version) to start a session
         """
         # Authorization with integrated_login
         if integrated_login:
-            self._s.auth = HttpNegotiateAuth()
+            self._s.auth = HttpNegotiateAuth(
+                domain=integrated_login_domain,
+                service=integrated_login_service,
+                host=integrated_login_host,
+                delegate=integrated_login_delegate)
 
         # Authorization [Basic, CAM] through Headers
         else:
@@ -309,7 +355,11 @@ class RestService:
 
         url = '/api/v1/Configuration/ProductVersion/$value'
         try:
-            response = self.GET(url=url)
+            additional_headers = dict()
+            if impersonate:
+                additional_headers["TM1-Impersonate"] = impersonate
+
+            response = self.GET(url=url, headers=additional_headers)
             self._version = response.text
         finally:
             # After we have session cookie, drop the Authorization Header
@@ -343,6 +393,23 @@ class RestService:
     @property
     def version(self) -> str:
         return self._version
+
+    @property
+    def is_admin(self) -> bool:
+        if self._is_admin is None:
+            response = self.GET("/api/v1/ActiveUser/Groups")
+            self._is_admin = "ADMIN" in CaseAndSpaceInsensitiveSet(
+                *[group["Name"] for group in response.json()["value"]])
+
+        return self._is_admin
+
+    @property
+    def sandboxing_disabled(self):
+        if self._sandboxing_disabled is None:
+            value = self.GET("/api/v1/ActiveConfiguration/Administration/DisableSandboxing/$value")
+            self._sandboxing_disabled = value
+
+        return self._sandboxing_disabled
 
     @property
     def session_id(self) -> str:
@@ -440,6 +507,25 @@ class RestService:
     def retrieve_async_response(self, async_id: str, **kwargs) -> Response:
         url = self._base_url + f"/api/v1/_async('{async_id}')"
         return self._s.get(url, **kwargs)
+
+    def cancel_async_operation(self, async_id: str, **kwargs):
+        url = self._base_url + f"/api/v1/_async('{async_id}')"
+        response = self._s.delete(url, **kwargs)
+        self.verify_response(response)
+
+    def cancel_running_operation(self):
+        monitoring_service = self.get_monitoring_service()
+        threads = monitoring_service.get_active_session_threads(exclude_idle=True)
+
+        # if more than one thread is running in session, operation can not be identified unambiguously
+        if not len(threads) == 1:
+            return
+
+        monitoring_service.cancel_thread(threads[0]['ID'])
+
+    def get_monitoring_service(self):
+        from TM1py.Services import MonitoringService
+        return MonitoringService(self)
 
     @staticmethod
     def urllib3_response_from_bytes(data: bytes) -> HTTPResponse:

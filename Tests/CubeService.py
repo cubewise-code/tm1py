@@ -7,19 +7,10 @@ from TM1py import Element, Hierarchy, Dimension
 from TM1py.Objects import Cube
 from TM1py.Objects import Rules
 from TM1py.Services import TM1Service
-
 from .TestUtils import skip_if_insufficient_version
 
-PREFIX = "TM1py_Tests_Cube_"
 
-
-class TestCubeMethods(unittest.TestCase):
-    tm1 = None
-    cube_name = PREFIX + "some_name"
-    dimension_names = [
-        PREFIX + "dimension1",
-        PREFIX + "dimension2",
-        PREFIX + "dimension3"]
+class TestCubeService(unittest.TestCase):
 
     @classmethod
     def setUp(cls):
@@ -28,7 +19,15 @@ class TestCubeMethods(unittest.TestCase):
         cls.config = configparser.ConfigParser()
         cls.config.read(Path(__file__).parent.joinpath('config.ini'))
         cls.tm1 = TM1Service(**cls.config['tm1srv01'])
-        
+
+        cls.prefix = "TM1py_Tests_Cube_"
+
+        cls.cube_name = cls.prefix + "some_name"
+        cls.dimension_names = [
+            cls.prefix + "dimension1",
+            cls.prefix + "dimension2",
+            cls.prefix + "dimension3"]
+
         for dimension_name in cls.dimension_names:
             elements = [Element('Element {}'.format(str(j)), 'Numeric') for j in range(1, 1001)]
             hierarchy = Hierarchy(dimension_name=dimension_name,
@@ -95,7 +94,7 @@ class TestCubeMethods(unittest.TestCase):
         self.assertFalse(self.tm1.cubes.exists(uuid.uuid4()))
 
     def test_create_delete_cube(self):
-        cube_name = PREFIX + "Some_Other_Name"
+        cube_name = self.prefix + "Some_Other_Name"
         # element with index 0 is Sandboxes
         dimension_names = self.tm1.dimensions.get_all_names()[1:3]
         cube = Cube(cube_name, dimension_names)
@@ -114,6 +113,27 @@ class TestCubeMethods(unittest.TestCase):
         self.tm1.cubes.delete(cube_name)
         all_cubes_after = self.tm1.cubes.get_all_names()
         self.assertEqual(len(all_cubes_before) - 1, len(all_cubes_after))
+
+    def test_get_all_names(self):
+        all_cubes_before = self.tm1.cubes.get_all_names()
+        cubes_with_rules = self.tm1.cubes.get_all_names_with_rules()
+        cubes_without_rules = self.tm1.cubes.get_all_names_without_rules()
+
+        self.assertEqual(len(all_cubes_before), len(cubes_with_rules) + len(cubes_without_rules))
+
+        cube_name = self.prefix + "Some_Other_Name"
+        dimension_names = self.tm1.dimensions.get_all_names()[1:3]
+        cube = Cube(cube_name, dimension_names)
+        self.tm1.cubes.create(cube)
+        self.assertEqual(len(cubes_without_rules) + 1, len(self.tm1.cubes.get_all_names_without_rules()))
+        self.assertEqual(len(cubes_with_rules), len(self.tm1.cubes.get_all_names_with_rules()))
+
+        cube.rules = "SKIPCHECK"
+        self.tm1.cubes.update(cube)
+        self.assertEqual(len(cubes_with_rules) + 1, len(self.tm1.cubes.get_all_names_with_rules()))
+        self.assertEqual(len(cubes_without_rules), len(self.tm1.cubes.get_all_names_without_rules()))
+
+        self.tm1.cubes.delete(cube_name)
 
     @skip_if_insufficient_version(version="11.4")
     def test_get_storage_dimension_order(self):
@@ -164,6 +184,11 @@ class TestCubeMethods(unittest.TestCase):
 
         errors = self.tm1.cubes.check_rules(cube_name=self.cube_name)
         self.assertEqual(1, len(errors))
+
+    def test_get_measure_dimension(self):
+        measure_dimension = self.tm1.cubes.get_measure_dimension(self.cube_name)
+
+        self.assertEqual(self.dimension_names[-1], measure_dimension)
 
     @classmethod
     def tearDown(cls):

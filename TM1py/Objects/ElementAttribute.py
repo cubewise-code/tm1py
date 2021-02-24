@@ -73,3 +73,6 @@ class ElementAttribute(TM1Object):
             return case_and_space_insensitive_equals(self.name, other.name)
         else:
             raise ValueError("Argument: 'other' must be of type str or ElementAttribute")
+
+    def __hash__(self):
+        return super().__hash__()

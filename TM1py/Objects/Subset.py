@@ -51,6 +51,10 @@ class Subset(TM1Object):
     def name(self) -> str:
         return self._subset_name
 
+    @name.setter
+    def name(self, value: str):
+        self._subset_name = value
+
     @property
     def alias(self) -> str:
         return self._alias
@@ -106,12 +110,12 @@ class Subset(TM1Object):
     @classmethod
     def from_dict(cls, subset_as_dict: Dict) -> 'Subset':
         return cls(dimension_name=subset_as_dict["UniqueName"][1:subset_as_dict["UniqueName"].find('].[')],
-                   hierarchy_name=subset_as_dict["Hierarchy"]["Name"],
+                   hierarchy_name=subset_as_dict.get("Hierarchy", {}).get("Name"),
                    subset_name=subset_as_dict['Name'],
-                   alias=subset_as_dict['Alias'],
-                   expression=subset_as_dict['Expression'],
-                   elements=[element['Name'] for element in subset_as_dict['Elements']]
-                   if not subset_as_dict['Expression'] else None)
+                   alias=subset_as_dict.get('Alias'),
+                   expression=subset_as_dict.get('Expression'),
+                   elements=[element['Name'] for element in subset_as_dict.get('Elements', [])]
+                   if not subset_as_dict.get('Expression') else None)
 
     @property
     def body(self) -> str:
@@ -171,12 +175,12 @@ class AnonymousSubset(Subset):
     """
 
     def __init__(self, dimension_name: str, hierarchy_name: Optional[str] = None, expression: Optional[str] = None,
-                 elements: Optional[Iterable[str]] = None):
+                 elements: Optional[Iterable[str]] = None, alias: str = ''):
         Subset.__init__(self,
                         dimension_name=dimension_name,
                         hierarchy_name=hierarchy_name if hierarchy_name else dimension_name,
                         subset_name='',
-                        alias='',
+                        alias=alias,
                         expression=expression,
                         elements=elements)
 
@@ -203,6 +207,7 @@ class AnonymousSubset(Subset):
         return cls(dimension_name=subset_as_dict["Hierarchy"]["Dimension"]["Name"],
                    hierarchy_name=subset_as_dict["Hierarchy"]["Name"],
                    expression=subset_as_dict['Expression'],
+                   alias=subset_as_dict['Alias'],
                    elements=[element['Name'] for element in subset_as_dict['Elements']]
                    if not subset_as_dict['Expression'] else None)
 
@@ -212,6 +217,8 @@ class AnonymousSubset(Subset):
             "Dimensions('{}')/Hierarchies('{}')",
             self._dimension_name,
             self.hierarchy_name)
+        if self.alias:
+            body_as_dict['Alias'] = self._alias
         body_as_dict['Expression'] = self._expression
         return body_as_dict
 
@@ -221,6 +228,8 @@ class AnonymousSubset(Subset):
             "Dimensions('{}')/Hierarchies('{}')",
             self._dimension_name,
             self.hierarchy_name)
+        if self.alias:
+            body_as_dict['Alias'] = self._alias
         body_as_dict['Elements@odata.bind'] = [
             format_url(
                 "Dimensions('{}')/Hierarchies('{}')/Elements('{}')",

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # TM1py Exceptions are defined here
-from typing import Mapping
+from typing import Mapping, List
 
 
 class TM1pyTimeout(Exception):
@@ -15,12 +15,20 @@ class TM1pyTimeout(Exception):
 
 
 class TM1pyVersionException(Exception):
-    def __init__(self, function, required_version):
+    def __init__(self, function: str, required_version):
         self.function = function
         self.required_version = required_version
 
     def __str__(self):
         return f"Function '{self.function}' requires TM1 server version >= '{self.required_version}'"
+
+
+class TM1pyNotAdminException(Exception):
+    def __init__(self, function: str):
+        self.function = function
+
+    def __str__(self):
+        return f"Function '{self.function}' requires admin permissions"
 
 
 class TM1pyException(Exception):
@@ -63,8 +71,30 @@ class TM1pyRestException(TM1pyException):
         return self._headers
 
     def __str__(self):
-        return "Text: {} Status Code: {} Reason: {} Headers: {}".format(
+        return "Text: '{}' - Status Code: {} - Reason: '{}' - Headers: {}".format(
             self.message,
             self._status_code,
             self._reason,
             self._headers)
+
+
+class TM1pyWriteFailureException(TM1pyException):
+
+    def __init__(self, statuses: List[str], error_log_files: List[str]):
+        self.statuses = statuses
+        self.error_log_files = error_log_files
+
+        message = f"All {len(self.statuses)} write operations failed. Details: {self.error_log_files}"
+        super(TM1pyWriteFailureException, self).__init__(message)
+
+
+class TM1pyWritePartialFailureException(TM1pyException):
+
+    def __init__(self, statuses: List[str], error_log_files: List[str], attempts: int):
+        self.statuses = statuses
+        self.error_log_files = error_log_files
+        self.attempts = attempts
+
+        message = f"{len(self.statuses)} out of {self.attempts} write operations failed partially. " \
+                  f"Details: {self.error_log_files}"
+        super(TM1pyWritePartialFailureException, self).__init__(message)
