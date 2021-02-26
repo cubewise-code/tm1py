@@ -72,10 +72,6 @@ class DimensionService(ObjectService):
         for hierarchy in dimension.hierarchy_names:
             hierarchies_to_be_removed.discard(hierarchy)
 
-        for hierarchy_name in hierarchies_to_be_removed:
-            if not case_and_space_insensitive_equals(hierarchy_name, "Leaves"):
-                self.hierarchies.delete(dimension_name=dimension.name, hierarchy_name=hierarchy_name, **kwargs)
-
         # update all Hierarchies except for the implicitly maintained 'Leaves' Hierarchy
         for hierarchy in dimension:
             if not case_and_space_insensitive_equals(hierarchy.name, "Leaves"):
@@ -83,6 +79,10 @@ class DimensionService(ObjectService):
                     self.hierarchies.update(hierarchy, **kwargs)
                 else:
                     self.hierarchies.create(hierarchy, **kwargs)
+
+        for hierarchy_name in hierarchies_to_be_removed:
+            if not case_and_space_insensitive_equals(hierarchy_name, "Leaves"):
+                self.hierarchies.delete(dimension_name=dimension.name, hierarchy_name=hierarchy_name, **kwargs)
 
     def update_or_create(self, dimension: Dimension, **kwargs):
         """ update if exists else create

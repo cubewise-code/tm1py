@@ -8,6 +8,7 @@ from TM1py.Services import TM1Service
 
 
 class TestDimensionService(unittest.TestCase):
+    tm1: TM1Service
 
     @classmethod
     def setUpClass(cls):
@@ -55,7 +56,7 @@ class TestDimensionService(unittest.TestCase):
         cls.tm1.dimensions.create(d)
 
     @classmethod
-    def create_dimension_with_multiple_hierarchies(cls):
+    def create_or_update_dimension_with_multiple_hierarchies(cls):
         dimension = Dimension(cls.dimension_name_with_multi_hierarchy)
         dimension.add_hierarchy(
             Hierarchy(
@@ -72,7 +73,7 @@ class TestDimensionService(unittest.TestCase):
                 name="Hierarchy3",
                 dimension_name=dimension.name,
                 elements=[Element("Elem1", "Numeric"), Element("Elem2", "Numeric"), Element("Elem3", "Numeric")]))
-        cls.tm1.dimensions.create(dimension)
+        cls.tm1.dimensions.update_or_create(dimension)
 
     @classmethod
     def delete_dimensions(cls):
@@ -146,8 +147,21 @@ class TestDimensionService(unittest.TestCase):
         dimension = self.tm1.dimensions.get(self.dimension_name)
         self.assertEqual(len(dimension.hierarchies[0].elements), len(elements))
 
+    def test_update_dimension_without_leaves(self):
+        self.create_or_update_dimension_with_multiple_hierarchies()
+        dimension = self.tm1.dimensions.get(self.dimension_name_with_multi_hierarchy)
+        self.assertEqual(dimension.hierarchy_names, ['Hierarchy1', 'Hierarchy2', 'Hierarchy3', 'Leaves'])
+        dimension.remove_hierarchy('Hierarchy2')
+        dimension.remove_hierarchy('Hierarchy3')
+        dimension._hierarchies = [hierarchy for hierarchy in dimension._hierarchies if not hierarchy.name == 'Leaves']
+
+        # Test that TM1py does not attempt to delete the leaves hierarchy
+        self.tm1.dimensions.update(dimension)
+        dimension = self.tm1.dimensions.get(self.dimension_name_with_multi_hierarchy)
+        self.assertEqual(dimension.hierarchy_names, ['Hierarchy1', 'Leaves'])
+
     def test_update_dimension_remove_hierarchy(self):
-        self.create_dimension_with_multiple_hierarchies()
+        self.create_or_update_dimension_with_multiple_hierarchies()
         dimension = self.tm1.dimensions.get(self.dimension_name_with_multi_hierarchy)
         self.assertEqual(dimension.hierarchy_names, ['Hierarchy1', 'Hierarchy2', 'Hierarchy3', 'Leaves'])
         dimension.remove_hierarchy('Hierarchy2')
@@ -176,7 +190,7 @@ class TestDimensionService(unittest.TestCase):
 
     def test_hierarchy_names(self):
         # create dimension with two Hierarchies
-        self.create_dimension_with_multiple_hierarchies()
+        self.create_or_update_dimension_with_multiple_hierarchies()
 
         dimension = self.tm1.dimensions.get(dimension_name=self.dimension_name_with_multi_hierarchy)
         self.assertEqual(
@@ -190,7 +204,7 @@ class TestDimensionService(unittest.TestCase):
 
     def test_remove_leaves_hierarchy(self):
         # create dimension with two Hierarchies
-        self.create_dimension_with_multiple_hierarchies()
+        self.create_or_update_dimension_with_multiple_hierarchies()
         dimension = self.tm1.dimensions.get(dimension_name=self.dimension_name_with_multi_hierarchy)
 
         try:
@@ -201,7 +215,7 @@ class TestDimensionService(unittest.TestCase):
 
     def test_remove_hierarchy(self):
         # create dimension with two Hierarchies
-        self.create_dimension_with_multiple_hierarchies()
+        self.create_or_update_dimension_with_multiple_hierarchies()
 
         dimension = self.tm1.dimensions.get(dimension_name=self.dimension_name_with_multi_hierarchy)
         self.assertEqual(len(dimension.hierarchies), 4)
