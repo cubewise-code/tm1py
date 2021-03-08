@@ -30,7 +30,7 @@ class Process(TM1Object):
     def __init__(self,
                  name: str,
                  has_security_access: Optional[bool] = False,
-                 ui_data: str = "CubeAction=1511€DataAction=1503€CubeLogChanges=0€",
+                 ui_data: str = "CubeAction=1511\fDataAction=1503\fCubeLogChanges=0\f",
                  parameters: Iterable = None,
                  variables: Iterable = None,
                  variables_ui_data: Iterable = None,
