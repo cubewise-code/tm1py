@@ -51,7 +51,7 @@ Install
     
 > with pandas
 
-    pip install tm1py[pandas]
+    pip install "tm1py[pandas]"
     
     
 Usage
