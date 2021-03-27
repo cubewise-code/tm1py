@@ -119,8 +119,7 @@ class TestChoreService(unittest.TestCase):
 
         c4 = self.tm1.chores.get(CHORE_NAME4)
 
-        # delta in start time is expected to be <= 1h due to potential DST
-        self.assertLessEqual(abs(c4.start_time.datetime.hour - self.start_time.hour), 1)
+        self.assertEqual(c4.start_time.datetime.hour, self.start_time.hour)
         self.assertEqual(c4._start_time._datetime.replace(hour=0), self.start_time.replace(hour=0, microsecond=0))
         self.assertEqual(c4._name, CHORE_NAME4)
         self.assertEqual(c4.active, True)
@@ -148,8 +147,7 @@ class TestChoreService(unittest.TestCase):
 
         c4 = self.tm1.chores.get(CHORE_NAME4)
 
-        # delta in start time is expected to be <= 1h due to potential DST
-        self.assertLessEqual(abs(c4.start_time.datetime.hour - self.start_time.hour), 1)
+        self.assertEqual(c4.start_time.datetime.hour, self.start_time.hour)
         self.assertEqual(c4._start_time._datetime.replace(hour=0), self.start_time.replace(hour=0, microsecond=0))
         self.assertEqual(c4._name, CHORE_NAME4)
         self.assertEqual(c4.active, True)
@@ -239,8 +237,7 @@ class TestChoreService(unittest.TestCase):
         # get chore and check all properties
         c = self.tm1.chores.get(chore_name=CHORE_NAME1)
 
-        # delta in start time is expected to be <= 1h due to potential DST
-        self.assertLessEqual(abs(c.start_time.datetime.hour - start_time.hour), 1)
+        self.assertEqual(c.start_time.datetime.hour, start_time.hour)
         self.assertEqual(c._start_time._datetime.replace(hour=0), start_time.replace(hour=0))
 
         self.assertEqual(c._name, CHORE_NAME1)
