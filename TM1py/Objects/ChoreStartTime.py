@@ -2,15 +2,13 @@
 
 import datetime
 
-from TM1py.Objects.TM1Object import TM1Object
-
 
 class ChoreStartTime:
     """ Utility class to handle time representation for Chore Start Time
         
     """
 
-    def __init__(self, year: int, month: int, day: int, hour: int, minute: int, second: int):
+    def __init__(self, year: int, month: int, day: int, hour: int, minute: int, second: int, tz: str = None):
         """
         
         :param year: year 
@@ -21,9 +19,20 @@ class ChoreStartTime:
         :param second: second or None
         """
         self._datetime = datetime.datetime.combine(datetime.date(year, month, day), datetime.time(hour, minute, second))
+        self.tz = tz
 
     @classmethod
     def from_string(cls, start_time_string: str) -> 'ChoreStartTime':
+        # extract optional tz info (e.g., +01:00) from string end
+        if '+' in start_time_string:
+            # case "2020-11-05T08:00:01+01:00",
+            tz = "+" + start_time_string.split('+')[1]
+        elif start_time_string.count('-') == 3:
+            # case: "2020-11-05T08:00:01-01:00",
+            tz = "-" + start_time_string.split('-')[-1]
+        else:
+            tz = None
+
         # f to handle strange timestamp 2016-09-25T20:25Z instead of common 2016-09-25T20:25:00Z
         f = lambda x: int(x) if x else 0
         return cls(year=f(start_time_string[0:4]),
@@ -31,15 +40,23 @@ class ChoreStartTime:
                    day=f(start_time_string[8:10]),
                    hour=f(start_time_string[11:13]),
                    minute=f(start_time_string[14:16]),
-                   second=f(start_time_string[17:19]))
+                   second=f(start_time_string[17:19]),
+                   tz=tz)
 
     @property
     def start_time_string(self) -> str:
         # produce timestamp 2016-09-25T20:25Z instead of common 2016-09-25T20:25:00Z
         if not self._datetime.second:
-            return self._datetime.strftime("%Y-%m-%dT%H:%MZ")
+            start_time = self._datetime.strftime("%Y-%m-%dT%H:%M")
         else:
-            return self._datetime.strftime("%Y-%m-%dT%H:%M:%SZ")
+            start_time = self._datetime.strftime("%Y-%m-%dT%H:%M:%S")
+
+        if self.tz:
+            start_time += self.tz
+        else:
+            start_time += "Z"
+
+        return start_time
 
     @property
     def datetime(self) -> datetime:
