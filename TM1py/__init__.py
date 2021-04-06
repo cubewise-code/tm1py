@@ -27,6 +27,7 @@ from TM1py.Services.CubeService import CubeService
 from TM1py.Services.CellService import CellService
 from TM1py.Services.DimensionService import DimensionService
 from TM1py.Services.ElementService import ElementService
+from TM1py.Services.GitService import GitService
 from TM1py.Services.HierarchyService import HierarchyService
 from TM1py.Services.ServerService import ServerService
 from TM1py.Services.ProcessService import ProcessService
