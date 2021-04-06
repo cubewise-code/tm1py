@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import warnings
 from collections import namedtuple, OrderedDict
 from enum import Enum
 from typing import Union, Dict
@@ -102,11 +103,28 @@ class DimensionApplication(Application):
 
 
 class DocumentApplication(Application):
-    def __init__(self, path: str, name: str, content: bytes):
+    def __init__(self, path: str, name: str, content: bytes, file_id: str = None, file_name: str = None,
+                 last_updated: str = None):
         super().__init__(path, name, ApplicationTypes.DOCUMENT)
         self.content = content
+        # below fields only populated for retrieved applications
+        self.file_id = file_id
+        self.file_name = file_name
+        self.last_updated = last_updated
 
     def to_xlsx(self, path_to_file: str):
+        warnings.warn(
+            f"Function 'to_xlsx' is deprecated. Use 'to_file' instead",
+            DeprecationWarning,
+            stacklevel=2)
+        return self.to_file(path_to_file=path_to_file)
+
+    def to_file(self, path_to_file: str):
+        """
+
+        :param path_to_file: path to newly to create file including the extension (e.g., xlsx, xlsm)
+        :return:
+        """
         with open(path_to_file, "wb") as file:
             file.write(self.content)
 
