@@ -120,8 +120,20 @@ class ApplicationService(ObjectService):
             "/api/v1/Contents('Applications')" + mid + "/" + contents + "('{name}')/Document/Content",
             name=name)
 
-        response = self._rest.GET(url, **kwargs)
-        return DocumentApplication(path, name, response.content)
+        content = self._rest.GET(url, **kwargs).content
+
+        url = format_url(
+            "/api/v1/Contents('Applications')" + mid + "/" + contents + "('{name}')/Document",
+            name=name)
+        document_fields = self._rest.GET(url, **kwargs).json()
+
+        return DocumentApplication(
+            path=path,
+            name=name,
+            content=content,
+            file_id=document_fields.get("ID"),
+            file_name=document_fields.get("Name"),
+            last_updated=document_fields.get("LastUpdated"))
 
     def delete(self, path: str, application_type: Union[str, ApplicationTypes], application_name: str,
                private: bool = False, **kwargs) -> Response:

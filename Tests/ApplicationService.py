@@ -220,6 +220,10 @@ class TestApplicationService(unittest.TestCase):
             self.tm1.applications.create(application=app, private=private)
 
         app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=private)
+        self.assertEqual(app_retrieved.last_updated[:10], datetime.today().strftime('%Y-%m-%d'))
+        self.assertIsNotNone(app_retrieved.file_id)
+        self.assertIsNotNone(app_retrieved.file_name)
+
         self.assertEqual(app, app_retrieved)
         exists = self.tm1.applications.exists(
             app.path, name=app.name, application_type=ApplicationTypes.DOCUMENT, private=private)
