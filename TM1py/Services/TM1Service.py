@@ -21,6 +21,7 @@ class TM1Service:
         self.cubes = CubeService(self._tm1_rest)
         self.dimensions = DimensionService(self._tm1_rest)
         self.elements = ElementService(self._tm1_rest)
+        self.git = GitService(self._tm1_rest)
         self.hierarchies = HierarchyService(self._tm1_rest)
         self.monitoring = MonitoringService(self._tm1_rest)
         self.power_bi = PowerBiService(self._tm1_rest)
