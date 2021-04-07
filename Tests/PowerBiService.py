@@ -385,7 +385,7 @@ class TestPowerBiService(unittest.TestCase):
         row = members.loc[members[DIMENSION_NAME] == "Total Years"]
         self.assertEqual(
             tuple(row.values[0]),
-            ("Total Years", "Consolidated", "", "", "", "All Consolidations", ""))
+            ("Total Years", "Consolidated", "", "", "", "", "All Consolidations"))
         row = members.loc[members[DIMENSION_NAME] == "No Year"]
         self.assertEqual(
             tuple(row.values[0]),
