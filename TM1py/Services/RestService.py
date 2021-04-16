@@ -553,7 +553,7 @@ class RestService:
         yield 0.3
         yield 0.6
         if timeout:
-            for _ in range(1, timeout):
+            for _ in range(1, int(timeout)):
                 yield 1
         else:
             while True:

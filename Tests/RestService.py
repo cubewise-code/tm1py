@@ -18,7 +18,13 @@ class TestRestService(unittest.TestCase):
         cls.config = configparser.ConfigParser()
         cls.config.read(Path(__file__).parent.joinpath('config.ini'))
         cls.tm1 = TM1Service(**cls.config['tm1srv01'])
-        
+
+    def test_wait_time_generator_with_float_timeout(self):
+        self.assertEqual(
+            [0.1, 0.3, 0.6, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            list(self.tm1._tm1_rest.wait_time_generator(10.0)))
+        self.assertEqual(sum(self.tm1._tm1_rest.wait_time_generator(10)), 10)
+
     def test_wait_time_generator_with_timeout(self):
         self.assertEqual(
             [0.1, 0.3, 0.6, 1, 1, 1, 1, 1, 1, 1, 1, 1],
