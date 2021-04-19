@@ -75,7 +75,7 @@ class User(TM1Object):
 
     @property
     def is_admin(self) -> bool:
-        return 'ADMIN' in self.groups
+        return "ADMIN" in CaseAndSpaceInsensitiveSet(*self.groups)
 
     @property
     def groups(self) -> List[str]:
