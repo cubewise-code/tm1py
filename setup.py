@@ -1,11 +1,11 @@
 from setuptools import setup
 
-SCHEDULE_VERSION = '1.6.0'
+SCHEDULE_VERSION = '1.6.3'
 SCHEDULE_DOWNLOAD_URL = (
         'https://github.com/Cubewise-code/TM1py/tarball/' + SCHEDULE_VERSION
 )
 
-with open('README.md', 'r', encoding='utf-8') as f:
+with open('README.md', 'r') as f:
     long_description = f.read()
 
 setup(
