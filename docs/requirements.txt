@@ -1,0 +1,8 @@
+TM1py>=1.6.2
+pandas>=1.2.2
+mdxpy<=0.2
+python-dateutil>=2.8.1
+requests>=2.25.1
+urllib3>=1.26.3
+pytz>=2021.1
+setuptools>=49.2.1

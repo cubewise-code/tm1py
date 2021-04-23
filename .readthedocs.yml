@@ -7,7 +7,7 @@
 version: 2
 
 sphinx:
-  configuration: conf.py
+  configuration: docs/conf.py
 
 formats: all
 
@@ -16,3 +16,5 @@ build:
 
 python:
   version: 3.8
+  install:
+    - requirements: docs/requirements.txt
