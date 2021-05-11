@@ -981,6 +981,30 @@ class TestCellService(unittest.TestCase):
                 Utils.dimension_name_from_element_unique_name(coordinates[2]),
                 self.dimension_names[2])
 
+    def test_execute_mdx_unique_element_names_false(self):
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.members([Member.of(self.dimension_names[0], "Element 1")])) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(self.dimension_names[1], "Element2"))) \
+            .add_member_to_where("[" + self.dimension_names[2] + "].[Element3]").to_mdx()
+
+        data = self.tm1.cubes.cells.execute_mdx(mdx, element_unique_names=False)
+
+        self.assertEqual(len(data), 1)
+        for coordinates, cell in data.items():
+            self.assertEqual(coordinates, ("Element 1", "Element 2", "Element 3"))
+
+    def test_execute_mdx_values_only_true(self):
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.members([Member.of(self.dimension_names[0], "Element 1")])) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(self.dimension_names[1], "Element1"))) \
+            .add_member_to_where("[" + self.dimension_names[2] + "].[Element1]").to_mdx()
+
+        data = self.tm1.cubes.cells.execute_mdx(mdx, values_only=True)
+
+        self.assertEqual(len(data), 1)
+        for coordinates, value in data.items():
+            self.assertEqual(1, value)
+
     def test_execute_mdx_raw_skip_contexts(self):
         mdx = MdxBuilder.from_cube(self.cube_name) \
             .add_hierarchy_set_to_row_axis(MdxHierarchySet.member(Member.of(self.dimension_names[0], "Element1"))) \
@@ -1530,7 +1554,6 @@ class TestCellService(unittest.TestCase):
             'Attr1': {0: 'TM1py'},
             'Value': {0: 1.0}}
         self.assertEqual(expected, df.to_dict())
-
 
     @skip_if_no_pandas
     def test_execute_mdx_dataframe_pivot(self):
