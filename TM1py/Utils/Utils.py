@@ -161,23 +161,32 @@ def extract_element_names_from_members(members: Iterable[Dict]) -> List[str]:
             in members]
 
 
-def sort_coordinates(cube_dimensions: Iterable[str], unsorted_coordinates: Iterable[str]) -> Tuple[str]:
+def sort_coordinates(cube_dimensions: Iterable[str], unsorted_coordinates: Iterable[str],
+                     element_unique_names: True) -> Tuple[str]:
     sorted_coordinates = []
     for dimension in cube_dimensions:
         # could be more than one hierarchy!
         address_elements = [item for item in unsorted_coordinates if item.startswith('[' + dimension + '].')]
         # address_elements could be ( [dim1].[hier1].[elem1], [dim1].[hier2].[elem3] )
         for address_element in address_elements:
-            sorted_coordinates.append(address_element)
+            if element_unique_names:
+                coordinate = address_element
+            else:
+                coordinate = element_name_from_element_unique_name(address_element)
+            sorted_coordinates.append(coordinate)
     return tuple(sorted_coordinates)
 
 
 def build_content_from_cellset_dict(
         raw_cellset_as_dict: Dict,
-        top: Optional[int] = None) -> 'CaseAndSpaceInsensitiveTuplesDict':
+        top: Optional[int] = None,
+        element_unique_names: bool = True,
+        values_only: bool = False) -> 'CaseAndSpaceInsensitiveTuplesDict':
     """ transform raw cellset data into concise dictionary
     :param raw_cellset_as_dict:
     :param top: Int, number of cells to return (counting from top)
+    :param element_unique_names: '[d1].[h1].[e1]' or 'e1'
+    :param values_only: cell values in result dictionary, instead of cell_properties dictionary
     :return:
     """
     cube_dimensions = [dim['Name'] for dim in raw_cellset_as_dict['Cube']['Dimensions']]
@@ -193,17 +202,20 @@ def build_content_from_cellset_dict(
         coordinates = []
         if axis1:
             index_rows = ordinal // axis0['Cardinality'] % axis1.get('Cardinality')
-            coordinates.extend(extract_unique_names_from_members(axis1['Tuples'][index_rows]['Members']))
+            coordinate = extract_unique_names_from_members(axis1['Tuples'][index_rows]['Members'])
+            coordinates.extend(coordinate)
 
         if title_axis:
-            coordinates.extend(extract_unique_names_from_members(title_axis['Tuples'][0]['Members']))
+            coordinate = extract_unique_names_from_members(title_axis['Tuples'][0]['Members'])
+            coordinates.extend(coordinate)
 
         if axis0:
             index_columns = ordinal % axis0['Cardinality']
-            coordinates.extend(extract_unique_names_from_members(axis0['Tuples'][index_columns]['Members']))
+            coordinate = extract_unique_names_from_members(axis0['Tuples'][index_columns]['Members'])
+            coordinates.extend(coordinate)
 
-        coordinates = sort_coordinates(cube_dimensions, coordinates)
-        content_as_dict[coordinates] = cell
+        coordinates = sort_coordinates(cube_dimensions, coordinates, element_unique_names=element_unique_names)
+        content_as_dict[coordinates] = cell['Value'] if values_only else cell
     return content_as_dict
 
 
