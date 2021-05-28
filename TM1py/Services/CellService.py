@@ -4,9 +4,11 @@ import functools
 import json
 import uuid
 import warnings
+import asyncio
 from collections import OrderedDict
 from io import StringIO
 from typing import List, Union, Dict, Iterable, Tuple, Optional
+from concurrent.futures.thread import ThreadPoolExecutor
 
 from mdxpy import MdxHierarchySet, MdxBuilder, Member
 from requests import Response
@@ -367,6 +369,57 @@ class CellService(ObjectService):
                           use_ti=use_ti,
                           use_changeset=use_changeset,
                           **kwargs)
+
+    @require_pandas
+    @manage_transaction_log
+    def write_dataframe_async(self, cube_name: str, data: 'pd.DataFrame',
+                              slice_size_of_dataframe: int, max_workers: int,
+                              increment: bool = False):
+        """ Write DataFrame into a cube using unbound TI processes in a multi-threading way. Requires admin permissions.
+        For a DataFrame with > 1,000,000 rows, this function will at least save half of runtime compared with `write_dataframe` function.
+        Column order must match dimensions in the target cube with an additional column for the values.
+        Column names are not relevant.
+        :param cube_name:
+        :param data: Pandas Data Frame
+        :param slice_size_of_dataframe: Number of rows for each DataFrame slice, e.g. 10000
+        :param max_workers: Max number of threads, e.g. 14
+        :param increment: increment or update cell values. Defaults to False.
+        :return: the Future’s result or raise exception.
+        """
+        def chunks(data):
+            slice_list = [data.iloc[i:i + slice_size_of_dataframe] for i in range(0, data.shape[0], slice_size_of_dataframe)]
+            return slice_list
+
+        def write(self, chunk):
+            try:
+                return self.write_dataframe(cube_name=cube_name, data=chunk, increment=increment, use_ti=True)
+            except TM1pyException as e:
+                raise e
+
+        async def write_async(self, data):
+            loop = asyncio.get_event_loop()
+            outcomes = []
+
+            with ThreadPoolExecutor(max_workers) as executor:
+                futures = [loop.run_in_executor(executor, write, self, chunk) for chunk in chunks(data)]
+
+                for future in futures:
+                    outcomes.append(await future)
+
+            return outcomes
+
+        if not isinstance(data, pd.DataFrame):
+            raise ValueError("argument 'data' must of type DataFrame")
+
+        dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
+
+        if not len(data.columns) == len(dimensions) + 1:
+            raise ValueError("Number of columns in 'data' DataFrame must be number of dimensions in cube + 1")
+
+        try:
+            return asyncio.run(write_async(self, data))
+        except TM1pyException as e:
+            raise e
 
     def write_value(self, value: Union[str, float], cube_name: str, element_tuple: Iterable,
                     dimensions: Iterable[str] = None, sandbox_name: str = None, **kwargs) -> Response:
