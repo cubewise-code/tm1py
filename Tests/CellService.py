@@ -645,6 +645,26 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(list(df["Value"]), values)
 
     @skip_if_no_pandas
+    def test_write_dataframe_async(self):
+        df = pd.DataFrame({
+            self.dimension_names[0]: ["element 1", "element 1", "element 1"],
+            self.dimension_names[1]: ["element 1", "element 2", "element 3"],
+            self.dimension_names[2]: ["element 5", "element 5", "element 5"],
+            "Value": [1, 2, 3]})
+        self.tm1.cubes.cells.write_dataframe_async(self.cube_name, df, 1, 3)
+
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(self.dimension_names[0], "element 1"))) \
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+            Member.of(self.dimension_names[1], "element 1"),
+            Member.of(self.dimension_names[1], "element 2"),
+            Member.of(self.dimension_names[1], "element 3")])) \
+            .add_member_to_where(Member.of(self.dimension_names[2], "element 5")).to_mdx()
+        values = self.tm1.cubes.cells.execute_mdx_values(mdx)
+
+        self.assertEqual(list(df["Value"]), values)
+
+    @skip_if_no_pandas
     def test_write_dataframe_error(self):
         df = pd.DataFrame({
             self.dimension_names[0]: ["element 1", "element 3", "element 5"],
@@ -654,6 +674,17 @@ class TestCellService(unittest.TestCase):
             "Value": [1, 2, 3]})
         with self.assertRaises(ValueError) as e:
             self.tm1.cubes.cells.write_dataframe(self.cube_name, df)
+
+    @skip_if_no_pandas
+    def test_write_dataframe_async_error(self):
+        df = pd.DataFrame({
+            self.dimension_names[0]: ["element 1", "element 3", "element 5"],
+            self.dimension_names[1]: ["element 1", "element 2", "element 4"],
+            self.dimension_names[2]: ["element 1", "element 3", "element 5"],
+            "Extra Column": ["element 1", "element2", "element3"],
+            "Value": [1, 2, 3]})
+        with self.assertRaises(ValueError) as e:
+            self.tm1.cubes.cells.write_dataframe_async(self.cube_name, df, 1, 3)
 
     def test_relative_proportional_spread_happy_case(self):
         """
