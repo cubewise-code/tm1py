@@ -386,9 +386,16 @@ class CellService(ObjectService):
         :param increment: increment or update cell values. Defaults to False.
         :return: the Future’s result or raise exception.
         """
+        if not isinstance(data, pd.DataFrame):
+            raise ValueError("argument 'data' must of type DataFrame")
+
+        dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
+
+        if not len(data.columns) == len(dimensions) + 1:
+            raise ValueError("Number of columns in 'data' DataFrame must be number of dimensions in cube + 1")
+
         def chunks(data):
-            slice_list = [data.iloc[i:i + slice_size_of_dataframe] for i in range(0, data.shape[0], slice_size_of_dataframe)]
-            return slice_list
+            return [data.iloc[i:i + slice_size_of_dataframe] for i in range(0, data.shape[0], slice_size_of_dataframe)]
 
         def write(self, chunk):
             return self.write_dataframe(cube_name=cube_name, data=chunk, increment=increment, use_ti=True)
@@ -404,15 +411,7 @@ class CellService(ObjectService):
                     outcomes.append(await future)
 
             return outcomes
-
-        if not isinstance(data, pd.DataFrame):
-            raise ValueError("argument 'data' must of type DataFrame")
-
-        dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
-
-        if not len(data.columns) == len(dimensions) + 1:
-            raise ValueError("Number of columns in 'data' DataFrame must be number of dimensions in cube + 1")
-
+            
         return asyncio.run(write_async(self, data))
 
     def write_value(self, value: Union[str, float], cube_name: str, element_tuple: Iterable,
