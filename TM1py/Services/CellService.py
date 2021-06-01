@@ -391,10 +391,7 @@ class CellService(ObjectService):
             return slice_list
 
         def write(self, chunk):
-            try:
-                return self.write_dataframe(cube_name=cube_name, data=chunk, increment=increment, use_ti=True)
-            except TM1pyException as e:
-                raise e
+            return self.write_dataframe(cube_name=cube_name, data=chunk, increment=increment, use_ti=True)
 
         async def write_async(self, data):
             loop = asyncio.get_event_loop()
@@ -416,10 +413,7 @@ class CellService(ObjectService):
         if not len(data.columns) == len(dimensions) + 1:
             raise ValueError("Number of columns in 'data' DataFrame must be number of dimensions in cube + 1")
 
-        try:
-            return asyncio.run(write_async(self, data))
-        except TM1pyException as e:
-            raise e
+        return asyncio.run(write_async(self, data))
 
     def write_value(self, value: Union[str, float], cube_name: str, element_tuple: Iterable,
                     dimensions: Iterable[str] = None, sandbox_name: str = None, **kwargs) -> Response:
