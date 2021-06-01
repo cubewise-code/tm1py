@@ -350,7 +350,11 @@ class ElementService(ObjectService):
         :param attribute_value:
         :return: List of element names
         """
-
+        if not self.exists(f'}}ElementAttributes_{dimension_name}',
+                f'}}ElementAttributes_{dimension_name}',
+                attribute_name):
+            raise RuntimeError(f"Attribute '{attribute_name}' does not exist in Dimension '{dimension_name}'.")
+            
         if isinstance(attribute_value, str):
             mdx = (
                 f'{{FILTER({{TM1SUBSETALL([{dimension_name}].[{hierarchy_name}])}},'
@@ -362,7 +366,11 @@ class ElementService(ObjectService):
                 f'[{dimension_name}].[{hierarchy_name}].[{attribute_name}] = {attribute_value})}}'
             )
 
-        elems =  self.execute_set_mdx(mdx)
+        elems =  self.execute_set_mdx(
+            mdx=mdx,
+            member_properties=["Name"],
+            parent_properties=None,
+            element_properties=None)
         return [elem[0]['Name'] for elem in elems]
 
     def create_element_attribute(self, dimension_name: str, hierarchy_name: str, element_attribute: ElementAttribute,
