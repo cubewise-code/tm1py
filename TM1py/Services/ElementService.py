@@ -351,11 +351,11 @@ class ElementService(ObjectService):
         :return: List of element names
         """
         if isinstance(attribute_value, str):
-            mdx = '{{FILTER({{TM1SUBSETALL([{0}].[{1}])}},[{0}].[{1}].[{2}] = "{3}")}}'.format(
-                        dimension_name, hierarchy_name, attribute_name, attribute_value)
+            mdx = f'{{FILTER({{TM1SUBSETALL([{dimension_name}].[{hierarchy_name}])}},' \
+                    '[{dimension_name}].[{hierarchy_name}].[{attribute_name}] = "{attribute_value}")}}'
         else:
-             mdx = '{{FILTER({{TM1SUBSETALL([{0}].[{1}])}},[{0}].[{1}].[{2}] = {3})}}'.format(
-                        dimension_name, hierarchy_name, attribute_name, attribute_value)
+            mdx = f'{{FILTER({{TM1SUBSETALL([{dimension_name}].[{hierarchy_name}])}},'\
+                    '[{dimension_name}].[{hierarchy_name}].[{attribute_name}] = {attribute_value})}}'
 
         elems =  self.execute_set_mdx(mdx)
         return [elem[0]['Name'] for elem in elems]
