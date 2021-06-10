@@ -8,7 +8,7 @@ from contextlib import suppress
 from enum import Enum, unique
 from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator
 
-from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminException, TM1pyRestException
+from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminException
 
 try:
     import pandas as pd
@@ -100,7 +100,7 @@ def create_server_on_adminhost(adminhost='localhost', server_as_dict={}):
     response_as_dict = json.loads(response)
 
     return Server(response_as_dict)
-    
+
 def build_url_friendly_object_name(object_name: str) -> str:
     return object_name.replace("'", "''").replace('%', '%25').replace('#', '%23')
 
