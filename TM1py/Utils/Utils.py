@@ -8,7 +8,7 @@ from contextlib import suppress
 from enum import Enum, unique
 from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator
 
-from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminException
+from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminException, TM1pyRestException
 
 try:
     import pandas as pd
@@ -74,7 +74,33 @@ def get_all_servers_from_adminhost(adminhost='localhost') -> List:
         servers.append(server)
     return servers
 
+def create_server_on_adminhost(adminhost='localhost', server_as_dict={}):
+    from TM1py.Objects import Server
+    """  Create new TM1 instance on Adminhost
+    :param adminhost: IP or DNS Alias of the adminhost
+    :param server_as_dict: 
+            server_as_dict = {
+                "Name":"MyModel1",
+                "IPAddress":"172.20.10.10",
+                "IPv6Address":None,
+                "PortNumber":12345,
+                "UsingSSL": True,
+                "ClientMessagePortNumber":61098,
+                "HTTPPortNumber":12999,
+                "ClientExportSSLSvrCert":True,
+                "ClientExportSSLSvrKeyID":"whateverExportSSLSvrKeyID",
+                "AcceptingClients":True }
+    :return: instance of TM1py.Server
+    """
 
+    conn = http_client.HTTPConnection(adminhost, 5895)
+    request = '/api/v1/Servers'
+    conn.request('POST', request, body=json.dumps(server_as_dict), headers={'Content-Type':'application/json'})
+    response = conn.getresponse().read().decode('utf-8')
+    response_as_dict = json.loads(response)
+
+    return Server(response_as_dict)
+    
 def build_url_friendly_object_name(object_name: str) -> str:
     return object_name.replace("'", "''").replace('%', '%25').replace('#', '%23')
 
