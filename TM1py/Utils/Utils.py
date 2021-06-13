@@ -74,7 +74,7 @@ def get_all_servers_from_adminhost(adminhost='localhost') -> List:
         servers.append(server)
     return servers
 
-def create_server_on_adminhost(adminhost='localhost', server_as_dict={}):
+def create_server_on_adminhost(adminhost='localhost', server_as_dict=None):
     from TM1py.Objects import Server
     """  Create new TM1 instance on Adminhost
     :param adminhost: IP or DNS Alias of the adminhost
@@ -92,7 +92,8 @@ def create_server_on_adminhost(adminhost='localhost', server_as_dict={}):
                 "AcceptingClients":True }
     :return: instance of TM1py.Server
     """
-
+    if server_as_Dict is None: 
+        server_as_dict = {}
     conn = http_client.HTTPConnection(adminhost, 5895)
     request = '/api/v1/Servers'
     conn.request('POST', request, body=json.dumps(server_as_dict), headers={'Content-Type':'application/json'})
