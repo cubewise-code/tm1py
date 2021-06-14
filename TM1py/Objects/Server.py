@@ -22,6 +22,7 @@ class Server:
         self.host = server_as_dict['Host'] 
         self.is_local = server_as_dict['IsLocal'] 
         self.ssl_certificate_id = server_as_dict['SSLCertificateID'] 
+        self.ssl_certificate_authority = server_as_dict['SSLCertificateAuthority'] 
         self.ssl_certificate_revocation_list = server_as_dict['SSLCertificateRevocationList'] 
         self.client_export_ssl_server_keyid = server_as_dict['ClientExportSSLSvrKeyID'] 
         self.client_export_ssl_server_cert = server_as_dict['ClientExportSSLSvrCert'] 
