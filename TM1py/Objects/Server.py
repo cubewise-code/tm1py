@@ -18,4 +18,11 @@ class Server:
         self.http_port_number = server_as_dict['HTTPPortNumber']
         self.using_ssl = server_as_dict['UsingSSL']
         self.accepting_clients = server_as_dict['AcceptingClients']
-
+        self.self_registered = server_as_dict['SelfRegistered'] 
+        self.host = server_as_dict['Host'] 
+        self.is_local = server_as_dict['IsLocal'] 
+        self.ssl_certificate_id = server_as_dict['SSLCertificateID'] 
+        self.ssl_certificate_revocation_list = server_as_dict['SSLCertificateRevocationList'] 
+        self.client_export_ssl_server_keyid = server_as_dict['ClientExportSSLSvrKeyID'] 
+        self.client_export_ssl_server_cert = server_as_dict['ClientExportSSLSvrCert'] 
+        self.last_updated = server_as_dict['LastUpdated']
