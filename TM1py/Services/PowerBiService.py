@@ -129,6 +129,9 @@ class PowerBiService:
 
         df_data = self.execute_mdx(mdx)
 
+        # override hierarchy name
+        df_data.rename(columns={0:dimension_name})
+        
         # shift levels to right hand side
         if not skip_parents:
             # skip max level (= leaves)
