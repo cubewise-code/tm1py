@@ -9,7 +9,7 @@ from TM1py.Services.ElementService import ElementService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.SubsetService import SubsetService
-from TM1py.Utils.Utils import case_and_space_insensitive_equals, format_url, hierarchy_name_from_element_unique_name
+from TM1py.Utils.Utils import case_and_space_insensitive_equals, format_url
 
 
 class HierarchyService(ObjectService):
