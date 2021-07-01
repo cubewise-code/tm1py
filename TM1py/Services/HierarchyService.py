@@ -9,7 +9,7 @@ from TM1py.Services.ElementService import ElementService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.SubsetService import SubsetService
-from TM1py.Utils.Utils import case_and_space_insensitive_equals, format_url
+from TM1py.Utils.Utils import case_and_space_insensitive_equals, format_url, hierarchy_name_from_element_unique_name
 
 
 class HierarchyService(ObjectService):
@@ -98,6 +98,17 @@ class HierarchyService(ObjectService):
             responses.append(process_service.execute_ti_code(lines_prolog=ti_statements, **kwargs))
 
         return responses
+
+    def update_or_create(self, hierarchy: Hierarchy, **kwargs):
+        """ update if exists else create
+
+        :param Hierarchy:
+        :return:
+        """
+        if self.exists(dimension_name=hierarchy.dimension_name, hierarchy_name=hierarchy.name, **kwargs):
+            self.update(hierarchy=hierarchy, **kwargs)
+        else:
+            self.create(hierarchy=hierarchy, **kwargs)
 
     def exists(self, dimension_name: str, hierarchy_name: str, **kwargs) -> bool:
         """
