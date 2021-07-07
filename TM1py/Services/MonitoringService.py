@@ -27,6 +27,16 @@ class MonitoringService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return response.json()['value']
 
+    def get_active_threads(self, **kwargs):
+        '''Return a list of non-idle threads from the TM1 Server
+
+            :return:
+                list: TM1 threads as dict
+        '''
+        url = "/api/v1/Threads?$filter=Function ne 'GET /api/v1/Threads' and State ne 'Idle'"
+        response = self._rest.GET(url, **kwargs)
+        return response.json()['value']
+
     def cancel_thread(self, thread_id: int, **kwargs) -> Response:
         """ Kill a running thread
         
