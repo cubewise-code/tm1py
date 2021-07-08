@@ -181,12 +181,12 @@ def build_content_from_cellset_dict(
         raw_cellset_as_dict: Dict,
         top: Optional[int] = None,
         element_unique_names: bool = True,
-        values_only: bool = False) -> 'CaseAndSpaceInsensitiveTuplesDict':
+        skip_cell_properties: bool = False) -> 'CaseAndSpaceInsensitiveTuplesDict':
     """ transform raw cellset data into concise dictionary
     :param raw_cellset_as_dict:
     :param top: Int, number of cells to return (counting from top)
     :param element_unique_names: '[d1].[h1].[e1]' or 'e1'
-    :param values_only: cell values in result dictionary, instead of cell_properties dictionary
+    :param skip_cell_properties: cell values in result dictionary, instead of cell_properties dictionary
     :return:
     """
     cube_dimensions = [dim['Name'] for dim in raw_cellset_as_dict['Cube']['Dimensions']]
@@ -215,7 +215,7 @@ def build_content_from_cellset_dict(
             coordinates.extend(coordinate)
 
         coordinates = sort_coordinates(cube_dimensions, coordinates, element_unique_names=element_unique_names)
-        content_as_dict[coordinates] = cell['Value'] if values_only else cell
+        content_as_dict[coordinates] = cell['Value'] if skip_cell_properties else cell
     return content_as_dict
 
 

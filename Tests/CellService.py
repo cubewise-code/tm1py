@@ -1024,13 +1024,13 @@ class TestCellService(unittest.TestCase):
         for coordinates, cell in data.items():
             self.assertEqual(coordinates, ("Element 1", "Element 2", "Element 3"))
 
-    def test_execute_mdx_values_only_true(self):
+    def test_execute_mdx_skip_cell_properties_true(self):
         mdx = MdxBuilder.from_cube(self.cube_name) \
             .add_hierarchy_set_to_row_axis(MdxHierarchySet.members([Member.of(self.dimension_names[0], "Element 1")])) \
             .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(self.dimension_names[1], "Element1"))) \
             .add_member_to_where("[" + self.dimension_names[2] + "].[Element1]").to_mdx()
 
-        data = self.tm1.cubes.cells.execute_mdx(mdx, values_only=True)
+        data = self.tm1.cubes.cells.execute_mdx(mdx, skip_cell_properties=True)
 
         self.assertEqual(len(data), 1)
         for coordinates, value in data.items():
