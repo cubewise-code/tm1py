@@ -531,7 +531,7 @@ class CellService(ObjectService):
 
             if element_type == 'String':
                 function_str = 'CellPutS('
-                value_str = value.replace("'", "''")
+                value_str = str(value).replace("'", "''")
                 value_str = f"'{value_str}'"
 
             # by default assume numeric, to trigger minor errors on write operations to C elements
