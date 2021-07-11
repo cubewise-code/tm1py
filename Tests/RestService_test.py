@@ -7,6 +7,7 @@ from TM1py.Services.RestService import RestService
 
 
 class TestRestService(unittest.TestCase):
+    tm1: TM1Service
 
     @classmethod
     def setUpClass(cls):
@@ -72,7 +73,8 @@ class TestRestService(unittest.TestCase):
         self.assertEqual(response.headers.get("OData-Version"), "4.0")
         self.assertEqual(
             response.text,
-            "{\"error\":{\"code\":\"278\",\"message\":\"\'dummy\' can not be found in collection of type \'Process\'.\"}}")
+            "{\"error\":{\"code\":\"278\",\"message\":\"\'dummy\' "
+            "can not be found in collection of type \'Process\'.\"}}")
 
     @classmethod
     def tearDownClass(cls):

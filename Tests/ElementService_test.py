@@ -1,6 +1,5 @@
 import configparser
 import unittest
-import uuid
 from pathlib import Path
 
 from TM1py.Exceptions import TM1pyRestException
@@ -10,6 +9,11 @@ from TM1py.Services import TM1Service
 
 class TestElementService(unittest.TestCase):
     tm1: TM1Service
+
+    prefix = 'TM1py_unittest_element_'
+    dimension_name = f"{prefix}_dimension"
+    hierarchy_name = dimension_name
+    attribute_cube_name = '}ElementAttributes_' + dimension_name
 
     @classmethod
     def setUpClass(cls):
@@ -21,11 +25,6 @@ class TestElementService(unittest.TestCase):
         cls.config = configparser.ConfigParser()
         cls.config.read(Path(__file__).parent.joinpath('config.ini'))
         cls.tm1 = TM1Service(**cls.config['tm1srv01'])
-
-        cls.prefix = 'TM1py_unittest_element_'
-        cls.dimension_name = f"{cls.prefix}{uuid.uuid4()}"
-        cls.hierarchy_name = cls.dimension_name
-        cls.attribute_cube_name = '}ElementAttributes_' + cls.dimension_name
 
     @classmethod
     def setUp(cls):

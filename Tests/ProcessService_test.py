@@ -8,13 +8,51 @@ from pathlib import Path
 
 from TM1py.Objects import Process, Subset
 from TM1py.Services import TM1Service
-
-from .TestUtils import skip_if_insufficient_version
-
-PROCESS_PREFIX = 'TM1py_Tests_'
+from .Utils import skip_if_insufficient_version
 
 
 class TestProcessService(unittest.TestCase):
+    tm1: TM1Service
+
+    prefix = 'TM1py_Tests_'
+
+    some_name = "some_name"
+
+    p_none = Process(name=prefix + '_none_' + some_name, datasource_type='None')
+    p_ascii = Process(name=prefix + '_ascii_' + some_name,
+                      datasource_type='ASCII',
+                      datasource_ascii_delimiter_type='Character',
+                      datasource_ascii_delimiter_char=',',
+                      datasource_ascii_header_records=2,
+                      datasource_ascii_quote_character='^',
+                      datasource_ascii_thousand_separator='~',
+                      prolog_procedure="sTestProlog = 'test prolog procedure'",
+                      metadata_procedure="sTestMeta = 'test metadata procedure'",
+                      data_procedure="sTestData =  'test data procedure'",
+                      epilog_procedure="sTestEpilog = 'test epilog procedure'",
+                      datasource_data_source_name_for_server=r'C:\Data\file.csv',
+                      datasource_data_source_name_for_client=r'C:\Data\file.csv')
+    p_ascii.add_variable('v_1', 'Numeric')
+    p_ascii.add_variable('v_2', 'Numeric')
+    p_ascii.add_variable('v_3', 'Numeric')
+    p_ascii.add_variable('v_4', 'Numeric')
+    p_ascii.add_parameter('p_Year', 'year?', '2016')
+    p_ascii.add_parameter('p_Number', 'number?', 2)
+
+    p_view = Process(name=prefix + '_view_' + some_name,
+                     datasource_type='TM1CubeView',
+                     datasource_view='view1',
+                     datasource_data_source_name_for_client='Plan_BudgetPlan',
+                     datasource_data_source_name_for_server='Plan_BudgetPlan')
+
+    p_odbc = Process(name=prefix + '_odbc_' + some_name,
+                     datasource_type='ODBC',
+                     datasource_password='password',
+                     datasource_user_name='user')
+
+    subset: Subset
+    subset_name: str
+    p_subset: Process
 
     @classmethod
     def setUpClass(cls):
@@ -26,60 +64,19 @@ class TestProcessService(unittest.TestCase):
         cls.config = configparser.ConfigParser()
         cls.config.read(Path(__file__).parent.joinpath('config.ini'))
         cls.tm1 = TM1Service(**cls.config['tm1srv01'])
-        
-        cls.some_name = "some_name"
 
         cls.all_dimension_names = cls.tm1.dimensions.get_all_names()
         cls.random_dimension = cls.tm1.dimensions.get(random.choice(cls.all_dimension_names))
         cls.random_dimension_all_elements = cls.random_dimension.default_hierarchy.elements
         cls.random_dimension_elements = [element for element in cls.random_dimension_all_elements][0:2]
 
-        # None process
-        cls.p_none = Process(name=PROCESS_PREFIX + '_none_' + cls.some_name, datasource_type='None')
-
-        # ACII process
-        cls.p_ascii = Process(name=PROCESS_PREFIX + '_ascii_' + cls.some_name,
-                              datasource_type='ASCII',
-                              datasource_ascii_delimiter_type='Character',
-                              datasource_ascii_delimiter_char=',',
-                              datasource_ascii_header_records=2,
-                              datasource_ascii_quote_character='^',
-                              datasource_ascii_thousand_separator='~',
-                              prolog_procedure="sTestProlog = 'test prolog procedure'",
-                              metadata_procedure="sTestMeta = 'test metadata procedure'",
-                              data_procedure="sTestData =  'test data procedure'",
-                              epilog_procedure="sTestEpilog = 'test epilog procedure'",
-                              datasource_data_source_name_for_server=r'C:\Data\file.csv',
-                              datasource_data_source_name_for_client=r'C:\Data\file.csv')
-        # Variables
-        cls.p_ascii.add_variable('v_1', 'Numeric')
-        cls.p_ascii.add_variable('v_2', 'Numeric')
-        cls.p_ascii.add_variable('v_3', 'Numeric')
-        cls.p_ascii.add_variable('v_4', 'Numeric')
-        # Parameters
-        cls.p_ascii.add_parameter('p_Year', 'year?', '2016')
-        cls.p_ascii.add_parameter('p_Number', 'number?', 2)
-
-        # View process
-        cls.p_view = Process(name=PROCESS_PREFIX + '_view_' + cls.some_name,
-                             datasource_type='TM1CubeView',
-                             datasource_view='view1',
-                             datasource_data_source_name_for_client='Plan_BudgetPlan',
-                             datasource_data_source_name_for_server='Plan_BudgetPlan')
-
-        # ODBC process
-        cls.p_odbc = Process(name=PROCESS_PREFIX + '_odbc_' + cls.some_name,
-                             datasource_type='ODBC',
-                             datasource_password='password',
-                             datasource_user_name='user')
-
         # Subset process
-        cls.subset_name = PROCESS_PREFIX + '_subset_' + cls.some_name
+        cls.subset_name = cls.prefix + '_subset_' + cls.some_name
         cls.subset = Subset(dimension_name=cls.random_dimension.name,
                             subset_name=cls.subset_name,
                             elements=cls.random_dimension_elements)
-        cls.tm1.dimensions.subsets.create(cls.subset, False)
-        cls.p_subset = Process(name=PROCESS_PREFIX + '_subset_' + cls.some_name,
+        cls.tm1.dimensions.subsets.update_or_create(cls.subset, False)
+        cls.p_subset = Process(name=cls.prefix + '_subset_' + cls.some_name,
                                datasource_type='TM1DimensionSubset',
                                datasource_data_source_name_for_server=cls.subset.dimension_name,
                                datasource_subset=cls.subset.name,
@@ -90,11 +87,11 @@ class TestProcessService(unittest.TestCase):
 
     @classmethod
     def setUp(cls):
-        cls.tm1.processes.create(cls.p_none)
-        cls.tm1.processes.create(cls.p_ascii)
-        cls.tm1.processes.create(cls.p_view)
-        cls.tm1.processes.create(cls.p_odbc)
-        cls.tm1.processes.create(cls.p_subset)
+        cls.tm1.processes.update_or_create(cls.p_none)
+        cls.tm1.processes.update_or_create(cls.p_ascii)
+        cls.tm1.processes.update_or_create(cls.p_view)
+        cls.tm1.processes.update_or_create(cls.p_odbc)
+        cls.tm1.processes.update_or_create(cls.p_subset)
 
     @classmethod
     def tearDown(cls):

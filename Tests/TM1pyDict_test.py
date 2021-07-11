@@ -7,6 +7,8 @@ from TM1py.Utils.Utils import CaseAndSpaceInsensitiveSet, CaseAndSpaceInsensitiv
 
 
 class TestCaseAndSpaceInsensitiveDict(unittest.TestCase):
+    tm1: TM1Service
+    map: CaseAndSpaceInsensitiveDict
 
     @classmethod
     def setUpClass(cls):
@@ -60,40 +62,41 @@ class TestCaseAndSpaceInsensitiveDict(unittest.TestCase):
         self.assertEqual(c, self.map)
 
     def test_eq(self):
-        map = CaseAndSpaceInsensitiveDict()
-        map["key1"] = "value1"
-        map["key2"] = "value2"
-        map["key3"] = "value3"
-        self.assertEqual(self.map, map)
+        _map = CaseAndSpaceInsensitiveDict()
+        _map["key1"] = "value1"
+        _map["key2"] = "value2"
+        _map["key3"] = "value3"
+        self.assertEqual(self.map, _map)
 
     def test_eq_case_and_space_insensitive(self):
-        map = CaseAndSpaceInsensitiveDict()
-        map["key1"] = "value1"
-        map["KEY2"] = "value2"
-        map["K e Y 3"] = "value3"
-        self.assertEqual(self.map, map)
+        _map = CaseAndSpaceInsensitiveDict()
+        _map["key1"] = "value1"
+        _map["KEY2"] = "value2"
+        _map["K e Y 3"] = "value3"
+        self.assertEqual(self.map, _map)
 
     def test_ne(self):
-        map = CaseAndSpaceInsensitiveDict()
-        map["key 1"] = "wrong"
-        map["key 2"] = "value2"
-        map["key3"] = "value3"
-        self.assertNotEqual(self.map, map)
+        _map = CaseAndSpaceInsensitiveDict()
+        _map["key 1"] = "wrong"
+        _map["key 2"] = "value2"
+        _map["key3"] = "value3"
+        self.assertNotEqual(self.map, _map)
 
-        map = CaseAndSpaceInsensitiveDict()
-        map["key1"] = "value1"
-        map["key 2"] = "wrong"
-        map["key3"] = "value3"
-        self.assertNotEqual(self.map, map)
+        _map = CaseAndSpaceInsensitiveDict()
+        _map["key1"] = "value1"
+        _map["key 2"] = "wrong"
+        _map["key3"] = "value3"
+        self.assertNotEqual(self.map, _map)
 
-        map = CaseAndSpaceInsensitiveDict()
-        map["key1"] = "value1"
-        map["key2"] = "value2"
-        map["key4"] = "value4"
-        self.assertNotEqual(self.map, map)
+        _map = CaseAndSpaceInsensitiveDict()
+        _map["key1"] = "value1"
+        _map["key2"] = "value2"
+        _map["key4"] = "value4"
+        self.assertNotEqual(self.map, _map)
 
 
 class TestCaseAndSpaceInsensitiveSet(unittest.TestCase):
+    set: CaseAndSpaceInsensitiveSet
 
     @classmethod
     def setUp(cls):
@@ -211,6 +214,8 @@ class TestCaseAndSpaceInsensitiveSet(unittest.TestCase):
 
 
 class TestCaseAndSpaceInsensitiveTuplesDict(unittest.TestCase):
+    tm1: TM1Service
+    map: CaseAndSpaceInsensitiveTuplesDict
 
     @classmethod
     def setUpClass(cls):
@@ -244,36 +249,36 @@ class TestCaseAndSpaceInsensitiveTuplesDict(unittest.TestCase):
         self.assertNotIn(("Elem1", "Elem3"), self.map)
 
     def test_eq(self):
-        map = CaseAndSpaceInsensitiveTuplesDict()
-        map[("Elem1", "Elem1")] = "Value1"
-        map[("Elem1", "Elem2")] = 2
-        map[("Elem1", "Elem3")] = 3
-        self.assertEqual(map, self.map)
+        _map = CaseAndSpaceInsensitiveTuplesDict()
+        _map[("Elem1", "Elem1")] = "Value1"
+        _map[("Elem1", "Elem2")] = 2
+        _map[("Elem1", "Elem3")] = 3
+        self.assertEqual(_map, self.map)
 
-        map = CaseAndSpaceInsensitiveTuplesDict()
-        map[("Elem 1", "Elem1")] = "Value1"
-        map[("ELEM 1", "E L E M 2")] = 2
-        map[(" Elem1 ", "Elem 3")] = 3
-        self.assertEqual(map, self.map)
+        _map = CaseAndSpaceInsensitiveTuplesDict()
+        _map[("Elem 1", "Elem1")] = "Value1"
+        _map[("ELEM 1", "E L E M 2")] = 2
+        _map[(" Elem1 ", "Elem 3")] = 3
+        self.assertEqual(_map, self.map)
 
     def test_ne(self):
-        map = CaseAndSpaceInsensitiveTuplesDict()
-        map[("Elem1", "Elem1")] = "Value1"
-        map[("Elem1", "Elem2")] = 0
-        map[("Elem1", "Elem3")] = 3
-        self.assertNotEqual(map, self.map)
+        _map = CaseAndSpaceInsensitiveTuplesDict()
+        _map[("Elem1", "Elem1")] = "Value1"
+        _map[("Elem1", "Elem2")] = 0
+        _map[("Elem1", "Elem3")] = 3
+        self.assertNotEqual(_map, self.map)
 
-        map = CaseAndSpaceInsensitiveTuplesDict()
-        map[("Elem 1", "Elem1")] = "Value1"
-        map[("ELEM 1", "E L E M 2")] = "wrong"
-        map[(" Elem1 ", "Elem 3")] = 3
-        self.assertNotEqual(map, self.map)
+        _map = CaseAndSpaceInsensitiveTuplesDict()
+        _map[("Elem 1", "Elem1")] = "Value1"
+        _map[("ELEM 1", "E L E M 2")] = "wrong"
+        _map[(" Elem1 ", "Elem 3")] = 3
+        self.assertNotEqual(_map, self.map)
 
-        map = CaseAndSpaceInsensitiveTuplesDict()
-        map[("wrong", "Elem1")] = "Value1"
-        map[("Elem1", "Elem2")] = 2
-        map[("Elem1", "Elem3")] = 3
-        self.assertNotEqual(map, self.map)
+        _map = CaseAndSpaceInsensitiveTuplesDict()
+        _map[("wrong", "Elem1")] = "Value1"
+        _map[("Elem1", "Elem2")] = 2
+        _map[("Elem1", "Elem3")] = 3
+        self.assertNotEqual(_map, self.map)
 
     def test_get(self):
         self.assertEqual(self.map[("ELEM1", "ELEM1")], "Value1")

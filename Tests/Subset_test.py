@@ -1,27 +1,26 @@
 import unittest
 
-from TM1py.Objects import AnonymousSubset, Element, Subset
-
-PREFIX = "TM1py_Tests_Subset_"
+from TM1py.Objects import AnonymousSubset, Subset
 
 
 class TestSubset(unittest.TestCase):
+    prefix = "TM1py_Tests_Subset_"
+
+    dimension_name = prefix + "dimension"
+    hierarchy_name = prefix + "hierarchy"
+    subset_name_static = prefix + "static_subset"
+    subset_name_dynamic = prefix + "dynamic_subset"
+    subset_name_minimal = prefix + "minimal_subset"
+    subset_name_complete = prefix + "complete_subset"
+    subset_name_alias = prefix + "alias_subset"
+    subset_name_anon = prefix + "anon_subset"
+    element_name = prefix + "element"
 
     @classmethod
     def setUpClass(cls):
         """
         Create any class scoped fixtures here.
         """
-
-        cls.dimension_name = PREFIX + "dimension"
-        cls.hierarchy_name = PREFIX + "hierarchy"
-        cls.subset_name_static = PREFIX + "static_subset"
-        cls.subset_name_dynamic = PREFIX + "dynamic_subset"
-        cls.subset_name_minimal = PREFIX + "minimal_subset"
-        cls.subset_name_complete = PREFIX + "complete_subset"
-        cls.subset_name_alias = PREFIX + "alias_subset"
-        cls.subset_name_anon = PREFIX + "anon_subset"
-        cls.element_name = PREFIX + "element"
 
         cls.subset_dict = {
             "Name": "dict_subset",

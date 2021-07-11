@@ -4,11 +4,16 @@ import string
 import unittest
 from pathlib import Path
 
-from TM1py.Objects import Annotation,Cube, Dimension, Element, Hierarchy
+from TM1py.Objects import Annotation, Cube, Dimension, Element, Hierarchy
 from TM1py.Services import TM1Service
 
 
 class TestAnnotationService(unittest.TestCase):
+    tm1: TM1Service
+    cube_name = "TM1py_tests_annotations"
+    dimension_names = ("TM1py_tests_annotations_dimension1",
+                       "TM1py_tests_annotations_dimension2",
+                       "TM1py_tests_annotations_dimension3")
 
     @classmethod
     def setUpClass(cls):
@@ -22,10 +27,6 @@ class TestAnnotationService(unittest.TestCase):
         cls.tm1 = TM1Service(**cls.config['tm1srv01'])
 
         # Build Dimensions
-        cls.dimension_names = ("TM1py_tests_annotations_dimension1",
-                               "TM1py_tests_annotations_dimension2",
-                               "TM1py_tests_annotations_dimension3")
-
         for dimension_name in cls.dimension_names:
             elements = [Element('Element {}'.format(str(j)), 'Numeric') for j in range(1, 1001)]
             hierarchy = Hierarchy(dimension_name=dimension_name,
@@ -35,32 +36,30 @@ class TestAnnotationService(unittest.TestCase):
             cls.tm1.dimensions.update_or_create(dimension)
 
         # Build Cube
-        cls.cube_name = "TM1py_tests_annotations"
-
         cube = Cube(cls.cube_name, cls.dimension_names)
         cls.tm1.cubes.update_or_create(cube)
 
     @classmethod
-    def setUp(self):
+    def setUp(cls):
         """
         Run before each test to create a test annotation
         """
-        random_intersection = self.tm1.cubes.get_random_intersection(self.cube_name, False)
+        random_intersection = cls.tm1.cubes.get_random_intersection(cls.cube_name, False)
         random_text = "".join([random.choice(string.printable) for _ in range(100)])
 
         annotation = Annotation(comment_value=random_text,
-                                object_name=self.cube_name,
+                                object_name=cls.cube_name,
                                 dimensional_context=random_intersection)
 
-        self.annotation_id = self.tm1.cubes.annotations.create(annotation).json().get("ID")
+        cls.annotation_id = cls.tm1.cubes.annotations.create(annotation).json().get("ID")
 
     @classmethod
-    def tearDown(self):
+    def tearDown(cls):
         """
         Run at the end of each test to delete all test annotations
         """
-        for a in self.tm1.cubes.annotations.get_all(self.cube_name):
-            self.tm1.annotations.delete(a.id)
+        for a in cls.tm1.cubes.annotations.get_all(cls.cube_name):
+            cls.tm1.annotations.delete(a.id)
 
     def test_get_all(self):
         """

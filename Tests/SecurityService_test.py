@@ -9,11 +9,21 @@ from TM1py.Objects.User import UserType
 from TM1py.Services import TM1Service
 from TM1py.Utils.Utils import CaseAndSpaceInsensitiveSet
 
-PREFIX = "TM1py_Tests_"
-
 
 class TestSecurityService(unittest.TestCase):
+    tm1: TM1Service
 
+    prefix = "TM1py_Tests_"
+    user_name = prefix + "Us'er1"
+    read_only_user_name = prefix + "Read_Only_user"
+    user_name_exotic_password = "UserWithExoticPassword"
+    enabled = True
+    user = User(name=user_name, groups=[], password='TM1py', enabled=enabled)
+    read_only_user = User(name=read_only_user_name, groups=[], password="TM1py", enabled=True)
+    group_name1 = prefix + "Gro'up1"
+    group_name2 = prefix + "Group2"
+    user.add_group(group_name1)
+    
     @classmethod
     def setUpClass(cls):
         """
@@ -24,16 +34,6 @@ class TestSecurityService(unittest.TestCase):
         cls.config = configparser.ConfigParser()
         cls.config.read(Path(__file__).parent.joinpath('config.ini'))
         cls.tm1 = TM1Service(**cls.config['tm1srv01'])
-
-        cls.user_name = PREFIX + "Us'er1"
-        cls.read_only_user_name = PREFIX + "Read_Only_user"
-        cls.user_name_exotic_password = "UserWithExoticPassword"
-        cls.enabled = True
-        cls.user = User(name=cls.user_name, groups=[], password='TM1py', enabled=cls.enabled)
-        cls.read_only_user = User(name=cls.read_only_user_name, groups=[], password="TM1py", enabled=True)
-        cls.group_name1 = PREFIX + "Gro'up1"
-        cls.group_name2 = PREFIX + "Group2"
-        cls.user.add_group(cls.group_name1)
 
         if cls.user_name in CaseAndSpaceInsensitiveSet(*cls.tm1.security.get_all_user_names()):
             cls.tm1.security.delete_user(cls.user_name)
@@ -90,7 +90,7 @@ class TestSecurityService(unittest.TestCase):
         self.assertNotIn(self.group_name2, groups)
 
     def test_user_type_invalid_type(self):
-        with self.assertRaises(ValueError) as e:
+        with self.assertRaises(ValueError) as _:
             self.tm1.security.create_user(User("not_relevant", groups=["ADMIN"], user_type=3))
 
     def test_user_type_invalid_str(self):
@@ -236,7 +236,7 @@ class TestSecurityService(unittest.TestCase):
             self.assertEqual(tm1_second_conn.whoami.name, user.name)
 
     def test_create_and_delete_user(self):
-        u = User(name=PREFIX + "User2", groups=())
+        u = User(name=self.prefix + "User2", groups=())
         all_users = self.tm1.security.get_all_user_names()
         if u.name not in CaseAndSpaceInsensitiveSet(*all_users):
             self.tm1.security.create_user(u)
@@ -248,7 +248,7 @@ class TestSecurityService(unittest.TestCase):
         self.assertNotIn(u.name, CaseAndSpaceInsensitiveSet(*users_after_delete))
 
     def test_create_and_delete_group(self):
-        group = PREFIX + "Group3"
+        group = self.prefix + "Group3"
         groups = self.tm1.security.get_all_groups()
         if group not in CaseAndSpaceInsensitiveSet(*groups):
             self.tm1.security.create_group(group)

@@ -13,10 +13,16 @@ from TM1py.Exceptions import TM1pyRestException
 from TM1py.Objects import Cube, Dimension, Hierarchy, Process
 from TM1py.Services import TM1Service
 
-PREFIX = "TM1py_Tests_Server_"
-
 
 class TestServerService(unittest.TestCase):
+    tm1: TM1Service
+
+    prefix = "TM1py_Tests_Server_"
+    dimension_name1 = prefix + "Dimension1"
+    dimension_name2 = prefix + "Dimension2"
+    cube_name = prefix + "Cube1"
+    process_name1 = prefix + "Process1"
+    process_name2 = prefix + "Process2"
 
     @classmethod
     def setUpClass(cls):
@@ -28,13 +34,6 @@ class TestServerService(unittest.TestCase):
         cls.config = configparser.ConfigParser()
         cls.config.read(Path(__file__).parent.joinpath('config.ini'))
         cls.tm1 = TM1Service(**cls.config['tm1srv01'])
-
-        # Namings
-        cls.dimension_name1 = PREFIX + "Dimension1"
-        cls.dimension_name2 = PREFIX + "Dimension2"
-        cls.cube_name = PREFIX + "Cube1"
-        cls.process_name1 = PREFIX + "Process1"
-        cls.process_name2 = PREFIX + "Process2"
 
         # create a simple cube with dimensions to test transactionlog methods
         if not cls.tm1.dimensions.exists(cls.dimension_name1):

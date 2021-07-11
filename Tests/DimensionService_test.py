@@ -10,6 +10,11 @@ from TM1py.Services import TM1Service
 class TestDimensionService(unittest.TestCase):
     tm1: TM1Service
 
+    prefix = "TM1py_Tests_Dimension_"
+    dimension_name = prefix + "Some_Dimension"
+    hierarchy_name = dimension_name
+    dimension_name_with_multi_hierarchy = prefix + "Dimension_With_Multiple_Hierarchies"
+
     @classmethod
     def setUpClass(cls):
         """
@@ -20,11 +25,6 @@ class TestDimensionService(unittest.TestCase):
         cls.config = configparser.ConfigParser()
         cls.config.read(Path(__file__).parent.joinpath('config.ini'))
         cls.tm1 = TM1Service(**cls.config['tm1srv01'])
-
-        cls.prefix = "TM1py_Tests_Dimension_"
-        cls.dimension_name = cls.prefix + "Some_Dimension"
-        cls.hierarchy_name = cls.dimension_name
-        cls.dimension_name_with_multi_hierarchy = cls.prefix + "Dimension_With_Multiple_Hierarchies"
 
     @classmethod
     def setUp(cls):
