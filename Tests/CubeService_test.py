@@ -7,10 +7,18 @@ from TM1py import Element, Hierarchy, Dimension
 from TM1py.Objects import Cube
 from TM1py.Objects import Rules
 from TM1py.Services import TM1Service
-from .TestUtils import skip_if_insufficient_version
+from .Utils import skip_if_insufficient_version
 
 
 class TestCubeService(unittest.TestCase):
+    tm1: TM1Service
+    prefix = "TM1py_Tests_Cube_"
+
+    cube_name = prefix + "some_name"
+    dimension_names = [
+        prefix + "dimension1",
+        prefix + "dimension2",
+        prefix + "dimension3"]
 
     @classmethod
     def setUp(cls):
@@ -19,14 +27,6 @@ class TestCubeService(unittest.TestCase):
         cls.config = configparser.ConfigParser()
         cls.config.read(Path(__file__).parent.joinpath('config.ini'))
         cls.tm1 = TM1Service(**cls.config['tm1srv01'])
-
-        cls.prefix = "TM1py_Tests_Cube_"
-
-        cls.cube_name = cls.prefix + "some_name"
-        cls.dimension_names = [
-            cls.prefix + "dimension1",
-            cls.prefix + "dimension2",
-            cls.prefix + "dimension3"]
 
         for dimension_name in cls.dimension_names:
             elements = [Element('Element {}'.format(str(j)), 'Numeric') for j in range(1, 1001)]

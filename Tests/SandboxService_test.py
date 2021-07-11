@@ -7,18 +7,18 @@ from mdxpy import MdxBuilder, Member
 from TM1py.Objects import Sandbox, Cube, Element, Hierarchy, Dimension, Rules
 from TM1py.Services import TM1Service
 
-PREFIX = "TM1py_Tests_Sandbox_"
-
 
 class TestSandboxService(unittest.TestCase):
-    tm1: TM1Service = None
-    cube_name = PREFIX + "some_name"
+    tm1: TM1Service
+
+    prefix = "TM1py_Tests_Sandbox_"
+    cube_name = prefix + "some_name"
     dimension_names = [
-        PREFIX + "dimension1",
-        PREFIX + "dimension2",
-        PREFIX + "dimension3"]
-    sandbox_name1 = PREFIX + "sandbox1"
-    sandbox_name2 = PREFIX + "sandbox2"
+        prefix + "dimension1",
+        prefix + "dimension2",
+        prefix + "dimension3"]
+    sandbox_name1 = prefix + "sandbox1"
+    sandbox_name2 = prefix + "sandbox2"
 
     @classmethod
     def setUp(cls):

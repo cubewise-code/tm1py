@@ -5,10 +5,17 @@ from pathlib import Path
 from TM1py.Objects import Dimension, Hierarchy, Subset, ElementAttribute, Element
 from TM1py.Services import TM1Service
 
-PREFIX = "TM1py_Tests_Subset_"
-
 
 class TestSubsetService(unittest.TestCase):
+    tm1: TM1Service
+
+    prefix = "TM1py_Tests_Subset_"
+    dimension_name = prefix + "Dimension"
+    subset_name_static = prefix + "static"
+    subset_name_dynamic = prefix + "dynamic"
+    unfriendly_dimension_name = prefix + "Dimension#%AD"
+    unfriendly_subset_name = prefix + "Subset#%AD"
+    unfriendly_element_name = prefix + "Element#%AD"
 
     @classmethod
     def setUpClass(cls):
@@ -22,13 +29,6 @@ class TestSubsetService(unittest.TestCase):
         cls.tm1 = TM1Service(**cls.config['tm1srv01'])
 
         # Define Names
-        cls.dimension_name = PREFIX + "Dimension"
-        cls.subset_name_static = PREFIX + "static"
-        cls.subset_name_dynamic = PREFIX + "dynamic"
-
-        cls.unfriendly_dimension_name = PREFIX + "Dimension#%AD"
-        cls.unfriendly_subset_name = PREFIX + "Subset#%AD"
-        cls.unfriendly_element_name = PREFIX + "Element#%AD"
 
     def setUp(self):
         # Instantiate Subsets
@@ -454,7 +454,7 @@ class TestSubsetService(unittest.TestCase):
 
     def test_create_subset_with_url_unfriendly_characters_in_elements_dynamic(self):
         expression = "{[" + self.unfriendly_dimension_name + \
-            "].[" + self.unfriendly_element_name + "]}"
+                     "].[" + self.unfriendly_element_name + "]}"
         subset = Subset(
             subset_name=self.unfriendly_subset_name,
             dimension_name=self.unfriendly_dimension_name,

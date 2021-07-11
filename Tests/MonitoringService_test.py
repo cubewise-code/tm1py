@@ -5,10 +5,9 @@ from pathlib import Path
 from TM1py.Services import TM1Service
 from TM1py.Utils import case_and_space_insensitive_equals
 
-PREFIX = "TM1py_Tests_MonitoringService_"
-
 
 class TestMonitoringService(unittest.TestCase):
+    tm1: TM1Service
 
     @classmethod
     def setUpClass(cls):

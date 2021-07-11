@@ -11,7 +11,7 @@ from TM1py.Objects import (AnonymousSubset, Cube, Dimension, Element,
                            ElementAttribute, Hierarchy, MDXView, NativeView)
 from TM1py.Services import TM1Service
 from TM1py.Utils import Utils, element_names_from_element_unique_names, CaseAndSpaceInsensitiveDict
-from .TestUtils import skip_if_insufficient_version, skip_if_no_pandas
+from .Utils import skip_if_insufficient_version, skip_if_no_pandas
 
 try:
     import pandas as pd
@@ -20,6 +20,44 @@ except ImportError:
 
 
 class TestCellService(unittest.TestCase):
+    tm1: TM1Service
+    prefix = 'TM1py_Tests_Cell_'
+    cube_name = prefix + "Cube"
+    view_name = prefix + "View"
+    dimension_names = [
+        prefix + 'Dimension1',
+        prefix + 'Dimension2',
+        prefix + 'Dimension3']
+    string_cube_name = prefix + "StringCube"
+    string_dimension_names = [
+        prefix + 'StringDimension1',
+        prefix + 'StringDimension2',
+        prefix + 'StringDimension3']
+    cells_in_string_cube = {
+        ('d1e1', 'd2e1', 'd3e1'): 'String1',
+        ('d1e2', 'd2e2', 'd3e2'): 'String2',
+        ('d1e3', 'd2e3', 'd3e3'): 'String3'}
+
+    latin_1_encoded_text = "Èd5áÂè"
+
+    cube_rps1_name = prefix + "Cube" + "_RPS1"
+    cube_rps2_name = prefix + "Cube" + "_RPS2"
+
+    cube_with_consolidations_name = cube_name + "_With_Consolidations"
+    dimensions_with_consolidations_names = [
+        dimension_name + "_With_Consolidations"
+        for dimension_name in
+        dimension_names]
+    cube_with_rules_name = cube_name + "_With_Rules"
+
+    dimension_rps1_name = prefix + "Dimension" + "_RPS1"
+    dimension_rps2_name = prefix + "Dimension" + "_RPS2"
+
+    sandbox_name = prefix + "sandbox"
+
+    target_coordinates = list(zip(('Element ' + str(e) for e in range(1, 101)),
+                                  ('Element ' + str(e) for e in range(1, 101)),
+                                  ('Element ' + str(e) for e in range(1, 101))))
 
     @classmethod
     def setUpClass(cls):
@@ -31,39 +69,6 @@ class TestCellService(unittest.TestCase):
         cls.config = configparser.ConfigParser()
         cls.config.read(Path(__file__).parent.joinpath('config.ini'))
         cls.tm1 = TM1Service(**cls.config['tm1srv01'])
-
-        # Fixture names and properties
-        cls.prefix = 'TM1py_Tests_Cell_'
-        cls.cube_name = cls.prefix + "Cube"
-        cls.view_name = cls.prefix + "View"
-        cls.dimension_names = [
-            cls.prefix + 'Dimension1',
-            cls.prefix + 'Dimension2',
-            cls.prefix + 'Dimension3']
-        cls.string_cube_name = cls.prefix + "StringCube"
-        cls.string_dimension_names = [
-            cls.prefix + 'StringDimension1',
-            cls.prefix + 'StringDimension2',
-            cls.prefix + 'StringDimension3']
-        cls.cells_in_string_cube = {
-            ('d1e1', 'd2e1', 'd3e1'): 'String1',
-            ('d1e2', 'd2e2', 'd3e2'): 'String2',
-            ('d1e3', 'd2e3', 'd3e3'): 'String3'}
-
-        cls.latin_1_encoded_text = "Èd5áÂè"
-
-        cls.cube_rps1_name = cls.prefix + "Cube" + "_RPS1"
-        cls.cube_rps2_name = cls.prefix + "Cube" + "_RPS2"
-
-        cls.cube_with_consolidations_name = cls.cube_name + "_With_Consolidations"
-        cls.dimensions_with_consolidations_names = [dimension_name + "_With_Consolidations" for dimension_name in
-                                                    cls.dimension_names]
-        cls.cube_with_rules_name = cls.cube_name + "_With_Rules"
-
-        cls.dimension_rps1_name = cls.prefix + "Dimension" + "_RPS1"
-        cls.dimension_rps2_name = cls.prefix + "Dimension" + "_RPS2"
-
-        cls.sandbox_name = cls.prefix + "sandbox"
 
         # Build Dimensions
         for dimension_name in cls.dimension_names:
@@ -118,11 +123,6 @@ class TestCellService(unittest.TestCase):
             cls.tm1.cubes.views.update_or_create(
                 view=view,
                 private=False)
-
-        # build target coordinates
-        cls.target_coordinates = list(zip(('Element ' + str(e) for e in range(1, 101)),
-                                          ('Element ' + str(e) for e in range(1, 101)),
-                                          ('Element ' + str(e) for e in range(1, 101))))
 
         cls.build_cube_with_rules()
 
@@ -272,8 +272,7 @@ class TestCellService(unittest.TestCase):
         self.tm1.cubes.cells.write_value(original_value, self.cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
 
     def test_write_values(self):
-        cells = {}
-        cells["Element 2", "Element4", "Element7"] = 716
+        cells = {("Element 2", "Element4", "Element7"): 716}
 
         self.tm1.cubes.cells.write_values(self.cube_name, cells)
         query = MdxBuilder.from_cube(self.cube_name)
@@ -633,14 +632,16 @@ class TestCellService(unittest.TestCase):
             "Value": [1, 2, 3]})
         self.tm1.cubes.cells.write_dataframe(self.cube_name, df)
 
-        mdx = MdxBuilder.from_cube(self.cube_name) \
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(self.dimension_names[0], "element 1"))) \
-            .add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+        query = MdxBuilder.from_cube(self.cube_name)
+        query = query.add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(self.dimension_names[0], "element 1")))
+        query = query.add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
             Member.of(self.dimension_names[1], "element 1"),
             Member.of(self.dimension_names[1], "element 2"),
-            Member.of(self.dimension_names[1], "element 3")])) \
-            .add_member_to_where(Member.of(self.dimension_names[2], "element 5")).to_mdx()
-        values = self.tm1.cubes.cells.execute_mdx_values(mdx)
+            Member.of(self.dimension_names[1], "element 3")]))
+
+        query = query.add_member_to_where(Member.of(self.dimension_names[2], "element 5"))
+        values = self.tm1.cubes.cells.execute_mdx_values(query.to_mdx())
 
         self.assertEqual(list(df["Value"]), values)
 
@@ -653,14 +654,15 @@ class TestCellService(unittest.TestCase):
             "Value": [1, 2, 3]})
         self.tm1.cubes.cells.write_dataframe_async(self.cube_name, df, 1, 3)
 
-        mdx = MdxBuilder.from_cube(self.cube_name) \
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(self.dimension_names[0], "element 1"))) \
-            .add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+        query = MdxBuilder.from_cube(self.cube_name)
+        query = query.add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(self.dimension_names[0], "element 1")))
+        query = query.add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
             Member.of(self.dimension_names[1], "element 1"),
             Member.of(self.dimension_names[1], "element 2"),
-            Member.of(self.dimension_names[1], "element 3")])) \
-            .add_member_to_where(Member.of(self.dimension_names[2], "element 5")).to_mdx()
-        values = self.tm1.cubes.cells.execute_mdx_values(mdx)
+            Member.of(self.dimension_names[1], "element 3")]))
+        query = query.add_member_to_where(Member.of(self.dimension_names[2], "element 5"))
+        values = self.tm1.cubes.cells.execute_mdx_values(query.to_mdx())
 
         self.assertEqual(list(df["Value"]), values)
 
@@ -672,7 +674,7 @@ class TestCellService(unittest.TestCase):
             self.dimension_names[2]: ["element 1", "element 3", "element 5"],
             "Extra Column": ["element 1", "element2", "element3"],
             "Value": [1, 2, 3]})
-        with self.assertRaises(ValueError) as e:
+        with self.assertRaises(ValueError) as _:
             self.tm1.cubes.cells.write_dataframe(self.cube_name, df)
 
     @skip_if_no_pandas
@@ -683,7 +685,7 @@ class TestCellService(unittest.TestCase):
             self.dimension_names[2]: ["element 1", "element 3", "element 5"],
             "Extra Column": ["element 1", "element2", "element3"],
             "Value": [1, 2, 3]})
-        with self.assertRaises(ValueError) as e:
+        with self.assertRaises(ValueError) as _:
             self.tm1.cubes.cells.write_dataframe_async(self.cube_name, df, 1, 3)
 
     def test_relative_proportional_spread_happy_case(self):
@@ -706,14 +708,15 @@ class TestCellService(unittest.TestCase):
             reference_unique_element_names=(
                 "[" + self.dimension_rps1_name + "].[c1]", "[" + self.dimension_rps2_name + "].[c1]"))
 
-        mdx = MdxBuilder.from_cube(self.cube_rps1_name) \
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(self.dimension_rps1_name, "e2"))) \
-            .add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+        query = MdxBuilder.from_cube(self.cube_rps1_name)
+        query = query.add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(self.dimension_rps1_name, "e2")))
+        query = query.add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
             Member.of(self.dimension_rps2_name, "e1"),
             Member.of(self.dimension_rps2_name, "e2"),
-            Member.of(self.dimension_rps2_name, "e3")])).to_mdx()
+            Member.of(self.dimension_rps2_name, "e3")]))
 
-        values = self.tm1.cubes.cells.execute_mdx_values(mdx)
+        values = self.tm1.cubes.cells.execute_mdx_values(query.to_mdx())
 
         self.assertEqual(values[0], 2)
         self.assertEqual(values[1], 4)
@@ -738,14 +741,15 @@ class TestCellService(unittest.TestCase):
                 "[" + self.dimension_rps1_name + "].[" + self.dimension_rps1_name + "].[c1]",
                 "[" + self.dimension_rps2_name + "].[" + self.dimension_rps2_name + "].[c1]"))
 
-        mdx = MdxBuilder.from_cube(self.cube_rps1_name) \
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(self.dimension_rps1_name, "e2"))) \
-            .add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+        query = MdxBuilder.from_cube(self.cube_rps1_name)
+        query = query.add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(self.dimension_rps1_name, "e2")))
+        query = query.add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
             Member.of(self.dimension_rps2_name, "e1"),
             Member.of(self.dimension_rps2_name, "e2"),
-            Member.of(self.dimension_rps2_name, "e3")])).to_mdx()
+            Member.of(self.dimension_rps2_name, "e3")]))
 
-        values = self.tm1.cubes.cells.execute_mdx_values(mdx)
+        values = self.tm1.cubes.cells.execute_mdx_values(query.to_mdx())
         self.assertEqual(values[0], 2)
         self.assertEqual(values[1], 4)
         self.assertEqual(values[2], 6)
@@ -766,14 +770,15 @@ class TestCellService(unittest.TestCase):
             reference_unique_element_names=(
                 "[" + self.dimension_rps1_name + "].[c1]", "[" + self.dimension_rps2_name + "].[c1]"))
 
-        mdx = MdxBuilder.from_cube(self.cube_rps1_name) \
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(self.dimension_rps1_name, "e2"))) \
-            .add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+        query = MdxBuilder.from_cube(self.cube_rps1_name)
+        query = query.add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(self.dimension_rps1_name, "e2")))
+        query = query.add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
             Member.of(self.dimension_rps2_name, "e1"),
             Member.of(self.dimension_rps2_name, "e2"),
-            Member.of(self.dimension_rps2_name, "e3")])).to_mdx()
+            Member.of(self.dimension_rps2_name, "e3")]))
 
-        values = self.tm1.cubes.cells.execute_mdx_values(mdx)
+        values = self.tm1.cubes.cells.execute_mdx_values(query.to_mdx())
         self.assertEqual(values[0], 2)
         self.assertEqual(values[1], 4)
         self.assertEqual(values[2], 6)
@@ -795,14 +800,15 @@ class TestCellService(unittest.TestCase):
             reference_unique_element_names=(
                 "[" + self.dimension_rps1_name + "].[c1]", "[" + self.dimension_rps2_name + "].[c1]"))
 
-        mdx = MdxBuilder.from_cube(self.cube_rps1_name) \
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(self.dimension_rps1_name, "e2"))) \
-            .add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+        query = MdxBuilder.from_cube(self.cube_rps1_name)
+        query = query.add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(self.dimension_rps1_name, "e2")))
+        query = query.add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
             Member.of(self.dimension_rps2_name, "e1"),
             Member.of(self.dimension_rps2_name, "e2"),
-            Member.of(self.dimension_rps2_name, "e3")])).to_mdx()
+            Member.of(self.dimension_rps2_name, "e3")]))
 
-        values = self.tm1.cubes.cells.execute_mdx_values(mdx)
+        values = self.tm1.cubes.cells.execute_mdx_values(query.to_mdx())
         self.assertEqual(values[0], 2)
         self.assertEqual(values[1], 4)
         self.assertEqual(values[2], 6)
@@ -948,16 +954,19 @@ class TestCellService(unittest.TestCase):
                 self.dimension_names[1])
 
     def test_execute_mdx_skip_consolidated(self):
-        mdx = MdxBuilder.from_cube(self.cube_with_consolidations_name) \
-            .add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
-            Member.of(self.dimensions_with_consolidations_names[0],
-                      "Total_" + self.dimensions_with_consolidations_names[0]),
-            Member.of(self.dimensions_with_consolidations_names[0], "Element1")])) \
-            .add_hierarchy_set_to_column_axis(
-            MdxHierarchySet.member(Member.of(self.dimensions_with_consolidations_names[1], "Element1"))) \
-            .add_member_to_where("[" + self.dimensions_with_consolidations_names[2] + "].[Element1]").to_mdx()
+        query = MdxBuilder.from_cube(self.cube_with_consolidations_name)
+        query = query.add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+            Member.of(
+                self.dimensions_with_consolidations_names[0],
+                "Total_" + self.dimensions_with_consolidations_names[0]),
+            Member.of(
+                self.dimensions_with_consolidations_names[0],
+                "Element1")]))
+        query = query.add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(self.dimensions_with_consolidations_names[1], "Element1")))
+        query = query.add_member_to_where("[" + self.dimensions_with_consolidations_names[2] + "].[Element1]")
 
-        data = self.tm1.cubes.cells.execute_mdx(mdx, skip_contexts=True, skip_consolidated_cells=True)
+        data = self.tm1.cubes.cells.execute_mdx(query.to_mdx(), skip_contexts=True, skip_consolidated_cells=True)
 
         self.assertEqual(len(data), 1)
         for coordinates, cell in data.items():
@@ -970,14 +979,15 @@ class TestCellService(unittest.TestCase):
                 self.dimensions_with_consolidations_names[1])
 
     def test_execute_mdx_skip_rule_derived(self):
-        mdx = MdxBuilder.from_cube(self.cube_with_rules_name) \
-            .add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+        query = MdxBuilder.from_cube(self.cube_with_rules_name)
+        query = query.add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
             Member.of(self.dimension_names[0], "Element 1"),
-            Member.of(self.dimension_names[0], "Element 2")])) \
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(self.dimension_names[1], "Element1"))) \
-            .add_member_to_where("[" + self.dimension_names[2] + "].[Element1]").to_mdx()
+            Member.of(self.dimension_names[0], "Element 2")]))
+        query = query.add_hierarchy_set_to_column_axis(MdxHierarchySet.member(
+            Member.of(self.dimension_names[1], "Element1")))
+        query = query.add_member_to_where("[" + self.dimension_names[2] + "].[Element1]")
 
-        data = self.tm1.cubes.cells.execute_mdx(mdx, skip_contexts=True, skip_rule_derived_cells=True)
+        data = self.tm1.cubes.cells.execute_mdx(query.to_mdx(), skip_contexts=True, skip_rule_derived_cells=True)
 
         self.assertEqual(len(data), 1)
         for coordinates, cell in data.items():
@@ -990,14 +1000,14 @@ class TestCellService(unittest.TestCase):
                 self.dimension_names[1])
 
     def test_execute_mdx_skip_zeros(self):
-        mdx = MdxBuilder.from_cube(self.cube_name) \
-            .add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+        query = MdxBuilder.from_cube(self.cube_name)
+        query = query.add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
             Member.of(self.dimension_names[0], "Element 1"),
-            Member.of(self.dimension_names[0], "Element 2")])) \
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(self.dimension_names[1], "Element1"))) \
-            .add_member_to_where("[" + self.dimension_names[2] + "].[Element1]").to_mdx()
+            Member.of(self.dimension_names[0], "Element 2")]))
+        query.add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(self.dimension_names[1], "Element1")))
+        query.add_member_to_where("[" + self.dimension_names[2] + "].[Element1]")
 
-        data = self.tm1.cubes.cells.execute_mdx(mdx, skip_contexts=False, skip_zeros=True)
+        data = self.tm1.cubes.cells.execute_mdx(query.to_mdx(), skip_contexts=False, skip_zeros=True)
 
         self.assertEqual(len(data), 1)
         for coordinates, cell in data.items():
@@ -1109,17 +1119,17 @@ class TestCellService(unittest.TestCase):
             self.assertEqual(member_name, "Element 1")
 
     def test_execute_mdx_rows_and_values_one_dimension_on_rows(self):
-        mdx = MdxBuilder.from_cube(self.cube_name) \
-            .add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+        query = MdxBuilder.from_cube(self.cube_name)
+        query = query.add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
             Member.of(self.dimension_names[0], "Element1"),
-            Member.of(self.dimension_names[0], "Element2")])) \
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.members([
+            Member.of(self.dimension_names[0], "Element2")]))
+        query = query.add_hierarchy_set_to_column_axis(MdxHierarchySet.members([
             Member.of(self.dimension_names[1], "Element1"),
             Member.of(self.dimension_names[1], "Element2"),
-            Member.of(self.dimension_names[1], "Element3")])) \
-            .where("[" + self.dimension_names[2] + "].[Element1]").to_mdx()
+            Member.of(self.dimension_names[1], "Element3")]))
+        query = query.where("[" + self.dimension_names[2] + "].[Element1]")
 
-        data = self.tm1.cubes.cells.execute_mdx_rows_and_values(mdx)
+        data = self.tm1.cubes.cells.execute_mdx_rows_and_values(query.to_mdx())
 
         self.assertEqual(len(data), 2)
         for row, cells in data.items():
@@ -1129,18 +1139,19 @@ class TestCellService(unittest.TestCase):
 
     def test_execute_mdx_rows_and_values_two_dimensions_on_rows(self):
 
-        mdx = MdxBuilder.from_cube(self.cube_name).add_hierarchy_set_to_axis(0, MdxHierarchySet.members([
+        query = MdxBuilder.from_cube(self.cube_name)
+        query = query.add_hierarchy_set_to_axis(0, MdxHierarchySet.members([
             Member.of(self.dimension_names[2], "Element1"),
             Member.of(self.dimension_names[2], "Element2"),
-            Member.of(self.dimension_names[2], "Element3")])) \
-            .add_hierarchy_set_to_axis(1, MdxHierarchySet.members([
+            Member.of(self.dimension_names[2], "Element3")]))
+        query = query.add_hierarchy_set_to_axis(1, MdxHierarchySet.members([
             Member.of(self.dimension_names[0], "Element1"),
-            Member.of(self.dimension_names[0], "Element2")])). \
-            add_hierarchy_set_to_axis(1, MdxHierarchySet.members([
+            Member.of(self.dimension_names[0], "Element2")]))
+        query = query.add_hierarchy_set_to_axis(1, MdxHierarchySet.members([
             Member.of(self.dimension_names[1], "Element1"),
-            Member.of(self.dimension_names[1], "Element2")])).to_mdx()
+            Member.of(self.dimension_names[1], "Element2")]))
 
-        data = self.tm1.cubes.cells.execute_mdx_rows_and_values(mdx)
+        data = self.tm1.cubes.cells.execute_mdx_rows_and_values(query.to_mdx())
 
         self.assertEqual(len(data), 4)
         for row, cells in data.items():
@@ -1784,17 +1795,17 @@ class TestCellService(unittest.TestCase):
     def test_execute_view_rows_and_values_one_dimension_on_rows(self):
         view_name = self.prefix + "MDX_View_With_One_Dim_On_Rows"
         if not self.tm1.cubes.views.exists(cube_name=self.cube_name, view_name=view_name, private=False):
-            mdx = MdxBuilder.from_cube(self.cube_name).add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+            query = MdxBuilder.from_cube(self.cube_name)
+            query = query.add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
                 Member.of(self.dimension_names[0], "Element1"),
-                Member.of(self.dimension_names[0], "Element2")])) \
-                .add_hierarchy_set_to_column_axis(MdxHierarchySet.members([
+                Member.of(self.dimension_names[0], "Element2")]))
+            query = query.add_hierarchy_set_to_column_axis(MdxHierarchySet.members([
                 Member.of(self.dimension_names[1], "Element1"),
                 Member.of(self.dimension_names[1], "Element2"),
-                Member.of(self.dimension_names[1], "Element3")])) \
-                .where(Member.of(self.dimension_names[2], "Element1")) \
-                .to_mdx()
+                Member.of(self.dimension_names[1], "Element3")]))
+            query = query.where(Member.of(self.dimension_names[2], "Element1"))
 
-            view = MDXView(cube_name=self.cube_name, view_name=view_name, MDX=mdx)
+            view = MDXView(cube_name=self.cube_name, view_name=view_name, MDX=query.to_mdx())
             self.tm1.cubes.views.update_or_create(view, False)
 
         data = self.tm1.cubes.cells.execute_view_rows_and_values(
@@ -1811,19 +1822,19 @@ class TestCellService(unittest.TestCase):
     def test_execute_view_rows_and_values_with_member_names(self):
         view_name = self.prefix + "MDX_View_With_Member_Names"
         if not self.tm1.cubes.views.exists(cube_name=self.cube_name, view_name=view_name, private=False):
-            mdx = MdxBuilder.from_cube(self.cube_name).add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+            query = MdxBuilder.from_cube(self.cube_name)
+            query = query.add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
                 Member.of(self.dimension_names[0], "Element1"),
-                Member.of(self.dimension_names[0], "Element2")])) \
-                .add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+                Member.of(self.dimension_names[0], "Element2")]))
+            query = query.add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
                 Member.of(self.dimension_names[2], "Element1"),
-                Member.of(self.dimension_names[2], "Element2")])) \
-                .add_hierarchy_set_to_column_axis(MdxHierarchySet.members([
+                Member.of(self.dimension_names[2], "Element2")]))
+            query = query.add_hierarchy_set_to_column_axis(MdxHierarchySet.members([
                 Member.of(self.dimension_names[1], "Element1"),
                 Member.of(self.dimension_names[1], "Element2"),
-                Member.of(self.dimension_names[1], "Element3")])) \
-                .to_mdx()
+                Member.of(self.dimension_names[1], "Element3")]))
 
-            view = MDXView(cube_name=self.cube_name, view_name=view_name, MDX=mdx)
+            view = MDXView(cube_name=self.cube_name, view_name=view_name, MDX=query.to_mdx())
             self.tm1.cubes.views.update_or_create(view, False)
 
         data = self.tm1.cubes.cells.execute_view_rows_and_values(
@@ -1843,19 +1854,19 @@ class TestCellService(unittest.TestCase):
     def test_execute_view_rows_and_values_two_dimensions_on_rows(self):
         view_name = self.prefix + "MDX_View_With_Two_Dim_On_Rows"
         if not self.tm1.cubes.views.exists(cube_name=self.cube_name, view_name=view_name, private=False):
-            mdx = MdxBuilder.from_cube(self.cube_name).add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+            query = MdxBuilder.from_cube(self.cube_name)
+            query = query.add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
                 Member.of(self.dimension_names[0], "Element1"),
-                Member.of(self.dimension_names[0], "Element2")])) \
-                .add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+                Member.of(self.dimension_names[0], "Element2")]))
+            query = query.add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
                 Member.of(self.dimension_names[1], "Element1"),
-                Member.of(self.dimension_names[1], "Element2")])) \
-                .add_hierarchy_set_to_column_axis(MdxHierarchySet.members([
+                Member.of(self.dimension_names[1], "Element2")]))
+            query = query.add_hierarchy_set_to_column_axis(MdxHierarchySet.members([
                 Member.of(self.dimension_names[2], "Element1"),
                 Member.of(self.dimension_names[2], "Element2"),
-                Member.of(self.dimension_names[2], "Element3")])) \
-                .to_mdx()
+                Member.of(self.dimension_names[2], "Element3")]))
 
-            view = MDXView(cube_name=self.cube_name, view_name=view_name, MDX=mdx)
+            view = MDXView(cube_name=self.cube_name, view_name=view_name, MDX=query.to_mdx())
             self.tm1.cubes.views.update_or_create(view, False)
 
         data = self.tm1.cubes.cells.execute_view_rows_and_values(
@@ -2297,8 +2308,6 @@ class TestCellService(unittest.TestCase):
             .where(Member.of(self.dimension_names[2], "element2")) \
             .to_mdx()
 
-        original_value = self.tm1.cubes.cells.execute_mdx_values(mdx)[0]
-
         self.tm1.cubes.cells.write_values_through_cellset(mdx, (1.5,))
 
         # check value on coordinate in cube
@@ -2306,20 +2315,19 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(values[0], 1.5)
 
     def test_write_values_through_cellset_deactivate_transaction_log(self):
-        mdx = MdxBuilder.from_cube(self.cube_name) \
-            .add_hierarchy_set_to_row_axis(MdxHierarchySet.member(Member.of(self.dimension_names[0], "element2"))) \
-            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(self.dimension_names[1], "element2"))) \
-            .where(Member.of(self.dimension_names[2], "element2")) \
-            .to_mdx()
+        query = MdxBuilder.from_cube(self.cube_name)
+        query = query.add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.member(Member.of(self.dimension_names[0], "element2")))
+        query = query.add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(self.dimension_names[1], "element2")))
+        query = query.where(Member.of(self.dimension_names[2], "element2"))
 
-        original_value = self.tm1.cubes.cells.execute_mdx_values(mdx)[0]
-
-        self.tm1.cubes.cells.write_values_through_cellset(mdx, (1.5,), deactivate_transaction_log=True)
+        self.tm1.cubes.cells.write_values_through_cellset(query.to_mdx(), (1.5,), deactivate_transaction_log=True)
 
         # check value on coordinate in cube
-        values = self.tm1.cubes.cells.execute_mdx_values(mdx)
-
+        values = self.tm1.cubes.cells.execute_mdx_values(query.to_mdx())
         self.assertEqual(values[0], 1.5)
+
         self.assertFalse(self.tm1.cells.transaction_log_is_active(self.cube_name))
 
     def test_write_values_through_cellset_deactivate_transaction_log_reactivate_transaction_log(self):
@@ -2328,8 +2336,6 @@ class TestCellService(unittest.TestCase):
             .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(self.dimension_names[1], "element2"))) \
             .where(Member.of(self.dimension_names[2], "element2")) \
             .to_mdx()
-
-        original_value = self.tm1.cubes.cells.execute_mdx_values(mdx)[0]
 
         self.tm1.cubes.cells.write_values_through_cellset(
             mdx,
