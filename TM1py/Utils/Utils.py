@@ -1,12 +1,13 @@
 import collections
 import functools
-import http.client as http_client
 import json
 import re
 import urllib.parse as urlparse
 from contextlib import suppress
 from enum import Enum, unique
 from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator
+
+import requests
 
 from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminException
 
@@ -56,25 +57,26 @@ def require_pandas(func):
     return wrapper
 
 
-def get_all_servers_from_adminhost(adminhost='localhost') -> List:
+def get_all_servers_from_adminhost(adminhost: str = 'localhost') -> List:
     from TM1py.Objects import Server
     """ Ask Adminhost for TM1 Servers
     :param adminhost: IP or DNS Alias of the adminhost
     :return: List of Servers (instances of the TM1py.Server class)
     """
+    if not adminhost:
+        adminhost = 'localhost'
 
-    conn = http_client.HTTPConnection(adminhost, 5895)
-    request = '/api/v1/Servers'
-    conn.request('GET', request, body='')
-    response = conn.getresponse().read().decode('utf-8')
-    response_as_dict = json.loads(response)
+    response = requests.get(f"http://{adminhost}:5895/api/v1/Servers")
+    response.raise_for_status()
+
     servers = []
-    for server_as_dict in response_as_dict['value']:
+    for server_as_dict in response.json()['value']:
         server = Server(server_as_dict)
         servers.append(server)
     return servers
 
-def create_server_on_adminhost(adminhost='localhost', server_as_dict=None):
+
+def create_server_on_adminhost(adminhost: str = 'localhost', server_as_dict: Dict = None):
     from TM1py.Objects import Server
     """  Create new TM1 instance on Adminhost
     :param adminhost: IP or DNS Alias of the adminhost
@@ -92,15 +94,63 @@ def create_server_on_adminhost(adminhost='localhost', server_as_dict=None):
                 "AcceptingClients":True }
     :return: instance of TM1py.Server
     """
-    if server_as_Dict is None: 
-        server_as_dict = {}
-    conn = http_client.HTTPConnection(adminhost, 5895)
-    request = '/api/v1/Servers'
-    conn.request('POST', request, body=json.dumps(server_as_dict), headers={'Content-Type':'application/json'})
-    response = conn.getresponse().read().decode('utf-8')
-    response_as_dict = json.loads(response)
 
-    return Server(response_as_dict)
+    if not server_as_dict:
+        raise ValueError("server_as_dict must be provided")
+
+    if not adminhost:
+        adminhost = 'localhost'
+
+    url = f"http://{adminhost}:5895/api/v1/Servers"
+    response = requests.post(url, data=json.dumps(server_as_dict), headers={'Content-Type': 'application/json'})
+    response.raise_for_status()
+
+    return Server(response.json())
+
+
+def delete_server_on_adminhost(adminhost: str = None, server_name: str = None):
+    if not server_name:
+        raise ValueError("server_name must be provided")
+
+    if not adminhost:
+        adminhost = 'localhost'
+
+    url = f"http://{adminhost}:5895/api/v1/Servers('{server_name}')"
+    response = requests.delete(url, headers={'Content-Type': 'application/json'})
+    response.raise_for_status()
+
+
+def update_server_on_adminhost(adminhost: str = 'localhost', server_as_dict: Dict = None):
+    from TM1py.Objects import Server
+    """  Create new TM1 instance on Adminhost
+    :param adminhost: IP or DNS Alias of the adminhost
+    :param server_as_dict: 
+            server_as_dict = {
+                "Name":"MyModel1",
+                "IPAddress":"172.20.10.10",
+                "IPv6Address":None,
+                "PortNumber":12345,
+                "UsingSSL": True,
+                "ClientMessagePortNumber":61098,
+                "HTTPPortNumber":12999,
+                "ClientExportSSLSvrCert":True,
+                "ClientExportSSLSvrKeyID":"whateverExportSSLSvrKeyID",
+                "AcceptingClients":True }
+    :return: instance of TM1py.Server
+    """
+
+    if not server_as_dict:
+        raise ValueError("server_as_dict must be provided")
+
+    if not adminhost:
+        adminhost = 'localhost'
+
+    url = f"http://{adminhost}:5895/api/v1/Servers"
+    response = requests.patch(url, body=json.dumps(server_as_dict), headers={'Content-Type': 'application/json'})
+    response.raise_for_status()
+
+    return Server(response.json())
+
 
 def build_url_friendly_object_name(object_name: str) -> str:
     return object_name.replace("'", "''").replace('%', '%25').replace('#', '%23')
@@ -609,7 +659,8 @@ def build_pandas_dataframe_from_cellset(cellset: Dict, multiindex: bool = True,
 def build_cellset_from_pandas_dataframe(df: 'pd.DataFrame') -> 'CaseAndSpaceInsensitiveTuplesDict':
     """
 
-    :param df: a Pandas Dataframe, with dimension-column mapping in correct order. As created in build_pandas_dataframe_from_cellset
+    :param df: a Pandas Dataframe, with dimension-column mapping in correct order.
+    As created in build_pandas_dataframe_from_cellset
     :return: a CaseAndSpaceInsensitiveTuplesDict
     """
     if isinstance(df.index, pd.MultiIndex):
