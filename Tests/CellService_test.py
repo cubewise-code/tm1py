@@ -487,6 +487,20 @@ class TestCellService(unittest.TestCase):
 
         self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [8])
 
+    def test_write_through_unbound_process_line_break_hashmark_combo(self):
+        cells = dict()
+        cells["d1e1", "d2e4", "d3e3"] = 'TM1py \r\n#Test'
+
+        self.tm1.cubes.cells.write_through_unbound_process(self.string_cube_name, cells)
+
+        query = MdxBuilder.from_cube(self.string_cube_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.string_dimension_names[0]}].[d1e1]",
+            f"[{self.string_dimension_names[1]}].[d2e4]",
+            f"[{self.string_dimension_names[2]}].[d3e3]")
+
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), ['TM1py #Test'])
+
     def test_undo_cellset_write(self):
         cells = dict()
         cells["Element 12", "Element 13", "Element 15"] = 3.3
