@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
+import asyncio
 import functools
 import json
 import uuid
 import warnings
-import asyncio
 from collections import OrderedDict
+from concurrent.futures.thread import ThreadPoolExecutor
 from io import StringIO
 from typing import List, Union, Dict, Iterable, Tuple, Optional
-from concurrent.futures.thread import ThreadPoolExecutor
 
 from mdxpy import MdxHierarchySet, MdxBuilder, Member
 from requests import Response
@@ -411,7 +411,7 @@ class CellService(ObjectService):
                     outcomes.append(await future)
 
             return outcomes
-            
+
         return asyncio.run(write_async(self, data))
 
     def write_value(self, value: Union[str, float], cube_name: str, element_tuple: Iterable,
@@ -531,7 +531,7 @@ class CellService(ObjectService):
 
             if element_type == 'String':
                 function_str = 'CellPutS('
-                value_str = str(value).replace("'", "''")
+                value_str = str(value).replace("'", "''").replace('\r', '').replace('\n', '')
                 value_str = f"'{value_str}'"
 
             # by default assume numeric, to trigger minor errors on write operations to C elements
