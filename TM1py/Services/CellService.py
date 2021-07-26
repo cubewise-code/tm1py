@@ -1555,7 +1555,7 @@ class CellService(ObjectService):
         if skip_zeros or skip_consolidated_cells or skip_rule_derived_cells:
             filters = []
             if skip_zeros:
-                filters.append("Value ne 0 and Value ne null")
+                filters.append("Value ne 0 and Value ne null and Value ne ''")
             if skip_consolidated_cells:
                 filters.append("Consolidated eq false")
             if skip_rule_derived_cells:
