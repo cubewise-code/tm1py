@@ -2,6 +2,7 @@
 
 import asyncio
 import functools
+import itertools
 import json
 import uuid
 import warnings
@@ -370,11 +371,69 @@ class CellService(ObjectService):
                           use_changeset=use_changeset,
                           **kwargs)
 
+    @manage_transaction_log
+    def write_async(self, cube_name: str, cells: Dict, slice_size: int, max_workers: int,
+                    dimensions: Iterable[str] = None, increment: bool = False,
+                    deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
+                    sandbox_name: str = None, **kwargs) -> Optional[str]:
+        """ Write asynchronously
+
+        :param cube_name:
+        :param cells:
+        :param slice_size:
+        :param max_workers:
+        :param dimensions:
+        :param increment:
+        :param deactivate_transaction_log:
+        :param reactivate_transaction_log:
+        :param sandbox_name:
+        :param kwargs:
+        :return:
+        """
+
+        if not dimensions:
+            dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
+
+        def _chunks(data: Dict):
+            it = iter(data)
+            for _ in range(0, len(data), slice_size):
+                yield {k: data[k] for k in itertools.islice(it, slice_size)}
+
+        def _write(chunk: Dict):
+            return self.write(cube_name=cube_name, cellset_as_dict=chunk, dimensions=dimensions, increment=increment,
+                              use_ti=True, sandbox_name=sandbox_name, **kwargs)
+
+        async def _write_async(data: Dict):
+            loop = asyncio.get_event_loop()
+            failures = []
+
+            with ThreadPoolExecutor(max_workers) as executor:
+                futures = [loop.run_in_executor(executor, _write, chunk) for chunk in _chunks(data)]
+
+                for future in futures:
+                    try:
+                        await future
+                    except (TM1pyWritePartialFailureException, TM1pyWriteFailureException) as exception:
+                        failures.append(exception)
+
+            return failures
+
+        exceptions = asyncio.run(_write_async(cells))
+        if not exceptions:
+            return
+
+        # merge all failures into one combined Exception
+        raise TM1pyWritePartialFailureException(
+            statuses=list(itertools.chain(*[exception.statuses for exception in exceptions])),
+            error_log_files=list(itertools.chain(*[exception.error_log_files for exception in exceptions])),
+            attempts=sum([exception.attempts for exception in exceptions]))
+
     @require_pandas
     @manage_transaction_log
-    def write_dataframe_async(self, cube_name: str, data: 'pd.DataFrame',
-                              slice_size_of_dataframe: int, max_workers: int,
-                              increment: bool = False):
+    def write_dataframe_async(self, cube_name: str, data: 'pd.DataFrame', slice_size_of_dataframe: int,
+                              max_workers: int, dimensions: Iterable[str] = None, increment: bool = False,
+                              sandbox_name: str = None, deactivate_transaction_log: bool = False,
+                              reactivate_transaction_log: bool = False, **kwargs):
         """ Write DataFrame into a cube using unbound TI processes in a multi-threading way. Requires admin permissions.
         For a DataFrame with > 1,000,000 rows, this function will at least save half of runtime compared with `write_dataframe` function.
         Column order must match dimensions in the target cube with an additional column for the values.
@@ -383,36 +442,53 @@ class CellService(ObjectService):
         :param data: Pandas Data Frame
         :param slice_size_of_dataframe: Number of rows for each DataFrame slice, e.g. 10000
         :param max_workers: Max number of threads, e.g. 14
+        :param dimensions:
         :param increment: increment or update cell values. Defaults to False.
+        :param sandbox_name: name of the sandbox or None
+        :param deactivate_transaction_log:
+        :param reactivate_transaction_log:
         :return: the Future’s result or raise exception.
         """
         if not isinstance(data, pd.DataFrame):
             raise ValueError("argument 'data' must of type DataFrame")
 
-        dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
+        if not dimensions:
+            dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
 
         if not len(data.columns) == len(dimensions) + 1:
             raise ValueError("Number of columns in 'data' DataFrame must be number of dimensions in cube + 1")
 
-        def chunks(data):
-            return [data.iloc[i:i + slice_size_of_dataframe] for i in range(0, data.shape[0], slice_size_of_dataframe)]
+        def _chunks(df: 'pd.DataFrame'):
+            return [df.iloc[i:i + slice_size_of_dataframe] for i in range(0, df.shape[0], slice_size_of_dataframe)]
 
-        def write(self, chunk):
-            return self.write_dataframe(cube_name=cube_name, data=chunk, increment=increment, use_ti=True)
+        def _write(chunk: 'pd.DataFrame'):
+            return self.write_dataframe(cube_name=cube_name, data=chunk, dimensions=dimensions, increment=increment,
+                                        use_ti=True, sandbox_name=sandbox_name, **kwargs)
 
-        async def write_async(self, data):
+        async def _write_async(df: 'pd.DataFrame'):
             loop = asyncio.get_event_loop()
-            outcomes = []
+            failures = []
 
             with ThreadPoolExecutor(max_workers) as executor:
-                futures = [loop.run_in_executor(executor, write, self, chunk) for chunk in chunks(data)]
+                futures = [loop.run_in_executor(executor, _write, chunk) for chunk in _chunks(df)]
 
                 for future in futures:
-                    outcomes.append(await future)
+                    try:
+                        await future
+                    except (TM1pyWritePartialFailureException, TM1pyWriteFailureException) as exception:
+                        failures.append(exception)
 
-            return outcomes
+            return failures
 
-        return asyncio.run(write_async(self, data))
+        exceptions = asyncio.run(_write_async(data))
+        if not exceptions:
+            return
+
+        # merge all failures into one combined Exception
+        raise TM1pyWritePartialFailureException(
+            statuses=list(itertools.chain(*[exception.statuses for exception in exceptions])),
+            error_log_files=list(itertools.chain(*[exception.error_log_files for exception in exceptions])),
+            attempts=sum([exception.attempts for exception in exceptions]))
 
     def write_value(self, value: Union[str, float], cube_name: str, element_tuple: Iterable,
                     dimensions: Iterable[str] = None, sandbox_name: str = None, **kwargs) -> Response:

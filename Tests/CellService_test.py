@@ -660,6 +660,17 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(list(df["Value"]), values)
 
     @skip_if_no_pandas
+    def test_write_dataframe_error(self):
+        df = pd.DataFrame({
+            self.dimension_names[0]: ["element 1", "element 3", "element 5"],
+            self.dimension_names[1]: ["element 1", "element 2", "element 4"],
+            self.dimension_names[2]: ["element 1", "element 3", "element 5"],
+            "Extra Column": ["element 1", "element2", "element3"],
+            "Value": [1, 2, 3]})
+        with self.assertRaises(ValueError) as _:
+            self.tm1.cubes.cells.write_dataframe(self.cube_name, df)
+
+    @skip_if_no_pandas
     def test_write_dataframe_async(self):
         df = pd.DataFrame({
             self.dimension_names[0]: ["element 1", "element 1", "element 1"],
@@ -681,6 +692,42 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(list(df["Value"]), values)
 
     @skip_if_no_pandas
+    def test_write_dataframe_async_value_error(self):
+        df = pd.DataFrame({
+            self.dimension_names[0]: ["element 1", "element 3", "element 5"],
+            self.dimension_names[1]: ["element 1", "element 2", "element 4"],
+            self.dimension_names[2]: ["element 1", "element 3", "element 5"],
+            "Extra Column": ["element 1", "element2", "element3"],
+            "Value": [1, 2, 3]})
+        with self.assertRaises(ValueError) as _:
+            self.tm1.cubes.cells.write_dataframe_async(self.cube_name, df, 1, 3)
+
+    @skip_if_no_pandas
+    def test_write_dataframe_async_minor_error(self):
+        df = pd.DataFrame({
+            self.dimension_names[0]: ["element 1", "element 1", "element 1", "element 1", "element 1"],
+            self.dimension_names[1]: ["element 2", "element 2", "element 2", "element 2", "element 2"],
+            self.dimension_names[2]: ["Not Existing", "element 2", "element 3", "element 4", "Not Existing"],
+            "Value": [1, 2, 3, 4, 5]})
+
+        with self.assertRaises(TM1pyWritePartialFailureException) as ex:
+            self.tm1.cubes.cells.write_dataframe_async(self.cube_name, df, 1, 5)
+        self.assertEqual(2, ex.exception.attempts)
+        self.assertEqual(['HasMinorErrors', 'HasMinorErrors'], ex.exception.statuses)
+
+        query = MdxBuilder.from_cube(self.cube_name)
+        query = query.add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(self.dimension_names[0], "element 1")))
+        query = query.add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+            Member.of(self.dimension_names[2], "element 2"),
+            Member.of(self.dimension_names[2], "element 3"),
+            Member.of(self.dimension_names[2], "element 4")]))
+        query = query.add_member_to_where(Member.of(self.dimension_names[1], "element 2"))
+        values = self.tm1.cubes.cells.execute_mdx_values(query.to_mdx())
+
+        self.assertEqual(list(df["Value"])[1:-1], values)
+
+    @skip_if_no_pandas
     def test_write_dataframe_error(self):
         df = pd.DataFrame({
             self.dimension_names[0]: ["element 1", "element 3", "element 5"],
@@ -691,16 +738,51 @@ class TestCellService(unittest.TestCase):
         with self.assertRaises(ValueError) as _:
             self.tm1.cubes.cells.write_dataframe(self.cube_name, df)
 
+    def test_write_async(self):
+        cells = {
+            ("element 1", "element 1", "element 5"): 1.59,
+            ("element 1", "element 2", "element 5"): 2.87,
+            ("element 1", "element 3", "element 5"): 3.12}
+
+        self.tm1.cubes.cells.write_async(self.cube_name, cells, 1, 3)
+
+        query = MdxBuilder.from_cube(self.cube_name)
+        query = query.add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(self.dimension_names[0], "element 1")))
+        query = query.add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+            Member.of(self.dimension_names[1], "element 1"),
+            Member.of(self.dimension_names[1], "element 2"),
+            Member.of(self.dimension_names[1], "element 3")]))
+        query = query.add_member_to_where(Member.of(self.dimension_names[2], "element 5"))
+        values = self.tm1.cubes.cells.execute_mdx_values(query.to_mdx())
+
+        self.assertEqual(list(cells.values()), values)
+
     @skip_if_no_pandas
-    def test_write_dataframe_async_error(self):
-        df = pd.DataFrame({
-            self.dimension_names[0]: ["element 1", "element 3", "element 5"],
-            self.dimension_names[1]: ["element 1", "element 2", "element 4"],
-            self.dimension_names[2]: ["element 1", "element 3", "element 5"],
-            "Extra Column": ["element 1", "element2", "element3"],
-            "Value": [1, 2, 3]})
-        with self.assertRaises(ValueError) as _:
-            self.tm1.cubes.cells.write_dataframe_async(self.cube_name, df, 1, 3)
+    def test_write_async_minor_errors(self):
+        cells = {
+            ("element 1", "element 2", "Not Existing1"): 0.612,
+            ("element 1", "element 2", "element 2"): -9.87,
+            ("element 1", "element 2", "element 3"): 1000,
+            ("element 1", "element 2", "element 4"): 12345,
+            ("element 1", "element 2", "Not Existing2"): 12.345}
+
+        with self.assertRaises(TM1pyWritePartialFailureException) as ex:
+            self.tm1.cubes.cells.write_async(self.cube_name, cells, 1, 5)
+        self.assertEqual(2, ex.exception.attempts)
+        self.assertEqual(['HasMinorErrors', 'HasMinorErrors'], ex.exception.statuses)
+
+        query = MdxBuilder.from_cube(self.cube_name)
+        query = query.add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(self.dimension_names[0], "element 1")))
+        query = query.add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+            Member.of(self.dimension_names[2], "element 2"),
+            Member.of(self.dimension_names[2], "element 3"),
+            Member.of(self.dimension_names[2], "element 4")]))
+        query = query.add_member_to_where(Member.of(self.dimension_names[1], "element 2"))
+        values = self.tm1.cubes.cells.execute_mdx_values(query.to_mdx())
+
+        self.assertEqual(list(cells.values())[1:-1], values)
 
     def test_relative_proportional_spread_happy_case(self):
         """
