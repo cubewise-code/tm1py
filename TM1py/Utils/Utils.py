@@ -57,20 +57,26 @@ def require_pandas(func):
     return wrapper
 
 
-def get_all_servers_from_adminhost(adminhost: str = 'localhost') -> List:
+def get_all_servers_from_adminhost(adminhost='localhost', port=5895, ssl=False) -> List:
     from TM1py.Objects import Server
+    import ssl
     """ Ask Adminhost for TM1 Servers
     :param adminhost: IP or DNS Alias of the adminhost
+    :param port: numeric port to connect to adminhost
+    :param ssl: True for secure connection
     :return: List of Servers (instances of the TM1py.Server class)
     """
-    if not adminhost:
-        adminhost = 'localhost'
 
-    response = requests.get(f"http://{adminhost}:5895/api/v1/Servers")
-    response.raise_for_status()
-
+    if ssl == False:
+        conn = http_client.HTTPConnection(adminhost, port)
+    else:
+        conn = http_client.HTTPSConnection(adminhost, port, context=ssl._create_unverified_context())
+    request = '/api/v1/Servers'
+    conn.request('GET', request, body='')
+    response = conn.getresponse().read().decode('utf-8')
+    response_as_dict = json.loads(response)
     servers = []
-    for server_as_dict in response.json()['value']:
+    for server_as_dict in response_as_dict['value']:
         server = Server(server_as_dict)
         servers.append(server)
     return servers
