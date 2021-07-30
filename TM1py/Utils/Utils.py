@@ -1,7 +1,9 @@
 import collections
 import functools
+import http.client as http_client
 import json
 import re
+import ssl
 import urllib.parse as urlparse
 from contextlib import suppress
 from enum import Enum, unique
@@ -57,9 +59,8 @@ def require_pandas(func):
     return wrapper
 
 
-def get_all_servers_from_adminhost(adminhost='localhost', port=5895, ssl=False) -> List:
+def get_all_servers_from_adminhost(adminhost='localhost', port=None, use_ssl=False) -> List:
     from TM1py.Objects import Server
-    import ssl
     """ Ask Adminhost for TM1 Servers
     :param adminhost: IP or DNS Alias of the adminhost
     :param port: numeric port to connect to adminhost
@@ -67,10 +68,10 @@ def get_all_servers_from_adminhost(adminhost='localhost', port=5895, ssl=False) 
     :return: List of Servers (instances of the TM1py.Server class)
     """
 
-    if ssl == False:
-        conn = http_client.HTTPConnection(adminhost, port)
+    if not use_ssl:
+        conn = http_client.HTTPConnection(adminhost, port or 5895)
     else:
-        conn = http_client.HTTPSConnection(adminhost, port, context=ssl._create_unverified_context())
+        conn = http_client.HTTPSConnection(adminhost, port or 5898, context=ssl._create_unverified_context())
     request = '/api/v1/Servers'
     conn.request('GET', request, body='')
     response = conn.getresponse().read().decode('utf-8')
