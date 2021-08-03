@@ -194,9 +194,17 @@ class ProcessService(ObjectService):
         """
         Run unbound TI code directly
         :param process: a TI Process Object
+        :param kwargs: dictionary of process parameters and values
         :return: success (boolean), status (String), error_log_file (String)
         """
         url = "/api/v1/ExecuteProcessWithReturn?$expand=*"
+        if kwargs:
+            parameters = {"Parameters": []}
+            for parameter_name, parameter_value in kwargs.items():
+                parameters["Parameters"].append({"Name": parameter_name, "Value": parameter_value})
+                process.add_parameter(name=parameter_name,
+                                      prompt=parameter_name,
+                                      value= parameter_value)
 
         payload = json.loads("{\"Process\":" + process.body + "}")
 
