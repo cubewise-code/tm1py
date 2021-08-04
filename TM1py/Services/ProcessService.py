@@ -200,6 +200,7 @@ class ProcessService(ObjectService):
         url = "/api/v1/ExecuteProcessWithReturn?$expand=*"
         if kwargs:
             for parameter_name, parameter_value in kwargs.items():
+                process.remove_parameter(name=parameter_name)
                 process.add_parameter(name=parameter_name,
                                       prompt=parameter_name,
                                       value=parameter_value)
