@@ -75,13 +75,16 @@ def manage_transaction_log(func):
             else:
                 cube_name = arg
 
+        deactivate_transaction_log = kwargs.pop("deactivate_transaction_log", False)
+        reactivate_transaction_log = kwargs.pop("reactivate_transaction_log", False)
         try:
-            if kwargs.get("deactivate_transaction_log", False):
+
+            if deactivate_transaction_log:
                 self.deactivate_transactionlog(cube_name)
             return func(self, *args, **kwargs)
 
         finally:
-            if kwargs.get("reactivate_transaction_log", False):
+            if reactivate_transaction_log:
                 self.activate_transactionlog(cube_name)
 
     return wrapper
