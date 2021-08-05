@@ -190,10 +190,13 @@ class ProcessService(ObjectService):
         return self._rest.POST(url=url, data=json.dumps(parameters, ensure_ascii=False), timeout=timeout,
                                cancel_at_timeout=cancel_at_timeout, **kwargs)
 
-    def execute_process_with_return(self, process: Process, **kwargs) -> Tuple[bool, str, str]:
-        """
-        Run unbound TI code directly
+    def execute_process_with_return(self, process: Process, timeout: float = None, cancel_at_timeout: bool = False,
+                                    **kwargs) -> Tuple[bool, str, str]:
+        """Run unbound TI code directly.
+
         :param process: a TI Process Object
+        :param timeout: Number of seconds that the client will wait to receive the first byte.
+        :param cancel_at_timeout: Abort operation in TM1 when timeout is reached
         :param kwargs: dictionary of process parameters and values
         :return: success (boolean), status (String), error_log_file (String)
         """
@@ -210,6 +213,8 @@ class ProcessService(ObjectService):
         response = self._rest.POST(
             url=url,
             data=json.dumps(payload, ensure_ascii=False),
+            timeout=timeout,
+            cancel_at_timeout=cancel_at_timeout,
             **kwargs)
 
         execution_summary = response.json()
