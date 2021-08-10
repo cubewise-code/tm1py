@@ -7,7 +7,7 @@ from TM1py.Exceptions import TM1pyRestException
 from TM1py.Objects import User
 from TM1py.Objects.User import UserType
 from TM1py.Services import TM1Service
-from TM1py.Utils.Utils import CaseAndSpaceInsensitiveSet
+from TM1py.Utils.Utils import CaseAndSpaceInsensitiveSet, case_and_space_insensitive_equals
 
 
 class TestSecurityService(unittest.TestCase):
@@ -68,7 +68,7 @@ class TestSecurityService(unittest.TestCase):
 
     def test_get_current_user(self):
         me = self.tm1.security.get_current_user()
-        self.assertEqual(me.name, self.config['tm1srv01']['User'])
+        self.assertTrue(case_and_space_insensitive_equals(me.name, self.config['tm1srv01']['User']))
 
         user = self.tm1.security.get_user(self.config['tm1srv01']['User'])
         self.assertEqual(me, user)
