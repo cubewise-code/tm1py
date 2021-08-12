@@ -400,7 +400,7 @@ def _build_csv_line_items_from_axis_tuple(members: Dict, include_attributes: boo
         line_items = list()
         for member in members:
 
-            element_name = member['Element']['Name'] if 'Element' in member and member['Element'] else member.get('Name', 'None')
+            element_name = member['Element']['Name'] if 'Element' in member and member['Element'] else member['Name']
             line_items.append(element_name)
 
             attribute_values = list(member['Attributes'].values())

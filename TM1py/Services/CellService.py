@@ -1801,7 +1801,7 @@ class CellService(ObjectService):
                                                 skip_rule_derived_cells=skip_rule_derived_cells,
                                                 delete_cellset=True, sandbox_name=sandbox_name,
                                                 elem_properties=['Name'],
-                                                member_properties=['Attributes'] if include_attributes else None,
+                                                member_properties=['Name', 'Attributes'] if include_attributes else None,
                                                 **kwargs)
         return build_csv_from_cellset_dict(rows, columns, cellset_dict, line_separator=line_separator,
                                            value_separator=value_separator, top=top,
