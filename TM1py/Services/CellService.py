@@ -429,7 +429,8 @@ class CellService(ObjectService):
         raise TM1pyWritePartialFailureException(
             statuses=list(itertools.chain(*[exception.statuses for exception in exceptions])),
             error_log_files=list(itertools.chain(*[exception.error_log_files for exception in exceptions])),
-            attempts=sum([exception.attempts for exception in exceptions]))
+            attempts=sum([exception.attempts if isinstance(exception, TM1pyWritePartialFailureException) else 1
+                          for exception in exceptions]))
 
     @require_pandas
     @manage_transaction_log
