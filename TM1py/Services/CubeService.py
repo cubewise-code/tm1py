@@ -10,7 +10,7 @@ from TM1py.Services.CellService import CellService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.ViewService import ViewService
-from TM1py.Utils import format_url, require_version, require_admin
+from TM1py.Utils import format_url, require_version, require_admin, case_and_space_insensitive_equals
 
 
 class CubeService(ObjectService):
@@ -44,6 +44,9 @@ class CubeService(ObjectService):
         url = format_url("/api/v1/Cubes('{}')?$expand=Dimensions($select=Name)", cube_name)
         response = self._rest.GET(url=url, **kwargs)
         cube = Cube.from_json(response.text)
+        # cater for potential EnableSandboxDimension=T setup
+        if case_and_space_insensitive_equals(cube.dimensions[0], "Sandboxes"):
+            cube.dimensions = cube.dimensions[1:]
         return cube
 
     def get_last_data_update(self, cube_name: str, **kwargs) -> str:
