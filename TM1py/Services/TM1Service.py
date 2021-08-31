@@ -13,8 +13,9 @@ class TM1Service:
 
     def __init__(self, **kwargs):
         self._tm1_rest = RestService(**kwargs)
+        self._instantiate_services()
 
-        # instantiate all Services
+    def _instantiate_services(self):
         self.annotations = AnnotationService(self._tm1_rest)
         self.cells = CellService(self._tm1_rest)
         self.chores = ChoreService(self._tm1_rest)
@@ -33,7 +34,6 @@ class TM1Service:
         self.views = ViewService(self._tm1_rest)
         self.sandboxes = SandboxService(self._tm1_rest)
         self.git = GitService(self._tm1_rest)
-
 
     def logout(self, **kwargs):
         self._tm1_rest.logout(**kwargs)
@@ -64,3 +64,7 @@ class TM1Service:
     def restore_from_file(cls, file_name):
         with open(file_name, 'rb') as file:
             return pickle.load(file)
+
+    def re_authenticate(self):
+        self._tm1_rest = RestService(**self.connection._kwargs)
+        self._instantiate_services()

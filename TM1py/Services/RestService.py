@@ -150,6 +150,7 @@ class RestService:
                 Default: False
         :param impersonate: Name of user to impersonate
         """
+        self._kwargs = kwargs
         self._ssl = self.translate_to_boolean(kwargs['ssl'])
         self._address = kwargs.get('address', None)
         self._port = kwargs.get('port', None)
