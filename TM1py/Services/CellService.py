@@ -378,7 +378,7 @@ class CellService(ObjectService):
     def write_async(self, cube_name: str, cells: Dict, slice_size: int, max_workers: int,
                     dimensions: Iterable[str] = None, increment: bool = False,
                     deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
-                    sandbox_name: str = None, **kwargs) -> Optional[str]:
+                    sandbox_name: str = None, precision: int = 8, **kwargs) -> Optional[str]:
         """ Write asynchronously
 
         :param cube_name:
@@ -390,6 +390,8 @@ class CellService(ObjectService):
         :param deactivate_transaction_log:
         :param reactivate_transaction_log:
         :param sandbox_name:
+        :param precision: max precision when writhing through unbound process.
+        Necessary to decrease when dealing with large numbers to avoid "number too long" TI syntax error.
         :param kwargs:
         :return:
         """
@@ -404,7 +406,7 @@ class CellService(ObjectService):
 
         def _write(chunk: Dict):
             return self.write(cube_name=cube_name, cellset_as_dict=chunk, dimensions=dimensions, increment=increment,
-                              use_ti=True, sandbox_name=sandbox_name, **kwargs)
+                              use_ti=True, sandbox_name=sandbox_name, precision=precision, **kwargs)
 
         async def _write_async(data: Dict):
             loop = asyncio.get_event_loop()
@@ -521,7 +523,8 @@ class CellService(ObjectService):
 
     def write(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None, increment: bool = False,
               deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
-              sandbox_name: str = None, use_ti=False, use_changeset: bool = False, **kwargs) -> Optional[str]:
+              sandbox_name: str = None, use_ti=False, use_changeset: bool = False, precision: int = 8,
+              **kwargs) -> Optional[str]:
         """ Write values to a cube
 
         Same signature as `write_values` method, but faster since it uses `write_values_through_cellset`
@@ -539,6 +542,8 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :param use_ti: Use unbound process to write. Requires admin permissions. causes massive performance improvement.
         :param use_changeset: Enable ChangesetID: True or False
+        :param precision: max precision when writhing through unbound process.
+        Necessary when dealing with large numbers to avoid "number too long" TI syntax error.
         :return: changeset or None
         """
 
@@ -550,6 +555,7 @@ class CellService(ObjectService):
                 sandbox_name=sandbox_name,
                 deactivate_transaction_log=deactivate_transaction_log,
                 reactivate_transaction_log=reactivate_transaction_log,
+                precision=precision,
                 **kwargs)
 
         if not dimensions:
@@ -576,7 +582,7 @@ class CellService(ObjectService):
     @require_admin
     @manage_transaction_log
     def write_through_unbound_process(self, cube_name: str, cellset_as_dict: Dict, increment: bool = False,
-                                      sandbox_name: str = None, precision=8, **kwargs):
+                                      sandbox_name: str = None, precision: int = 8, **kwargs):
         """
         Writes data back to TM1 via an unbound TI process
         :param cube_name:
@@ -1802,7 +1808,8 @@ class CellService(ObjectService):
                                                 skip_rule_derived_cells=skip_rule_derived_cells,
                                                 delete_cellset=True, sandbox_name=sandbox_name,
                                                 elem_properties=['Name'],
-                                                member_properties=['Name', 'Attributes'] if include_attributes else None,
+                                                member_properties=['Name',
+                                                                   'Attributes'] if include_attributes else None,
                                                 **kwargs)
         return build_csv_from_cellset_dict(rows, columns, cellset_dict, line_separator=line_separator,
                                            value_separator=value_separator, top=top,
