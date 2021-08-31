@@ -44,10 +44,11 @@ class ServerService(ObjectService):
         super().__init__(rest)
         self.tlog_last_delta_request = None
         self.mlog_last_delta_request = None
+        self.alog_last_delta_request = None
 
     @odata_track_changes_header
     def initialize_transaction_log_delta_requests(self, filter=None, **kwargs):
-        url = "/api/v1/TransactionLogEntries"
+        url = "/api/v1/TailTransactionLog()"
         if filter:
             url += "?$filter={}".format(filter)
         response = self._rest.GET(url=url, **kwargs)
@@ -62,23 +63,22 @@ class ServerService(ObjectService):
 
     @odata_track_changes_header
     def initialize_audit_log_delta_requests(self, filter=None, **kwargs):
-        url = "/api/v1/AuditLogEntries"
+        url = "/api/v1/TailAuditLog()"
         if filter:
             url += "?$filter={}".format(filter)
         response = self._rest.GET(url=url, **kwargs)
         # Read the next delta-request-url from the response
-        self.tlog_last_delta_request = response.text[response.text.rfind("AuditLogEntries/!delta('"):-2]
+        self.alog_last_delta_request = response.text[response.text.rfind("AuditLogEntries/!delta('"):-2]
 
     @odata_track_changes_header
     def execute_audit_log_delta_request(self, **kwargs) -> Dict:
-        response = self._rest.GET(url="/api/v1/" + self.tlog_last_delta_request, **kwargs)
-        self.tlog_last_delta_request = response.text[response.text.rfind("AuditLogEntries/!delta('"):-2]
-        return response.json()['value']    
-    
-    
+        response = self._rest.GET(url="/api/v1/" + self.alog_last_delta_request, **kwargs)
+        self.alog_last_delta_request = response.text[response.text.rfind("AuditLogEntries/!delta('"):-2]
+        return response.json()['value']
+
     @odata_track_changes_header
     def initialize_message_log_delta_requests(self, filter=None, **kwargs):
-        url = "/api/v1/MessageLogEntries"
+        url = "/api/v1/TailMessageLog()"
         if filter:
             url += "?$filter={}".format(filter)
         response = self._rest.GET(url=url, **kwargs)
@@ -200,7 +200,7 @@ class ServerService(ObjectService):
             url += '&$top={}'.format(top)
         response = self._rest.GET(url, **kwargs)
         return response.json()['value']
-    
+
     @require_admin
     @require_version(version="11.6")
     def get_audit_log_entries(self, user: str = None, object_type: str = None, object_name: str = None,
@@ -214,7 +214,7 @@ class ServerService(ObjectService):
         :param top: int
         :return:
         """
-        
+
         url = '/api/v1/AuditLogEntries?$expand=AuditDetails'
         # filter on user, object_type, object_name  and time
         if any([user, object_type, object_name, since, until]):
@@ -222,7 +222,7 @@ class ServerService(ObjectService):
             if user:
                 log_filters.append(format_url("UserName eq '{}'", user))
             if object_type:
-                log_filters.append(format_url("ObjectType eq '{}'", object_type))    
+                log_filters.append(format_url("ObjectType eq '{}'", object_type))
             if object_name:
                 log_filters.append(format_url("ObjectName eq '{}'", object_name))
             if since:
