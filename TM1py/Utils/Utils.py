@@ -845,6 +845,9 @@ class CaseAndSpaceInsensitiveTuplesDict(collections.abc.MutableMapping):
     def __len__(self):
         return len(self._store)
 
+    def items(self):
+        return super(CaseAndSpaceInsensitiveTuplesDict, self).items()
+
     def adjusted_items(self):
         """Like iteritems(), but with all adjusted keys."""
         return (
