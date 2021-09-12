@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import sys
 import asyncio
 import functools
 import itertools
@@ -10,6 +10,8 @@ from collections import OrderedDict
 from concurrent.futures.thread import ThreadPoolExecutor
 from io import StringIO
 from typing import List, Union, Dict, Iterable, Tuple, Optional
+import ijson
+import time
 
 from mdxpy import MdxHierarchySet, MdxBuilder, Member
 from requests import Response
@@ -35,6 +37,25 @@ try:
 except ImportError:
     _has_pandas = False
 
+def get_size(obj, seen=None):
+    """Recursively finds size of objects"""
+    size = sys.getsizeof(obj)
+    if seen is None:
+        seen = set()
+    obj_id = id(obj)
+    if obj_id in seen:
+        return 0
+    # Important mark as seen *before* entering recursion to gracefully handle
+    # self-referential objects
+    seen.add(obj_id)
+    if isinstance(obj, dict):
+        size += sum([get_size(v, seen) for v in obj.values()])
+        size += sum([get_size(k, seen) for k in obj.keys()])
+    elif hasattr(obj, '__dict__'):
+        size += get_size(obj.__dict__, seen)
+    elif hasattr(obj, '__iter__') and not isinstance(obj, (str, bytes, bytearray)):
+        size += sum([get_size(i, seen) for i in obj])
+    return size
 
 def tidy_cellset(func):
     """ Higher order function to tidy up cellset after usage
@@ -382,7 +403,7 @@ class CellService(ObjectService):
     def write_async(self, cube_name: str, cells: Dict, slice_size: int, max_workers: int,
                     dimensions: Iterable[str] = None, increment: bool = False,
                     deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
-                    sandbox_name: str = None, precision: int = 8, **kwargs) -> Optional[str]:
+                    sandbox_name: str = None, **kwargs) -> Optional[str]:
         """ Write asynchronously
 
         :param cube_name:
@@ -394,8 +415,6 @@ class CellService(ObjectService):
         :param deactivate_transaction_log:
         :param reactivate_transaction_log:
         :param sandbox_name:
-        :param precision: max precision when writhing through unbound process.
-        Necessary to decrease when dealing with large numbers to avoid "number too long" TI syntax error.
         :param kwargs:
         :return:
         """
@@ -410,7 +429,7 @@ class CellService(ObjectService):
 
         def _write(chunk: Dict):
             return self.write(cube_name=cube_name, cellset_as_dict=chunk, dimensions=dimensions, increment=increment,
-                              use_ti=True, sandbox_name=sandbox_name, precision=precision, **kwargs)
+                              use_ti=True, sandbox_name=sandbox_name, **kwargs)
 
         async def _write_async(data: Dict):
             loop = asyncio.get_event_loop()
@@ -435,8 +454,7 @@ class CellService(ObjectService):
         raise TM1pyWritePartialFailureException(
             statuses=list(itertools.chain(*[exception.statuses for exception in exceptions])),
             error_log_files=list(itertools.chain(*[exception.error_log_files for exception in exceptions])),
-            attempts=sum([exception.attempts if isinstance(exception, TM1pyWritePartialFailureException) else 1
-                          for exception in exceptions]))
+            attempts=sum([exception.attempts for exception in exceptions]))
 
     @require_pandas
     @manage_transaction_log
@@ -527,8 +545,7 @@ class CellService(ObjectService):
 
     def write(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None, increment: bool = False,
               deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
-              sandbox_name: str = None, use_ti=False, use_changeset: bool = False, precision: int = 8,
-              **kwargs) -> Optional[str]:
+              sandbox_name: str = None, use_ti=False, use_changeset: bool = False, **kwargs) -> Optional[str]:
         """ Write values to a cube
 
         Same signature as `write_values` method, but faster since it uses `write_values_through_cellset`
@@ -546,8 +563,6 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :param use_ti: Use unbound process to write. Requires admin permissions. causes massive performance improvement.
         :param use_changeset: Enable ChangesetID: True or False
-        :param precision: max precision when writhing through unbound process.
-        Necessary when dealing with large numbers to avoid "number too long" TI syntax error.
         :return: changeset or None
         """
 
@@ -559,7 +574,6 @@ class CellService(ObjectService):
                 sandbox_name=sandbox_name,
                 deactivate_transaction_log=deactivate_transaction_log,
                 reactivate_transaction_log=reactivate_transaction_log,
-                precision=precision,
                 **kwargs)
 
         if not dimensions:
@@ -586,7 +600,7 @@ class CellService(ObjectService):
     @require_admin
     @manage_transaction_log
     def write_through_unbound_process(self, cube_name: str, cellset_as_dict: Dict, increment: bool = False,
-                                      sandbox_name: str = None, precision: int = 8, **kwargs):
+                                      sandbox_name: str = None, precision=8, **kwargs):
         """
         Writes data back to TM1 via an unbound TI process
         :param cube_name:
@@ -1278,7 +1292,7 @@ class CellService(ObjectService):
     @require_pandas
     def execute_view_dataframe(self, cube_name: str, view_name: str, private: bool = False, top: int = None,
                                skip: int = None, skip_zeros: bool = True, skip_consolidated_cells: bool = False,
-                               skip_rule_derived_cells: bool = False, sandbox_name: str = None,
+                               skip_rule_derived_cells: bool = False, sandbox_name: str = None, stream_decode: bool = False,
                                **kwargs) -> 'pd.DataFrame':
         """ Optimized for performance. Get Pandas DataFrame from an existing Cube View
         Context dimensions are omitted in the resulting Dataframe !
@@ -1303,7 +1317,8 @@ class CellService(ObjectService):
         return self.extract_cellset_dataframe(cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                                               skip_consolidated_cells=skip_consolidated_cells,
                                               skip_rule_derived_cells=skip_rule_derived_cells,
-                                              sandbox_name=sandbox_name, **kwargs)
+                                              sandbox_name=sandbox_name, stream_decode=stream_decode, **kwargs)
+
 
     def execute_view_cellcount(self, cube_name: str, view_name: str, private: bool = False, sandbox_name: str = None,
                                **kwargs) -> int:
@@ -1581,7 +1596,6 @@ class CellService(ObjectService):
                                         **kwargs)
         return Utils.build_ui_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
 
-    @tidy_cellset
     def extract_cellset_raw(
             self,
             cellset_id: str,
@@ -1596,7 +1610,41 @@ class CellService(ObjectService):
             skip_rule_derived_cells: bool = False,
             sandbox_name: str = None,
             include_hierarchies: bool = False,
-            **kwargs) -> Dict:
+            **kwargs) -> dict:
+        
+        cellset_response = self.extract_cellset_raw_response(
+            cellset_id,
+            cell_properties,
+            elem_properties,
+            member_properties,
+            top,
+            skip,
+            skip_contexts,
+            skip_zeros,
+            skip_consolidated_cells,
+            skip_rule_derived_cells,
+            sandbox_name,
+            include_hierarchies,
+            **kwargs)
+
+        return cellset_response.json()
+
+    @tidy_cellset
+    def extract_cellset_raw_response(
+            self,
+            cellset_id: str,
+            cell_properties: Iterable[str] = None,
+            elem_properties: Iterable[str] = None,
+            member_properties: Iterable[str] = None,
+            top: int = None,
+            skip: int = None,
+            skip_contexts: bool = False,
+            skip_zeros: bool = False,
+            skip_consolidated_cells: bool = False,
+            skip_rule_derived_cells: bool = False,
+            sandbox_name: str = None,
+            include_hierarchies: bool = False,
+            **kwargs) -> Response:
         """ Extract full cellset data and return the raw data from TM1
 
         :param cellset_id: String; ID of existing cellset
@@ -1675,7 +1723,7 @@ class CellService(ObjectService):
                     filter_cells=f";$filter={filter_cells}" if filter_cells else "")
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url=url, **kwargs)
-        return response.json()
+        return response
 
     @tidy_cellset
     def extract_cellset_values(self, cellset_id: str, sandbox_name: str = None, **kwargs) -> List[Union[str, float]]:
@@ -1689,6 +1737,102 @@ class CellService(ObjectService):
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url=url, **kwargs)
         return [cell["Value"] for cell in response.json()["Cells"]]
+
+    @tidy_cellset
+    def extract_cellset_values_raw_response(
+            self,
+            cellset_id: str,
+            cell_properties: Iterable[str] = None,
+            elem_properties: Iterable[str] = None,
+            member_properties: Iterable[str] = None,
+            top: int = None,
+            skip: int = None,
+            skip_contexts: bool = False,
+            skip_zeros: bool = False,
+            skip_consolidated_cells: bool = False,
+            skip_rule_derived_cells: bool = False,
+            sandbox_name: str = None,
+            include_hierarchies: bool = False,
+            **kwargs) -> Response:
+        """ Extract full cellset data and return the raw data from TM1
+
+        :param cellset_id: String; ID of existing cellset
+        :param cell_properties: List of properties to be queried from cells. E.g. ['Value', 'RuleDerived', ...]
+        :param elem_properties: List of properties to be queried from elements. E.g. ['UniqueName','Attributes', ...]
+        :param member_properties: List properties to be queried from the member. E.g. ['Name', 'UniqueName']
+        :param top: Integer limiting the number of cells and the number or rows returned
+        :param skip: Integer limiting the number of cells and the number or rows returned
+        :param skip_contexts:
+        :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
+        :param skip_consolidated_cells: skip consolidated cells in cellset
+        :param skip_rule_derived_cells: skip rule derived cells in cellset
+        :param sandbox_name: str
+        :param include_hierarchies: retrieve Hierarchies property on Axes
+        :return: Raw format from TM1.
+        """
+        if not cell_properties:
+            cell_properties = ['Value']
+
+        if skip_rule_derived_cells:
+            cell_properties.append("RuleDerived")
+            # necessary due to bug in TM1 11.8: If only RuleDerived is retrieved it occasionally produces wrong results
+            cell_properties.append("Updateable")
+
+        if skip_consolidated_cells:
+            cell_properties.append("Consolidated")
+
+        if skip or skip_zeros or skip_rule_derived_cells or skip_consolidated_cells:
+            if 'Ordinal' not in cell_properties:
+                cell_properties.append('Ordinal')
+
+        # select Name property if member_properties is None or empty.
+        # Necessary, as tm1 default behaviour is to return all properties if no $select is specified in the request.
+        if member_properties is None or len(list(member_properties)) == 0:
+            member_properties = ["Name"]
+        select_member_properties = "$select={}".format(",".join(member_properties))
+
+        expand_elem_properties = ";$expand=Element($select={elem_properties})".format(
+            elem_properties=",".join(elem_properties)) \
+            if elem_properties is not None and len(list(elem_properties)) > 0 \
+            else ""
+
+        filter_axis = "$filter=Ordinal ne 2;" if skip_contexts else ""
+
+        filter_cells = ""
+        if skip_zeros or skip_consolidated_cells or skip_rule_derived_cells:
+            filters = []
+            if skip_zeros:
+                filters.append("Value ne 0 and Value ne null and Value ne ''")
+            if skip_consolidated_cells:
+                filters.append("Consolidated eq false")
+            if skip_rule_derived_cells:
+                filters.append("RuleDerived eq false")
+
+            filter_cells = " and ".join(filters)
+
+        if include_hierarchies:
+            expand_hierarchies = "Hierarchies($select=Name;$expand=Dimension($select=Name)),"
+        else:
+            expand_hierarchies = ""
+
+#              "Axes({filter_axis}$expand={hierarchies}Tuples($expand=Members({select_member_properties}" \
+#              "{expand_elem_properties}{top_rows})))," \
+        url = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
+              "Cube($select=Name;$expand=Dimensions($select=Name))," \
+              "Cells($select={cell_properties}{top_cells}{skip_cells}{filter_cells})" \
+            .format(cellset_id=cellset_id,
+                    top_rows=f";$top={top}" if top and not skip else "",
+                    cell_properties=",".join(cell_properties),
+                    filter_axis=filter_axis,
+                    hierarchies=expand_hierarchies,
+                    select_member_properties=select_member_properties,
+                    expand_elem_properties=expand_elem_properties,
+                    top_cells=f";$top={top}" if top else "",
+                    skip_cells=f";$skip={skip}" if skip else "",
+                    filter_cells=f";$filter={filter_cells}" if filter_cells else "")
+        url = add_url_parameters(url, **{"!sandbox": sandbox_name})
+        response = self._rest.GET(url=url, **kwargs)
+        return response
 
     @tidy_cellset
     def extract_cellset_rows_and_values(self, cellset_id: str, element_unique_names: bool = True,
@@ -1806,18 +1950,124 @@ class CellService(ObjectService):
         """
         _, _, rows, columns = self.extract_cellset_composition(cellset_id, delete_cellset=False,
                                                                sandbox_name=sandbox_name, **kwargs)
+
         cellset_dict = self.extract_cellset_raw(cellset_id, cell_properties=["Value"], top=top, skip=skip,
                                                 skip_contexts=True, skip_zeros=skip_zeros,
                                                 skip_consolidated_cells=skip_consolidated_cells,
                                                 skip_rule_derived_cells=skip_rule_derived_cells,
                                                 delete_cellset=True, sandbox_name=sandbox_name,
                                                 elem_properties=['Name'],
-                                                member_properties=['Name',
-                                                                   'Attributes'] if include_attributes else None,
+                                                member_properties=['Name', 'Attributes'] if include_attributes else None,
                                                 **kwargs)
+
         return build_csv_from_cellset_dict(rows, columns, cellset_dict, line_separator=line_separator,
                                            value_separator=value_separator, top=top,
                                            include_attributes=include_attributes)
+
+    def extract_cellset_csv_large(
+            self,
+            cellset_id: str,
+            top: int = None,
+            skip: int = None,
+            skip_zeros: bool = True,
+            skip_consolidated_cells: bool = False,
+            skip_rule_derived_cells: bool = False,
+            line_separator: str = "\r\n",
+            value_separator: str = ",",
+            sandbox_name: str = None,
+            include_attributes: bool = False,
+            **kwargs) -> str:
+        """ Execute cellset and return only the 'Content', in csv format
+
+        :param cellset_id: String; ID of existing cellset
+        :param top: Int, number of cells to return (counting from top)
+        :param skip: Int, number of cells to skip (counting from top)
+        :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
+        :param skip_consolidated_cells: skip consolidated cells in cellset
+        :param skip_rule_derived_cells: skip rule derived cells in cellset
+        :param line_separator:
+        :param value_separator
+        :param sandbox_name: str
+        :param include_attributes: include attribute columns
+        :return: Raw format from TM1.
+        """
+        _, _, rows, columns = self.extract_cellset_composition(cellset_id, delete_cellset=False,
+                                                               sandbox_name=sandbox_name, **kwargs)
+        
+        # try a different approach, as JSON into dict blows up memory by 10x
+        # first get cellset as JSON string
+        print('Retrieve cellset over web')
+        start_time = time.perf_counter()
+        cellset_response = self.extract_cellset_raw_response(cellset_id, cell_properties=["Value"], top=top, skip=skip,
+                                                skip_contexts=True, skip_zeros=skip_zeros,
+                                                skip_consolidated_cells=skip_consolidated_cells,
+                                                skip_rule_derived_cells=skip_rule_derived_cells,
+                                                delete_cellset=True, sandbox_name=sandbox_name,
+                                                elem_properties=['Name'],
+                                                member_properties=['Name', 'Attributes'] if include_attributes else None,
+                                                **kwargs)
+        print("Get everything web retrieve took %s seconds"%(time.perf_counter()-start_time))
+
+        # start parsing of JSON directly into CSV
+        print('Start parse JSON into CSV')
+        dimension_list = []
+        axes0_list = []
+        axes1_list = []
+        current_axes = 0
+        current_tuple = 0
+        current_cell_ordinal =0
+        csv_lines = []
+        csv = ''
+        start_time = time.perf_counter()
+        parser = ijson.parse(cellset_response.content)
+        prefixes_of_interest = ['Cells.item.Value','Axes.item.Tuples.item.Members.item.Element.Name','Cells.item.Ordinal','Axes.item.Tuples.item.Ordinal','Cube.Dimensions.item.Name','Axes.item.Ordinal']
+        gen = ((prefix, event, value) for prefix, event, value in parser if prefix in prefixes_of_interest)
+        start_time = time.perf_counter()
+        for prefix, event, value in gen:
+#            print('Prefix:%s Event: %s Value:%s'%(prefix, event, value))
+            if (prefix) == ('Cells.item.Value'):
+                q, r = divmod(current_cell_ordinal, len(axes0_list))
+                axes0_index = r
+                axes1_index = q
+                if len(axes0_list) == 1 and axes0_list[0] == '':
+                    csv_lines.append('~'.join([axes1_list[axes1_index],str(value)]))
+                else:
+                    csv_lines.append('~'.join([axes1_list[axes1_index],axes0_list[axes0_index],str(value)]))
+            elif (prefix, event) == ('Axes.item.Tuples.item.Members.item.Element.Name', 'string'):
+                if current_axes == 0:
+                    axes0_list[current_tuple] += ('' if axes0_list[current_tuple] == '' else '~')+value
+                else:
+                    axes1_list[current_tuple] += ('' if axes1_list[current_tuple] == '' else '~')+value
+            elif (prefix, event) == ('Cells.item.Ordinal', 'number'):
+                current_cell_ordinal = value
+            elif (prefix, event) == ('Axes.item.Tuples.item.Ordinal', 'number'):
+                current_tuple = value
+                if current_axes == 0:
+                    axes0_list.append('')
+                else:
+                    axes1_list.append('')
+            elif (prefix, event) == ('Cube.Dimensions.item.Name','string'):
+                dimension_list.append(value)
+            elif (prefix, event) == ('Axes.item.Ordinal', 'number'):
+                # write out csv header if we haven't yet
+                if len(csv_lines) == 0:
+                    dimension_list.append('Value')
+                    csv_lines.append('~'.join(dimension_list))
+                current_axes = value
+        # remove last cr from csv
+        print("Parse JSON to CSV took %s seconds"%(time.perf_counter()-start_time))
+        start_time = time.perf_counter()
+        csv = '\r\n'.join(csv_lines)
+        print("CSV join took %s seconds"%(time.perf_counter()-start_time))
+
+        # close response
+        cellset_response.close()
+
+#        f = open('c:/temp/temp.csv','w')
+#        f.write(csv)
+#        f.close()
+
+        return csv
 
     @require_pandas
     def extract_cellset_dataframe(
@@ -1830,6 +2080,7 @@ class CellService(ObjectService):
             skip_rule_derived_cells: bool = False,
             sandbox_name: str = None,
             include_attributes: bool = False,
+            stream_decode: bool = False,
             **kwargs) -> 'pd.DataFrame':
         """ Build pandas data frame from cellset_id
 
@@ -1844,11 +2095,19 @@ class CellService(ObjectService):
         :param kwargs:
         :return:
         """
-        raw_csv = self.extract_cellset_csv(cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
-                                           skip_rule_derived_cells=skip_rule_derived_cells,
-                                           skip_consolidated_cells=skip_consolidated_cells, value_separator='~',
-                                           sandbox_name=sandbox_name, include_attributes=include_attributes,
-                                           **kwargs)
+        if stream_decode:
+            raw_csv = self.extract_cellset_csv_large(cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
+                                            skip_rule_derived_cells=skip_rule_derived_cells,
+                                            skip_consolidated_cells=skip_consolidated_cells, value_separator='~',
+                                            sandbox_name=sandbox_name, include_attributes=include_attributes,
+                                            **kwargs)
+        else:
+            raw_csv = self.extract_cellset_csv(cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
+                                            skip_rule_derived_cells=skip_rule_derived_cells,
+                                            skip_consolidated_cells=skip_consolidated_cells, value_separator='~',
+                                            sandbox_name=sandbox_name, include_attributes=include_attributes,
+                                            **kwargs)
+
         if not raw_csv:
             return pd.DataFrame()
 
