@@ -127,6 +127,7 @@ class RestService:
         :param base_url - base url e.g. https://localhost:12354/api/v1
         :param user: String - name of the user
         :param password String - password of the user
+        :param cam_id String - cam id of user instead of password
         :param decode_b64 - whether password argument is b64 encoded
         :param namespace String - optional CAM namespace
         :param ssl: boolean -  as specified in the tm1s.cfg
@@ -201,6 +202,7 @@ class RestService:
                 password=kwargs.get("password", None),
                 namespace=kwargs.get("namespace", None),
                 gateway=kwargs.get("gateway", None),
+                cam_id=kwargs.get("cam_id", None),
                 decode_b64=self.translate_to_boolean(kwargs.get("decode_b64", False)),
                 integrated_login=self.translate_to_boolean(kwargs.get("integrated_login", False)),
                 integrated_login_domain=kwargs.get("integrated_login_domain"),
@@ -331,9 +333,10 @@ class RestService:
             self._s.close()
 
     def _start_session(self, user: str, password: str, decode_b64: bool = False, namespace: str = None,
-                       gateway: str = None, integrated_login: bool = None, integrated_login_domain: str = None,
-                       integrated_login_service: str = None, integrated_login_host: str = None,
-                       integrated_login_delegate: bool = None, impersonate: str = None):
+                       cam_id: str = None, gateway: str = None, integrated_login: bool = None,
+                       integrated_login_domain: str = None, integrated_login_service: str = None,
+                       integrated_login_host: str = None, integrated_login_delegate: bool = None,
+                       impersonate: str = None):
         """ perform a simple GET request (Ask for the TM1 Version) to start a session
         """
         # Authorization with integrated_login
@@ -350,6 +353,7 @@ class RestService:
                 user,
                 self.b64_decode_password(password) if decode_b64 else password,
                 namespace,
+                cam_id,
                 gateway,
                 self._verify)
             self.add_http_header('Authorization', token)
@@ -453,18 +457,18 @@ class RestService:
                                      headers=response.headers)
 
     @staticmethod
-    def _build_authorization_token(user: str, password: str, namespace: str = None, gateway: str = None,
-                                   verify: bool = False) -> str:
+    def _build_authorization_token(user: str, password: str, namespace: str = None, cam_id: str = None,
+                                   gateway: str = None, verify: bool = False) -> str:
         """ Build the Authorization Header for CAM and Native Security
         """
         if namespace:
-            return RestService._build_authorization_token_cam(user, password, namespace, gateway, verify)
+            return RestService._build_authorization_token_cam(user, password, namespace, cam_id, gateway, verify)
         else:
             return RestService._build_authorization_token_basic(user, password)
 
     @staticmethod
     def _build_authorization_token_cam(user: str = None, password: str = None, namespace: str = None,
-                                       gateway: str = None, verify: bool = False) -> str:
+                                       cam_id: str = None, gateway: str = None, verify: bool = False) -> str:
         if gateway:
             try:
                 HttpNegotiateAuth
@@ -483,6 +487,8 @@ class RestService:
                     "Failed to authenticate through CAM. HTTP response does not contain 'cam_passport' cookie")
             else:
                 return 'CAMPassport ' + response.cookies['cam_passport']
+        elif cam_id:
+            return 'CAMNamespace ' + cam_id
         else:
             return 'CAMNamespace ' + b64encode(str.encode("{}:{}:{}".format(user, password, namespace))).decode("ascii")
 
