@@ -34,6 +34,7 @@ setup(
         'Natural Language :: English',
     ],
     install_requires=[
+        'ijson',
         'requests',
         'pytz',
         'requests_negotiate_sspi;platform_system=="Windows"',
