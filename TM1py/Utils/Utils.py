@@ -884,7 +884,13 @@ class CaseAndSpaceInsensitiveSet(collections.abc.MutableSet):
     def __init__(self, *values):
         self._store = {}
         for v in values:
-            self.add(v)
+            if isinstance(v, str):
+                self.add(v)
+            elif isinstance(v, Iterable):
+                for item in v:
+                    self.add(item)
+            else:
+                self.add(v)
 
     def __contains__(self, value):
         return value.lower().replace(" ", "") in self._store
