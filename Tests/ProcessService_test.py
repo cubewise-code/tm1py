@@ -350,6 +350,23 @@ class TestProcessService(unittest.TestCase):
 
         self.tm1.processes.delete(process.name)
 
+    def test_get_last_message_from_processerrorlog(self):
+        process = Process(name=str(uuid.uuid4()))
+        process.epilog_procedure = "ItemReject('Not Relevant');"
+
+        if not self.tm1.processes.exists(process.name):
+            self.tm1.processes.create(process)
+        # with parameters
+        success, status, error_log_file = self.tm1.processes.execute_with_return(process_name=process.name)
+        self.assertFalse(success)
+        self.assertEqual(status, "CompletedWithMessages")
+        self.assertIsNotNone(error_log_file)
+
+        content = self.tm1.processes.get_last_message_from_processerrorlog(process_name=process.name)
+        self.assertIn("Not Relevant", content)
+
+        self.tm1.processes.delete(process.name)
+
     def test_delete_process(self):
         process = self.p_bedrock_server_wait
         process.name = str(uuid.uuid4())

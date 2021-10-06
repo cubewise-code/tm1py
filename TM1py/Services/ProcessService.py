@@ -304,8 +304,8 @@ class ProcessService(ObjectService):
         """ Get the latest ProcessErrorLog from a process entity
 
             :param process_name: name of the process
-            :return: String - the errorlog, e.g.: "Fehler: Prolog Prozedurzeile (9): Zeichenfolge "US772131
-            kann nicht in eine reelle Zahl umgewandelt werden."
+            :return: String - the errorlog, e.g.:  "Error: Data procedure line (9): Invalid key:
+            Dimension Name: "Product", Element Name (Key): "ProductA""
         """
         logs_as_list = self.get_processerrorlogs(process_name, **kwargs)
         if len(logs_as_list) > 0:
@@ -313,7 +313,7 @@ class ProcessService(ObjectService):
             url = format_url("/api/v1/Processes('{}')/ErrorLogs('{}')/Content", process_name, timestamp)
             # response is plain text - due to entity type Edm.Stream
             response = self._rest.GET(url=url, **kwargs)
-            return response
+            return response.text
 
     def debug_process(self, process_name: str, timeout: float = None, **kwargs) -> Dict:
         raw_url = "/api/v1/Processes('{}')/tm1.Debug?$expand=Breakpoints," \
