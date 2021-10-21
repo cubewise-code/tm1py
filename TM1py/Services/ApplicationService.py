@@ -186,6 +186,25 @@ class ApplicationService(ObjectService):
 
         return response
 
+    def update_or_create_document_from_file(self, path: str, name: str, 
+                                            path_to_file: str, private: bool = False, **kwargs) -> Response:
+        """Update or create application from file
+
+        :param path: application path on server, i.e. 'Finance\Reports'
+        :param name: name of the application on server, i.e. 'Flash.xlsx'
+        :param path_to_file: full local file path of file, i.e. 'C:\\Users\\User\\Flash.xslx'
+        :param private: access level of the object
+        :return: Response
+        """
+
+        if self.exists(path=path, application_type=ApplicationTypes.DOCUMENT, name=name, private=private):
+            self.delete(path=path, application_type=ApplicationTypes.DOCUMENT, application_name=name, private=private)
+
+        response = self.create_document_from_file(path_to_file=path_to_file, application_path=path,
+                                                  application_name=name, private=private)
+
+        return response
+
     def exists(self, path: str, application_type: Union[str, ApplicationTypes], name: str,
                private: bool = False, **kwargs) -> bool:
         """ Check if application exists
