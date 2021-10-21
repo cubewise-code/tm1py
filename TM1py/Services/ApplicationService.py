@@ -190,7 +190,7 @@ class ApplicationService(ObjectService):
                                             path_to_file: str, private: bool = False, **kwargs) -> Response:
         """Update or create application from file
 
-        :param path: application path on server, i.e. 'Finance\Reports'
+        :param path: application path on server, i.e. 'Finance/Reports'
         :param name: name of the application on server, i.e. 'Flash.xlsx'
         :param path_to_file: full local file path of file, i.e. 'C:\\Users\\User\\Flash.xslx'
         :param private: access level of the object
