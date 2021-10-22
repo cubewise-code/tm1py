@@ -365,6 +365,8 @@ class RestService:
                 additional_headers["TM1-Impersonate"] = impersonate
 
             response = self.GET(url=url, headers=additional_headers)
+            if response is None:
+                raise ValueError("Address or Port number could be invalid in URL: " + self._base_url + url)
             self._version = response.text
         finally:
             # After we have session cookie, drop the Authorization Header
