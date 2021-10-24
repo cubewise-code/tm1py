@@ -166,7 +166,7 @@ class ServerService(ObjectService):
         from TM1py.Services import ProcessService
         process_service = ProcessService(self._rest)
         ti="LogOutput('{}', '{}');".format(level, message)
-        return process_service.execute_ti_code(lines_prolog=ti, **kwargs)
+        return process_service.execute_ti_code(lines_prolog=[ti], **kwargs)
 
     @staticmethod
     def utc_localize_time(timestamp):
