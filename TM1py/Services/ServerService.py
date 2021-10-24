@@ -8,6 +8,7 @@ from typing import Dict, Optional
 
 import pytz
 from requests import Response
+from TM1py.Objects.Process import Process
 
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
@@ -158,16 +159,19 @@ class ServerService(ObjectService):
         return response.json()['value']
 
     @require_admin
-    def write_to_message_log(self, level: str, message: str, **kwargs) -> Response:
+    def write_to_message_log(self, level: str, message: str, **kwargs) -> None:
         """
-        :param level: string, FATAL, ERROR, WARNING, INFO, DEBUG
+        :param level: string, FATAL, ERROR, WARN, INFO, DEBUG
         :param message: string
         :return:
         """    
         from TM1py.Services import ProcessService
         process_service = ProcessService(self._rest)
-        ti="LogOutput('{}', '{}');".format(level, message)
-        return process_service.execute_ti_code(lines_prolog=[ti], **kwargs)
+        process = Process(name="", prolog_procedure="LogOutput('{}', '{}');".format(level, message))
+        success, status, _ = process_service.execute_process_with_return(process, **kwargs)
+
+        if not success:
+            raise RuntimeError(f"Failed to write to TM1 Message Log through unbound process. Status: '{status}'")
 
     @staticmethod
     def utc_localize_time(timestamp):
