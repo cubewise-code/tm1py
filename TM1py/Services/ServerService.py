@@ -157,6 +157,17 @@ class ServerService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return response.json()['value']
 
+    @require_admin
+    def write_to_message_log(self, level: str, message: str, **kwargs):
+        """
+        :param level: string, ERROR, WARNING, INFO, DEBUG, UNKNOWN
+        :param message: string
+        """    
+        from TM1py.Services import ProcessService
+        process_service = ProcessService(self._rest)
+        ti="LogOutput('{}', '{}');".format(level, message)
+        return process_service.execute_ti_code(lines_prolog=ti, **kwargs)
+
     @staticmethod
     def utc_localize_time(timestamp):
         timestamp = pytz.utc.localize(timestamp)
