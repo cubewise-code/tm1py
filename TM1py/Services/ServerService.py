@@ -158,10 +158,11 @@ class ServerService(ObjectService):
         return response.json()['value']
 
     @require_admin
-    def write_to_message_log(self, level: str, message: str, **kwargs):
+    def write_to_message_log(self, level: str, message: str, **kwargs) -> Response:
         """
-        :param level: string, ERROR, WARNING, INFO, DEBUG, UNKNOWN
+        :param level: string, FATAL, ERROR, WARNING, INFO, DEBUG
         :param message: string
+        :return:
         """    
         from TM1py.Services import ProcessService
         process_service = ProcessService(self._rest)
