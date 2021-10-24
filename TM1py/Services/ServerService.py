@@ -13,7 +13,7 @@ from TM1py.Objects.Process import Process
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import format_url
-from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, require_admin, require_version
+from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, CaseAndSpaceInsensitiveSet, require_admin, require_version
 
 
 def odata_track_changes_header(func):
@@ -165,6 +165,11 @@ class ServerService(ObjectService):
         :param message: string
         :return:
         """    
+
+        valid_levels = CaseAndSpaceInsensitiveSet({'FATAL', 'ERROR', 'WARN', 'INFO', 'DEBUG'})
+        if level not in valid_levels:
+            raise ValueError(f"Invalid level: '{level}'")
+
         from TM1py.Services import ProcessService
         process_service = ProcessService(self._rest)
         process = Process(name="", prolog_procedure="LogOutput('{}', '{}');".format(level, message))
