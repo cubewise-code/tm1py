@@ -12,6 +12,7 @@ from TM1py.Objects.Process import Process
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import format_url, require_admin
+from TM1py.Utils.Utils import require_version
 
 
 class ProcessService(ObjectService):
@@ -190,6 +191,7 @@ class ProcessService(ObjectService):
         return self._rest.POST(url=url, data=json.dumps(parameters, ensure_ascii=False), timeout=timeout,
                                cancel_at_timeout=cancel_at_timeout, **kwargs)
 
+    @require_version(version="11.3")
     def execute_process_with_return(self, process: Process, timeout: float = None, cancel_at_timeout: bool = False,
                                     **kwargs) -> Tuple[bool, str, str]:
         """Run unbound TI code directly.
