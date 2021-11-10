@@ -14,7 +14,8 @@ from typing import List, Union, Dict, Iterable, Tuple, Optional
 from mdxpy import MdxHierarchySet, MdxBuilder, Member
 from requests import Response
 
-from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyWritePartialFailureException, TM1pyWriteFailureException
+from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyWritePartialFailureException, TM1pyWriteFailureException, \
+    TM1pyRestException
 from TM1py.Objects.MDXView import MDXView
 from TM1py.Objects.Process import Process
 from TM1py.Services.ObjectService import ObjectService
@@ -47,10 +48,13 @@ def tidy_cellset(func):
         finally:
             if kwargs.get("delete_cellset", True):
                 sandbox_name = kwargs.get("sandbox_name", None)
-                if sandbox_name is not None:
+                try:
                     self.delete_cellset(cellset_id=cellset_id, sandbox_name=sandbox_name)
-                else:
-                    self.delete_cellset(cellset_id=cellset_id)
+
+                except TM1pyRestException as ex:
+                    # Fail silently if cellset is already removed
+                    if not ex.status_code == 404:
+                        raise ex
 
     return wrapper
 
