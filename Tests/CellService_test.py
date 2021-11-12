@@ -1640,6 +1640,39 @@ class TestCellService(unittest.TestCase):
             sum(values))
 
     @skip_if_no_pandas
+    def test_execute_mdx_dataframe_iterative_json_parsing(self):
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .rows_non_empty() \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0])) \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1])) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
+            .to_mdx()
+
+        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, iterative_json_parsing=True)
+
+        # check type
+        self.assertIsInstance(df, pd.DataFrame)
+
+        # check coordinates in df are equal to target coordinates
+        coordinates = {
+            tuple(row)
+            for row
+            in df[[*self.dimension_names]].values}
+        self.assertEqual(
+            len(coordinates),
+            len(self.target_coordinates))
+        self.assertTrue(coordinates.issubset(self.target_coordinates))
+
+        # check if total values are equal
+        values = df[["Value"]].values
+        self.assertEqual(
+            self.total_value,
+            sum(values))
+
+    @skip_if_no_pandas
     def test_execute_mdx_dataframe_column_only(self):
         mdx = """SELECT
                     NON EMPTY {[TM1PY_TESTS_CELL_DIMENSION1].[TM1PY_TESTS_CELL_DIMENSION1].MEMBERS} * 
@@ -1648,6 +1681,35 @@ class TestCellService(unittest.TestCase):
                     FROM [TM1PY_TESTS_CELL_CUBE]"""
 
         df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx)
+
+        # check type
+        self.assertIsInstance(df, pd.DataFrame)
+
+        # check coordinates in df are equal to target coordinates
+        coordinates = {
+            tuple(row)
+            for row
+            in df[[*self.dimension_names]].values}
+        self.assertEqual(
+            len(coordinates),
+            len(self.target_coordinates))
+        self.assertTrue(coordinates.issubset(self.target_coordinates))
+
+        # check if total values are equal
+        values = df[["Value"]].values
+        self.assertEqual(
+            self.total_value,
+            sum(values))
+
+    @skip_if_no_pandas
+    def test_execute_mdx_dataframe_column_only_iterative_json_parsing(self):
+        mdx = """SELECT
+                        NON EMPTY {[TM1PY_TESTS_CELL_DIMENSION1].[TM1PY_TESTS_CELL_DIMENSION1].MEMBERS} * 
+                        {[TM1PY_TESTS_CELL_DIMENSION2].[TM1PY_TESTS_CELL_DIMENSION2].MEMBERS} * 
+                        {[TM1PY_TESTS_CELL_DIMENSION3].[TM1PY_TESTS_CELL_DIMENSION3].MEMBERS} ON 0
+                        FROM [TM1PY_TESTS_CELL_CUBE]"""
+
+        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, iterative_json_parsing=True)
 
         # check type
         self.assertIsInstance(df, pd.DataFrame)

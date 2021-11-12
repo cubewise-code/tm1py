@@ -394,6 +394,8 @@ class CellService(ObjectService):
         :param deactivate_transaction_log:
         :param reactivate_transaction_log:
         :param sandbox_name:
+        :param precision: max precision when writhing through unbound process.
+        Necessary to decrease when dealing with large numbers to avoid "number too long" TI syntax error.
         :param kwargs:
         :return:
         """
@@ -584,7 +586,7 @@ class CellService(ObjectService):
     @require_admin
     @manage_transaction_log
     def write_through_unbound_process(self, cube_name: str, cellset_as_dict: Dict, increment: bool = False,
-                                      sandbox_name: str = None, precision=8, **kwargs):
+                                      sandbox_name: str = None, precision: int=8, **kwargs):
         """
         Writes data back to TM1 via an unbound TI process
         :param cube_name:
@@ -1134,7 +1136,7 @@ class CellService(ObjectService):
     def execute_mdx_dataframe(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
                               skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
                               sandbox_name: str = None, include_attributes: bool = False,
-                              **kwargs) -> 'pd.DataFrame':
+                              iterative_json_parsing: bool = False, **kwargs) -> 'pd.DataFrame':
         """ Optimized for performance. Get Pandas DataFrame from MDX Query.
 
         Takes all arguments from the pandas.read_csv method:
@@ -1148,6 +1150,8 @@ class CellService(ObjectService):
         :param skip_rule_derived_cells: skip rule derived cells in cellset
         :param sandbox_name: str
         :param include_attributes: include attribute columns
+        :param iterative_json_parsing: use iterative json parsing to reduce memory consumption significantly.
+        Comes at a cost of 3-5% performance.
         :return: Pandas Dataframe
         """
         cellset_id = self.create_cellset(mdx, sandbox_name=sandbox_name, **kwargs)
@@ -1155,7 +1159,7 @@ class CellService(ObjectService):
                                               skip_consolidated_cells=skip_consolidated_cells,
                                               skip_rule_derived_cells=skip_rule_derived_cells,
                                               sandbox_name=sandbox_name, include_attributes=include_attributes,
-                                              **kwargs)
+                                              iterative_json_parsing=iterative_json_parsing, **kwargs)
 
     @require_pandas
     def execute_mdx_dataframe_shaped(self, mdx: str, sandbox_name: str = None, display_attribute: bool = False,
@@ -1277,8 +1281,7 @@ class CellService(ObjectService):
     def execute_view_dataframe(self, cube_name: str, view_name: str, private: bool = False, top: int = None,
                                skip: int = None, skip_zeros: bool = True, skip_consolidated_cells: bool = False,
                                skip_rule_derived_cells: bool = False, sandbox_name: str = None,
-                               stream_decode: bool = False,
-                               **kwargs) -> 'pd.DataFrame':
+                               iterative_json_parsing: bool = False, **kwargs) -> 'pd.DataFrame':
         """ Optimized for performance. Get Pandas DataFrame from an existing Cube View
         Context dimensions are omitted in the resulting Dataframe !
         Cells with Zero/null are omitted !
@@ -1295,6 +1298,8 @@ class CellService(ObjectService):
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
         :param sandbox_name: str
+        :param iterative_json_parsing: use iterative json parsing to reduce memory consumption significantly.
+        Comes at a cost of 3-5% performance.
         :return: Pandas Dataframe
         """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
@@ -1302,7 +1307,8 @@ class CellService(ObjectService):
         return self.extract_cellset_dataframe(cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                                               skip_consolidated_cells=skip_consolidated_cells,
                                               skip_rule_derived_cells=skip_rule_derived_cells,
-                                              sandbox_name=sandbox_name, stream_decode=stream_decode, **kwargs)
+                                              sandbox_name=sandbox_name, iterative_json_parsing=iterative_json_parsing,
+                                              **kwargs)
 
     def execute_view_cellcount(self, cube_name: str, view_name: str, private: bool = False, sandbox_name: str = None,
                                **kwargs) -> int:
@@ -1853,7 +1859,7 @@ class CellService(ObjectService):
                                            value_separator=value_separator, top=top,
                                            include_attributes=include_attributes)
 
-    def extract_cellset_csv_large(
+    def extract_cellset_csv_iter_json(
             self,
             cellset_id: str,
             top: int = None,
@@ -1864,7 +1870,6 @@ class CellService(ObjectService):
             line_separator: str = "\r\n",
             value_separator: str = ",",
             sandbox_name: str = None,
-            include_attributes: bool = False,
             **kwargs) -> str:
         """ Execute cellset and return only the 'Content', in csv format
 
@@ -1877,7 +1882,6 @@ class CellService(ObjectService):
         :param line_separator:
         :param value_separator
         :param sandbox_name: str
-        :param include_attributes: include attribute columns
         :return: Raw format from TM1.
         """
         _, _, rows, columns = self.extract_cellset_composition(
@@ -1893,8 +1897,7 @@ class CellService(ObjectService):
             skip_rule_derived_cells=skip_rule_derived_cells,
             delete_cellset=True,
             sandbox_name=sandbox_name,
-            elem_properties=['Name'],
-            member_properties=['Name', 'Attributes'] if include_attributes else None,
+            member_properties=['Name'],
             **kwargs)
 
         # start parsing of JSON directly into CSV
@@ -1907,9 +1910,10 @@ class CellService(ObjectService):
         csv_lines = []
 
         parser = ijson.parse(cellset_response.content)
-        prefixes_of_interest = ['Cells.item.Value', 'Axes.item.Tuples.item.Members.item.Element.Name',
+        prefixes_of_interest = ['Cells.item.Value', 'Axes.item.Tuples.item.Members.item.Name',
                                 'Cells.item.Ordinal', 'Axes.item.Tuples.item.Ordinal', 'Cube.Dimensions.item.Name',
                                 'Axes.item.Ordinal']
+
         gen = ((prefix, event, value) for prefix, event, value in parser if prefix in prefixes_of_interest)
         for prefix, event, value in gen:
             if prefix == 'Cells.item.Value':
@@ -1918,15 +1922,21 @@ class CellService(ObjectService):
                 axes1_index = q
                 if len(axes0_list) == 1 and axes0_list[0] == '':
                     csv_lines.append(value_separator.join([axes1_list[axes1_index], str(value)]))
+                # case of no row selection
+                elif len(axes1_list) == 0:
+                    csv_lines.append(value_separator.join([axes0_list[axes0_index], str(value)]))
                 else:
                     csv_lines.append(
                         value_separator.join([axes1_list[axes1_index], axes0_list[axes0_index], str(value)]))
 
-            elif (prefix, event) == ('Axes.item.Tuples.item.Members.item.Element.Name', 'string'):
+            elif (prefix, event) == ('Axes.item.Tuples.item.Members.item.Name', 'string'):
                 if current_axes == 0:
                     axes0_list[current_tuple] += ('' if axes0_list[current_tuple] == '' else value_separator) + value
                 else:
                     axes1_list[current_tuple] += ('' if axes1_list[current_tuple] == '' else value_separator) + value
+
+            elif (prefix, event) == ('Axes.item.Tuples.item.Members.item.Attributes.item.Value', 'string'):
+                print("test")
 
             elif (prefix, event) == ('Cells.item.Ordinal', 'number'):
                 current_cell_ordinal = value
@@ -1966,8 +1976,7 @@ class CellService(ObjectService):
             skip_rule_derived_cells: bool = False,
             sandbox_name: str = None,
             include_attributes: bool = False,
-            # ToDo: set back to False. Only True to channel test cases against new function
-            stream_decode: bool = True,
+            iterative_json_parsing: bool = False,
             **kwargs) -> 'pd.DataFrame':
         """ Build pandas data frame from cellset_id
 
@@ -1979,22 +1988,24 @@ class CellService(ObjectService):
         :param skip_rule_derived_cells: skip rule derived cells in cellset
         :param sandbox_name: str
         :param include_attributes: include attribute columns
+        :param iterative_json_parsing: use iterative json parsing to reduce memory consumption significantly.
+        Comes at a cost of 3-5% performance.
         :param kwargs:
         :return:
         """
-        if stream_decode:
-            raw_csv = self.extract_cellset_csv_large(cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
-                                                     skip_rule_derived_cells=skip_rule_derived_cells,
-                                                     skip_consolidated_cells=skip_consolidated_cells,
-                                                     value_separator='~',
-                                                     sandbox_name=sandbox_name, include_attributes=include_attributes,
-                                                     **kwargs)
+        if iterative_json_parsing:
+            if include_attributes:
+                raise ValueError("Iterative JSON parsing must not be used together with include_attributes")
+
+            raw_csv = self.extract_cellset_csv_iter_json(
+                cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
+                skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
+                value_separator='~', sandbox_name=sandbox_name, **kwargs)
         else:
-            raw_csv = self.extract_cellset_csv(cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
-                                               skip_rule_derived_cells=skip_rule_derived_cells,
-                                               skip_consolidated_cells=skip_consolidated_cells, value_separator='~',
-                                               sandbox_name=sandbox_name, include_attributes=include_attributes,
-                                               **kwargs)
+            raw_csv = self.extract_cellset_csv(
+                cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
+                skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
+                value_separator='~', sandbox_name=sandbox_name, include_attributes=include_attributes, **kwargs)
 
         if not raw_csv:
             return pd.DataFrame()
