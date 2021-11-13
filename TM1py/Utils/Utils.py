@@ -734,6 +734,38 @@ def add_url_parameters(url, **kwargs: str) -> str:
     return urlparse.urlunparse(url_parts)
 
 
+def extract_cell_properties_from_odata_context(context: str) -> Dict:
+    """ Takes in an odata_context and returns a dictionary
+        with properties as keys and values as indexes
+        { Ordinal: 0, Value: 1, RuleDerived: 258, ... }
+    
+    """
+    pattern = re.compile('\$metadata#Cellsets\(Cells\(([A-Za-z,]+)\)\)/\$entity')
+    matches = pattern.match(context)
+    if not matches:
+        raise ValueError('Could not extract cell properties from odata context')
+    cell_properties = matches.groups()[0].split(',')
+    return {cell_properties[i]: i for i in range(0, len(cell_properties))}
+
+
+def map_cell_properties_to_data(properties: Dict, data: List) -> Dict:
+    """ Map cell properties to data e.g
+        [[0, 258, 100], [1, 258, 500]] => 
+        {Cells: [
+            { Ordinal: 0, RuleDerived: 258, Value: 100}, 
+            { Ordinal: 1, RuleDerived: 258, Value: 500}
+        ]}
+    """
+    cells_dict = dict()
+    cells = []
+    for cell in data:
+        d = dict()
+        for prop, index in properties.items():
+            d[prop] = cell[index]
+        cells.append(d)
+    cells_dict['Cells'] = cells
+    return cells_dict
+
 class CaseAndSpaceInsensitiveDict(collections.abc.MutableMapping):
     """A case-and-space-insensitive dict-like object with String keys.
     Implements all methods and operations of
