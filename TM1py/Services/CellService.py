@@ -1629,38 +1629,66 @@ class CellService(ObjectService):
                                         **kwargs)
         return Utils.build_ui_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
 
-    @tidy_cellset
-    def extract_cellset_raw(
-            self,
-            cellset_id: str,
-            cell_properties: Iterable[str] = None,
-            elem_properties: Iterable[str] = None,
-            member_properties: Iterable[str] = None,
-            top: int = None,
-            skip: int = None,
-            skip_contexts: bool = False,
-            skip_zeros: bool = False,
-            skip_consolidated_cells: bool = False,
-            skip_rule_derived_cells: bool = False,
-            sandbox_name: str = None,
-            include_hierarchies: bool = False,
-            **kwargs) -> Dict:
-        """ Extract full cellset data and return the raw data from TM1
 
-        :param cellset_id: String; ID of existing cellset
-        :param cell_properties: List of properties to be queried from cells. E.g. ['Value', 'RuleDerived', ...]
-        :param elem_properties: List of properties to be queried from elements. E.g. ['UniqueName','Attributes', ...]
-        :param member_properties: List properties to be queried from the member. E.g. ['Name', 'UniqueName']
-        :param top: Integer limiting the number of cells and the number or rows returned
-        :param skip: Integer limiting the number of cells and the number or rows returned
-        :param skip_contexts:
-        :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
-        :param skip_consolidated_cells: skip consolidated cells in cellset
-        :param skip_rule_derived_cells: skip rule derived cells in cellset
-        :param sandbox_name: str
-        :param include_hierarchies: retrieve Hierarchies property on Axes
-        :return: Raw format from TM1.
-        """
+    def extract_cellset_metadata_raw(
+        self, 
+        cellset_id: str, 
+        elem_properties: Iterable[str] = None, 
+        member_properties: Iterable[str] = None, 
+        top: int = None, 
+        skip: int = None, 
+        skip_contexts: bool = False, 
+        include_hierarchies: bool = False, 
+        sandbox_name: str = None, 
+        **kwargs):
+
+        # select Name property if member_properties is None or empty.
+        # Necessary, as tm1 default behaviour is to return all properties if no $select is specified in the request.
+        if member_properties is None or len(list(member_properties)) == 0:
+            member_properties = ["Name"]
+        select_member_properties = "$select={}".format(",".join(member_properties))
+
+        expand_elem_properties = ";$expand=Element($select={elem_properties})".format(
+            elem_properties=",".join(elem_properties)) \
+            if elem_properties is not None and len(list(elem_properties)) > 0 \
+            else ""
+
+        if include_hierarchies:
+            expand_hierarchies = "Hierarchies($select=Name;$expand=Dimension($select=Name)),"
+        else:
+            expand_hierarchies = ""
+
+        filter_axis = "$filter=Ordinal ne 2;" if skip_contexts else ""
+
+        url = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
+                "Cube($select=Name;$expand=Dimensions($select=Name))," \
+                "Axes({filter_axis}$expand={hierarchies}Tuples($expand=Members({select_member_properties}" \
+                "{expand_elem_properties}{top_rows})))" \
+        .format(cellset_id=cellset_id,
+                top_rows=f";$top={top}" if top and not skip else "",
+                filter_axis=filter_axis,
+                hierarchies=expand_hierarchies,
+                select_member_properties=select_member_properties,
+                expand_elem_properties=expand_elem_properties)
+
+        url = add_url_parameters(url, **{"!sandbox": sandbox_name})
+        response = self._rest.GET(url=url, **kwargs)
+        return response.json()
+
+
+    @odata_compact_json
+    def extract_cellset_cells_raw(
+        self, cellset_id: str, 
+        cell_properties: Iterable[str] = None, 
+        top: int = None, 
+        skip: int = None, 
+        skip_zeros: bool = False, 
+        skip_consolidated_cells: bool = False, 
+        skip_rule_derived_cells: bool = False, 
+        sandbox_name: str = None, 
+        use_compact_json: bool = False, 
+        **kwargs):
+        
         if not cell_properties:
             cell_properties = ['Value']
 
@@ -1676,18 +1704,6 @@ class CellService(ObjectService):
             if 'Ordinal' not in cell_properties:
                 cell_properties.append('Ordinal')
 
-        # select Name property if member_properties is None or empty.
-        # Necessary, as tm1 default behaviour is to return all properties if no $select is specified in the request.
-        if member_properties is None or len(list(member_properties)) == 0:
-            member_properties = ["Name"]
-        select_member_properties = "$select={}".format(",".join(member_properties))
-
-        expand_elem_properties = ";$expand=Element($select={elem_properties})".format(
-            elem_properties=",".join(elem_properties)) \
-            if elem_properties is not None and len(list(elem_properties)) > 0 \
-            else ""
-
-        filter_axis = "$filter=Ordinal ne 2;" if skip_contexts else ""
 
         filter_cells = ""
         if skip_zeros or skip_consolidated_cells or skip_rule_derived_cells:
@@ -1701,42 +1717,97 @@ class CellService(ObjectService):
 
             filter_cells = " and ".join(filters)
 
-        if include_hierarchies:
-            expand_hierarchies = "Hierarchies($select=Name;$expand=Dimension($select=Name)),"
-        else:
-            expand_hierarchies = ""
-
         url = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
-              "Cube($select=Name;$expand=Dimensions($select=Name))," \
-              "Axes({filter_axis}$expand={hierarchies}Tuples($expand=Members({select_member_properties}" \
-              "{expand_elem_properties}{top_rows})))," \
-              "Cells($select={cell_properties}{top_cells}{skip_cells}{filter_cells})" \
-            .format(cellset_id=cellset_id,
-                    top_rows=f";$top={top}" if top and not skip else "",
-                    cell_properties=",".join(cell_properties),
-                    filter_axis=filter_axis,
-                    hierarchies=expand_hierarchies,
-                    select_member_properties=select_member_properties,
-                    expand_elem_properties=expand_elem_properties,
-                    top_cells=f";$top={top}" if top else "",
-                    skip_cells=f";$skip={skip}" if skip else "",
-                    filter_cells=f";$filter={filter_cells}" if filter_cells else "")
+                    "Cells($select={cell_properties}{top_cells}{skip_cells}{filter_cells})" \
+        .format(cellset_id=cellset_id,
+            cell_properties=",".join(cell_properties),
+            top_cells=f";$top={top}" if top else "",
+            skip_cells=f";$skip={skip}" if skip else "",
+            filter_cells=f";$filter={filter_cells}" if filter_cells else "")
+
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url=url, **kwargs)
         return response.json()
 
+
     @tidy_cellset
-    def extract_cellset_values(self, cellset_id: str, sandbox_name: str = None, **kwargs) -> List[Union[str, float]]:
+    def extract_cellset_raw(
+            self,
+            cellset_id: str,
+            cell_properties: Iterable[str] = None,
+            elem_properties: Iterable[str] = None,
+            member_properties: Iterable[str] = None,
+            top: int = None,
+            skip: int = None,
+            skip_contexts: bool = False,
+            skip_zeros: bool = False,
+            skip_consolidated_cells: bool = False,
+            skip_rule_derived_cells: bool = False,
+            sandbox_name: str = None,
+            include_hierarchies: bool = False,
+            use_compact_json: bool = False,
+            **kwargs) -> Dict:
+        """ Extract full cellset data and return the raw data from TM1
+
+        :param cellset_id: String; ID of existing cellset
+        :param cell_properties: List of properties to be queried from cells. E.g. ['Value', 'RuleDerived', ...]
+        :param elem_properties: List of properties to be queried from elements. E.g. ['UniqueName','Attributes', ...]
+        :param member_properties: List properties to be queried from the member. E.g. ['Name', 'UniqueName']
+        :param top: Integer limiting the number of cells and the number or rows returned
+        :param skip: Integer limiting the number of cells and the number or rows returned
+        :param skip_contexts:
+        :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
+        :param skip_consolidated_cells: skip consolidated cells in cellset
+        :param skip_rule_derived_cells: skip rule derived cells in cellset
+        :param sandbox_name: str
+        :param include_hierarchies: retrieve Hierarchies property on Axes
+        :param use_compact_json: bool
+        :return: Raw format from TM1.
+        """
+
+        metadata = self.extract_cellset_metadata_raw(cellset_id=cellset_id,
+                                                     elem_properties=elem_properties, 
+                                                     member_properties=member_properties, 
+                                                     top=top, 
+                                                     skip=skip, 
+                                                     skip_contexts=skip_contexts, 
+                                                     include_hierarchies=include_hierarchies, 
+                                                     sandbox_name=sandbox_name, 
+                                                     **kwargs
+                                                    )
+        cells = self.extract_cellset_cells_raw(cellset_id=cellset_id, 
+                                               cell_properties=cell_properties, 
+                                               top=top, 
+                                               skip=skip, 
+                                               skip_zeros=skip_zeros, 
+                                               skip_consolidated_cells=skip_consolidated_cells, 
+                                               skip_rule_derived_cells=skip_rule_derived_cells, 
+                                               sandbox_name=sandbox_name, 
+                                               use_compact_json=use_compact_json, 
+                                               **kwargs
+                                              )
+
+        # Combine metadata and cells back into a single object
+        return {**metadata, **cells}
+
+    @tidy_cellset
+    @odata_compact_json(return_props_with_data=False)
+    def extract_cellset_values(self, cellset_id: str, sandbox_name: str = None, use_compact_json: bool = False, **kwargs) -> List[Union[str, float]]:
         """ Extract cellset data and return only the cells and values
 
         :param cellset_id: String; ID of existing cellset
         :param sandbox_name: str
+        :param use_compact_json: bool
         :return: Raw format from TM1.
         """
         url = format_url("/api/v1/Cellsets('{}')?$expand=Cells($select=Value)", cellset_id)
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url=url, **kwargs)
-        return [cell["Value"] for cell in response.json()["Cells"]]
+
+        if not use_compact_json:
+            return [cell["Value"] for cell in response.json()["Cells"]]
+        
+        return response.json()
 
     @tidy_cellset
     def extract_cellset_rows_and_values(self, cellset_id: str, element_unique_names: bool = True,
