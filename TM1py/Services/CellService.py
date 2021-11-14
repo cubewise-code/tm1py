@@ -874,7 +874,7 @@ class CellService(ObjectService):
     def execute_mdx(self, mdx: str, cell_properties: List[str] = None, top: int = None, skip_contexts: bool = False,
                     skip: int = None, skip_zeros: bool = False, skip_consolidated_cells: bool = False,
                     skip_rule_derived_cells: bool = False, sandbox_name: str = None, element_unique_names: bool = True,
-                    skip_cell_properties: bool = False, **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
+                    skip_cell_properties: bool = False, use_compact_json: bool = False, **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
         """ Execute MDX and return the cells with their properties
 
         :param mdx: MDX Query, as string
@@ -888,6 +888,7 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :param element_unique_names: '[d1].[h1].[e1]' or 'e1'
         :param skip_cell_properties: cell values in result dictionary, instead of cell_properties dictionary
+        :param use_compact_json: bool
         :return: content in sweet concise structure.
         """
         cellset_id = self.create_cellset(mdx=mdx, sandbox_name=sandbox_name, **kwargs)
@@ -904,13 +905,14 @@ class CellService(ObjectService):
             sandbox_name=sandbox_name,
             element_unique_names=element_unique_names,
             skip_cell_properties=skip_cell_properties,
+            use_compact_json=use_compact_json,
             **kwargs)
 
     def execute_view(self, cube_name: str, view_name: str, private: bool = False, cell_properties: Iterable[str] = None,
                      top: int = None, skip_contexts: bool = False, skip: int = None, skip_zeros: bool = False,
                      skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
                      sandbox_name: str = None, element_unique_names: bool = True, skip_cell_properties: bool = False,
-                     **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
+                     use_compact_json: bool = False, **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
         """ get view content as dictionary with sweet and concise structure.
             Works on NativeView and MDXView !
 
@@ -928,6 +930,7 @@ class CellService(ObjectService):
         :param element_unique_names: '[d1].[h1].[e1]' or 'e1'
         :param sandbox_name: str
         :param skip_cell_properties: cell values in result dictionary, instead of cell_properties dictionary
+        :param use_compact_json: bool
         :return: Dictionary : {([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }
         """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
@@ -945,6 +948,7 @@ class CellService(ObjectService):
             sandbox_name=sandbox_name,
             element_unique_names=element_unique_names,
             skip_cell_properties=skip_cell_properties,
+            use_compact_json=use_compact_json,
             **kwargs)
 
     def execute_mdx_raw(
@@ -961,6 +965,7 @@ class CellService(ObjectService):
             skip_rule_derived_cells: bool = False,
             sandbox_name: str = None,
             include_hierarchies: bool = False,
+            use_compact_json: bool = False,
             **kwargs) -> Dict:
         """ Execute MDX and return the raw data from TM1
 
@@ -976,6 +981,7 @@ class CellService(ObjectService):
         :param skip_rule_derived_cells: skip rule derived cells in cellset
         :param sandbox_name: str
         :param include_hierarchies: retrieve Hierarchies property on Axes
+        :param use_compact_json: bool
         :return: Raw format from TM1.
         """
         cellset_id = self.create_cellset(mdx=mdx, sandbox_name=sandbox_name, **kwargs)
@@ -993,6 +999,7 @@ class CellService(ObjectService):
             skip_rule_derived_cells=skip_rule_derived_cells,
             sandbox_name=sandbox_name,
             include_hierarchies=include_hierarchies,
+            use_compact_json=use_compact_json,
             **kwargs)
 
     def execute_view_raw(
@@ -1010,6 +1017,7 @@ class CellService(ObjectService):
             skip_consolidated_cells: bool = False,
             skip_rule_derived_cells: bool = False,
             sandbox_name: str = None,
+            use_compact_json: bool = False,
             **kwargs) -> Dict:
         """ Execute a cube view and return the raw data from TM1
 
@@ -1027,6 +1035,7 @@ class CellService(ObjectService):
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
         :param sandbox_name: str
+        :param use_compact_json: bool
         :return: Raw format from TM1.
         """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
@@ -1044,33 +1053,36 @@ class CellService(ObjectService):
             skip_consolidated_cells=skip_consolidated_cells,
             delete_cellset=True,
             sandbox_name=sandbox_name,
+            use_compact_json=use_compact_json,
             **kwargs)
 
-    def execute_mdx_values(self, mdx: str, sandbox_name: str = None, **kwargs) -> List[Union[str, float]]:
+    def execute_mdx_values(self, mdx: str, sandbox_name: str = None, use_compact_json: bool = False, **kwargs) -> List[Union[str, float]]:
         """ Optimized for performance. Query only raw cell values.
         Coordinates are omitted !
 
         :param mdx: a valid MDX Query
         :param sandbox_name: str
+        :param use_compact_json: bool
         :return: List of cell values
         """
         cellset_id = self.create_cellset(mdx=mdx, sandbox_name=sandbox_name, **kwargs)
-        return self.extract_cellset_values(cellset_id, delete_cellset=True, sandbox_name=sandbox_name, **kwargs)
+        return self.extract_cellset_values(cellset_id, delete_cellset=True, sandbox_name=sandbox_name, use_compact_json=use_compact_json, **kwargs)
 
     def execute_view_values(self, cube_name: str, view_name: str, private: bool = False, sandbox_name: str = None,
-                            **kwargs) -> List[Union[str, float]]:
+                            use_compact_json: bool = False, **kwargs) -> List[Union[str, float]]:
         """ Execute view and retrieve only the cell values
 
         :param cube_name: String, name of the cube
         :param view_name: String, name of the view
         :param private: True (private) or False (public)
         :param sandbox_name: str
+        :param use_compact_json: bool
         :param kwargs:
         :return:
         """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
                                                    sandbox_name=sandbox_name, **kwargs)
-        return self.extract_cellset_values(cellset_id, delete_cellset=True, sandbox_name=sandbox_name, **kwargs)
+        return self.extract_cellset_values(cellset_id, delete_cellset=True, sandbox_name=sandbox_name, use_compact_json=use_compact_json, **kwargs)
 
     def execute_mdx_rows_and_values(self, mdx: str, element_unique_names: bool = True, sandbox_name: str = None,
                                     **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
@@ -1410,6 +1422,7 @@ class CellService(ObjectService):
             top: int = None,
             skip: int = None,
             sandbox_name: str = None,
+            use_compact_json: bool = False,
             **kwargs) -> Dict:
         """ Execute MDX get dygraph dictionary
         Useful for grids or charting libraries that want an array of cell values per column
@@ -1434,6 +1447,7 @@ class CellService(ObjectService):
         :param member_properties: List of properties to be queried from the members. E.g. ['UniqueName','Attributes']
         :param value_precision: Integer (optional) specifying number of decimal places to return
         :param sandbox_name: str
+        :param use_compact_json: bool
         :return: dict: { titles: [], headers: [axis][], cells: { Page0: [ [column name, column values], [], ... ], ...}}
         """
         cellset_id = self.create_cellset(mdx=mdx, sandbox_name=sandbox_name)
@@ -1445,6 +1459,7 @@ class CellService(ObjectService):
                                         skip=skip,
                                         delete_cellset=True,
                                         sandbox_name=sandbox_name,
+                                        use_compact_json=use_compact_json,
                                         **kwargs)
         return Utils.build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
 
@@ -1459,6 +1474,7 @@ class CellService(ObjectService):
             top: int = None,
             skip: int = None,
             sandbox_name: str = None,
+            use_compact_json: bool = False,
             **kwargs):
         """
         Useful for grids or charting libraries that want an array of cell values per row.
@@ -1495,6 +1511,7 @@ class CellService(ObjectService):
         :param member_properties: List of properties to be queried from the members. E.g. ['UniqueName','Attributes']
         :param value_precision: Integer (optional) specifying number of decimal places to return
         :param sandbox_name: str
+        :param use_compact_json: bool
         :return:
         """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
@@ -1507,6 +1524,7 @@ class CellService(ObjectService):
                                         skip=skip,
                                         delete_cellset=True,
                                         sandbox_name=sandbox_name,
+                                        use_compact_json=use_compact_json,
                                         **kwargs)
         return Utils.build_ui_dygraph_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
 
@@ -1519,6 +1537,7 @@ class CellService(ObjectService):
             top: int = None,
             skip: int = None,
             sandbox_name: str = None,
+            use_compact_json: bool = False,
             **kwargs):
         """
         Useful for grids or charting libraries that want an array of cell values per row.
@@ -1553,6 +1572,7 @@ class CellService(ObjectService):
         :param member_properties: List of properties to be queried from the members. E.g. ['UniqueName','Attributes']
         :param value_precision: Integer (optional) specifying number of decimal places to return
         :param sandbox_name: str
+        :param use_compact_json: bool
         :return: dict :{ titles: [], headers: [axis][], cells:{ Page0:{ Row0:{ [row values], Row1: [], ...}, ...}, ...}}
         """
         cellset_id = self.create_cellset(mdx=mdx, sandbox_name=sandbox_name, **kwargs)
@@ -1564,6 +1584,7 @@ class CellService(ObjectService):
                                         skip=skip,
                                         delete_cellset=True,
                                         sandbox_name=sandbox_name,
+                                        use_compact_json=use_compact_json,
                                         **kwargs)
         return Utils.build_ui_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
 
@@ -1578,6 +1599,7 @@ class CellService(ObjectService):
             top: int = None,
             skip: int = None,
             sandbox_name: str = None,
+            use_compact_json: bool = False,
             **kwargs):
         """
         Useful for grids or charting libraries that want an array of cell values per row.
@@ -1614,6 +1636,7 @@ class CellService(ObjectService):
         :param member_properties: List properties to be queried from the member. E.g. ['Name', 'UniqueName']
         :param value_precision: Integer (optional) specifying number of decimal places to return
         :param sandbox_name: str
+        :param use_compact_json: bool
         :return: dict :{ titles: [], headers: [axis][], cells:{ Page0:{ Row0: {[row values], Row1: [], ...}, ...}, ...}}
         """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
@@ -1626,6 +1649,7 @@ class CellService(ObjectService):
                                         skip=skip,
                                         delete_cellset=True,
                                         sandbox_name=sandbox_name,
+                                        use_compact_json=use_compact_json,
                                         **kwargs)
         return Utils.build_ui_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
 
@@ -1908,6 +1932,7 @@ class CellService(ObjectService):
             value_separator: str = ",",
             sandbox_name: str = None,
             include_attributes: bool = False,
+            use_compact_json: bool = False,
             **kwargs) -> str:
         """ Execute cellset and return only the 'Content', in csv format
 
@@ -1921,6 +1946,7 @@ class CellService(ObjectService):
         :param value_separator
         :param sandbox_name: str
         :param include_attributes: include attribute columns
+        :param use_compact_json: bool
         :return: Raw format from TM1.
         """
         _, _, rows, columns = self.extract_cellset_composition(cellset_id, delete_cellset=False,
@@ -1933,6 +1959,7 @@ class CellService(ObjectService):
                                                 elem_properties=['Name'],
                                                 member_properties=['Name',
                                                                    'Attributes'] if include_attributes else None,
+                                                use_compact_json=use_compact_json,
                                                 **kwargs)
         return build_csv_from_cellset_dict(rows, columns, cellset_dict, line_separator=line_separator,
                                            value_separator=value_separator, top=top,
@@ -2046,7 +2073,7 @@ class CellService(ObjectService):
 
     @require_pandas
     def extract_cellset_dataframe_pivot(self, cellset_id: str, dropna: bool = False, fill_value: bool = False,
-                                        sandbox_name: str = None,
+                                        sandbox_name: str = None, use_compact_json: bool = False,
                                         **kwargs) -> 'pd.DataFrame':
         """ Extract a pivot table (pandas dataframe) from a cellset in TM1
 
@@ -2055,6 +2082,7 @@ class CellService(ObjectService):
         :param fill_value:
         :param kwargs:
         :param sandbox_name: str
+        :param use_compact_json: bool
         :return:
         """
 
@@ -2062,6 +2090,7 @@ class CellService(ObjectService):
             cellset_id=cellset_id,
             delete_cellset=False,
             sandbox_name=sandbox_name,
+            use_compact_json=use_compact_json
             **kwargs)
 
         cube, titles, rows, columns = self.extract_cellset_composition(
@@ -2095,6 +2124,7 @@ class CellService(ObjectService):
             sandbox_name: str = None,
             element_unique_names: bool = True,
             skip_cell_properties: bool = False,
+            use_compact_json: bool = False,
             **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
         """ Execute cellset and return the cells with their properties
 
@@ -2110,6 +2140,7 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :param element_unique_names: '[d1].[h1].[e1]' or 'e1'
         :param skip_cell_properties: cell values in result dictionary, instead of cell_properties dictionary
+        :param use_compact_json: bool
         :return: Content in sweet concise strcuture.
         """
         if not cell_properties:
@@ -2129,6 +2160,7 @@ class CellService(ObjectService):
             skip_rule_derived_cells=skip_rule_derived_cells,
             sandbox_name=sandbox_name,
             include_hierarchies=False,
+            use_compact_json=use_compact_json,
             **kwargs)
 
         return Utils.build_content_from_cellset_dict(
