@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import asyncio
 import functools
 import itertools
@@ -10,7 +11,6 @@ from concurrent.futures.thread import ThreadPoolExecutor
 from io import StringIO
 from typing import List, Union, Dict, Iterable, Tuple, Optional
 
-import ijson
 from mdxpy import MdxHierarchySet, MdxBuilder, Member
 from requests import Response
 
@@ -1107,7 +1107,7 @@ class CellService(ObjectService):
     def execute_mdx_csv(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
                         skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
                         line_separator: str = "\r\n", value_separator: str = ",", sandbox_name: str = None,
-                        include_attributes: bool = False, iterative_json_parsing: bool = False, **kwargs) -> str:
+                        **kwargs) -> str:
         """ Optimized for performance. Get csv string of coordinates and values.
 
         :param mdx: Valid MDX Query
@@ -1119,32 +1119,18 @@ class CellService(ObjectService):
         :param line_separator:
         :param value_separator:
         :param sandbox_name: str
-        :param include_attributes: include attribute columns
-        :param iterative_json_parsing: use iterative json parsing to reduce memory consumption significantly.
-        Comes at a cost of 3-5% performance.
         :return: String
         """
         cellset_id = self.create_cellset(mdx, sandbox_name=sandbox_name, **kwargs)
-
-        if iterative_json_parsing and include_attributes:
-            raise ValueError("Iterative JSON parsing must not be used together with include_attributes")
-
-        if iterative_json_parsing:
-            return self.extract_cellset_csv_iter_json(
-                cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
-                skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
-                line_separator=line_separator, value_separator=value_separator, sandbox_name=sandbox_name, **kwargs)
-
-        return self.extract_cellset_csv(
-            cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
-            skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
-            line_separator=line_separator, value_separator=value_separator, sandbox_name=sandbox_name,
-            include_attributes=include_attributes, **kwargs)
+        return self.extract_cellset_csv(cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
+                                        skip_consolidated_cells=skip_consolidated_cells,
+                                        skip_rule_derived_cells=skip_rule_derived_cells, line_separator=line_separator,
+                                        value_separator=value_separator, sandbox_name=sandbox_name, **kwargs)
 
     def execute_view_csv(self, cube_name: str, view_name: str, private: bool = False, top: int = None, skip: int = None,
                          skip_zeros: bool = True, skip_consolidated_cells: bool = False,
-                         skip_rule_derived_cells: bool = False, line_separator: str = "\r\n",
-                         value_separator: str = ",", sandbox_name: str = None, iterative_json_parsing: bool = False,
+                         skip_rule_derived_cells: bool = False,
+                         line_separator: str = "\r\n", value_separator: str = ",", sandbox_name: str = None,
                          **kwargs) -> str:
         """ Optimized for performance. Get csv string of coordinates and values.
 
@@ -1159,24 +1145,14 @@ class CellService(ObjectService):
         :param line_separator:
         :param value_separator:
         :param sandbox_name: str
-        :param iterative_json_parsing: use iterative json parsing to reduce memory consumption significantly.
-        Comes at a cost of 3-5% performance.
         :return: String
         """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
                                                    sandbox_name=sandbox_name)
-        if iterative_json_parsing:
-            return self.extract_cellset_csv_iter_json(
-                cellset_id=cellset_id, skip_zeros=skip_zeros, top=top, skip=skip,
-                skip_consolidated_cells=skip_consolidated_cells,
-                skip_rule_derived_cells=skip_rule_derived_cells, line_separator=line_separator,
-                value_separator=value_separator, sandbox_name=sandbox_name, **kwargs)
-
-        return self.extract_cellset_csv(
-            cellset_id=cellset_id, skip_zeros=skip_zeros, top=top, skip=skip,
-            skip_consolidated_cells=skip_consolidated_cells,
-            skip_rule_derived_cells=skip_rule_derived_cells, line_separator=line_separator,
-            value_separator=value_separator, sandbox_name=sandbox_name, **kwargs)
+        return self.extract_cellset_csv(cellset_id=cellset_id, skip_zeros=skip_zeros, top=top, skip=skip,
+                                        skip_consolidated_cells=skip_consolidated_cells,
+                                        skip_rule_derived_cells=skip_rule_derived_cells, line_separator=line_separator,
+                                        value_separator=value_separator, sandbox_name=sandbox_name, **kwargs)
 
     def execute_mdx_elements_value_dict(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
                                         skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
@@ -1208,7 +1184,7 @@ class CellService(ObjectService):
     def execute_mdx_dataframe(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
                               skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
                               sandbox_name: str = None, include_attributes: bool = False,
-                              iterative_json_parsing: bool = False, **kwargs) -> 'pd.DataFrame':
+                              **kwargs) -> 'pd.DataFrame':
         """ Optimized for performance. Get Pandas DataFrame from MDX Query.
 
         Takes all arguments from the pandas.read_csv method:
@@ -1222,8 +1198,6 @@ class CellService(ObjectService):
         :param skip_rule_derived_cells: skip rule derived cells in cellset
         :param sandbox_name: str
         :param include_attributes: include attribute columns
-        :param iterative_json_parsing: use iterative json parsing to reduce memory consumption significantly.
-        Comes at a cost of 3-5% performance.
         :return: Pandas Dataframe
         """
         cellset_id = self.create_cellset(mdx, sandbox_name=sandbox_name, **kwargs)
@@ -1231,7 +1205,7 @@ class CellService(ObjectService):
                                               skip_consolidated_cells=skip_consolidated_cells,
                                               skip_rule_derived_cells=skip_rule_derived_cells,
                                               sandbox_name=sandbox_name, include_attributes=include_attributes,
-                                              iterative_json_parsing=iterative_json_parsing, **kwargs)
+                                              **kwargs)
 
     @require_pandas
     def execute_mdx_dataframe_shaped(self, mdx: str, sandbox_name: str = None, display_attribute: bool = False,
@@ -1353,7 +1327,7 @@ class CellService(ObjectService):
     def execute_view_dataframe(self, cube_name: str, view_name: str, private: bool = False, top: int = None,
                                skip: int = None, skip_zeros: bool = True, skip_consolidated_cells: bool = False,
                                skip_rule_derived_cells: bool = False, sandbox_name: str = None,
-                               iterative_json_parsing: bool = False, **kwargs) -> 'pd.DataFrame':
+                               **kwargs) -> 'pd.DataFrame':
         """ Optimized for performance. Get Pandas DataFrame from an existing Cube View
         Context dimensions are omitted in the resulting Dataframe !
         Cells with Zero/null are omitted !
@@ -1370,8 +1344,6 @@ class CellService(ObjectService):
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
         :param sandbox_name: str
-        :param iterative_json_parsing: use iterative json parsing to reduce memory consumption significantly.
-        Comes at a cost of 3-5% performance.
         :return: Pandas Dataframe
         """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
@@ -1379,8 +1351,7 @@ class CellService(ObjectService):
         return self.extract_cellset_dataframe(cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                                               skip_consolidated_cells=skip_consolidated_cells,
                                               skip_rule_derived_cells=skip_rule_derived_cells,
-                                              sandbox_name=sandbox_name, iterative_json_parsing=iterative_json_parsing,
-                                              **kwargs)
+                                              sandbox_name=sandbox_name, **kwargs)
 
     def execute_view_cellcount(self, cube_name: str, view_name: str, private: bool = False, sandbox_name: str = None,
                                **kwargs) -> int:
@@ -1658,71 +1629,66 @@ class CellService(ObjectService):
                                         **kwargs)
         return Utils.build_ui_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
 
-    @tidy_cellset
-    def extract_cellset_raw(
-            self,
-            cellset_id: str,
-            cell_properties: Iterable[str] = None,
-            elem_properties: Iterable[str] = None,
-            member_properties: Iterable[str] = None,
-            top: int = None,
-            skip: int = None,
-            skip_contexts: bool = False,
-            skip_zeros: bool = False,
-            skip_consolidated_cells: bool = False,
-            skip_rule_derived_cells: bool = False,
-            sandbox_name: str = None,
-            include_hierarchies: bool = False,
-            **kwargs) -> dict:
 
-        cellset_response = self.extract_cellset_raw_response(
-            cellset_id,
-            cell_properties,
-            elem_properties,
-            member_properties,
-            top,
-            skip,
-            skip_contexts,
-            skip_zeros,
-            skip_consolidated_cells,
-            skip_rule_derived_cells,
-            sandbox_name,
-            include_hierarchies,
-            **kwargs)
+    def extract_cellset_metadata_raw(
+        self, 
+        cellset_id: str, 
+        elem_properties: Iterable[str] = None, 
+        member_properties: Iterable[str] = None, 
+        top: int = None, 
+        skip: int = None, 
+        skip_contexts: bool = False, 
+        include_hierarchies: bool = False, 
+        sandbox_name: str = None, 
+        **kwargs):
 
-        return cellset_response.json()
+        # select Name property if member_properties is None or empty.
+        # Necessary, as tm1 default behaviour is to return all properties if no $select is specified in the request.
+        if member_properties is None or len(list(member_properties)) == 0:
+            member_properties = ["Name"]
+        select_member_properties = "$select={}".format(",".join(member_properties))
 
-    def extract_cellset_raw_response(
-            self,
-            cellset_id: str,
-            cell_properties: Iterable[str] = None,
-            elem_properties: Iterable[str] = None,
-            member_properties: Iterable[str] = None,
-            top: int = None,
-            skip: int = None,
-            skip_contexts: bool = False,
-            skip_zeros: bool = False,
-            skip_consolidated_cells: bool = False,
-            skip_rule_derived_cells: bool = False,
-            sandbox_name: str = None,
-            include_hierarchies: bool = False,
-            **kwargs) -> Response:
-        """ Extract full cellset data and return the raw data from TM1
+        expand_elem_properties = ";$expand=Element($select={elem_properties})".format(
+            elem_properties=",".join(elem_properties)) \
+            if elem_properties is not None and len(list(elem_properties)) > 0 \
+            else ""
 
-        :param cellset_id: String; ID of existing cellset
-        :param cell_properties: List of properties to be queried from cells. E.g. ['Value', 'RuleDerived', ...]
-        :param elem_properties: List of properties to be queried from elements. E.g. ['UniqueName','Attributes', ...]
-        :param member_properties: List properties to be queried from the member. E.g. ['Name', 'UniqueName']
-        :param top: Integer limiting the number of cells and the number or rows returned
-        :param skip: Integer limiting the number of cells and the number or rows returned
-        :param skip_contexts:
-        :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
-        :param skip_consolidated_cells: skip consolidated cells in cellset
-        :param skip_rule_derived_cells: skip rule derived cells in cellset
-        :param sandbox_name: str
-        :param include_hierarchies: retrieve Hierarchies property on Axes
-        :return: Raw format from TM1.
-        """
+        if include_hierarchies:
+            expand_hierarchies = "Hierarchies($select=Name;$expand=Dimension($select=Name)),"
+        else:
+            expand_hierarchies = ""
+
+        filter_axis = "$filter=Ordinal ne 2;" if skip_contexts else ""
+
+        url = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
+                "Cube($select=Name;$expand=Dimensions($select=Name))," \
+                "Axes({filter_axis}$expand={hierarchies}Tuples($expand=Members({select_member_properties}" \
+                "{expand_elem_properties}{top_rows})))" \
+        .format(cellset_id=cellset_id,
+                top_rows=f";$top={top}" if top and not skip else "",
+                filter_axis=filter_axis,
+                hierarchies=expand_hierarchies,
+                select_member_properties=select_member_properties,
+                expand_elem_properties=expand_elem_properties)
+
+        url = add_url_parameters(url, **{"!sandbox": sandbox_name})
+        response = self._rest.GET(url=url, **kwargs)
+        return response.json()
+
+
+    @odata_compact_json
+    def extract_cellset_cells_raw(
+        self, cellset_id: str, 
+        cell_properties: Iterable[str] = None, 
+        top: int = None, 
+        skip: int = None, 
+        skip_zeros: bool = False, 
+        skip_consolidated_cells: bool = False, 
+        skip_rule_derived_cells: bool = False, 
+        sandbox_name: str = None, 
+        use_compact_json: bool = False, 
+        **kwargs):
+        
         if not cell_properties:
             cell_properties = ['Value']
 
@@ -1738,18 +1704,6 @@ class CellService(ObjectService):
             if 'Ordinal' not in cell_properties:
                 cell_properties.append('Ordinal')
 
-        # select Name property if member_properties is None or empty.
-        # Necessary, as tm1 default behaviour is to return all properties if no $select is specified in the request.
-        if member_properties is None or len(list(member_properties)) == 0:
-            member_properties = ["Name"]
-        select_member_properties = "$select={}".format(",".join(member_properties))
-
-        expand_elem_properties = ";$expand=Element($select={elem_properties})".format(
-            elem_properties=",".join(elem_properties)) \
-            if elem_properties is not None and len(list(elem_properties)) > 0 \
-            else ""
-
-        filter_axis = "$filter=Ordinal ne 2;" if skip_contexts else ""
 
         filter_cells = ""
         if skip_zeros or skip_consolidated_cells or skip_rule_derived_cells:
@@ -1763,42 +1717,97 @@ class CellService(ObjectService):
 
             filter_cells = " and ".join(filters)
 
-        if include_hierarchies:
-            expand_hierarchies = "Hierarchies($select=Name;$expand=Dimension($select=Name)),"
-        else:
-            expand_hierarchies = ""
-
         url = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
-              "Cube($select=Name;$expand=Dimensions($select=Name))," \
-              "Axes({filter_axis}$expand={hierarchies}Tuples($expand=Members({select_member_properties}" \
-              "{expand_elem_properties}{top_rows})))," \
-              "Cells($select={cell_properties}{top_cells}{skip_cells}{filter_cells})" \
-            .format(cellset_id=cellset_id,
-                    top_rows=f";$top={top}" if top and not skip else "",
-                    cell_properties=",".join(cell_properties),
-                    filter_axis=filter_axis,
-                    hierarchies=expand_hierarchies,
-                    select_member_properties=select_member_properties,
-                    expand_elem_properties=expand_elem_properties,
-                    top_cells=f";$top={top}" if top else "",
-                    skip_cells=f";$skip={skip}" if skip else "",
-                    filter_cells=f";$filter={filter_cells}" if filter_cells else "")
+                    "Cells($select={cell_properties}{top_cells}{skip_cells}{filter_cells})" \
+        .format(cellset_id=cellset_id,
+            cell_properties=",".join(cell_properties),
+            top_cells=f";$top={top}" if top else "",
+            skip_cells=f";$skip={skip}" if skip else "",
+            filter_cells=f";$filter={filter_cells}" if filter_cells else "")
+
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url=url, **kwargs)
-        return response
+        return response.json()
+
 
     @tidy_cellset
-    def extract_cellset_values(self, cellset_id: str, sandbox_name: str = None, **kwargs) -> List[Union[str, float]]:
+    def extract_cellset_raw(
+            self,
+            cellset_id: str,
+            cell_properties: Iterable[str] = None,
+            elem_properties: Iterable[str] = None,
+            member_properties: Iterable[str] = None,
+            top: int = None,
+            skip: int = None,
+            skip_contexts: bool = False,
+            skip_zeros: bool = False,
+            skip_consolidated_cells: bool = False,
+            skip_rule_derived_cells: bool = False,
+            sandbox_name: str = None,
+            include_hierarchies: bool = False,
+            use_compact_json: bool = False,
+            **kwargs) -> Dict:
+        """ Extract full cellset data and return the raw data from TM1
+
+        :param cellset_id: String; ID of existing cellset
+        :param cell_properties: List of properties to be queried from cells. E.g. ['Value', 'RuleDerived', ...]
+        :param elem_properties: List of properties to be queried from elements. E.g. ['UniqueName','Attributes', ...]
+        :param member_properties: List properties to be queried from the member. E.g. ['Name', 'UniqueName']
+        :param top: Integer limiting the number of cells and the number or rows returned
+        :param skip: Integer limiting the number of cells and the number or rows returned
+        :param skip_contexts:
+        :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
+        :param skip_consolidated_cells: skip consolidated cells in cellset
+        :param skip_rule_derived_cells: skip rule derived cells in cellset
+        :param sandbox_name: str
+        :param include_hierarchies: retrieve Hierarchies property on Axes
+        :param use_compact_json: bool
+        :return: Raw format from TM1.
+        """
+
+        metadata = self.extract_cellset_metadata_raw(cellset_id=cellset_id,
+                                                     elem_properties=elem_properties, 
+                                                     member_properties=member_properties, 
+                                                     top=top, 
+                                                     skip=skip, 
+                                                     skip_contexts=skip_contexts, 
+                                                     include_hierarchies=include_hierarchies, 
+                                                     sandbox_name=sandbox_name, 
+                                                     **kwargs
+                                                    )
+        cells = self.extract_cellset_cells_raw(cellset_id=cellset_id, 
+                                               cell_properties=cell_properties, 
+                                               top=top, 
+                                               skip=skip, 
+                                               skip_zeros=skip_zeros, 
+                                               skip_consolidated_cells=skip_consolidated_cells, 
+                                               skip_rule_derived_cells=skip_rule_derived_cells, 
+                                               sandbox_name=sandbox_name, 
+                                               use_compact_json=use_compact_json, 
+                                               **kwargs
+                                              )
+
+        # Combine metadata and cells back into a single object
+        return {**metadata, **cells}
+
+    @tidy_cellset
+    @odata_compact_json(return_props_with_data=False)
+    def extract_cellset_values(self, cellset_id: str, sandbox_name: str = None, use_compact_json: bool = False, **kwargs) -> List[Union[str, float]]:
         """ Extract cellset data and return only the cells and values
 
         :param cellset_id: String; ID of existing cellset
         :param sandbox_name: str
+        :param use_compact_json: bool
         :return: Raw format from TM1.
         """
         url = format_url("/api/v1/Cellsets('{}')?$expand=Cells($select=Value)", cellset_id)
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url=url, **kwargs)
-        return [cell["Value"] for cell in response.json()["Cells"]]
+
+        if not use_compact_json:
+            return [cell["Value"] for cell in response.json()["Cells"]]
+        
+        return response.json()
 
     @tidy_cellset
     def extract_cellset_rows_and_values(self, cellset_id: str, element_unique_names: bool = True,
@@ -1916,7 +1925,6 @@ class CellService(ObjectService):
         """
         _, _, rows, columns = self.extract_cellset_composition(cellset_id, delete_cellset=False,
                                                                sandbox_name=sandbox_name, **kwargs)
-
         cellset_dict = self.extract_cellset_raw(cellset_id, cell_properties=["Value"], top=top, skip=skip,
                                                 skip_contexts=True, skip_zeros=skip_zeros,
                                                 skip_consolidated_cells=skip_consolidated_cells,
@@ -1926,113 +1934,9 @@ class CellService(ObjectService):
                                                 member_properties=['Name',
                                                                    'Attributes'] if include_attributes else None,
                                                 **kwargs)
-
         return build_csv_from_cellset_dict(rows, columns, cellset_dict, line_separator=line_separator,
                                            value_separator=value_separator, top=top,
                                            include_attributes=include_attributes)
-
-    def extract_cellset_csv_iter_json(
-            self,
-            cellset_id: str,
-            top: int = None,
-            skip: int = None,
-            skip_zeros: bool = True,
-            skip_consolidated_cells: bool = False,
-            skip_rule_derived_cells: bool = False,
-            line_separator: str = "\r\n",
-            value_separator: str = ",",
-            sandbox_name: str = None,
-            **kwargs) -> str:
-        """ Execute cellset and return only the 'Content', in csv format
-
-        :param cellset_id: String; ID of existing cellset
-        :param top: Int, number of cells to return (counting from top)
-        :param skip: Int, number of cells to skip (counting from top)
-        :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
-        :param skip_consolidated_cells: skip consolidated cells in cellset
-        :param skip_rule_derived_cells: skip rule derived cells in cellset
-        :param line_separator:
-        :param value_separator
-        :param sandbox_name: str
-        :return: Raw format from TM1.
-        """
-        _, _, rows, columns = self.extract_cellset_composition(
-            cellset_id,
-            delete_cellset=False,
-            sandbox_name=sandbox_name,
-            **kwargs)
-
-        cellset_response = self.extract_cellset_raw_response(
-            cellset_id, cell_properties=["Value"], top=top, skip=skip,
-            skip_contexts=True, skip_zeros=skip_zeros,
-            skip_consolidated_cells=skip_consolidated_cells,
-            skip_rule_derived_cells=skip_rule_derived_cells,
-            delete_cellset=True,
-            sandbox_name=sandbox_name,
-            member_properties=['Name'],
-            **kwargs)
-
-        # start parsing of JSON directly into CSV
-        dimension_list = []
-        axes0_list = []
-        axes1_list = []
-        current_axes = 0
-        current_tuple = 0
-        current_cell_ordinal = 0
-        csv_lines = []
-
-        parser = ijson.parse(cellset_response.content)
-        prefixes_of_interest = ['Cells.item.Value', 'Axes.item.Tuples.item.Members.item.Name',
-                                'Cells.item.Ordinal', 'Axes.item.Tuples.item.Ordinal', 'Cube.Dimensions.item.Name',
-                                'Axes.item.Ordinal']
-
-        gen = ((prefix, event, value) for prefix, event, value in parser if prefix in prefixes_of_interest)
-        for prefix, event, value in gen:
-            if prefix == 'Cells.item.Value':
-                q, r = divmod(current_cell_ordinal, len(axes0_list))
-                axes0_index = r
-                axes1_index = q
-                if len(axes0_list) == 1 and axes0_list[0] == '':
-                    csv_lines.append(value_separator.join([axes1_list[axes1_index], str(value)]))
-                # case of no row selection
-                elif len(axes1_list) == 0:
-                    csv_lines.append(value_separator.join([axes0_list[axes0_index], str(value)]))
-                else:
-                    csv_lines.append(
-                        value_separator.join([axes1_list[axes1_index], axes0_list[axes0_index], str(value)]))
-
-            elif (prefix, event) == ('Axes.item.Tuples.item.Members.item.Name', 'string'):
-                if current_axes == 0:
-                    axes0_list[current_tuple] += ('' if axes0_list[current_tuple] == '' else value_separator) + value
-                else:
-                    axes1_list[current_tuple] += ('' if axes1_list[current_tuple] == '' else value_separator) + value
-
-            elif (prefix, event) == ('Cells.item.Ordinal', 'number'):
-                current_cell_ordinal = value
-
-            elif (prefix, event) == ('Axes.item.Tuples.item.Ordinal', 'number'):
-                current_tuple = value
-                if current_axes == 0:
-                    axes0_list.append('')
-                else:
-                    axes1_list.append('')
-
-            elif (prefix, event) == ('Cube.Dimensions.item.Name', 'string'):
-                dimension_list.append(value)
-
-            elif (prefix, event) == ('Axes.item.Ordinal', 'number'):
-                current_axes = value
-
-        # add header
-        dimension_list.append('Value')
-        csv_lines.insert(0, value_separator.join(dimension_list))
-
-        csv = line_separator.join(csv_lines)
-
-        # close response
-        cellset_response.close()
-
-        return csv
 
     @require_pandas
     def extract_cellset_dataframe(
@@ -2045,7 +1949,6 @@ class CellService(ObjectService):
             skip_rule_derived_cells: bool = False,
             sandbox_name: str = None,
             include_attributes: bool = False,
-            iterative_json_parsing: bool = False,
             **kwargs) -> 'pd.DataFrame':
         """ Build pandas data frame from cellset_id
 
@@ -2057,25 +1960,14 @@ class CellService(ObjectService):
         :param skip_rule_derived_cells: skip rule derived cells in cellset
         :param sandbox_name: str
         :param include_attributes: include attribute columns
-        :param iterative_json_parsing: use iterative json parsing to reduce memory consumption significantly.
-        Comes at a cost of 3-5% performance.
         :param kwargs:
         :return:
         """
-        if iterative_json_parsing and include_attributes:
-            raise ValueError("Iterative JSON parsing must not be used together with include_attributes")
-
-        if iterative_json_parsing:
-            raw_csv = self.extract_cellset_csv_iter_json(
-                cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
-                skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
-                value_separator='~', sandbox_name=sandbox_name, **kwargs)
-        else:
-            raw_csv = self.extract_cellset_csv(
-                cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
-                skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
-                value_separator='~', sandbox_name=sandbox_name, include_attributes=include_attributes, **kwargs)
-
+        raw_csv = self.extract_cellset_csv(cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
+                                           skip_rule_derived_cells=skip_rule_derived_cells,
+                                           skip_consolidated_cells=skip_consolidated_cells, value_separator='~',
+                                           sandbox_name=sandbox_name, include_attributes=include_attributes,
+                                           **kwargs)
         if not raw_csv:
             return pd.DataFrame()
 

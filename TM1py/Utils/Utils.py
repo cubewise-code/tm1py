@@ -737,7 +737,7 @@ def add_url_parameters(url, **kwargs: str) -> str:
 def extract_cell_properties_from_odata_context(context: str) -> Dict:
     """ Takes in an odata_context and returns a dictionary
         with properties as keys and values as indexes
-        { Ordinal: 0, Value: 1, RuleDerived: 258, ... }
+        { Ordinal: 0, Value: 1, ... }
     
     """
     pattern = re.compile('\$metadata#Cellsets\(Cells\(([A-Za-z,]+)\)\)/\$entity')
