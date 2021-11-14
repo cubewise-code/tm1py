@@ -115,7 +115,7 @@ def manage_changeset(func):
     return wrapper
 
 
-def odata_compact_json(return_props_with_data: Optional[bool] = True):
+def odata_compact_json(return_props_with_data: bool):
     """ Higher order function to manage header and response when using compact JSON
         
         Applies when decorated function has `use_compact_json` argument set to True
@@ -1700,7 +1700,7 @@ class CellService(ObjectService):
         return response.json()
 
 
-    @odata_compact_json
+    @odata_compact_json(return_props_with_data=True)
     def extract_cellset_cells_raw(
         self, cellset_id: str, 
         cell_properties: Iterable[str] = None, 
@@ -2090,7 +2090,7 @@ class CellService(ObjectService):
             cellset_id=cellset_id,
             delete_cellset=False,
             sandbox_name=sandbox_name,
-            use_compact_json=use_compact_json
+            use_compact_json=use_compact_json,
             **kwargs)
 
         cube, titles, rows, columns = self.extract_cellset_composition(
