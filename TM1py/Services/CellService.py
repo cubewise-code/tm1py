@@ -1059,7 +1059,7 @@ class CellService(ObjectService):
     def execute_mdx_csv(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
                         skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
                         line_separator: str = "\r\n", value_separator: str = ",", sandbox_name: str = None,
-                        **kwargs) -> str:
+                        include_attributes: bool = False, iterative_json_parsing: bool = False, **kwargs) -> str:
         """ Optimized for performance. Get csv string of coordinates and values.
 
         :param mdx: Valid MDX Query
@@ -1071,18 +1071,32 @@ class CellService(ObjectService):
         :param line_separator:
         :param value_separator:
         :param sandbox_name: str
+        :param include_attributes: include attribute columns
+        :param iterative_json_parsing: use iterative json parsing to reduce memory consumption significantly.
+        Comes at a cost of 3-5% performance.
         :return: String
         """
         cellset_id = self.create_cellset(mdx, sandbox_name=sandbox_name, **kwargs)
-        return self.extract_cellset_csv(cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
-                                        skip_consolidated_cells=skip_consolidated_cells,
-                                        skip_rule_derived_cells=skip_rule_derived_cells, line_separator=line_separator,
-                                        value_separator=value_separator, sandbox_name=sandbox_name, **kwargs)
+
+        if iterative_json_parsing and include_attributes:
+            raise ValueError("Iterative JSON parsing must not be used together with include_attributes")
+
+        if iterative_json_parsing:
+            return self.extract_cellset_csv_iter_json(
+                cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
+                skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
+                line_separator=line_separator, value_separator=value_separator, sandbox_name=sandbox_name, **kwargs)
+
+        return self.extract_cellset_csv(
+            cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
+            skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
+            line_separator=line_separator, value_separator=value_separator, sandbox_name=sandbox_name,
+            include_attributes=include_attributes, **kwargs)
 
     def execute_view_csv(self, cube_name: str, view_name: str, private: bool = False, top: int = None, skip: int = None,
                          skip_zeros: bool = True, skip_consolidated_cells: bool = False,
-                         skip_rule_derived_cells: bool = False,
-                         line_separator: str = "\r\n", value_separator: str = ",", sandbox_name: str = None,
+                         skip_rule_derived_cells: bool = False, line_separator: str = "\r\n",
+                         value_separator: str = ",", sandbox_name: str = None, iterative_json_parsing: bool = False,
                          **kwargs) -> str:
         """ Optimized for performance. Get csv string of coordinates and values.
 
@@ -1097,14 +1111,24 @@ class CellService(ObjectService):
         :param line_separator:
         :param value_separator:
         :param sandbox_name: str
+        :param iterative_json_parsing: use iterative json parsing to reduce memory consumption significantly.
+        Comes at a cost of 3-5% performance.
         :return: String
         """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
                                                    sandbox_name=sandbox_name)
-        return self.extract_cellset_csv(cellset_id=cellset_id, skip_zeros=skip_zeros, top=top, skip=skip,
-                                        skip_consolidated_cells=skip_consolidated_cells,
-                                        skip_rule_derived_cells=skip_rule_derived_cells, line_separator=line_separator,
-                                        value_separator=value_separator, sandbox_name=sandbox_name, **kwargs)
+        if iterative_json_parsing:
+            return self.extract_cellset_csv_iter_json(
+                cellset_id=cellset_id, skip_zeros=skip_zeros, top=top, skip=skip,
+                skip_consolidated_cells=skip_consolidated_cells,
+                skip_rule_derived_cells=skip_rule_derived_cells, line_separator=line_separator,
+                value_separator=value_separator, sandbox_name=sandbox_name, **kwargs)
+
+        return self.extract_cellset_csv(
+            cellset_id=cellset_id, skip_zeros=skip_zeros, top=top, skip=skip,
+            skip_consolidated_cells=skip_consolidated_cells,
+            skip_rule_derived_cells=skip_rule_derived_cells, line_separator=line_separator,
+            value_separator=value_separator, sandbox_name=sandbox_name, **kwargs)
 
     def execute_mdx_elements_value_dict(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
                                         skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
