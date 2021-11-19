@@ -1451,6 +1451,49 @@ class TestCellService(unittest.TestCase):
             self.total_value,
             sum(values))
 
+    def test_execute_mdx_csv_iterative_json_parsing(self):
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .rows_non_empty() \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0])) \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1])) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
+            .to_mdx()
+
+        csv = self.tm1.cubes.cells.execute_mdx_csv(mdx, iterative_json_parsing=True)
+
+        # check header
+        header = csv.split('\r\n')[0]
+        self.assertEqual(
+            ",".join(self.dimension_names + ["Value"]),
+            header)
+
+        # check type
+        self.assertIsInstance(csv, str)
+
+        records = csv.split('\r\n')[1:]
+        coordinates = {tuple(record.split(',')[0:3])
+                       for record
+                       in records if record != '' and records[4] != 0}
+
+        # check number of coordinates (with values)
+        self.assertEqual(
+            len(coordinates),
+            len(self.target_coordinates))
+
+        # check if coordinates are the same
+        self.assertTrue(coordinates.issubset(self.target_coordinates))
+        values = [float(record.split(',')[3])
+                  for record
+                  in records if record != '']
+
+        # check if sum of retrieved values is sum of written values
+        self.assertEqual(
+            self.total_value,
+            sum(values))
+
     def test_execute_mdx_csv_column_only(self):
         mdx = """SELECT
                     NON EMPTY {[TM1PY_TESTS_CELL_DIMENSION1].[TM1PY_TESTS_CELL_DIMENSION1].MEMBERS} * 
