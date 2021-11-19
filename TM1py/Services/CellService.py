@@ -586,7 +586,7 @@ class CellService(ObjectService):
     @require_admin
     @manage_transaction_log
     def write_through_unbound_process(self, cube_name: str, cellset_as_dict: Dict, increment: bool = False,
-                                      sandbox_name: str = None, precision: int=8, **kwargs):
+                                      sandbox_name: str = None, precision: int = 8, **kwargs):
         """
         Writes data back to TM1 via an unbound TI process
         :param cube_name:
@@ -1952,11 +1952,11 @@ class CellService(ObjectService):
                 dimension_list.append(value)
 
             elif (prefix, event) == ('Axes.item.Ordinal', 'number'):
-                # write out csv header if we haven't yet
-                if len(csv_lines) == 0:
-                    dimension_list.append('Value')
-                    csv_lines.append(value_separator.join(dimension_list))
                 current_axes = value
+
+        # add header
+        dimension_list.append('Value')
+        csv_lines.insert(0, value_separator.join(dimension_list))
 
         csv = line_separator.join(csv_lines)
 
@@ -1993,10 +1993,10 @@ class CellService(ObjectService):
         :param kwargs:
         :return:
         """
-        if iterative_json_parsing:
-            if include_attributes:
-                raise ValueError("Iterative JSON parsing must not be used together with include_attributes")
+        if iterative_json_parsing and include_attributes:
+            raise ValueError("Iterative JSON parsing must not be used together with include_attributes")
 
+        if iterative_json_parsing:
             raw_csv = self.extract_cellset_csv_iter_json(
                 cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                 skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
