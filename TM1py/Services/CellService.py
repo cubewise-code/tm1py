@@ -1959,9 +1959,6 @@ class CellService(ObjectService):
                 else:
                     axes1_list[current_tuple] += ('' if axes1_list[current_tuple] == '' else value_separator) + value
 
-            elif (prefix, event) == ('Axes.item.Tuples.item.Members.item.Attributes.item.Value', 'string'):
-                print("test")
-
             elif (prefix, event) == ('Cells.item.Ordinal', 'number'):
                 current_cell_ordinal = value
 
