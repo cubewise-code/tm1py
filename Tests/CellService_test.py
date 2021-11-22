@@ -1908,12 +1908,81 @@ class TestCellService(unittest.TestCase):
         df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, include_attributes=True)
 
         expected = {
+            'TM1py_Tests_Cell_Dimension1': {0: 'Element 1'},
+            'Attr1': {0: 'TM1py'},
+            'TM1py_Tests_Cell_Dimension2': {0: 'Element 1'},
+            'Attr2': {0: '2'},
+            'TM1py_Tests_Cell_Dimension3': {0: 'Element 1'},
+            'Attr3': {0: '3'},
+            'Value': {0: 1.0}}
+        self.assertEqual(expected, df.to_dict())
+
+    @skip_if_no_pandas
+    def test_execute_mdx_dataframe_include_attributes_iter_json(self):
+        mdx = """SELECT
+        NON EMPTY 
+        {[TM1PY_TESTS_CELL_DIMENSION1].[TM1PY_TESTS_CELL_DIMENSION1].[Element1]} 
+        PROPERTIES [TM1PY_TESTS_CELL_DIMENSION1].[ATTR1]  ON 0,
+        NON EMPTY
+        {[TM1PY_TESTS_CELL_DIMENSION3].[TM1PY_TESTS_CELL_DIMENSION3].[Element1]} * 
+        {[TM1PY_TESTS_CELL_DIMENSION2].[TM1PY_TESTS_CELL_DIMENSION2].[Element1]} 
+        PROPERTIES [TM1PY_TESTS_CELL_DIMENSION2].[ATTR2], [TM1PY_TESTS_CELL_DIMENSION3].[ATTR3] ON 1
+        FROM [TM1PY_TESTS_CELL_CUBE]
+        """
+
+        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, include_attributes=True, iterative_json_parsing=True)
+
+        expected = {
             'TM1py_Tests_Cell_Dimension3': {0: 'Element 1'},
             'Attr3': {0: '3'},
             'TM1py_Tests_Cell_Dimension2': {0: 'Element 1'},
             'Attr2': {0: '2'},
             'TM1py_Tests_Cell_Dimension1': {0: 'Element 1'},
             'Attr1': {0: 'TM1py'},
+            'Value': {0: 1.0}}
+        self.assertEqual(expected, df.to_dict())
+
+    @skip_if_no_pandas
+    def test_execute_mdx_dataframe_include_attributes_iter_json_all_columns(self):
+        mdx = """SELECT
+        NON EMPTY 
+        {[TM1PY_TESTS_CELL_DIMENSION1].[TM1PY_TESTS_CELL_DIMENSION1].[Element1]} *
+        {[TM1PY_TESTS_CELL_DIMENSION2].[TM1PY_TESTS_CELL_DIMENSION2].[Element1]} *
+        {[TM1PY_TESTS_CELL_DIMENSION3].[TM1PY_TESTS_CELL_DIMENSION3].[Element1]}
+        PROPERTIES [TM1PY_TESTS_CELL_DIMENSION1].[ATTR1], [TM1PY_TESTS_CELL_DIMENSION2].[ATTR2],
+        [TM1PY_TESTS_CELL_DIMENSION3].[ATTR3]  ON 0
+        FROM [TM1PY_TESTS_CELL_CUBE]
+        """
+
+        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, include_attributes=True, iterative_json_parsing=True)
+
+        expected = {
+            'TM1py_Tests_Cell_Dimension1': {0: 'Element 1'},
+            'Attr1': {0: 'TM1py'},
+            'TM1py_Tests_Cell_Dimension2': {0: 'Element 1'},
+            'Attr2': {0: '2'},
+            'TM1py_Tests_Cell_Dimension3': {0: 'Element 1'},
+            'Attr3': {0: '3'},
+            'Value': {0: 1.0}}
+        self.assertEqual(expected, df.to_dict())
+
+    @skip_if_no_pandas
+    def test_execute_mdx_dataframe_include_attributes_iter_json_no_attributes(self):
+        mdx = """SELECT
+        {[TM1PY_TESTS_CELL_DIMENSION1].[TM1PY_TESTS_CELL_DIMENSION1].[Element2]} *
+        {[TM1PY_TESTS_CELL_DIMENSION2].[TM1PY_TESTS_CELL_DIMENSION2].[Element2]} *
+        {[TM1PY_TESTS_CELL_DIMENSION3].[TM1PY_TESTS_CELL_DIMENSION3].[Element2]} 
+         PROPERTIES MEMBER_NAME
+        ON 0
+        FROM [TM1PY_TESTS_CELL_CUBE]
+        """
+
+        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, include_attributes=True, iterative_json_parsing=True)
+
+        expected = {
+            'TM1py_Tests_Cell_Dimension1': {0: 'Element 2'},
+            'TM1py_Tests_Cell_Dimension2': {0: 'Element 2'},
+            'TM1py_Tests_Cell_Dimension3': {0: 'Element 2'},
             'Value': {0: 1.0}}
         self.assertEqual(expected, df.to_dict())
 

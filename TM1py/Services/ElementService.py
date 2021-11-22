@@ -340,6 +340,20 @@ class ElementService(ObjectService):
         element_attributes = [ElementAttribute.from_dict(ea) for ea in response.json()['value']]
         return element_attributes
 
+    def get_element_attribute_names(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
+        """ Get element attributes from hierarchy
+
+        :param dimension_name:
+        :param hierarchy_name:
+        :return:
+        """
+        url = format_url(
+            "/api/v1/Dimensions('{}')/Hierarchies('{}')/ElementAttributes?$select=Name",
+            dimension_name,
+            hierarchy_name)
+        response = self._rest.GET(url, **kwargs)
+        return [ea["Name"] for ea in response.json()['value']]
+
     def get_elements_filtered_by_attribute(self, dimension_name: str, hierarchy_name: str, attribute_name: str,
                                            attribute_value: Union[str, float], **kwargs) -> List[str]:
         """ Get all elements from a hierarchy with given attribute value

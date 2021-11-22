@@ -28,7 +28,7 @@ from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_nam
     abbreviate_mdx, \
     build_csv_from_cellset_dict, require_version, require_pandas, build_cellset_from_pandas_dataframe, \
     case_and_space_insensitive_equals, get_cube, resembles_mdx, require_admin, extract_compact_json_cellset, \
-    cell_is_updateable, build_mdx_from_cellset, build_mdx_and_values_from_cellset
+    cell_is_updateable, build_mdx_from_cellset, build_mdx_and_values_from_cellset, dimension_names_from_element_unique_names
 
 try:
     import pandas as pd
@@ -119,7 +119,7 @@ def manage_changeset(func):
 
 def odata_compact_json(return_as_dict: bool):
     """ Higher order function to manage header and response when using compact JSON
-        
+
         Applies when decorated function has `use_compact_json` argument set to True
 
         Currently only supports responses with only cell properties and where they are explicitly specified:
@@ -1192,14 +1192,12 @@ class CellService(ObjectService):
         """
         cellset_id = self.create_cellset(mdx, sandbox_name=sandbox_name, **kwargs)
 
-        if use_iterative_json and include_attributes:
-            raise ValueError("Iterative JSON parsing must not be used together with include_attributes")
-
         if use_iterative_json:
             return self.extract_cellset_csv_iter_json(
                 cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                 skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
-                line_separator=line_separator, value_separator=value_separator, sandbox_name=sandbox_name, **kwargs)
+                line_separator=line_separator, value_separator=value_separator, sandbox_name=sandbox_name,
+                include_attributes=include_attributes, **kwargs)
 
         return self.extract_cellset_csv(
             cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
@@ -2189,6 +2187,7 @@ class CellService(ObjectService):
             line_separator: str = "\r\n",
             value_separator: str = ",",
             sandbox_name: str = None,
+            include_attributes: bool = False,
             **kwargs) -> str:
         """ Execute cellset and return only the 'Content', in csv format
 
@@ -2201,9 +2200,10 @@ class CellService(ObjectService):
         :param line_separator:
         :param value_separator
         :param sandbox_name: str
+        :param include_attributes: boolean
         :return: Raw format from TM1.
         """
-        _, _, rows, columns = self.extract_cellset_composition(
+        cube, _, rows, columns = self.extract_cellset_composition(
             cellset_id,
             delete_cellset=False,
             sandbox_name=sandbox_name,
@@ -2216,11 +2216,12 @@ class CellService(ObjectService):
             skip_rule_derived_cells=skip_rule_derived_cells,
             delete_cellset=True,
             sandbox_name=sandbox_name,
-            member_properties=['Name'],
+            member_properties=['Name', 'Attributes'] if include_attributes else ['Name'],
             **kwargs)
 
         # start parsing of JSON directly into CSV
-        dimension_list = []
+        row_headers = list(dimension_names_from_element_unique_names(rows))
+        column_headers = list(dimension_names_from_element_unique_names(columns))
         axes0_list = []
         axes1_list = []
         current_axes = 0
@@ -2232,6 +2233,15 @@ class CellService(ObjectService):
         prefixes_of_interest = ['Cells.item.Value', 'Axes.item.Tuples.item.Members.item.Name',
                                 'Cells.item.Ordinal', 'Axes.item.Tuples.item.Ordinal', 'Cube.Dimensions.item.Name',
                                 'Axes.item.Ordinal']
+
+        attributes_prefixes = set()
+        if include_attributes:
+            attributes_by_dimension = self._get_attributes_by_dimension(cube)
+            for _, attributes in attributes_by_dimension.items():
+                for attribute in attributes:
+                    prefix = f'Axes.item.Tuples.item.Members.item.Attributes.{attribute.replace(" ", "")}'
+                    prefixes_of_interest.append(prefix)
+                    attributes_prefixes.add(prefix)
 
         gen = ((prefix, event, value) for prefix, event, value in parser if prefix in prefixes_of_interest)
         for prefix, event, value in gen:
@@ -2254,6 +2264,28 @@ class CellService(ObjectService):
                 else:
                     axes1_list[current_tuple] += ('' if axes1_list[current_tuple] == '' else value_separator) + value
 
+            if prefix in attributes_prefixes:
+                if event not in ('string', 'number'):
+                    continue
+
+                attribute_name = prefix.split('.')[-1]
+                value = str(value)
+
+                if current_axes == 0:
+                    axes0_list[current_tuple] += ('' if axes0_list[current_tuple] == '' else value_separator) + value
+                else:
+                    axes1_list[current_tuple] += ('' if axes1_list[current_tuple] == '' else value_separator) + value
+
+                # Add header entry for attribute if necessary
+                if current_tuple == 0:
+                    if current_axes == 0:
+                        axis0_elements = axes0_list[current_tuple].split('~')
+                        column_headers.insert(len(axis0_elements) - 1, attribute_name)
+
+                    else:
+                        axis1_elements = axes1_list[current_tuple].split('~')
+                        row_headers.insert(len(axis1_elements) - 1, attribute_name)
+
             elif (prefix, event) == ('Cells.item.Ordinal', 'number'):
                 current_cell_ordinal = value
 
@@ -2264,21 +2296,20 @@ class CellService(ObjectService):
                 else:
                     axes1_list.append('')
 
-            elif (prefix, event) == ('Cube.Dimensions.item.Name', 'string'):
-                dimension_list.append(value)
-
             elif (prefix, event) == ('Axes.item.Ordinal', 'number'):
                 current_axes = value
 
+        # comply with prior implementations: return empty string when cellset is empty
+        if not csv_lines:
+            return ""
+
         # add header
-        dimension_list.append('Value')
-        csv_lines.insert(0, value_separator.join(dimension_list))
+        headers = row_headers + column_headers + ['Value']
+        csv_lines.insert(0, value_separator.join(headers))
 
         csv = line_separator.join(csv_lines)
 
-        # close response
         cellset_response.close()
-
         return csv
 
     @require_pandas
@@ -2311,9 +2342,6 @@ class CellService(ObjectService):
         :param kwargs:
         :return:
         """
-        if use_iterative_json and include_attributes:
-            raise ValueError("Iterative JSON parsing must not be used together with include_attributes")
-
         if use_iterative_json and use_compact_json:
             raise ValueError("Iterative JSON parsing must not be used together with compact JSON")
 
@@ -2321,7 +2349,7 @@ class CellService(ObjectService):
             raw_csv = self.extract_cellset_csv_iter_json(
                 cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                 skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
-                value_separator='~', sandbox_name=sandbox_name, **kwargs)
+                value_separator='~', sandbox_name=sandbox_name, include_attributes=include_attributes, **kwargs)
         else:
             raw_csv = self.extract_cellset_csv(
                 cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
@@ -2652,3 +2680,16 @@ class CellService(ObjectService):
     def sandbox_exists(self, sandbox_name) -> bool:
         sandbox_service = SandboxService(self._rest)
         return sandbox_service.exists(sandbox_name)
+
+    def _get_attributes_by_dimension(self, cube: str, **kwargs) -> Dict[str, List[str]]:
+        from TM1py import ElementService
+        element_service = ElementService(self._rest)
+
+        attributes_by_dimension = CaseAndSpaceInsensitiveDict()
+        for dimension_name in self.get_dimension_names_for_writing(cube):
+            attributes_by_dimension[dimension_name] = element_service.get_element_attribute_names(
+                dimension_name,
+                dimension_name,
+                **kwargs)
+
+        return attributes_by_dimension

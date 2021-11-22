@@ -603,6 +603,16 @@ def element_names_from_element_unique_names(element_unique_names: Iterable[str])
                  in element_unique_names)
 
 
+def dimension_names_from_element_unique_names(element_unique_names: Iterable[str]) -> Tuple[str]:
+    """ Get tuple of simple element names from the full element unique names
+    :param element_unique_names: tuple of element unique names ([dim1].[hier1].[elem1], ... )
+    :return: tuple of element names: (elem1, elem2, ... )
+    """
+    return tuple(dimension_name_from_element_unique_name(unique_name)
+                 for unique_name
+                 in element_unique_names)
+
+
 def build_element_unique_names(
         dimension_names: Iterable[str],
         element_names: Iterable[str],
