@@ -734,33 +734,39 @@ def add_url_parameters(url, **kwargs: str) -> str:
     return urlparse.urlunparse(url_parts)
 
 
-def extract_cell_properties_from_odata_context(context: str) -> Dict:
-    """ Takes in an odata_context and returns a dictionary
-        with properties as keys and values as indexes
-        { Ordinal: 0, Value: 1, ... }
-    
+def extract_cell_properties_from_odata_context(context: str) -> List[str]:
+    """ Takes in an odata_context and returns a list of properties e.g
+      [Ordinal, Value, RuleDerived, ...]
+    :param context: A valid odata_context returned when querying cells
+    :return:
     """
     pattern = re.compile('\$metadata#Cellsets\(Cells\(([A-Za-z,]+)\)\)/\$entity')
     matches = pattern.match(context)
     if not matches:
         raise ValueError('Could not extract cell properties from odata context')
     cell_properties = matches.groups()[0].split(',')
-    return {cell_properties[i]: i for i in range(0, len(cell_properties))}
+    return cell_properties
 
 
-def map_cell_properties_to_data(properties: Dict, data: List) -> Dict:
-    """ Map cell properties to data e.g
-        [[0, 258, 100], [1, 258, 500]] => 
-        {Cells: [
-            { Ordinal: 0, RuleDerived: 258, Value: 100}, 
-            { Ordinal: 1, RuleDerived: 258, Value: 500}
-        ]}
+def map_cell_properties_to_compact_json_response(properties: List, compact_cells_response: List) -> Dict:
+    """ Map cell properties to compact json response e.g
+    properties = [Ordinal, Value, RuleDerived]
+    compact_cells_response = [[0, 258, 100], [1, 258, 500]]
+    result: {Cells: [
+        { Ordinal: 0, Value: 100, RuleDerived: 258}, 
+        { Ordinal: 1, Value: 500, RuleDerived: 258}
+    ]}
+    
+
+    :param properties: list of `Cell` properties e.g [Ordinal, Value, Updateable, ...]
+    :param compact_cells_response: list of cells returned in compact json format
+    :return: dict with properties mapped to compact json response    
     """
     cells_dict = dict()
     cells = []
-    for cell in data:
+    for cell in compact_cells_response:
         d = dict()
-        for prop, index in properties.items():
+        for index, prop in enumerate(properties):
             d[prop] = cell[index]
         cells.append(d)
     cells_dict['Cells'] = cells
