@@ -24,7 +24,7 @@ from TM1py.Services.SandboxService import SandboxService
 from TM1py.Services.ViewService import ViewService
 from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url, add_url_parameters
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
-    CaseAndSpaceInsensitiveDict, extract_cell_properties_from_odata_context, map_cell_properties_to_data, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, abbreviate_mdx, \
+    CaseAndSpaceInsensitiveDict, extract_cell_properties_from_odata_context, map_cell_properties_to_compact_json_response, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, abbreviate_mdx, \
     build_csv_from_cellset_dict, require_version, require_pandas, build_cellset_from_pandas_dataframe, \
     case_and_space_insensitive_equals, get_cube, resembles_mdx, require_admin
 
@@ -144,16 +144,16 @@ def odata_compact_json(return_props_with_data: bool):
                     props = extract_cell_properties_from_odata_context(context)
 
                     # First element [0] is the cellset ID, second is the cellset data
-                    data = response['value'][1]
+                    cells_data = response['value'][1]
 
                     # return props with data if required
                     if return_props_with_data:
-                        return map_cell_properties_to_data(props, data)
+                        return map_cell_properties_to_compact_json_response(props, cells_data)
 
                     if len(props) == 1:
-                        return [value[0] for value in data]
+                        return [value[0] for value in cells_data]
 
-                    return data
+                    return cells_data
                 finally:
                     # Restore original header
                     self._rest.add_http_header('Accept', header)
