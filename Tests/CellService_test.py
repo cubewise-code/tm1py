@@ -1451,7 +1451,7 @@ class TestCellService(unittest.TestCase):
             self.total_value,
             sum(values))
 
-    def test_execute_mdx_csv_iterative_json_parsing(self):
+    def test_execute_mdx_csv_use_iterative_json(self):
         mdx = MdxBuilder.from_cube(self.cube_name) \
             .rows_non_empty() \
             .add_hierarchy_set_to_row_axis(
@@ -1462,7 +1462,7 @@ class TestCellService(unittest.TestCase):
             MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
             .to_mdx()
 
-        csv = self.tm1.cubes.cells.execute_mdx_csv(mdx, iterative_json_parsing=True)
+        csv = self.tm1.cubes.cells.execute_mdx_csv(mdx, use_iterative_json=True)
 
         # check header
         header = csv.split('\r\n')[0]
@@ -1683,7 +1683,7 @@ class TestCellService(unittest.TestCase):
             sum(values))
 
     @skip_if_no_pandas
-    def test_execute_mdx_dataframe_iterative_json_parsing(self):
+    def test_execute_mdx_dataframe_use_iterative_json(self):
         mdx = MdxBuilder.from_cube(self.cube_name) \
             .rows_non_empty() \
             .add_hierarchy_set_to_row_axis(
@@ -1694,7 +1694,7 @@ class TestCellService(unittest.TestCase):
             MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
             .to_mdx()
 
-        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, iterative_json_parsing=True)
+        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, use_iterative_json=True)
 
         # check type
         self.assertIsInstance(df, pd.DataFrame)
@@ -1745,14 +1745,14 @@ class TestCellService(unittest.TestCase):
             sum(values))
 
     @skip_if_no_pandas
-    def test_execute_mdx_dataframe_column_only_iterative_json_parsing(self):
+    def test_execute_mdx_dataframe_column_only_use_iterative_json(self):
         mdx = """SELECT
                         NON EMPTY {[TM1PY_TESTS_CELL_DIMENSION1].[TM1PY_TESTS_CELL_DIMENSION1].MEMBERS} * 
                         {[TM1PY_TESTS_CELL_DIMENSION2].[TM1PY_TESTS_CELL_DIMENSION2].MEMBERS} * 
                         {[TM1PY_TESTS_CELL_DIMENSION3].[TM1PY_TESTS_CELL_DIMENSION3].MEMBERS} ON 0
                         FROM [TM1PY_TESTS_CELL_CUBE]"""
 
-        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, iterative_json_parsing=True)
+        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, use_iterative_json=True)
 
         # check type
         self.assertIsInstance(df, pd.DataFrame)
