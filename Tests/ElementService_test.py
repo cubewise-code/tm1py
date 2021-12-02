@@ -445,6 +445,26 @@ class TestElementService(unittest.TestCase):
                 self.dimension_name,
                 [element_attribute])
 
+    def test_execute_set_mdx(self):
+        mdx = f"{{[{self.dimension_name}].[1990]}}"
+        members = self.tm1.elements.execute_set_mdx(
+            mdx=mdx,
+            member_properties=["Name"],
+            element_properties=None,
+            parent_properties=None)
+
+        self.assertEqual(members, [[{'Name': '1990'}]])
+
+    def test_execute_set_mdx_attribute_with_space(self):
+        mdx = f"{{[{self.dimension_name}].[1990]}}"
+        members = self.tm1.elements.execute_set_mdx(
+            mdx=mdx,
+            member_properties=["Name", "Attributes/Previous Year"],
+            element_properties=None,
+            parent_properties=None)
+
+        self.assertEqual(members, [[{'Name': '1990', 'Attributes': {'Previous Year': '1990'}}]])
+
     @classmethod
     def tearDownClass(cls):
         cls.tm1.logout()

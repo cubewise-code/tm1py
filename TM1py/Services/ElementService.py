@@ -351,10 +351,10 @@ class ElementService(ObjectService):
         :return: List of element names
         """
         if not self.exists(f"}}ElementAttributes_{dimension_name}",
-                f"}}ElementAttributes_{dimension_name}",
-                attribute_name):
+                           f"}}ElementAttributes_{dimension_name}",
+                           attribute_name):
             raise RuntimeError(f"Attribute '{attribute_name}' does not exist in Dimension '{dimension_name}'")
-            
+
         if isinstance(attribute_value, str):
             mdx = (
                 f"{{FILTER({{TM1SUBSETALL([{dimension_name}].[{hierarchy_name}])}},"
@@ -364,7 +364,7 @@ class ElementService(ObjectService):
                 f"{{FILTER({{TM1SUBSETALL([{dimension_name}].[{hierarchy_name}])}},"
                 f"[{dimension_name}].[{hierarchy_name}].[{attribute_name}] = {attribute_value})}}")
 
-        elems =  self.execute_set_mdx(
+        elems = self.execute_set_mdx(
             mdx=mdx,
             member_properties=["Name"],
             parent_properties=None,
@@ -465,9 +465,12 @@ class ElementService(ObjectService):
         :method to execute an MDX statement against a dimension
         :param mdx: valid dimension mdx statement
         :param top_records: number of records to return, default: all elements no limit
-        :param member_properties: list of member properties to return, will always return name
-        :param parent_properties: list of parent properties to return, can be empty
-        :param element_properties: list of element properties to return, can be empty
+        :param member_properties: list of member properties (e.g., Name, UniqueName, Type, Weight, Attributes/Color)
+        to return, will always return the Name property
+        :param parent_properties: list of parent properties (e.g., Name, UniqueName, Type, Weight, Attributes/Color)
+         to return, can be None or empty
+        :param element_properties: list of element properties (e.g., Name, UniqueName, Type, Level, Index,
+        Attributes/Color) to return, can be empty
         :return: dictionary of members, unique names, weights, types, and parents
         """
 
@@ -475,6 +478,25 @@ class ElementService(ObjectService):
 
         if not member_properties:
             member_properties = ['Name']
+
+        # drop spaces in Attribute names
+        else:
+            member_properties = [
+                member_property.replace(' ', '') if member_property.startswith('Attributes/') else member_property
+                for member_property
+                in member_properties]
+
+        if element_properties:
+            element_properties = [
+                element_property.replace(' ', '') if element_property.startswith('Attributes/') else element_property
+                for element_property
+                in element_properties]
+
+        if parent_properties:
+            parent_properties = [
+                parent_property.replace(' ', '') if parent_property.startswith('Attributes/') else parent_property
+                for parent_property
+                in parent_properties]
 
         member_properties = ",".join(member_properties)
         select_member_properties = f'$select={member_properties}'
