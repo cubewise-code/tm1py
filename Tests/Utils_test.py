@@ -8,7 +8,8 @@ from TM1py.Utils import (
     get_dimensions_from_where_clause,
     integerize_version,
     verify_version, get_cube, resembles_mdx, format_url, add_url_parameters, extract_cell_updateable_property,
-    CellUpdateableProperty, cell_is_updateable,
+    CellUpdateableProperty, cell_is_updateable, extract_cell_properties_from_odata_context,
+    map_cell_properties_to_compact_json_response
 )
 
 
@@ -332,6 +333,44 @@ class TestUtilsMethods(unittest.TestCase):
     def test_cell_is_updateable_false(self):
         cell = {'Updateable': 268435716}
         self.assertFalse(cell_is_updateable(cell))
+
+    def test_extract_cell_properties_from_odata_context_cell_properties(self):
+        context = "$metadata#Cellsets(Cells(Ordinal,Value,RuleDerived))/$entity"
+        cell_properties = extract_cell_properties_from_odata_context(context)
+
+        self.assertEqual(['Ordinal', 'Value', 'RuleDerived'], cell_properties)
+
+    def test_extract_cell_properties_from_odata_context_only_value(self):
+        context = "$metadata#Cellsets(Cells(Value))/$entity"
+        cell_properties = extract_cell_properties_from_odata_context(context)
+
+        self.assertEqual(['Value'], cell_properties)
+
+    def test_map_cell_properties_to_compact_json_response_ordinal_value(self):
+        properties = ['Ordinal', 'Value']
+        compact_cells_response = [[1, 200], [2, 350], [3, 100]]
+        actual = map_cell_properties_to_compact_json_response(properties, compact_cells_response)
+
+        expected = {'Cells': [
+            {'Ordinal': 1, 'Value': 200},
+            {'Ordinal': 2, 'Value': 350},
+            {'Ordinal': 3, 'Value': 100},
+        ]}
+
+        self.assertEqual(expected, actual)
+
+    def test_map_cell_properties_to_compact_json_response_value(self):
+        properties = ['Value']
+        compact_cells_response = [[200], [350], [100]]
+        actual = map_cell_properties_to_compact_json_response(properties, compact_cells_response)
+
+        expected = {'Cells': [
+            {'Value': 200},
+            {'Value': 350},
+            {'Value': 100},
+        ]}
+
+        self.assertEqual(expected, actual)
 
     @classmethod
     def tearDownClass(cls):
