@@ -772,6 +772,7 @@ def map_cell_properties_to_compact_json_response(properties: List, compact_cells
     cells_dict['Cells'] = cells
     return cells_dict
 
+
 class CaseAndSpaceInsensitiveDict(collections.abc.MutableMapping):
     """A case-and-space-insensitive dict-like object with String keys.
     Implements all methods and operations of

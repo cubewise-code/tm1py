@@ -368,7 +368,7 @@ class RestService:
             if response is None:
                 raise ValueError(f"No response returned from URL: '{self._base_url + url}'. "
                                  f"Please double check your address and port number in the URL.")
-                
+
             self._version = response.text
         finally:
             # After we have session cookie, drop the Authorization Header
@@ -514,6 +514,17 @@ class RestService:
     def remove_http_header(self, key: str):
         if key in self._headers:
             self._headers.pop(key)
+
+    def add_compact_json_header(self) -> str:
+        original_header = self.get_http_header('Accept')
+        parts = original_header.split(';')
+
+        # Point of insertion is important. Needs to come after application/json
+        parts.insert(1, 'tm1.compact=v0')
+        modified_header = ";".join(parts)
+        self.add_http_header('Accept', modified_header)
+
+        return original_header
 
     def retrieve_async_response(self, async_id: str, **kwargs) -> Response:
         url = self._base_url + f"/api/v1/_async('{async_id}')"
