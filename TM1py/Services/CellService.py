@@ -133,36 +133,33 @@ def odata_compact_json(return_props_with_data: bool):
     def wrap(func):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
-            if kwargs.get("use_compact_json", False):
-                # Update Accept Header
-                header = self._rest.get_http_header('Accept')
-                parts = header.split(';')
-                # Point of insertion is important. Needs to come after application/json
-                parts.insert(1, 'tm1.compact=v0')
-                modified_header = ";".join(parts)
-                self._rest.add_http_header('Accept', modified_header)
-                try:
-                    response = func(self, *args, **kwargs)
-                    context = response['@odata.context']
 
-                    props = extract_cell_properties_from_odata_context(context)
-
-                    # First element [0] is the cellset ID, second is the cellset data
-                    cells_data = response['value'][1]
-
-                    # return props with data if required
-                    if return_props_with_data:
-                        return map_cell_properties_to_compact_json_response(props, cells_data)
-
-                    if len(props) == 1:
-                        return [value[0] for value in cells_data]
-
-                    return cells_data
-                finally:
-                    # Restore original header
-                    self._rest.add_http_header('Accept', header)
-            else:
+            if not kwargs.get("use_compact_json", False):
                 return func(self, *args, **kwargs)
+
+            # Update Accept Header
+            original_header = self._rest.add_compact_json_header()
+
+            try:
+                response = func(self, *args, **kwargs)
+                context = response['@odata.context']
+
+                props = extract_cell_properties_from_odata_context(context)
+
+                # First element [0] is the cellset ID, second is the cellset data
+                cells_data = response['value'][1]
+
+                # return props with data if required
+                if return_props_with_data:
+                    return map_cell_properties_to_compact_json_response(props, cells_data)
+
+                if len(props) == 1:
+                    return [value[0] for value in cells_data]
+
+                return cells_data
+            finally:
+                # Restore original header
+                self._rest.add_http_header('Accept', original_header)
 
         return wrapper
 
@@ -881,7 +878,7 @@ class CellService(ObjectService):
     def execute_mdx(self, mdx: str, cell_properties: List[str] = None, top: int = None, skip_contexts: bool = False,
                     skip: int = None, skip_zeros: bool = False, skip_consolidated_cells: bool = False,
                     skip_rule_derived_cells: bool = False, sandbox_name: str = None, element_unique_names: bool = True,
-                    skip_cell_properties: bool = False, use_compact_json: bool = True,
+                    skip_cell_properties: bool = False, use_compact_json: bool = False,
                     **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
         """ Execute MDX and return the cells with their properties
 
@@ -920,7 +917,7 @@ class CellService(ObjectService):
                      top: int = None, skip_contexts: bool = False, skip: int = None, skip_zeros: bool = False,
                      skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
                      sandbox_name: str = None, element_unique_names: bool = True, skip_cell_properties: bool = False,
-                     use_compact_json: bool = True, **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
+                     use_compact_json: bool = False, **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
         """ get view content as dictionary with sweet and concise structure.
             Works on NativeView and MDXView !
 
@@ -973,7 +970,7 @@ class CellService(ObjectService):
             skip_rule_derived_cells: bool = False,
             sandbox_name: str = None,
             include_hierarchies: bool = False,
-            use_compact_json: bool = True,
+            use_compact_json: bool = False,
             **kwargs) -> Dict:
         """ Execute MDX and return the raw data from TM1
 
@@ -1025,7 +1022,7 @@ class CellService(ObjectService):
             skip_consolidated_cells: bool = False,
             skip_rule_derived_cells: bool = False,
             sandbox_name: str = None,
-            use_compact_json: bool = True,
+            use_compact_json: bool = False,
             **kwargs) -> Dict:
         """ Execute a cube view and return the raw data from TM1
 
@@ -1064,7 +1061,7 @@ class CellService(ObjectService):
             use_compact_json=use_compact_json,
             **kwargs)
 
-    def execute_mdx_values(self, mdx: str, sandbox_name: str = None, use_compact_json: bool = True,
+    def execute_mdx_values(self, mdx: str, sandbox_name: str = None, use_compact_json: bool = False,
                            **kwargs) -> List[Union[str, float]]:
         """ Optimized for performance. Query only raw cell values.
         Coordinates are omitted !
@@ -1079,7 +1076,7 @@ class CellService(ObjectService):
                                            use_compact_json=use_compact_json, **kwargs)
 
     def execute_view_values(self, cube_name: str, view_name: str, private: bool = False, sandbox_name: str = None,
-                            use_compact_json: bool = True, **kwargs) -> List[Union[str, float]]:
+                            use_compact_json: bool = False, **kwargs) -> List[Union[str, float]]:
         """ Execute view and retrieve only the cell values
 
         :param cube_name: String, name of the cube
@@ -1462,7 +1459,7 @@ class CellService(ObjectService):
             top: int = None,
             skip: int = None,
             sandbox_name: str = None,
-            use_compact_json: bool = True,
+            use_compact_json: bool = False,
             **kwargs) -> Dict:
         """ Execute MDX get dygraph dictionary
         Useful for grids or charting libraries that want an array of cell values per column
@@ -1514,7 +1511,7 @@ class CellService(ObjectService):
             top: int = None,
             skip: int = None,
             sandbox_name: str = None,
-            use_compact_json: bool = True,
+            use_compact_json: bool = False,
             **kwargs):
         """
         Useful for grids or charting libraries that want an array of cell values per row.
@@ -1577,7 +1574,7 @@ class CellService(ObjectService):
             top: int = None,
             skip: int = None,
             sandbox_name: str = None,
-            use_compact_json: bool = True,
+            use_compact_json: bool = False,
             **kwargs):
         """
         Useful for grids or charting libraries that want an array of cell values per row.
@@ -1639,7 +1636,7 @@ class CellService(ObjectService):
             top: int = None,
             skip: int = None,
             sandbox_name: str = None,
-            use_compact_json: bool = True,
+            use_compact_json: bool = False,
             **kwargs):
         """
         Useful for grids or charting libraries that want an array of cell values per row.
@@ -1803,7 +1800,7 @@ class CellService(ObjectService):
             skip_rule_derived_cells: bool = False,
             sandbox_name: str = None,
             include_hierarchies: bool = False,
-            use_compact_json: bool = True,
+            use_compact_json: bool = False,
             **kwargs) -> Dict:
         """ Extract full cellset data and return the raw data from TM1
 
@@ -1918,7 +1915,7 @@ class CellService(ObjectService):
             skip_consolidated_cells: bool = False,
             skip_rule_derived_cells: bool = False,
             sandbox_name: str = None,
-            use_compact_json: bool = True,
+            use_compact_json: bool = False,
             **kwargs):
 
         if not cell_properties:
@@ -1962,7 +1959,7 @@ class CellService(ObjectService):
 
     @tidy_cellset
     @odata_compact_json(return_props_with_data=False)
-    def extract_cellset_values(self, cellset_id: str, sandbox_name: str = None, use_compact_json: bool = True,
+    def extract_cellset_values(self, cellset_id: str, sandbox_name: str = None, use_compact_json: bool = False,
                                **kwargs) -> List[Union[str, float]]:
         """ Extract cellset data and return only the cells and values
 
@@ -2079,7 +2076,7 @@ class CellService(ObjectService):
             value_separator: str = ",",
             sandbox_name: str = None,
             include_attributes: bool = False,
-            use_compact_json: bool = True,
+            use_compact_json: bool = False,
             **kwargs) -> str:
         """ Execute cellset and return only the 'Content', in csv format
 
@@ -2335,7 +2332,7 @@ class CellService(ObjectService):
 
     @require_pandas
     def extract_cellset_dataframe_pivot(self, cellset_id: str, dropna: bool = False, fill_value: bool = False,
-                                        sandbox_name: str = None, use_compact_json: bool = True,
+                                        sandbox_name: str = None, use_compact_json: bool = False,
                                         **kwargs) -> 'pd.DataFrame':
         """ Extract a pivot table (pandas dataframe) from a cellset in TM1
 
@@ -2386,7 +2383,7 @@ class CellService(ObjectService):
             sandbox_name: str = None,
             element_unique_names: bool = True,
             skip_cell_properties: bool = False,
-            use_compact_json: bool = True,
+            use_compact_json: bool = False,
             **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
         """ Execute cellset and return the cells with their properties
 
