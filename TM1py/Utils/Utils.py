@@ -7,7 +7,7 @@ import ssl
 import urllib.parse as urlparse
 from contextlib import suppress
 from enum import Enum, unique
-from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator
+from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator, Union
 
 import requests
 
@@ -732,6 +732,29 @@ def add_url_parameters(url, **kwargs: str) -> str:
 
     url_parts[4] = query_part
     return urlparse.urlunparse(url_parts)
+
+
+def extract_compact_json_cellset(context: str, response: Dict, return_as_dict: bool) -> Union[Dict, List]:
+    """ Translates odata compact response json into default dictionary response or plain list (e.g., list of values)
+
+    :param context: The context field from the TM1 response JSON
+    :param response: The JSON response
+    :param return_as_dict: boolean
+    :return:
+    """
+    props = extract_cell_properties_from_odata_context(context)
+
+    # First element [0] is the cellset ID, second is the cellset data
+    cells_data = response['value'][1]
+
+    # return props with data if required
+    if return_as_dict:
+        return map_cell_properties_to_compact_json_response(props, cells_data)
+
+    if len(props) == 1:
+        return [value[0] for value in cells_data]
+
+    return cells_data
 
 
 def extract_cell_properties_from_odata_context(context: str) -> List[str]:

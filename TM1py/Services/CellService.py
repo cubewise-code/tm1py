@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import asyncio
 import functools
 import itertools
@@ -25,11 +24,10 @@ from TM1py.Services.SandboxService import SandboxService
 from TM1py.Services.ViewService import ViewService
 from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url, add_url_parameters
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
-    CaseAndSpaceInsensitiveDict, extract_cell_properties_from_odata_context, \
-    map_cell_properties_to_compact_json_response, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, \
+    CaseAndSpaceInsensitiveDict, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, \
     abbreviate_mdx, \
     build_csv_from_cellset_dict, require_version, require_pandas, build_cellset_from_pandas_dataframe, \
-    case_and_space_insensitive_equals, get_cube, resembles_mdx, require_admin
+    case_and_space_insensitive_equals, get_cube, resembles_mdx, require_admin, extract_compact_json_cellset
 
 try:
     import pandas as pd
@@ -118,7 +116,7 @@ def manage_changeset(func):
     return wrapper
 
 
-def odata_compact_json(return_props_with_data: bool):
+def odata_compact_json(return_as_dict: bool):
     """ Higher order function to manage header and response when using compact JSON
         
         Applies when decorated function has `use_compact_json` argument set to True
@@ -144,19 +142,12 @@ def odata_compact_json(return_props_with_data: bool):
                 response = func(self, *args, **kwargs)
                 context = response['@odata.context']
 
-                props = extract_cell_properties_from_odata_context(context)
+                if context.startswith('$metadata#Cellsets'):
+                    return extract_compact_json_cellset(context, response, return_as_dict)
 
-                # First element [0] is the cellset ID, second is the cellset data
-                cells_data = response['value'][1]
+                else:
+                    raise NotImplementedError('odata_compact_json decorator must only be used on cellsets')
 
-                # return props with data if required
-                if return_props_with_data:
-                    return map_cell_properties_to_compact_json_response(props, cells_data)
-
-                if len(props) == 1:
-                    return [value[0] for value in cells_data]
-
-                return cells_data
             finally:
                 # Restore original header
                 self._rest.add_http_header('Accept', original_header)
@@ -1127,7 +1118,8 @@ class CellService(ObjectService):
     def execute_mdx_csv(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
                         skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
                         line_separator: str = "\r\n", value_separator: str = ",", sandbox_name: str = None,
-                        include_attributes: bool = False, use_iterative_json: bool = False, **kwargs) -> str:
+                        include_attributes: bool = False, use_iterative_json: bool = False,
+                        use_compact_json: bool = False, **kwargs) -> str:
         """ Optimized for performance. Get csv string of coordinates and values.
 
         :param mdx: Valid MDX Query
@@ -1142,6 +1134,7 @@ class CellService(ObjectService):
         :param include_attributes: include attribute columns
         :param use_iterative_json: use iterative json parsing to reduce memory consumption significantly.
         Comes at a cost of 3-5% performance.
+        :param use_compact_json: bool
         :return: String
         """
         cellset_id = self.create_cellset(mdx, sandbox_name=sandbox_name, **kwargs)
@@ -1159,13 +1152,13 @@ class CellService(ObjectService):
             cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
             skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
             line_separator=line_separator, value_separator=value_separator, sandbox_name=sandbox_name,
-            include_attributes=include_attributes, **kwargs)
+            include_attributes=include_attributes, use_compact_json=use_compact_json, **kwargs)
 
     def execute_view_csv(self, cube_name: str, view_name: str, private: bool = False, top: int = None, skip: int = None,
                          skip_zeros: bool = True, skip_consolidated_cells: bool = False,
                          skip_rule_derived_cells: bool = False, line_separator: str = "\r\n",
                          value_separator: str = ",", sandbox_name: str = None, use_iterative_json: bool = False,
-                         **kwargs) -> str:
+                         use_compact_json: bool = False, **kwargs) -> str:
         """ Optimized for performance. Get csv string of coordinates and values.
 
         :param cube_name: String, name of the cube
@@ -1181,6 +1174,7 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :param use_iterative_json: use iterative json parsing to reduce memory consumption significantly.
         Comes at a cost of 3-5% performance.
+        :param use_compact_json: bool
         :return: String
         """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
@@ -1196,12 +1190,12 @@ class CellService(ObjectService):
             cellset_id=cellset_id, skip_zeros=skip_zeros, top=top, skip=skip,
             skip_consolidated_cells=skip_consolidated_cells,
             skip_rule_derived_cells=skip_rule_derived_cells, line_separator=line_separator,
-            value_separator=value_separator, sandbox_name=sandbox_name, **kwargs)
+            value_separator=value_separator, sandbox_name=sandbox_name, use_compact_json=use_compact_json, **kwargs)
 
     def execute_mdx_elements_value_dict(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
                                         skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
-                                        element_separator: str = "|",
-                                        sandbox_name: str = None, **kwargs) -> CaseAndSpaceInsensitiveDict:
+                                        element_separator: str = "|", sandbox_name: str = None,
+                                        **kwargs) -> CaseAndSpaceInsensitiveDict:
         """ Optimized for performance. Get Dict from MDX Query.
         :param mdx: Valid MDX Query
         :param top: Int, number of cells to return (counting from top)
@@ -1228,7 +1222,8 @@ class CellService(ObjectService):
     def execute_mdx_dataframe(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
                               skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
                               sandbox_name: str = None, include_attributes: bool = False,
-                              use_iterative_json: bool = False, **kwargs) -> 'pd.DataFrame':
+                              use_iterative_json: bool = False, use_compact_json: bool = False,
+                              **kwargs) -> 'pd.DataFrame':
         """ Optimized for performance. Get Pandas DataFrame from MDX Query.
 
         Takes all arguments from the pandas.read_csv method:
@@ -1244,6 +1239,7 @@ class CellService(ObjectService):
         :param include_attributes: include attribute columns
         :param use_iterative_json: use iterative json parsing to reduce memory consumption significantly.
         Comes at a cost of 3-5% performance.
+        :param use_compact_json: bool
         :return: Pandas Dataframe
         """
         cellset_id = self.create_cellset(mdx, sandbox_name=sandbox_name, **kwargs)
@@ -1251,7 +1247,8 @@ class CellService(ObjectService):
                                               skip_consolidated_cells=skip_consolidated_cells,
                                               skip_rule_derived_cells=skip_rule_derived_cells,
                                               sandbox_name=sandbox_name, include_attributes=include_attributes,
-                                              use_iterative_json=use_iterative_json, **kwargs)
+                                              use_iterative_json=use_iterative_json, use_compact_json=use_compact_json,
+                                              **kwargs)
 
     @require_pandas
     def execute_mdx_dataframe_shaped(self, mdx: str, sandbox_name: str = None, display_attribute: bool = False,
@@ -1905,7 +1902,7 @@ class CellService(ObjectService):
         response = self._rest.GET(url=url, **kwargs)
         return response.json()
 
-    @odata_compact_json(return_props_with_data=True)
+    @odata_compact_json(return_as_dict=True)
     def extract_cellset_cells_raw(
             self, cellset_id: str,
             cell_properties: Iterable[str] = None,
@@ -1915,7 +1912,6 @@ class CellService(ObjectService):
             skip_consolidated_cells: bool = False,
             skip_rule_derived_cells: bool = False,
             sandbox_name: str = None,
-            use_compact_json: bool = False,
             **kwargs):
 
         if not cell_properties:
@@ -1958,7 +1954,7 @@ class CellService(ObjectService):
         return response.json()
 
     @tidy_cellset
-    @odata_compact_json(return_props_with_data=False)
+    @odata_compact_json(return_as_dict=False)
     def extract_cellset_values(self, cellset_id: str, sandbox_name: str = None, use_compact_json: bool = False,
                                **kwargs) -> List[Union[str, float]]:
         """ Extract cellset data and return only the cells and values
@@ -2224,6 +2220,7 @@ class CellService(ObjectService):
             sandbox_name: str = None,
             include_attributes: bool = False,
             use_iterative_json: bool = False,
+            use_compact_json: bool = False,
             **kwargs) -> 'pd.DataFrame':
         """ Build pandas data frame from cellset_id
 
@@ -2237,11 +2234,15 @@ class CellService(ObjectService):
         :param include_attributes: include attribute columns
         :param use_iterative_json: use iterative json parsing to reduce memory consumption significantly.
         Comes at a cost of 3-5% performance.
+        :param use_compact_json: bool
         :param kwargs:
         :return:
         """
         if use_iterative_json and include_attributes:
             raise ValueError("Iterative JSON parsing must not be used together with include_attributes")
+
+        if use_iterative_json and use_compact_json:
+            raise ValueError("Iterative JSON parsing must not be used together with compact JSON")
 
         if use_iterative_json:
             raw_csv = self.extract_cellset_csv_iter_json(
@@ -2252,7 +2253,8 @@ class CellService(ObjectService):
             raw_csv = self.extract_cellset_csv(
                 cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                 skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
-                value_separator='~', sandbox_name=sandbox_name, include_attributes=include_attributes, **kwargs)
+                value_separator='~', sandbox_name=sandbox_name, include_attributes=include_attributes,
+                use_compact_json=use_compact_json, **kwargs)
 
         if not raw_csv:
             return pd.DataFrame()
