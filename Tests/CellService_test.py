@@ -930,11 +930,27 @@ class TestCellService(unittest.TestCase):
             self.total_value, sum(v["Value"] for v in data.values() if v["Value"])
         )
 
+    def test_execute_mdx_top(self):
+        # write cube content
+        self.tm1.cubes.cells.write_values(self.cube_name, self.cellset)
+
+        # MDX Query that gets full cube content with zero suppression
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .rows_non_empty() \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0])) \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1])) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
+            .to_mdx()
+
         # MDX with top
         data = self.tm1.cubes.cells.execute_mdx(mdx, top=5)
         # Check if total value is the same AND coordinates are the same. Handle None
         self.assertEqual(len(data), 5)
 
+    def test_execute_mdx_calculated_member(self):
         # MDX Query with calculated MEMBER
         mdx = """
         WITH MEMBER[{}].[{}] AS 2 
@@ -949,6 +965,25 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(1000, len(data))
         self.assertEqual(2000, sum(v["Value"] for v in data.values()))
         self.assertEqual(sum(range(1000)), sum(v["Ordinal"] for v in data.values()))
+
+    def test_execute_mdx_compact_json(self):
+        # write cube content
+        self.tm1.cubes.cells.write_values(self.cube_name, self.cellset)
+
+        # MDX Query that gets full cube content with zero suppression
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .rows_non_empty() \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0])) \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1])) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
+            .to_mdx()
+
+        data = self.tm1.cubes.cells.execute_mdx(mdx, use_compact_json=True)
+        # Check if total value is the same AND coordinates are the same. Handle None
+        self.assertEqual(self.total_value, sum(v["Value"] for v in data.values() if v["Value"]))
 
     def test_execute_mdx_without_rows(self):
         # write cube content
@@ -1385,6 +1420,43 @@ class TestCellService(unittest.TestCase):
             .to_mdx()
 
         cell_values = self.tm1.cubes.cells.execute_mdx_values(mdx)
+        self.assertIsInstance(
+            cell_values,
+            list)
+        # Check if total value is the same. Handle None.
+        self.assertEqual(self.total_value, sum(v for v in cell_values if v))
+        # Define MDX Query with calculated MEMBER
+        mdx = "WITH MEMBER[{}].[{}] AS 2 " \
+              "SELECT[{}].MEMBERS ON ROWS, " \
+              "{{[{}].[{}]}} ON COLUMNS " \
+              "FROM[{}] " \
+              "WHERE([{}].DefaultMember)".format(self.dimension_names[1], "Calculated Member", self.dimension_names[0],
+                                                 self.dimension_names[1], "Calculated Member", self.cube_name,
+                                                 self.dimension_names[2])
+
+        data = self.tm1.cubes.cells.execute_mdx_values(mdx)
+        self.assertEqual(
+            1000,
+            len(list(data)))
+        data = self.tm1.cubes.cells.execute_mdx_values(mdx)
+        self.assertEqual(
+            2000,
+            sum(data))
+
+    def test_execute_mdx_values_compact_json(self):
+        self.tm1.cells.write_values(self.cube_name, self.cellset)
+
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .columns_non_empty() \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0])) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1])) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
+            .to_mdx()
+
+        cell_values = self.tm1.cubes.cells.execute_mdx_values(mdx, use_compact_json=True)
         self.assertIsInstance(
             cell_values,
             list)
