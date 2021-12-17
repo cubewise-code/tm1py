@@ -152,7 +152,7 @@ class RestService:
         :param impersonate: Name of user to impersonate
         """
         self._kwargs = kwargs
-        self._ssl = self.translate_to_boolean(kwargs['ssl'])
+        self._ssl = self.translate_to_boolean(kwargs.get('ssl', True))
         self._address = kwargs.get('address', None)
         self._port = kwargs.get('port', None)
         self._verify = False
@@ -180,6 +180,7 @@ class RestService:
 
         if 'base_url' in kwargs:
             self._base_url = kwargs['base_url']
+            self._ssl = self._determine_ssl_based_on_base_url()
         else:
             self._base_url = "http{}://{}:{}".format(
                 's' if self._ssl else '',
@@ -580,6 +581,14 @@ class RestService:
         else:
             while True:
                 yield 1
+
+    def _determine_ssl_based_on_base_url(self) -> bool:
+        if self._base_url.startswith("https"):
+            return True
+        elif self._base_url.startswith("http"):
+            return False
+        else:
+            raise ValueError(f"Invalid base_url: '{self._base_url}'")
 
 
 class BytesIOSocket:

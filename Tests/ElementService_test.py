@@ -463,7 +463,7 @@ class TestElementService(unittest.TestCase):
             element_properties=None,
             parent_properties=None)
 
-        self.assertEqual(members, [[{'Name': '1990', 'Attributes': {'Previous Year': '1990'}}]])
+        self.assertEqual(members, [[{'Name': '1990', 'Attributes': {'Previous Year': '1989'}}]])
 
     @classmethod
     def tearDownClass(cls):
