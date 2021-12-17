@@ -27,7 +27,8 @@ from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_nam
     CaseAndSpaceInsensitiveDict, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, \
     abbreviate_mdx, \
     build_csv_from_cellset_dict, require_version, require_pandas, build_cellset_from_pandas_dataframe, \
-    case_and_space_insensitive_equals, get_cube, resembles_mdx, require_admin, extract_compact_json_cellset
+    case_and_space_insensitive_equals, get_cube, resembles_mdx, require_admin, extract_compact_json_cellset, \
+    cell_is_updateable, build_mdx_from_cellset, build_mdx_and_values_from_cellset
 
 try:
     import pandas as pd
@@ -570,7 +571,7 @@ class CellService(ObjectService):
     def write(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None, increment: bool = False,
               deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
               sandbox_name: str = None, use_ti=False, use_changeset: bool = False, precision: int = 8,
-              **kwargs) -> Optional[str]:
+              skip_non_updateable: bool = False, **kwargs) -> Optional[str]:
         """ Write values to a cube
 
         Same signature as `write_values` method, but faster since it uses `write_values_through_cellset`
@@ -590,6 +591,7 @@ class CellService(ObjectService):
         :param use_changeset: Enable ChangesetID: True or False
         :param precision: max precision when writhing through unbound process.
         Necessary when dealing with large numbers to avoid "number too long" TI syntax error.
+        :param skip_non_updateable skip cells that are not updateable (e.g. rule derived or consolidated)
         :return: changeset or None
         """
 
@@ -602,19 +604,16 @@ class CellService(ObjectService):
                 deactivate_transaction_log=deactivate_transaction_log,
                 reactivate_transaction_log=reactivate_transaction_log,
                 precision=precision,
+                skip_non_updateable=skip_non_updateable,
                 **kwargs)
 
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name, **kwargs)
 
-        values = []
-        query = MdxBuilder.from_cube(cube_name)
-        for coordinates, value in cellset_as_dict.items():
-            members = (Member.of(dimension, element) for dimension, element in zip(dimensions, coordinates))
-            query.add_member_tuple_to_columns(*members)
-            values.append(value)
-        mdx = query.to_mdx()
+        if skip_non_updateable:
+            cellset_as_dict = self.drop_non_updateable_cells(cellset_as_dict, cube_name, dimensions)
 
+        mdx, values = build_mdx_and_values_from_cellset(cellset_as_dict, cube_name, dimensions)
         return self.write_values_through_cellset(
             mdx=mdx,
             values=values,
@@ -625,17 +624,40 @@ class CellService(ObjectService):
             use_changeset=use_changeset,
             **kwargs)
 
+    def drop_non_updateable_cells(self, cells: Dict, cube_name: str, dimensions: List[str]):
+        mdx = build_mdx_from_cellset(cells, cube_name, dimensions)
+        updateable_cells = CaseAndSpaceInsensitiveTuplesDict()
+
+        cells_with_updateable_flag = self.execute_mdx(
+            mdx,
+            # Issue in TM1 Server 11.8: Updateable property is not correct if Value property is not retrieved
+            cell_properties=["Updateable", "Value"],
+            element_unique_names=False,
+            skip_consolidated_cells=True,
+            skip_rule_derived_cells=True)
+
+        for elements, cell in cells_with_updateable_flag.items():
+            # skip sandbox element
+            if len(elements) > len(dimensions):
+                elements = elements[1:]
+
+            if cell_is_updateable(cell):
+                updateable_cells[elements] = cells[elements]
+        return updateable_cells
+
     @require_admin
     @manage_transaction_log
     def write_through_unbound_process(self, cube_name: str, cellset_as_dict: Dict, increment: bool = False,
-                                      sandbox_name: str = None, precision: int = 8, **kwargs):
+                                      sandbox_name: str = None, precision: int = 8, skip_non_updateable: bool = False,
+                                      **kwargs):
         """
         Writes data back to TM1 via an unbound TI process
-        :param cube_name:
+        :param cube_name: str
         :param cellset_as_dict:
-        :param increment:
-        :param sandbox_name:
-        :param precision:
+        :param increment: increment or update cell values
+        :param sandbox_name: str
+        :param precision: max precision when writhing through unbound process.
+        :param skip_non_updateable skip cells that are not updateable (e.g. rule derived or consolidated)
         :param kwargs:
         :return: Success: bool, Messages: list, ChangeSet: None
         """
@@ -680,12 +702,24 @@ class CellService(ObjectService):
                 else:
                     value_str = format(value, f'.{precision}f')
 
+            comma_separated_elements = ",".join("'" + element.replace("'", "''") + "'" for element in coordinates)
+
+            if skip_non_updateable:
+                cell_is_updateable_pre = f"IF(CellIsUpdateable('{cube_name}', {comma_separated_elements})=1,"
+                cell_is_updateable_post = ",0);"
+            else:
+                cell_is_updateable_pre = ""
+                cell_is_updateable_post = ";"
+
             statement = "".join([
+                cell_is_updateable_pre,
                 function_str,
                 value_str,
                 f",'{cube_name}',",
-                ",".join("'" + element.replace("'", "''") + "'" for element in coordinates),
-                ");"])
+                comma_separated_elements,
+                ")",
+                cell_is_updateable_post])
+
             statements.append(statement)
 
         chunk = list()

@@ -10,7 +10,8 @@ from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyVersionException, T
 from TM1py.Objects import (AnonymousSubset, Cube, Dimension, Element,
                            ElementAttribute, Hierarchy, MDXView, NativeView)
 from TM1py.Services import TM1Service
-from TM1py.Utils import Utils, element_names_from_element_unique_names, CaseAndSpaceInsensitiveDict
+from TM1py.Utils import Utils, element_names_from_element_unique_names, CaseAndSpaceInsensitiveDict, \
+    CaseAndSpaceInsensitiveTuplesDict
 from .Utils import skip_if_insufficient_version, skip_if_no_pandas
 
 try:
@@ -306,6 +307,36 @@ class TestCellService(unittest.TestCase):
             f"[{self.dimension_names[2]}].[Element 9]")
 
         self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [1234])
+
+    def test_write_use_ti_skip_non_updateable(self):
+        cells = CaseAndSpaceInsensitiveTuplesDict()
+        cells["Element 1", "Element4", "TOTAL_" + self.dimensions_with_consolidations_names[2]] = 5
+        cells["Element 1", "Element22", "Element9"] = 8
+
+        self.tm1.cells.write(self.cube_with_consolidations_name, cells, use_ti=True, skip_non_updateable=True)
+
+        query = MdxBuilder.from_cube(self.cube_with_consolidations_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimensions_with_consolidations_names[0]}].[Element 1]",
+            f"[{self.dimensions_with_consolidations_names[1]}].[Element 22]",
+            f"[{self.dimensions_with_consolidations_names[2]}].[Element 9]")
+
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [8])
+
+    def test_write_skip_non_updateable(self):
+        cells = CaseAndSpaceInsensitiveTuplesDict()
+        cells["Element 1", "Element4", "TOTAL_" + self.dimensions_with_consolidations_names[2]] = 5
+        cells["Element 4", "Element7", "Element9"] = 8
+
+        self.tm1.cells.write(self.cube_with_consolidations_name, cells, skip_non_updateable=True)
+
+        query = MdxBuilder.from_cube(self.cube_with_consolidations_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimensions_with_consolidations_names[0]}].[Element 4]",
+            f"[{self.dimensions_with_consolidations_names[1]}].[Element 7]",
+            f"[{self.dimensions_with_consolidations_names[2]}].[Element 9]")
+
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [8])
 
     def test_write_increment_true(self):
         cells = {("Element 1", "Element5", "Element8"): 211}
