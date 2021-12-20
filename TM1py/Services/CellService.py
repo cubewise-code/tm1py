@@ -607,6 +607,14 @@ class CellService(ObjectService):
                 skip_non_updateable=skip_non_updateable,
                 **kwargs)
 
+        return self.write_through_cellset(cube_name, cellset_as_dict, dimensions, increment, deactivate_transaction_log,
+                                          reactivate_transaction_log, sandbox_name, use_changeset, skip_non_updateable,
+                                          **kwargs)
+
+    def write_through_cellset(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None,
+                              increment: bool = False, deactivate_transaction_log: bool = False,
+                              reactivate_transaction_log: bool = False, sandbox_name: str = None,
+                              use_changeset: bool = False, skip_non_updateable: bool = False, **kwargs) -> str:
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name, **kwargs)
 
@@ -704,12 +712,11 @@ class CellService(ObjectService):
 
             comma_separated_elements = ",".join("'" + element.replace("'", "''") + "'" for element in coordinates)
 
+            cell_is_updateable_pre = ""
+            cell_is_updateable_post = ";"
             if skip_non_updateable:
                 cell_is_updateable_pre = f"IF(CellIsUpdateable('{cube_name}', {comma_separated_elements})=1,"
                 cell_is_updateable_post = ",0);"
-            else:
-                cell_is_updateable_pre = ""
-                cell_is_updateable_post = ";"
 
             statement = "".join([
                 cell_is_updateable_pre,
