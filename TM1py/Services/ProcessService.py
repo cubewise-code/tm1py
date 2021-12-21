@@ -94,7 +94,6 @@ class ProcessService(ObjectService):
                          "or contains(toupper(EpilogProcedure),toupper('{}'))",
                          search_string, search_string, search_string, search_string
             )
-        
         response = self._rest.GET(url, **kwargs)
         processes = list(process['Name'] for process in response.json()['value'])
         return processes
