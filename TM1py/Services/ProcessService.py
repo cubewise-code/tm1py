@@ -82,6 +82,49 @@ class ProcessService(ObjectService):
         processes = list(process['Name'] for process in response.json()['value'])
         return processes
 
+    def search_string_in_body(self, search_string: str, **kwargs) -> List[str]:
+        """ Ask TM1 Server for list of process names that contain string anywhere in body
+
+        :param search_string: case insensitive string to search for
+        """
+        url = format_url("/api/v1/Processes?$select=Name&$filter=" \
+                         "contains(toupper(PrologProcedure),toupper('{}')) " \
+                         "or contains(toupper(MetadataProcedure),toupper('{}')) " \
+                         "or contains(toupper(DataProcedure),toupper('{}')) " \
+                         "or contains(toupper(EpilogProcedure),toupper('{}'))",
+                         search_string, search_string, search_string, search_string
+            )
+        
+        response = self._rest.GET(url, **kwargs)
+        processes = list(process['Name'] for process in response.json()['value'])
+        return processes
+
+    def search_string_in_name(self, name_startswith: str = None, name_contains: Iterable = None,
+                              **kwargs) -> List[str]:
+        """ Ask TM1 Server for list of process names that contain or start with string
+
+        :param name_startswith: str, process name begins with (case insensitive)
+        :param name_contains: iterable, found anywhere in name (case insensitive)
+        """
+        url = "/api/v1/Processes?$select=Name"
+        name_filters = []
+
+        if name_startswith:
+            name_filters.append(format_url("startswith(toupper(Name),toupper('{}'))", name_startswith))
+
+        if name_contains:
+            if isinstance(name_contains, str):
+                name_filters.append(format_url("contains(toupper(Name),toupper('{}'))", name_contains))
+            else:
+                name_contains_filters = [format_url("contains(toupper(Name),toupper('{}'))", wildcard)
+                                         for wildcard in name_contains]
+                name_filters.append("({})".format(" and ".join(name_contains_filters)))
+
+        url += "&$filter={}".format(" and ".join(name_filters))
+        response = self._rest.GET(url, **kwargs)
+        processes = list(process['Name'] for process in response.json()['value'])
+        return processes
+    
     def create(self, process: Process, **kwargs) -> Response:
         """ Create a new process on TM1 Server
 
