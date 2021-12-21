@@ -196,7 +196,6 @@ class CubeService(ObjectService):
         :param dimension_name: string, valid dimension name (case insensitive)
         :param model_cubes_only: bool, True will filter result to model cubes only
         """
-
         cube_prefix = 'Cubes' if model_cubes_only == False else 'ModelCubes()'
         url = format_url(
             "/api/v1/{}?$select=Name&$filter=Dimensions/any(d: toupper(d/Name) eq toupper('{}'))",
@@ -223,8 +222,7 @@ class CubeService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         cube_dict = {entry['Name']:[dim['Name'] for dim in entry['Dimensions']] for entry in response.json()['value']}
         return cube_dict
-    
-    
+        
     @require_version(version="11.4")
     def get_storage_dimension_order(self, cube_name: str, **kwargs) -> List[str]:
         """ Get the storage dimension order of a cube
