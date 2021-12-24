@@ -10,6 +10,7 @@ from enum import Enum, unique
 from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator, Union
 
 import requests
+from mdxpy import MdxBuilder, Member
 
 from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminException
 
@@ -1084,3 +1085,23 @@ def cell_is_updateable(cell: dict) -> bool:
     bit = extract_cell_updateable_property(cell["Updateable"], CellUpdateableProperty.CELL_IS_NOT_UPDATEABLE)
     updateable = not bit
     return updateable
+
+
+def build_mdx_from_cellset(cells: Dict, cube_name: str, dimensions: Iterable[str]) -> str:
+    query = MdxBuilder.from_cube(cube_name)
+    for coordinates in cells:
+        members = (Member.of(dimension, element) for dimension, element in zip(dimensions, coordinates))
+        query.add_member_tuple_to_columns(*members)
+    mdx = query.to_mdx()
+    return mdx
+
+
+def build_mdx_and_values_from_cellset(cells: Dict, cube_name: str, dimensions: Iterable[str]) -> Tuple[str, List]:
+    values = []
+    query = MdxBuilder.from_cube(cube_name)
+    for coordinates, value in cells.items():
+        members = (Member.of(dimension, element) for dimension, element in zip(dimensions, coordinates))
+        query.add_member_tuple_to_columns(*members)
+        values.append(value)
+    mdx = query.to_mdx()
+    return mdx, values
