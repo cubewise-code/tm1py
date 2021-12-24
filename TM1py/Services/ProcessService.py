@@ -82,8 +82,9 @@ class ProcessService(ObjectService):
         processes = list(process['Name'] for process in response.json()['value'])
         return processes
 
-    def search_string_in_body(self, search_string: str, **kwargs) -> List[str]:
-        """ Ask TM1 Server for list of process names that contain string anywhere in body
+    def search_string_in_code(self, search_string: str, **kwargs) -> List[str]:
+        """ Ask TM1 Server for list of process names that contain string anywhere in code tabs: Prolog,Metadata,Data,Epilog
+        will not search DataSource, Parameters, Variables, or Attributes
 
         :param search_string: case insensitive string to search for
         """
