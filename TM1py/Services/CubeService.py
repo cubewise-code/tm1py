@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import random
-from typing import List, Iterable
+from typing import List, Iterable, Dict
 
 from requests import Response
 
@@ -189,40 +189,42 @@ class CubeService(ObjectService):
             return dimension_names[1:]
         return dimension_names
 
-    def get_names_with_dimension(self, dimension_name: str, skip_control_cubes: bool = False,
-                                 **kwargs) -> List[str]:
+    def search_for_dimension(self, dimension_name: str, skip_control_cubes: bool = False,
+                             **kwargs) -> List[str]:
         """ Ask TM1 Server for list of cube names that contain specific dimension
 
         :param dimension_name: string, valid dimension name (case insensitive)
         :param skip_control_cubes: bool, True will exclude control cubes from result
         """
-        cube_prefix = 'Cubes' if skip_control_cubes == False else 'ModelCubes()'
         url = format_url(
-            "/api/v1/{}?$select=Name&$filter=Dimensions/any(d: toupper(d/Name) eq toupper('{}'))",
-            cube_prefix, dimension_name
-            )
+            "/api/v1/{}?$select=Name&$filter=Dimensions/any(d: replace(tolower(d/Name), ' ', '') eq '{}')",
+            'ModelCubes()' if skip_control_cubes else 'Cubes',
+            dimension_name.lower().replace(' ', '')
+        )
         response = self._rest.GET(url, **kwargs)
         cubes = list(entry['Name'] for entry in response.json()['value'])
         return cubes
 
+    def search_for_dimension_substring(self, substring: str, skip_control_cubes: bool = False,
+                                       **kwargs) -> Dict[str, List[str]]:
+        """ Ask TM1 Server for a dictinary of cube names with the dimension whose name contains the substring
 
-    def get_names_with_dimension_wildcard(self, wildcard: str, skip_control_cubes: bool = False,
-                                          **kwargs) -> List[str]:
-        """ Ask TM1 Server for list of cube names that contain dimension whose name contains wildcard
-
-        :param wildcard: string, wildcard to search for in dim name
+        :param substring: string to search for in dim name
         :param skip_control_cubes: bool, True will exclude control cubes from result
         """
-        cube_prefix = 'Cubes' if skip_control_cubes == False else 'ModelCubes()'
+        substring = substring.lower().replace(' ', '')
+
         url = format_url(
-            "/api/v1/{}?$select=Name&$filter=Dimensions/any(d: contains(toupper(d/Name),toupper('{}')))" \
-            "&$expand=Dimensions($select=Name;$filter=contains(toupper(Name),toupper('{}')))",
-            cube_prefix, wildcard, wildcard
-            )
+            "/api/v1/{}?$select=Name&$filter=Dimensions/any(d: contains(replace(tolower(d/Name), ' ', ''),'{}'))" +
+            "&$expand=Dimensions($select=Name;$filter=contains(replace(tolower(Name), ' ', ''), '{}'))",
+            'ModelCubes()' if skip_control_cubes else 'Cubes',
+            substring,
+            substring)
+
         response = self._rest.GET(url, **kwargs)
-        cube_dict = {entry['Name']:[dim['Name'] for dim in entry['Dimensions']] for entry in response.json()['value']}
+        cube_dict = {entry['Name']: [dim['Name'] for dim in entry['Dimensions']] for entry in response.json()['value']}
         return cube_dict
-        
+
     @require_version(version="11.4")
     def get_storage_dimension_order(self, cube_name: str, **kwargs) -> List[str]:
         """ Get the storage dimension order of a cube

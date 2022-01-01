@@ -120,15 +120,18 @@ class ProcessService(ObjectService):
         if name_contains:
             if isinstance(name_contains, str):
                 name_filters.append(format_url("contains(toupper(Name),toupper('{}'))", name_contains))
-            else:
+
+            elif isinstance(name_contains, Iterable):
                 name_contains_filters = [format_url("contains(toupper(Name),toupper('{}'))", wildcard)
                                          for wildcard in name_contains]
                 name_filters.append("({})".format(f" {name_contains_operator} ".join(name_contains_filters)))
 
-        url += "&$filter={}".format(" and ".join(name_filters))
+            else:
+                raise ValueError("'name_contains' must be str or iterable")
+
+        url += "&$filter={}".format(f" and ".join(name_filters))
         response = self._rest.GET(url, **kwargs)
-        processes = list(process['Name'] for process in response.json()['value'])
-        return processes
+        return list(process['Name'] for process in response.json()['value'])
     
     def create(self, process: Process, **kwargs) -> Response:
         """ Create a new process on TM1 Server
