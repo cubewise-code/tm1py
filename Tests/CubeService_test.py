@@ -140,6 +140,46 @@ class TestCubeService(unittest.TestCase):
         dimensions = self.tm1.cubes.get_storage_dimension_order(cube_name=self.cube_name)
         self.assertEqual(dimensions, self.dimension_names)
 
+    def test_search_for_dimension_happy_case(self):
+        cube_names = self.tm1.cubes.search_for_dimension(self.dimension_names[0])
+        self.assertEqual([self.cube_name], cube_names)
+
+    def test_search_for_dimension_no_match(self):
+        cube_names = self.tm1.cubes.search_for_dimension("NotADimensionName")
+        self.assertEqual([], cube_names)
+
+    def test_search_for_dimension_case_insensitive(self):
+        cube_names = self.tm1.cubes.search_for_dimension(self.dimension_names[1].upper())
+        self.assertEqual([self.cube_name], cube_names)
+
+    def test_search_for_dimension_space_insensitive(self):
+        cube_names = self.tm1.cubes.search_for_dimension(" " + self.dimension_names[2] + " ")
+        self.assertEqual([self.cube_name], cube_names)
+
+    def test_search_for_dimension_substring_happy_case(self):
+        cubes = self.tm1.cubes.search_for_dimension_substring(substring=self.dimension_names[0])
+        self.assertEqual({self.cube_name: [self.dimension_names[0]]}, cubes)
+
+    def test_search_for_dimension_substring_case_insensitive(self):
+        cubes = self.tm1.cubes.search_for_dimension_substring(substring=self.dimension_names[1].upper())
+        self.assertEqual({self.cube_name: [self.dimension_names[1]]}, cubes)
+
+    def test_search_for_dimension_substring_space_insensitive(self):
+        cubes = self.tm1.cubes.search_for_dimension_substring(substring=" " + self.dimension_names[2] + " ")
+        self.assertEqual({self.cube_name: [self.dimension_names[2]]}, cubes)
+
+    def test_search_for_dimension_substring_no_match(self):
+        cubes = self.tm1.cubes.search_for_dimension_substring(substring="NotADimensionName")
+        self.assertEqual({}, cubes)
+
+    def test_search_for_dimension_substring_skip_control_cubes_true(self):
+        cubes = self.tm1.cubes.search_for_dimension_substring(substring="}cubes", skip_control_cubes=True)
+        self.assertEqual({}, cubes)
+
+    def test_search_for_dimension_substring_skip_control_cubes_false(self):
+        cubes = self.tm1.cubes.search_for_dimension_substring(substring="}cubes", skip_control_cubes=False)
+        self.assertEqual(cubes['}CubeProperties'], ['}Cubes'])
+
     def test_get_number_of_cubes(self):
         number_of_cubes = self.tm1.cubes.get_number_of_cubes()
         self.assertIsInstance(number_of_cubes, int)

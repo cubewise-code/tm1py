@@ -374,6 +374,32 @@ class TestProcessService(unittest.TestCase):
             self.tm1.processes.create(process)
         self.tm1.processes.delete(process.name)
 
+    def test_search_string_in_name_no_match_startswith(self):
+        process_names = self.tm1.processes.search_string_in_name(
+            name_startswith="NotAProcessName")
+        self.assertEqual([], process_names)
+
+    def test_search_string_in_name_no_match_contains(self):
+        process_names = self.tm1.processes.search_string_in_name(
+            name_contains="NotAProcessName")
+        self.assertEqual([], process_names)
+
+    def test_search_string_in_name_startswith_happy_case(self):
+        process_names = self.tm1.processes.search_string_in_name(name_startswith=self.p_ascii.name)
+        self.assertEqual([self.p_ascii.name], process_names)
+
+    def test_search_string_in_name_contains_happy_case(self):
+        process_names = self.tm1.processes.search_string_in_name(name_contains=self.p_ascii.name)
+        self.assertEqual([self.p_ascii.name], process_names)
+
+    def test_search_string_in_name_contains_multiple(self):
+        process_names = self.tm1.processes.search_string_in_name(name_contains=self.p_ascii.name.split("_"))
+        self.assertEqual([self.p_ascii.name], process_names)
+
+    def test_search_string_in_code(self):
+        process_names = self.tm1.processes.search_string_in_code("sTestProlog = 'test prolog procedure'")
+        self.assertEqual([self.p_ascii.name], process_names)
+
     @classmethod
     def tearDownClass(cls):
         cls.tm1.dimensions.subsets.delete(
