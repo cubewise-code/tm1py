@@ -25,10 +25,10 @@ from TM1py.Services.ViewService import ViewService
 from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url, add_url_parameters
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
     CaseAndSpaceInsensitiveDict, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, \
-    abbreviate_mdx, \
-    build_csv_from_cellset_dict, require_version, require_pandas, build_cellset_from_pandas_dataframe, \
+    abbreviate_mdx, build_csv_from_cellset_dict, require_version, require_pandas, build_cellset_from_pandas_dataframe, \
     case_and_space_insensitive_equals, get_cube, resembles_mdx, require_admin, extract_compact_json_cellset, \
-    cell_is_updateable, build_mdx_from_cellset, build_mdx_and_values_from_cellset, dimension_names_from_element_unique_names
+    cell_is_updateable, build_mdx_from_cellset, build_mdx_and_values_from_cellset, \
+    dimension_names_from_element_unique_names
 
 try:
     import pandas as pd
@@ -2219,9 +2219,10 @@ class CellService(ObjectService):
             member_properties=['Name', 'Attributes'] if include_attributes else ['Name'],
             **kwargs)
 
-        # start parsing of JSON directly into CSV
         row_headers = list(dimension_names_from_element_unique_names(rows))
         column_headers = list(dimension_names_from_element_unique_names(columns))
+
+        # start parsing of JSON directly into CSV
         axes0_list = []
         axes1_list = []
         current_axes = 0
