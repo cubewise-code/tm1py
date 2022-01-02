@@ -1892,12 +1892,12 @@ class TestCellService(unittest.TestCase):
         df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, include_attributes=True)
 
         expected = {
-            'TM1py_Tests_Cell_Dimension1': {0: 'Element 1'},
-            'Attr1': {0: 'TM1py'},
-            'TM1py_Tests_Cell_Dimension2': {0: 'Element 1'},
-            'Attr2': {0: '2'},
             'TM1py_Tests_Cell_Dimension3': {0: 'Element 1'},
             'Attr3': {0: '3'},
+            'TM1py_Tests_Cell_Dimension2': {0: 'Element 1'},
+            'Attr2': {0: '2'},
+            'TM1py_Tests_Cell_Dimension1': {0: 'Element 1'},
+            'Attr1': {0: 'TM1py'},
             'Value': {0: 1.0}}
         self.assertEqual(expected, df.to_dict())
 
@@ -1914,7 +1914,7 @@ class TestCellService(unittest.TestCase):
         FROM [TM1PY_TESTS_CELL_CUBE]
         """
 
-        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, include_attributes=True, iterative_json_parsing=True)
+        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, include_attributes=True, use_iterative_json=True)
 
         expected = {
             'TM1py_Tests_Cell_Dimension3': {0: 'Element 1'},
@@ -1938,7 +1938,7 @@ class TestCellService(unittest.TestCase):
         FROM [TM1PY_TESTS_CELL_CUBE]
         """
 
-        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, include_attributes=True, iterative_json_parsing=True)
+        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, include_attributes=True, use_iterative_json=True)
 
         expected = {
             'TM1py_Tests_Cell_Dimension1': {0: 'Element 1'},
@@ -1961,7 +1961,7 @@ class TestCellService(unittest.TestCase):
         FROM [TM1PY_TESTS_CELL_CUBE]
         """
 
-        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, include_attributes=True, iterative_json_parsing=True)
+        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, include_attributes=True, use_iterative_json=True)
 
         expected = {
             'TM1py_Tests_Cell_Dimension1': {0: 'Element 2'},
