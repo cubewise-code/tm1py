@@ -2208,7 +2208,7 @@ class CellService(ObjectService):
             attributes_by_dimension = self._get_attributes_by_dimension(cube)
             for _, attributes in attributes_by_dimension.items():
                 for attribute in attributes:
-                    prefix = f'Axes.item.Tuples.item.Members.item.Attributes.{attribute.replace(" ", "")}'
+                    prefix = f'Axes.item.Tuples.item.Members.item.Attributes.{attribute}'
                     prefixes_of_interest.append(prefix)
                     attributes_prefixes.add(prefix)
 
