@@ -129,6 +129,43 @@ class ChoreService(ObjectService):
         url = format_url("/api/v1/Chores('{}')", chore_name)
         return self._exists(url, **kwargs)
 
+     def search_for_process_name(self, process_name: str, matching_tasks_only: bool=False, **kwargs) -> List[Chore]:
+        """ Return chore details for any/all chores that contain specified process name in tasks
+
+        :param process_name: string, a valid ti process name; spaces will be elimniated
+        :param matching_tasks_only: bool, True will only return tasks whose process name matches process_name parameter.
+            Be very careful with this, calling chores.update on a filterd task list of a chore will change the structure of the chore
+        """
+        url = format_url(
+            "/api/v1/Chores?$filter=Tasks/any(t: replace(tolower(t/Process/Name), ' ', '') eq '{}')" \
+            "&$expand=Tasks($expand=*,Chore($select=Name),Process($select=Name)" \
+            + (format_url(";$filter=replace(tolower(Process/Name), ' ', '') eq '{}')", process_name.lower().replace(' ', '')
+                         ) if matching_tasks_only else ")"
+              ),
+            process_name.lower().replace(' ', '')
+        )
+        response = self._rest.GET(url, **kwargs)
+        return [Chore.from_dict(chore_as_dict) for chore_as_dict in response.json()['value']]
+
+    def search_for_parameter_value(self, parameter_value: str, matching_tasks_only: bool=False, **kwargs) -> List[Chore]:
+        """ Return chore details for any/all chores that have a specified value set in the chore parameter settings
+            *this will NOT check the process parameter default, rather the defined parameter value saved in the chore
+
+        :param parameter_value: string, will search wildcard for string in parameter value using Contains(string)
+        :param matching_tasks_only: bool, True will only return tasks that that have the defined string in the parameter value
+            Be very careful with this, calling chores.update on a filterd task list of a chore will change the structure of the chore
+        """
+        url = format_url(
+            "/api/v1/Chores?$filter=Tasks/any(t: t/Parameters/any(p: contains(tolower(p/Value), '{}')))" \
+            "&$expand=Tasks($expand=*,Process($select=Name),Chore($select=Name)" \
+            + (format_url(";$filter=Parameters/any(p: contains(tolower(p/Value), '{}')))", parameter_value.lower()
+                         ) if matching_tasks_only else ")"
+              ),
+            parameter_value.lower()
+        )
+        response = self._rest.GET(url, **kwargs)
+        return [Chore.from_dict(chore_as_dict) for chore_as_dict in response.json()['value']]
+
     @deactivate_activate
     def update(self, chore: Chore, **kwargs):
         """ update chore on TM1 Server
