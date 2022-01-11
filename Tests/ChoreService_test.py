@@ -400,6 +400,22 @@ class TestChoreService(unittest.TestCase):
         self.assertTrue(self.tm1.chores.exists(self.chore_name2))
         self.assertTrue(self.tm1.chores.exists(self.chore_name3))
         self.assertFalse(self.tm1.chores.exists(uuid.uuid4()))
+        
+    def test_search_for_process_name_no_match(self):
+        chore_names = self.tm1.chores.search_for_process_name(process_name="NotAProcessName")
+        self.assertEqual([], chore_names)
+
+    def test_search_for_process_name_happy_case(self):
+        chore_names = self.tm1.chores.search_for_process_name(process_name=process_name1)
+        self.assertEqual(self.chore_name1, chore_names[0].name)
+
+    def test_search_for_parameter_value_no_match(self):
+        chore_names = self.tm1.chores.search_for_parameter_value(parameter_value='NotAParamValue')
+        self.assertEqual([], chore_names)
+
+    def test_search_for_parameter_value_happy_case(self):
+        chore_names = self.tm1.chores.search_for_parameter_value(parameter_value='UK')
+        self.assertEqual(self.chore_name1, chore_names[0].name)        
 
     @classmethod
     def teardown_class(cls):
