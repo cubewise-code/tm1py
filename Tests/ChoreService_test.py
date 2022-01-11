@@ -200,6 +200,22 @@ class TestChoreService(unittest.TestCase):
         self.assertIn(self.chore_name2, all_chore_names)
         self.assertIn(self.chore_name3, all_chore_names)
 
+    def test_search_for_process_name_happy_case(self):
+        chore_names = self.tm1.chores.search_for_process_name(process_name=process_name1)
+        self.assertEqual(2, len(chore_names))
+        self.assertEqual(self.chore_name1, chore_names[0].name)
+        self.assertEqual(self.chore_name2, chore_names[1].name)
+
+    def test_search_for_parameter_value_no_match(self):
+        chore_names = self.tm1.chores.search_for_parameter_value(parameter_value='NotAParamValue')
+        self.assertEqual([], chore_names)
+
+    def test_search_for_parameter_value_happy_case(self):
+        chore_names = self.tm1.chores.search_for_parameter_value(parameter_value='UK')
+        self.assertEqual(2, len(chore_names))
+        self.assertEqual(self.chore_name1, chore_names[0].name)
+        self.assertEqual(self.chore_name2, chore_names[1].name)
+
     def test_update_chore_dst(self):
         # get chore
         c = self.tm1.chores.get(self.chore_name1)
@@ -403,22 +419,6 @@ class TestChoreService(unittest.TestCase):
         def test_search_for_process_name_no_match(self):
     chore_names = self.tm1.chores.search_for_process_name(process_name="NotAProcessName")
     self.assertEqual([], chore_names)
-
-    def test_search_for_process_name_happy_case(self):
-        chore_names = self.tm1.chores.search_for_process_name(process_name=process_name1)
-        self.assertEqual(2, len(chore_names))
-        self.assertEqual(self.chore_name1, chore_names[0].name)
-        self.assertEqual(self.chore_name2, chore_names[1].name)
-
-    def test_search_for_parameter_value_no_match(self):
-        chore_names = self.tm1.chores.search_for_parameter_value(parameter_value='NotAParamValue')
-        self.assertEqual([], chore_names)
-
-    def test_search_for_parameter_value_happy_case(self):
-        chore_names = self.tm1.chores.search_for_parameter_value(parameter_value='UK')
-        self.assertEqual(2, len(chore_names))
-        self.assertEqual(self.chore_name1, chore_names[0].name)
-        self.assertEqual(self.chore_name2, chore_names[1].name)    
 
     @classmethod
     def teardown_class(cls):
