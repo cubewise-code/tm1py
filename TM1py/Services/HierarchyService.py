@@ -9,7 +9,8 @@ from TM1py.Services.ElementService import ElementService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.SubsetService import SubsetService
-from TM1py.Utils.Utils import case_and_space_insensitive_equals, format_url
+from TM1py.Utils.Utils import case_and_space_insensitive_equals, format_url, CaseAndSpaceInsensitiveDict, \
+    CaseAndSpaceInsensitiveSet
 
 
 class HierarchyService(ObjectService):
@@ -144,29 +145,56 @@ class HierarchyService(ObjectService):
         :return:
         """
         # get existing attributes first
-        element_attributes = self.elements.get_element_attributes(
+        existing_element_attributes = self.elements.get_element_attributes(
             dimension_name=hierarchy.dimension_name,
             hierarchy_name=hierarchy.name,
             **kwargs)
-        element_attribute_names = [ea.name for ea in element_attributes]
+        existing_element_attributes = CaseAndSpaceInsensitiveDict({ea.name: ea for ea in existing_element_attributes})
 
-        # write ElementAttributes that don't already exist
+        attributes_to_create = list()
+        attributes_to_delete = list()
+        attributes_to_update = list()
+
         for element_attribute in hierarchy.element_attributes:
-            if element_attribute not in element_attribute_names:
-                self.elements.create_element_attribute(
-                    dimension_name=hierarchy.dimension_name,
-                    hierarchy_name=hierarchy.name,
-                    element_attribute=element_attribute,
-                    **kwargs)
+            if element_attribute.name not in existing_element_attributes:
+                attributes_to_create.append(element_attribute)
+                continue
 
-        # delete attributes that are determined to be removed
-        for element_attribute in element_attribute_names:
-            if element_attribute not in hierarchy.element_attributes:
-                self.elements.delete_element_attribute(
-                    dimension_name=hierarchy.dimension_name,
-                    hierarchy_name=hierarchy.name,
-                    element_attribute=element_attribute,
-                    **kwargs)
+            existing_element_attribute = existing_element_attributes[element_attribute.name]
+            if not existing_element_attribute.attribute_type == element_attribute.attribute_type:
+                attributes_to_update.append(element_attribute)
+                continue
+
+        for existing_element_attribute in existing_element_attributes:
+            if existing_element_attribute not in CaseAndSpaceInsensitiveSet(
+                    [ea.name for ea in hierarchy.element_attributes]):
+                attributes_to_delete.append(existing_element_attribute)
+
+        for element_attribute in attributes_to_create:
+            self.elements.create_element_attribute(
+                dimension_name=hierarchy.dimension_name,
+                hierarchy_name=hierarchy.name,
+                element_attribute=element_attribute,
+                **kwargs)
+
+        for element_attribute in attributes_to_delete:
+            self.elements.delete_element_attribute(
+                dimension_name=hierarchy.dimension_name,
+                hierarchy_name=hierarchy.name,
+                element_attribute=element_attribute,
+                **kwargs)
+
+        for element_attribute in attributes_to_update:
+            self.elements.delete_element_attribute(
+                dimension_name=hierarchy.dimension_name,
+                hierarchy_name=hierarchy.name,
+                element_attribute=element_attribute.name,
+                **kwargs)
+            self.elements.create_element_attribute(
+                dimension_name=hierarchy.dimension_name,
+                hierarchy_name=hierarchy.name,
+                element_attribute=element_attribute,
+                **kwargs)
 
     def get_default_member(self, dimension_name: str, hierarchy_name: str = None, **kwargs) -> Optional[str]:
         """ Get the defined default_member for a Hierarchy.

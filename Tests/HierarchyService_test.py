@@ -2,7 +2,7 @@ import configparser
 import unittest
 from pathlib import Path
 
-from TM1py import Element
+from TM1py import Element, ElementAttribute
 from TM1py.Exceptions import TM1pyException
 from TM1py.Objects import Dimension, Hierarchy, Subset
 from TM1py.Services import TM1Service
@@ -48,6 +48,7 @@ class TestHierarchyService(unittest.TestCase):
         hierarchy.add_element("My Element", "Numeric")
         hierarchy.add_element_attribute('Previous Year', 'String')
         hierarchy.add_element_attribute('Next Year', 'String')
+        hierarchy.add_element_attribute('Updateable Attribute', 'String')
         hierarchy.add_edge('Total Years', '1989', 2)
         dimension.add_hierarchy(hierarchy)
         cls.tm1.dimensions.create(dimension)
@@ -110,6 +111,9 @@ class TestHierarchyService(unittest.TestCase):
         h.add_element_attribute('Days', 'Numeric')
         # Remove attribute
         h.remove_element_attribute('Next Year')
+        # Change attribute type
+        h.remove_element_attribute('Updateable Attribute')
+        h.add_element_attribute("Updateable Attribute", "Numeric")
         # Remove Edge
         h.remove_edge('Total Years', '1989')
         # Update Edge
@@ -185,10 +189,11 @@ class TestHierarchyService(unittest.TestCase):
         self.assertIn('2010-Jan', h.elements.keys())
         self.assertIn('2020-Dec', h.elements.keys())
 
-        self.assertNotIn('Next Year', [ea.name for ea in h.element_attributes])
-        self.assertIn('Previous Year', [ea.name for ea in h.element_attributes])
-        self.assertIn('Days', [ea.name for ea in h.element_attributes])
-        self.assertIn('Name Long', [ea.name for ea in h.element_attributes])
+        self.assertNotIn(ElementAttribute('Next Year', 'String'), h.element_attributes)
+        self.assertIn(ElementAttribute('Previous Year', 'String'), h.element_attributes)
+        self.assertIn(ElementAttribute('Days', 'String'), h.element_attributes)
+        self.assertIn(ElementAttribute('Name Long', 'String'), h.element_attributes)
+        self.assertIn(ElementAttribute('Updateable Attribute', 'Numeric'), h.element_attributes)
 
         self.assertEqual(h.edges[('Total Years', '2011')], 2)
         self.assertEqual(h.elements['No Year'].element_type, Element.Types.STRING)
@@ -197,7 +202,7 @@ class TestHierarchyService(unittest.TestCase):
         self.assertEqual(summary["Elements"], 147)
         self.assertEqual(summary["Edges"], 143)
         self.assertEqual(summary["Members"], 147)
-        self.assertEqual(summary["ElementAttributes"], 4)
+        self.assertEqual(summary["ElementAttributes"], 5)
         self.assertEqual(summary["Levels"], 3)
 
     def test_update_hierarchy_remove_c_element(self):
@@ -298,7 +303,7 @@ class TestHierarchyService(unittest.TestCase):
         self.assertEqual(summary["Elements"], 4)
         self.assertEqual(summary["Edges"], 1)
         self.assertEqual(summary["Members"], 4)
-        self.assertEqual(summary["ElementAttributes"], 2)
+        self.assertEqual(summary["ElementAttributes"], 3)
         self.assertEqual(summary["Levels"], 2)
 
     def test_get_default_member(self):
