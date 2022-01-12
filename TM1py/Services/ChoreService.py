@@ -129,13 +129,13 @@ class ChoreService(ObjectService):
         url = format_url("/api/v1/Chores('{}')", chore_name)
         return self._exists(url, **kwargs)
 
-     def search_for_process_name(self, process_name: str, **kwargs) -> List[Chore]:
+    def search_for_process_name(self, process_name: str, **kwargs) -> List[Chore]:
         """ Return chore details for any/all chores that contain specified process name in tasks
 
         :param process_name: string, a valid ti process name; spaces will be elimniated
         """
         url = format_url(
-            "/api/v1/Chores?$filter=Tasks/any(t: replace(tolower(t/Process/Name), ' ', '') eq '{}')" \
+            "/api/v1/Chores?$filter=Tasks/any(t: replace(tolower(t/Process/Name), ' ', '') eq '{}')"
             "&$expand=Tasks($expand=*,Chore($select=Name),Process($select=Name))",
             process_name.lower().replace(' ', '')
         )
@@ -149,7 +149,8 @@ class ChoreService(ObjectService):
         :param parameter_value: string, will search wildcard for string in parameter value using Contains(string)
         """
         url = format_url(
-            "/api/v1/Chores?$filter=Tasks/any(t: t/Parameters/any(p: contains(tolower(p/Value), '{}')))" \
+            "/api/v1/Chores?"
+            "$filter=Tasks/any(t: t/Parameters/any(p: isof(p/Value, Edm.String) and contains(tolower(p/Value), '{}')))"
             "&$expand=Tasks($expand=*,Process($select=Name),Chore($select=Name))",
             parameter_value.lower()
         )

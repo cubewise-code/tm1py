@@ -201,7 +201,7 @@ class TestChoreService(unittest.TestCase):
         self.assertIn(self.chore_name3, all_chore_names)
 
     def test_search_for_process_name_happy_case(self):
-        chore_names = self.tm1.chores.search_for_process_name(process_name=process_name1)
+        chore_names = self.tm1.chores.search_for_process_name(process_name=self.process_name1)
         self.assertEqual(2, len(chore_names))
         self.assertEqual(self.chore_name1, chore_names[0].name)
         self.assertEqual(self.chore_name2, chore_names[1].name)
@@ -416,9 +416,10 @@ class TestChoreService(unittest.TestCase):
         self.assertTrue(self.tm1.chores.exists(self.chore_name2))
         self.assertTrue(self.tm1.chores.exists(self.chore_name3))
         self.assertFalse(self.tm1.chores.exists(uuid.uuid4()))
-        def test_search_for_process_name_no_match(self):
-    chore_names = self.tm1.chores.search_for_process_name(process_name="NotAProcessName")
-    self.assertEqual([], chore_names)
+
+    def test_search_for_process_name_no_match(self):
+        chore_names = self.tm1.chores.search_for_process_name(process_name="NotAProcessName")
+        self.assertEqual([], chore_names)
 
     @classmethod
     def teardown_class(cls):
