@@ -1511,6 +1511,22 @@ class TestCellService(unittest.TestCase):
             2000,
             sum(data))
 
+    def test_execute_mdx_values_skip_zeros(self):
+        cells = {
+            ('Element 1', 'Element 3', 'Element 9'): 128
+        }
+        self.tm1.cells.write(self.cube_name, cells)
+
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(self.dimension_names[0], "Element1"))) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(self.dimension_names[1], "Element 3"))) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.members(
+                [Member.of(self.dimension_names[2], "Element 9"), Member.of(self.dimension_names[2], "Element 10")])) \
+            .to_mdx()
+        values = self.tm1.cells.execute_mdx_values(mdx, skip_zeros=True)
+
+        self.assertEqual([128], values)
+
     def test_execute_mdx_csv(self):
         mdx = MdxBuilder.from_cube(self.cube_name) \
             .rows_non_empty() \

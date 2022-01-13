@@ -11,7 +11,7 @@ from io import StringIO
 from typing import List, Union, Dict, Iterable, Tuple, Optional
 
 import ijson
-from mdxpy import MdxHierarchySet, MdxBuilder, Member
+from mdxpy import MdxHierarchySet, MdxBuilder
 from requests import Response
 
 from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyWritePartialFailureException, TM1pyWriteFailureException, \
@@ -1094,21 +1094,28 @@ class CellService(ObjectService):
             **kwargs)
 
     def execute_mdx_values(self, mdx: str, sandbox_name: str = None, use_compact_json: bool = False,
-                           **kwargs) -> List[Union[str, float]]:
+                           skip_zeros: bool = False, skip_consolidated_cells: bool = False,
+                           skip_rule_derived_cells: bool = False, **kwargs) -> List[Union[str, float]]:
         """ Optimized for performance. Query only raw cell values.
         Coordinates are omitted !
 
         :param mdx: a valid MDX Query
         :param sandbox_name: str
         :param use_compact_json: bool
+        :param skip_zeros: bool
+        :param skip_consolidated_cells: bool
+        :param skip_rule_derived_cells: bool
         :return: List of cell values
         """
         cellset_id = self.create_cellset(mdx=mdx, sandbox_name=sandbox_name, **kwargs)
         return self.extract_cellset_values(cellset_id, delete_cellset=True, sandbox_name=sandbox_name,
+                                           skip_zeros=skip_zeros, skip_consolidated_cells=skip_consolidated_cells,
+                                           skip_rule_derived_cells=skip_rule_derived_cells,
                                            use_compact_json=use_compact_json, **kwargs)
 
     def execute_view_values(self, cube_name: str, view_name: str, private: bool = False, sandbox_name: str = None,
-                            use_compact_json: bool = False, **kwargs) -> List[Union[str, float]]:
+                            skip_zeros: bool = False, skip_consolidated_cells: bool = False,
+                            skip_rule_derived_cells: bool = False, use_compact_json: bool = False, **kwargs) -> List[Union[str, float]]:
         """ Execute view and retrieve only the cell values
 
         :param cube_name: String, name of the cube
@@ -1116,13 +1123,18 @@ class CellService(ObjectService):
         :param private: True (private) or False (public)
         :param sandbox_name: str
         :param use_compact_json: bool
+        :param skip_zeros: bool
+        :param skip_consolidated_cells: bool
+        :param skip_rule_derived_cells: bool
         :param kwargs:
         :return:
         """
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
                                                    sandbox_name=sandbox_name, **kwargs)
         return self.extract_cellset_values(cellset_id, delete_cellset=True, sandbox_name=sandbox_name,
-                                           use_compact_json=use_compact_json, **kwargs)
+                                           use_compact_json=use_compact_json, skip_zeros=skip_zeros,
+                                           skip_rule_derived_cells=skip_rule_derived_cells,
+                                           skip_consolidated_cells=skip_consolidated_cells, **kwargs)
 
     def execute_mdx_rows_and_values(self, mdx: str, element_unique_names: bool = True, sandbox_name: str = None,
                                     **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
@@ -1997,15 +2009,35 @@ class CellService(ObjectService):
     @tidy_cellset
     @odata_compact_json(return_as_dict=False)
     def extract_cellset_values(self, cellset_id: str, sandbox_name: str = None, use_compact_json: bool = False,
-                               **kwargs) -> List[Union[str, float]]:
+                               skip_zeros: bool = False, skip_consolidated_cells: bool = False,
+                               skip_rule_derived_cells: bool = False, **kwargs) -> List[Union[str, float]]:
         """ Extract cellset data and return only the cells and values
 
         :param cellset_id: String; ID of existing cellset
         :param sandbox_name: str
         :param use_compact_json: bool
+        :param skip_zeros: bool
+        :param skip_consolidated_cells: bool
+        :param skip_rule_derived_cells: bool
         :return: Raw format from TM1.
         """
-        url = format_url("/api/v1/Cellsets('{}')?$expand=Cells($select=Value)", cellset_id)
+
+        filter_cells = ""
+        if skip_zeros or skip_consolidated_cells or skip_rule_derived_cells:
+            filters = []
+            if skip_zeros:
+                filters.append("Value ne 0 and Value ne null and Value ne ''")
+            if skip_consolidated_cells:
+                filters.append("Consolidated eq false")
+            if skip_rule_derived_cells:
+                filters.append("RuleDerived eq false")
+
+            filter_cells = " and ".join(filters)
+
+        url = format_url(
+            "/api/v1/Cellsets('{}')?$expand=Cells($select=Value{})",
+            cellset_id,
+            f";$filter={filter_cells}" if filter_cells else "")
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url=url, **kwargs)
 
