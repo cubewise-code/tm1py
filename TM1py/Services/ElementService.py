@@ -4,6 +4,7 @@ from typing import List, Union, Iterable, Optional, Dict, Tuple
 
 from requests import Response
 
+from TM1py.Exceptions import TM1pyRestException
 from TM1py.Objects import ElementAttribute, Element
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
@@ -414,7 +415,13 @@ class ElementService(ObjectService):
             dimension_name,
             hierarchy_name,
             element_attribute)
-        return self._rest.DELETE(url, **kwargs)
+        try:
+            return self._rest.DELETE(url, **kwargs)
+
+        # Fail silently if attribute hierarchy or attribute doesn't exist
+        except TM1pyRestException as ex:
+            if not ex.status_code == 404:
+                raise ex
 
     def get_leaves_under_consolidation(self, dimension_name: str, hierarchy_name: str, consolidation: str,
                                        max_depth: int = None, **kwargs) -> List[str]:
