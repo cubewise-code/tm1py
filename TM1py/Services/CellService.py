@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import csv
 import functools
 import itertools
 import json
@@ -1170,8 +1171,8 @@ class CellService(ObjectService):
 
     def execute_mdx_csv(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
                         skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
-                        line_separator: str = "\r\n", value_separator: str = ",", sandbox_name: str = None,
-                        include_attributes: bool = False, use_iterative_json: bool = False,
+                        csv_dialect: 'csv.Dialect' = None, line_separator: str = "\r\n", value_separator: str = ",",
+                        sandbox_name: str = None, include_attributes: bool = False, use_iterative_json: bool = False,
                         use_compact_json: bool = False, **kwargs) -> str:
         """ Optimized for performance. Get csv string of coordinates and values.
 
@@ -1181,6 +1182,8 @@ class CellService(ObjectService):
         :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
+        :param csv_dialect: provide all csv output settings through standard library csv.Dialect
+            If not provided dialect is created based on line_separator and value_separator arguments.
         :param line_separator:
         :param value_separator:
         :param sandbox_name: str
@@ -1196,20 +1199,21 @@ class CellService(ObjectService):
             return self.extract_cellset_csv_iter_json(
                 cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                 skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
-                line_separator=line_separator, value_separator=value_separator, sandbox_name=sandbox_name,
-                include_attributes=include_attributes, **kwargs)
+                csv_dialect=csv_dialect, line_separator=line_separator, value_separator=value_separator,
+                sandbox_name=sandbox_name, include_attributes=include_attributes, **kwargs)
 
         return self.extract_cellset_csv(
             cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
             skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
-            line_separator=line_separator, value_separator=value_separator, sandbox_name=sandbox_name,
-            include_attributes=include_attributes, use_compact_json=use_compact_json, **kwargs)
+            csv_dialect=csv_dialect, line_separator=line_separator, value_separator=value_separator,
+            sandbox_name=sandbox_name, include_attributes=include_attributes,
+            use_compact_json=use_compact_json, **kwargs)
 
     def execute_view_csv(self, cube_name: str, view_name: str, private: bool = False, top: int = None, skip: int = None,
                          skip_zeros: bool = True, skip_consolidated_cells: bool = False,
-                         skip_rule_derived_cells: bool = False, line_separator: str = "\r\n",
-                         value_separator: str = ",", sandbox_name: str = None, use_iterative_json: bool = False,
-                         use_compact_json: bool = False, **kwargs) -> str:
+                         skip_rule_derived_cells: bool = False, csv_dialect: 'csv.Dialect' = None,
+                         line_separator: str = "\r\n", value_separator: str = ",", sandbox_name: str = None,
+                         use_iterative_json: bool = False, use_compact_json: bool = False, **kwargs) -> str:
         """ Optimized for performance. Get csv string of coordinates and values.
 
         :param cube_name: String, name of the cube
@@ -1220,6 +1224,8 @@ class CellService(ObjectService):
         :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
+        :param csv_dialect: provide all csv output settings through standard library csv.Dialect
+            If not provided dialect is created based on line_separator and value_separator arguments.
         :param line_separator:
         :param value_separator:
         :param sandbox_name: str
@@ -1234,14 +1240,16 @@ class CellService(ObjectService):
             return self.extract_cellset_csv_iter_json(
                 cellset_id=cellset_id, skip_zeros=skip_zeros, top=top, skip=skip,
                 skip_consolidated_cells=skip_consolidated_cells,
-                skip_rule_derived_cells=skip_rule_derived_cells, line_separator=line_separator,
-                value_separator=value_separator, sandbox_name=sandbox_name, **kwargs)
+                skip_rule_derived_cells=skip_rule_derived_cells, csv_dialect=csv_dialect,
+                line_separator=line_separator, value_separator=value_separator,
+                sandbox_name=sandbox_name, **kwargs)
 
         return self.extract_cellset_csv(
             cellset_id=cellset_id, skip_zeros=skip_zeros, top=top, skip=skip,
             skip_consolidated_cells=skip_consolidated_cells,
-            skip_rule_derived_cells=skip_rule_derived_cells, line_separator=line_separator,
-            value_separator=value_separator, sandbox_name=sandbox_name, use_compact_json=use_compact_json, **kwargs)
+            skip_rule_derived_cells=skip_rule_derived_cells, csv_dialect=csv_dialect,
+            line_separator=line_separator, value_separator=value_separator, sandbox_name=sandbox_name,
+            use_compact_json=use_compact_json, **kwargs)
 
     def execute_mdx_elements_value_dict(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
                                         skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
@@ -2139,6 +2147,7 @@ class CellService(ObjectService):
             skip_zeros: bool = True,
             skip_consolidated_cells: bool = False,
             skip_rule_derived_cells: bool = False,
+            csv_dialect: 'csv.Dialect' = None,
             line_separator: str = "\r\n",
             value_separator: str = ",",
             sandbox_name: str = None,
@@ -2153,6 +2162,8 @@ class CellService(ObjectService):
         :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
+        :param csv_dialect: provide all csv output settings through standard library csv.Dialect
+            If not provided dialect is created based on line_separator and value_separator arguments.
         :param line_separator:
         :param value_separator
         :param sandbox_name: str
@@ -2172,9 +2183,9 @@ class CellService(ObjectService):
                                                                    'Attributes'] if include_attributes else None,
                                                 use_compact_json=use_compact_json,
                                                 **kwargs)
-        return build_csv_from_cellset_dict(rows, columns, cellset_dict, line_separator=line_separator,
-                                           value_separator=value_separator, top=top,
-                                           include_attributes=include_attributes)
+        return build_csv_from_cellset_dict(rows, columns, cellset_dict, csv_dialect=csv_dialect,
+                                           line_separator=line_separator, value_separator=value_separator,
+                                           top=top, include_attributes=include_attributes)
 
     def extract_cellset_csv_iter_json(
             self,
@@ -2184,6 +2195,7 @@ class CellService(ObjectService):
             skip_zeros: bool = True,
             skip_consolidated_cells: bool = False,
             skip_rule_derived_cells: bool = False,
+            csv_dialect: 'csv.Dialect' = None,
             line_separator: str = "\r\n",
             value_separator: str = ",",
             sandbox_name: str = None,
@@ -2197,6 +2209,8 @@ class CellService(ObjectService):
         :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param skip_rule_derived_cells: skip rule derived cells in cellset
+        :param csv_dialect: provide all csv output settings through standard library csv.Dialect
+            If not provided dialect is created based on line_separator and value_separator arguments.
         :param line_separator:
         :param value_separator
         :param sandbox_name: str
@@ -2222,13 +2236,18 @@ class CellService(ObjectService):
         row_headers = list(dimension_names_from_element_unique_names(rows))
         column_headers = list(dimension_names_from_element_unique_names(columns))
 
+        if csv_dialect is None:
+            csv.register_dialect("TM1py", delimiter=value_separator, lineterminator=line_separator)
+            csv_dialect = csv.get_dialect("TM1py")
+
         # start parsing of JSON directly into CSV
         axes0_list = []
         axes1_list = []
         current_axes = 0
         current_tuple = 0
         current_cell_ordinal = 0
-        csv_lines = []
+        csv_body = StringIO()
+        csv_writer = csv.writer(csv_body, dialect=csv_dialect)
 
         parser = ijson.parse(cellset_response.content)
         prefixes_of_interest = ['Cells.item.Value', 'Axes.item.Tuples.item.Members.item.Name',
@@ -2250,20 +2269,19 @@ class CellService(ObjectService):
                 q, r = divmod(current_cell_ordinal, len(axes0_list))
                 axes0_index = r
                 axes1_index = q
-                if len(axes0_list) == 1 and axes0_list[0] == '':
-                    csv_lines.append(value_separator.join([axes1_list[axes1_index], str(value)]))
+                if len(axes0_list) == 1 and len(axes0_list[0]) == 0:
+                    csv_writer.writerow(axes1_list[axes1_index] + [str(value)])
                 # case of no row selection
                 elif len(axes1_list) == 0:
-                    csv_lines.append(value_separator.join([axes0_list[axes0_index], str(value)]))
+                    csv_writer.writerow(axes0_list[axes0_index] + [str(value)])
                 else:
-                    csv_lines.append(
-                        value_separator.join([axes1_list[axes1_index], axes0_list[axes0_index], str(value)]))
+                    csv_writer.writerow(axes1_list[axes1_index] + axes0_list[axes0_index] + [str(value)])
 
             elif (prefix, event) == ('Axes.item.Tuples.item.Members.item.Name', 'string'):
                 if current_axes == 0:
-                    axes0_list[current_tuple] += ('' if axes0_list[current_tuple] == '' else value_separator) + value
+                    axes0_list[current_tuple].append(value)
                 else:
-                    axes1_list[current_tuple] += ('' if axes1_list[current_tuple] == '' else value_separator) + value
+                    axes1_list[current_tuple].append(value)
 
             if prefix in attributes_prefixes:
                 if event not in ('string', 'number'):
@@ -2273,9 +2291,9 @@ class CellService(ObjectService):
                 value = str(value)
 
                 if current_axes == 0:
-                    axes0_list[current_tuple] += ('' if axes0_list[current_tuple] == '' else value_separator) + value
+                    axes0_list[current_tuple].append(value)
                 else:
-                    axes1_list[current_tuple] += ('' if axes1_list[current_tuple] == '' else value_separator) + value
+                    axes1_list[current_tuple].append(value)
 
                 # Add header entry for attribute if necessary
                 if current_tuple == 0:
@@ -2293,25 +2311,24 @@ class CellService(ObjectService):
             elif (prefix, event) == ('Axes.item.Tuples.item.Ordinal', 'number'):
                 current_tuple = value
                 if current_axes == 0:
-                    axes0_list.append('')
+                    axes0_list.append(list())
                 else:
-                    axes1_list.append('')
+                    axes1_list.append(list())
 
             elif (prefix, event) == ('Axes.item.Ordinal', 'number'):
                 current_axes = value
 
         # comply with prior implementations: return empty string when cellset is empty
-        if not csv_lines:
+        if csv_body.getvalue() == "":
             return ""
 
-        # add header
-        headers = row_headers + column_headers + ['Value']
-        csv_lines.insert(0, value_separator.join(headers))
-
-        csv = line_separator.join(csv_lines)
+        # prepare header
+        csv_header = StringIO()
+        csv_header_writer = csv.writer(csv_header, dialect=csv_dialect)
+        csv_header_writer.writerow(row_headers + column_headers + ['Value'])
 
         cellset_response.close()
-        return csv
+        return csv_header.getvalue() + csv_body.getvalue()
 
     @require_pandas
     def extract_cellset_dataframe(
