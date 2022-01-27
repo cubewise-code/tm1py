@@ -172,7 +172,7 @@ class ServerService(ObjectService):
 
         from TM1py.Services import ProcessService
         process_service = ProcessService(self._rest)
-        process = Process(name="", prolog_procedure="LogOutput('{}', '{}');".format(level, message))
+        process = Process(name="", prolog_procedure="LogOutput('{}', '{}');".format(level, message.replace("'", "''")))
         success, status, _ = process_service.execute_process_with_return(process, **kwargs)
 
         if not success:

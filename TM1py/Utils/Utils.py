@@ -2,6 +2,7 @@ import collections
 import functools
 import http.client as http_client
 import json
+import logging
 import re
 import ssl
 import urllib.parse as urlparse
@@ -12,7 +13,8 @@ from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator, Union
 import requests
 from mdxpy import MdxBuilder, Member
 
-from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminException
+from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminException, TM1pyRestException
+
 
 try:
     import pandas as pd
@@ -1115,3 +1117,27 @@ def build_mdx_and_values_from_cellset(cells: Dict, cube_name: str, dimensions: I
         values.append(value)
     mdx = query.to_mdx()
     return mdx, values
+
+
+class Tm1LogHandler(logging.StreamHandler):
+    """ A log handler that can be used with standard python logging module to log into the TM1 Message Log
+
+    """
+    LOG_PREFIX = 'TM1pyLog : '
+
+    def __init__(self, tm1):
+        logging.StreamHandler.__init__(self)
+        self.tm1 = tm1
+
+    def emit(self, record):
+        line = f'{self.LOG_PREFIX}{record.message}'.strip()
+
+        try:
+            self.tm1.server.write_to_message_log(record.levelname, line)
+
+        except TM1pyRestException as ex:
+            if not ex.status_code == 401:
+                raise ex
+
+            self.tm1.re_authenticate()
+            self.tm1.server.write_to_message_log(record.levelname, line)
