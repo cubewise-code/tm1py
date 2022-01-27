@@ -1,4 +1,5 @@
 import collections
+import csv
 import functools
 import http.client as http_client
 import json
@@ -7,6 +8,7 @@ import ssl
 import urllib.parse as urlparse
 from contextlib import suppress
 from enum import Enum, unique
+from io import StringIO
 from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator, Union
 
 import requests
@@ -333,6 +335,7 @@ def build_csv_from_cellset_dict(
         column_dimensions: List[str],
         raw_cellset_as_dict: Dict,
         top: Optional[int] = None,
+        csv_dialect: 'csv.Dialect' = None,
         line_separator: str = "\r\n",
         value_separator: str = ",",
         include_attributes: bool = False) -> str:
@@ -341,6 +344,8 @@ def build_csv_from_cellset_dict(
     :param row_dimensions:
     :param raw_cellset_as_dict:
     :param top: Maximum Number of cells
+    :param csv_dialect: provide all csv output settings through standard library csv.Dialect
+        If not provided dialect is created based on line_separator and value_separator arguments.
     :param line_separator:
     :param value_separator:
     :param include_attributes: include attribute columns
@@ -352,12 +357,17 @@ def build_csv_from_cellset_dict(
     if len(cells) == 0:
         return ""
 
-    lines = list()
+    if csv_dialect is None:
+        csv.register_dialect("TM1py", delimiter=value_separator, lineterminator=line_separator)
+        csv_dialect = csv.get_dialect("TM1py")
+
+    csv_content = StringIO()
+    csv_writer = csv.writer(csv_content, dialect=csv_dialect)
 
     column_axis, row_axis, _ = extract_axes_from_cellset(raw_cellset_as_dict=raw_cellset_as_dict)
 
     headers = _build_headers_for_csv(row_axis, column_axis, row_dimensions, column_dimensions, include_attributes)
-    lines.append(value_separator.join(headers))
+    csv_writer.writerow(headers)
 
     for ordinal, cell in enumerate(cells[:top or len(cells)]):
         # if skip is used in execution we must use the original ordinal from the cell, if not we can simply enumerate
@@ -388,9 +398,9 @@ def build_csv_from_cellset_dict(
 
         line.append(str(cell["Value"] or ""))
 
-        lines.append(value_separator.join(line))
+        csv_writer.writerow(line)
 
-    return line_separator.join(lines)
+    return csv_content.getvalue()
 
 
 def _build_csv_line_items_from_axis_tuple(members: Dict, include_attributes: bool = False) -> List[str]:
