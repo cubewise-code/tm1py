@@ -302,6 +302,20 @@ class ElementService(ObjectService):
             result[element['Name']] = element["Type"]
         return result
 
+    def get_element_types_from_all_hierarchies(
+            self, dimension_name: str, skip_consolidations: bool = False, **kwargs) -> CaseAndSpaceInsensitiveDict:
+        url = format_url(
+            "/api/v1/Dimensions('{}')?$expand=Hierarchies($select=Elements;$expand=Elements($select=Name,Type{}",
+            dimension_name,
+            "&$filter=Type ne 3))" if skip_consolidations else "))")
+        response = self._rest.GET(url, **kwargs)
+
+        result = CaseAndSpaceInsensitiveDict()
+        for hierarchy in response.json()["Hierarchies"]:
+            for element in hierarchy["Elements"]:
+                result[element['Name']] = element["Type"]
+        return result
+
     def attribute_cube_exists(self, dimension_name: str, **kwargs) -> bool:
         url = format_url("/api/v1/Cubes('{}')", self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name)
         return self._exists(url, **kwargs)

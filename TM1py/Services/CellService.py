@@ -572,7 +572,7 @@ class CellService(ObjectService):
     def write(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None, increment: bool = False,
               deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
               sandbox_name: str = None, use_ti=False, use_changeset: bool = False, precision: int = 8,
-              skip_non_updateable: bool = False, **kwargs) -> Optional[str]:
+              skip_non_updateable: bool = False, measure_dimension_elements: Dict = None, **kwargs) -> Optional[str]:
         """ Write values to a cube
 
         Same signature as `write_values` method, but faster since it uses `write_values_through_cellset`
@@ -593,6 +593,8 @@ class CellService(ObjectService):
         :param precision: max precision when writhing through unbound process.
         Necessary when dealing with large numbers to avoid "number too long" TI syntax error.
         :param skip_non_updateable skip cells that are not updateable (e.g. rule derived or consolidated)
+        :param measure_dimension_elements: dictionary of measure elements and their types to improve performance
+        when use_ti=True
         :return: changeset or None
         """
 
@@ -606,6 +608,7 @@ class CellService(ObjectService):
                 reactivate_transaction_log=reactivate_transaction_log,
                 precision=precision,
                 skip_non_updateable=skip_non_updateable,
+                measure_dimension_elements=measure_dimension_elements,
                 **kwargs)
 
         return self.write_through_cellset(cube_name, cellset_as_dict, dimensions, increment, deactivate_transaction_log,
@@ -658,7 +661,7 @@ class CellService(ObjectService):
     @manage_transaction_log
     def write_through_unbound_process(self, cube_name: str, cellset_as_dict: Dict, increment: bool = False,
                                       sandbox_name: str = None, precision: int = 8, skip_non_updateable: bool = False,
-                                      **kwargs):
+                                      measure_dimension_elements: Dict = None, **kwargs):
         """
         Writes data back to TM1 via an unbound TI process
         :param cube_name: str
@@ -667,10 +670,10 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :param precision: max precision when writhing through unbound process.
         :param skip_non_updateable skip cells that are not updateable (e.g. rule derived or consolidated)
+        :param measure_dimension_elements: dictionary of measure elements and their types to improve performance
         :param kwargs:
         :return: Success: bool, Messages: list, ChangeSet: None
         """
-
         enable_sandbox = self.generate_enable_sandbox_ti(sandbox_name)
 
         successes = list()
@@ -678,19 +681,21 @@ class CellService(ObjectService):
         statuses = list()
         log_files = list()
 
-        cube_service = self.get_cube_service()
-        element_service = self.get_element_service()
-
-        measure_dimension = cube_service.get_measure_dimension(cube_name=cube_name)
-
-        measure_dimension_elements = element_service.get_element_types(
-            dimension_name=measure_dimension,
-            hierarchy_name=measure_dimension,
-            skip_consolidations=False)
+        if not measure_dimension_elements:
+            measure_dimension_elements = self.get_elements_from_all_measure_hierarchies(cube_name)
 
         for coordinates, value in cellset_as_dict.items():
-            # use default 'Numeric' so that not existing elements trigger minor error during TI execution
-            element_type = measure_dimension_elements.get(coordinates[-1], 'Numeric')
+            # default to 'Numeric' so that not existing elements trigger minor error during TI execution
+            measure_element = coordinates[-1]
+            try:
+                element_type = measure_dimension_elements[measure_element]
+
+            except KeyError:
+                if ":" in measure_element:
+                    measure_element = measure_element.split(":")[1]
+                    element_type = measure_dimension_elements.get(measure_element, 'Numeric')
+                else:
+                    element_type = 'Numeric'
 
             if element_type == 'String':
                 function_str = 'CellPutS('
@@ -770,6 +775,16 @@ class CellService(ObjectService):
         else:
             enable_sandbox = f"ServerActiveSandboxSet('');SetUseActiveSandboxProperty(0);"
         return enable_sandbox
+
+    def get_elements_from_all_measure_hierarchies(self, cube_name: str) -> Dict[str, str]:
+        from TM1py.Services.CubeService import CubeService
+        from TM1py.Services.ElementService import ElementService
+
+        cube_service = CubeService(self._rest)
+        element_service = ElementService(self._rest)
+
+        measure_dimension = cube_service.get_measure_dimension(cube_name=cube_name)
+        return element_service.get_element_types_from_all_hierarchies(dimension_name=measure_dimension)
 
     def _execute_write_statements(self, statements: List[str], enable_sandbox: str, kwargs) -> Tuple[bool, str, str]:
         process = Process(
@@ -1116,7 +1131,8 @@ class CellService(ObjectService):
 
     def execute_view_values(self, cube_name: str, view_name: str, private: bool = False, sandbox_name: str = None,
                             skip_zeros: bool = False, skip_consolidated_cells: bool = False,
-                            skip_rule_derived_cells: bool = False, use_compact_json: bool = False, **kwargs) -> List[Union[str, float]]:
+                            skip_rule_derived_cells: bool = False, use_compact_json: bool = False, **kwargs) -> List[
+        Union[str, float]]:
         """ Execute view and retrieve only the cell values
 
         :param cube_name: String, name of the cube
