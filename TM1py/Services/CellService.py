@@ -2298,12 +2298,9 @@ class CellService(ObjectService):
                 # Add header entry for attribute if necessary
                 if current_tuple == 0:
                     if current_axes == 0:
-                        axis0_elements = axes0_list[current_tuple].split('~')
-                        column_headers.insert(len(axis0_elements) - 1, attribute_name)
-
+                        column_headers.insert(len(axes0_list[current_tuple]) - 1, attribute_name)
                     else:
-                        axis1_elements = axes1_list[current_tuple].split('~')
-                        row_headers.insert(len(axis1_elements) - 1, attribute_name)
+                        row_headers.insert(len(axes1_list[current_tuple]) - 1, attribute_name)
 
             elif (prefix, event) == ('Cells.item.Ordinal', 'number'):
                 current_cell_ordinal = value
@@ -2328,7 +2325,7 @@ class CellService(ObjectService):
         csv_header_writer.writerow(row_headers + column_headers + ['Value'])
 
         cellset_response.close()
-        return csv_header.getvalue() + csv_body.getvalue()
+        return csv_header.getvalue() + csv_body.getvalue().strip()
 
     @require_pandas
     def extract_cellset_dataframe(
