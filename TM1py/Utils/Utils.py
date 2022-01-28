@@ -400,7 +400,7 @@ def build_csv_from_cellset_dict(
 
         csv_writer.writerow(line)
 
-    return csv_content.getvalue()
+    return csv_content.getvalue().strip()
 
 
 def _build_csv_line_items_from_axis_tuple(members: Dict, include_attributes: bool = False) -> List[str]:
