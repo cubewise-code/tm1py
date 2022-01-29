@@ -661,7 +661,8 @@ class CellService(ObjectService):
     @manage_transaction_log
     def write_through_unbound_process(self, cube_name: str, cellset_as_dict: Dict, increment: bool = False,
                                       sandbox_name: str = None, precision: int = 8, skip_non_updateable: bool = False,
-                                      measure_dimension_elements: Dict = None, **kwargs):
+                                      measure_dimension_elements: Dict = None, is_attribute_cube: bool = None,
+                                      **kwargs):
         """
         Writes data back to TM1 via an unbound TI process
         :param cube_name: str
@@ -671,18 +672,133 @@ class CellService(ObjectService):
         :param precision: max precision when writhing through unbound process.
         :param skip_non_updateable skip cells that are not updateable (e.g. rule derived or consolidated)
         :param measure_dimension_elements: dictionary of measure elements and their types to improve performance
+        :param is_attribute_cube
         :param kwargs:
         :return: Success: bool, Messages: list, ChangeSet: None
         """
+        if is_attribute_cube is None:
+            is_attribute_cube = cube_name.lower().startswith("}elementattributes_")
+
         enable_sandbox = self.generate_enable_sandbox_ti(sandbox_name)
 
         successes = list()
-        statements = list()
         statuses = list()
         log_files = list()
 
         if not measure_dimension_elements:
             measure_dimension_elements = self.get_elements_from_all_measure_hierarchies(cube_name)
+
+        if is_attribute_cube:
+            statements = self._build_attribute_update_statements(
+                cube_name=cube_name,
+                cellset_as_dict=cellset_as_dict,
+                precision=precision,
+                measure_dimension_elements=measure_dimension_elements,
+                skip_non_updateable=skip_non_updateable)
+
+        else:
+            statements = self._build_cell_update_statements(cube_name, cellset_as_dict, increment,
+                                                            measure_dimension_elements, precision,
+                                                            skip_non_updateable)
+
+        chunk = list()
+        for n, statement in enumerate(statements):
+            chunk.append(statement)
+            if n > 0 and n % (Process.MAX_STATEMENTS * 2) == 0:
+                success, status, log_file = self._execute_write_statements(chunk, enable_sandbox, kwargs)
+                successes.append(success)
+                if not success:
+                    statuses.append(status)
+                    log_files.append(log_file)
+
+                chunk = list()
+
+        success, status, log_file = self._execute_write_statements(chunk, enable_sandbox, kwargs)
+        successes.append(success)
+        if not success:
+            statuses.append(status)
+            log_files.append(log_file)
+
+        if not any(successes):
+            if 'HasMinorErrors' in statuses:
+                raise TM1pyWritePartialFailureException(statuses, log_files, len(successes))
+
+            raise TM1pyWriteFailureException(statuses, log_files)
+
+        if not all(successes):
+            raise TM1pyWritePartialFailureException(statuses, log_files, len(successes))
+
+    def _build_attribute_update_statements(self, cube_name, cellset_as_dict, precision: int = 8,
+                                           skip_non_updateable: bool = False, measure_dimension_elements: Dict = None):
+        dimension_name = cube_name[19:]
+        statements = list()
+
+        for coordinates, value in cellset_as_dict.items():
+            # default to 'Numeric' so that not existing elements trigger minor error during TI execution
+            raw_element_name = coordinates[0]
+            if ":" in raw_element_name:
+                hierarchy_name, element_name = raw_element_name.split(":")
+            else:
+                element_name = raw_element_name
+                hierarchy_name = dimension_name
+            attribute_name = coordinates[-1]
+
+            try:
+                attribute_type = measure_dimension_elements[attribute_name]
+
+            except KeyError:
+                if ":" in attribute_name:
+                    attribute_name = attribute_name.split(":")[1]
+                    attribute_type = measure_dimension_elements.get(attribute_name, 'String')
+                else:
+                    attribute_type = 'String'
+
+            if attribute_type == 'String':
+                function_str = 'ElementAttrPutS('
+                value_str = str(value).replace("'", "''").replace('\r', '').replace('\n', '')
+                value_str = f"'{value_str}'"
+
+            # by default assume numeric, to trigger minor errors on write operations to C elements
+            else:
+                function_str = "ElementAttrPutN("
+                # number strings must not exceed float range
+                if isinstance(value, str):
+                    try:
+                        value_str = format(float(value), f'.{precision}f')
+                    except ValueError:
+                        value_str = f'{value}'
+                elif value is None:
+                    value_str = '0'
+                else:
+                    value_str = format(value, f'.{precision}f')
+            value_str += ","
+
+            comma_separated_elements = ",".join(
+                "'" + element.replace("'", "''") + "'"
+                for element
+                in [dimension_name, hierarchy_name, element_name, attribute_name])
+
+            cell_is_updateable_pre = ""
+            cell_is_updateable_post = ";"
+            if skip_non_updateable:
+                cell_is_updateable_pre = f"IF(CellIsUpdateable('{cube_name}', '{raw_element_name}', '{attribute_name}')=1,"
+                cell_is_updateable_post = ",0);"
+
+            statement = "".join([
+                cell_is_updateable_pre,
+                function_str,
+                value_str,
+                comma_separated_elements,
+                ")",
+                cell_is_updateable_post])
+
+            statements.append(statement)
+
+        return statements
+
+    def _build_cell_update_statements(self, cube_name: str, cellset_as_dict: Dict, increment: bool,
+                                      measure_dimension_elements: Dict, precision: int, skip_non_updateable: bool):
+        statements = list()
 
         for coordinates, value in cellset_as_dict.items():
             # default to 'Numeric' so that not existing elements trigger minor error during TI execution
@@ -735,32 +851,7 @@ class CellService(ObjectService):
 
             statements.append(statement)
 
-        chunk = list()
-        for n, statement in enumerate(statements):
-            chunk.append(statement)
-            if n > 0 and n % (Process.MAX_STATEMENTS * 2) == 0:
-                success, status, log_file = self._execute_write_statements(chunk, enable_sandbox, kwargs)
-                successes.append(success)
-                if not success:
-                    statuses.append(status)
-                    log_files.append(log_file)
-
-                chunk = list()
-
-        success, status, log_file = self._execute_write_statements(chunk, enable_sandbox, kwargs)
-        successes.append(success)
-        if not success:
-            statuses.append(status)
-            log_files.append(log_file)
-
-        if not any(successes):
-            if 'HasMinorErrors' in statuses:
-                raise TM1pyWritePartialFailureException(statuses, log_files, len(successes))
-
-            raise TM1pyWriteFailureException(statuses, log_files)
-
-        if not all(successes):
-            raise TM1pyWritePartialFailureException(statuses, log_files, len(successes))
+        return statements
 
     def generate_enable_sandbox_ti(self, sandbox_name):
         if self._rest.sandboxing_disabled:
