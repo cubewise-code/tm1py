@@ -307,7 +307,7 @@ class ElementService(ObjectService):
         url = format_url(
             "/api/v1/Dimensions('{}')?$expand=Hierarchies($select=Elements;$expand=Elements($select=Name,Type{}",
             dimension_name,
-            "&$filter=Type ne 3))" if skip_consolidations else "))")
+            ";$filter=Type ne 3))" if skip_consolidations else "))")
         response = self._rest.GET(url, **kwargs)
 
         result = CaseAndSpaceInsensitiveDict()
