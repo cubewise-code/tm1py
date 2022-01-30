@@ -12,6 +12,7 @@ class TestElementService(unittest.TestCase):
 
     prefix = 'TM1py_unittest_element_'
     dimension_name = f"{prefix}_dimension"
+    dimension_with_hierarchies_name = f"{prefix}_dimension_with_hierarchies"
     hierarchy_name = dimension_name
     attribute_cube_name = '}ElementAttributes_' + dimension_name
 
@@ -67,9 +68,33 @@ class TestElementService(unittest.TestCase):
         cls.tm1.cubes.cells.write_value('1990/91', cls.attribute_cube_name, ('1991', 'Financial Year'))
         cls.tm1.cubes.cells.write_value('1991/92', cls.attribute_cube_name, ('1992', 'Financial Year'))
 
+        cls.create_or_update_dimension_with_hierarchies()
+
     @classmethod
     def tearDown(cls):
         cls.tm1.dimensions.delete(cls.dimension_name)
+        cls.tm1.dimensions.delete(cls.dimension_with_hierarchies_name)
+
+    @classmethod
+    def create_or_update_dimension_with_hierarchies(cls):
+        dimension = Dimension(cls.dimension_with_hierarchies_name)
+        dimension.add_hierarchy(
+            Hierarchy(
+                name="Hierarchy1",
+                dimension_name=dimension.name,
+                elements=[Element("Elem1", "Numeric"), Element("Elem2", "Numeric"), Element("Elem3", "Numeric")]))
+        dimension.add_hierarchy(
+            Hierarchy(
+                name="Hierarchy2",
+                dimension_name=dimension.name,
+                elements=[Element("Elem4", "Numeric"), Element("Elem6", "Numeric"), Element("Cons1", "Consolidated")]))
+        dimension.add_hierarchy(
+            Hierarchy(
+                name="Hierarchy3",
+                dimension_name=dimension.name,
+                elements=[Element("Elem5", "Numeric"), Element("Cons2", "Consolidated"),
+                          Element("Cons3", "Consolidated")]))
+        cls.tm1.dimensions.update_or_create(dimension)
 
     def test_create_and_delete_element(self):
         element = Element(self.extra_year, "String")
@@ -464,6 +489,65 @@ class TestElementService(unittest.TestCase):
             parent_properties=None)
 
         self.assertEqual(members, [[{'Name': '1990', 'Attributes': {'Previous Year': '1989'}}]])
+
+    def test_get_element_types(self):
+        element_types = self.tm1.elements.get_element_types(self.dimension_name, self.hierarchy_name)
+        expected = {
+            "No Year": "Numeric",
+            "1989": "Numeric",
+            "1990": "Numeric",
+            "1991": "Numeric",
+            "1992": "Numeric",
+            "Total Years": "Consolidated",
+            "All Consolidations": "Consolidated"
+        }
+        self.assertEqual(expected, element_types)
+
+    def test_get_element_types_from_all_hierarchies_with_single_hierarchy(self):
+        expected = {
+            "No Year": "Numeric",
+            "1989": "Numeric",
+            "1990": "Numeric",
+            "1991": "Numeric",
+            "1992": "Numeric",
+            "Total Years": "Consolidated",
+            "All Consolidations": "Consolidated"
+        }
+        element_types = self.tm1.elements.get_element_types_from_all_hierarchies(self.dimension_name)
+        self.assertEqual(expected, element_types)
+
+    def test_get_element_types_from_all_hierarchies(self):
+        expected = {
+            "Elem1": "Numeric",
+            "Elem2": "Numeric",
+            "Elem3": "Numeric",
+            "Elem4": "Numeric",
+            "Elem5": "Numeric",
+            "Elem6": "Numeric",
+            "Cons1": "Consolidated",
+            "Cons2": "Consolidated",
+            "Cons3": "Consolidated"
+        }
+        element_types = self.tm1.elements.get_element_types_from_all_hierarchies(
+            self.dimension_with_hierarchies_name)
+
+        self.assertEqual(expected, element_types)
+
+    def test_get_element_types_from_all_hierarchies_skip_consolidations(self):
+
+        expected = {
+            "Elem1": "Numeric",
+            "Elem2": "Numeric",
+            "Elem3": "Numeric",
+            "Elem4": "Numeric",
+            "Elem5": "Numeric",
+            "Elem6": "Numeric",
+        }
+        element_types = self.tm1.elements.get_element_types_from_all_hierarchies(
+            dimension_name=self.dimension_with_hierarchies_name,
+            skip_consolidations=True)
+
+        self.assertEqual(expected, element_types)
 
     @classmethod
     def tearDownClass(cls):

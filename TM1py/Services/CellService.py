@@ -593,8 +593,9 @@ class CellService(ObjectService):
         :param precision: max precision when writhing through unbound process.
         Necessary when dealing with large numbers to avoid "number too long" TI syntax error.
         :param skip_non_updateable skip cells that are not updateable (e.g. rule derived or consolidated)
-        :param measure_dimension_elements: dictionary of measure elements and their types to improve performance
-        when use_ti=True
+        :param measure_dimension_elements: dictionary of measure elements and their types to improve
+        performance when `use_ti` is `True`.
+        When all written values are numeric you can pass a default dict with default key 'Numeric'
         :return: changeset or None
         """
 
@@ -671,8 +672,9 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :param precision: max precision when writhing through unbound process.
         :param skip_non_updateable skip cells that are not updateable (e.g. rule derived or consolidated)
-        :param measure_dimension_elements: dictionary of measure elements and their types to improve performance
-        :param is_attribute_cube
+        :param measure_dimension_elements: pass dictionary of measure elements and their types to improve performance
+        When all written values are numeric you can pass a defaultdict with default key: 'Numeric'
+        :param is_attribute_cube bool or None
         :param kwargs:
         :return: Success: bool, Messages: list, ChangeSet: None
         """
@@ -697,9 +699,13 @@ class CellService(ObjectService):
                 skip_non_updateable=skip_non_updateable)
 
         else:
-            statements = self._build_cell_update_statements(cube_name, cellset_as_dict, increment,
-                                                            measure_dimension_elements, precision,
-                                                            skip_non_updateable)
+            statements = self._build_cell_update_statements(
+                cube_name=cube_name,
+                cellset_as_dict=cellset_as_dict,
+                increment=increment,
+                measure_dimension_elements=measure_dimension_elements,
+                precision=precision,
+                skip_non_updateable=skip_non_updateable)
 
         chunk = list()
         for n, statement in enumerate(statements):
@@ -728,7 +734,8 @@ class CellService(ObjectService):
         if not all(successes):
             raise TM1pyWritePartialFailureException(statuses, log_files, len(successes))
 
-    def _build_attribute_update_statements(self, cube_name, cellset_as_dict, precision: int = 8,
+    @staticmethod
+    def _build_attribute_update_statements(cube_name, cellset_as_dict, precision: int = 8,
                                            skip_non_updateable: bool = False, measure_dimension_elements: Dict = None):
         dimension_name = cube_name[19:]
         statements = list()
@@ -753,13 +760,7 @@ class CellService(ObjectService):
                 else:
                     attribute_type = 'String'
 
-            if attribute_type == 'String':
-                function_str = 'ElementAttrPutS('
-                value_str = str(value).replace("'", "''").replace('\r', '').replace('\n', '')
-                value_str = f"'{value_str}'"
-
-            # by default assume numeric, to trigger minor errors on write operations to C elements
-            else:
+            if attribute_type == 'Numeric':
                 function_str = "ElementAttrPutN("
                 # number strings must not exceed float range
                 if isinstance(value, str):
@@ -771,9 +772,16 @@ class CellService(ObjectService):
                     value_str = '0'
                 else:
                     value_str = format(value, f'.{precision}f')
+
+            # by default assume String for attribute values
+            else:
+                function_str = 'ElementAttrPutS('
+                value_str = str(value).replace("'", "''").replace('\r', '').replace('\n', '')
+                value_str = f"'{value_str}'"
+
             value_str += ","
 
-            comma_separated_elements = ",".join(
+            comma_separated_args = ",".join(
                 "'" + element.replace("'", "''") + "'"
                 for element
                 in [dimension_name, hierarchy_name, element_name, attribute_name])
@@ -788,7 +796,7 @@ class CellService(ObjectService):
                 cell_is_updateable_pre,
                 function_str,
                 value_str,
-                comma_separated_elements,
+                comma_separated_args,
                 ")",
                 cell_is_updateable_post])
 
@@ -796,7 +804,8 @@ class CellService(ObjectService):
 
         return statements
 
-    def _build_cell_update_statements(self, cube_name: str, cellset_as_dict: Dict, increment: bool,
+    @staticmethod
+    def _build_cell_update_statements(cube_name: str, cellset_as_dict: Dict, increment: bool,
                                       measure_dimension_elements: Dict, precision: int, skip_non_updateable: bool):
         statements = list()
 
