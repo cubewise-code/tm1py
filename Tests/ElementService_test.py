@@ -53,7 +53,7 @@ class TestElementService(unittest.TestCase):
         for attribute in cls.alias_attributes:
             h.add_element_attribute(attribute, "Alias")
         d.add_hierarchy(h)
-        cls.tm1.dimensions.create(d)
+        cls.tm1.dimensions.update_or_create(d)
 
         cls.added_attribute_name = "NewAttribute"
 
