@@ -60,6 +60,8 @@ class TestCellService(unittest.TestCase):
                                   ('Element ' + str(e) for e in range(1, 101)),
                                   ('Element ' + str(e) for e in range(1, 101))))
 
+    dimension_with_hierarchies_name = prefix + "Dimension_With_Hierarchies"
+
     @classmethod
     def setUpClass(cls):
         """
@@ -133,6 +135,8 @@ class TestCellService(unittest.TestCase):
         cls.build_string_cube()
 
         cls.build_assets_for_relative_proportional_spread()
+
+        cls.create_or_update_dimension_with_hierarchies()
 
     @classmethod
     def setUp(cls):
@@ -259,6 +263,34 @@ class TestCellService(unittest.TestCase):
         for dimension_name in (cls.dimension_rps1_name, cls.dimension_rps2_name):
             if cls.tm1.dimensions.exists(dimension_name):
                 cls.tm1.dimensions.delete(dimension_name=dimension_name)
+
+    @classmethod
+    def create_or_update_dimension_with_hierarchies(cls):
+        dimension = Dimension(cls.dimension_with_hierarchies_name)
+        dimension.add_hierarchy(
+            Hierarchy(
+                name="Hierarchy1",
+                dimension_name=dimension.name,
+                elements=[Element("Elem1", "Numeric"), Element("Elem2", "Numeric"), Element("Elem3", "Numeric")],
+                element_attributes=[ElementAttribute("ea1", "String"), ElementAttribute("ea2", "String")]))
+        dimension.add_hierarchy(
+            Hierarchy(
+                name="Hierarchy2",
+                dimension_name=dimension.name,
+                elements=[Element("Elem4", "Numeric"), Element("Elem6", "Numeric"), Element("Cons1", "Consolidated")]))
+        dimension.add_hierarchy(
+            Hierarchy(
+                name="Hierarchy3",
+                dimension_name=dimension.name,
+                elements=[Element("Elem5", "Numeric"), Element("Cons2", "Consolidated"),
+                          Element("Cons3", "Consolidated")]))
+        cls.tm1.dimensions.update_or_create(dimension)
+
+        cells = {
+            ("Hierarchy1:Elem1", "ea1"): "123",
+            ("Hierarchy2:Cons1", "ea2"): "ABC",
+            ("Hierarchy3:Cons2", "ea2"): "DEF"}
+        cls.tm1.cells.write("}ElementAttributes_" + cls.dimension_with_hierarchies_name, cells, use_ti=True)
 
     def test_write_and_get_value(self):
         original_value = self.tm1.cubes.cells.get_value(self.cube_name, 'Element1,EleMent2,ELEMENT  3')
@@ -1521,7 +1553,7 @@ class TestCellService(unittest.TestCase):
             .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(self.dimension_names[0], "Element1"))) \
             .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(self.dimension_names[1], "Element 3"))) \
             .add_hierarchy_set_to_column_axis(MdxHierarchySet.members(
-                [Member.of(self.dimension_names[2], "Element 9"), Member.of(self.dimension_names[2], "Element 10")])) \
+            [Member.of(self.dimension_names[2], "Element 9"), Member.of(self.dimension_names[2], "Element 10")])) \
             .to_mdx()
         values = self.tm1.cells.execute_mdx_values(mdx, skip_zeros=True)
 
@@ -3039,6 +3071,20 @@ class TestCellService(unittest.TestCase):
         for rows, values in result.items():
             self.assertEqual(118, values[0])
 
+    def test_get_value(self):
+        value = self.tm1.cells.get_value(
+            cube_name=self.cube_name,
+            element_string="Element1,Element1,Element1")
+
+        self.assertEqual(1, value)
+
+    def test_get_value_other_hierarchy_in_attribute_cube(self):
+        value = self.tm1.cells.get_value(
+            cube_name='}ElementAttributes_' + self.dimension_with_hierarchies_name,
+            element_string=f'Hierarchy2::Cons1,ea2')
+
+        self.assertEqual('ABC', value)
+
     # Delete Cube and Dimensions
     @classmethod
     def tearDownClass(cls):
@@ -3052,6 +3098,8 @@ class TestCellService(unittest.TestCase):
 
         if cls.tm1.sandboxes.exists(cls.sandbox_name):
             cls.tm1.sandboxes.delete(cls.sandbox_name)
+
+        cls.tm1.dimensions.delete(cls.dimension_with_hierarchies_name)
 
         cls.tm1.logout()
 

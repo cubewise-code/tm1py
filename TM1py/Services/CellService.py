@@ -191,28 +191,48 @@ class CellService(ObjectService):
         if not dimensions:
             dimensions = CubeService(self._rest).get(cube_name).dimensions
         element_selections = element_string.split(',')
+
         # Build the ON ROWS statement:
         # Loop through the comma separated element selection, except for the last one
         for dimension_name, element_selection in zip(dimensions[:-1], element_selections[:-1]):
             if "&&" not in element_selection:
-                mdx_rows_list.append("{[" + dimension_name + "].[" + dimension_name + "].[" + element_selection + "]}")
+                if '::' in element_selection:
+                    hierarchy_name, element_name = element_selection.split("::")
+                else:
+                    hierarchy_name = dimension_name
+                    element_name = element_selection
+
+                mdx_rows_list.append("{[" + dimension_name + "].[" + hierarchy_name + "].[" + element_name + "]}")
+
             else:
                 for element_selection_part in element_selection.split('&&'):
                     hierarchy_name, element_name = element_selection_part.split('::')
                     mdx_rows_list.append("{[" + dimension_name + "].[" + hierarchy_name + "].[" + element_name + "]}")
+
         mdx_rows = "*".join(mdx_rows_list)
+
         # Build the ON COLUMNS statement from last dimension
         mdx_columns = ""
-        if "&&" not in element_selections[-1]:
-            mdx_columns = "{[" + dimensions[-1] + "].[" + dimensions[-1] + "].[" + element_selections[-1] + "]}"
+        element_selection = element_selections[-1]
+        dimension_name = dimensions[-1]
+        if "&&" not in element_selection:
+            if '::' in element_selection:
+                hierarchy_name, element_name = element_selection.split("::")
+            else:
+                hierarchy_name = dimension_name
+                element_name = element_selection
+            mdx_columns = "{[" + dimension_name + "].[" + hierarchy_name + "].[" + element_name + "]}"
+
         else:
             mdx_columns_list = []
             for element_selection_part in element_selections[-1].split('&&'):
                 hierarchy_name, element_name = element_selection_part.split('::')
-                mdx_columns_list.append("{[" + dimensions[-1] + "].[" + hierarchy_name + "].[" + element_name + "]}")
+                mdx_columns_list.append("{[" + dimension_name + "].[" + hierarchy_name + "].[" + element_name + "]}")
                 mdx_columns = "*".join(mdx_columns_list)
+
         # Construct final MDX
         mdx = mdx_template.format(mdx_rows, mdx_columns, cube_name)
+
         # Execute MDX
         cellset = dict(self.execute_mdx(mdx=mdx, sandbox_name=sandbox_name, **kwargs))
         return next(iter(cellset.values()))["Value"]
