@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 from typing import Union
 
 from requests import Response
@@ -162,6 +163,26 @@ class ApplicationService(ObjectService):
             application_name=application_name)
         return self._rest.DELETE(url, **kwargs)
 
+    def rename(self, path: str, application_type: Union[str, ApplicationTypes], application_name: str,
+               new_application_name: str, private: bool = False, **kwargs):
+        # raise ValueError if not a valid ApplicationType
+        application_type = ApplicationTypes(application_type)
+
+        if not application_type == ApplicationTypes.FOLDER:
+            application_name += application_type.suffix
+
+        contents = 'PrivateContents' if private else 'Contents'
+        mid = ""
+        if path.strip() != '':
+            mid = "".join([format_url("/Contents('{}')", element) for element in path.split('/')])
+
+        url = format_url(
+            "/api/v1/Contents('Applications')" + mid + "/" + contents + "('{application_name}')/tm1.Move",
+            application_name=application_name)
+        data = {"Name": new_application_name}
+
+        return self._rest.POST(url, data=json.dumps(data), **kwargs)
+
     def create(self, application: Union[Application, DocumentApplication], private: bool = False, **kwargs) -> Response:
         """ Create Planning Analytics application
 
@@ -186,7 +207,7 @@ class ApplicationService(ObjectService):
 
         return response
 
-    def update_or_create_document_from_file(self, path: str, name: str, 
+    def update_or_create_document_from_file(self, path: str, name: str,
                                             path_to_file: str, private: bool = False, **kwargs) -> Response:
         """Update or create application from file
 
