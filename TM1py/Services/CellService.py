@@ -403,7 +403,8 @@ class CellService(ObjectService):
     def write_dataframe(self, cube_name: str, data: 'pd.DataFrame', dimensions: Iterable[str] = None,
                         increment: bool = False, deactivate_transaction_log: bool = False,
                         reactivate_transaction_log: bool = False, sandbox_name: str = None,
-                        use_ti: bool = False, use_changeset: bool = False, **kwargs) -> str:
+                        use_ti: bool = False, use_changeset: bool = False, precision: int = 8,
+                        skip_non_updateable: bool = False, measure_dimension_elements: Dict = None, **kwargs) -> str:
         """
         Function expects same shape as `execute_mdx_dataframe` returns.
         Column order must match dimensions in the target cube with an additional column for the values.
@@ -417,8 +418,13 @@ class CellService(ObjectService):
         :param sandbox_name:
         :param use_ti:
         :param use_changeset: Enable ChangesetID: True or False
-        :param kwargs:
-        :return: ChangeSet: str
+        :param precision: max precision when writhing through unbound process.
+        Necessary when dealing with large numbers to avoid "number too long" TI syntax error.
+        :param skip_non_updateable skip cells that are not updateable (e.g. rule derived or consolidated)
+        :param measure_dimension_elements: dictionary of measure elements and their types to improve
+        performance when `use_ti` is `True`.
+        When all written values are numeric you can pass a default dict with default key 'Numeric'
+        :return: changeset or None
         """
         if not isinstance(data, pd.DataFrame):
             raise ValueError("argument 'data' must of type DataFrame")
@@ -440,6 +446,9 @@ class CellService(ObjectService):
                           sandbox_name=sandbox_name,
                           use_ti=use_ti,
                           use_changeset=use_changeset,
+                          precision=precision,
+                          skip_non_updateable=skip_non_updateable,
+                          measure_dimension_elements=measure_dimension_elements,
                           **kwargs)
 
     @manage_transaction_log
