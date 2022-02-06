@@ -29,6 +29,8 @@ class TestApplicationService(unittest.TestCase):
         prefix + 'Dimension2',
         prefix + 'Dimension3']
 
+    rename_suffix = "_New"
+
     @classmethod
     def setUpClass(cls) -> None:
         """
@@ -157,12 +159,21 @@ class TestApplicationService(unittest.TestCase):
             app.path, name=app.name, application_type=ApplicationTypes.CUBE, private=private)
         self.assertTrue(exists)
 
-        self.tm1.applications.delete(app.path, app.application_type, app.name, private=private)
+        self.tm1.applications.rename(app.path, application_type=ApplicationTypes.CUBE,
+                                     application_name=app.name, new_application_name=app.name + self.rename_suffix,
+                                     private=private)
         exists = self.tm1.applications.exists(
             app.path, name=app.name, application_type=ApplicationTypes.CUBE, private=private)
         self.assertFalse(exists)
+        exists = self.tm1.applications.exists(
+            app.path, name=app.name + self.rename_suffix, application_type=ApplicationTypes.CUBE, private=private)
+        self.assertTrue(exists)
 
-    @unittest.skip
+        self.tm1.applications.delete(app.path, app.application_type, app.name + self.rename_suffix, private=private)
+        exists = self.tm1.applications.exists(
+            app.path, name=app.name + self.rename_suffix, application_type=ApplicationTypes.CUBE, private=private)
+        self.assertFalse(exists)
+
     def test_cube_application_private(self):
         self.run_cube_application(private=True)
 
@@ -178,9 +189,19 @@ class TestApplicationService(unittest.TestCase):
             app.path, name=app.name, application_type=ApplicationTypes.CHORE, private=private)
         self.assertTrue(exists)
 
-        self.tm1.applications.delete(app.path, app.application_type, app.name, private=private)
+        self.tm1.applications.rename(app.path, application_type=ApplicationTypes.CHORE,
+                                     application_name=app.name, new_application_name=app.name + self.rename_suffix,
+                                     private=private)
         exists = self.tm1.applications.exists(
             app.path, name=app.name, application_type=ApplicationTypes.CHORE, private=private)
+        self.assertFalse(exists)
+        exists = self.tm1.applications.exists(
+            app.path, name=app.name + self.rename_suffix, application_type=ApplicationTypes.CHORE, private=private)
+        self.assertTrue(exists)
+
+        self.tm1.applications.delete(app.path, app.application_type, app.name + self.rename_suffix, private=private)
+        exists = self.tm1.applications.exists(
+            app.path, name=app.name + self.rename_suffix, application_type=ApplicationTypes.CHORE, private=private)
         self.assertFalse(exists)
 
     @unittest.skip
@@ -199,12 +220,21 @@ class TestApplicationService(unittest.TestCase):
             app.path, name=app.name, application_type=ApplicationTypes.DIMENSION, private=private)
         self.assertTrue(exists)
 
-        self.tm1.applications.delete(app.path, app.application_type, app.name, private=private)
+        self.tm1.applications.rename(app.path, application_type=ApplicationTypes.DIMENSION,
+                                     application_name=app.name, new_application_name=app.name + self.rename_suffix,
+                                     private=private)
         exists = self.tm1.applications.exists(
             app.path, name=app.name, application_type=ApplicationTypes.DIMENSION, private=private)
         self.assertFalse(exists)
+        exists = self.tm1.applications.exists(
+            app.path, name=app.name + self.rename_suffix, application_type=ApplicationTypes.DIMENSION, private=private)
+        self.assertTrue(exists)
 
-    @unittest.skip
+        self.tm1.applications.delete(app.path, app.application_type, app.name + self.rename_suffix, private=private)
+        exists = self.tm1.applications.exists(
+            app.path, name=app.name + self.rename_suffix, application_type=ApplicationTypes.DIMENSION, private=private)
+        self.assertFalse(exists)
+
     def test_dimension_application_private(self):
         self.run_dimension_application(private=True)
 
@@ -228,9 +258,19 @@ class TestApplicationService(unittest.TestCase):
             app.path, name=app.name, application_type=ApplicationTypes.DOCUMENT, private=private)
         self.assertTrue(exists)
 
-        self.tm1.applications.delete(app.path, app.application_type, app.name, private=private)
+        self.tm1.applications.rename(app.path, application_type=ApplicationTypes.DOCUMENT,
+                                     application_name=app.name, new_application_name=app.name + self.rename_suffix,
+                                     private=private)
         exists = self.tm1.applications.exists(
             app.path, name=app.name, application_type=ApplicationTypes.DOCUMENT, private=private)
+        self.assertFalse(exists)
+        exists = self.tm1.applications.exists(
+            app.path, name=app.name + self.rename_suffix, application_type=ApplicationTypes.DOCUMENT, private=private)
+        self.assertTrue(exists)
+
+        self.tm1.applications.delete(app.path, app.application_type, app.name + self.rename_suffix, private=private)
+        exists = self.tm1.applications.exists(
+            app.path, name=app.name + self.rename_suffix, application_type=ApplicationTypes.DOCUMENT, private=private)
         self.assertFalse(exists)
 
     def test_document_application_private(self):
@@ -248,9 +288,19 @@ class TestApplicationService(unittest.TestCase):
             app.path, name=app.name, application_type=ApplicationTypes.FOLDER, private=private)
         self.assertTrue(exists)
 
-        self.tm1.applications.delete(app.path, app.application_type, app.name, private=private)
+        self.tm1.applications.rename(app.path, application_type=ApplicationTypes.FOLDER,
+                                     application_name=app.name, new_application_name=app.name + self.rename_suffix,
+                                     private=private)
         exists = self.tm1.applications.exists(
             app.path, name=app.name, application_type=ApplicationTypes.FOLDER, private=private)
+        self.assertFalse(exists)
+        exists = self.tm1.applications.exists(
+            app.path, name=app.name + self.rename_suffix, application_type=ApplicationTypes.FOLDER, private=private)
+        self.assertTrue(exists)
+
+        self.tm1.applications.delete(app.path, app.application_type, app.name + self.rename_suffix, private=private)
+        exists = self.tm1.applications.exists(
+            app.path, name=app.name + self.rename_suffix, application_type=ApplicationTypes.FOLDER, private=private)
         self.assertFalse(exists)
 
     def test_run_folder_application_private(self):
@@ -268,9 +318,19 @@ class TestApplicationService(unittest.TestCase):
             app.path, name=app.name, application_type=ApplicationTypes.LINK, private=private)
         self.assertTrue(exists)
 
-        self.tm1.applications.delete(app.path, app.application_type, app.name, private=private)
+        self.tm1.applications.rename(app.path, application_type=ApplicationTypes.LINK,
+                                     application_name=app.name, new_application_name=app.name + self.rename_suffix,
+                                     private=private)
         exists = self.tm1.applications.exists(
             app.path, name=app.name, application_type=ApplicationTypes.LINK, private=private)
+        self.assertFalse(exists)
+        exists = self.tm1.applications.exists(
+            app.path, name=app.name + self.rename_suffix, application_type=ApplicationTypes.LINK, private=private)
+        self.assertTrue(exists)
+
+        self.tm1.applications.delete(app.path, app.application_type, app.name + self.rename_suffix, private=private)
+        exists = self.tm1.applications.exists(
+            app.path, name=app.name + self.rename_suffix, application_type=ApplicationTypes.LINK, private=private)
         self.assertFalse(exists)
 
     def test_run_link_application_private(self):
@@ -288,9 +348,19 @@ class TestApplicationService(unittest.TestCase):
             app.path, name=app.name, application_type=ApplicationTypes.PROCESS, private=private)
         self.assertTrue(exists)
 
-        self.tm1.applications.delete(app.path, app.application_type, app.name, private=private)
+        self.tm1.applications.rename(app.path, application_type=ApplicationTypes.PROCESS,
+                                     application_name=app.name, new_application_name=app.name + self.rename_suffix,
+                                     private=private)
         exists = self.tm1.applications.exists(
             app.path, name=app.name, application_type=ApplicationTypes.PROCESS, private=private)
+        self.assertFalse(exists)
+        exists = self.tm1.applications.exists(
+            app.path, name=app.name + self.rename_suffix, application_type=ApplicationTypes.PROCESS, private=private)
+        self.assertTrue(exists)
+
+        self.tm1.applications.delete(app.path, app.application_type, app.name + self.rename_suffix, private=private)
+        exists = self.tm1.applications.exists(
+            app.path, name=app.name + self.rename_suffix, application_type=ApplicationTypes.PROCESS, private=private)
         self.assertFalse(exists)
 
     @unittest.skip
@@ -310,9 +380,19 @@ class TestApplicationService(unittest.TestCase):
             app.path, name=app.name, application_type=ApplicationTypes.SUBSET, private=private)
         self.assertTrue(exists)
 
-        self.tm1.applications.delete(app.path, app.application_type, app.name, private=private)
+        self.tm1.applications.rename(app.path, application_type=ApplicationTypes.SUBSET,
+                                     application_name=app.name, new_application_name=app.name + self.rename_suffix,
+                                     private=private)
         exists = self.tm1.applications.exists(
             app.path, name=app.name, application_type=ApplicationTypes.SUBSET, private=private)
+        self.assertFalse(exists)
+        exists = self.tm1.applications.exists(
+            app.path, name=app.name + self.rename_suffix, application_type=ApplicationTypes.SUBSET, private=private)
+        self.assertTrue(exists)
+
+        self.tm1.applications.delete(app.path, app.application_type, app.name + self.rename_suffix, private=private)
+        exists = self.tm1.applications.exists(
+            app.path, name=app.name + self.rename_suffix, application_type=ApplicationTypes.SUBSET, private=private)
         self.assertFalse(exists)
 
     @unittest.skip
@@ -331,9 +411,19 @@ class TestApplicationService(unittest.TestCase):
             app.path, name=app.name, application_type=ApplicationTypes.VIEW, private=private)
         self.assertTrue(exists)
 
-        self.tm1.applications.delete(app.path, app.application_type, app.name, private=private)
+        self.tm1.applications.rename(app.path, application_type=ApplicationTypes.VIEW,
+                                     application_name=app.name, new_application_name=app.name + self.rename_suffix,
+                                     private=private)
         exists = self.tm1.applications.exists(
             app.path, name=app.name, application_type=ApplicationTypes.VIEW, private=private)
+        self.assertFalse(exists)
+        exists = self.tm1.applications.exists(
+            app.path, name=app.name + self.rename_suffix, application_type=ApplicationTypes.VIEW, private=private)
+        self.assertTrue(exists)
+        
+        self.tm1.applications.delete(app.path, app.application_type, app.name + self.rename_suffix, private=private)
+        exists = self.tm1.applications.exists(
+            app.path, name=app.name + self.rename_suffix, application_type=ApplicationTypes.VIEW, private=private)
         self.assertFalse(exists)
 
     @unittest.skip
