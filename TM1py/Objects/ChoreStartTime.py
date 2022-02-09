@@ -67,18 +67,15 @@ class ChoreStartTime:
 
     def set_time(self, year: int = None, month: int = None, day: int = None, hour: int = None, minute: int = None,
                  second: int = None):
-        if year:
-            self._datetime = self._datetime.replace(year=year)
-        if month:
-            self._datetime = self._datetime.replace(month=month)
-        if day:
-            self._datetime = self._datetime.replace(day=day)
-        if hour:
-            self._datetime = self._datetime.replace(hour=hour)
-        if minute:
-            self._datetime = self._datetime.replace(minute=minute)
-        if second:
-            self._datetime = self._datetime.replace(second=second)
+                 
+        _year = year if year is not None else self._datetime.year
+        _month = month if month is not None else self._datetime.month
+        _day = day if day is not None else self._datetime.day
+        _hour = hour if hour is not None else self._datetime.hour
+        _minute = minute if minute is not None else self._datetime.minute
+        _second = second if second is not None else self._datetime.second
+
+        self._datetime.replace(year=_year,month=_month,day=_day,hour=_hour,minute=_minute,second=_second)
 
     def add(self, days: int = 0, hours: int = 0, minutes: int = 0, seconds: int = 0):
         self._datetime = self._datetime + datetime.timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
