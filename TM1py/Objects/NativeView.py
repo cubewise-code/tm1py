@@ -203,6 +203,15 @@ class NativeView(View):
             if case_and_space_insensitive_equals(title.dimension_name, dimension_name):
                 self._titles.remove(title)
 
+    def substitute_title(self, dimension: str, element: str):
+        for title in self._titles:
+            if case_and_space_insensitive_equals(title.dimension_name, dimension):
+                title._subset = AnonymousSubset(dimension, dimension, elements=[element])
+                title._selected = element
+                return
+
+        raise ValueError(f"Dimension '{dimension}' not found in titles")
+
     @classmethod
     def from_json(cls, view_as_json: str, cube_name: Optional[str] = None) -> 'NativeView':
         """ Alternative constructor

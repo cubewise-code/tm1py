@@ -110,3 +110,21 @@ class TestNativeView(unittest.TestCase):
             "FROM [C1]\r\n"
             "WHERE ([D1].[D1].[E1])",
             native_view.mdx)
+
+    def test_substitute_title(self):
+        s1 = Subset("s1", "d1", "d1", None, None, ["e1", "e2"])
+        s2 = Subset("s2", "d2", "d2", None, None, ["e1", "e2"])
+        s3 = Subset("s3", "d3", "d3", None, None, ["e1", "e2"])
+
+        native_view = NativeView(
+            cube_name="c1",
+            view_name="not_relevant",
+            suppress_empty_columns=True,
+            suppress_empty_rows=False,
+            titles=[ViewTitleSelection("d1", s1, "e1")],
+            columns=[ViewAxisSelection("d2", s2)],
+            rows=[ViewAxisSelection("d3", s3)])
+
+        native_view.substitute_title("d1", "e2")
+
+        self.assertEqual(native_view.titles[0].selected, "e2")
