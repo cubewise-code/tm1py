@@ -2,9 +2,11 @@
 
 import collections
 import json
+import re
 from typing import Optional, Dict
 
 from TM1py.Objects.View import View
+from TM1py.Utils import case_and_space_insensitive_equals
 
 
 class MDXView(View):
@@ -36,6 +38,36 @@ class MDXView(View):
     @property
     def body(self) -> str:
         return self.construct_body()
+
+    def substitute_title(self, dimension: str, hierarchy: str, element: str):
+        """ dimension and hierarchy name are space sensitive!
+
+        :param dimension:
+        :param hierarchy:
+        :param element:
+        :return:
+        """
+        pattern = re.compile(r"\[" + dimension + r"\].\[" + hierarchy + r"\].\[(.*?)\]", re.IGNORECASE)
+        findings = re.findall(pattern, self._mdx)
+
+        if findings:
+            self._mdx = re.sub(
+                pattern=pattern,
+                repl=f"[{dimension}].[{hierarchy}].[{element}]",
+                string=self._mdx)
+            return
+
+        if hierarchy is None or case_and_space_insensitive_equals(dimension, hierarchy):
+            pattern = re.compile(r"\[" + dimension + r"\].\[(.*?)\]", re.IGNORECASE)
+            findings = re.findall(pattern, self._mdx)
+            if findings:
+                self._mdx = re.sub(
+                    pattern=pattern,
+                    repl=f"[{dimension}].[{element}]",
+                    string=self._mdx)
+                return
+
+        raise ValueError(f"No selection in title with dimension: '{dimension}' and hierarchy: '{hierarchy}'")
 
     @classmethod
     def from_json(cls, view_as_json: str, cube_name: Optional[str] = None) -> 'MDXView':
