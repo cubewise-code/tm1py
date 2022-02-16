@@ -338,7 +338,8 @@ def build_csv_from_cellset_dict(
         csv_dialect: 'csv.Dialect' = None,
         line_separator: str = "\r\n",
         value_separator: str = ",",
-        include_attributes: bool = False) -> str:
+        include_attributes: bool = False,
+        include_headers: bool = True) -> str:
     """ transform raw cellset data into concise dictionary
     :param column_dimensions:
     :param row_dimensions:
@@ -349,6 +350,7 @@ def build_csv_from_cellset_dict(
     :param line_separator:
     :param value_separator:
     :param include_attributes: include attribute columns
+    :param include_headers: bool
     :return:
     """
 
@@ -366,8 +368,9 @@ def build_csv_from_cellset_dict(
 
     column_axis, row_axis, _ = extract_axes_from_cellset(raw_cellset_as_dict=raw_cellset_as_dict)
 
-    headers = _build_headers_for_csv(row_axis, column_axis, row_dimensions, column_dimensions, include_attributes)
-    csv_writer.writerow(headers)
+    if include_headers:
+        headers = _build_headers_for_csv(row_axis, column_axis, row_dimensions, column_dimensions, include_attributes)
+        csv_writer.writerow(headers)
 
     for ordinal, cell in enumerate(cells[:top or len(cells)]):
         # if skip is used in execution we must use the original ordinal from the cell, if not we can simply enumerate
