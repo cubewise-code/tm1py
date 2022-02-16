@@ -2298,6 +2298,7 @@ class CellService(ObjectService):
             sandbox_name: str = None,
             include_attributes: bool = False,
             use_compact_json: bool = False,
+            include_headers: bool = True,
             **kwargs) -> str:
         """ Execute cellset and return only the 'Content', in csv format
 
@@ -2314,15 +2315,20 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :param include_attributes: include attribute columns
         :param use_compact_json: bool
+        :param include_headers: bool
         :return: Raw format from TM1.
         """
+        if 'delete_cellset' in kwargs:
+            delete_cellset = kwargs.pop('delete_cellset')
+        else:
+            delete_cellset = True
         _, _, rows, columns = self.extract_cellset_composition(cellset_id, delete_cellset=False,
                                                                sandbox_name=sandbox_name, **kwargs)
         cellset_dict = self.extract_cellset_raw(cellset_id, cell_properties=["Value"], top=top, skip=skip,
                                                 skip_contexts=True, skip_zeros=skip_zeros,
                                                 skip_consolidated_cells=skip_consolidated_cells,
                                                 skip_rule_derived_cells=skip_rule_derived_cells,
-                                                delete_cellset=True, sandbox_name=sandbox_name,
+                                                delete_cellset=delete_cellset, sandbox_name=sandbox_name,
                                                 elem_properties=['Name'],
                                                 member_properties=['Name',
                                                                    'Attributes'] if include_attributes else None,
@@ -2330,7 +2336,8 @@ class CellService(ObjectService):
                                                 **kwargs)
         return build_csv_from_cellset_dict(rows, columns, cellset_dict, csv_dialect=csv_dialect,
                                            line_separator=line_separator, value_separator=value_separator,
-                                           top=top, include_attributes=include_attributes)
+                                           top=top, include_attributes=include_attributes,
+                                           include_headers=include_headers)
 
     def extract_cellset_csv_iter_json(
             self,
