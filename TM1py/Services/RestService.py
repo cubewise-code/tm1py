@@ -10,6 +10,7 @@ from typing import Union, Dict, Tuple, Optional
 
 import requests
 import urllib3
+from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
 from requests import Timeout, Response, ConnectionError
 from requests.adapters import HTTPAdapter
 
@@ -131,6 +132,7 @@ class RestService:
         :param namespace String - optional CAM namespace
         :param ssl: boolean -  as specified in the tm1s.cfg
         :param cam_passport: String - the cam passport
+        :param paw_api_key: Use in combination with base_url to authenticate with TM1 12 in IBM cloud
         :param session_id: String - TM1SessionId e.g. q7O6e1w49AixeuLVxJ1GZg
         :param session_context: String - Name of the Application. Controls "Context" column in Arc / TM1top.
         If None, use default: TM1py
@@ -195,7 +197,8 @@ class RestService:
         self.disable_http_warnings()
         # re-use or create tm1 http session
         self._s = requests.session()
-        if "session_id" in kwargs:
+
+        if 'session_id' in kwargs:
             self._s.cookies.set("TM1SessionId", kwargs["session_id"])
         else:
             self._start_session(
@@ -204,6 +207,7 @@ class RestService:
                 namespace=kwargs.get("namespace", None),
                 gateway=kwargs.get("gateway", None),
                 cam_passport=kwargs.get("cam_passport", None),
+                paw_api_key=kwargs.get("paw_api_key", None),
                 decode_b64=self.translate_to_boolean(kwargs.get("decode_b64", False)),
                 integrated_login=self.translate_to_boolean(kwargs.get("integrated_login", False)),
                 integrated_login_domain=kwargs.get("integrated_login_domain"),
@@ -334,12 +338,13 @@ class RestService:
             self._s.close()
 
     def _start_session(self, user: str, password: str, decode_b64: bool = False, namespace: str = None,
-                       gateway: str = None, cam_passport: str = None, integrated_login: bool = None,
-                       integrated_login_domain: str = None, integrated_login_service: str = None,
-                       integrated_login_host: str = None, integrated_login_delegate: bool = None,
-                       impersonate: str = None):
+                       gateway: str = None, cam_passport: str = None, paw_api_key: str = None,
+                       integrated_login: bool = None, integrated_login_domain: str = None,
+                       integrated_login_service: str = None, integrated_login_host: str = None,
+                       integrated_login_delegate: bool = None, impersonate: str = None):
         """ perform a simple GET request (Ask for the TM1 Version) to start a session
         """
+
         # Authorization with integrated_login
         if integrated_login:
             self._s.auth = HttpNegotiateAuth(
@@ -356,6 +361,7 @@ class RestService:
                 namespace,
                 gateway,
                 cam_passport,
+                paw_api_key,
                 self._verify)
             self.add_http_header('Authorization', token)
 
@@ -463,15 +469,23 @@ class RestService:
 
     @staticmethod
     def _build_authorization_token(user: str, password: str, namespace: str = None, gateway: str = None,
-                                   cam_passport: str = None, verify: bool = False) -> str:
-        """ Build the Authorization Header for CAM and Native Security
+                                   cam_passport: str = None, paw_api_key: str = None, verify: bool = False) -> str:
+        """ Build the required Authorization Header for each authentication type
+
         """
         if cam_passport:
             return 'CAMPassport ' + cam_passport
+        elif paw_api_key:
+            return 'Bearer ' + RestService._build_authorization_token_ibm_cloud_iam(paw_api_key)
         elif namespace:
             return RestService._build_authorization_token_cam(user, password, namespace, gateway, verify)
         else:
             return RestService._build_authorization_token_basic(user, password)
+
+    @staticmethod
+    def _build_authorization_token_ibm_cloud_iam(paw_api_key: str = None):
+        authenticator = IAMAuthenticator(paw_api_key)
+        return authenticator.token_manager.get_token()
 
     @staticmethod
     def _build_authorization_token_cam(user: str = None, password: str = None, namespace: str = None,

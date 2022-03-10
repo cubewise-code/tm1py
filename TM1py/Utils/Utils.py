@@ -12,6 +12,7 @@ from io import StringIO
 from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator, Union
 
 import requests
+from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
 from mdxpy import MdxBuilder, Member
 
 from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminException
@@ -1128,3 +1129,16 @@ def build_mdx_and_values_from_cellset(cells: Dict, cube_name: str, dimensions: I
         values.append(value)
     mdx = query.to_mdx()
     return mdx, values
+
+
+def get_servers_from_ibm_cloud(base_url: str, paw_api_key: str) -> List[Dict]:
+    """
+    :param base_url: e.g., https://eu-de.planning-analytics.cloud.ibm.com/api/P7NG815TNO4P/v0/tm1/
+    :param paw_api_key: PAW API Key from IBM Cloud
+    """
+    authenticator = IAMAuthenticator(paw_api_key)
+    auth_token = "Bearer " + authenticator.token_manager.get_token()
+    url = base_url.rstrip('/') + "/Servers"
+    response = requests.get(url, headers={"Authorization": auth_token})
+
+    return response.json()['value']

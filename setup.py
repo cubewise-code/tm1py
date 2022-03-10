@@ -1,6 +1,6 @@
 from setuptools import setup
 
-SCHEDULE_VERSION = '1.9.0'
+SCHEDULE_VERSION = '2.0.0'
 SCHEDULE_DOWNLOAD_URL = (
         'https://github.com/Cubewise-code/TM1py/tarball/' + SCHEDULE_VERSION
 )
@@ -38,7 +38,8 @@ setup(
         'requests',
         'pytz',
         'requests_negotiate_sspi;platform_system=="Windows"',
-        'mdxpy'],
+        'mdxpy',
+        'ibm-cloud-sdk-core'],
     extras_require={
         "pandas": ["pandas"]
     },
