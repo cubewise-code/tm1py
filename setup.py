@@ -1,6 +1,6 @@
 from setuptools import setup
 
-SCHEDULE_VERSION = '1.9.0'
+SCHEDULE_VERSION = '1.9.1'
 SCHEDULE_DOWNLOAD_URL = (
         'https://github.com/Cubewise-code/TM1py/tarball/' + SCHEDULE_VERSION
 )
@@ -31,6 +31,7 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Natural Language :: English',
     ],
     install_requires=[
