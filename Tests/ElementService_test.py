@@ -549,6 +549,33 @@ class TestElementService(unittest.TestCase):
 
         self.assertEqual(expected, element_types)
 
+    def test_remove_edge_happy_case(self):
+        self.tm1.elements.remove_edge(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            parent="Total Years",
+            component="1989"
+        )
+
+        edges = self.tm1.elements.get_edges(self.dimension_name, self.dimension_name)
+        self.assertNotIn(("Total Years", "1989"), edges)
+
+    def test_remove_edge_parent_not_existing(self):
+        with self.assertRaises(TM1pyRestException):
+            self.tm1.elements.remove_edge(
+                dimension_name=self.dimension_name,
+                hierarchy_name=self.hierarchy_name,
+                parent="Not Existing Consolidation",
+                component="1989")
+
+    def test_remove_edge_child_not_existing(self):
+        with self.assertRaises(TM1pyRestException):
+            self.tm1.elements.remove_edge(
+                dimension_name=self.dimension_name,
+                hierarchy_name=self.hierarchy_name,
+                parent="Total Years",
+                component="Not Existing Element")
+
     @classmethod
     def tearDownClass(cls):
         cls.tm1.logout()
