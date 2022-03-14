@@ -561,6 +561,26 @@ class ElementService(ObjectService):
         raw_dict = response.json()
         return [tuples['Members'] for tuples in raw_dict['Tuples']]
 
+    def remove_edge(self, dimension_name: str, hierarchy_name: str, parent: str, component: str, **kwargs) -> Response:
+        """ Remove one edge from hierarchy. Fails if parent or child element doesn't exist.
+
+        :param dimension_name:
+        :param hierarchy_name:
+        :param parent:
+        :param component:
+        :return:
+        """
+
+        url = format_url(
+            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')/Edges(ParentName='{}',ComponentName='{}')",
+            dimension_name,
+            hierarchy_name,
+            parent,
+            parent,
+            component)
+
+        return self._rest.DELETE(url=url, **kwargs)
+
     def add_edges(self, dimension_name: str, hierarchy_name: str = None, edges: Dict[Tuple[str, str], int] = None,
                   **kwargs) -> Response:
         """ Add Edges to hierarchy. Fails if one edge already exists.
