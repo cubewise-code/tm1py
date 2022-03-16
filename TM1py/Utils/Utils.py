@@ -696,9 +696,10 @@ def build_cellset_from_pandas_dataframe(df: 'pd.DataFrame') -> 'CaseAndSpaceInse
     """
     if isinstance(df.index, pd.MultiIndex):
         df.reset_index(inplace=True)
-    cellset = CaseAndSpaceInsensitiveTuplesDict(
-        dict(zip(df.iloc[:, :-1].itertuples(index=False, name=None), df.iloc[:, -1].values)))
-
+    cellset = CaseAndSpaceInsensitiveTuplesDict()
+    split = df.to_numpy().tolist()
+    for row in split:
+        cellset[tuple(row[0:-1])] = row[-1]
     return cellset
 
 
@@ -799,10 +800,10 @@ def map_cell_properties_to_compact_json_response(properties: List, compact_cells
     properties = [Ordinal, Value, RuleDerived]
     compact_cells_response = [[0, 258, 100], [1, 258, 500]]
     result: {Cells: [
-        { Ordinal: 0, Value: 100, RuleDerived: 258},
+        { Ordinal: 0, Value: 100, RuleDerived: 258}, 
         { Ordinal: 1, Value: 500, RuleDerived: 258}
     ]}
-
+    
 
     :param properties: list of `Cell` properties e.g [Ordinal, Value, Updateable, ...]
     :param compact_cells_response: list of cells returned in compact json format
