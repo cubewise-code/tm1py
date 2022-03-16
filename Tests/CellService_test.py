@@ -706,7 +706,7 @@ class TestCellService(unittest.TestCase):
             self.dimension_names[0]: ["element 1", "element 1", "element 1"],
             self.dimension_names[1]: ["element 1", "element 2", "element 3"],
             self.dimension_names[2]: ["element 5", "element 5", "element 5"],
-            "Value": [1, 2, 3]})
+            "Value": [1.0, 2.0, 3.0]})
         self.tm1.cubes.cells.write_dataframe(self.cube_name, df)
 
         query = MdxBuilder.from_cube(self.cube_name)
