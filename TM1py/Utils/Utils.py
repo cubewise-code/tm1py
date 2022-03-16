@@ -696,10 +696,8 @@ def build_cellset_from_pandas_dataframe(df: 'pd.DataFrame') -> 'CaseAndSpaceInse
     """
     if isinstance(df.index, pd.MultiIndex):
         df.reset_index(inplace=True)
-    cellset = CaseAndSpaceInsensitiveTuplesDict()
-    split = df.to_numpy().tolist()
-    for row in split:
-        cellset[tuple(row[0:-1])] = row[-1]
+    cellset = CaseAndSpaceInsensitiveTuplesDict(
+        dict(zip(df.iloc[:, :-1].itertuples(index=False, name=None), df.iloc[:, -1].values)))
     return cellset
 
 
