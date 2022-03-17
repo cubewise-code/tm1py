@@ -60,24 +60,27 @@ class Hierarchy(TM1Object):
         self._default_member = default_member
 
     @classmethod
-    def from_dict(cls, hierarchy_as_dict: Dict) -> 'Hierarchy':
+    def from_dict(cls, hierarchy_as_dict: Dict, dimension_name: str = None) -> 'Hierarchy':
         # Build the Dictionary for the edges
         edges = CaseAndSpaceInsensitiveTuplesDict(
             {(edge['ParentName'], edge['ComponentName']): edge['Weight']
              for edge
              in hierarchy_as_dict['Edges']})
 
+        if not dimension_name:
+            dimension_name = hierarchy_as_dict['UniqueName'][1:hierarchy_as_dict['UniqueName'].find("].[")]
+
         return cls(
             name=hierarchy_as_dict['Name'],
-            dimension_name=hierarchy_as_dict['UniqueName'][1:hierarchy_as_dict['UniqueName'].find("].[")],
+            dimension_name=dimension_name,
             elements=[Element.from_dict(elem) for elem in hierarchy_as_dict['Elements']],
             element_attributes=[ElementAttribute(ea['Name'], ea['Type'])
-                                for ea in hierarchy_as_dict['ElementAttributes']],
+                                for ea in hierarchy_as_dict.get('ElementAttributes', [])],
             edges=edges,
-            subsets=[subset['Name'] for subset in hierarchy_as_dict['Subsets']],
+            subsets=[subset['Name'] for subset in hierarchy_as_dict.get('Subsets', [])],
             structure=hierarchy_as_dict['Structure'] if 'Structure' in hierarchy_as_dict else None,
             default_member=hierarchy_as_dict['DefaultMember']['Name']
-            if hierarchy_as_dict['DefaultMember'] else None)
+            if hierarchy_as_dict.get('DefaultMember', None) else None)
 
     @property
     def name(self) -> str:
