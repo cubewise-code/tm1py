@@ -576,6 +576,37 @@ class TestElementService(unittest.TestCase):
                 parent="Total Years",
                 component="Not Existing Element")
 
+    def test_get_parents_happy_case(self):
+        parents = self.tm1.elements.get_parents(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            element_name="1989")
+
+        self.assertEqual(["Total Years"], parents)
+
+    def test_get_parents_case_and_space_insensitive(self):
+        parents = self.tm1.elements.get_parents(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            element_name="TOTALYEARS")
+
+        self.assertEqual(["All Consolidations"], parents)
+
+    def test_get_parents_no_parents(self):
+        parents = self.tm1.elements.get_parents(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            element_name="All Consolidations")
+
+        self.assertEqual([], parents)
+
+    def test_get_parents_not_existing(self):
+        with self.assertRaises(TM1pyRestException):
+            self.tm1.elements.get_parents(
+                dimension_name=self.dimension_name,
+                hierarchy_name=self.hierarchy_name,
+                element_name="Not Existing Element")
+
     @classmethod
     def tearDownClass(cls):
         cls.tm1.logout()

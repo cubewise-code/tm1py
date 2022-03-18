@@ -626,3 +626,12 @@ class ElementService(ObjectService):
         body = [element_attribute.body_as_dict for element_attribute in element_attributes]
 
         return self._rest.POST(url=url, data=json.dumps(body), **kwargs)
+
+    def get_parents(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> List[str]:
+        url = format_url(
+            f"/api/v1/Dimensions('{dimension_name}')/Hierarchies('{hierarchy_name}')/Elements('{element_name}')/Parents"
+            f"?$select=Name",
+        )
+        response = self._rest.GET(url=url, **kwargs)
+
+        return [record["Name"] for record in response.json()["value"]]
