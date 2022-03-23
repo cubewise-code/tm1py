@@ -80,6 +80,22 @@ class DimensionService(ObjectService):
                 else:
                     self.hierarchies.create(hierarchy, **kwargs)
 
+        # Edge case: elements in leaves hierarchy that do not exist in other hierarchies
+        if "Leaves" in dimension:
+            existing_leaves = CaseAndSpaceInsensitiveSet(
+                self.hierarchies.elements.get_leaf_element_names(dimension.name, "Leaves"))
+
+            leaves_to_create = list()
+            for leaf in dimension.get_hierarchy("Leaves"):
+                if leaf.name not in existing_leaves:
+                    leaves_to_create.append(leaf)
+
+            if leaves_to_create:
+                self.hierarchies.elements.add_elements(
+                    dimension_name=dimension.name,
+                    hierarchy_name="Leaves",
+                    elements=leaves_to_create)
+
         for hierarchy_name in hierarchies_to_be_removed:
             if not case_and_space_insensitive_equals(hierarchy_name, "Leaves"):
                 self.hierarchies.delete(dimension_name=dimension.name, hierarchy_name=hierarchy_name, **kwargs)
