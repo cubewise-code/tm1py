@@ -1416,10 +1416,14 @@ class CellService(ObjectService):
                                      skip_rule_derived_cells=skip_rule_derived_cells,
                                      value_separator=element_separator,
                                      sandbox_name=sandbox_name, **kwargs)
+        reader = csv.reader(StringIO(lines), delimiter=element_separator)
+
+        # skip header
+        next(reader)
+
         elements_value_dict = CaseAndSpaceInsensitiveDict()
-        for entries in lines.split("\r\n")[1:]:
-            elements_value_dict[
-                element_separator.join(entries.split(element_separator)[:-1])] = entries.split(element_separator)[-1]
+        for row in reader:
+            elements_value_dict[element_separator.join(row[:-1])] = row[-1]
         return elements_value_dict
 
     @require_pandas
