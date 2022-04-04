@@ -696,6 +696,12 @@ def build_cellset_from_pandas_dataframe(df: 'pd.DataFrame') -> 'CaseAndSpaceInse
     """
     if isinstance(df.index, pd.MultiIndex):
         df.reset_index(inplace=True)
+
+    # handle duplicate intersections
+    dimension_headers = df.columns[:-1]
+    value_header = df.columns[-1]
+    df = df.groupby([*dimension_headers])[value_header].sum().reset_index()
+
     cellset = CaseAndSpaceInsensitiveTuplesDict(
         dict(zip(df.iloc[:, :-1].itertuples(index=False, name=None), df.iloc[:, -1].values)))
     return cellset
