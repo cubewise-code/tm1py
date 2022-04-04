@@ -723,6 +723,26 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(list(df["Value"]), values)
 
     @skip_if_no_pandas
+    def test_write_dataframe_duplicate_entries(self):
+        df = pd.DataFrame({
+            self.dimension_names[0]: ["element 1", "element 1", "element 1"],
+            self.dimension_names[1]: ["element 1", "element 1", "element 1"],
+            self.dimension_names[2]: ["element 1", "element 1", "element 1"],
+            "Value": [1.0, 2.0, 3.0]})
+        self.tm1.cubes.cells.write_dataframe(self.cube_name, df)
+
+        query = MdxBuilder.from_cube(self.cube_name)
+        query = query.add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(self.dimension_names[0], "element 1")))
+        query = query.add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+            Member.of(self.dimension_names[1], "element 1")]))
+
+        query = query.add_member_to_where(Member.of(self.dimension_names[2], "element 1"))
+        values = self.tm1.cubes.cells.execute_mdx_values(query.to_mdx())
+
+        self.assertEqual([6], values)
+
+    @skip_if_no_pandas
     def test_write_dataframe_error(self):
         df = pd.DataFrame({
             self.dimension_names[0]: ["element 1", "element 3", "element 5"],
