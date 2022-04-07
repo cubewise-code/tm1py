@@ -18,6 +18,7 @@ from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminExce
 
 try:
     import pandas as pd
+    import numpy as np
 
     _has_pandas = True
 except ImportError:
@@ -687,24 +688,40 @@ def build_pandas_dataframe_from_cellset(cellset: Dict, multiindex: bool = True,
 
 
 @require_pandas
-def build_cellset_from_pandas_dataframe(df: 'pd.DataFrame') -> 'CaseAndSpaceInsensitiveTuplesDict':
+def build_cellset_from_pandas_dataframe(
+        df: 'pd.DataFrame',
+        sum_numeric_duplicates: bool = True) -> 'CaseAndSpaceInsensitiveTuplesDict':
     """
 
-    :param df: a Pandas Dataframe, with dimension-column mapping in correct order.
+    param sum_numeric_duplicates: Aggregate numerical values for duplicated intersections
+    param df: a Pandas Dataframe, with dimension-column mapping in correct order.
     As created in build_pandas_dataframe_from_cellset
+
     :return: a CaseAndSpaceInsensitiveTuplesDict
     """
     if isinstance(df.index, pd.MultiIndex):
         df.reset_index(inplace=True)
 
-    # handle duplicate intersections
-    dimension_headers = df.columns[:-1]
-    value_header = df.columns[-1]
-    df = df.groupby([*dimension_headers])[value_header].sum().reset_index()
+    if sum_numeric_duplicates:
+        value_header = df.columns[-1]
+        dimension_headers = df.columns[:-1]
+
+        if pd.api.types.is_numeric_dtype(df[value_header]):
+            df = aggregate_duplicate_intersections(df, dimension_headers, value_header)
+        else:
+            filter_mask = df[value_header].apply(np.isreal)
+            df_n = df[filter_mask]
+            df_s = df[~ filter_mask]
+            df_n = aggregate_duplicate_intersections(df_n, dimension_headers, value_header)
+            df = pd.concat([df_n, df_s])
 
     cellset = CaseAndSpaceInsensitiveTuplesDict(
         dict(zip(df.iloc[:, :-1].itertuples(index=False, name=None), df.iloc[:, -1].values)))
     return cellset
+
+
+def aggregate_duplicate_intersections(df, dimension_headers, value_header):
+    return df.groupby([*dimension_headers])[value_header].sum().reset_index()
 
 
 def lower_and_drop_spaces(item: str) -> str:
