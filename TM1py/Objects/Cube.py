@@ -49,12 +49,14 @@ class Cube(TM1Object):
 
     @rules.setter
     def rules(self, value: Union[str, Rules]):
-        if isinstance(value, str):
+        if value is None:
+            self._rules = None
+        elif isinstance(value, str):
             self._rules = Rules(rules=value)
         elif isinstance(value, Rules):
             self._rules = value
         else:
-            raise ValueError('value must be of type str or Rules')
+            raise ValueError('value must None or of type str or Rules')
 
     @property
     def skipcheck(self) -> bool:
