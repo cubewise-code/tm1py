@@ -404,7 +404,8 @@ class CellService(ObjectService):
                         increment: bool = False, deactivate_transaction_log: bool = False,
                         reactivate_transaction_log: bool = False, sandbox_name: str = None,
                         use_ti: bool = False, use_changeset: bool = False, precision: int = 8,
-                        skip_non_updateable: bool = False, measure_dimension_elements: Dict = None, **kwargs) -> str:
+                        skip_non_updateable: bool = False, measure_dimension_elements: Dict = None,
+                        sum_numeric_duplicates: bool =True, **kwargs) -> str:
         """
         Function expects same shape as `execute_mdx_dataframe` returns.
         Column order must match dimensions in the target cube with an additional column for the values.
@@ -424,6 +425,7 @@ class CellService(ObjectService):
         :param measure_dimension_elements: dictionary of measure elements and their types to improve
         performance when `use_ti` is `True`.
         When all written values are numeric you can pass a default dict with default key 'Numeric'
+        :sum_numeric_duplicates: Aggregate numerical values for duplicated intersections
         :return: changeset or None
         """
         if not isinstance(data, pd.DataFrame):
@@ -435,7 +437,7 @@ class CellService(ObjectService):
         if not len(data.columns) == len(dimensions) + 1:
             raise ValueError("Number of columns in 'data' DataFrame must be number of dimensions in cube + 1")
 
-        cells = build_cellset_from_pandas_dataframe(data)
+        cells = build_cellset_from_pandas_dataframe(data, sum_numeric_duplicates=sum_numeric_duplicates)
 
         return self.write(cube_name=cube_name,
                           cellset_as_dict=cells,
