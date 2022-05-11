@@ -94,7 +94,7 @@ class ProcessService(ObjectService):
                          "or contains(toupper(DataProcedure),toupper('{}')) " \
                          "or contains(toupper(EpilogProcedure),toupper('{}'))",
                          search_string, search_string, search_string, search_string
-            )
+                         )
         response = self._rest.GET(url, **kwargs)
         processes = list(process['Name'] for process in response.json()['value'])
         return processes
@@ -132,7 +132,7 @@ class ProcessService(ObjectService):
         url += "&$filter={}".format(f" and ".join(name_filters))
         response = self._rest.GET(url, **kwargs)
         return list(process['Name'] for process in response.json()['value'])
-    
+
     def create(self, process: Process, **kwargs) -> Response:
         """ Create a new process on TM1 Server
 
@@ -244,13 +244,14 @@ class ProcessService(ObjectService):
 
     @require_version(version="11.3")
     def execute_process_with_return(self, process: Process, timeout: float = None, cancel_at_timeout: bool = False,
-                                    **kwargs) -> Tuple[bool, str, str]:
+                                    sub_processes: Iterable[Process] = None, **kwargs) -> Tuple[bool, str, str]:
         """Run unbound TI code directly.
 
         :param process: a TI Process Object
         :param timeout: Number of seconds that the client will wait to receive the first byte.
         :param cancel_at_timeout: Abort operation in TM1 when timeout is reached
         :param kwargs: dictionary of process parameters and values
+        :param sub_processes: a list of TI process definitions that can called from the process through ExecuteCommand
         :return: success (boolean), status (String), error_log_file (String)
         """
         url = "/api/v1/ExecuteProcessWithReturn?$expand=*"
@@ -261,7 +262,9 @@ class ProcessService(ObjectService):
                                       prompt=parameter_name,
                                       value=parameter_value)
 
-        payload = json.loads("{\"Process\":" + process.body + "}")
+        payload = {"Process": process.body_as_dict}
+        if sub_processes:
+            payload["WithProcess"] = [p.body_as_dict for p in sub_processes]
 
         response = self._rest.POST(
             url=url,

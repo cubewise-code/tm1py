@@ -505,11 +505,10 @@ class CellService(ObjectService):
             return
 
         # merge all failures into one combined Exception
-        raise TM1pyWritePartialFailureException(
-            statuses=list(itertools.chain(*[exception.statuses for exception in exceptions])),
-            error_log_files=list(itertools.chain(*[exception.error_log_files for exception in exceptions])),
-            attempts=sum([exception.attempts if isinstance(exception, TM1pyWritePartialFailureException) else 1
-                          for exception in exceptions]))
+        if all([isinstance(ex, TM1pyWriteFailureException) for ex in exceptions]):
+            raise TM1pyWriteFailureException(error_log_files=[ex.error_log_files[0] for ex in exceptions])
+        raise TM1pyWritePartialFailureException(error_log_files=[ex.error_log_files[0] for ex in exceptions])
+
 
     @require_pandas
     @manage_transaction_log
@@ -567,11 +566,9 @@ class CellService(ObjectService):
         if not exceptions:
             return
 
-        # merge all failures into one combined Exception
-        raise TM1pyWritePartialFailureException(
-            statuses=list(itertools.chain(*[exception.statuses for exception in exceptions])),
-            error_log_files=list(itertools.chain(*[exception.error_log_files for exception in exceptions])),
-            attempts=sum([exception.attempts for exception in exceptions]))
+        if all([isinstance(ex, TM1pyWriteFailureException) for ex in exceptions]):
+            raise TM1pyWriteFailureException(error_log_files=[ex.error_log_files[0] for ex in exceptions])
+        raise TM1pyWritePartialFailureException(error_log_files=[ex.error_log_files[0] for ex in exceptions])
 
     def write_value(self, value: Union[str, float], cube_name: str, element_tuple: Iterable,
                     dimensions: Iterable[str] = None, sandbox_name: str = None, **kwargs) -> Response:
@@ -712,10 +709,6 @@ class CellService(ObjectService):
 
         enable_sandbox = self.generate_enable_sandbox_ti(sandbox_name)
 
-        successes = list()
-        statuses = list()
-        log_files = list()
-
         if not measure_dimension_elements:
             measure_dimension_elements = self.get_elements_from_all_measure_hierarchies(cube_name)
 
@@ -736,32 +729,43 @@ class CellService(ObjectService):
                 precision=precision,
                 skip_non_updateable=skip_non_updateable)
 
+        sub_processes = dict()
         chunk = list()
         for n, statement in enumerate(statements):
             chunk.append(statement)
-            if n > 0 and n % (Process.MAX_STATEMENTS * 2) == 0:
-                success, status, log_file = self._execute_write_statements(chunk, enable_sandbox, kwargs)
-                successes.append(success)
-                if not success:
-                    statuses.append(status)
-                    log_files.append(log_file)
 
+            if n > 0 and n % (Process.MAX_STATEMENTS * 2) == 0:
+                sub_process_name = uuid.uuid4()
+                sub_process = self._build_process_with_write_statements(
+                    process_name=str(sub_process_name),
+                    statements=chunk,
+                    enable_sandbox="")
+                sub_processes[sub_process_name] = sub_process
                 chunk = list()
 
-        success, status, log_file = self._execute_write_statements(chunk, enable_sandbox, kwargs)
-        successes.append(success)
+        sub_process_name = uuid.uuid4()
+        sub_process = self._build_process_with_write_statements(
+            process_name=str(sub_process_name),
+            statements=chunk,
+            enable_sandbox="")
+        sub_processes[sub_process_name] = sub_process
+
+        statements = [f"ExecuteProcess('{process_name}');\r" for process_name in sub_processes]
+        process = Process(
+            name="",
+            prolog_procedure=enable_sandbox + "\r".join(statements[:Process.MAX_STATEMENTS]),
+            epilog_procedure="\r".join(statements[Process.MAX_STATEMENTS:]))
+
+        success, status, log_file = self.execute_unbound_process(
+            process=process,
+            sub_processes=sub_processes.values(),
+            **kwargs)
+
         if not success:
-            statuses.append(status)
-            log_files.append(log_file)
+            if 'HasMinorErrors' in status:
+                raise TM1pyWritePartialFailureException([log_file])
 
-        if not any(successes):
-            if 'HasMinorErrors' in statuses:
-                raise TM1pyWritePartialFailureException(statuses, log_files, len(successes))
-
-            raise TM1pyWriteFailureException(statuses, log_files)
-
-        if not all(successes):
-            raise TM1pyWritePartialFailureException(statuses, log_files, len(successes))
+            raise TM1pyWriteFailureException([log_file])
 
     @staticmethod
     def _build_attribute_update_statements(cube_name, cellset_as_dict, precision: int = 8,
@@ -915,11 +919,15 @@ class CellService(ObjectService):
         measure_dimension = cube_service.get_measure_dimension(cube_name=cube_name)
         return element_service.get_element_types_from_all_hierarchies(dimension_name=measure_dimension)
 
-    def _execute_write_statements(self, statements: List[str], enable_sandbox: str, kwargs) -> Tuple[bool, str, str]:
-        process = Process(
-            name="",
+    def _build_process_with_write_statements(self, process_name: str, statements: List[str],
+                                             enable_sandbox: str) -> Process:
+        return Process(
+            name=process_name,
             prolog_procedure=enable_sandbox + "\r".join(statements[:Process.MAX_STATEMENTS]),
             epilog_procedure="\r".join(statements[Process.MAX_STATEMENTS:]))
+
+    def _execute_write_statements(self, statements: List[str], enable_sandbox: str, kwargs) -> Tuple[bool, str, str]:
+        process = self._build_process_with_write_statements("", statements, enable_sandbox)
 
         return self.execute_unbound_process(process, **kwargs)
 
@@ -931,11 +939,12 @@ class CellService(ObjectService):
         from TM1py import CubeService
         return CubeService(self._rest)
 
-    def execute_unbound_process(self, process: Process, **kwargs) -> Tuple[bool, str, str]:
+    def execute_unbound_process(self, process: Process, sub_processes: Iterable[Process] = None,
+                                **kwargs) -> Tuple[bool, str, str]:
         from TM1py import ProcessService
         process_service = ProcessService(self._rest)
 
-        return process_service.execute_process_with_return(process, **kwargs)
+        return process_service.execute_process_with_return(process=process, sub_processes=sub_processes, **kwargs)
 
     def get_error_log_file_content(self, file_name: str, **kwargs) -> str:
         from TM1py import ProcessService

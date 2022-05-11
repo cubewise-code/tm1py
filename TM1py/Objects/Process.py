@@ -154,6 +154,10 @@ class Process(TM1Object):
 
     @property
     def body(self) -> str:
+        return json.dumps(self._construct_body(), ensure_ascii=False)
+
+    @property
+    def body_as_dict(self) -> Dict:
         return self._construct_body()
 
     @property
@@ -395,7 +399,7 @@ class Process(TM1Object):
                 del self.parameters[p]['Type']
 
     # construct self.body (json) from the class-attributes
-    def _construct_body(self) -> str:
+    def _construct_body(self) -> Dict:
         # general parameters
         body_as_dict = {
             'Name': self._name,
@@ -454,4 +458,4 @@ class Process(TM1Object):
                 "dataSourceNameForServer": self._datasource_data_source_name_for_server,
                 "subset": self._datasource_subset
             }
-        return json.dumps(body_as_dict, ensure_ascii=False)
+        return body_as_dict

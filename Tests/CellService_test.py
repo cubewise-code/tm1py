@@ -6,7 +6,7 @@ from mdxpy import CalculatedMember, MdxBuilder, MdxHierarchySet, Member
 
 from TM1py import Sandbox
 from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyVersionException, TM1pyWritePartialFailureException, \
-    TM1pyWriteFailureException
+    TM1pyWriteFailureException, TM1pyRestException
 from TM1py.Objects import (AnonymousSubset, Cube, Dimension, Element,
                            ElementAttribute, Hierarchy, MDXView, NativeView)
 from TM1py.Services import TM1Service
@@ -513,15 +513,13 @@ class TestCellService(unittest.TestCase):
 
         self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [5])
 
-    def test_write_through_unbound_process_write_failure_exception(self):
+    def test_write_through_unbound_process_failure_exception(self):
         cells = dict()
-        cells["Element 1", "Element4", "Not Existing Element 1"] = "Text 1"
+        cells["Element 1", "Element4", "Not Existing Element 1"] = "Text1"
         cells["Element 2", "Element8", "Element 9"] = 8
 
-        with self.assertRaises(TM1pyWriteFailureException) as ex:
+        with self.assertRaises(TM1pyRestException) as _:
             self.tm1.cubes.cells.write_through_unbound_process(self.cube_with_consolidations_name, cells)
-        self.assertEqual(ex.exception.statuses, ['Aborted'])
-        self.assertIn(".log", ex.exception.error_log_files[0])
 
         query = MdxBuilder.from_cube(self.cube_with_consolidations_name)
         query.add_member_tuple_to_columns(
@@ -538,9 +536,6 @@ class TestCellService(unittest.TestCase):
 
         with self.assertRaises(TM1pyWritePartialFailureException) as ex:
             self.tm1.cubes.cells.write_through_unbound_process(self.cube_with_consolidations_name, cells)
-        self.assertEqual(ex.exception.statuses, ['HasMinorErrors'])
-        self.assertEqual(ex.exception.attempts, 1)
-        self.assertIn(".log", ex.exception.error_log_files[0])
 
         query = MdxBuilder.from_cube(self.cube_with_consolidations_name)
         query.add_member_tuple_to_columns(
@@ -795,8 +790,6 @@ class TestCellService(unittest.TestCase):
 
         with self.assertRaises(TM1pyWritePartialFailureException) as ex:
             self.tm1.cubes.cells.write_dataframe_async(self.cube_name, df, 1, 5)
-        self.assertEqual(2, ex.exception.attempts)
-        self.assertEqual(['HasMinorErrors', 'HasMinorErrors'], ex.exception.statuses)
 
         query = MdxBuilder.from_cube(self.cube_name)
         query = query.add_hierarchy_set_to_column_axis(
@@ -852,8 +845,6 @@ class TestCellService(unittest.TestCase):
 
         with self.assertRaises(TM1pyWritePartialFailureException) as ex:
             self.tm1.cubes.cells.write_async(self.cube_name, cells, 1, 5)
-        self.assertEqual(2, ex.exception.attempts)
-        self.assertEqual(['HasMinorErrors', 'HasMinorErrors'], ex.exception.statuses)
 
         query = MdxBuilder.from_cube(self.cube_name)
         query = query.add_hierarchy_set_to_column_axis(
