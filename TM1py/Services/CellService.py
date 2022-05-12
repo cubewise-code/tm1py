@@ -2380,7 +2380,7 @@ class CellService(ObjectService):
             **kwargs)
 
         cellset_response = self.extract_cellset_raw_response(
-            cellset_id, cell_properties=["Value"], top=top, skip=skip,
+            cellset_id, cell_properties=["Value", "Ordinal"], top=top, skip=skip,
             skip_contexts=True, skip_zeros=skip_zeros,
             skip_consolidated_cells=skip_consolidated_cells,
             skip_rule_derived_cells=skip_rule_derived_cells,
