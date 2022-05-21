@@ -128,23 +128,36 @@ class DimensionService(ObjectService):
         url = format_url("/api/v1/Dimensions('{}')", dimension_name)
         return self._exists(url, **kwargs)
 
-    def get_all_names(self, **kwargs) -> List[str]:
-        """Ask TM1 Server for list with all dimension names
+    def get_all_names(self, skip_control_dims: bool = False, **kwargs) -> List[str]:
+        """Ask TM1 Server for list of all dimension names
 
+        :skip_control_dims: bool, True to skip control dims
         :Returns:
             List of Strings
         """
-        response = self._rest.GET(url='/api/v1/Dimensions?$select=Name', **kwargs)
+        url = format_url(
+            "/api/v1/{}?$select=Name",
+            'ModelDimensions()' if skip_control_dims else 'Dimensions'
+        )
+
+        response = self._rest.GET(url, **kwargs)
+
         dimension_names = list(entry['Name'] for entry in response.json()['value'])
         return dimension_names
 
-    def get_number_of_dimensions(self, **kwargs) -> int:
-        """Ask TM1 Server for the total number of dimensions
+    def get_number_of_dimensions(self, skip_control_dims: bool = False, **kwargs) -> int:
+        """Ask TM1 Server for number of dimensions
 
+        :skip_control_dims: bool, True to exclude control dims from count
         :return: Number of dimensions
         """
-        response = self._rest.GET(url='/api/v1/Dimensions/$count', **kwargs)
-        return int(response.text)
+
+        if skip_control_dims:
+            response = len(self.get_all_names(skip_control_dims=True, **kwargs))
+        else:
+            response = int(self._rest.GET("/api/v1/Dimensions/$count", **kwargs).text)
+        
+        return response
 
     def execute_mdx(self, dimension_name: str, mdx: str, **kwargs) -> List:
         """ Execute MDX against Dimension. 

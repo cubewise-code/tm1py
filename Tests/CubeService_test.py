@@ -121,6 +121,8 @@ class TestCubeService(unittest.TestCase):
 
         self.assertEqual(len(all_cubes_before), len(cubes_with_rules) + len(cubes_without_rules))
 
+        self.assertNotEqual(len(self.tm1.cubes.get_all_names()), len(self.tm1.cubes.get_all_names(skip_control_cubes=True)))
+
         cube_name = self.prefix + "Some_Other_Name"
         dimension_names = self.tm1.dimensions.get_all_names()[1:3]
         cube = Cube(cube_name, dimension_names)
@@ -134,6 +136,12 @@ class TestCubeService(unittest.TestCase):
         self.assertEqual(len(cubes_without_rules), len(self.tm1.cubes.get_all_names_without_rules()))
 
         self.tm1.cubes.delete(cube_name)
+
+        cube = self.tm1.cubes.get_control_cubes()[0]
+        cube.rules = "#find_control_comment"
+        self.tm1.cubes.update(cube)
+        self.assertNotEqual(self.tm1.cubes.get_all_names_with_rules(), self.tm1.cubes.get_all_names_with_rules(skip_control_cubes=True))
+        self.assertNotEqual(self.tm1.cubes.get_all_names_without_rules(), self.tm1.cubes.get_all_names_without_rules(skip_control_cubes=True))
 
     @skip_if_insufficient_version(version="11.4")
     def test_get_storage_dimension_order(self):

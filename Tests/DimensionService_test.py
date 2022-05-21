@@ -172,10 +172,12 @@ class TestDimensionService(unittest.TestCase):
 
     def test_get_all_names(self):
         self.assertIn(self.dimension_name, self.tm1.dimensions.get_all_names())
-
+        self.assertNotEqual(self.tm1.dimensions.get_all_names(), self.tm1.dimensions.get_all_names(skip_control_dims=True))
+        
     def test_get_number_of_dimensions(self):
         number_of_dimensions = self.tm1.dimensions.get_number_of_dimensions()
         self.assertIsInstance(number_of_dimensions, int)
+        self.assertNotEqual(self.tm1.dimensions.get_number_of_dimensions(), self.tm1.dimensions.get_number_of_dimensions(skip_control_dims=True))
 
     def test_execute_mdx(self):
         mdx = "{TM1SubsetAll(" + self.dimension_name + ")}"
