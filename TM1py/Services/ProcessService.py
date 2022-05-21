@@ -51,7 +51,7 @@ class ProcessService(ObjectService):
     def get_all(self, skip_control_processes: bool = False, **kwargs) -> List[Process]:
         """ Get a processes from TM1 Server
     
-        :skip_control_processes: bool, True to exclude processes that begin with "}" or "{"
+        :param skip_control_processes: bool, True to exclude processes that begin with "}" or "{"
         :return: List, instances of the TM1py.Process
         """
         model_process_filter = "&$filter=startswith(Name,'}') eq false and startswith(Name,'{') eq false"
@@ -79,7 +79,7 @@ class ProcessService(ObjectService):
     def get_all_names(self, skip_control_processes: bool = False, **kwargs) -> List[str]:
         """ Get List with all process names from TM1 Server
         
-        :skip_control_processes: bool, True to exclude processes that begin with "}" or "{"
+        :param skip_control_processes: bool, True to exclude processes that begin with "}" or "{"
         :Returns:
             List of Strings
         """
