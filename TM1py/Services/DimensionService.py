@@ -145,13 +145,19 @@ class DimensionService(ObjectService):
         dimension_names = list(entry['Name'] for entry in response.json()['value'])
         return dimension_names
 
-    def get_number_of_dimensions(self, **kwargs) -> int:
-        """Ask TM1 Server for the total number of dimensions
+    def get_number_of_dimensions(self, skip_control_dims: bool = False, **kwargs) -> int:
+        """Ask TM1 Server for number of dimensions
 
+        :skip_control_dims: bool, True to exclude control dims from count
         :return: Number of dimensions
         """
-        response = self._rest.GET(url='/api/v1/Dimensions/$count', **kwargs)
-        return int(response.text)
+
+        if skip_control_dims:
+            response = len(self.get_all_names(skip_control_dims=True, **kwargs))
+        else:
+            response = int(self._rest.GET("/api/v1/Dimensions/$count", **kwargs).text)
+        
+        return response
 
     def execute_mdx(self, dimension_name: str, mdx: str, **kwargs) -> List:
         """ Execute MDX against Dimension. 
