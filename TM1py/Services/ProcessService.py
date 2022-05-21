@@ -104,7 +104,8 @@ class ProcessService(ObjectService):
                          "or contains(toupper(DataProcedure),toupper('{}')) " \
                          "or contains(toupper(EpilogProcedure),toupper('{}'))",
                          search_string, search_string, search_string, search_string
-            ) + "{}".format(model_process_filter if skip_control_processes else "")
+            )
+        url += "{}".format(model_process_filter if skip_control_processes else "")
         response = self._rest.GET(url, **kwargs)
         processes = list(process['Name'] for process in response.json()['value'])
         return processes
