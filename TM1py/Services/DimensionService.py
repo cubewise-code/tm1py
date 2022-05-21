@@ -128,13 +128,20 @@ class DimensionService(ObjectService):
         url = format_url("/api/v1/Dimensions('{}')", dimension_name)
         return self._exists(url, **kwargs)
 
-    def get_all_names(self, **kwargs) -> List[str]:
-        """Ask TM1 Server for list with all dimension names
+    def get_all_names(self, skip_control_dims: bool = False, **kwargs) -> List[str]:
+        """Ask TM1 Server for list of all dimension names
 
+        :skip_control_dims: bool, True to skip control dims
         :Returns:
             List of Strings
         """
-        response = self._rest.GET(url='/api/v1/Dimensions?$select=Name', **kwargs)
+        url = format_url(
+            "/api/v1/{}?$select=Name",
+            'ModelDimensions()' if skip_control_dims else 'Dimensions'
+        )
+
+        response = self._rest.GET(url, **kwargs)
+
         dimension_names = list(entry['Name'] for entry in response.json()['value'])
         return dimension_names
 
