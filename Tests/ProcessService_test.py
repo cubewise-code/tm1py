@@ -400,6 +400,13 @@ class TestProcessService(unittest.TestCase):
         process_names = self.tm1.processes.search_string_in_code("sTestProlog = 'test prolog procedure'")
         self.assertEqual([self.p_ascii.name], process_names)
 
+    def test_get_all_names(self):
+        self.assertNotEqual(self.tm1.processes.get_all_names(), self.tm1.processes.get_all_names(skip_control_processes=True))
+        self.assertNotEqual('}', self.tm1.processes.get_all_names(skip_control_processes=True)[-1][0][0])
+        self.assertEqual('}', self.tm1.processes.get_all_names()[-1][0][0])
+        self.assertNotEQual(self.tm1.processes.get_all(), self.tm1.processes.get_all(skip_control_processes=True))
+
+
     @classmethod
     def tearDownClass(cls):
         cls.tm1.dimensions.subsets.delete(
