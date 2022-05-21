@@ -148,12 +148,18 @@ class CubeService(ObjectService):
         url = format_url("/api/v1/Cubes('{}')", cube_name)
         return self._exists(url, **kwargs)
 
-    def get_all_names(self, **kwargs) -> List[str]:
+    def get_all_names(self, skip_control_cubes: bool = False, **kwargs) -> List[str]:
         """ Ask TM1 Server for list of all cube names
-
+        
+        :skip_control_cubes: bool, True will exclude control cubes from list
         :return: List of Strings
         """
-        response = self._rest.GET(url='/api/v1/Cubes?$select=Name', **kwargs)
+        url = format_url(
+                "/api/v1/{}?$select=Name",
+                'ModelCubes()' if skip_control_cubes else 'Cubes'
+        )
+
+        response = self._rest.GET(url, **kwargs)
         cubes = list(entry['Name'] for entry in response.json()['value'])
         return cubes
 
