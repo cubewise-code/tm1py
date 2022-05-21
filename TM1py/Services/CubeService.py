@@ -224,6 +224,19 @@ class CubeService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         cube_dict = {entry['Name']: [dim['Name'] for dim in entry['Dimensions']] for entry in response.json()['value']}
         return cube_dict
+    
+    def search_for_rule_substring(self, rule_contains: str, skip_control_cubes: bool = False, **kwargs) -> List[Cube]:
+        """ get all cubes from TM1 Server as TM1py.Cube instances where rules for given cube contain specified substring
+
+        :return: List of TM1py.Cube instances
+        """
+        url = format_url(
+            "/api/v1/{}?$filter=Rules ne null and contains(toupper(Rules),toupper('{}'))&$expand=Dimensions($select=Name)",
+            'ModelCubes()' if skip_control_cubes else 'Cubes', rule_contains
+        )
+        response = self._rest.GET(url, **kwargs)
+        cubes = [Cube.from_dict(cube_as_dict=cube) for cube in response.json()['value']]
+        return cubes    
 
     @require_version(version="11.4")
     def get_storage_dimension_order(self, cube_name: str, **kwargs) -> List[str]:
