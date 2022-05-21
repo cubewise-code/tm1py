@@ -97,7 +97,7 @@ class ProcessService(ObjectService):
         :param skip_control_processes: bool, True to exclude processes that begin with "}" or "{"
         :param skip_control_processe
         """
-        model_process_filter = "&$filter=startswith(Name,'}') eq false and startswith(Name,'{') eq false"
+        model_process_filter = "and (startswith(Name,'}') eq false and startswith(Name,'{') eq false)"
         url = format_url("/api/v1/Processes?$select=Name&$filter=" \
                          "contains(toupper(PrologProcedure),toupper('{}')) " \
                          "or contains(toupper(MetadataProcedure),toupper('{}')) " \
@@ -430,3 +430,4 @@ class ProcessService(ObjectService):
         response = self._rest.GET(url, **kwargs)
 
         return response.json()
+    
