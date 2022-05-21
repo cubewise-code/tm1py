@@ -48,11 +48,14 @@ class ProcessService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return Process.from_dict(response.json())
 
-    def get_all(self, **kwargs) -> List[Process]:
+    def get_all(self, skip_control_processes: bool = False, **kwargs) -> List[Process]:
         """ Get a processes from TM1 Server
     
+        :skip_control_processes: bool, True to exclude processes that begin with "}" or "{"
         :return: List, instances of the TM1py.Process
         """
+        model_process_filter = "&$filter=startswith(Name,'}') eq false and startswith(Name,'{') eq false"
+
         url = "/api/v1/Processes?$select=*,UIData,VariablesUIData," \
               "DataSource/dataSourceNameForServer," \
               "DataSource/dataSourceNameForClient," \
@@ -67,7 +70,8 @@ class ProcessService(ObjectService):
               "DataSource/userName," \
               "DataSource/password," \
               "DataSource/usesUnicode," \
-              "DataSource/subset"
+              "DataSource/subset{}".format(model_process_filter if skip_control_processes else "")
+
         response = self._rest.GET(url, **kwargs)
         response_as_dict = response.json()
         return [Process.from_dict(p) for p in response_as_dict['value']]
