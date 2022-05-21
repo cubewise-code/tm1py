@@ -90,19 +90,21 @@ class ProcessService(ObjectService):
         processes = list(process['Name'] for process in response.json()['value'])
         return processes
 
-    def search_string_in_code(self, search_string: str, **kwargs) -> List[str]:
+    def search_string_in_code(self, search_string: str, skip_control_processes: bool=False, **kwargs) -> List[str]:
         """ Ask TM1 Server for list of process names that contain string anywhere in code tabs: Prolog,Metadata,Data,Epilog
         will not search DataSource, Parameters, Variables, or Attributes
 
-        :param search_string: case insensitive string to search for
+        :param skip_control_processes: bool, True to exclude processes that begin with "}" or "{"
+        :param skip_control_processe
         """
+        model_process_filter = "&$filter=startswith(Name,'}') eq false and startswith(Name,'{') eq false"
         url = format_url("/api/v1/Processes?$select=Name&$filter=" \
                          "contains(toupper(PrologProcedure),toupper('{}')) " \
                          "or contains(toupper(MetadataProcedure),toupper('{}')) " \
                          "or contains(toupper(DataProcedure),toupper('{}')) " \
                          "or contains(toupper(EpilogProcedure),toupper('{}'))",
                          search_string, search_string, search_string, search_string
-            )
+            ) + "{}".format(model_process_filter if skip_control_processes else "")
         response = self._rest.GET(url, **kwargs)
         processes = list(process['Name'] for process in response.json()['value'])
         return processes
