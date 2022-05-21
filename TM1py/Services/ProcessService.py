@@ -111,13 +111,16 @@ class ProcessService(ObjectService):
         return processes
 
     def search_string_in_name(self, name_startswith: str = None, name_contains: Iterable = None,
-                              name_contains_operator: str = 'and', **kwargs) -> List[str]:
+                              name_contains_operator: str = 'and', skip_control_processes: bool = False,
+                              **kwargs) -> List[str]:
         """ Ask TM1 Server for list of process names that contain or start with string
 
         :param name_startswith: str, process name begins with (case insensitive)
         :param name_contains: iterable, found anywhere in name (case insensitive)
         :param name_contains_operator: 'and' or 'or'
+        :param skip_control_processes: bool, True to exclude processes that begin with "}" or "{"
         """
+        model_process_filter = "and (startswith(Name,'}') eq false and startswith(Name,'{') eq false)"
         name_contains_operator = name_contains_operator.strip().lower()
         if name_contains_operator not in ("and", "or"):
             raise ValueError("'name_contains_operator' must be either 'AND' or 'OR'")
@@ -141,6 +144,7 @@ class ProcessService(ObjectService):
                 raise ValueError("'name_contains' must be str or iterable")
 
         url += "&$filter={}".format(f" and ".join(name_filters))
+        url += "{}".format(model_process_filter if skip_control_processes else "")
         response = self._rest.GET(url, **kwargs)
         return list(process['Name'] for process in response.json()['value'])
     
