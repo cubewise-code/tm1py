@@ -72,13 +72,17 @@ class ProcessService(ObjectService):
         response_as_dict = response.json()
         return [Process.from_dict(p) for p in response_as_dict['value']]
 
-    def get_all_names(self, **kwargs) -> List[str]:
+    def get_all_names(self, skip_control_processes: bool = False, **kwargs) -> List[str]:
         """ Get List with all process names from TM1 Server
-
+        
+        :skip_control_processes: bool, True to exclude processes that begin with "}" or "{"
         :Returns:
             List of Strings
         """
-        response = self._rest.GET('/api/v1/Processes?$select=Name', **kwargs)
+        model_process_filter = "&$filter=startswith(Name,'}') eq false and startswith(Name,'{') eq false"
+        url = "/api/v1/Processes?$select=Name{}".format(model_process_filter if skip_control_processes else "")
+        
+        response = self._rest.GET(url, **kwargs)
         processes = list(process['Name'] for process in response.json()['value'])
         return processes
 
