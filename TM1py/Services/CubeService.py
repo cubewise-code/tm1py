@@ -91,7 +91,7 @@ class CubeService(ObjectService):
         :return: int, count
         """ 
         if skip_control_cubes:
-            response = len(self.get_all_names(skip_control_cubes=True, **kwargs))
+            response = int(self._rest.GET(url=format_url("/api/v1/ModelCubes()?$select=Name&$count"), **kwargs).json()['@odata.count'])
         else:
             response = int(self._rest.GET(url=format_url("/api/v1/Cubes/$count"), **kwargs).text)
     
