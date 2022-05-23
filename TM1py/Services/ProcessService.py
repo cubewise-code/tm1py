@@ -94,8 +94,10 @@ class ProcessService(ObjectService):
         """ Ask TM1 Server for list of process names that contain string anywhere in code tabs: Prolog,Metadata,Data,Epilog
         will not search DataSource, Parameters, Variables, or Attributes
 
+        :param search_string: case insensitive string to search for
         :param skip_control_processes: bool, True to exclude processes that begin with "}" or "{"
-        :param skip_control_processe
+        :Returns:
+            List of strings
         """
         model_process_filter = "and (startswith(Name,'}') eq false and startswith(Name,'{') eq false)"
         url = format_url("/api/v1/Processes?$select=Name&$filter=" \
