@@ -153,7 +153,7 @@ class DimensionService(ObjectService):
         """
 
         if skip_control_dims:
-            response = len(self.get_all_names(skip_control_dims=True, **kwargs))
+            response = int(self._rest.GET("/api/v1/ModelDimensions()?$select=Name&$count", **kwargs).json()['@odata.count'])
         else:
             response = int(self._rest.GET("/api/v1/Dimensions/$count", **kwargs).text)
         
