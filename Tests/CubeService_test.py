@@ -15,6 +15,7 @@ class TestCubeService(unittest.TestCase):
     prefix = "TM1py_Tests_Cube_"
 
     cube_name = prefix + "some_name"
+    control_cube_name = '}' + prefix + 'some_control_cube_name'
     dimension_names = [
         prefix + "dimension1",
         prefix + "dimension2",
@@ -42,6 +43,15 @@ class TestCubeService(unittest.TestCase):
         if not cls.tm1.cubes.exists(cls.cube_name):
             cls.tm1.cubes.create(cube)
         c = Cube(cls.cube_name, dimensions=cls.dimension_names, rules=Rules(''))
+        if cls.tm1.cubes.exists(c.name):
+            cls.tm1.cubes.delete(c.name)
+        cls.tm1.cubes.create(c)
+
+        # Build Control Cube
+        control_cube = Cube(cls.control_cube_name, cls.dimension_names)
+        if not cls.tm1.cubes.exists(cls.control_cube_name):
+            cls.tm1.cubes.create(control_cube)
+        c = Cube(cls.control_cube_name, dimensions=cls.dimension_names, rules=Rules(''))
         if cls.tm1.cubes.exists(c.name):
             cls.tm1.cubes.delete(c.name)
         cls.tm1.cubes.create(c)
@@ -137,7 +147,7 @@ class TestCubeService(unittest.TestCase):
 
         self.tm1.cubes.delete(cube_name)
 
-        cube = self.tm1.cubes.get_control_cubes()[0]
+        cube = self.tm1.cubes.get(self.control_cube_name)
         cube.rules = "#find_control_comment"
         self.tm1.cubes.update(cube)
         self.assertNotEqual(self.tm1.cubes.get_all_names_with_rules(), self.tm1.cubes.get_all_names_with_rules(skip_control_cubes=True))
@@ -246,7 +256,7 @@ class TestCubeService(unittest.TestCase):
         self.assertEqual(cube_name, cubes[0].name)
 
     def test_search_for_rule_substring_skip_control_cubes_false(self):
-        cube = self.tm1.cubes.get_control_cubes()[0]
+        cube = self.tm1.cubes.get(self.control_cube_name)
         cube.rules = "#find_control_comment"
         self.tm1.cubes.update(cube)
 
@@ -254,7 +264,7 @@ class TestCubeService(unittest.TestCase):
         self.assertEqual(cube_name, cubes[0].name)
 
     def test_search_for_rule_substring_skip_control_cubes_true(self):
-        cube = self.tm1.cubes.get_control_cubes()[0]
+        cube = self.tm1.cubes.get(self.control_cube_name)
         cube.rules = "#find_control_comment"
         self.tm1.cubes.update(cube)
 
