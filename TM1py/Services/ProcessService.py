@@ -459,3 +459,9 @@ class ProcessService(ObjectService):
 
         response = self._rest.POST(url, breakpoint.body, **kwargs)
         return response
+
+    def debug_remove_breakpoint(self, debug_id: str, breakpoint_id: int, **kwargs) -> Response:
+        url = format_url("/api/v1/ProcessDebugContexts('{}')/Breakpoints('{}')", debug_id, breakpoint_id)
+
+        response = self._rest.DELETE(url, **kwargs)
+        return response
