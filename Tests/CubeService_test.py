@@ -131,7 +131,8 @@ class TestCubeService(unittest.TestCase):
 
         self.assertEqual(len(all_cubes_before), len(cubes_with_rules) + len(cubes_without_rules))
 
-        self.assertNotEqual(len(self.tm1.cubes.get_all_names()), len(self.tm1.cubes.get_all_names(skip_control_cubes=True)))
+        self.assertNotEqual(len(self.tm1.cubes.get_all_names()),
+                            len(self.tm1.cubes.get_all_names(skip_control_cubes=True)))
 
         cube_name = self.prefix + "Some_Other_Name"
         dimension_names = self.tm1.dimensions.get_all_names()[1:3]
@@ -150,8 +151,10 @@ class TestCubeService(unittest.TestCase):
         cube = self.tm1.cubes.get(self.control_cube_name)
         cube.rules = "#find_control_comment"
         self.tm1.cubes.update(cube)
-        self.assertNotEqual(self.tm1.cubes.get_all_names_with_rules(), self.tm1.cubes.get_all_names_with_rules(skip_control_cubes=True))
-        self.assertNotEqual(self.tm1.cubes.get_all_names_without_rules(), self.tm1.cubes.get_all_names_without_rules(skip_control_cubes=True))
+        self.assertNotEqual(self.tm1.cubes.get_all_names_with_rules(),
+                            self.tm1.cubes.get_all_names_with_rules(skip_control_cubes=True))
+        self.assertNotEqual(self.tm1.cubes.get_all_names_without_rules(),
+                            self.tm1.cubes.get_all_names_without_rules(skip_control_cubes=True))
 
     @skip_if_insufficient_version(version="11.4")
     def test_get_storage_dimension_order(self):
@@ -160,7 +163,7 @@ class TestCubeService(unittest.TestCase):
 
     def test_search_for_dimension_happy_case(self):
         cube_names = self.tm1.cubes.search_for_dimension(self.dimension_names[0])
-        self.assertEqual([self.cube_name], cube_names)
+        self.assertEqual([self.cube_name, self.control_cube_name], cube_names)
 
     def test_search_for_dimension_no_match(self):
         cube_names = self.tm1.cubes.search_for_dimension("NotADimensionName")
@@ -168,23 +171,29 @@ class TestCubeService(unittest.TestCase):
 
     def test_search_for_dimension_case_insensitive(self):
         cube_names = self.tm1.cubes.search_for_dimension(self.dimension_names[1].upper())
-        self.assertEqual([self.cube_name], cube_names)
+        self.assertEqual([self.cube_name, self.control_cube_name], cube_names)
 
     def test_search_for_dimension_space_insensitive(self):
         cube_names = self.tm1.cubes.search_for_dimension(" " + self.dimension_names[2] + " ")
-        self.assertEqual([self.cube_name], cube_names)
+        self.assertEqual([self.cube_name, self.control_cube_name], cube_names)
 
     def test_search_for_dimension_substring_happy_case(self):
         cubes = self.tm1.cubes.search_for_dimension_substring(substring=self.dimension_names[0])
-        self.assertEqual({self.cube_name: [self.dimension_names[0]]}, cubes)
+        self.assertEqual(
+            {self.cube_name: [self.dimension_names[0]], self.control_cube_name: [self.dimension_names[0]]},
+            cubes)
 
     def test_search_for_dimension_substring_case_insensitive(self):
         cubes = self.tm1.cubes.search_for_dimension_substring(substring=self.dimension_names[1].upper())
-        self.assertEqual({self.cube_name: [self.dimension_names[1]]}, cubes)
+        self.assertEqual(
+            cubes,
+            {self.cube_name: [self.dimension_names[1]], self.control_cube_name: [self.dimension_names[1]]})
 
     def test_search_for_dimension_substring_space_insensitive(self):
         cubes = self.tm1.cubes.search_for_dimension_substring(substring=" " + self.dimension_names[2] + " ")
-        self.assertEqual({self.cube_name: [self.dimension_names[2]]}, cubes)
+        self.assertEqual(
+            cubes,
+            {self.cube_name: [self.dimension_names[2]], self.control_cube_name: [self.dimension_names[2]]})
 
     def test_search_for_dimension_substring_no_match(self):
         cubes = self.tm1.cubes.search_for_dimension_substring(substring="NotADimensionName")
@@ -242,34 +251,42 @@ class TestCubeService(unittest.TestCase):
 
         errors = self.tm1.cubes.check_rules(cube_name=self.cube_name)
         self.assertEqual(1, len(errors))
-        
+
     def test_search_for_rule_substring_no_match(self):
-        cubes = self.tm1.cubes.search_for_rule_substring(substring:"find_nothing")
+        cubes = self.tm1.cubes.search_for_rule_substring(substring="find_nothing")
         self.assertEqual(0, len(cubes))
 
     def test_search_for_rule_substring_happy_case(self):
         cube = self.tm1.cubes.get(cube_name=self.cube_name)
-        cube.rules = "#find_me_comment"
+        cube.rules = "SKIPCHECK;\n#find_me_comment"
         self.tm1.cubes.update(cube)
 
-        cubes = self.tm1.cubes.search_for_rule_substring(substring:"find_me_comment")
-        self.assertEqual(cube_name, cubes[0].name)
+        cubes = self.tm1.cubes.search_for_rule_substring(substring="find_me_comment")
+        self.assertEqual(self.cube_name, cubes[0].name)
 
     def test_search_for_rule_substring_skip_control_cubes_false(self):
         cube = self.tm1.cubes.get(self.control_cube_name)
-        cube.rules = "#find_control_comment"
+        cube.rules = "SKIPCHECK;\n[]=N:1;\n#find_me_comment\nFEEDERS;"
         self.tm1.cubes.update(cube)
 
-        cubes = self.tm1.cubes.search_for_rule_substring(substring:"find_control_comment", skip_control_cubes=False)
-        self.assertEqual(cube_name, cubes[0].name)
+        cubes = self.tm1.cubes.search_for_rule_substring(substring="find_me_comment", skip_control_cubes=False)
+        self.assertEqual(self.control_cube_name, cubes[0].name)
+
+    def test_search_for_rule_substring_space_insensitive(self):
+        cube = self.tm1.cubes.get(self.cube_name)
+        cube.rules = "SKIPCHECK;\n[]=N:2;\n#find_me_comment\nFEEDERS;"
+        self.tm1.cubes.update(cube)
+
+        cubes = self.tm1.cubes.search_for_rule_substring(substring="find _me _COMMENT", skip_control_cubes=False)
+        self.assertEqual(self.cube_name, cubes[0].name)
 
     def test_search_for_rule_substring_skip_control_cubes_true(self):
         cube = self.tm1.cubes.get(self.control_cube_name)
-        cube.rules = "#find_control_comment"
+        cube.rules = "SKIPCHECK;\n#find_me_comment"
         self.tm1.cubes.update(cube)
 
-        cubes = self.tm1.cubes.search_for_rule_substring(substring:"find_control_comment", skip_control_cubes=True)
-        self.assertEqual(0, len(cubes))        
+        cubes = self.tm1.cubes.search_for_rule_substring(substring="find_control_comment", skip_control_cubes=True)
+        self.assertEqual(0, len(cubes))
 
     def test_get_measure_dimension(self):
         measure_dimension = self.tm1.cubes.get_measure_dimension(self.cube_name)
