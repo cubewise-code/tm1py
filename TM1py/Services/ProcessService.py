@@ -472,3 +472,55 @@ class ProcessService(ObjectService):
 
         response = self._rest.PATCH(url, breakpoint.body, **kwargs)
         return response
+
+    @require_admin
+    def ti_formula(self, formula: str, **kwargs) -> str:
+        """ This function is same funcitonality as hitting "Evaluate" within variable formula editor in TI
+            Function creates temporary TI and then starts a debug session on that TI
+            EnableTIDebugging=T must be present in .cfg file
+            Only suited for Deb and one-off uses, don't incorporate into dataframe lambda function
+
+        :param formula: a valid tm1 variable formula (no double quotes, no equals sign, semicolon optional)
+            e.g. 8*2;, CellGetN('<cube>',...);, ATTRS('<dim>', '<elem>', '<attr>')
+        :returns: string result from formula
+        """
+        # grab everything to right of "=" if present
+        formula = formula[formula.find('=') + 1:]
+
+        # make sure semicolon at end is present
+        formula += ';' if formula[-1] != ';' else ''
+
+        prolog_list = ["sFunc = {}".format(formula), "sDebug='Stop';"]
+        process_name = "".join(['}TM1py', str(uuid.uuid4())])
+        p = Process(name=process_name,
+                    prolog_procedure=Process.AUTO_GENERATED_STATEMENTS + '\r\n'.join(prolog_list)
+            )
+        self.create(p, **kwargs)
+        syntax_errors = self.compile(p.name, **kwargs)
+
+        if syntax_errors:
+            self.delete(p.name, **kwargs)
+            raise ValueError(str(syntax_errors))
+        else:
+            try:
+                debug_id = self.debug_process(p.name, **kwargs)['ID']
+                breakpoint = ProcessDebugBreakpoint(
+                                    breakpoint_type='ProcessDebugContextDataBreakpoint',
+                                    breakpoint_id=1,
+                                    enabled=True,
+                                    hitmode='BreakAlways',
+                                    variable_name='sFunc'
+                )
+                self.debug_add_breakpoint(debug_id=debug_id, breakpoint=breakpoint, **kwargs)
+                self.debug_continue(debug_id, **kwargs)
+                result = self.debug_get_variable_values(debug_id, **kwargs)
+                self.debug_continue(debug_id, **kwargs)
+
+                if not result:
+                    raise ValueError('unknown error: no formula result found')
+                else:
+                    return result[-2]['Value']
+            except TM1pyRestException as e:
+                raise e
+            finally:
+                self.delete(p.name, **kwargs)
