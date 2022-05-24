@@ -433,3 +433,17 @@ class ProcessService(ObjectService):
 
         return response.json()
     
+    def debug_continue(self, debug_id: str, **kwargs) -> Dict:
+        url = format_url("/api/v1/ProcessDebugContexts('{}')/tm1.Continue", debug_id)
+        self._rest.POST(url, **kwargs)
+
+        # digest time  necessary for TM1 <= 11.8
+        # ToDo: remove in later versions of TM1 once issue in TM1 server is resolved
+        time.sleep(0.1)
+
+        raw_url = "/api/v1/ProcessDebugContexts('{}')?$expand=Breakpoints," \
+                  "Thread,CallStack($expand=Variables,Process($select=Name))"
+        url = format_url(raw_url, debug_id)
+        response = self._rest.GET(url, **kwargs)
+
+        return response.json()
