@@ -775,7 +775,7 @@ class CellService(ObjectService):
             # default to 'Numeric' so that not existing elements trigger minor error during TI execution
             raw_element_name = coordinates[0]
             if ":" in raw_element_name:
-                hierarchy_name, element_name = raw_element_name.split(":")
+                hierarchy_name, element_name = raw_element_name.split(":", maxsplit=1)
             else:
                 element_name = raw_element_name
                 hierarchy_name = dimension_name

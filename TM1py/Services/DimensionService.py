@@ -153,11 +153,11 @@ class DimensionService(ObjectService):
         """
 
         if skip_control_dims:
-            response = int(self._rest.GET("/api/v1/ModelDimensions()?$select=Name&$count", **kwargs).json()['@odata.count'])
-        else:
-            response = int(self._rest.GET("/api/v1/Dimensions/$count", **kwargs).text)
-        
-        return response
+            response = self._rest.GET("/api/v1/ModelDimensions()?$select=Name&$top=0&$count", **kwargs)
+            return  response.json()['@odata.count']
+
+        return int(self._rest.GET("/api/v1/Dimensions/$count", **kwargs).text)
+
 
     def execute_mdx(self, dimension_name: str, mdx: str, **kwargs) -> List:
         """ Execute MDX against Dimension. 

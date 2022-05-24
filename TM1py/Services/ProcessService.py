@@ -99,12 +99,13 @@ class ProcessService(ObjectService):
         :Returns:
             List of strings
         """
+        search_string = search_string.lower().replace(' ', '')
         model_process_filter = "and (startswith(Name,'}') eq false and startswith(Name,'{') eq false)"
-        url = format_url("/api/v1/Processes?$select=Name&$filter=" \
-                         "contains(toupper(PrologProcedure),toupper('{}')) " \
-                         "or contains(toupper(MetadataProcedure),toupper('{}')) " \
-                         "or contains(toupper(DataProcedure),toupper('{}')) " \
-                         "or contains(toupper(EpilogProcedure),toupper('{}'))",
+        url = format_url("/api/v1/Processes?$select=Name&$filter="
+                         "contains(tolower(replace(PrologProcedure, ' ', '')),'{}') "
+                         "or contains(tolower(replace(MetadataProcedure, ' ', '')),'{}') "
+                         "or contains(tolower(replace(DataProcedure, ' ', '')),'{}') "
+                         "or contains(tolower(replace(EpilogProcedure, ' ', '')),'{}')",
                          search_string, search_string, search_string, search_string
             )
         url += "{}".format(model_process_filter if skip_control_processes else "")
