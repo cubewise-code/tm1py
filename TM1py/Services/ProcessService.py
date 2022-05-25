@@ -473,6 +473,14 @@ class ProcessService(ObjectService):
         response = self._rest.PATCH(url, breakpoint.body, **kwargs)
         return response
 
+    def debug_get_variable_values(self, debug_id: str, **kwargs) -> Dict:
+        raw_url = "/api/v1/ProcessDebugContexts('{}')?$expand=" \
+                  "CallStack($expand=Variables)"
+        url = format_url(raw_url, debug_id)
+
+        response = self._rest.GET(url, **kwargs)
+        return response.json()['CallStack'][0]['Variables'] if response.json()['CallStack'] else response.json()['CallStack']
+
     @require_admin
     def ti_formula(self, formula: str, **kwargs) -> str:
         """ This function is same funcitonality as hitting "Evaluate" within variable formula editor in TI
