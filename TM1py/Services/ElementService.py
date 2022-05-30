@@ -635,3 +635,11 @@ class ElementService(ObjectService):
         response = self._rest.GET(url=url, **kwargs)
 
         return [record["Name"] for record in response.json()["value"]]
+    
+
+    def get_element_principal_name(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> Element:
+        url = format_url(
+            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')?$expand=*",
+            dimension_name, hierarchy_name, element_name)
+        response = self._rest.GET(url, **kwargs)
+        return Element.from_dict(response.json())
