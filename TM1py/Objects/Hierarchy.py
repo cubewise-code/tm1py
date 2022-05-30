@@ -2,7 +2,7 @@
 
 import collections
 import json
-from typing import List, Dict, Iterable, Optional, Tuple, Union
+from typing import List, Dict, Iterable, Optional, Tuple, Union, Set
 
 from TM1py.Objects.Element import Element
 from TM1py.Objects.ElementAttribute import ElementAttribute
@@ -138,6 +138,38 @@ class Hierarchy(TM1Object):
             return self._elements[element_name]
         else:
             raise ValueError("Element: {} not found in Hierarchy: {}".format(element_name, self.name))
+
+    def get_ancestors(self, element_name: str, recursive: bool = False):
+        ancestors = set()
+
+        for (parent, component) in self._edges:
+            if not case_and_space_insensitive_equals(component, element_name):
+                continue
+
+            ancestor: Element = self.elements[parent]
+            ancestors.add(ancestor)
+
+            if recursive:
+                ancestors = ancestors.union(self.get_ancestors(ancestor.name, True))
+        return ancestors
+
+    def get_descendants(self, element_name: str, recursive: bool = False, leaves_only=False) -> Set[Element]:
+        descendants = set()
+
+        for (parent, component) in self._edges:
+            if not case_and_space_insensitive_equals(parent, element_name):
+                continue
+
+            descendant: Element = self.elements[component]
+            if not leaves_only:
+                descendants.add(descendant)
+            else:
+                if descendant.element_type == Element.Types.NUMERIC:
+                    descendants.add(descendant)
+
+            if recursive and descendant.element_type == Element.Types.CONSOLIDATED:
+                descendants = descendants.union(self.get_descendants(descendant.name, True))
+        return descendants
 
     def add_element(self, element_name: str, element_type: Union[str, Element.Types]):
         if element_name in self._elements:
