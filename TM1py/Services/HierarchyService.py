@@ -37,7 +37,7 @@ class HierarchyService(ObjectService):
         response = self._rest.POST(url, hierarchy.body, **kwargs)
         return response
 
-    def get(self, dimension_name: str, hierarchy_name: str, **kwargs):
+    def get(self, dimension_name: str, hierarchy_name: str, **kwargs) -> Hierarchy:
         """ get hierarchy
 
         :param dimension_name: name of the dimension
@@ -51,7 +51,7 @@ class HierarchyService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return Hierarchy.from_dict(response.json())
 
-    def get_all_names(self, dimension_name: str, **kwargs):
+    def get_all_names(self, dimension_name: str, **kwargs) -> List[str]:
         """ get all names of existing Hierarchies in a dimension
 
         :param dimension_name:

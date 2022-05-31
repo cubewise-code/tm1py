@@ -48,7 +48,7 @@ class Hierarchy(TM1Object):
         self._name = name
         self._dimension_name = None
         self.dimension_name = dimension_name
-        self._elements = CaseAndSpaceInsensitiveDict()
+        self._elements: Dict[str, Element] = CaseAndSpaceInsensitiveDict()
         if elements:
             for elem in elements:
                 self._elements[elem.name] = elem
@@ -99,7 +99,7 @@ class Hierarchy(TM1Object):
         self._dimension_name = dimension_name
 
     @property
-    def elements(self) -> CaseAndSpaceInsensitiveDict:
+    def elements(self) -> Dict[str, Element]:
         return self._elements
 
     @property
@@ -107,7 +107,7 @@ class Hierarchy(TM1Object):
         return self._element_attributes
 
     @property
-    def edges(self) -> 'CaseAndSpaceInsensitiveTuplesDict':
+    def edges(self) -> Dict[Tuple[str], Element]:
         return self._edges
 
     @property
@@ -139,7 +139,7 @@ class Hierarchy(TM1Object):
         else:
             raise ValueError("Element: {} not found in Hierarchy: {}".format(element_name, self.name))
 
-    def get_ancestors(self, element_name: str, recursive: bool = False):
+    def get_ancestors(self, element_name: str, recursive: bool = False) -> Set[Element]:
         ancestors = set()
 
         for (parent, component) in self._edges:
