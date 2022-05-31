@@ -299,6 +299,13 @@ class TestElementService(unittest.TestCase):
             self.hierarchy_name)
         self.assertEqual(expected_identifiers, set(identifiers))
 
+    def test_get_all_element_identifiers_no_attributes(self):
+        expected_identifiers = {'Elem1', 'Elem2', 'Elem3'}
+        identifiers = self.tm1.dimensions.hierarchies.elements.get_all_element_identifiers(
+            self.dimension_with_hierarchies_name,
+            "Hierarchy1")
+        self.assertEqual(expected_identifiers, set(identifiers))
+
     def test_get_all_leaf_element_identifiers(self):
         expected_identifiers = {'1988/89', '1989/90', '1990/91', '1991/92', *self.years}
         identifiers = self.tm1.dimensions.hierarchies.elements.get_all_leaf_element_identifiers(
