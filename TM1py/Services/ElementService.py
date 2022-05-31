@@ -206,6 +206,15 @@ class ElementService(ObjectService):
                 [dimension_name] * len(elements),
                 elements,
                 [hierarchy_name] * len(elements)))
+
+        if not alias_attributes:
+            result = self.execute_set_mdx(
+                mdx=mdx_element_selection,
+                member_properties=["Name"],
+                parent_properties=None,
+                element_properties=None)
+            return CaseAndSpaceInsensitiveSet([record[0]["Name"] for record in result])
+
         mdx = """
              SELECT
              {{ {elem_mdx} }} ON ROWS, 
