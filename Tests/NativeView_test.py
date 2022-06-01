@@ -19,7 +19,7 @@ class TestNativeView(unittest.TestCase):
             "SELECT\r\n"
             "NON EMPTY {[d1].[e1]} ON 0,\r\n"
             "{[d2].[e2]} ON 1\r\n"
-            "FROM [C1]\r\n"
+            "FROM [c1]\r\n"
             "WHERE ([d3].[d3].[e3])",
             native_view.mdx)
 
