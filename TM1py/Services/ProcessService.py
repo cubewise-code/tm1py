@@ -9,6 +9,7 @@ from requests import Response
 
 from TM1py.Exceptions.Exceptions import TM1pyRestException
 from TM1py.Objects.Process import Process
+from TM1py.Objects.ProcessDebugBreakpoint import ProcessDebugBreakpoint
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import format_url, require_admin
@@ -85,12 +86,12 @@ class ProcessService(ObjectService):
         """
         model_process_filter = "&$filter=startswith(Name,'}') eq false and startswith(Name,'{') eq false"
         url = "/api/v1/Processes?$select=Name{}".format(model_process_filter if skip_control_processes else "")
-        
+
         response = self._rest.GET(url, **kwargs)
         processes = list(process['Name'] for process in response.json()['value'])
         return processes
 
-    def search_string_in_code(self, search_string: str, skip_control_processes: bool=False, **kwargs) -> List[str]:
+    def search_string_in_code(self, search_string: str, skip_control_processes: bool = False, **kwargs) -> List[str]:
         """ Ask TM1 Server for list of process names that contain string anywhere in code tabs: Prolog,Metadata,Data,Epilog
         will not search DataSource, Parameters, Variables, or Attributes
 
@@ -107,7 +108,7 @@ class ProcessService(ObjectService):
                          "or contains(tolower(replace(DataProcedure, ' ', '')),'{}') "
                          "or contains(tolower(replace(EpilogProcedure, ' ', '')),'{}')",
                          search_string, search_string, search_string, search_string
-            )
+                         )
         url += "{}".format(model_process_filter if skip_control_processes else "")
         response = self._rest.GET(url, **kwargs)
         processes = list(process['Name'] for process in response.json()['value'])
@@ -150,7 +151,7 @@ class ProcessService(ObjectService):
         url += "{}".format(model_process_filter if skip_control_processes else "")
         response = self._rest.GET(url, **kwargs)
         return list(process['Name'] for process in response.json()['value'])
-    
+
     def create(self, process: Process, **kwargs) -> Response:
         """ Create a new process on TM1 Server
 
@@ -433,7 +434,7 @@ class ProcessService(ObjectService):
         response = self._rest.GET(url, **kwargs)
 
         return response.json()
-    
+
     def debug_continue(self, debug_id: str, **kwargs) -> Dict:
         url = format_url("/api/v1/ProcessDebugContexts('{}')/tm1.Continue", debug_id)
         self._rest.POST(url, **kwargs)
@@ -449,28 +450,31 @@ class ProcessService(ObjectService):
 
         return response.json()
 
-    def debug_get_breakpoints(self, debug_id: str, **kwargs) -> Dict:
+    def debug_get_breakpoints(self, debug_id: str, **kwargs) -> List:
         url = format_url("/api/v1/ProcessDebugContexts('{}')/Breakpoints", debug_id)
 
         response = self._rest.GET(url, **kwargs)
         return [ProcessDebugBreakpoint.from_dict(b) for b in response.json()['value']]
 
-    def debug_add_breakpoint(self, debug_id: str, breakpoint: ProcessDebugBreakpoint, **kwargs) -> Response:
+    def debug_add_breakpoint(self, debug_id: str, break_point: ProcessDebugBreakpoint, **kwargs) -> Response:
         url = format_url("/api/v1/ProcessDebugContexts('{}')/Breakpoints", debug_id)
 
-        response = self._rest.POST(url, breakpoint.body, **kwargs)
+        response = self._rest.POST(url, break_point.body, **kwargs)
         return response
 
     def debug_remove_breakpoint(self, debug_id: str, breakpoint_id: int, **kwargs) -> Response:
-        url = format_url("/api/v1/ProcessDebugContexts('{}')/Breakpoints('{}')", debug_id, breakpoint_id)
+        url = format_url("/api/v1/ProcessDebugContexts('{}')/Breakpoints('{}')", debug_id, str(breakpoint_id))
 
         response = self._rest.DELETE(url, **kwargs)
         return response
 
-    def debug_update_breakpoint(self, debug_id: str, breakpoint: ProcessDebugBreakpoint, **kwargs) -> Response:
-        url = format_url("/api/v1/ProcessDebugContexts('{}')/Breakpoints('{}')", debug_id, breakpoint.breakpoint_id)
+    def debug_update_breakpoint(self, debug_id: str, break_point: ProcessDebugBreakpoint, **kwargs) -> Response:
+        url = format_url(
+            "/api/v1/ProcessDebugContexts('{}')/Breakpoints('{}')",
+            debug_id,
+            str(break_point.breakpoint_id))
 
-        response = self._rest.PATCH(url, breakpoint.body, **kwargs)
+        response = self._rest.PATCH(url, break_point.body, **kwargs)
         return response
 
     def debug_get_variable_values(self, debug_id: str, **kwargs) -> Dict:
@@ -479,56 +483,58 @@ class ProcessService(ObjectService):
         url = format_url(raw_url, debug_id)
 
         response = self._rest.GET(url, **kwargs)
-        return response.json()['CallStack'][0]['Variables'] if response.json()['CallStack'] else response.json()['CallStack']
+        return response.json()['CallStack'][0]['Variables'] if response.json()['CallStack'] else response.json()[
+            'CallStack']
 
     @require_admin
     def ti_formula(self, formula: str, **kwargs) -> str:
-        """ This function is same funcitonality as hitting "Evaluate" within variable formula editor in TI
+        """ This function is same functionality as hitting "Evaluate" within variable formula editor in TI
             Function creates temporary TI and then starts a debug session on that TI
             EnableTIDebugging=T must be present in .cfg file
             Only suited for Deb and one-off uses, don't incorporate into dataframe lambda function
 
         :param formula: a valid tm1 variable formula (no double quotes, no equals sign, semicolon optional)
-            e.g. 8*2;, CellGetN('<cube>',...);, ATTRS('<dim>', '<elem>', '<attr>')
+            e.g. "8*2;", "CellGetN('c1', 'e1', 'e2);", "ATTRS('Region', 'France', 'Currency')"
         :returns: string result from formula
         """
         # grab everything to right of "=" if present
         formula = formula[formula.find('=') + 1:]
 
         # make sure semicolon at end is present
-        formula += ';' if formula[-1] != ';' else ''
+        if not formula.strip().endswith(";"):
+            formula += ";"
 
         prolog_list = ["sFunc = {}".format(formula), "sDebug='Stop';"]
         process_name = "".join(['}TM1py', str(uuid.uuid4())])
-        p = Process(name=process_name,
-                    prolog_procedure=Process.AUTO_GENERATED_STATEMENTS + '\r\n'.join(prolog_list)
-            )
-        self.create(p, **kwargs)
-        syntax_errors = self.compile(p.name, **kwargs)
+        p = Process(
+            name=process_name,
+            prolog_procedure=Process.AUTO_GENERATED_STATEMENTS + '\r\n'.join(prolog_list))
+        syntax_errors = self.compile_process(p, **kwargs)
 
         if syntax_errors:
-            self.delete(p.name, **kwargs)
             raise ValueError(str(syntax_errors))
-        else:
-            try:
-                debug_id = self.debug_process(p.name, **kwargs)['ID']
-                breakpoint = ProcessDebugBreakpoint(
-                                    breakpoint_type='ProcessDebugContextDataBreakpoint',
-                                    breakpoint_id=1,
-                                    enabled=True,
-                                    hitmode='BreakAlways',
-                                    variable_name='sFunc'
-                )
-                self.debug_add_breakpoint(debug_id=debug_id, breakpoint=breakpoint, **kwargs)
-                self.debug_continue(debug_id, **kwargs)
-                result = self.debug_get_variable_values(debug_id, **kwargs)
-                self.debug_continue(debug_id, **kwargs)
 
-                if not result:
-                    raise ValueError('unknown error: no formula result found')
-                else:
-                    return result[-2]['Value']
-            except TM1pyRestException as e:
-                raise e
-            finally:
-                self.delete(p.name, **kwargs)
+        try:
+            self.create(p, **kwargs)
+            debug_id = self.debug_process(p.name, **kwargs)['ID']
+            break_point = ProcessDebugBreakpoint(
+                breakpoint_type='ProcessDebugContextDataBreakpoint',
+                breakpoint_id=1,
+                enabled=True,
+                hitmode='BreakAlways',
+                variable_name='sFunc')
+            self.debug_add_breakpoint(debug_id=debug_id, break_point=break_point, **kwargs)
+            self.debug_continue(debug_id, **kwargs)
+            result = self.debug_get_variable_values(debug_id, **kwargs)
+            self.debug_continue(debug_id, **kwargs)
+
+            if not result:
+                raise ValueError('unknown error: no formula result found')
+            else:
+                return result[-2]['Value']
+
+        except TM1pyRestException as e:
+            raise e
+
+        finally:
+            self.delete(p.name, **kwargs)
