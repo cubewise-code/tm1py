@@ -411,6 +411,13 @@ class TestProcessService(unittest.TestCase):
         self.assertEqual('}', self.tm1.processes.get_all_names()[-1][0][0])
         self.assertNotEqual(self.tm1.processes.get_all(), self.tm1.processes.get_all(skip_control_processes=True))
 
+    def test_ti_formula(self):
+        result = self.tm1.processes.ti_formula("2+2")
+        self.assertEqual(4, int(result))
+
+    def test_ti_formula_no_code(self):
+        with self.assertRaises(ValueError):
+            result = self.tm1.processes.ti_formula("")
 
     @classmethod
     def tearDownClass(cls):
