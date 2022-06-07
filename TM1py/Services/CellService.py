@@ -2537,7 +2537,7 @@ class CellService(ObjectService):
         # make sure all element names are strings and values column is derived from data
         if 'dtype' not in kwargs:
             kwargs['dtype'] = {'Value': None, **{col: str for col in range(999)}}
-        return pd.read_csv(memory_file, sep='~', **kwargs)
+        return pd.read_csv(memory_file, sep='~', na_values=["", None], keep_default_na=False, **kwargs)
 
     @tidy_cellset
     @require_pandas
