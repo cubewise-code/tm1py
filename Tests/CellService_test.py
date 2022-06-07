@@ -81,7 +81,8 @@ class TestCellService(unittest.TestCase):
 
             element_attributes = [ElementAttribute("Attr1", "String"),
                                   ElementAttribute("Attr2", "Numeric"),
-                                  ElementAttribute("Attr3", "Numeric")]
+                                  ElementAttribute("Attr3", "Numeric"),
+                                  ElementAttribute("NA", "Numeric")]
             hierarchy = Hierarchy(dimension_name=dimension_name,
                                   name=dimension_name,
                                   elements=elements,
@@ -97,6 +98,7 @@ class TestCellService(unittest.TestCase):
                 attribute_values[(element.name, "Attr1")] = "TM1py"
                 attribute_values[(element.name, "Attr2")] = "2"
                 attribute_values[(element.name, "Attr3")] = "3"
+                attribute_values[(element.name, "NA")] = "4"
             cls.tm1.cubes.cells.write_values(attribute_cube, attribute_values)
 
         # Build Cube
@@ -1888,6 +1890,18 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(
             self.total_value,
             sum(values))
+
+    @skip_if_no_pandas
+    def test_execute_mdx_dataframe_na_element_name(self):
+        attribute_dimension = "}ElementAttributes_" + self.dimension_names[0]
+        query = MdxBuilder.from_cube(attribute_dimension)
+        query.add_hierarchy_set_to_column_axis(MdxHierarchySet.member(f"[{attribute_dimension}].[NA]"))
+        query.add_hierarchy_set_to_column_axis(MdxHierarchySet.member(f"[{self.dimension_names[0]}].[Element 1]"))
+
+        df = self.tm1.cubes.cells.execute_mdx_dataframe(query.to_mdx())
+        self.assertEqual(
+            [["NA", "Element 1", 4.0]],
+            df.values.tolist())
 
     @skip_if_no_pandas
     def test_execute_mdx_dataframe_use_iterative_json(self):
