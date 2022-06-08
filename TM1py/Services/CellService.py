@@ -314,8 +314,18 @@ class CellService(ObjectService):
     @require_version(version="11.7")
     def clear(self, cube: str, **kwargs):
         """
-        Takes the cube name and keyword argument pairs of dimensions and expressions:
-        `tm1.cells.clear(cube="Sales", product="{[Product].[ABC]}", time="{[Time].[2020].Children}")`
+        Takes the cube name and keyword argument pairs of dimensions and MDX expressions:
+
+        ```
+        tm1.cells.clear(
+            cube="Sales",
+            salesregion="{[Sales Region].[Australia],[Sales Region].[New Zealand]}",
+            product="{[Product].[ABC]}",
+            time="{[Time].[2022].Children}")
+        ```
+
+        Make sure that the keyword argument names (e.g. product) map with the dimension names (e.g. Product) in the cube.
+        Spaces in the dimension name (e.g., "Sales Region") must be omitted in the keyword (e.g. "salesregion")
 
         :param cube: name of the cube
         :param kwargs: keyword argument pairs of dimension names and mdx set expressions
