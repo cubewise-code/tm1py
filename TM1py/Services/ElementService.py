@@ -372,7 +372,7 @@ class ElementService(ObjectService):
         :return:
         """
         url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/ElementAttributes?$select=Name",
+            "Dimensions('{}')/Hierarchies('{}')/ElementAttributes?$select=Name",
             dimension_name,
             hierarchy_name)
         response = self._rest.GET(url, **kwargs)
@@ -419,7 +419,7 @@ class ElementService(ObjectService):
         :return:
         """
         url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/ElementAttributes",
+            "Dimensions('{}')/Hierarchies('{}')/ElementAttributes",
             dimension_name,
             hierarchy_name)
         return self._rest.POST(url, element_attribute.body, **kwargs)
@@ -434,7 +434,7 @@ class ElementService(ObjectService):
         :return:
         """
         url = format_url(
-            "/Dimensions('}}ElementAttributes_{}')/Hierarchies('}}ElementAttributes_{}')/Elements('{}')",
+            "Dimensions('}}ElementAttributes_{}')/Hierarchies('}}ElementAttributes_{}')/Elements('{}')",
             dimension_name,
             hierarchy_name,
             element_attribute)
@@ -581,7 +581,7 @@ class ElementService(ObjectService):
         """
 
         url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Elements('{}')/Edges(ParentName='{}',ComponentName='{}')",
+            "Dimensions('{}')/Hierarchies('{}')/Elements('{}')/Edges(ParentName='{}',ComponentName='{}')",
             dimension_name,
             hierarchy_name,
             parent,
@@ -638,7 +638,7 @@ class ElementService(ObjectService):
 
     def get_parents(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> List[str]:
         url = format_url(
-            f"/Dimensions('{dimension_name}')/Hierarchies('{hierarchy_name}')/Elements('{element_name}')/Parents"
+            f"Dimensions('{dimension_name}')/Hierarchies('{hierarchy_name}')/Elements('{element_name}')/Parents"
             f"?$select=Name",
         )
         response = self._rest.GET(url=url, **kwargs)

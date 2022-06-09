@@ -76,7 +76,7 @@ def get_all_servers_from_adminhost(adminhost='localhost', port=None, use_ssl=Fal
         conn = http_client.HTTPConnection(adminhost, port or 5895)
     else:
         conn = http_client.HTTPSConnection(adminhost, port or 5898, context=ssl._create_unverified_context())
-    request = '/Servers'
+    request = '/api/v1/Servers'
     conn.request('GET', request, body='')
     response = conn.getresponse().read().decode('utf-8')
     response_as_dict = json.loads(response)
@@ -112,7 +112,7 @@ def create_server_on_adminhost(adminhost: str = 'localhost', server_as_dict: Dic
     if not adminhost:
         adminhost = 'localhost'
 
-    url = f"http://{adminhost}:5895/Servers"
+    url = f"http://{adminhost}:5895/api/v1/Servers"
     response = requests.post(url, data=json.dumps(server_as_dict), headers={'Content-Type': 'application/json'})
     response.raise_for_status()
 
@@ -126,7 +126,7 @@ def delete_server_on_adminhost(adminhost: str = None, server_name: str = None):
     if not adminhost:
         adminhost = 'localhost'
 
-    url = f"http://{adminhost}:5895/Servers('{server_name}')"
+    url = f"http://{adminhost}:5895/api/v1/Servers('{server_name}')"
     response = requests.delete(url, headers={'Content-Type': 'application/json'})
     response.raise_for_status()
 
@@ -156,7 +156,7 @@ def update_server_on_adminhost(adminhost: str = 'localhost', server_as_dict: Dic
     if not adminhost:
         adminhost = 'localhost'
 
-    url = f"http://{adminhost}:5895/Servers"
+    url = f"http://{adminhost}:5895/api/v1/Servers"
     response = requests.patch(url, body=json.dumps(server_as_dict), headers={'Content-Type': 'application/json'})
     response.raise_for_status()
 

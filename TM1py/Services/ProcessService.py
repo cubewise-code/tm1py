@@ -30,7 +30,7 @@ class ProcessService(ObjectService):
         :return: Instance of the TM1py.Process
         """
         url = format_url(
-            "/Processes('{}')?$select=*,UIData,VariablesUIData,"
+            "Processes('{}')?$select=*,UIData,VariablesUIData,"
             "DataSource/dataSourceNameForServer,"
             "DataSource/dataSourceNameForClient,"
             "DataSource/asciiDecimalSeparator,"

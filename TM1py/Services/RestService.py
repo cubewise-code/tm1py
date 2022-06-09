@@ -188,8 +188,12 @@ class RestService:
                 'localhost' if len(self._address) == 0 else self._address,
                 self._port)
 
-        self._base_url.rstrip("/")
-        if not self._base_url.endswith("/api/v1"):
+        if self._base_url.endswith("/api/v1"):
+            self._base_url += "/"
+        elif self._base_url.endswith("/api/v1/"):
+            pass
+        else:
+            self._base_url = self._base_url.rstrip("/")
             self._base_url += "/api/v1/"
 
         self._version = None

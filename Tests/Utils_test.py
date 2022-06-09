@@ -226,7 +226,7 @@ class TestUtilsMethods(unittest.TestCase):
         process_name = "process"
         escaped_url = format_url(url, process_name)
         self.assertEqual(
-            "/Processes('process')/tm1.ExecuteWithReturn?$expand=*", escaped_url
+            "Processes('process')/tm1.ExecuteWithReturn?$expand=*", escaped_url
         )
 
     def test_format_url_args_one_single_quote(self):
@@ -234,7 +234,7 @@ class TestUtilsMethods(unittest.TestCase):
         process_name = "pro'cess"
         escaped_url = format_url(url, process_name)
         self.assertEqual(
-            "/Processes('pro''cess')/tm1.ExecuteWithReturn?$expand=*",
+            "Processes('pro''cess')/tm1.ExecuteWithReturn?$expand=*",
             escaped_url,
         )
 
@@ -243,7 +243,7 @@ class TestUtilsMethods(unittest.TestCase):
         process_name = "pro'ces's"
         escaped_url = format_url(url, process_name)
         self.assertEqual(
-            "/Processes('pro''ces''s')/tm1.ExecuteWithReturn?$expand=*",
+            "Processes('pro''ces''s')/tm1.ExecuteWithReturn?$expand=*",
             escaped_url,
         )
 
@@ -252,7 +252,7 @@ class TestUtilsMethods(unittest.TestCase):
         process_name = "process"
         escaped_url = format_url(url, process_name=process_name)
         self.assertEqual(
-            "/Processes('process')/tm1.ExecuteWithReturn?$expand=*", escaped_url
+            "Processes('process')/tm1.ExecuteWithReturn?$expand=*", escaped_url
         )
 
     def test_format_url_kwargs_one_single_quote(self):
@@ -260,7 +260,7 @@ class TestUtilsMethods(unittest.TestCase):
         process_name = "pro'cess"
         escaped_url = format_url(url, process_name=process_name)
         self.assertEqual(
-            "/Processes('pro''cess')/tm1.ExecuteWithReturn?$expand=*",
+            "Processes('pro''cess')/tm1.ExecuteWithReturn?$expand=*",
             escaped_url,
         )
 
@@ -269,7 +269,7 @@ class TestUtilsMethods(unittest.TestCase):
         process_name = "pro'ces's"
         escaped_url = format_url(url, process_name=process_name)
         self.assertEqual(
-            "/Processes('pro''ces''s')/tm1.ExecuteWithReturn?$expand=*",
+            "Processes('pro''ces''s')/tm1.ExecuteWithReturn?$expand=*",
             escaped_url,
         )
 
@@ -278,7 +278,7 @@ class TestUtilsMethods(unittest.TestCase):
         url = add_url_parameters(url, **{"!sandbox": "sandbox1"})
 
         self.assertEqual(
-            "/Cubes('cube')/tm1.Update?!sandbox=sandbox1",
+            "Cubes('cube')/tm1.Update?!sandbox=sandbox1",
             url)
 
     def test_url_parameters_add_with_query_options(self):
@@ -286,7 +286,7 @@ class TestUtilsMethods(unittest.TestCase):
         url = add_url_parameters(url, **{"!sandbox": "sandbox1"})
 
         self.assertEqual(
-            "/Cellsets('abcd')?$expand=Cells($select=Value)&!sandbox=sandbox1",
+            "Cellsets('abcd')?$expand=Cells($select=Value)&!sandbox=sandbox1",
             url)
 
     def test_get_seconds_from_duration(self):

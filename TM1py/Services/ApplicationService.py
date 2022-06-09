@@ -47,10 +47,10 @@ class ApplicationService(ObjectService):
         contents = 'PrivateContents' if private else 'Contents'
         mid = ""
         if path.strip() != '':
-            mid = "".join([format_url("Contents('{}')", element) for element in path.split('/')])
+            mid = "".join([format_url("/Contents('{}')", element) for element in path.split('/')])
 
         base_url = format_url(
-            "/Contents('Applications')" + mid + "/" + contents + "('{application_name}')",
+            "Contents('Applications')" + mid + "/" + contents + "('{application_name}')",
             application_name=name)
 
         if application_type == ApplicationTypes.CUBE:
@@ -116,15 +116,15 @@ class ApplicationService(ObjectService):
             name += ApplicationTypes.DOCUMENT.suffix
 
         contents = 'PrivateContents' if private else 'Contents'
-        mid = "".join([format_url("Contents('{}')", element) for element in path.split('/')])
+        mid = "".join([format_url("/Contents('{}')", element) for element in path.split('/')])
         url = format_url(
-            "/Contents('Applications')" + mid + "/" + contents + "('{name}')/Document/Content",
+            "Contents('Applications')" + mid + "/" + contents + "('{name}')/Document/Content",
             name=name)
 
         content = self._rest.GET(url, **kwargs).content
 
         url = format_url(
-            "/Contents('Applications')" + mid + "/" + contents + "('{name}')/Document",
+            "Contents('Applications')" + mid + "/" + contents + "('{name}')/Document",
             name=name)
         document_fields = self._rest.GET(url, **kwargs).json()
 
@@ -156,10 +156,10 @@ class ApplicationService(ObjectService):
         contents = 'PrivateContents' if private else 'Contents'
         mid = ""
         if path.strip() != '':
-            mid = "".join([format_url("Contents('{}')", element) for element in path.split('/')])
+            mid = "".join([format_url("/Contents('{}')", element) for element in path.split('/')])
 
         url = format_url(
-            "/Contents('Applications')" + mid + "/" + contents + "('{application_name}')",
+            "Contents('Applications')" + mid + "/" + contents + "('{application_name}')",
             application_name=application_name)
         return self._rest.DELETE(url, **kwargs)
 
@@ -174,10 +174,10 @@ class ApplicationService(ObjectService):
         contents = 'PrivateContents' if private else 'Contents'
         mid = ""
         if path.strip() != '':
-            mid = "".join([format_url("Contents('{}')", element) for element in path.split('/')])
+            mid = "".join([format_url("/Contents('{}')", element) for element in path.split('/')])
 
         url = format_url(
-            "/Contents('Applications')" + mid + "/" + contents + "('{application_name}')/tm1.Move",
+            "Contents('Applications')" + mid + "/" + contents + "('{application_name}')/tm1.Move",
             application_name=application_name)
         data = {"Name": new_application_name}
 
@@ -195,13 +195,13 @@ class ApplicationService(ObjectService):
 
         mid = ""
         if application.path.strip() != '':
-            mid = "".join([format_url("Contents('{}')", element) for element in application.path.split('/')])
+            mid = "".join([format_url("/Contents('{}')", element) for element in application.path.split('/')])
         url = "Contents('Applications')" + mid + "/" + contents
         response = self._rest.POST(url, application.body, **kwargs)
 
         if application.application_type == ApplicationTypes.DOCUMENT:
             url = format_url(
-                "/Contents('Applications')" + mid + "/" + contents + "('{name}.blob')/Document/Content",
+                "Contents('Applications')" + mid + "/" + contents + "('{name}.blob')/Document/Content",
                 name=application.name)
             response = self._rest.PUT(url, application.content, headers=self.BINARY_HTTP_HEADER, **kwargs)
 
@@ -248,7 +248,7 @@ class ApplicationService(ObjectService):
             mid = "".join(["/Contents('{}')".format(element) for element in path.split('/')])
 
         url = format_url(
-            "/Contents('Applications')" + mid + "/" + contents + "('{application_name}')",
+            "Contents('Applications')" + mid + "/" + contents + "('{application_name}')",
             application_name=name)
         return self._exists(url, **kwargs)
 

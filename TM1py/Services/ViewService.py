@@ -43,7 +43,7 @@ class ViewService(ObjectService):
 
         :return boolean tuple
         """
-        url_template = "/Cubes('{}')/{}('{}')"
+        url_template = "Cubes('{}')/{}('{}')"
         if private is not None:
             url = format_url(url_template, cube_name, "PrivateViews" if private else "Views", view_name)
             return self._exists(url, **kwargs)
@@ -82,7 +82,7 @@ class ViewService(ObjectService):
         """
         view_type = "PrivateViews" if private else "Views"
         url = format_url(
-            "/Cubes('{}')/{}('{}')?$expand="
+            "Cubes('{}')/{}('{}')?$expand="
             "tm1.NativeView/Rows/Subset($expand=Hierarchy($select=Name;"
             "$expand=Dimension($select=Name)),Elements($select=Name);"
             "$select=Expression,UniqueName,Name, Alias),  "
@@ -122,7 +122,7 @@ class ViewService(ObjectService):
         private_views, public_views = [], []
         for view_type in ('PrivateViews', 'Views'):
             url = format_url(
-                "/Cubes('{}')/{}?$expand="
+                "Cubes('{}')/{}?$expand="
                 "tm1.NativeView/Rows/Subset($expand=Hierarchy($select=Name;"
                 "$expand=Dimension($select=Name)),Elements($select=Name);"
                 "$select=Expression,UniqueName,Name, Alias),  "
