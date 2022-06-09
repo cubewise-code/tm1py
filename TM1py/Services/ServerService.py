@@ -49,7 +49,7 @@ class ServerService(ObjectService):
 
     @odata_track_changes_header
     def initialize_transaction_log_delta_requests(self, filter=None, **kwargs):
-        url = "/api/v1/TailTransactionLog()"
+        url = "TailTransactionLog()"
         if filter:
             url += "?$filter={}".format(filter)
         response = self._rest.GET(url=url, **kwargs)
@@ -58,13 +58,13 @@ class ServerService(ObjectService):
 
     @odata_track_changes_header
     def execute_transaction_log_delta_request(self, **kwargs) -> Dict:
-        response = self._rest.GET(url="/api/v1/" + self.tlog_last_delta_request, **kwargs)
+        response = self._rest.GET(url="/" + self.tlog_last_delta_request, **kwargs)
         self.tlog_last_delta_request = response.text[response.text.rfind("TransactionLogEntries/!delta('"):-2]
         return response.json()['value']
 
     @odata_track_changes_header
     def initialize_audit_log_delta_requests(self, filter=None, **kwargs):
-        url = "/api/v1/TailAuditLog()"
+        url = "TailAuditLog()"
         if filter:
             url += "?$filter={}".format(filter)
         response = self._rest.GET(url=url, **kwargs)
@@ -73,13 +73,13 @@ class ServerService(ObjectService):
 
     @odata_track_changes_header
     def execute_audit_log_delta_request(self, **kwargs) -> Dict:
-        response = self._rest.GET(url="/api/v1/" + self.alog_last_delta_request, **kwargs)
+        response = self._rest.GET(url="/" + self.alog_last_delta_request, **kwargs)
         self.alog_last_delta_request = response.text[response.text.rfind("AuditLogEntries/!delta('"):-2]
         return response.json()['value']
 
     @odata_track_changes_header
     def initialize_message_log_delta_requests(self, filter=None, **kwargs):
-        url = "/api/v1/TailMessageLog()"
+        url = "TailMessageLog()"
         if filter:
             url += "?$filter={}".format(filter)
         response = self._rest.GET(url=url, **kwargs)
@@ -88,7 +88,7 @@ class ServerService(ObjectService):
 
     @odata_track_changes_header
     def execute_message_log_delta_request(self, **kwargs) -> Dict:
-        response = self._rest.GET(url="/api/v1/" + self.mlog_last_delta_request, **kwargs)
+        response = self._rest.GET(url="/" + self.mlog_last_delta_request, **kwargs)
         self.mlog_last_delta_request = response.text[response.text.rfind("MessageLogEntries/!delta('"):-2]
         return response.json()['value']
 
@@ -115,7 +115,7 @@ class ServerService(ObjectService):
             raise ValueError("'msg_contains_operator' must be either 'AND' or 'OR'")
 
         reverse = 'desc' if reverse else 'asc'
-        url = '/api/v1/MessageLogEntries?$orderby=TimeStamp {}'.format(reverse)
+        url = 'MessageLogEntries?$orderby=TimeStamp {}'.format(reverse)
 
         if since or until or logger or level or msg_contains:
             log_filters = []
@@ -197,7 +197,7 @@ class ServerService(ObjectService):
         :return:
         """
         reverse = 'desc' if reverse else 'asc'
-        url = '/api/v1/TransactionLogEntries?$orderby=TimeStamp {} '.format(reverse)
+        url = 'TransactionLogEntries?$orderby=TimeStamp {} '.format(reverse)
         # filter on user, cube and time
         if user or cube or since or until:
             log_filters = []
@@ -236,7 +236,7 @@ class ServerService(ObjectService):
         :return:
         """
 
-        url = '/api/v1/AuditLogEntries?$expand=AuditDetails'
+        url = 'AuditLogEntries?$expand=AuditDetails'
         # filter on user, object_type, object_name  and time
         if any([user, object_type, object_name, since, until]):
             log_filters = []
@@ -271,7 +271,7 @@ class ServerService(ObjectService):
             :return: String - the message, for instance: "Ausführung normal beendet, verstrichene Zeit 0.03  Sekunden"
         """
         url = format_url(
-            "/api/v1/MessageLog()?$orderby='TimeStamp'&$filter=Logger eq 'TM1.Process' and contains(Message, '{}')",
+            "/MessageLog()?$orderby='TimeStamp'&$filter=Logger eq 'TM1.Process' and contains(Message, '{}')",
             process_name)
         response = self._rest.GET(url=url, **kwargs)
         response_as_list = response.json()['value']
@@ -285,7 +285,7 @@ class ServerService(ObjectService):
         :Returns:
             String, the server name
         """
-        url = '/api/v1/Configuration/ServerName/$value'
+        url = 'Configuration/ServerName/$value'
         return self._rest.GET(url, **kwargs).text
 
     def get_product_version(self, **kwargs) -> str:
@@ -294,19 +294,19 @@ class ServerService(ObjectService):
         :Returns:
             String, the version
         """
-        url = '/api/v1/Configuration/ProductVersion/$value'
+        url = 'Configuration/ProductVersion/$value'
         return self._rest.GET(url, **kwargs).text
 
     def get_admin_host(self, **kwargs) -> str:
-        url = '/api/v1/Configuration/AdminHost/$value'
+        url = 'Configuration/AdminHost/$value'
         return self._rest.GET(url, **kwargs).text
 
     def get_data_directory(self, **kwargs) -> str:
-        url = '/api/v1/Configuration/DataBaseDirectory/$value'
+        url = 'Configuration/DataBaseDirectory/$value'
         return self._rest.GET(url, **kwargs).text
 
     def get_configuration(self, **kwargs) -> Dict:
-        url = '/api/v1/Configuration'
+        url = 'Configuration'
         config = self._rest.GET(url, **kwargs).json()
         del config["@odata.context"]
         return config
@@ -317,7 +317,7 @@ class ServerService(ObjectService):
 
         :return: config as dictionary
         """
-        url = '/api/v1/StaticConfiguration'
+        url = 'StaticConfiguration'
         config = self._rest.GET(url, **kwargs).json()
         del config["@odata.context"]
         return config
@@ -328,7 +328,7 @@ class ServerService(ObjectService):
 
         :return: config as dictionary
         """
-        url = '/api/v1/ActiveConfiguration'
+        url = 'ActiveConfiguration'
         config = self._rest.GET(url, **kwargs).json()
         del config["@odata.context"]
         return config
@@ -340,7 +340,7 @@ class ServerService(ObjectService):
         :param configuration:
         :return: Response
         """
-        url = '/api/v1/StaticConfiguration'
+        url = 'StaticConfiguration'
         return self._rest.PATCH(url, json.dumps(configuration))
 
     @require_admin

@@ -114,7 +114,7 @@ class Process(TM1Object):
     @classmethod
     def from_json(cls, process_as_json: str) -> 'Process':
         """
-        :param process_as_json: response of /api/v1/Processes('x')?$expand=*
+        :param process_as_json: response of /Processes('x')?$expand=*
         :return: an instance of this class
         """
         process_as_dict = json.loads(process_as_json)

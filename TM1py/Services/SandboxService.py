@@ -23,7 +23,7 @@ class SandboxService(ObjectService):
         :param sandbox_name: str
         :return: instance of TM1py.Sandbox
         """
-        url = format_url("/api/v1/Sandboxes('{}')", sandbox_name)
+        url = format_url("Sandboxes('{}')", sandbox_name)
         response = self._rest.GET(url=url, **kwargs)
         sandbox = Sandbox.from_json(response.text)
         return sandbox
@@ -33,7 +33,7 @@ class SandboxService(ObjectService):
 
         :return: List of TM1py.Sandbox instances
         """
-        url = "/api/v1/Sandboxes?$select=Name,IncludeInSandboxDimension"
+        url = "Sandboxes?$select=Name,IncludeInSandboxDimension"
         response = self._rest.GET(url, **kwargs)
         sandboxes = [
             Sandbox.from_dict(sandbox_as_dict=sandbox)
@@ -47,7 +47,7 @@ class SandboxService(ObjectService):
         :param kwargs:
         :return:
         """
-        url = "/api/v1/Sandboxes?$select=Name"
+        url = "Sandboxes?$select=Name"
         response = self._rest.GET(url, **kwargs)
         return [entry["Name"] for entry in response.json()["value"]]
 
@@ -57,7 +57,7 @@ class SandboxService(ObjectService):
         :param sandbox: Sandbox
         :return: response
         """
-        url = "/api/v1/Sandboxes"
+        url = "Sandboxes"
         return self._rest.POST(url=url, data=sandbox.body, **kwargs)
 
     def update(self, sandbox: Sandbox, **kwargs) -> Response:
@@ -66,7 +66,7 @@ class SandboxService(ObjectService):
         :param sandbox:
         :return: response
         """
-        url = format_url("/api/v1/Sandboxes('{}')", sandbox.name)
+        url = format_url("Sandboxes('{}')", sandbox.name)
         return self._rest.PATCH(url=url, data=sandbox.body, **kwargs)
 
     def delete(self, sandbox_name: str, **kwargs) -> Response:
@@ -75,7 +75,7 @@ class SandboxService(ObjectService):
         :param sandbox_name:
         :return: response
         """
-        url = format_url("/api/v1/Sandboxes('{}')", sandbox_name)
+        url = format_url("Sandboxes('{}')", sandbox_name)
         return self._rest.DELETE(url, **kwargs)
 
     def publish(self, sandbox_name: str, **kwargs) -> Response:
@@ -84,7 +84,7 @@ class SandboxService(ObjectService):
         :param sandbox_name: str
         :return: response
         """
-        url = format_url("/api/v1/Sandboxes('{}')/tm1.Publish", sandbox_name)
+        url = format_url("Sandboxes('{}')/tm1.Publish", sandbox_name)
         return self._rest.POST(url=url, **kwargs)
 
     def reset(self, sandbox_name: str, **kwargs) -> Response:
@@ -93,7 +93,7 @@ class SandboxService(ObjectService):
         :param sandbox_name: str
         :return: response
         """
-        url = format_url("/api/v1/Sandboxes('{}')/tm1.DiscardChanges", sandbox_name)
+        url = format_url("Sandboxes('{}')/tm1.DiscardChanges", sandbox_name)
         return self._rest.POST(url=url, **kwargs)
 
     def merge(
@@ -110,7 +110,7 @@ class SandboxService(ObjectService):
         :param clean_after: bool: Reset source sandbox after merging
         :return: response
         """
-        url = format_url("/api/v1/Sandboxes('{}')/tm1.Merge", source_sandbox_name)
+        url = format_url("Sandboxes('{}')/tm1.Merge", source_sandbox_name)
         payload = dict()
         payload["Target@odata.bind"] = format_url(
             "Sandboxes('{}')", target_sandbox_name
@@ -124,5 +124,5 @@ class SandboxService(ObjectService):
         :param sandbox_name: String
         :return: bool
         """
-        url = format_url("/api/v1/Sandboxes('{}')", sandbox_name)
+        url = format_url("Sandboxes('{}')", sandbox_name)
         return self._exists(url, **kwargs)

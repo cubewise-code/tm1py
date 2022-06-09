@@ -375,7 +375,7 @@ class TestServerService(unittest.TestCase):
     def test_session_context_default(self):
         threads = self.tm1.monitoring.get_threads()
         for thread in threads:
-            if "GET /api/v1/Threads" in thread["Function"] and thread["Name"] == self.config['tm1srv01']['user']:
+            if "GET /Threads" in thread["Function"] and thread["Name"] == self.config['tm1srv01']['user']:
                 self.assertTrue(thread["Context"] == "TM1py")
                 return
         raise Exception("Did not find my own Thread")
@@ -385,7 +385,7 @@ class TestServerService(unittest.TestCase):
         with TM1Service(**self.config['tm1srv01'], session_context=app_name) as tm1:
             threads = tm1.monitoring.get_threads()
             for thread in threads:
-                if "GET /api/v1/Threads" in thread["Function"] and thread["Name"] == self.config['tm1srv01']['user']:
+                if "GET /Threads" in thread["Function"] and thread["Name"] == self.config['tm1srv01']['user']:
                     self.assertTrue(thread["Context"] == app_name)
                     return
         raise Exception("Did not find my own Thread")

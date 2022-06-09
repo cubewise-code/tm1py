@@ -23,7 +23,7 @@ class MonitoringService(ObjectService):
             :return:
                 dict: the response
         """
-        url = '/api/v1/Threads'
+        url = 'Threads'
         response = self._rest.GET(url, **kwargs)
         return response.json()['value']
 
@@ -33,7 +33,7 @@ class MonitoringService(ObjectService):
             :return:
                 list: TM1 threads as dict
         """
-        url = "/api/v1/Threads?$filter=Function ne 'GET /api/v1/Threads' and State ne 'Idle'"
+        url = "Threads?$filter=Function ne 'GET /Threads' and State ne 'Idle'"
         response = self._rest.GET(url, **kwargs)
         return response.json()['value']
 
@@ -43,7 +43,7 @@ class MonitoringService(ObjectService):
         :param thread_id: 
         :return: 
         """
-        url = format_url("/api/v1/Threads('{}')/tm1.CancelOperation", str(thread_id))
+        url = format_url("Threads('{}')/tm1.CancelOperation", str(thread_id))
         response = self._rest.POST(url, **kwargs)
         return response
 
@@ -57,7 +57,7 @@ class MonitoringService(ObjectService):
                 continue
             if thread["Name"] == "Pseudo":
                 continue
-            if thread["Function"] == "GET /api/v1/Threads":
+            if thread["Function"] == "GET /Threads":
                 continue
             self.cancel_thread(thread["ID"], **kwargs)
             canceled_threads.append(thread)
@@ -68,7 +68,7 @@ class MonitoringService(ObjectService):
 
         :return: List of TM1py.User instances
         """
-        url = '/api/v1/Users?$filter=IsActive eq true&$expand=Groups'
+        url = 'Users?$filter=IsActive eq true&$expand=Groups'
         response = self._rest.GET(url, **kwargs)
         users = [User.from_dict(user) for user in response.json()['value']]
         return users
@@ -79,7 +79,7 @@ class MonitoringService(ObjectService):
         :param user_name:
         :return: Boolean
         """
-        url = format_url("/api/v1/Users('{}')/IsActive", user_name)
+        url = format_url("Users('{}')/IsActive", user_name)
         response = self._rest.GET(url, **kwargs)
         return bool(response.json()['value'])
 
@@ -89,12 +89,12 @@ class MonitoringService(ObjectService):
         :param user_name: 
         :return: 
         """
-        url = format_url("/api/v1/Users('{}')/tm1.Disconnect", user_name)
+        url = format_url("Users('{}')/tm1.Disconnect", user_name)
         response = self._rest.POST(url, **kwargs)
         return response
 
     def get_active_session_threads(self, exclude_idle: bool = True, **kwargs):
-        url = "/api/v1/ActiveSession/Threads?$filter=Function ne 'GET /api/v1/ActiveSession/Threads'"
+        url = "ActiveSession/Threads?$filter=Function ne 'GET /ActiveSession/Threads'"
         if exclude_idle:
             url += " and State ne 'Idle'"
 
@@ -102,7 +102,7 @@ class MonitoringService(ObjectService):
         return response.json()['value']
 
     def get_sessions(self, include_user: bool = True, include_threads: bool = True, **kwargs) -> List:
-        url = "/api/v1/Sessions"
+        url = "Sessions"
         if include_user or include_threads:
             expands = list()
             if include_user:
@@ -126,7 +126,7 @@ class MonitoringService(ObjectService):
         return disconnected_users
 
     def close_session(self, session_id, **kwargs) -> Response:
-        url = format_url(f"/api/v1/Sessions('{session_id}')/tm1.Close")
+        url = format_url(f"/Sessions('{session_id}')/tm1.Close")
         return self._rest.POST(url, **kwargs)
 
     @require_admin
