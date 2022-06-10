@@ -99,6 +99,7 @@ class TestCellService(unittest.TestCase):
                 attribute_values[(element.name, "Attr2")] = "2"
                 attribute_values[(element.name, "Attr3")] = "3"
                 attribute_values[(element.name, "NA")] = "4"
+
             cls.tm1.cubes.cells.write_values(attribute_cube, attribute_values)
 
         # Build Cube
