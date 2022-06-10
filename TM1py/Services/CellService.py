@@ -415,7 +415,7 @@ class CellService(ObjectService):
                         reactivate_transaction_log: bool = False, sandbox_name: str = None,
                         use_ti: bool = False, use_changeset: bool = False, precision: int = 8,
                         skip_non_updateable: bool = False, measure_dimension_elements: Dict = None,
-                        sum_numeric_duplicates: bool =True, **kwargs) -> str:
+                        sum_numeric_duplicates: bool = True, **kwargs) -> str:
         """
         Function expects same shape as `execute_mdx_dataframe` returns.
         Column order must match dimensions in the target cube with an additional column for the values.
@@ -2416,6 +2416,9 @@ class CellService(ObjectService):
         current_cell_ordinal = 0
         csv_body = StringIO()
         csv_writer = csv.writer(csv_body, dialect=csv_dialect)
+        # handle potential imbalance between number of headers and entries in row
+        max_entries_per_row = 0
+        least_entries_per_row = 1_000
 
         parser = ijson.parse(cellset_response.content)
         prefixes_of_interest = ['Cells.item.Value', 'Axes.item.Tuples.item.Members.item.Name',
@@ -2438,12 +2441,19 @@ class CellService(ObjectService):
                 axes0_index = r
                 axes1_index = q
                 if len(axes0_list) == 1 and len(axes0_list[0]) == 0:
-                    csv_writer.writerow(axes1_list[axes1_index] + [str(value)])
+                    row = axes1_list[axes1_index] + [str(value)]
                 # case of no row selection
                 elif len(axes1_list) == 0:
-                    csv_writer.writerow(axes0_list[axes0_index] + [str(value)])
+                    row = axes0_list[axes0_index] + [str(value)]
                 else:
-                    csv_writer.writerow(axes1_list[axes1_index] + axes0_list[axes0_index] + [str(value)])
+                    row = axes1_list[axes1_index] + axes0_list[axes0_index] + [str(value)]
+
+                if len(row) > max_entries_per_row:
+                    max_entries_per_row = len(row)
+                if len(row) < least_entries_per_row:
+                    least_entries_per_row = len(row)
+
+                csv_writer.writerow(row)
 
             elif (prefix, event) == ('Axes.item.Tuples.item.Members.item.Name', 'string'):
                 if current_axes == 0:
@@ -2488,6 +2498,11 @@ class CellService(ObjectService):
             return ""
 
         # prepare header
+        if include_attributes:
+            if not least_entries_per_row == max_entries_per_row == len(row_headers) + len(column_headers) + 1:
+                raise ValueError("Invalid response. With 'include_attributes' as True,"
+                                 " Attributes must be requested explicitly as PROPERTIES in the MDX")
+
         csv_header = StringIO()
         csv_header_writer = csv.writer(csv_header, dialect=csv_dialect)
         csv_header_writer.writerow(row_headers + column_headers + ['Value'])

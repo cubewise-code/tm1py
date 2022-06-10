@@ -369,9 +369,11 @@ def build_csv_from_cellset_dict(
 
     column_axis, row_axis, _ = extract_axes_from_cellset(raw_cellset_as_dict=raw_cellset_as_dict)
 
+    num_headers = 0
     if include_headers:
         headers = _build_headers_for_csv(row_axis, column_axis, row_dimensions, column_dimensions, include_attributes)
         csv_writer.writerow(headers)
+        num_headers = len(headers)
 
     for ordinal, cell in enumerate(cells[:top or len(cells)]):
         # if skip is used in execution we must use the original ordinal from the cell, if not we can simply enumerate
@@ -401,7 +403,9 @@ def build_csv_from_cellset_dict(
             line.extend(line_items)
 
         line.append(str(cell["Value"] or ""))
-
+        if include_attributes and include_headers and not len(line) == num_headers:
+            raise ValueError("Invalid response. With 'include_attributes' as True,"
+                             " Attributes must be requested explicitly as PROPERTIES in the MDX")
         csv_writer.writerow(line)
 
     return csv_content.getvalue().strip()
