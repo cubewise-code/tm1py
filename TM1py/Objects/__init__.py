@@ -13,6 +13,7 @@ from TM1py.Objects.Hierarchy import Hierarchy
 from TM1py.Objects.MDXView import MDXView
 from TM1py.Objects.NativeView import NativeView
 from TM1py.Objects.Process import Process
+from TM1py.Objects.ProcessDebugBreakpoint import ProcessDebugBreakpoint, BreakPointType, HitMode
 from TM1py.Objects.Rules import Rules
 from TM1py.Objects.Server import Server
 from TM1py.Objects.Subset import Subset, AnonymousSubset

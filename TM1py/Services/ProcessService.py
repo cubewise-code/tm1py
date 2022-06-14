@@ -421,6 +421,9 @@ class ProcessService(ObjectService):
         return response.json()
 
     def debug_step_out(self, debug_id: str, **kwargs) -> Dict:
+        """
+        Resumes execution and runs until the current process has finished.
+        """
         url = format_url("/api/v1/ProcessDebugContexts('{}')/tm1.StepOut", debug_id)
         self._rest.POST(url, **kwargs)
 
@@ -487,7 +490,7 @@ class ProcessService(ObjectService):
             'CallStack']
 
     @require_admin
-    def ti_formula(self, formula: str, **kwargs) -> str:
+    def evaluate_ti(self, formula: str, **kwargs) -> str:
         """ This function is same functionality as hitting "Evaluate" within variable formula editor in TI
             Function creates temporary TI and then starts a debug session on that TI
             EnableTIDebugging=T must be present in .cfg file
@@ -521,7 +524,7 @@ class ProcessService(ObjectService):
                 breakpoint_type='ProcessDebugContextDataBreakpoint',
                 breakpoint_id=1,
                 enabled=True,
-                hitmode='BreakAlways',
+                hit_mode='BreakAlways',
                 variable_name='sFunc')
             self.debug_add_breakpoint(debug_id=debug_id, break_point=break_point, **kwargs)
             self.debug_continue(debug_id, **kwargs)
