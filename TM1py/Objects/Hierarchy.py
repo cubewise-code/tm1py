@@ -171,6 +171,18 @@ class Hierarchy(TM1Object):
                 descendants = descendants.union(self.get_descendants(descendant.name, True))
         return descendants
 
+    def get_descendant_edges(self, element_name: str, recursive: bool = False) -> Dict:
+        descendant_edges = dict()
+
+        for (parent, component), weight in self._edges.items():
+            if not case_and_space_insensitive_equals(parent, element_name):
+                continue
+            descendant_edges[parent, component] = weight
+            descendant: Element = self.elements[component]
+            if recursive and descendant.element_type == Element.Types.CONSOLIDATED:
+                descendant_edges.update(self.get_descendant_edges(descendant.name, True))
+        return descendant_edges
+        
     def add_element(self, element_name: str, element_type: Union[str, Element.Types]):
         if element_name in self._elements:
             raise ValueError("Element name must be unique")
