@@ -52,10 +52,10 @@ class ProcessDebugBreakpoint(TM1Object):
 
     def __init__(
             self,
-            breakpoint_type: Union[BreakPointType, str] = '',
-            breakpoint_id: int = 1,
+            breakpoint_id: int,
+            breakpoint_type: Union[BreakPointType, str] = BreakPointType.PROCESS_DEBUG_CONTEXT_LINE_BREAK_POINT,
             enabled: bool = True,
-            hit_mode: Union[HitMode, str] = '',
+            hit_mode: Union[HitMode, str] = HitMode.BREAK_ALWAYS,
             hit_count: int = 0,
             expression: str = '',
             variable_name: str = '',
@@ -81,9 +81,10 @@ class ProcessDebugBreakpoint(TM1Object):
         self._lock_mode = lock_mode
 
     @classmethod
-    def from_dict(cls, breakpoint_as_dict: Dict, **kwargs) -> 'ProcessDebugBreakpoint':
+    def from_dict(cls, breakpoint_as_dict: Dict) -> 'ProcessDebugBreakpoint':
         """
-        :param breakpoint
+
+        :param breakpoint_as_dict
         :return: an instance of this class
         """
         breakpoint_type = breakpoint_as_dict['@odata.type'][16:]
@@ -110,7 +111,7 @@ class ProcessDebugBreakpoint(TM1Object):
 
     @property
     def breakpoint_type(self) -> str:
-        return self._type
+        return str(self._type)
 
     @property
     def breakpoint_id(self) -> int:
@@ -169,7 +170,7 @@ class ProcessDebugBreakpoint(TM1Object):
         self._enabled = value
 
     @hit_mode.setter
-    def hitmode(self, value: Union[HitMode, str]):
+    def hit_mode(self, value: Union[HitMode, str]):
         self._hit_mode = HitMode(value)
 
     @expression.setter

@@ -419,12 +419,12 @@ class TestProcessService(unittest.TestCase):
         self.assertNotEqual(self.tm1.processes.get_all(), self.tm1.processes.get_all(skip_control_processes=True))
 
     def test_ti_formula(self):
-        result = self.tm1.processes.evaluate_ti("2+2")
+        result = self.tm1.processes.evaluate_ti_expression("2+2")
         self.assertEqual(4, int(result))
 
     def test_ti_formula_no_code(self):
         with self.assertRaises(ValueError):
-            result = self.tm1.processes.evaluate_ti("")
+            result = self.tm1.processes.evaluate_ti_expression("")
 
     def test_debug_add_breakpoint(self):
         line_number = 4
@@ -434,6 +434,7 @@ class TestProcessService(unittest.TestCase):
 
         time.sleep(0.1)
         break_point = ProcessDebugBreakpoint(
+            breakpoint_id=1,
             breakpoint_type=BreakPointType.PROCESS_DEBUG_CONTEXT_LINE_BREAK_POINT,
             process_name=self.p_debug.name,
             procedure="Prolog",
@@ -460,8 +461,8 @@ class TestProcessService(unittest.TestCase):
 
         time.sleep(0.1)
         break_point = ProcessDebugBreakpoint(
-            breakpoint_type=BreakPointType.PROCESS_DEBUG_CONTEXT_LINE_BREAK_POINT,
             breakpoint_id=1,
+            breakpoint_type=BreakPointType.PROCESS_DEBUG_CONTEXT_LINE_BREAK_POINT,
             process_name=self.p_debug.name,
             procedure="Prolog",
             hit_mode=HitMode.BREAK_ALWAYS,
@@ -469,8 +470,8 @@ class TestProcessService(unittest.TestCase):
         self.tm1.processes.debug_add_breakpoint(debug_id, break_point)
         time.sleep(0.1)
         break_point = ProcessDebugBreakpoint(
-            breakpoint_type=BreakPointType.PROCESS_DEBUG_CONTEXT_LINE_BREAK_POINT,
             breakpoint_id=2,
+            breakpoint_type=BreakPointType.PROCESS_DEBUG_CONTEXT_LINE_BREAK_POINT,
             process_name=self.p_debug.name,
             procedure="Prolog",
             hit_mode=HitMode.BREAK_ALWAYS,
