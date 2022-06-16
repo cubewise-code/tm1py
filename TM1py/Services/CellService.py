@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 import asyncio
-import math
 import csv
 import functools
 import itertools
 import json
+import math
 import uuid
 import warnings
 from collections import OrderedDict
@@ -30,7 +30,7 @@ from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_nam
     abbreviate_mdx, build_csv_from_cellset_dict, require_version, require_pandas, build_cellset_from_pandas_dataframe, \
     case_and_space_insensitive_equals, get_cube, resembles_mdx, require_admin, extract_compact_json_cellset, \
     cell_is_updateable, build_mdx_from_cellset, build_mdx_and_values_from_cellset, \
-    dimension_names_from_element_unique_names
+    dimension_names_from_element_unique_names, frame_to_significant_digits
 
 try:
     import pandas as pd
@@ -61,13 +61,6 @@ def tidy_cellset(func):
                         raise ex
 
     return wrapper
-
-
-def frame_to_significant_digits(x, digits=15):
-    if x == 0 or not math.isfinite(x):
-        return str(x).replace('e+', 'E')
-    digits -= math.ceil(math.log10(abs(x)))
-    return str(round(x, digits)).replace('e+', 'E')
 
 
 def manage_transaction_log(func):
@@ -710,7 +703,8 @@ class CellService(ObjectService):
     @require_admin
     @manage_transaction_log
     def write_through_unbound_process(self, cube_name: str, cellset_as_dict: Dict, increment: bool = False,
-                                      sandbox_name: str = None, precision: int = 8, skip_non_updateable: bool = False,
+                                      sandbox_name: str = None, precision: int = None,
+                                      skip_non_updateable: bool = False,
                                       measure_dimension_elements: Dict = None, is_attribute_cube: bool = None,
                                       **kwargs):
         """
@@ -820,7 +814,10 @@ class CellService(ObjectService):
                 elif value is None:
                     value_str = '0'
                 else:
-                    value_str = format(value, f'.{precision}f')
+                    if precision is None:
+                        value_str = frame_to_significant_digits(float(value))
+                    else:
+                        value_str = format(float(value), f'.{precision}f')
 
             # by default assume String for attribute values
             else:
@@ -855,7 +852,8 @@ class CellService(ObjectService):
 
     @staticmethod
     def _build_cell_update_statements(cube_name: str, cellset_as_dict: Dict, increment: bool,
-                                      measure_dimension_elements: Dict, skip_non_updateable: bool, precision: int=None):
+                                      measure_dimension_elements: Dict, precision: int = None,
+                                      skip_non_updateable: bool = False):
         statements = list()
 
         for coordinates, value in cellset_as_dict.items():
@@ -882,19 +880,19 @@ class CellService(ObjectService):
                 # number strings must not exceed float range
                 if isinstance(value, str):
                     try:
-                        if precision:
-                            value_str = format(float(value), f'.{precision}f')
-                        else:
+                        if precision is None:
                             value_str = frame_to_significant_digits(float(value))
+                        else:
+                            value_str = format(float(value), f'.{precision}f')
                     except ValueError:
                         value_str = f'{value}'
                 elif value is None:
                     value_str = '0'
                 else:
-                    if precision:
-                        value_str = format(float(value), f'.{precision}f')
-                    else:
+                    if precision is None:
                         value_str = frame_to_significant_digits(float(value))
+                    else:
+                        value_str = format(float(value), f'.{precision}f')
 
             comma_separated_elements = ",".join("'" + element.replace("'", "''") + "'" for element in coordinates)
 

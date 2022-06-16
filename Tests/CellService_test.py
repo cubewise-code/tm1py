@@ -445,7 +445,7 @@ class TestCellService(unittest.TestCase):
             f"[{self.dimension_names[1]}].[Element 4]",
             f"[{self.dimension_names[2]}].[Element 9]")
 
-        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [10000.12345679])
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [10000.1234567891])
 
     def test_write_through_unbound_process_str(self):
         cells = dict()
