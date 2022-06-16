@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import math
 import csv
 import functools
 import itertools
@@ -60,6 +61,13 @@ def tidy_cellset(func):
                         raise ex
 
     return wrapper
+
+
+def frame_to_significant_digits(x, digits=15):
+    if x == 0 or not math.isfinite(x):
+        return str(x).replace('e+', 'E')
+    digits -= math.ceil(math.log10(abs(x)))
+    return str(round(x, digits)).replace('e+', 'E')
 
 
 def manage_transaction_log(func):
@@ -847,7 +855,7 @@ class CellService(ObjectService):
 
     @staticmethod
     def _build_cell_update_statements(cube_name: str, cellset_as_dict: Dict, increment: bool,
-                                      measure_dimension_elements: Dict, precision: int, skip_non_updateable: bool):
+                                      measure_dimension_elements: Dict, skip_non_updateable: bool, precision: int=None):
         statements = list()
 
         for coordinates, value in cellset_as_dict.items():
@@ -874,13 +882,19 @@ class CellService(ObjectService):
                 # number strings must not exceed float range
                 if isinstance(value, str):
                     try:
-                        value_str = format(float(value), f'.{precision}f')
+                        if precision:
+                            value_str = format(float(value), f'.{precision}f')
+                        else:
+                            value_str = frame_to_significant_digits(float(value))
                     except ValueError:
                         value_str = f'{value}'
                 elif value is None:
                     value_str = '0'
                 else:
-                    value_str = format(value, f'.{precision}f')
+                    if precision:
+                        value_str = format(float(value), f'.{precision}f')
+                    else:
+                        value_str = frame_to_significant_digits(float(value))
 
             comma_separated_elements = ",".join("'" + element.replace("'", "''") + "'" for element in coordinates)
 
