@@ -3,6 +3,7 @@ import csv
 import functools
 import http.client as http_client
 import json
+import math
 import re
 import ssl
 import urllib.parse as urlparse
@@ -1153,3 +1154,10 @@ def build_mdx_and_values_from_cellset(cells: Dict, cube_name: str, dimensions: I
         values.append(value)
     mdx = query.to_mdx()
     return mdx, values
+
+
+def frame_to_significant_digits(x, digits=15):
+    if x == 0 or not math.isfinite(x):
+        return str(x).replace('e+', 'E')
+    digits -= math.ceil(math.log10(abs(x)))
+    return str(round(x, digits)).replace('e+', 'E')
