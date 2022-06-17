@@ -113,27 +113,30 @@ class ViewService(ObjectService):
         mdx_view = MDXView.from_json(view_as_json=response.text)
         return mdx_view
 
-    def get_all(self, cube_name: str, **kwargs) -> Tuple[List[View], List[View]]:
+    def get_all(self, cube_name: str, include_elements: bool = True, **kwargs) -> Tuple[List[View], List[View]]:
         """ Get all public and private views from cube.
-
         :param cube_name: String, name of the cube.
+        :param include_elements: false to return view details without elements, faster
         :return: 2 Lists of TM1py.View instances: private views, public views
         """
+
+        element_filter = ";$top=0" if not include_elements else ""
+
         private_views, public_views = [], []
         for view_type in ('PrivateViews', 'Views'):
             url = format_url(
                 "/api/v1/Cubes('{}')/{}?$expand="
                 "tm1.NativeView/Rows/Subset($expand=Hierarchy($select=Name;"
-                "$expand=Dimension($select=Name)),Elements($select=Name);"
+                "$expand=Dimension($select=Name)),Elements($select=Name{});"
                 "$select=Expression,UniqueName,Name, Alias),  "
                 "tm1.NativeView/Columns/Subset($expand=Hierarchy($select=Name;"
-                "$expand=Dimension($select=Name)),Elements($select=Name);"
+                "$expand=Dimension($select=Name)),Elements($select=Name{});"
                 "$select=Expression,UniqueName,Name,Alias), "
                 "tm1.NativeView/Titles/Subset($expand=Hierarchy($select=Name;"
-                "$expand=Dimension($select=Name)),Elements($select=Name);"
+                "$expand=Dimension($select=Name)),Elements($select=Name{});"
                 "$select=Expression,UniqueName,Name,Alias), "
                 "tm1.NativeView/Titles/Selected($select=Name)",
-                cube_name, view_type)
+                cube_name, view_type, element_filter, element_filter, element_filter)
             response = self._rest.GET(url, **kwargs)
             response_as_list = response.json()['value']
             for view_as_dict in response_as_list:
