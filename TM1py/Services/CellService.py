@@ -414,7 +414,7 @@ class CellService(ObjectService):
     def write_dataframe(self, cube_name: str, data: 'pd.DataFrame', dimensions: Iterable[str] = None,
                         increment: bool = False, deactivate_transaction_log: bool = False,
                         reactivate_transaction_log: bool = False, sandbox_name: str = None,
-                        use_ti: bool = False, use_changeset: bool = False, precision: int = 8,
+                        use_ti: bool = False, use_changeset: bool = False, precision: int = None,
                         skip_non_updateable: bool = False, measure_dimension_elements: Dict = None,
                         sum_numeric_duplicates: bool = True, **kwargs) -> str:
         """
@@ -468,7 +468,7 @@ class CellService(ObjectService):
     def write_async(self, cube_name: str, cells: Dict, slice_size: int, max_workers: int,
                     dimensions: Iterable[str] = None, increment: bool = False,
                     deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
-                    sandbox_name: str = None, precision: int = 8, **kwargs) -> Optional[str]:
+                    sandbox_name: str = None, precision: int = None, **kwargs) -> Optional[str]:
         """ Write asynchronously
 
         :param cube_name:
@@ -613,7 +613,7 @@ class CellService(ObjectService):
 
     def write(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None, increment: bool = False,
               deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
-              sandbox_name: str = None, use_ti=False, use_changeset: bool = False, precision: int = 8,
+              sandbox_name: str = None, use_ti=False, use_changeset: bool = False, precision: int = None,
               skip_non_updateable: bool = False, measure_dimension_elements: Dict = None, **kwargs) -> Optional[str]:
         """ Write values to a cube
 
@@ -778,7 +778,7 @@ class CellService(ObjectService):
             raise TM1pyWritePartialFailureException(statuses, log_files, len(successes))
 
     @staticmethod
-    def _build_attribute_update_statements(cube_name, cellset_as_dict, precision: int = 8,
+    def _build_attribute_update_statements(cube_name, cellset_as_dict, precision: int = None,
                                            skip_non_updateable: bool = False, measure_dimension_elements: Dict = None):
         dimension_name = cube_name[19:]
         statements = list()
