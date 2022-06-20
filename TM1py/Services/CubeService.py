@@ -278,34 +278,6 @@ class CubeService(ObjectService):
         cubes = [Cube.from_dict(cube_as_dict=cube) for cube in response.json()['value']]
         return cubes   
 
-    def search_subset_in_view(self, dimension_name: str = None, subset_name: str = None, skip_control_cubes: bool = False,
-                            cube_name: str = None, **kwargs):
-            """ Get all public views that utlize given subset in specified dimension.
-
-            :param dimension_name: string, valid dimension name with subset to query
-            :param subset_name: string, valid subset name to search for in views
-            :param skip_control_cubes: bool, True to only search views within model cubes
-            :param cube_name: str, optionally specify cube to search, otherwise will search all cubes
-            :return: list of view objects that contain specified subset
-            """
-        view_list = []
-
-        for cube in [cube_name if cube_name else
-                    self.get_names_with_dimension(dimension_name=dimension_name,
-                                                skip_control_cubes=skip_control_cubes
-                                                )
-                    ][0]:
-
-            all_views = self.views.get_all(cube_name=cube, include_elements=False)
-
-            for view in all_views[1]:
-                view_list.append(self.views.get(cube_name=view.cube, view_name=view.name)) if any(
-                    sub_item for item in [view.titles, view.rows, view.columns] for sub_item in item
-                    if sub_item.dimension_name == dimension_name and sub_item.subset.name == subset_name
-                ) else None
-
-        return view_list
-
     @require_version(version="11.4")
     def get_storage_dimension_order(self, cube_name: str, **kwargs) -> List[str]:
         """ Get the storage dimension order of a cube
