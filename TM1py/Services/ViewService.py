@@ -235,7 +235,7 @@ class ViewService(ObjectService):
                 "or"
                 "(tm1.NativeView/Titles/any (t: t/Subset/Name eq '{}' and t/Subset/Hierarchy/Dimension/Name eq '{}'))"
                 ");"
-                "tm1.NativeView/Rows/Subset($expand=Hierarchy($select=Name;"
+                "$expand=tm1.NativeView/Rows/Subset($expand=Hierarchy($select=Name;"
                 "$expand=Dimension($select=Name)),Elements($select=Name{});"
                 "$select=Expression,UniqueName,Name, Alias),  "
                 "tm1.NativeView/Columns/Subset($expand=Hierarchy($select=Name;"
@@ -254,9 +254,9 @@ class ViewService(ObjectService):
                 if cube[view_type]:
                     for view_as_dict in cube[view_type]:
                         if view_as_dict['@odata.type'] == '#ibm.tm1.api.v1.MDXView':
-                            view = MDXView.from_dict(view_as_dict, cube_name)
+                            view = MDXView.from_dict(view_as_dict, cube['Name'])
                         else:
-                            view = NativeView.from_dict(view_as_dict, cube_name)
+                            view = NativeView.from_dict(view_as_dict, cube['Name'])
                         if view_type == "PrivateViews":
                             private_views.append(view)
                         else:
