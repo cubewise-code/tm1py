@@ -249,14 +249,18 @@ class ViewService(ObjectService):
                      dimension_name, element_filter, element_filter, element_filter)
 
             response = self._rest.GET(url, **kwargs)
-            response_as_list = response.json()['value']
-            for cube in response_as_list:
-                if cube[view_type]:
+            response_as_list = response.json()[view_type] if cube_name else response.json()['value']
+            if cube_name:
+                for view_as_dict in response_as_list:
+                    view = NativeView.from_dict(view_as_dict, cube_name)
+                    if view_type == "PrivateViews":
+                        private_views.append(view)
+                    else:
+                        public_views.append(view)
+            else:
+                for cube in response_as_list:
                     for view_as_dict in cube[view_type]:
-                        if view_as_dict['@odata.type'] == '#ibm.tm1.api.v1.MDXView':
-                            view = MDXView.from_dict(view_as_dict, cube['Name'])
-                        else:
-                            view = NativeView.from_dict(view_as_dict, cube['Name'])
+                        view = NativeView.from_dict(view_as_dict, cube['Name'])
                         if view_type == "PrivateViews":
                             private_views.append(view)
                         else:
