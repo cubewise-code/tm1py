@@ -229,11 +229,14 @@ class ViewService(ObjectService):
                 "/api/v1/Cubes{}?select=Name&$expand={}("
                 "$filter=isof(tm1.NativeView) and"
                 "("
-                "(tm1.NativeView/Rows/any (r: r/Subset/Name eq '{}' and r/Subset/Hierarchy/Dimension/Name eq '{}'))"
+                "(tm1.NativeView/Rows/any (r: replace(tolower(r/Subset/Name), ' ', '') eq '{}' "
+                "and replace(tolower(r/Subset/Hierarchy/Dimension/Name), ' ', '') eq '{}'))"
                 "or"
-                "(tm1.NativeView/Columns/any (c: c/Subset/Name eq '{}' and c/Subset/Hierarchy/Dimension/Name eq '{}')) "
+                "(tm1.NativeView/Columns/any (c: replace(tolower(c/Subset/Name), ' ', '') eq '{}' "
+                "and replace(tolower(c/Subset/Hierarchy/Dimension/Name), ' ', '') eq '{}')) "
                 "or"
-                "(tm1.NativeView/Titles/any (t: t/Subset/Name eq '{}' and t/Subset/Hierarchy/Dimension/Name eq '{}'))"
+                "(tm1.NativeView/Titles/any (t: replace(tolower(t/Subset/Name), ' ', '') eq '{}' "
+                "and replace(tolower(t/Subset/Hierarchy/Dimension/Name), ' ', '') eq '{}'))"
                 ");"
                 "$expand=tm1.NativeView/Rows/Subset($expand=Hierarchy($select=Name;"
                 "$expand=Dimension($select=Name)),Elements($select=Name{});"
@@ -245,8 +248,12 @@ class ViewService(ObjectService):
                 "$expand=Dimension($select=Name)),Elements($select=Name{});"
                 "$select=Expression,UniqueName,Name,Alias), "
                 "tm1.NativeView/Titles/Selected($select=Name))"
-            ).format(cube_filter, view_type, subset_name, dimension_name, subset_name, dimension_name, subset_name, 
-                     dimension_name, element_filter, element_filter, element_filter)
+            ).format(cube_filter, view_type,
+                     subset_name.lower().replace(' ', ''), dimension_name.lower().replace(' ', ''), 
+                     subset_name.lower().replace(' ', ''), dimension_name.lower().replace(' ', ''), 
+                     subset_name.lower().replace(' ', ''), dimension_name.lower().replace(' ', ''), 
+                     element_filter, element_filter, element_filter
+                     )
 
             response = self._rest.GET(url, **kwargs)
             response_as_list = response.json()[view_type] if cube_name else response.json()['value']
