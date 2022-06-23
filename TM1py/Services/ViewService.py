@@ -226,7 +226,7 @@ class ViewService(ObjectService):
         private_views, public_views = [], []
         for view_type in ('PrivateViews', 'Views'):
             url = format_url(
-                "/api/v1/Cubes{}?$expand={}("
+                "/api/v1/Cubes{}?select=Name&$expand={}("
                 "$filter=isof(tm1.NativeView) and"
                 "("
                 "(tm1.NativeView/Rows/any (r: r/Subset/Name eq '{}' and r/Subset/Hierarchy/Dimension/Name eq '{}'))"
