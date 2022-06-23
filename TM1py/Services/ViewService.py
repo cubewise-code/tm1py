@@ -225,7 +225,7 @@ class ViewService(ObjectService):
         
         private_views, public_views = [], []
         for view_type in ('PrivateViews', 'Views'):
-            url = format_url(
+            url = (
                 "/api/v1/Cubes{}?select=Name&$expand={}("
                 "$filter=isof(tm1.NativeView) and"
                 "("
@@ -244,9 +244,9 @@ class ViewService(ObjectService):
                 "tm1.NativeView/Titles/Subset($expand=Hierarchy($select=Name;"
                 "$expand=Dimension($select=Name)),Elements($select=Name{});"
                 "$select=Expression,UniqueName,Name,Alias), "
-                "tm1.NativeView/Titles/Selected($select=Name))",
-                cube_filter, view_type, subset_name, dimension_name, subset_name, dimension_name, subset_name, dimension_name, 
-                element_filter, element_filter, element_filter)
+                "tm1.NativeView/Titles/Selected($select=Name))"
+            ).format(cube_filter, view_type, subset_name, dimension_name, subset_name, dimension_name, subset_name, 
+                     dimension_name, element_filter, element_filter, element_filter)
 
             response = self._rest.GET(url, **kwargs)
             response_as_list = response.json()['value']
