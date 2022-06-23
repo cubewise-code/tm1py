@@ -209,9 +209,9 @@ class ViewService(ObjectService):
         response = self._rest.DELETE(url, **kwargs)
         return response
 
-    def search_subset_in_view(self, dimension_name: str = None, subset_name: str = None, cube_name: str = None, 
+    def search_subset_in_native_view(self, dimension_name: str = None, subset_name: str = None, cube_name: str = None, 
                               include_elements: bool = True, **kwargs) -> Tuple[List[View], List[View]]:
-        """ Get all public and private views that utilize specified dimension subset
+        """ Get all public and private native views that utilize specified dimension subset
 
         :param dimension_name: string, valid dimension name with subset to query
         :param subset_name: string, valid subset name to search for in views
