@@ -209,8 +209,8 @@ class ViewService(ObjectService):
         response = self._rest.DELETE(url, **kwargs)
         return response
 
-    def search_subset_in_native_view(self, dimension_name: str = None, subset_name: str = None, cube_name: str = None, 
-                              include_elements: bool = True, **kwargs) -> Tuple[List[View], List[View]]:
+    def search_subset_in_native_views(self, dimension_name: str = None, subset_name: str = None, cube_name: str = None,
+                                      include_elements: bool = False, **kwargs) -> Tuple[List[View], List[View]]:
         """ Get all public and private native views that utilize specified dimension subset
 
         :param dimension_name: string, valid dimension name with subset to query
@@ -220,14 +220,21 @@ class ViewService(ObjectService):
         :return: 2 Lists of TM1py.View instances: private views, public views
         """
 
+        dimension_name = dimension_name.lower().replace(' ', '')
+        subset_name = subset_name.lower().replace(' ', '')
+
         element_filter = ";$top=0" if not include_elements else ""
-        cube_filter = "('{}')".format(cube_name) if cube_name else ""
-        
+        if cube_name:
+            base_url = format_url(
+                "/api/v1/Cubes?$select=Name&$filter=replace(tolower(Name),' ', '') eq '{}'",
+                cube_name.lower().replace(' ', ''))
+        else:
+            base_url = "/api/v1/Cubes?$select=Name"
+
         private_views, public_views = [], []
         for view_type in ('PrivateViews', 'Views'):
-            url = (
-                "/api/v1/Cubes{}?select=Name&$expand={}("
-                "$filter=isof(tm1.NativeView) and"
+            url = base_url + format_url(
+                "&$expand={}($filter=isof(tm1.NativeView) and"
                 "("
                 "(tm1.NativeView/Rows/any (r: replace(tolower(r/Subset/Name), ' ', '') eq '{}' "
                 "and replace(tolower(r/Subset/Hierarchy/Dimension/Name), ' ', '') eq '{}'))"
@@ -247,29 +254,19 @@ class ViewService(ObjectService):
                 "tm1.NativeView/Titles/Subset($expand=Hierarchy($select=Name;"
                 "$expand=Dimension($select=Name)),Elements($select=Name{});"
                 "$select=Expression,UniqueName,Name,Alias), "
-                "tm1.NativeView/Titles/Selected($select=Name))"
-            ).format(cube_filter, view_type,
-                     subset_name.lower().replace(' ', ''), dimension_name.lower().replace(' ', ''), 
-                     subset_name.lower().replace(' ', ''), dimension_name.lower().replace(' ', ''), 
-                     subset_name.lower().replace(' ', ''), dimension_name.lower().replace(' ', ''), 
-                     element_filter, element_filter, element_filter
-                     )
+                "tm1.NativeView/Titles/Selected($select=Name))",
+                view_type, subset_name, dimension_name, subset_name, dimension_name,
+                subset_name, dimension_name, element_filter, element_filter, element_filter
+            )
 
             response = self._rest.GET(url, **kwargs)
-            response_as_list = response.json()[view_type] if cube_name else response.json()['value']
-            if cube_name:
-                for view_as_dict in response_as_list:
-                    view = NativeView.from_dict(view_as_dict, cube_name)
+            response_as_list = response.json()['value']
+            for cube in response_as_list:
+                for view_as_dict in cube[view_type]:
+                    view = NativeView.from_dict(view_as_dict, cube['Name'])
                     if view_type == "PrivateViews":
                         private_views.append(view)
                     else:
                         public_views.append(view)
-            else:
-                for cube in response_as_list:
-                    for view_as_dict in cube[view_type]:
-                        view = NativeView.from_dict(view_as_dict, cube['Name'])
-                        if view_type == "PrivateViews":
-                            private_views.append(view)
-                        else:
-                            public_views.append(view)
+
         return private_views, public_views
