@@ -468,7 +468,8 @@ class CellService(ObjectService):
     def write_async(self, cube_name: str, cells: Dict, slice_size: int, max_workers: int,
                     dimensions: Iterable[str] = None, increment: bool = False,
                     deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
-                    sandbox_name: str = None, precision: int = None, **kwargs) -> Optional[str]:
+                    sandbox_name: str = None, precision: int = None, measure_dimension_elements: Dict=None,
+                    **kwargs) -> Optional[str]:
         """ Write asynchronously
 
         :param cube_name:
@@ -482,12 +483,17 @@ class CellService(ObjectService):
         :param sandbox_name:
         :param precision: max precision when writhing through unbound process.
         Necessary to decrease when dealing with large numbers to avoid "number too long" TI syntax error.
+        :param measure_dimension_elements: dictionary of measure elements and their types to improve
+        performance when `use_ti` is `True`.
         :param kwargs:
         :return:
         """
 
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
+
+        if not measure_dimension_elements:
+            measure_dimension_elements = self.get_elements_from_all_measure_hierarchies(cube_name=cube_name)
 
         def _chunks(data: Dict):
             it = iter(data)
@@ -496,7 +502,8 @@ class CellService(ObjectService):
 
         def _write(chunk: Dict):
             return self.write(cube_name=cube_name, cellset_as_dict=chunk, dimensions=dimensions, increment=increment,
-                              use_ti=True, sandbox_name=sandbox_name, precision=precision, **kwargs)
+                              use_ti=True, sandbox_name=sandbox_name, precision=precision,
+                              measure_dimension_elements=measure_dimension_elements, **kwargs)
 
         async def _write_async(data: Dict):
             loop = asyncio.get_event_loop()
