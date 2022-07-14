@@ -299,6 +299,13 @@ class TestElementService(unittest.TestCase):
             self.hierarchy_name)
         self.assertEqual(expected_identifiers, set(identifiers))
 
+    def test_get_all_element_identifiers_no_attributes(self):
+        expected_identifiers = {'Elem1', 'Elem2', 'Elem3'}
+        identifiers = self.tm1.dimensions.hierarchies.elements.get_all_element_identifiers(
+            self.dimension_with_hierarchies_name,
+            "Hierarchy1")
+        self.assertEqual(expected_identifiers, set(identifiers))
+
     def test_get_all_leaf_element_identifiers(self):
         expected_identifiers = {'1988/89', '1989/90', '1990/91', '1991/92', *self.years}
         identifiers = self.tm1.dimensions.hierarchies.elements.get_all_leaf_element_identifiers(
@@ -575,6 +582,37 @@ class TestElementService(unittest.TestCase):
                 hierarchy_name=self.hierarchy_name,
                 parent="Total Years",
                 component="Not Existing Element")
+
+    def test_get_parents_happy_case(self):
+        parents = self.tm1.elements.get_parents(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            element_name="1989")
+
+        self.assertEqual(["Total Years"], parents)
+
+    def test_get_parents_case_and_space_insensitive(self):
+        parents = self.tm1.elements.get_parents(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            element_name="TOTALYEARS")
+
+        self.assertEqual(["All Consolidations"], parents)
+
+    def test_get_parents_no_parents(self):
+        parents = self.tm1.elements.get_parents(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            element_name="All Consolidations")
+
+        self.assertEqual([], parents)
+
+    def test_get_parents_not_existing(self):
+        with self.assertRaises(TM1pyRestException):
+            self.tm1.elements.get_parents(
+                dimension_name=self.dimension_name,
+                hierarchy_name=self.hierarchy_name,
+                element_name="Not Existing Element")
 
     @classmethod
     def tearDownClass(cls):

@@ -113,27 +113,30 @@ class ViewService(ObjectService):
         mdx_view = MDXView.from_json(view_as_json=response.text)
         return mdx_view
 
-    def get_all(self, cube_name: str, **kwargs) -> Tuple[List[View], List[View]]:
+    def get_all(self, cube_name: str, include_elements: bool = True, **kwargs) -> Tuple[List[View], List[View]]:
         """ Get all public and private views from cube.
-
         :param cube_name: String, name of the cube.
+        :param include_elements: false to return view details without elements, faster
         :return: 2 Lists of TM1py.View instances: private views, public views
         """
+
+        element_filter = ";$top=0" if not include_elements else ""
+
         private_views, public_views = [], []
         for view_type in ('PrivateViews', 'Views'):
             url = format_url(
                 "/api/v1/Cubes('{}')/{}?$expand="
                 "tm1.NativeView/Rows/Subset($expand=Hierarchy($select=Name;"
-                "$expand=Dimension($select=Name)),Elements($select=Name);"
+                "$expand=Dimension($select=Name)),Elements($select=Name{});"
                 "$select=Expression,UniqueName,Name, Alias),  "
                 "tm1.NativeView/Columns/Subset($expand=Hierarchy($select=Name;"
-                "$expand=Dimension($select=Name)),Elements($select=Name);"
+                "$expand=Dimension($select=Name)),Elements($select=Name{});"
                 "$select=Expression,UniqueName,Name,Alias), "
                 "tm1.NativeView/Titles/Subset($expand=Hierarchy($select=Name;"
-                "$expand=Dimension($select=Name)),Elements($select=Name);"
+                "$expand=Dimension($select=Name)),Elements($select=Name{});"
                 "$select=Expression,UniqueName,Name,Alias), "
                 "tm1.NativeView/Titles/Selected($select=Name)",
-                cube_name, view_type)
+                cube_name, view_type, element_filter, element_filter, element_filter)
             response = self._rest.GET(url, **kwargs)
             response_as_list = response.json()['value']
             for view_as_dict in response_as_list:
@@ -205,3 +208,65 @@ class ViewService(ObjectService):
         url = format_url("/api/v1/Cubes('{}')/{}('{}')", cube_name, view_type, view_name)
         response = self._rest.DELETE(url, **kwargs)
         return response
+
+    def search_subset_in_native_views(self, dimension_name: str = None, subset_name: str = None, cube_name: str = None,
+                                      include_elements: bool = False, **kwargs) -> Tuple[List[View], List[View]]:
+        """ Get all public and private native views that utilize specified dimension subset
+
+        :param dimension_name: string, valid dimension name with subset to query
+        :param subset_name: string, valid subset name to search for in views
+        :param cube_name: str, optionally specify cube to search, otherwise will search all cubes
+        :param include_elements: false to return view details without elements, faster
+        :return: 2 Lists of TM1py.View instances: private views, public views
+        """
+
+        dimension_name = dimension_name.lower().replace(' ', '')
+        subset_name = subset_name.lower().replace(' ', '')
+
+        element_filter = ";$top=0" if not include_elements else ""
+        if cube_name:
+            base_url = format_url(
+                "/api/v1/Cubes?$select=Name&$filter=replace(tolower(Name),' ', '') eq '{}'",
+                cube_name.lower().replace(' ', ''))
+        else:
+            base_url = "/api/v1/Cubes?$select=Name"
+
+        private_views, public_views = [], []
+        for view_type in ('PrivateViews', 'Views'):
+            url = base_url + format_url(
+                "&$expand={}($filter=isof(tm1.NativeView) and"
+                "("
+                "(tm1.NativeView/Rows/any (r: replace(tolower(r/Subset/Name), ' ', '') eq '{}' "
+                "and replace(tolower(r/Subset/Hierarchy/Dimension/Name), ' ', '') eq '{}'))"
+                "or"
+                "(tm1.NativeView/Columns/any (c: replace(tolower(c/Subset/Name), ' ', '') eq '{}' "
+                "and replace(tolower(c/Subset/Hierarchy/Dimension/Name), ' ', '') eq '{}')) "
+                "or"
+                "(tm1.NativeView/Titles/any (t: replace(tolower(t/Subset/Name), ' ', '') eq '{}' "
+                "and replace(tolower(t/Subset/Hierarchy/Dimension/Name), ' ', '') eq '{}'))"
+                ");"
+                "$expand=tm1.NativeView/Rows/Subset($expand=Hierarchy($select=Name;"
+                "$expand=Dimension($select=Name)),Elements($select=Name{});"
+                "$select=Expression,UniqueName,Name, Alias),  "
+                "tm1.NativeView/Columns/Subset($expand=Hierarchy($select=Name;"
+                "$expand=Dimension($select=Name)),Elements($select=Name{});"
+                "$select=Expression,UniqueName,Name,Alias), "
+                "tm1.NativeView/Titles/Subset($expand=Hierarchy($select=Name;"
+                "$expand=Dimension($select=Name)),Elements($select=Name{});"
+                "$select=Expression,UniqueName,Name,Alias), "
+                "tm1.NativeView/Titles/Selected($select=Name))",
+                view_type, subset_name, dimension_name, subset_name, dimension_name,
+                subset_name, dimension_name, element_filter, element_filter, element_filter
+            )
+
+            response = self._rest.GET(url, **kwargs)
+            response_as_list = response.json()['value']
+            for cube in response_as_list:
+                for view_as_dict in cube[view_type]:
+                    view = NativeView.from_dict(view_as_dict, cube['Name'])
+                    if view_type == "PrivateViews":
+                        private_views.append(view)
+                    else:
+                        public_views.append(view)
+
+        return private_views, public_views

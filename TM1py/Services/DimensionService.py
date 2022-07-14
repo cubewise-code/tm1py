@@ -80,6 +80,22 @@ class DimensionService(ObjectService):
                 else:
                     self.hierarchies.create(hierarchy, **kwargs)
 
+        # Edge case: elements in leaves hierarchy that do not exist in other hierarchies
+        if "Leaves" in dimension:
+            existing_leaves = CaseAndSpaceInsensitiveSet(
+                self.hierarchies.elements.get_leaf_element_names(dimension.name, "Leaves"))
+
+            leaves_to_create = list()
+            for leaf in dimension.get_hierarchy("Leaves"):
+                if leaf.name not in existing_leaves:
+                    leaves_to_create.append(leaf)
+
+            if leaves_to_create:
+                self.hierarchies.elements.add_elements(
+                    dimension_name=dimension.name,
+                    hierarchy_name="Leaves",
+                    elements=leaves_to_create)
+
         for hierarchy_name in hierarchies_to_be_removed:
             if not case_and_space_insensitive_equals(hierarchy_name, "Leaves"):
                 self.hierarchies.delete(dimension_name=dimension.name, hierarchy_name=hierarchy_name, **kwargs)
@@ -112,23 +128,36 @@ class DimensionService(ObjectService):
         url = format_url("/api/v1/Dimensions('{}')", dimension_name)
         return self._exists(url, **kwargs)
 
-    def get_all_names(self, **kwargs) -> List[str]:
-        """Ask TM1 Server for list with all dimension names
+    def get_all_names(self, skip_control_dims: bool = False, **kwargs) -> List[str]:
+        """Ask TM1 Server for list of all dimension names
 
+        :skip_control_dims: bool, True to skip control dims
         :Returns:
             List of Strings
         """
-        response = self._rest.GET(url='/api/v1/Dimensions?$select=Name', **kwargs)
+        url = format_url(
+            "/api/v1/{}?$select=Name",
+            'ModelDimensions()' if skip_control_dims else 'Dimensions'
+        )
+
+        response = self._rest.GET(url, **kwargs)
+
         dimension_names = list(entry['Name'] for entry in response.json()['value'])
         return dimension_names
 
-    def get_number_of_dimensions(self, **kwargs) -> int:
-        """Ask TM1 Server for the total number of dimensions
+    def get_number_of_dimensions(self, skip_control_dims: bool = False, **kwargs) -> int:
+        """Ask TM1 Server for number of dimensions
 
+        :skip_control_dims: bool, True to exclude control dims from count
         :return: Number of dimensions
         """
-        response = self._rest.GET(url='/api/v1/Dimensions/$count', **kwargs)
-        return int(response.text)
+
+        if skip_control_dims:
+            response = self._rest.GET("/api/v1/ModelDimensions()?$select=Name&$top=0&$count", **kwargs)
+            return  response.json()['@odata.count']
+
+        return int(self._rest.GET("/api/v1/Dimensions/$count", **kwargs).text)
+
 
     def execute_mdx(self, dimension_name: str, mdx: str, **kwargs) -> List:
         """ Execute MDX against Dimension. 

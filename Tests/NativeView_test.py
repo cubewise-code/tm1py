@@ -19,8 +19,8 @@ class TestNativeView(unittest.TestCase):
             "SELECT\r\n"
             "NON EMPTY {[d1].[e1]} ON 0,\r\n"
             "{[d2].[e2]} ON 1\r\n"
-            "FROM [C1]\r\n"
-            "WHERE ([D3].[D3].[E3])",
+            "FROM [c1]\r\n"
+            "WHERE ([d3].[d3].[e3])",
             native_view.mdx)
 
     def test_as_mdx_multi_rows_multi_columns(self):
@@ -43,8 +43,8 @@ class TestNativeView(unittest.TestCase):
             "SELECT\r\n"
             "NON EMPTY {[d1].[e1]} * {[d2].[e2]} ON 0,\r\n"
             "NON EMPTY {[d3].[e3]} * {[d4].[e4]} ON 1\r\n"
-            "FROM [C1]\r\n"
-            "WHERE ([D5].[D5].[E5],[D6].[D6].[E6])",
+            "FROM [c1]\r\n"
+            "WHERE ([d5].[d5].[e5],[d6].[d6].[e6])",
             native_view.mdx)
 
     def test_as_mdx_no_rows(self):
@@ -59,8 +59,8 @@ class TestNativeView(unittest.TestCase):
         self.assertEqual(
             "SELECT\r\n"
             "NON EMPTY {[d1].[e1]} ON 0\r\n"
-            "FROM [C1]\r\n"
-            "WHERE ([D3].[D3].[E3])",
+            "FROM [c1]\r\n"
+            "WHERE ([d3].[d3].[e3])",
             native_view.mdx)
 
     def test_as_mdx_no_columns(self):
@@ -86,7 +86,7 @@ class TestNativeView(unittest.TestCase):
         self.assertEqual(
             "SELECT\r\n"
             "NON EMPTY {[d1].[e1]} ON 0\r\n"
-            "FROM [C1]",
+            "FROM [c1]",
             native_view.mdx)
 
     def test_as_mdx_registered_subsets(self):
@@ -105,10 +105,10 @@ class TestNativeView(unittest.TestCase):
 
         self.assertEqual(
             "SELECT\r\n"
-            "NON EMPTY {TM1SUBSETTOSET([D2].[D2],\"s2\")} ON 0,\r\n"
-            "{TM1SUBSETTOSET([D3].[D3],\"s3\")} ON 1\r\n"
-            "FROM [C1]\r\n"
-            "WHERE ([D1].[D1].[E1])",
+            "NON EMPTY {TM1SUBSETTOSET([d2].[d2],\"s2\")} ON 0,\r\n"
+            "{TM1SUBSETTOSET([d3].[d3],\"s3\")} ON 1\r\n"
+            "FROM [c1]\r\n"
+            "WHERE ([d1].[d1].[e1])",
             native_view.mdx)
 
     def test_substitute_title(self):

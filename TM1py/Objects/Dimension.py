@@ -11,14 +11,14 @@ from TM1py.Utils.Utils import case_and_space_insensitive_equals
 
 class Dimension(TM1Object):
     """ Abstraction of TM1 Dimension
-        
+
         A Dimension is a container for hierarchies.
     """
 
     def __init__(self, name: str, hierarchies: Optional[Iterable[Hierarchy]] = None):
         """ Abstraction of TM1 Dimension
-        
-         
+
+
         :param name: Name of the dimension
         :param hierarchies: List of TM1py.Objects.Hierarchy instances
         """
@@ -34,7 +34,7 @@ class Dimension(TM1Object):
     @classmethod
     def from_dict(cls, dimension_as_dict: Dict) -> 'Dimension':
         return cls(name=dimension_as_dict['Name'],
-                   hierarchies=[Hierarchy.from_dict(hierarchy)
+                   hierarchies=[Hierarchy.from_dict(hierarchy, dimension_name=dimension_as_dict['Name'])
                                 for hierarchy
                                 in dimension_as_dict['Hierarchies']])
 

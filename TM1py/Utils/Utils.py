@@ -3,6 +3,7 @@ import csv
 import functools
 import http.client as http_client
 import json
+import math
 import re
 import ssl
 import urllib.parse as urlparse
@@ -18,6 +19,7 @@ from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminExce
 
 try:
     import pandas as pd
+    import numpy as np
 
     _has_pandas = True
 except ImportError:
@@ -368,9 +370,11 @@ def build_csv_from_cellset_dict(
 
     column_axis, row_axis, _ = extract_axes_from_cellset(raw_cellset_as_dict=raw_cellset_as_dict)
 
+    num_headers = 0
     if include_headers:
         headers = _build_headers_for_csv(row_axis, column_axis, row_dimensions, column_dimensions, include_attributes)
         csv_writer.writerow(headers)
+        num_headers = len(headers)
 
     for ordinal, cell in enumerate(cells[:top or len(cells)]):
         # if skip is used in execution we must use the original ordinal from the cell, if not we can simply enumerate
@@ -400,7 +404,9 @@ def build_csv_from_cellset_dict(
             line.extend(line_items)
 
         line.append(str(cell["Value"] or ""))
-
+        if include_attributes and include_headers and not len(line) == num_headers:
+            raise ValueError("Invalid response. With 'include_attributes' as True,"
+                             " Attributes must be requested explicitly as PROPERTIES in the MDX")
         csv_writer.writerow(line)
 
     return csv_content.getvalue().strip()
@@ -687,20 +693,40 @@ def build_pandas_dataframe_from_cellset(cellset: Dict, multiindex: bool = True,
 
 
 @require_pandas
-def build_cellset_from_pandas_dataframe(df: 'pd.DataFrame') -> 'CaseAndSpaceInsensitiveTuplesDict':
+def build_cellset_from_pandas_dataframe(
+        df: 'pd.DataFrame',
+        sum_numeric_duplicates: bool = True) -> 'CaseAndSpaceInsensitiveTuplesDict':
     """
 
-    :param df: a Pandas Dataframe, with dimension-column mapping in correct order.
+    param sum_numeric_duplicates: Aggregate numerical values for duplicated intersections
+    param df: a Pandas Dataframe, with dimension-column mapping in correct order.
     As created in build_pandas_dataframe_from_cellset
+
     :return: a CaseAndSpaceInsensitiveTuplesDict
     """
     if isinstance(df.index, pd.MultiIndex):
         df.reset_index(inplace=True)
-    cellset = CaseAndSpaceInsensitiveTuplesDict()
-    split = df.to_numpy().tolist()
-    for row in split:
-        cellset[tuple(row[0:-1])] = row[-1]
+
+    if sum_numeric_duplicates:
+        value_header = df.columns[-1]
+        dimension_headers = df.columns[:-1]
+
+        if pd.api.types.is_numeric_dtype(df[value_header]):
+            df = aggregate_duplicate_intersections(df, dimension_headers, value_header)
+        else:
+            filter_mask = df[value_header].apply(np.isreal)
+            df_n = df[filter_mask]
+            df_s = df[~ filter_mask]
+            df_n = aggregate_duplicate_intersections(df_n, dimension_headers, value_header)
+            df = pd.concat([df_n, df_s])
+
+    cellset = CaseAndSpaceInsensitiveTuplesDict(
+        dict(zip(df.iloc[:, :-1].itertuples(index=False, name=None), df.iloc[:, -1].values)))
     return cellset
+
+
+def aggregate_duplicate_intersections(df, dimension_headers, value_header):
+    return df.groupby([*dimension_headers])[value_header].sum().reset_index()
 
 
 def lower_and_drop_spaces(item: str) -> str:
@@ -1128,3 +1154,10 @@ def build_mdx_and_values_from_cellset(cells: Dict, cube_name: str, dimensions: I
         values.append(value)
     mdx = query.to_mdx()
     return mdx, values
+
+
+def frame_to_significant_digits(x, digits=15):
+    if x == 0 or not math.isfinite(x):
+        return str(x).replace('e+', 'E')
+    digits -= math.ceil(math.log10(abs(x)))
+    return str(round(x, digits)).replace('e+', 'E')

@@ -6,7 +6,7 @@ import unittest
 import uuid
 from pathlib import Path
 
-from TM1py.Objects import Process, Subset
+from TM1py.Objects import Process, Subset, ProcessDebugBreakpoint, BreakPointType, HitMode
 from TM1py.Services import TM1Service
 from .Utils import skip_if_insufficient_version
 
@@ -50,6 +50,11 @@ class TestProcessService(unittest.TestCase):
                      datasource_password='password',
                      datasource_user_name='user')
 
+    p_debug = Process(
+        name=prefix + "_debug",
+        datasource_type="None",
+        prolog_procedure="sleep(1);\r\nsleep(1);\r\nsleep(1);\r\nsleep(1);\r\nsleep(1);\r\nsleep(1);\r\n")
+
     subset: Subset
     subset_name: str
     p_subset: Process
@@ -92,6 +97,7 @@ class TestProcessService(unittest.TestCase):
         cls.tm1.processes.update_or_create(cls.p_view)
         cls.tm1.processes.update_or_create(cls.p_odbc)
         cls.tm1.processes.update_or_create(cls.p_subset)
+        cls.tm1.processes.update_or_create(cls.p_debug)
 
     @classmethod
     def tearDown(cls):
@@ -100,6 +106,7 @@ class TestProcessService(unittest.TestCase):
         cls.tm1.processes.delete(cls.p_view.name)
         cls.tm1.processes.delete(cls.p_odbc.name)
         cls.tm1.processes.delete(cls.p_subset.name)
+        cls.tm1.processes.update_or_create(cls.p_debug)
 
     def test_update_or_create(self):
         if self.tm1.processes.exists(self.p_bedrock_server_wait.name):
@@ -399,6 +406,96 @@ class TestProcessService(unittest.TestCase):
     def test_search_string_in_code(self):
         process_names = self.tm1.processes.search_string_in_code("sTestProlog = 'test prolog procedure'")
         self.assertEqual([self.p_ascii.name], process_names)
+
+    def test_search_string_in_code_space_insensitive(self):
+        process_names = self.tm1.processes.search_string_in_code("sTestProlog = 'test PROLOG procedure'")
+        self.assertEqual([self.p_ascii.name], process_names)
+
+    def test_get_all_names(self):
+        self.assertNotEqual(self.tm1.processes.get_all_names(),
+                            self.tm1.processes.get_all_names(skip_control_processes=True))
+        self.assertNotEqual('}', self.tm1.processes.get_all_names(skip_control_processes=True)[-1][0][0])
+        self.assertEqual('}', self.tm1.processes.get_all_names()[-1][0][0])
+        self.assertNotEqual(self.tm1.processes.get_all(), self.tm1.processes.get_all(skip_control_processes=True))
+
+    def test_ti_formula(self):
+        result = self.tm1.processes.evaluate_ti_expression("2+2")
+        self.assertEqual(4, int(result))
+
+    def test_ti_formula_no_code(self):
+        with self.assertRaises(ValueError):
+            result = self.tm1.processes.evaluate_ti_expression("")
+
+    def test_debug_add_breakpoint(self):
+        line_number = 4
+
+        result = self.tm1.processes.debug_process(self.p_debug.name)
+        debug_id = result['ID']
+
+        time.sleep(0.1)
+        break_point = ProcessDebugBreakpoint(
+            breakpoint_id=1,
+            breakpoint_type=BreakPointType.PROCESS_DEBUG_CONTEXT_LINE_BREAK_POINT,
+            process_name=self.p_debug.name,
+            procedure="Prolog",
+            hit_mode=HitMode.BREAK_ALWAYS,
+            line_number=line_number)
+        self.tm1.processes.debug_add_breakpoint(debug_id, break_point)
+
+        time.sleep(0.1)
+        result = self.tm1.processes.debug_continue(debug_id=debug_id)
+        self.assertEqual(
+            line_number,
+            result['CallStack'][0]['LineNumber'])
+
+        time.sleep(0.1)
+        result = self.tm1.processes.debug_step_out(debug_id=debug_id)
+        self.assertEqual(
+            1,
+            len(result['Breakpoints']))
+        self.assertEqual(result["Status"], "Complete")
+
+    def test_debug_remove_breakpoint(self):
+        result = self.tm1.processes.debug_process(self.p_debug.name)
+        debug_id = result['ID']
+
+        time.sleep(0.1)
+        break_point = ProcessDebugBreakpoint(
+            breakpoint_id=1,
+            breakpoint_type=BreakPointType.PROCESS_DEBUG_CONTEXT_LINE_BREAK_POINT,
+            process_name=self.p_debug.name,
+            procedure="Prolog",
+            hit_mode=HitMode.BREAK_ALWAYS,
+            line_number=4)
+        self.tm1.processes.debug_add_breakpoint(debug_id, break_point)
+        time.sleep(0.1)
+        break_point = ProcessDebugBreakpoint(
+            breakpoint_id=2,
+            breakpoint_type=BreakPointType.PROCESS_DEBUG_CONTEXT_LINE_BREAK_POINT,
+            process_name=self.p_debug.name,
+            procedure="Prolog",
+            hit_mode=HitMode.BREAK_ALWAYS,
+            line_number=5)
+        self.tm1.processes.debug_add_breakpoint(debug_id, break_point)
+
+        time.sleep(0.1)
+        result = self.tm1.processes.debug_step_out(debug_id=debug_id)
+        self.assertEqual(
+            4,
+            result['CallStack'][0]['LineNumber'])
+        self.assertEqual(
+            2,
+            len(result['Breakpoints']))
+
+        time.sleep(0.1)
+        self.tm1.processes.debug_remove_breakpoint(debug_id, breakpoint_id=2)
+
+        time.sleep(0.1)
+        result = self.tm1.processes.debug_step_out(debug_id=debug_id)
+        self.assertEqual(
+            1,
+            len(result['Breakpoints']))
+        self.assertEqual(result["Status"], "Complete")
 
     @classmethod
     def tearDownClass(cls):

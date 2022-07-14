@@ -206,6 +206,15 @@ class ElementService(ObjectService):
                 [dimension_name] * len(elements),
                 elements,
                 [hierarchy_name] * len(elements)))
+
+        if not alias_attributes:
+            result = self.execute_set_mdx(
+                mdx=mdx_element_selection,
+                member_properties=["Name"],
+                parent_properties=None,
+                element_properties=None)
+            return CaseAndSpaceInsensitiveSet([record[0]["Name"] for record in result])
+
         mdx = """
              SELECT
              {{ {elem_mdx} }} ON ROWS, 
@@ -626,3 +635,16 @@ class ElementService(ObjectService):
         body = [element_attribute.body_as_dict for element_attribute in element_attributes]
 
         return self._rest.POST(url=url, data=json.dumps(body), **kwargs)
+
+    def get_parents(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> List[str]:
+        url = format_url(
+            f"/api/v1/Dimensions('{dimension_name}')/Hierarchies('{hierarchy_name}')/Elements('{element_name}')/Parents"
+            f"?$select=Name",
+        )
+        response = self._rest.GET(url=url, **kwargs)
+
+        return [record["Name"] for record in response.json()["value"]]
+
+    def get_element_principal_name(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> str:
+        element = self.get(dimension_name, hierarchy_name, element_name, **kwargs)
+        return element.name

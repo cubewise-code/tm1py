@@ -4,6 +4,7 @@ import csv
 import functools
 import itertools
 import json
+import math
 import uuid
 import warnings
 from collections import OrderedDict
@@ -29,7 +30,7 @@ from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_nam
     abbreviate_mdx, build_csv_from_cellset_dict, require_version, require_pandas, build_cellset_from_pandas_dataframe, \
     case_and_space_insensitive_equals, get_cube, resembles_mdx, require_admin, extract_compact_json_cellset, \
     cell_is_updateable, build_mdx_from_cellset, build_mdx_and_values_from_cellset, \
-    dimension_names_from_element_unique_names
+    dimension_names_from_element_unique_names, frame_to_significant_digits
 
 try:
     import pandas as pd
@@ -314,8 +315,18 @@ class CellService(ObjectService):
     @require_version(version="11.7")
     def clear(self, cube: str, **kwargs):
         """
-        Takes the cube name and keyword argument pairs of dimensions and expressions:
-        `tm1.cells.clear(cube="Sales", product="{[Product].[ABC]}", time="{[Time].[2020].Children}")`
+        Takes the cube name and keyword argument pairs of dimensions and MDX expressions:
+
+        ```
+        tm1.cells.clear(
+            cube="Sales",
+            salesregion="{[Sales Region].[Australia],[Sales Region].[New Zealand]}",
+            product="{[Product].[ABC]}",
+            time="{[Time].[2022].Children}")
+        ```
+
+        Make sure that the keyword argument names (e.g. product) map with the dimension names (e.g. Product) in the cube.
+        Spaces in the dimension name (e.g., "Sales Region") must be omitted in the keyword (e.g. "salesregion")
 
         :param cube: name of the cube
         :param kwargs: keyword argument pairs of dimension names and mdx set expressions
@@ -403,8 +414,9 @@ class CellService(ObjectService):
     def write_dataframe(self, cube_name: str, data: 'pd.DataFrame', dimensions: Iterable[str] = None,
                         increment: bool = False, deactivate_transaction_log: bool = False,
                         reactivate_transaction_log: bool = False, sandbox_name: str = None,
-                        use_ti: bool = False, use_changeset: bool = False, precision: int = 8,
-                        skip_non_updateable: bool = False, measure_dimension_elements: Dict = None, **kwargs) -> str:
+                        use_ti: bool = False, use_changeset: bool = False, precision: int = None,
+                        skip_non_updateable: bool = False, measure_dimension_elements: Dict = None,
+                        sum_numeric_duplicates: bool = True, **kwargs) -> str:
         """
         Function expects same shape as `execute_mdx_dataframe` returns.
         Column order must match dimensions in the target cube with an additional column for the values.
@@ -424,6 +436,7 @@ class CellService(ObjectService):
         :param measure_dimension_elements: dictionary of measure elements and their types to improve
         performance when `use_ti` is `True`.
         When all written values are numeric you can pass a default dict with default key 'Numeric'
+        :sum_numeric_duplicates: Aggregate numerical values for duplicated intersections
         :return: changeset or None
         """
         if not isinstance(data, pd.DataFrame):
@@ -435,7 +448,7 @@ class CellService(ObjectService):
         if not len(data.columns) == len(dimensions) + 1:
             raise ValueError("Number of columns in 'data' DataFrame must be number of dimensions in cube + 1")
 
-        cells = build_cellset_from_pandas_dataframe(data)
+        cells = build_cellset_from_pandas_dataframe(data, sum_numeric_duplicates=sum_numeric_duplicates)
 
         return self.write(cube_name=cube_name,
                           cellset_as_dict=cells,
@@ -455,7 +468,8 @@ class CellService(ObjectService):
     def write_async(self, cube_name: str, cells: Dict, slice_size: int, max_workers: int,
                     dimensions: Iterable[str] = None, increment: bool = False,
                     deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
-                    sandbox_name: str = None, precision: int = 8, **kwargs) -> Optional[str]:
+                    sandbox_name: str = None, precision: int = None, measure_dimension_elements: Dict=None,
+                    **kwargs) -> Optional[str]:
         """ Write asynchronously
 
         :param cube_name:
@@ -469,12 +483,17 @@ class CellService(ObjectService):
         :param sandbox_name:
         :param precision: max precision when writhing through unbound process.
         Necessary to decrease when dealing with large numbers to avoid "number too long" TI syntax error.
+        :param measure_dimension_elements: dictionary of measure elements and their types to improve
+        performance when `use_ti` is `True`.
         :param kwargs:
         :return:
         """
 
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
+
+        if not measure_dimension_elements:
+            measure_dimension_elements = self.get_elements_from_all_measure_hierarchies(cube_name=cube_name)
 
         def _chunks(data: Dict):
             it = iter(data)
@@ -483,7 +502,8 @@ class CellService(ObjectService):
 
         def _write(chunk: Dict):
             return self.write(cube_name=cube_name, cellset_as_dict=chunk, dimensions=dimensions, increment=increment,
-                              use_ti=True, sandbox_name=sandbox_name, precision=precision, **kwargs)
+                              use_ti=True, sandbox_name=sandbox_name, precision=precision,
+                              measure_dimension_elements=measure_dimension_elements, **kwargs)
 
         async def _write_async(data: Dict):
             loop = asyncio.get_event_loop()
@@ -600,7 +620,7 @@ class CellService(ObjectService):
 
     def write(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None, increment: bool = False,
               deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
-              sandbox_name: str = None, use_ti=False, use_changeset: bool = False, precision: int = 8,
+              sandbox_name: str = None, use_ti=False, use_changeset: bool = False, precision: int = None,
               skip_non_updateable: bool = False, measure_dimension_elements: Dict = None, **kwargs) -> Optional[str]:
         """ Write values to a cube
 
@@ -690,7 +710,8 @@ class CellService(ObjectService):
     @require_admin
     @manage_transaction_log
     def write_through_unbound_process(self, cube_name: str, cellset_as_dict: Dict, increment: bool = False,
-                                      sandbox_name: str = None, precision: int = 8, skip_non_updateable: bool = False,
+                                      sandbox_name: str = None, precision: int = None,
+                                      skip_non_updateable: bool = False,
                                       measure_dimension_elements: Dict = None, is_attribute_cube: bool = None,
                                       **kwargs):
         """
@@ -764,7 +785,7 @@ class CellService(ObjectService):
             raise TM1pyWritePartialFailureException(statuses, log_files, len(successes))
 
     @staticmethod
-    def _build_attribute_update_statements(cube_name, cellset_as_dict, precision: int = 8,
+    def _build_attribute_update_statements(cube_name, cellset_as_dict, precision: int = None,
                                            skip_non_updateable: bool = False, measure_dimension_elements: Dict = None):
         dimension_name = cube_name[19:]
         statements = list()
@@ -773,7 +794,7 @@ class CellService(ObjectService):
             # default to 'Numeric' so that not existing elements trigger minor error during TI execution
             raw_element_name = coordinates[0]
             if ":" in raw_element_name:
-                hierarchy_name, element_name = raw_element_name.split(":")
+                hierarchy_name, element_name = raw_element_name.split(":", maxsplit=1)
             else:
                 element_name = raw_element_name
                 hierarchy_name = dimension_name
@@ -800,7 +821,10 @@ class CellService(ObjectService):
                 elif value is None:
                     value_str = '0'
                 else:
-                    value_str = format(value, f'.{precision}f')
+                    if precision is None:
+                        value_str = frame_to_significant_digits(float(value))
+                    else:
+                        value_str = format(float(value), f'.{precision}f')
 
             # by default assume String for attribute values
             else:
@@ -835,7 +859,8 @@ class CellService(ObjectService):
 
     @staticmethod
     def _build_cell_update_statements(cube_name: str, cellset_as_dict: Dict, increment: bool,
-                                      measure_dimension_elements: Dict, precision: int, skip_non_updateable: bool):
+                                      measure_dimension_elements: Dict, precision: int = None,
+                                      skip_non_updateable: bool = False):
         statements = list()
 
         for coordinates, value in cellset_as_dict.items():
@@ -862,13 +887,19 @@ class CellService(ObjectService):
                 # number strings must not exceed float range
                 if isinstance(value, str):
                     try:
-                        value_str = format(float(value), f'.{precision}f')
+                        if precision is None:
+                            value_str = frame_to_significant_digits(float(value))
+                        else:
+                            value_str = format(float(value), f'.{precision}f')
                     except ValueError:
                         value_str = f'{value}'
                 elif value is None:
                     value_str = '0'
                 else:
-                    value_str = format(value, f'.{precision}f')
+                    if precision is None:
+                        value_str = frame_to_significant_digits(float(value))
+                    else:
+                        value_str = format(float(value), f'.{precision}f')
 
             comma_separated_elements = ",".join("'" + element.replace("'", "''") + "'" for element in coordinates)
 
@@ -1416,10 +1447,14 @@ class CellService(ObjectService):
                                      skip_rule_derived_cells=skip_rule_derived_cells,
                                      value_separator=element_separator,
                                      sandbox_name=sandbox_name, **kwargs)
+        reader = csv.reader(StringIO(lines), delimiter=element_separator)
+
+        # skip header
+        next(reader)
+
         elements_value_dict = CaseAndSpaceInsensitiveDict()
-        for entries in lines.split("\r\n")[1:]:
-            elements_value_dict[
-                element_separator.join(entries.split(element_separator)[:-1])] = entries.split(element_separator)[-1]
+        for row in reader:
+            elements_value_dict[element_separator.join(row[:-1])] = row[-1]
         return elements_value_dict
 
     @require_pandas
@@ -2376,7 +2411,7 @@ class CellService(ObjectService):
             **kwargs)
 
         cellset_response = self.extract_cellset_raw_response(
-            cellset_id, cell_properties=["Value"], top=top, skip=skip,
+            cellset_id, cell_properties=["Value", "Ordinal"], top=top, skip=skip,
             skip_contexts=True, skip_zeros=skip_zeros,
             skip_consolidated_cells=skip_consolidated_cells,
             skip_rule_derived_cells=skip_rule_derived_cells,
@@ -2400,6 +2435,9 @@ class CellService(ObjectService):
         current_cell_ordinal = 0
         csv_body = StringIO()
         csv_writer = csv.writer(csv_body, dialect=csv_dialect)
+        # handle potential imbalance between number of headers and entries in row
+        max_entries_per_row = 0
+        least_entries_per_row = 1_000
 
         parser = ijson.parse(cellset_response.content)
         prefixes_of_interest = ['Cells.item.Value', 'Axes.item.Tuples.item.Members.item.Name',
@@ -2422,12 +2460,19 @@ class CellService(ObjectService):
                 axes0_index = r
                 axes1_index = q
                 if len(axes0_list) == 1 and len(axes0_list[0]) == 0:
-                    csv_writer.writerow(axes1_list[axes1_index] + [str(value)])
+                    row = axes1_list[axes1_index] + [str(value)]
                 # case of no row selection
                 elif len(axes1_list) == 0:
-                    csv_writer.writerow(axes0_list[axes0_index] + [str(value)])
+                    row = axes0_list[axes0_index] + [str(value)]
                 else:
-                    csv_writer.writerow(axes1_list[axes1_index] + axes0_list[axes0_index] + [str(value)])
+                    row = axes1_list[axes1_index] + axes0_list[axes0_index] + [str(value)]
+
+                if len(row) > max_entries_per_row:
+                    max_entries_per_row = len(row)
+                if len(row) < least_entries_per_row:
+                    least_entries_per_row = len(row)
+
+                csv_writer.writerow(row)
 
             elif (prefix, event) == ('Axes.item.Tuples.item.Members.item.Name', 'string'):
                 if current_axes == 0:
@@ -2472,6 +2517,11 @@ class CellService(ObjectService):
             return ""
 
         # prepare header
+        if include_attributes:
+            if not least_entries_per_row == max_entries_per_row == len(row_headers) + len(column_headers) + 1:
+                raise ValueError("Invalid response. With 'include_attributes' as True,"
+                                 " Attributes must be requested explicitly as PROPERTIES in the MDX")
+
         csv_header = StringIO()
         csv_header_writer = csv.writer(csv_header, dialect=csv_dialect)
         csv_header_writer.writerow(row_headers + column_headers + ['Value'])
@@ -2531,7 +2581,7 @@ class CellService(ObjectService):
         # make sure all element names are strings and values column is derived from data
         if 'dtype' not in kwargs:
             kwargs['dtype'] = {'Value': None, **{col: str for col in range(999)}}
-        return pd.read_csv(memory_file, sep='~', **kwargs)
+        return pd.read_csv(memory_file, sep='~', na_values=["", None], keep_default_na=False, **kwargs)
 
     @tidy_cellset
     @require_pandas

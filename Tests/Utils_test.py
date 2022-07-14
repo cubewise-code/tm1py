@@ -9,7 +9,7 @@ from TM1py.Utils import (
     integerize_version,
     verify_version, get_cube, resembles_mdx, format_url, add_url_parameters, extract_cell_updateable_property,
     CellUpdateableProperty, cell_is_updateable, extract_cell_properties_from_odata_context,
-    map_cell_properties_to_compact_json_response
+    map_cell_properties_to_compact_json_response, frame_to_significant_digits
 )
 
 
@@ -371,6 +371,30 @@ class TestUtilsMethods(unittest.TestCase):
         ]}
 
         self.assertEqual(expected, actual)
+
+    def test_frame_to_significant_digits_happy_case(self):
+        framed_value = frame_to_significant_digits(1000, 4)
+        self.assertEqual('1000', framed_value)
+
+    def test_frame_to_significant_digits_too_many_decimals(self):
+        framed_value = frame_to_significant_digits(1000.1234, 6)
+        self.assertEqual('1000.12', framed_value)
+
+    def test_frame_to_significant_digits_too_many_digits(self):
+        framed_value = frame_to_significant_digits(1234, 2)
+        self.assertEqual('1200', framed_value)
+
+    def test_frame_to_significant_digits_too_many_digits(self):
+        framed_value = frame_to_significant_digits(1234, 2)
+        self.assertEqual('1200', framed_value)
+
+    def test_frame_to_significant_digits_scientific_too_many_digits(self):
+        framed_value = frame_to_significant_digits(1.2345E-1, 2)
+        self.assertEqual('0.12', framed_value)
+
+    def test_frame_to_significant_digits_scientific_too_many_digits(self):
+        framed_value = frame_to_significant_digits(1.2345E3, 2)
+        self.assertEqual('1200.0', framed_value)
 
     @classmethod
     def tearDownClass(cls):

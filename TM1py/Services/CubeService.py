@@ -84,11 +84,17 @@ class CubeService(ObjectService):
         cubes = [Cube.from_dict(cube_as_dict=cube) for cube in response.json()['value']]
         return cubes
 
-    def get_number_of_cubes(self, **kwargs) -> int:
-        url = format_url(
-            "/api/v1/Cubes/$count")
-        response = self._rest.GET(url, **kwargs)
-        return int(response.text)
+    def get_number_of_cubes(self, skip_control_cubes: bool = False, **kwargs) -> int:
+        """ Ask TM1 Server for count of cubes
+
+        :skip_control_cubes: bool, True will exclude control cubes from count
+        :return: int, count
+        """ 
+        if skip_control_cubes:
+            response = self._rest.GET(url=format_url("/api/v1/ModelCubes()?$select=Name&$top=0&$count"), **kwargs)
+            return int(response.json()['@odata.count'])
+
+        return int(self._rest.GET(url=format_url("/api/v1/Cubes/$count"), **kwargs).text)
 
     def get_measure_dimension(self, cube_name: str, **kwargs) -> str:
         url = format_url(
@@ -148,30 +154,48 @@ class CubeService(ObjectService):
         url = format_url("/api/v1/Cubes('{}')", cube_name)
         return self._exists(url, **kwargs)
 
-    def get_all_names(self, **kwargs) -> List[str]:
+    def get_all_names(self, skip_control_cubes: bool = False, **kwargs) -> List[str]:
         """ Ask TM1 Server for list of all cube names
-
+        
+        :skip_control_cubes: bool, True will exclude control cubes from list
         :return: List of Strings
         """
-        response = self._rest.GET(url='/api/v1/Cubes?$select=Name', **kwargs)
+        url = format_url(
+                "/api/v1/{}?$select=Name",
+                'ModelCubes()' if skip_control_cubes else 'Cubes'
+        )
+
+        response = self._rest.GET(url, **kwargs)
         cubes = list(entry['Name'] for entry in response.json()['value'])
         return cubes
 
-    def get_all_names_with_rules(self, **kwargs) -> List[str]:
+    def get_all_names_with_rules(self, skip_control_cubes: bool = False, **kwargs) -> List[str]:
         """ Ask TM1 Server for list of all cube names that have rules
-
+        
+        :skip_control_cubes: bool, True will exclude control cubes from list
         :return: List of Strings
         """
-        response = self._rest.GET(url="/api/v1/Cubes?$select=Name,Rules&$filter=Rules ne null", **kwargs)
+        url = format_url(
+                "/api/v1/{}?$select=Name,Rules&$filter=Rules ne null",
+                'ModelCubes()' if skip_control_cubes else 'Cubes'
+        )
+
+        response = self._rest.GET(url, **kwargs)
         cubes = list(cube['Name'] for cube in response.json()['value'])
         return cubes
 
-    def get_all_names_without_rules(self, **kwargs) -> List[str]:
+    def get_all_names_without_rules(self, skip_control_cubes: bool = False, **kwargs) -> List[str]:
         """ Ask TM1 Server for list of all cube names that do not have rules
-
+        :skip_control_cubes: bool, True will exclude control cubes from list
         :return: List of Strings
         """
-        response = self._rest.GET(url="/api/v1/Cubes?$select=Name,Rules&$filter=Rules eq null", **kwargs)
+
+        url = format_url(
+                "/api/v1/{}?$select=Name,Rules&$filter=Rules eq null",
+                'ModelCubes()' if skip_control_cubes else 'Cubes'
+        )
+
+        response = self._rest.GET(url, **kwargs)
         cubes = list(cube['Name'] for cube in response.json()['value'])
         return cubes
 
@@ -224,6 +248,35 @@ class CubeService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         cube_dict = {entry['Name']: [dim['Name'] for dim in entry['Dimensions']] for entry in response.json()['value']}
         return cube_dict
+    
+    def search_for_rule_substring(self, substring: str, skip_control_cubes: bool = False, case_insensitive=True,
+                                  space_insensitive=True, **kwargs) -> List[Cube]:
+        """ get all cubes from TM1 Server as TM1py.Cube instances where rules for given cube contain specified substring
+
+        :param substring: string to search for in rules
+        :param skip_control_cubes: bool, True will exclude control cubes from result
+        :param case_insensitive: case agnostic search
+        :param space_insensitive: space agnostic search
+        :return: List of TM1py.Cube instances
+        """
+        substring = substring.lower().replace(' ', '')
+
+        url_filter = "Rules ne null and contains("
+        if case_insensitive and space_insensitive:
+            url_filter += format_url("tolower(replace(Rules, ' ', '')),'{}')", substring)
+        elif case_insensitive:
+            url_filter += format_url("tolower(Rules),'{}')", substring)
+        elif space_insensitive:
+            url_filter += format_url("replace(Rules, ' ', ''),'{}')", substring)
+        else:
+            url_filter += format_url("Rules,'{}')", substring)
+
+        url = f"/api/v1/{'ModelCubes()' if skip_control_cubes else 'Cubes'}?$filter={url_filter}" \
+              f"&$expand=Dimensions($select=Name)"
+
+        response = self._rest.GET(url, **kwargs)
+        cubes = [Cube.from_dict(cube_as_dict=cube) for cube in response.json()['value']]
+        return cubes   
 
     @require_version(version="11.4")
     def get_storage_dimension_order(self, cube_name: str, **kwargs) -> List[str]:

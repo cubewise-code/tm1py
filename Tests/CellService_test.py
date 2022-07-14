@@ -75,10 +75,14 @@ class TestCellService(unittest.TestCase):
 
         # Build Dimensions
         for dimension_name in cls.dimension_names:
-            elements = [Element('Element {}'.format(str(j)), 'Numeric') for j in range(1, 1001)]
+            elements = [Element('Element {}'.format(str(j)), 'Numeric')
+                        for j
+                        in range(1, 1001)]
+
             element_attributes = [ElementAttribute("Attr1", "String"),
                                   ElementAttribute("Attr2", "Numeric"),
-                                  ElementAttribute("Attr3", "Numeric")]
+                                  ElementAttribute("Attr3", "Numeric"),
+                                  ElementAttribute("NA", "Numeric")]
             hierarchy = Hierarchy(dimension_name=dimension_name,
                                   name=dimension_name,
                                   elements=elements,
@@ -94,6 +98,8 @@ class TestCellService(unittest.TestCase):
                 attribute_values[(element.name, "Attr1")] = "TM1py"
                 attribute_values[(element.name, "Attr2")] = "2"
                 attribute_values[(element.name, "Attr3")] = "3"
+                attribute_values[(element.name, "NA")] = "4"
+
             cls.tm1.cubes.cells.write_values(attribute_cube, attribute_values)
 
         # Build Cube
@@ -177,6 +183,9 @@ class TestCellService(unittest.TestCase):
 
     @classmethod
     def build_string_cube(cls):
+        if cls.tm1.cubes.exists(cls.string_cube_name):
+            cls.tm1.cubes.delete(cls.string_cube_name)
+
         for d, dimension_name in enumerate(cls.string_dimension_names, start=1):
             dimension = Dimension(dimension_name)
             hierarchy = Hierarchy(dimension_name, dimension_name)
@@ -184,14 +193,15 @@ class TestCellService(unittest.TestCase):
                 element_name = "d" + str(d) + "e" + str(i)
                 hierarchy.add_element(element_name=element_name, element_type="String")
             dimension.add_hierarchy(hierarchy)
-            if not cls.tm1.dimensions.exists(dimension.name):
-                cls.tm1.dimensions.update_or_create(dimension)
+            cls.tm1.dimensions.update_or_create(dimension)
 
         cube = Cube(name=cls.string_cube_name, dimensions=cls.string_dimension_names)
-        if not cls.tm1.cubes.exists(cube.name):
-            cls.tm1.cubes.update_or_create(cube)
-        # zero out cube
-        cls.tm1.processes.execute_ti_code("CubeClearData('" + cls.string_cube_name + "');")
+        cls.tm1.elements.add_elements(
+            dimension_name=cube.dimensions[-1],
+            hierarchy_name=cube.dimensions[-1],
+            elements=[Element("n1", "Numeric")])
+
+        cls.tm1.cubes.update_or_create(cube)
 
     @classmethod
     def remove_string_cube(cls):
@@ -435,7 +445,7 @@ class TestCellService(unittest.TestCase):
             f"[{self.dimension_names[1]}].[Element 4]",
             f"[{self.dimension_names[2]}].[Element 9]")
 
-        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [10000.12345679])
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [10000.1234567891])
 
     def test_write_through_unbound_process_str(self):
         cells = dict()
@@ -721,6 +731,55 @@ class TestCellService(unittest.TestCase):
         values = self.tm1.cubes.cells.execute_mdx_values(query.to_mdx())
 
         self.assertEqual(list(df["Value"]), values)
+
+    @skip_if_no_pandas
+    def test_write_dataframe_duplicate_numeric_entries(self):
+        df = pd.DataFrame({
+            self.dimension_names[0]: ["element 1", "element 1", "element 1"],
+            self.dimension_names[1]: ["element 1", "element 1", "element 1"],
+            self.dimension_names[2]: ["element 1", "element 1", "element 1"],
+            "Value": [1.0, 2.0, 3.0]})
+        self.tm1.cubes.cells.write_dataframe(self.cube_name, df)
+
+        query = MdxBuilder.from_cube(self.cube_name)
+        query = query.add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(self.dimension_names[0], "element 1")))
+        query = query.add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+            Member.of(self.dimension_names[1], "element 1")]))
+
+        query = query.add_member_to_where(Member.of(self.dimension_names[2], "element 1"))
+        values = self.tm1.cubes.cells.execute_mdx_values(query.to_mdx())
+
+        self.assertEqual([6], values)
+
+    @skip_if_no_pandas
+    def test_write_dataframe_duplicate_numeric_and_string_entries(self):
+        df = pd.DataFrame({
+            self.string_dimension_names[0]: ["d1e1", "d1e1", "d1e1", "d1e1", "d1e1"],
+            self.string_dimension_names[1]: ["d2e1", "d2e1", "d2e1", "d2e1", "d2e1"],
+            self.string_dimension_names[2]: ["d3e1", "d3e2", "d3e2", "n1", "n1"],
+            "Value": ["text1", "text2", "text3", 3.0, 4.0]})
+        self.tm1.cubes.cells.write_dataframe(self.string_cube_name, df)
+
+        query = MdxBuilder.from_cube(self.string_cube_name)
+        query = query.add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(self.string_dimension_names[0], "d1e1")))
+        query = query.add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+            Member.of(self.string_dimension_names[1], "d2e1")]))
+        query = query.add_member_to_where(Member.of(self.string_dimension_names[2], "n1"))
+        values = self.tm1.cubes.cells.execute_mdx_values(query.to_mdx())
+        self.assertEqual([7], values)
+
+        query = MdxBuilder.from_cube(self.string_cube_name)
+        query = query.add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.members([
+                Member.of(self.string_dimension_names[2], "d3e1"),
+                Member.of(self.string_dimension_names[2], "d3e2")]))
+        query = query.add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
+            Member.of(self.string_dimension_names[1], "d2e1")]))
+        query = query.add_member_to_where(Member.of(self.string_dimension_names[0], "d1e1"))
+        values = self.tm1.cubes.cells.execute_mdx_values(query.to_mdx())
+        self.assertEqual(["text1", "text3"], values)
 
     @skip_if_no_pandas
     def test_write_dataframe_error(self):
@@ -1832,6 +1891,18 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(
             self.total_value,
             sum(values))
+
+    @skip_if_no_pandas
+    def test_execute_mdx_dataframe_na_element_name(self):
+        attribute_dimension = "}ElementAttributes_" + self.dimension_names[0]
+        query = MdxBuilder.from_cube(attribute_dimension)
+        query.add_hierarchy_set_to_column_axis(MdxHierarchySet.member(f"[{attribute_dimension}].[NA]"))
+        query.add_hierarchy_set_to_column_axis(MdxHierarchySet.member(f"[{self.dimension_names[0]}].[Element 1]"))
+
+        df = self.tm1.cubes.cells.execute_mdx_dataframe(query.to_mdx())
+        self.assertEqual(
+            [["NA", "Element 1", 4.0]],
+            df.values.tolist())
 
     @skip_if_no_pandas
     def test_execute_mdx_dataframe_use_iterative_json(self):

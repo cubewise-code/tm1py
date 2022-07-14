@@ -9,6 +9,7 @@ from requests import Response
 
 from TM1py.Exceptions.Exceptions import TM1pyRestException
 from TM1py.Objects.Process import Process
+from TM1py.Objects.ProcessDebugBreakpoint import ProcessDebugBreakpoint
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import format_url, require_admin
@@ -48,11 +49,14 @@ class ProcessService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return Process.from_dict(response.json())
 
-    def get_all(self, **kwargs) -> List[Process]:
+    def get_all(self, skip_control_processes: bool = False, **kwargs) -> List[Process]:
         """ Get a processes from TM1 Server
     
+        :param skip_control_processes: bool, True to exclude processes that begin with "}" or "{"
         :return: List, instances of the TM1py.Process
         """
+        model_process_filter = "&$filter=startswith(Name,'}') eq false and startswith(Name,'{') eq false"
+
         url = "/api/v1/Processes?$select=*,UIData,VariablesUIData," \
               "DataSource/dataSourceNameForServer," \
               "DataSource/dataSourceNameForClient," \
@@ -67,46 +71,60 @@ class ProcessService(ObjectService):
               "DataSource/userName," \
               "DataSource/password," \
               "DataSource/usesUnicode," \
-              "DataSource/subset"
+              "DataSource/subset{}".format(model_process_filter if skip_control_processes else "")
+
         response = self._rest.GET(url, **kwargs)
         response_as_dict = response.json()
         return [Process.from_dict(p) for p in response_as_dict['value']]
 
-    def get_all_names(self, **kwargs) -> List[str]:
+    def get_all_names(self, skip_control_processes: bool = False, **kwargs) -> List[str]:
         """ Get List with all process names from TM1 Server
-
+        
+        :param skip_control_processes: bool, True to exclude processes that begin with "}" or "{"
         :Returns:
             List of Strings
         """
-        response = self._rest.GET('/api/v1/Processes?$select=Name', **kwargs)
+        model_process_filter = "&$filter=startswith(Name,'}') eq false and startswith(Name,'{') eq false"
+        url = "/api/v1/Processes?$select=Name{}".format(model_process_filter if skip_control_processes else "")
+
+        response = self._rest.GET(url, **kwargs)
         processes = list(process['Name'] for process in response.json()['value'])
         return processes
 
-    def search_string_in_code(self, search_string: str, **kwargs) -> List[str]:
+    def search_string_in_code(self, search_string: str, skip_control_processes: bool = False, **kwargs) -> List[str]:
         """ Ask TM1 Server for list of process names that contain string anywhere in code tabs: Prolog,Metadata,Data,Epilog
         will not search DataSource, Parameters, Variables, or Attributes
 
         :param search_string: case insensitive string to search for
+        :param skip_control_processes: bool, True to exclude processes that begin with "}" or "{"
+        :Returns:
+            List of strings
         """
-        url = format_url("/api/v1/Processes?$select=Name&$filter=" \
-                         "contains(toupper(PrologProcedure),toupper('{}')) " \
-                         "or contains(toupper(MetadataProcedure),toupper('{}')) " \
-                         "or contains(toupper(DataProcedure),toupper('{}')) " \
-                         "or contains(toupper(EpilogProcedure),toupper('{}'))",
+        search_string = search_string.lower().replace(' ', '')
+        model_process_filter = "and (startswith(Name,'}') eq false and startswith(Name,'{') eq false)"
+        url = format_url("/api/v1/Processes?$select=Name&$filter="
+                         "contains(tolower(replace(PrologProcedure, ' ', '')),'{}') "
+                         "or contains(tolower(replace(MetadataProcedure, ' ', '')),'{}') "
+                         "or contains(tolower(replace(DataProcedure, ' ', '')),'{}') "
+                         "or contains(tolower(replace(EpilogProcedure, ' ', '')),'{}')",
                          search_string, search_string, search_string, search_string
-            )
+                         )
+        url += "{}".format(model_process_filter if skip_control_processes else "")
         response = self._rest.GET(url, **kwargs)
         processes = list(process['Name'] for process in response.json()['value'])
         return processes
 
     def search_string_in_name(self, name_startswith: str = None, name_contains: Iterable = None,
-                              name_contains_operator: str = 'and', **kwargs) -> List[str]:
+                              name_contains_operator: str = 'and', skip_control_processes: bool = False,
+                              **kwargs) -> List[str]:
         """ Ask TM1 Server for list of process names that contain or start with string
 
         :param name_startswith: str, process name begins with (case insensitive)
         :param name_contains: iterable, found anywhere in name (case insensitive)
         :param name_contains_operator: 'and' or 'or'
+        :param skip_control_processes: bool, True to exclude processes that begin with "}" or "{"
         """
+        model_process_filter = "and (startswith(Name,'}') eq false and startswith(Name,'{') eq false)"
         name_contains_operator = name_contains_operator.strip().lower()
         if name_contains_operator not in ("and", "or"):
             raise ValueError("'name_contains_operator' must be either 'AND' or 'OR'")
@@ -130,9 +148,10 @@ class ProcessService(ObjectService):
                 raise ValueError("'name_contains' must be str or iterable")
 
         url += "&$filter={}".format(f" and ".join(name_filters))
+        url += "{}".format(model_process_filter if skip_control_processes else "")
         response = self._rest.GET(url, **kwargs)
         return list(process['Name'] for process in response.json()['value'])
-    
+
     def create(self, process: Process, **kwargs) -> Response:
         """ Create a new process on TM1 Server
 
@@ -402,6 +421,9 @@ class ProcessService(ObjectService):
         return response.json()
 
     def debug_step_out(self, debug_id: str, **kwargs) -> Dict:
+        """
+        Resumes execution and runs until next breakpoint or current process has finished.
+        """
         url = format_url("/api/v1/ProcessDebugContexts('{}')/tm1.StepOut", debug_id)
         self._rest.POST(url, **kwargs)
 
@@ -415,3 +437,107 @@ class ProcessService(ObjectService):
         response = self._rest.GET(url, **kwargs)
 
         return response.json()
+
+    def debug_continue(self, debug_id: str, **kwargs) -> Dict:
+        url = format_url("/api/v1/ProcessDebugContexts('{}')/tm1.Continue", debug_id)
+        self._rest.POST(url, **kwargs)
+
+        # digest time  necessary for TM1 <= 11.8
+        # ToDo: remove in later versions of TM1 once issue in TM1 server is resolved
+        time.sleep(0.1)
+
+        raw_url = "/api/v1/ProcessDebugContexts('{}')?$expand=Breakpoints," \
+                  "Thread,CallStack($expand=Variables,Process($select=Name))"
+        url = format_url(raw_url, debug_id)
+        response = self._rest.GET(url, **kwargs)
+
+        return response.json()
+
+    def debug_get_breakpoints(self, debug_id: str, **kwargs) -> List:
+        url = format_url("/api/v1/ProcessDebugContexts('{}')/Breakpoints", debug_id)
+
+        response = self._rest.GET(url, **kwargs)
+        return [ProcessDebugBreakpoint.from_dict(b) for b in response.json()['value']]
+
+    def debug_add_breakpoint(self, debug_id: str, break_point: ProcessDebugBreakpoint, **kwargs) -> Response:
+        url = format_url("/api/v1/ProcessDebugContexts('{}')/Breakpoints", debug_id)
+
+        response = self._rest.POST(url, break_point.body, **kwargs)
+        return response
+
+    def debug_remove_breakpoint(self, debug_id: str, breakpoint_id: int, **kwargs) -> Response:
+        url = format_url("/api/v1/ProcessDebugContexts('{}')/Breakpoints('{}')", debug_id, str(breakpoint_id))
+
+        response = self._rest.DELETE(url, **kwargs)
+        return response
+
+    def debug_update_breakpoint(self, debug_id: str, break_point: ProcessDebugBreakpoint, **kwargs) -> Response:
+        url = format_url(
+            "/api/v1/ProcessDebugContexts('{}')/Breakpoints('{}')",
+            debug_id,
+            str(break_point.breakpoint_id))
+
+        response = self._rest.PATCH(url, break_point.body, **kwargs)
+        return response
+
+    def debug_get_variable_values(self, debug_id: str, **kwargs) -> Dict:
+        raw_url = "/api/v1/ProcessDebugContexts('{}')?$expand=" \
+                  "CallStack($expand=Variables)"
+        url = format_url(raw_url, debug_id)
+
+        response = self._rest.GET(url, **kwargs)
+        return response.json()['CallStack'][0]['Variables'] if response.json()['CallStack'] else response.json()[
+            'CallStack']
+
+    @require_admin
+    def evaluate_ti_expression(self, formula: str, **kwargs) -> str:
+        """ This function is same functionality as hitting "Evaluate" within variable formula editor in TI
+            Function creates temporary TI and then starts a debug session on that TI
+            EnableTIDebugging=T must be present in .cfg file
+            Only suited for Deb and one-off uses, don't incorporate into dataframe lambda function
+
+        :param formula: a valid tm1 variable formula (no double quotes, no equals sign, semicolon optional)
+            e.g. "8*2;", "CellGetN('c1', 'e1', 'e2);", "ATTRS('Region', 'France', 'Currency')"
+        :returns: string result from formula
+        """
+        # grab everything to right of "=" if present
+        formula = formula[formula.find('=') + 1:]
+
+        # make sure semicolon at end is present
+        if not formula.strip().endswith(";"):
+            formula += ";"
+
+        prolog_list = ["sFunc = {}".format(formula), "sDebug='Stop';"]
+        process_name = "".join(['}TM1py', str(uuid.uuid4())])
+        p = Process(
+            name=process_name,
+            prolog_procedure=Process.AUTO_GENERATED_STATEMENTS + '\r\n'.join(prolog_list))
+        syntax_errors = self.compile_process(p, **kwargs)
+
+        if syntax_errors:
+            raise ValueError(str(syntax_errors))
+
+        try:
+            self.create(p, **kwargs)
+            debug_id = self.debug_process(p.name, **kwargs)['ID']
+            break_point = ProcessDebugBreakpoint(
+                breakpoint_id=1,
+                breakpoint_type='ProcessDebugContextDataBreakpoint',
+                enabled=True,
+                hit_mode='BreakAlways',
+                variable_name='sFunc')
+            self.debug_add_breakpoint(debug_id=debug_id, break_point=break_point, **kwargs)
+            self.debug_continue(debug_id, **kwargs)
+            result = self.debug_get_variable_values(debug_id, **kwargs)
+            self.debug_continue(debug_id, **kwargs)
+
+            if not result:
+                raise ValueError('unknown error: no formula result found')
+            else:
+                return result[-2]['Value']
+
+        except TM1pyRestException as e:
+            raise e
+
+        finally:
+            self.delete(p.name, **kwargs)

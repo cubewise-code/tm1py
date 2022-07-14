@@ -275,6 +275,83 @@ class TestViewService(unittest.TestCase):
             sum_mdx_updated = sum([value['Value'] for value in data_mdx_updated.values() if value['Value']])
             self.assertNotEqual(sum_mdx_original, sum_mdx_updated)
 
+    def test_search_subset_in_native_views(self):
+
+        private_views, public_views = self.tm1.views.search_subset_in_native_views(
+            dimension_name=self.dimension_names[2],
+            subset_name=self.subset_name)
+
+        self.assertEqual(1, len(private_views))
+        self.assertEqual(private_views[0].name, self.native_view_name)
+
+        self.assertEqual(1, len(public_views))
+        self.assertEqual(public_views[0].name, self.native_view_name)
+
+    def test_search_subset_in_native_views_for_cube(self):
+
+        private_views, public_views = self.tm1.views.search_subset_in_native_views(
+            dimension_name=self.dimension_names[2],
+            cube_name=self.cube_name,
+            subset_name=self.subset_name)
+
+        self.assertEqual(1, len(private_views))
+        self.assertEqual(private_views[0].name, self.native_view_name)
+
+        self.assertEqual(1, len(public_views))
+        self.assertEqual(public_views[0].name, self.native_view_name)
+
+    def test_search_subset_in_native_views_for_cube_include_elements(self):
+
+        private_views, public_views = self.tm1.views.search_subset_in_native_views(
+            dimension_name=self.dimension_names[2],
+            cube_name=self.cube_name,
+            subset_name=self.subset_name,
+            include_elements=True)
+
+        self.assertEqual(1, len(private_views))
+        self.assertEqual(private_views[0].name, self.native_view_name)
+
+        self.assertEqual(1, len(public_views))
+        self.assertEqual(public_views[0].name, self.native_view_name)
+        self.assertEqual(200, len(public_views[0].columns[0].subset.elements))
+
+    def test_search_subset_in_native_views_for_cube_exclude_elements(self):
+
+        private_views, public_views = self.tm1.views.search_subset_in_native_views(
+            dimension_name=self.dimension_names[2],
+            cube_name=self.cube_name,
+            subset_name=self.subset_name,
+            include_elements=False)
+
+        self.assertEqual(1, len(private_views))
+        self.assertEqual(private_views[0].name, self.native_view_name)
+
+        self.assertEqual(1, len(public_views))
+        self.assertEqual(public_views[0].name, self.native_view_name)
+        self.assertEqual(0, len(public_views[0].columns[0].subset.elements))
+
+    def test_search_subset_in_native_views_case_and_space_insensitive(self):
+
+        private_views, public_views = self.tm1.views.search_subset_in_native_views(
+            dimension_name=self.dimension_names[2].upper(),
+            cube_name=" " + self.cube_name.upper(),
+            subset_name=" " + self.subset_name.upper())
+
+        self.assertEqual(1, len(private_views))
+        self.assertEqual(private_views[0].name, self.native_view_name)
+
+        self.assertEqual(1, len(public_views))
+        self.assertEqual(public_views[0].name, self.native_view_name)
+
+    def test_search_subset_in_native_views_no_findings(self):
+
+        private_views, public_views = self.tm1.views.search_subset_in_native_views(
+            dimension_name=self.dimension_names[2],
+            subset_name="NotASubset")
+
+        self.assertEqual(0, len(private_views))
+        self.assertEqual(0, len(public_views))
+
     def tearDown(self):
         for private in (True, False):
             self.tm1.cubes.views.delete(cube_name=self.cube_name, view_name=self.native_view_name, private=private)

@@ -2,7 +2,7 @@
 
 import collections
 import json
-from typing import Iterable, List, Dict, Optional
+from typing import Iterable, List, Dict, Optional, Union
 
 from TM1py.Objects.Rules import Rules
 from TM1py.Objects.TM1Object import TM1Object
@@ -14,7 +14,7 @@ class Cube(TM1Object):
         
     """
 
-    def __init__(self, name: str, dimensions: Iterable[str], rules: Optional[Rules] = None):
+    def __init__(self, name: str, dimensions: Iterable[str], rules: Optional[Union[str, Rules]] = None):
         """
         
         :param name: name of the Cube
@@ -48,8 +48,15 @@ class Cube(TM1Object):
         return self._rules
 
     @rules.setter
-    def rules(self, value: Rules):
-        self._rules = value
+    def rules(self, value: Union[str, Rules]):
+        if value is None:
+            self._rules = None
+        elif isinstance(value, str):
+            self._rules = Rules(rules=value)
+        elif isinstance(value, Rules):
+            self._rules = value
+        else:
+            raise ValueError('value must None or of type str or Rules')
 
     @property
     def skipcheck(self) -> bool:
