@@ -3,7 +3,7 @@ import json
 from typing import List, Union, Iterable, Optional, Dict, Tuple
 
 from requests import Response
-
+from mdxpy import MdxHierarchySet
 from TM1py.Exceptions import TM1pyRestException
 from TM1py.Objects import ElementAttribute, Element
 from TM1py.Services.ObjectService import ObjectService
@@ -648,3 +648,19 @@ class ElementService(ObjectService):
     def get_element_principal_name(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> str:
         element = self.get(dimension_name, hierarchy_name, element_name, **kwargs)
         return element.name
+
+    def element_is_descendant_of(self, dimension_name: str, hierarchy_name: str, descendant, ancestor,
+                                   max_depth: int = None):
+        if not self.get(dimension_name, hierarchy_name, ancestor).element_type == Element.Types.CONSOLIDATED:
+            raise ValueError('parent must be a consolidated element.')
+
+        return descendant in self.get_members_under_consolidation(dimension_name, hierarchy_name, ancestor, max_depth)
+
+    def element_is_parent_of(self, dimension_name: str, hierarchy_name: str, parent: str, child: str):
+        return parent in self.get_parents(dimension_name, hierarchy_name, child)
+
+    def element_is_ancestor_of(self, dimension_name: str, hierarchy_name: str, ancestor: str, member: str, mode: str):
+        return member in self.execute_set_mdx(
+            MdxHierarchySet(dimension_name, hierarchy_name).ancestors(member).to_mdx())
+
+    # mdx variant & TI process variant, get parents until root variant, drilldown vs drillup, get_ancestors in REST
