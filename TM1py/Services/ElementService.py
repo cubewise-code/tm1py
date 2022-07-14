@@ -3,7 +3,7 @@ import json
 from typing import List, Union, Iterable, Optional, Dict, Tuple
 
 from requests import Response
-from mdxpy import MdxHierarchySet
+from mdxpy import MdxHierarchySet, Member
 from TM1py.Exceptions import TM1pyRestException
 from TM1py.Objects import ElementAttribute, Element
 from TM1py.Services.ObjectService import ObjectService
@@ -650,17 +650,35 @@ class ElementService(ObjectService):
         return element.name
 
     def element_is_descendant_of(self, dimension_name: str, hierarchy_name: str, descendant, ancestor,
-                                   max_depth: int = None):
+                                 max_depth: int = None):
         if not self.get(dimension_name, hierarchy_name, ancestor).element_type == Element.Types.CONSOLIDATED:
             raise ValueError('parent must be a consolidated element.')
 
         return descendant in self.get_members_under_consolidation(dimension_name, hierarchy_name, ancestor, max_depth)
 
+    def member_under_consolidation(self, dimension_name: str, hierarchy_name: str, member, consolidation,
+                                   max_depth: int = None):
+        if not self.get(dimension_name, hierarchy_name, consolidation).element_type == Element.Types.CONSOLIDATED:
+            raise ValueError('parent must be a consolidated element.')
+
+        return member in CaseAndSpaceInsensitiveSet(
+            self.get_members_under_consolidation(dimension_name, hierarchy_name, consolidation, max_depth))
+
     def element_is_parent_of(self, dimension_name: str, hierarchy_name: str, parent: str, child: str):
         return parent in self.get_parents(dimension_name, hierarchy_name, child)
 
-    def element_is_ancestor_of(self, dimension_name: str, hierarchy_name: str, ancestor: str, member: str, mode: str):
-        return member in self.execute_set_mdx(
-            MdxHierarchySet(dimension_name, hierarchy_name).ancestors(member).to_mdx())
+    def element_is_ancestor_of(self, dimension_name: str, hierarchy_name: str, ancestor: str, member: str):
+        return self.member_under_consolidation(dimension_name, hierarchy_name, member, ancestor)
 
-    # mdx variant & TI process variant, get parents until root variant, drilldown vs drillup, get_ancestors in REST
+    def element_is_ancestor_of_by_parents(self, dimension_name: str, hierarchy_name: str, ancestor: str, member: str):
+
+        def get_ancestry_generator(element):
+            parents = self.get_parents(dimension_name, hierarchy_name, element)
+
+            for parent in parents:
+                yield parent
+                yield from get_ancestry_generator(parent)
+
+        ancestors = set(get_ancestry_generator(member))
+
+        return ancestor in ancestors
