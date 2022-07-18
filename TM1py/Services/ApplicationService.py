@@ -207,6 +207,31 @@ class ApplicationService(ObjectService):
 
         return response
 
+    def update(self, application: Union[Application, DocumentApplication], private: bool = False, **kwargs) -> Response:
+        """ Update Planning Analytics application
+
+        :param application: instance of Application
+        :param private: boolean
+        :return:
+        """
+
+        contents = 'PrivateContents' if private else 'Contents'
+
+        mid = ""
+        if application.path.strip() != '':
+            mid = "".join([format_url("/Contents('{}')", element) for element in application.path.split('/')])
+
+        if application.application_type == ApplicationTypes.DOCUMENT:
+            url = format_url(
+                "/api/v1/Contents('Applications')" + mid + "/" + contents + "('{name}.blob')/Document/Content",
+                name=application.name)
+            response = self._rest.PATCH(url, application.content, headers=self.BINARY_HTTP_HEADER, **kwargs)
+        else:
+            url = "/api/v1/Contents('Applications')" + mid + "/" + contents
+            response = self._rest.POST(url, application.body, **kwargs)
+            
+        return response
+
     def update_or_create_document_from_file(self, path: str, name: str,
                                             path_to_file: str, private: bool = False, **kwargs) -> Response:
         """Update or create application from file
@@ -219,10 +244,11 @@ class ApplicationService(ObjectService):
         """
 
         if self.exists(path=path, application_type=ApplicationTypes.DOCUMENT, name=name, private=private):
-            self.delete(path=path, application_type=ApplicationTypes.DOCUMENT, application_name=name, private=private)
-
-        response = self.create_document_from_file(path_to_file=path_to_file, application_path=path,
-                                                  application_name=name, private=private)
+            response = self.update_document_from_file(path_to_file=path_to_file, application_path=path,
+                                                    application_name=name, private=private)
+        else:
+            response = self.create_document_from_file(path_to_file=path_to_file, application_path=path,
+                                                    application_name=name, private=private)
 
         return response
 
@@ -264,4 +290,18 @@ class ApplicationService(ObjectService):
         """
         with open(path_to_file, 'rb') as file:
             application = DocumentApplication(path=application_path, name=application_name, content=file.read())
-            return self.create(application=application, private=private, **kwargs)
+            return self.create(application=application, private=private, **kwargs)            
+
+    def update_document_from_file(self, path_to_file: str, application_path: str, application_name: str,
+                                  private: bool = False, **kwargs) -> Response:
+        """ Update DocumentApplication in TM1 from local file
+
+        :param path_to_file:
+        :param application_path:
+        :param application_name:
+        :param private:
+        :return:
+        """
+        with open(path_to_file, 'rb') as file:
+            application = DocumentApplication(path=application_path, name=application_name, content=file.read())
+            return self.update(application=application, private=private, **kwargs)
