@@ -176,5 +176,65 @@ class TestHierarchy(unittest.TestCase):
              Element("Switzerland", "Numeric"), Element("France", "Numeric")},
             elements)
 
+    def test_get_descendant_edges_recursive_false(self):
+        hierarchy = Hierarchy(
+            name="NotRelevant",
+            dimension_name="NotRelevant",
+            elements=[
+                Element("Total", "Consolidated"),
+                Element("Europe", "Consolidated"),
+                Element("DACH", "Consolidated"),
+                Element("Germany", "Numeric"),
+                Element("Switzerland", "Numeric"),
+                Element("Austria", "Numeric"),
+                Element("France", "Numeric"),
+                Element("Other", "Numeric")],
+            edges={
+                ("Total", "Europe"): 1,
+                ("Europe", "DACH"): 1,
+                ("DACH", "Germany"): 1,
+                ("DACH", "Switzerland"): 1,
+                ("DACH", "Austria"): 1,
+                ("Europe", "France"): 1,
+            })
+
+        edges = hierarchy.get_descendant_edges("Europe")
+        self.assertEqual(
+            {("Europe", "DACH"):1, ("Europe", "France"):1},
+            edges)
+
+    def test_get_descendant_edges_recursive_true(self):
+        hierarchy = Hierarchy(
+            name="NotRelevant",
+            dimension_name="NotRelevant",
+            elements=[
+                Element("Total", "Consolidated"),
+                Element("Europe", "Consolidated"),
+                Element("DACH", "Consolidated"),
+                Element("Germany", "Numeric"),
+                Element("Switzerland", "Numeric"),
+                Element("Austria", "Numeric"),
+                Element("France", "Numeric"),
+                Element("Other", "Numeric")],
+            edges={
+                ("Total", "Europe"): 1,
+                ("Europe", "DACH"): 1,
+                ("DACH", "Germany"): 1,
+                ("DACH", "Switzerland"): 1,
+                ("DACH", "Austria"): 1,
+                ("Europe", "France"): 1,
+            })
+
+        edges = hierarchy.get_descendant_edges("Europe", recursive=True)
+        self.assertEqual(
+            {
+                ("Europe", "DACH"): 1,
+                ("DACH", "Germany"): 1,
+                ("DACH", "Switzerland"): 1,
+                ("DACH", "Austria"): 1,
+                ("Europe", "France"): 1,
+            },
+            edges)
+
 if __name__ == '__main__':
     unittest.main()
