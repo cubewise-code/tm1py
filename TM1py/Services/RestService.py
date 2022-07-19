@@ -14,7 +14,7 @@ from requests import Timeout, Response, ConnectionError
 from requests.adapters import HTTPAdapter
 
 # SSO not supported for Linux
-from TM1py.Exceptions.Exceptions import TM1pyTimeout
+from TM1py.Exceptions.Exceptions import TM1pyTimeout, TM1pyNoResponseException
 from TM1py.Utils import case_and_space_insensitive_equals, CaseAndSpaceInsensitiveSet
 
 try:
@@ -56,7 +56,7 @@ def httpmethod(func):
                 http_headers.update(additional_header)
                 kwargs['headers'] = http_headers
                 response = func(self, url, data, **kwargs)
-                self.verify_response(response=response)
+                self.verify_response(url=url, response=response)
 
                 if 'Location' not in response.headers or "'" not in response.headers['Location']:
                     raise ValueError(f"Failed to retrieve async_id from request {func.__name__} '{url}'")
@@ -77,7 +77,7 @@ def httpmethod(func):
                 response = self.build_response_from_raw_bytes(response.content)
 
             # verify
-            self.verify_response(response=response)
+            self.verify_response(url=url, response=response)
 
             # response encoding
             response.encoding = encoding
@@ -447,7 +447,7 @@ class RestService:
         return b64decode(encrypted_password).decode("UTF-8")
 
     @staticmethod
-    def verify_response(response: Response):
+    def verify_response(url: str, response: Response):
         """ check if Status Code is OK
         :Parameters:
             `response`: String
@@ -455,6 +455,9 @@ class RestService:
         :Exceptions:
             TM1pyException, raises TM1pyException when Code is not 200, 204 etc.
         """
+        if not response:
+            raise TM1pyNoResponseException(f"No response received for URL: '{url}'")
+
         if not response.ok:
             raise TM1pyRestException(response.text,
                                      status_code=response.status_code,
@@ -534,7 +537,7 @@ class RestService:
     def cancel_async_operation(self, async_id: str, **kwargs):
         url = self._base_url + f"/api/v1/_async('{async_id}')"
         response = self._s.delete(url, **kwargs)
-        self.verify_response(response)
+        self.verify_response(url, response)
 
     def cancel_running_operation(self):
         monitoring_service = self.get_monitoring_service()

@@ -43,6 +43,12 @@ class TM1pyException(Exception):
         return self.message
 
 
+class TM1pyNoResponseException(TM1pyException):
+
+    def __init__(self, message: str):
+        super(TM1pyNoResponseException, self).__init__(message)
+
+
 class TM1pyRestException(TM1pyException):
     """ Exception for failing REST operations
 
