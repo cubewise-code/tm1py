@@ -10,6 +10,9 @@ from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import CaseAndSpaceInsensitiveDict, format_url, CaseAndSpaceInsensitiveSet
 from TM1py.Utils import build_element_unique_names, CaseAndSpaceInsensitiveTuplesDict
+from mdxpy import MdxHierarchySet, Member
+
+
 
 
 class ElementService(ObjectService):
@@ -19,6 +22,7 @@ class ElementService(ObjectService):
 
     def __init__(self, rest: RestService):
         super().__init__(rest)
+
 
     def get(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> Element:
         url = format_url(
@@ -648,3 +652,54 @@ class ElementService(ObjectService):
     def get_element_principal_name(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> str:
         element = self.get(dimension_name, hierarchy_name, element_name, **kwargs)
         return element.name
+
+    def _get_mdx_set_cardinality(self, mdx: str) -> int:
+        url = format_url("/api/v1/ExecuteMDXSetExpression?$select=Cardinality")
+        payload = {"MDX": mdx}
+        response = self._rest.POST(url, json.dumps(payload, ensure_ascii=False))
+        return response.json()['Cardinality']
+
+    def _build_drill_intersection_mdx(self, dimension_name: str, hierarchy_name: str, first_element_name: str,
+                          second_element_name: str, recursive: bool) ->str:
+
+        first_member = Member.of(dimension_name, hierarchy_name, first_element_name)
+        second_member = Member.of(dimension_name, hierarchy_name, second_element_name)
+        mdx = MdxHierarchySet.members([first_member]).tm1_drill_down_member(all=True, recursive=recursive)\
+            .intersect(MdxHierarchySet.members([second_member])).to_mdx()
+
+        return mdx
+
+    def element_is_parent(self, dimension_name: str, hierarchy_name: str, parent_name: str,
+                          element_name: str) -> bool:
+        """ Element is Parent
+        :Note, unlike the related function in TM1 (ELISPAR or ElementIsParent), this function will return False
+        :if an invalid element is passed;
+        :but will raise an exception if an invalid dimension, or hierarchy is passed
+        """
+        mdx = self._build_drill_intersection_mdx(dimension_name,
+                                                    hierarchy_name,
+                                                    parent_name,
+                                                    element_name,
+                                                    False)
+
+        cardinality = self._get_mdx_set_cardinality(mdx)
+        return bool(cardinality)
+
+    def element_is_ancestor(self, dimension_name: str, hierarchy_name: str, ancestor_name: str,
+                          element_name: str) -> bool:
+        """ Element is Parent
+        :Note, unlike the related function in TM1 (ELISANC or ElementIsAncestor), this function will return False
+        :if an invalid element is passed;
+        :but will raise an exception if an invalid dimension, or hierarchy is passed
+        """
+        mdx = self._build_drill_intersection_mdx(dimension_name,
+                                                      hierarchy_name,
+                                                      ancestor_name,
+                                                      element_name,
+                                                      True)
+
+        cardinality = self._get_mdx_set_cardinality(mdx)
+        return bool(cardinality)
+
+
+
