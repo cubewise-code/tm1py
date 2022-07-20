@@ -15,6 +15,8 @@ class TestElementService(unittest.TestCase):
     dimension_with_hierarchies_name = f"{prefix}_dimension_with_hierarchies"
     hierarchy_name = dimension_name
     attribute_cube_name = '}ElementAttributes_' + dimension_name
+    dimension_does_not_exist_name = f"{prefix}_dimension_does_not_exist"
+    hierarchy_does_not_exist_name = dimension_does_not_exist_name
 
     @classmethod
     def setUpClass(cls):
@@ -613,6 +615,61 @@ class TestElementService(unittest.TestCase):
                 dimension_name=self.dimension_name,
                 hierarchy_name=self.hierarchy_name,
                 element_name="Not Existing Element")
+
+    def test_element_is_parent_dim_not_exist(self):
+        with self.assertRaises(TM1pyRestException):
+            self.tm1.elements.element_is_parent(dimension_name=self.dimension_does_not_exist_name,
+                                                hierarchy_name=self.hierarchy_name,
+                                                parent_name='All Consolidations',
+                                                element_name='Total Years')
+
+    def test_element_is_parent_hier_not_exist(self):
+        with self.assertRaises(TM1pyRestException):
+            self.tm1.elements.element_is_parent(dimension_name=self.dimension_name,
+                                                hierarchy_name=self.hierarchy_does_not_exist_name,
+                                                parent_name='All Consolidations',
+                                                element_name='Total Years')
+    def test_element_is_parent(self):
+        result = self.tm1.elements.element_is_parent(dimension_name=self.dimension_name,
+                                                hierarchy_name=self.hierarchy_name,
+                                                parent_name='All Consolidations',
+                                                element_name='Total Years')
+        self.assertEqual(True, result)
+
+    def test_element_is_not_parent(self):
+        result = self.tm1.elements.element_is_parent(dimension_name=self.dimension_name,
+                                                hierarchy_name=self.hierarchy_name,
+                                                parent_name='All Consolidations',
+                                                element_name='1992')
+        self.assertEqual(False, result)
+
+    def test_element_is_ancestor_dim_not_exist(self):
+        with self.assertRaises(TM1pyRestException):
+            self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_does_not_exist_name,
+                                                hierarchy_name=self.hierarchy_name,
+                                                ancestor_name='All Consolidations',
+                                                element_name='Total Years')
+
+    def test_element_is_ancestor_hier_not_exist(self):
+        with self.assertRaises(TM1pyRestException):
+            self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_name,
+                                                hierarchy_name=self.hierarchy_does_not_exist_name,
+                                                ancestor_name='All Consolidations',
+                                                element_name='Total Years')
+
+    def test_element_is_ancestor(self):
+        result = self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_name,
+                                                     hierarchy_name=self.hierarchy_name,
+                                                     ancestor_name='All Consolidations',
+                                                     element_name='1992')
+        self.assertEqual(True, result)
+
+    def test_element_is_not_ancestor(self):
+        result = self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_name,
+                                                     hierarchy_name=self.hierarchy_name,
+                                                     ancestor_name='1992',
+                                                     element_name='1991')
+        self.assertEqual(False, result)
 
     @classmethod
     def tearDownClass(cls):
