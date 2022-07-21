@@ -649,36 +649,42 @@ class ElementService(ObjectService):
         element = self.get(dimension_name, hierarchy_name, element_name, **kwargs)
         return element.name
 
-    def element_is_descendant_of(self, dimension_name: str, hierarchy_name: str, descendant, ancestor,
-                                 max_depth: int = None):
-        if not self.get(dimension_name, hierarchy_name, ancestor).element_type == Element.Types.CONSOLIDATED:
-            raise ValueError('parent must be a consolidated element.')
-
-        return descendant in self.get_members_under_consolidation(dimension_name, hierarchy_name, ancestor, max_depth)
-
-    def member_under_consolidation(self, dimension_name: str, hierarchy_name: str, member, consolidation,
-                                   max_depth: int = None):
-        if not self.get(dimension_name, hierarchy_name, consolidation).element_type == Element.Types.CONSOLIDATED:
-            raise ValueError('parent must be a consolidated element.')
-
-        return member in CaseAndSpaceInsensitiveSet(
-            self.get_members_under_consolidation(dimension_name, hierarchy_name, consolidation, max_depth))
-
     def element_is_parent_of(self, dimension_name: str, hierarchy_name: str, parent: str, child: str):
         return parent in self.get_parents(dimension_name, hierarchy_name, child)
 
-    def element_is_ancestor_of(self, dimension_name: str, hierarchy_name: str, ancestor: str, member: str):
-        return self.member_under_consolidation(dimension_name, hierarchy_name, member, ancestor)
+    def element_is_ancestor_of(self, dimension_name: str, hierarchy_name: str, ancestor: str, descendant: str, method: str,
+                               **kwargs):
 
-    def element_is_ancestor_of_by_parents(self, dimension_name: str, hierarchy_name: str, ancestor: str, member: str):
+        if method == 'descendants':
+            url = format_url(
+                f"/api/v1/Dimensions('{dimension_name}')/Hierarchies('{hierarchy_name}')/Elements('{descendant}')"
+                f"?$select=Level"
+            )
+            element_level = self._rest.GET(url=url, **kwargs).json()['Level']
 
-        def get_ancestry_generator(element):
-            parents = self.get_parents(dimension_name, hierarchy_name, element)
+            url = format_url(
+                f"/api/v1/Dimensions('{dimension_name}')/Hierarchies('{hierarchy_name}')/Elements('{ancestor}')"
+                f"?$select=Level"
+            )
+            ancestor_level = self._rest.GET(url=url, **kwargs).json()['Level']
 
-            for parent in parents:
-                yield parent
-                yield from get_ancestry_generator(parent)
+            distance = ancestor_level - element_level
 
-        ancestors = set(get_ancestry_generator(member))
+            if distance <= 0:
+                return False
 
-        return ancestor in ancestors
+            mdx = f"""Intersect(Descendants([{dimension_name}].[{hierarchy_name}].[{ancestor}], {distance}), 
+            {{[{dimension_name}].[{hierarchy_name}].[{descendant}]}})"""
+
+        elif method == 'drilldown':
+            mdx = f"""{{INTERSECT({{TM1DRILLDOWNMEMBER({{[{dimension_name}].[{hierarchy_name}].[{ancestor}]}}, 
+                        ALL, RECURSIVE)}},{{[{dimension_name}].[{hierarchy_name}].[{descendant}]}})}}"""
+        else:
+            raise ValueError('method must be one of: "drilldown", "descendants"')
+        result = set([anc['Name'] for anc_tups in self.execute_set_mdx(
+            mdx=mdx,
+            member_properties=['Name'],
+            parent_properties=[],
+            element_properties=[]) for anc in anc_tups])
+
+        return len(result) > 0
