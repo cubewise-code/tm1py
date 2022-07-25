@@ -678,7 +678,7 @@ class ElementService(ObjectService):
                 .intersect(MdxHierarchySet.members([second_member])).to_mdx()
         elif MDXDrillMethod.TM1DRILLDOWNMEMBER.name == mdx_method.upper():
             mdx = MdxHierarchySet.descendants(first_member,
-                                              MdxLevelExpression.member_level(first_member).to_mdx(),
+                                              MdxLevelExpression.member_level(first_member),
                                               'SELF_AND_AFTER')
         return mdx
 
