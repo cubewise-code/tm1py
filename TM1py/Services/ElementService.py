@@ -4,13 +4,19 @@ from typing import List, Union, Iterable, Optional, Dict, Tuple
 
 from requests import Response
 
-from TM1py.Exceptions import TM1pyRestException
+from TM1py.Exceptions import TM1pyRestException, TM1pyException
 from TM1py.Objects import ElementAttribute, Element
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import CaseAndSpaceInsensitiveDict, format_url, CaseAndSpaceInsensitiveSet
 from TM1py.Utils import build_element_unique_names, CaseAndSpaceInsensitiveTuplesDict
-from mdxpy import MdxHierarchySet, Member
+from mdxpy import MdxHierarchySet, Member, MdxLevelExpression
+from enum import Enum
+
+
+class MDXDrillMethod(Enum):
+    TM1DRILLDOWNMEMBER = 1
+    DESCENDANTS = 2
 
 
 
@@ -22,7 +28,6 @@ class ElementService(ObjectService):
 
     def __init__(self, rest: RestService):
         super().__init__(rest)
-
 
     def get(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> Element:
         url = format_url(
@@ -458,7 +463,7 @@ class ElementService(ObjectService):
         :param hierarchy_name: name of hierarchy
         :param consolidation: name of consolidated Element
         :param max_depth: 99 if not passed
-        :return: 
+        :return:
         """
         return self.get_members_under_consolidation(dimension_name, hierarchy_name, consolidation, max_depth, True,
                                                     **kwargs)
@@ -659,14 +664,22 @@ class ElementService(ObjectService):
         response = self._rest.POST(url, json.dumps(payload, ensure_ascii=False))
         return response.json()['Cardinality']
 
-    def _build_drill_intersection_mdx(self, dimension_name: str, hierarchy_name: str, first_element_name: str,
-                          second_element_name: str, recursive: bool) ->str:
+    @staticmethod
+    def _build_drill_intersection_mdx(dimension_name: str, hierarchy_name: str, first_element_name: str,
+                                      second_element_name: str, mdx_method: str, recursive: bool) -> str:
 
         first_member = Member.of(dimension_name, hierarchy_name, first_element_name)
         second_member = Member.of(dimension_name, hierarchy_name, second_element_name)
-        mdx = MdxHierarchySet.members([first_member]).tm1_drill_down_member(all=True, recursive=recursive)\
-            .intersect(MdxHierarchySet.members([second_member])).to_mdx()
 
+        if not hasattr(MDXDrillMethod, mdx_method.upper()):
+            raise TM1pyException('Invalid MDX Drill Method Specified, Options: TM1DrillDownMember or Descendants')
+        elif MDXDrillMethod.DESCENDANTS.name == mdx_method.upper():
+            mdx = MdxHierarchySet.members([first_member]).tm1_drill_down_member(all=True, recursive=recursive) \
+                .intersect(MdxHierarchySet.members([second_member])).to_mdx()
+        elif MDXDrillMethod.TM1DRILLDOWNMEMBER.name == mdx_method.upper():
+            mdx = MdxHierarchySet.descendants(first_member,
+                                              MdxLevelExpression.member_level(first_member).to_mdx(),
+                                              'SELF_AND_AFTER')
         return mdx
 
     def element_is_parent(self, dimension_name: str, hierarchy_name: str, parent_name: str,
@@ -676,30 +689,30 @@ class ElementService(ObjectService):
         :if an invalid element is passed;
         :but will raise an exception if an invalid dimension, or hierarchy is passed
         """
-        mdx = self._build_drill_intersection_mdx(dimension_name,
-                                                    hierarchy_name,
-                                                    parent_name,
-                                                    element_name,
-                                                    False)
+        mdx = self._build_drill_intersection_mdx(dimension_name=dimension_name,
+                                                 hierarchy_name=hierarchy_name,
+                                                 first_element_name=parent_name,
+                                                 second_element_name=element_name,
+                                                 mdx_method='TM1DrillDownMember',
+                                                 recursive=False)
 
         cardinality = self._get_mdx_set_cardinality(mdx)
         return bool(cardinality)
 
     def element_is_ancestor(self, dimension_name: str, hierarchy_name: str, ancestor_name: str,
-                          element_name: str) -> bool:
+                            element_name: str, mdx_method: str = 'TM1DrillDownMember') -> bool:
         """ Element is Parent
         :Note, unlike the related function in TM1 (ELISANC or ElementIsAncestor), this function will return False
         :if an invalid element is passed;
         :but will raise an exception if an invalid dimension, or hierarchy is passed
         """
-        mdx = self._build_drill_intersection_mdx(dimension_name,
-                                                      hierarchy_name,
-                                                      ancestor_name,
-                                                      element_name,
-                                                      True)
+
+        mdx = self._build_drill_intersection_mdx(dimension_name=dimension_name,
+                                                 hierarchy_name=hierarchy_name,
+                                                 first_element_name=ancestor_name,
+                                                 second_element_name=element_name,
+                                                 mdx_method=mdx_method,
+                                                 recursive=True)
 
         cardinality = self._get_mdx_set_cardinality(mdx)
         return bool(cardinality)
-
-
-
