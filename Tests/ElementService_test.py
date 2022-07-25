@@ -671,6 +671,22 @@ class TestElementService(unittest.TestCase):
                                                      element_name='1991')
         self.assertEqual(False, result)
 
+    def test_element_is_ancestor_descendants_method(self):
+        result = self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_name,
+                                                     hierarchy_name=self.hierarchy_name,
+                                                     ancestor_name='All Consolidations',
+                                                     element_name='1992',
+                                                     mdx_method='Descendants')
+        self.assertEqual(True, result)
+
+    def test_element_is_not_ancestor_descendants_method(self):
+        result = self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_name,
+                                                     hierarchy_name=self.hierarchy_name,
+                                                     ancestor_name='1992',
+                                                     element_name='1991',
+                                                     mdx_method='Descendants')
+        self.assertEqual(False, result)
+
     @classmethod
     def tearDownClass(cls):
         cls.tm1.logout()
