@@ -673,10 +673,10 @@ class ElementService(ObjectService):
 
         if not hasattr(MDXDrillMethod, mdx_method.upper()):
             raise TM1pyException('Invalid MDX Drill Method Specified, Options: TM1DrillDownMember or Descendants')
-        elif MDXDrillMethod.DESCENDANTS.name == mdx_method.upper():
+        elif MDXDrillMethod.TM1DRILLDOWNMEMBER.name == mdx_method.upper():
             mdx = MdxHierarchySet.members([first_member]).tm1_drill_down_member(all=True, recursive=recursive) \
                 .intersect(MdxHierarchySet.members([second_member])).to_mdx()
-        elif MDXDrillMethod.TM1DRILLDOWNMEMBER.name == mdx_method.upper():
+        elif MDXDrillMethod.DESCENDANTS.name == mdx_method.upper():
             mdx = MdxHierarchySet.descendants(first_member,
                                               MdxLevelExpression.member_level(first_member),
                                               'SELF_AND_AFTER')
