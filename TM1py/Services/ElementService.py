@@ -1,24 +1,22 @@
 # -*- coding: utf-8 -*-
 import json
+from enum import Enum
 from typing import List, Union, Iterable, Optional, Dict, Tuple
 
+from mdxpy import MdxHierarchySet, Member, MdxLevelExpression
 from requests import Response
 
 from TM1py.Exceptions import TM1pyRestException, TM1pyException
 from TM1py.Objects import ElementAttribute, Element
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import CaseAndSpaceInsensitiveDict, format_url, CaseAndSpaceInsensitiveSet
+from TM1py.Utils import CaseAndSpaceInsensitiveDict, format_url, CaseAndSpaceInsensitiveSet, require_admin
 from TM1py.Utils import build_element_unique_names, CaseAndSpaceInsensitiveTuplesDict
-from mdxpy import MdxHierarchySet, Member, MdxLevelExpression
-from enum import Enum
 
 
 class MDXDrillMethod(Enum):
     TM1DRILLDOWNMEMBER = 1
     DESCENDANTS = 2
-
-
 
 
 class ElementService(ObjectService):
@@ -671,16 +669,22 @@ class ElementService(ObjectService):
         first_member = Member.of(dimension_name, hierarchy_name, first_element_name)
         second_member = Member.of(dimension_name, hierarchy_name, second_element_name)
 
-        if not hasattr(MDXDrillMethod, mdx_method.upper()):
-            raise TM1pyException('Invalid MDX Drill Method Specified, Options: TM1DrillDownMember or Descendants')
-        elif MDXDrillMethod.TM1DRILLDOWNMEMBER.name == mdx_method.upper():
-            mdx = MdxHierarchySet.members([first_member]).tm1_drill_down_member(all=True, recursive=recursive) \
-                .intersect(MdxHierarchySet.members([second_member])).to_mdx()
+        if MDXDrillMethod.TM1DRILLDOWNMEMBER.name == mdx_method.upper():
+            query = MdxHierarchySet.members([first_member]).tm1_drill_down_member(
+                all=True,
+                recursive=recursive)
+
         elif MDXDrillMethod.DESCENDANTS.name == mdx_method.upper():
-            mdx = MdxHierarchySet.descendants(first_member,
-                                              MdxLevelExpression.member_level(first_member),
-                                              'SELF_AND_AFTER')
-        return mdx
+            query = MdxHierarchySet.descendants(
+                member=first_member,
+                level_or_depth=MdxLevelExpression.member_level(second_member),
+                desc_flag='SELF')
+
+        else:
+            raise TM1pyException("Invalid MDX Drill Method Specified, Options: 'TM1DrillDownMember' or 'Descendants'")
+
+        mdx = query.intersect(MdxHierarchySet.members([second_member]))
+        return mdx.to_mdx()
 
     def element_is_parent(self, dimension_name: str, hierarchy_name: str, parent_name: str,
                           element_name: str) -> bool:
@@ -700,19 +704,65 @@ class ElementService(ObjectService):
         return bool(cardinality)
 
     def element_is_ancestor(self, dimension_name: str, hierarchy_name: str, ancestor_name: str,
-                            element_name: str, mdx_method: str = 'TM1DrillDownMember') -> bool:
-        """ Element is Parent
-        :Note, unlike the related function in TM1 (ELISANC or ElementIsAncestor), this function will return False
-        :if an invalid element is passed;
-        :but will raise an exception if an invalid dimension, or hierarchy is passed
-        """
+                            element_name: str, method: str = 'TM1DrillDownMember') -> bool:
+        """ Element is Ancestor
 
-        mdx = self._build_drill_intersection_mdx(dimension_name=dimension_name,
-                                                 hierarchy_name=hierarchy_name,
-                                                 first_element_name=ancestor_name,
-                                                 second_element_name=element_name,
-                                                 mdx_method=mdx_method,
-                                                 recursive=True)
+        :Note, unlike the related function in TM1 (`ELISANC` or `ElementIsAncestor`), this function will return False
+        if an invalid element is passed;
+        but will raise an exception if an invalid dimension, or hierarchy is passed
+
+        Default value for `method` parameter is 'TM1DrillDownMember'. It  performs best when element is a leaf.
+        Value 'Descendants' will perform better when `ancestor_name` and `element_name` are Consolidations.
+        value `ti` performs best on large dimensions but requires admin permissions
+
+        """
+        if method.upper() == "TI":
+            if self._element_is_ancestor_ti(dimension_name, hierarchy_name, element_name, ancestor_name):
+                return True
+
+            if self.hierarchy_exists(dimension_name, hierarchy_name):
+                return False
+
+            raise TM1pyException(f"Hierarchy: '{hierarchy_name}' does not exist in dimension: '{dimension_name}'")
+
+        # make sure DESCENDANTS behaves like default TM1DrillDownMember
+        if method.upper() == MDXDrillMethod.DESCENDANTS.name:
+            if not self.exists(dimension_name, hierarchy_name, element_name):
+
+                # case dimension or hierarchy doesn't exist
+                if not self.hierarchy_exists(dimension_name, hierarchy_name):
+                    raise TM1pyException(f"Hierarchy '{hierarchy_name}' does not exist in dimension '{dimension_name}'")
+
+                # case element doesn't exist
+                return False
+
+        mdx = self._build_drill_intersection_mdx(
+            dimension_name=dimension_name,
+            hierarchy_name=hierarchy_name,
+            first_element_name=ancestor_name,
+            second_element_name=element_name,
+            mdx_method=method,
+            recursive=True)
 
         cardinality = self._get_mdx_set_cardinality(mdx)
         return bool(cardinality)
+
+    def hierarchy_exists(self, dimension_name, hierarchy_name):
+        hierarchy_service = self._get_hierarchy_service()
+        return hierarchy_service.exists(dimension_name, hierarchy_name)
+
+    @require_admin
+    def _element_is_ancestor_ti(self, dimension_name: str, hierarchy_name: str, element_name: str,
+                                ancestor_name: str) -> bool:
+        process_service = self.get_process_service()
+        code = f"ElementIsAncestor('{dimension_name}', '{hierarchy_name}', '{ancestor_name}', '{element_name}');"
+        value = process_service.evaluate_ti_expression(code)
+        return bool(value)
+
+    def get_process_service(self):
+        from TM1py import ProcessService
+        return ProcessService(self._rest)
+
+    def _get_hierarchy_service(self):
+        from TM1py import HierarchyService
+        return HierarchyService(self._rest)
