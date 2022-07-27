@@ -2,7 +2,7 @@ import configparser
 import unittest
 from pathlib import Path
 
-from TM1py.Exceptions import TM1pyRestException
+from TM1py.Exceptions import TM1pyRestException, TM1pyException
 from TM1py.Objects import Dimension, Hierarchy, Element, ElementAttribute
 from TM1py.Services import TM1Service
 
@@ -629,63 +629,135 @@ class TestElementService(unittest.TestCase):
                                                 hierarchy_name=self.hierarchy_does_not_exist_name,
                                                 parent_name='All Consolidations',
                                                 element_name='Total Years')
+
     def test_element_is_parent(self):
         result = self.tm1.elements.element_is_parent(dimension_name=self.dimension_name,
-                                                hierarchy_name=self.hierarchy_name,
-                                                parent_name='All Consolidations',
-                                                element_name='Total Years')
+                                                     hierarchy_name=self.hierarchy_name,
+                                                     parent_name='All Consolidations',
+                                                     element_name='Total Years')
         self.assertEqual(True, result)
 
     def test_element_is_not_parent(self):
         result = self.tm1.elements.element_is_parent(dimension_name=self.dimension_name,
-                                                hierarchy_name=self.hierarchy_name,
-                                                parent_name='All Consolidations',
-                                                element_name='1992')
+                                                     hierarchy_name=self.hierarchy_name,
+                                                     parent_name='All Consolidations',
+                                                     element_name='1992')
         self.assertEqual(False, result)
-
-    def test_element_is_ancestor_dim_not_exist(self):
-        with self.assertRaises(TM1pyRestException):
-            self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_does_not_exist_name,
-                                                hierarchy_name=self.hierarchy_name,
-                                                ancestor_name='All Consolidations',
-                                                element_name='Total Years')
-
-    def test_element_is_ancestor_hier_not_exist(self):
-        with self.assertRaises(TM1pyRestException):
-            self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_name,
-                                                hierarchy_name=self.hierarchy_does_not_exist_name,
-                                                ancestor_name='All Consolidations',
-                                                element_name='Total Years')
 
     def test_element_is_ancestor(self):
         result = self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_name,
-                                                     hierarchy_name=self.hierarchy_name,
-                                                     ancestor_name='All Consolidations',
-                                                     element_name='1992')
+                                                       hierarchy_name=self.hierarchy_name,
+                                                       ancestor_name='All Consolidations',
+                                                       element_name='1992')
         self.assertEqual(True, result)
 
-    def test_element_is_not_ancestor(self):
+    def test_element_is_ancestor_false(self):
         result = self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_name,
-                                                     hierarchy_name=self.hierarchy_name,
-                                                     ancestor_name='1992',
-                                                     element_name='1991')
+                                                       hierarchy_name=self.hierarchy_name,
+                                                       ancestor_name='1992',
+                                                       element_name='1991')
         self.assertEqual(False, result)
+
+    def test_element_is_ancestor_not_existing_element(self):
+        result = self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_name,
+                                                       hierarchy_name=self.hierarchy_name,
+                                                       ancestor_name='1992',
+                                                       element_name='NotExisting')
+        self.assertEqual(False, result)
+
+    def test_element_is_ancestor_not_existing_dimension(self):
+        with self.assertRaises(TM1pyException):
+            self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_does_not_exist_name,
+                                                  hierarchy_name=self.hierarchy_name,
+                                                  ancestor_name='All Consolidations',
+                                                  element_name='1992')
+
+    def test_element_is_ancestor_not_existing_hierarchy(self):
+        with self.assertRaises(TM1pyException):
+            self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_name,
+                                                  hierarchy_name=self.hierarchy_does_not_exist_name,
+                                                  ancestor_name='All Consolidations',
+                                                  element_name='Total Years')
 
     def test_element_is_ancestor_descendants_method(self):
         result = self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_name,
-                                                     hierarchy_name=self.hierarchy_name,
-                                                     ancestor_name='All Consolidations',
-                                                     element_name='1992',
-                                                     mdx_method='Descendants')
+                                                       hierarchy_name=self.hierarchy_name,
+                                                       ancestor_name='All Consolidations',
+                                                       element_name='1992',
+                                                       method='Descendants')
         self.assertEqual(True, result)
 
-    def test_element_is_not_ancestor_descendants_method(self):
+    def test_element_is_ancestor_descendants_method_false(self):
         result = self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_name,
-                                                     hierarchy_name=self.hierarchy_name,
-                                                     ancestor_name='1992',
-                                                     element_name='1991',
-                                                     mdx_method='Descendants')
+                                                       hierarchy_name=self.hierarchy_name,
+                                                       ancestor_name='1992',
+                                                       element_name='1991',
+                                                       method='Descendants')
         self.assertEqual(False, result)
+
+    def test_element_is_ancestor_descendants_method_not_existing_element(self):
+        result = self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_name,
+                                                       hierarchy_name=self.hierarchy_name,
+                                                       ancestor_name='1992',
+                                                       element_name='Not Existing',
+                                                       method='descendants')
+        self.assertEqual(False, result)
+
+    def test_element_is_ancestor_descendants_method_not_existing_dimension(self):
+        with self.assertRaises(TM1pyException):
+            self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_does_not_exist_name,
+                                                  hierarchy_name=self.hierarchy_name,
+                                                  ancestor_name='All Consolidations',
+                                                  element_name='1992',
+                                                  method='descendants')
+
+    def test_element_is_ancestor_descendants_method_not_existing_hierarchy(self):
+        with self.assertRaises(TM1pyException):
+            self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_name,
+                                                  hierarchy_name=self.hierarchy_does_not_exist_name,
+                                                  ancestor_name='All Consolidations',
+                                                  element_name='1992',
+                                                  method='descendants')
+
+    def test_element_is_ancestor_ti_method(self):
+        result = self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_name,
+                                                       hierarchy_name=self.hierarchy_name,
+                                                       ancestor_name='All Consolidations',
+                                                       element_name='1992',
+                                                       method='TI')
+        self.assertEqual(True, result)
+
+    def test_element_is_ancestor_ti_method_false(self):
+        result = self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_name,
+                                                       hierarchy_name=self.hierarchy_name,
+                                                       ancestor_name='1992',
+                                                       element_name='1991',
+                                                       method='TI')
+        self.assertEqual(False, result)
+
+    def test_element_is_ancestor_ti_method_not_existing(self):
+        result = self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_name,
+                                                       hierarchy_name=self.hierarchy_name,
+                                                       ancestor_name='1992',
+                                                       element_name='Not Existing',
+                                                       method='TI')
+        self.assertEqual(False, result)
+
+    def test_element_is_ancestor_ti_method_not_existing_dimension(self):
+        with self.assertRaises(TM1pyException):
+            self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_does_not_exist_name,
+                                                  hierarchy_name=self.hierarchy_name,
+                                                  ancestor_name='All Consolidations',
+                                                  element_name='1992',
+                                                  method='TI')
+
+    def test_element_is_ancestor_ti_method_not_existing_hierarchy(self):
+        with self.assertRaises(TM1pyException):
+            self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_name,
+                                                  hierarchy_name=self.hierarchy_does_not_exist_name,
+                                                  ancestor_name='All Consolidations',
+                                                  element_name='1992',
+                                                  method='TI')
 
     @classmethod
     def tearDownClass(cls):
