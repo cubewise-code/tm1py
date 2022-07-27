@@ -6,6 +6,7 @@ import unittest
 import uuid
 from pathlib import Path
 
+from TM1py.Exceptions import TM1pyException
 from TM1py.Objects import Process, Subset, ProcessDebugBreakpoint, BreakPointType, HitMode
 from TM1py.Services import TM1Service
 from .Utils import skip_if_insufficient_version
@@ -496,6 +497,27 @@ class TestProcessService(unittest.TestCase):
             1,
             len(result['Breakpoints']))
         self.assertEqual(result["Status"], "Complete")
+
+    def test_evaluate_boolean_ti_expression_true(self):
+        value = self.tm1.processes.evaluate_boolean_ti_expression("1>0")
+        self.assertEqual(True, value)
+
+    def test_evaluate_boolean_ti_expression_false(self):
+        value = self.tm1.processes.evaluate_boolean_ti_expression("1=0")
+        self.assertEqual(False, value)
+
+    def test_evaluate_boolean_ti_expression_function_true(self):
+        value = self.tm1.processes.evaluate_boolean_ti_expression("cos(0)=1")
+        self.assertEqual(True, value)
+
+    def test_evaluate_boolean_ti_expression_function_false(self):
+        value = self.tm1.processes.evaluate_boolean_ti_expression("cos(0)=0")
+        self.assertEqual(False, value)
+
+    def test_evaluate_boolean_ti_expression_syntax_error(self):
+        with self.assertRaises(TM1pyException):
+            value = self.tm1.processes.evaluate_boolean_ti_expression("1@=1")
+            self.assertEqual(True, value)
 
     @classmethod
     def tearDownClass(cls):

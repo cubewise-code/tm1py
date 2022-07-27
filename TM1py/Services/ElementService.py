@@ -755,9 +755,9 @@ class ElementService(ObjectService):
     def _element_is_ancestor_ti(self, dimension_name: str, hierarchy_name: str, element_name: str,
                                 ancestor_name: str) -> bool:
         process_service = self.get_process_service()
-        code = f"ElementIsAncestor('{dimension_name}', '{hierarchy_name}', '{ancestor_name}', '{element_name}');"
-        value = process_service.evaluate_ti_expression(code)
-        return bool(value)
+        code = f"ElementIsAncestor('{dimension_name}', '{hierarchy_name}', '{ancestor_name}', '{element_name}')=1"
+        return process_service.evaluate_boolean_ti_expression(code)
+
 
     def get_process_service(self):
         from TM1py import ProcessService
