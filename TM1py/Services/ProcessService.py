@@ -7,7 +7,7 @@ from typing import List, Dict, Tuple, Iterable
 
 from requests import Response
 
-from TM1py.Exceptions.Exceptions import TM1pyRestException
+from TM1py.Exceptions.Exceptions import TM1pyRestException, TM1pyException
 from TM1py.Objects.Process import Process
 from TM1py.Objects.ProcessDebugBreakpoint import ProcessDebugBreakpoint
 from TM1py.Services.ObjectService import ObjectService
@@ -490,6 +490,23 @@ class ProcessService(ObjectService):
             'CallStack']
 
     @require_admin
+    def evaluate_boolean_ti_expression(self, formula: str):
+        prolog_procedure = f"""
+        if (~{formula.strip(";")});
+          ProcessQuit;
+        endif;
+        """
+
+        process = Process(name="", prolog_procedure=prolog_procedure)
+        success, status, _ = self.execute_process_with_return(process)
+        if status == "QuitCalled":
+            return False
+        elif status == "CompletedSuccessfully":
+            return True
+        else:
+            raise TM1pyException(f"Unexpected TI return status: '{status}' for expression: '{formula}'")
+
+    @require_admin
     def evaluate_ti_expression(self, formula: str, **kwargs) -> str:
         """ This function is same functionality as hitting "Evaluate" within variable formula editor in TI
             Function creates temporary TI and then starts a debug session on that TI
@@ -500,6 +517,7 @@ class ProcessService(ObjectService):
             e.g. "8*2;", "CellGetN('c1', 'e1', 'e2);", "ATTRS('Region', 'France', 'Currency')"
         :returns: string result from formula
         """
+
         # grab everything to right of "=" if present
         formula = formula[formula.find('=') + 1:]
 
