@@ -651,26 +651,29 @@ class TestElementService(unittest.TestCase):
                                                        element_name='1992')
         self.assertEqual(True, result)
 
-    def test_element_is_ancestor_false(self):
+    def test_element_is_ancestor_tm1drilldownmember_false(self):
         result = self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_name,
                                                        hierarchy_name=self.hierarchy_name,
                                                        ancestor_name='1992',
-                                                       element_name='1991')
+                                                       element_name='1991',
+                                                       method="TM1DrillDownMember")
         self.assertEqual(False, result)
 
-    def test_element_is_ancestor_not_existing_element(self):
+    def test_element_is_ancestor_tm1drilldownmember_not_existing_element(self):
         result = self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_name,
                                                        hierarchy_name=self.hierarchy_name,
                                                        ancestor_name='1992',
-                                                       element_name='NotExisting')
+                                                       element_name='NotExisting',
+                                                       method="TM1DrillDownMember")
         self.assertEqual(False, result)
 
-    def test_element_is_ancestor_not_existing_dimension(self):
+    def test_element_is_ancestor_tm1drilldownmember_not_existing_dimension(self):
         with self.assertRaises(TM1pyException):
             self.tm1.elements.element_is_ancestor(dimension_name=self.dimension_does_not_exist_name,
                                                   hierarchy_name=self.hierarchy_name,
                                                   ancestor_name='All Consolidations',
-                                                  element_name='1992')
+                                                  element_name='1992',
+                                                  method="TM1DrillDownMember")
 
     def test_element_is_ancestor_not_existing_hierarchy(self):
         with self.assertRaises(TM1pyException):

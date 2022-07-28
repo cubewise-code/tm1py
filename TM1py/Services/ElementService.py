@@ -704,18 +704,23 @@ class ElementService(ObjectService):
         return bool(cardinality)
 
     def element_is_ancestor(self, dimension_name: str, hierarchy_name: str, ancestor_name: str,
-                            element_name: str, method: str = 'TM1DrillDownMember') -> bool:
+                            element_name: str, method: str = None) -> bool:
         """ Element is Ancestor
 
         :Note, unlike the related function in TM1 (`ELISANC` or `ElementIsAncestor`), this function will return False
-        if an invalid element is passed;
-        but will raise an exception if an invalid dimension, or hierarchy is passed
+        if an invalid element is passed; but will raise an exception if an invalid dimension, or hierarchy is passed
 
-        Default value for `method` parameter is 'TM1DrillDownMember'. It  performs best when element is a leaf.
-        Value 'Descendants' will perform better when `ancestor_name` and `element_name` are Consolidations.
-        value `ti` performs best on large dimensions but requires admin permissions
+        For `method` you can pass 3 three values
+        value `TI` performs best, but requires admin permissions
+        Value 'TM1DrillDownMember' performs well when element is a leaf.
+        Value 'Descendants' performs well when `ancestor_name` and `element_name` are Consolidations.
 
+        If no value is passed, function defaults to 'TI' for user with admin permissions
+        and 'TM1DrillDownMember' for users without admin permissions
         """
+        if not method:
+            method = 'TI' if self.is_admin else 'TM1DrillDownMember'
+
         if method.upper() == "TI":
             if self._element_is_ancestor_ti(dimension_name, hierarchy_name, element_name, ancestor_name):
                 return True
