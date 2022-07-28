@@ -8,6 +8,7 @@ from TM1py.Objects.GitPlan import GitPushPlan, GitPullPlan, GitPlan
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService, Response
 from TM1py.Utils.Utils import format_url
+from TM1py.Objects.GitProject import TM1Project
 
 
 class GitService(ObjectService):
@@ -20,6 +21,29 @@ class GitService(ObjectService):
 
     def __init__(self, rest: RestService):
         super().__init__(rest)
+        
+    def tm1project_get(self) -> TM1Project:
+        """_summary_
+        """
+        url = '/api/v1/!tm1project'
+        tm1project = self._rest.GET(url)
+        
+        return TM1Project.from_dict(tm1project.json())
+    
+    def tm1project_delete(self):
+        url = '/api/v1/!tm1project'
+        empty_dict = {}
+        body_json = json.dumps(empty_dict)
+        
+        response = self._rest.PUT(url, data=body_json)
+        return TM1Project.from_dict(response.json())
+        
+    def tm1project_put(self, tm1_project: TM1Project) -> Response:
+        url = '/api/v1/!tm1project'
+        body_json = tm1_project.body
+        
+        response = self._rest.PUT(url=url,data=body_json)
+        return TM1Project.from_dict(response.json())
 
     def git_init(self, git_url: str, deployment: str, username: str = None, password: str = None,
                  public_key: str = None, private_key: str = None, passphrase: str = None, force: bool = None,
