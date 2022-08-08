@@ -62,6 +62,16 @@ class TestCellService(unittest.TestCase):
 
     dimension_with_hierarchies_name = prefix + "Dimension_With_Hierarchies"
 
+    cube_with_five_dimensions = prefix + "Cube_with_five_dimensions"
+
+    five_dimensions = [
+        cube_with_five_dimensions + "_" + str(1),
+        cube_with_five_dimensions + "_" + str(2),
+        cube_with_five_dimensions + "_" + str(3),
+        cube_with_five_dimensions + "_" + str(4),
+        cube_with_five_dimensions + "_" + str(5)
+    ]
+
     @classmethod
     def setUpClass(cls):
         """
@@ -143,6 +153,8 @@ class TestCellService(unittest.TestCase):
         cls.build_assets_for_relative_proportional_spread()
 
         cls.create_or_update_dimension_with_hierarchies()
+
+        cls.create_cube_with_five_dimensions()
 
     @classmethod
     def setUp(cls):
@@ -241,6 +253,33 @@ class TestCellService(unittest.TestCase):
         if cls.tm1.cubes.exists(cube_name=cls.cube_with_consolidations_name):
             cls.tm1.cubes.delete(cube_name=cls.cube_with_consolidations_name)
         for dimension_name in cls.dimensions_with_consolidations_names:
+            if cls.tm1.dimensions.exists(dimension_name=dimension_name):
+                cls.tm1.dimensions.delete(dimension_name=dimension_name)
+
+    @classmethod
+    def create_cube_with_five_dimensions(cls):
+        for dimension_name in cls.five_dimensions:
+            hierarchy = Hierarchy(
+                dimension_name=dimension_name,
+                name=dimension_name,
+                elements=[Element("e1", "Numeric"), Element("e2", "Numeric"), Element("e3", "Numeric")])
+            dimension = Dimension(name=dimension_name, hierarchies=[hierarchy])
+            cls.tm1.dimensions.update_or_create(dimension)
+        cube = Cube(cls.cube_with_five_dimensions, dimensions=cls.five_dimensions)
+        cls.tm1.cubes.update_or_create(cube)
+
+        cells = {
+            ("e1", "e1", "e1", "e1", "e1"): 1,
+            ("e2", "e2", "e2", "e2", "e2"): 2,
+            ("e3", "e3", "e3", "e3", "e3"): 3
+        }
+        cls.tm1.cells.write(cls.cube_with_five_dimensions, cells)
+
+    @classmethod
+    def remove_cube_with_five_dimensions(cls):
+        if cls.tm1.cubes.exists(cube_name=cls.cube_with_five_dimensions):
+            cls.tm1.cubes.delete(cube_name=cls.cube_with_five_dimensions)
+        for dimension_name in cls.five_dimensions:
             if cls.tm1.dimensions.exists(dimension_name=dimension_name):
                 cls.tm1.dimensions.delete(dimension_name=dimension_name)
 
@@ -1298,6 +1337,26 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(len(data), 1)
         for coordinates, value in data.items():
             self.assertEqual(1, value)
+
+    def test_execute_mdx_multi_axes(self):
+        query = MdxBuilder.from_cube(self.cube_with_five_dimensions)
+        for axis, dimension in enumerate(self.five_dimensions):
+            query.non_empty(axis)
+            query.add_hierarchy_set_to_axis(axis, MdxHierarchySet.all_leaves(dimension, dimension))
+
+        cells = self.tm1.cells.execute_mdx(
+            mdx=query.to_mdx(),
+            element_unique_names=False,
+            skip_cell_properties=True,
+            skip_zeros=True)
+
+        expected_cells = {
+            ("e1", "e1", "e1", "e1", "e1"): 1,
+            ("e2", "e2", "e2", "e2", "e2"): 2,
+            ("e3", "e3", "e3", "e3", "e3"): 3
+        }
+
+        self.assertEqual(expected_cells, cells)
 
     def test_execute_mdx_raw_skip_contexts(self):
         mdx = MdxBuilder.from_cube(self.cube_name) \
