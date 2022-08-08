@@ -213,10 +213,6 @@ def extract_axes_from_cellset(raw_cellset_as_dict: Dict) -> Tuple[Any, ...]:
         if axis and 'Tuples' in axis and len(axis['Tuples']) > 0:
             axes.append(axis)
 
-    # extend with None to assure 3 entries
-    while len(axes) < 3:
-        axes += [None]
-
     return tuple(axes)
 
 
@@ -281,27 +277,30 @@ def build_content_from_cellset_dict(
     cube_dimensions = [dim['Name'] for dim in raw_cellset_as_dict['Cube']['Dimensions']]
 
     cells = raw_cellset_as_dict['Cells']
-    axis0, axis1, title_axis = extract_axes_from_cellset(raw_cellset_as_dict=raw_cellset_as_dict)
+    axes = extract_axes_from_cellset(raw_cellset_as_dict=raw_cellset_as_dict)
+    num_axes = len(axes)
 
     content_as_dict = CaseAndSpaceInsensitiveTuplesDict()
-    for ordinal, cell in enumerate(cells[:top or len(cells)]):
+    for cell_ordinal, cell in enumerate(cells[:top or len(cells)]):
         # if skip is used in execution we must use the original ordinal from the cell, if not we can simply enumerate
-        ordinal = cell.get("Ordinal", ordinal)
+        cell_ordinal = cell.get("Ordinal", cell_ordinal)
 
         coordinates = []
-        if axis1:
-            index_rows = ordinal // axis0['Cardinality'] % axis1.get('Cardinality')
-            coordinate = extract_unique_names_from_members(axis1['Tuples'][index_rows]['Members'])
-            coordinates.extend(coordinate)
+        for axis_ordinal, axis in enumerate(axes):
 
-        if title_axis:
-            coordinate = extract_unique_names_from_members(title_axis['Tuples'][0]['Members'])
-            coordinates.extend(coordinate)
+            if axis_ordinal == 0:
+                index_columns = cell_ordinal % axis['Cardinality']
+                coordinate = extract_unique_names_from_members(axis['Tuples'][index_columns]['Members'])
+                coordinates.extend(coordinate)
 
-        if axis0:
-            index_columns = ordinal % axis0['Cardinality']
-            coordinate = extract_unique_names_from_members(axis0['Tuples'][index_columns]['Members'])
-            coordinates.extend(coordinate)
+            else:
+                tuple_ordinal = cell_ordinal
+                for pre_axis_ordinal in range(axis_ordinal):
+                    tuple_ordinal = tuple_ordinal // axes[pre_axis_ordinal]['Cardinality']
+
+                tuple_ordinal = tuple_ordinal % axis.get('Cardinality')
+                coordinate = extract_unique_names_from_members(axis['Tuples'][tuple_ordinal]['Members'])
+                coordinates.extend(coordinate)
 
         coordinates = sort_coordinates(cube_dimensions, coordinates, element_unique_names=element_unique_names)
         content_as_dict[coordinates] = cell['Value'] if skip_cell_properties else cell
@@ -368,7 +367,12 @@ def build_csv_from_cellset_dict(
     csv_content = StringIO()
     csv_writer = csv.writer(csv_content, dialect=csv_dialect)
 
-    column_axis, row_axis, _ = extract_axes_from_cellset(raw_cellset_as_dict=raw_cellset_as_dict)
+    axes = extract_axes_from_cellset(raw_cellset_as_dict=raw_cellset_as_dict)
+    column_axis = axes[0]
+    if len(axes) > 1:
+        row_axis = axes[1]
+    else:
+        row_axis = list()
 
     num_headers = 0
     if include_headers:
