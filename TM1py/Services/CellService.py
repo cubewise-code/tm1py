@@ -238,6 +238,53 @@ class CellService(ObjectService):
         cellset = dict(self.execute_mdx(mdx=mdx, sandbox_name=sandbox_name, **kwargs))
         return next(iter(cellset.values()))["Value"]
 
+    def _compose_odata_tuple(self, cube_name: str, element_tuple: Iterable, dimensions: Iterable[str] = None,
+                             **kwargs) -> OrderedDict:
+        if not dimensions:
+            dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
+        odata_tuple_as_dict = OrderedDict()
+        odata_tuple_as_dict["Tuple@odata.bind"] = [
+            format_url("Dimensions('{}')/Hierarchies('{}')/Elements('{}')", dim, dim, elem)
+            for dim, elem
+            in zip(dimensions, element_tuple)]
+        return odata_tuple_as_dict
+
+    def trace_cell_calculation(self, cube_name: str,
+                               element_tuple: Iterable,
+                               dimensions: Iterable[str] = None,
+                               sandbox_name: str = None,
+                               depth: int = 1,
+                               **kwargs) -> str:
+
+        """ Trace cell calculation at specified coordinates
+
+        :param cube_name: name of the target cube
+        :param element_tuple: target coordinates
+        :param dimensions: optional. Dimension names in their natural order. Will speed up the execution!
+        :param sandbox_name: str
+        :param depth: optional. Depth of the component trace that will be returned. Deeper traces take longer
+        :return: trace json string
+        """
+
+        expand_query = ''
+        select_query = ''
+        if depth:
+            for x in range(1, depth + 1):
+                component_depth = '/'.join(["Components"] * x)
+                components_tuple_cube = f'{component_depth}/Tuple($select=Name, UniqueName, Type), {component_depth}/Cube($select=Name)'
+                expand_query = ','.join([expand_query, components_tuple_cube])
+
+                component_fields = f'{component_depth}/Type, {component_depth}/Value, {component_depth}/Statements'
+                select_query = ','.join([select_query, component_fields])
+
+        url = format_url("/api/v1/Cubes('{}')/tm1.TraceCellCalculation?$select=Type,Value,Statements"
+                         "{}&$expand=Tuple($select=Name, UniqueName, Type) {}", cube_name, select_query, expand_query)
+
+        url = add_url_parameters(url, **{"!sandbox": sandbox_name})
+        body_as_dict = self._compose_odata_tuple(cube_name, element_tuple, dimensions)
+        data = json.dumps(body_as_dict, ensure_ascii=False)
+        return self._rest.POST(url=url, data=data, **kwargs).content
+
     def relative_proportional_spread(
             self,
             value: float,
@@ -468,7 +515,7 @@ class CellService(ObjectService):
     def write_async(self, cube_name: str, cells: Dict, slice_size: int, max_workers: int,
                     dimensions: Iterable[str] = None, increment: bool = False,
                     deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
-                    sandbox_name: str = None, precision: int = None, measure_dimension_elements: Dict=None,
+                    sandbox_name: str = None, precision: int = None, measure_dimension_elements: Dict = None,
                     **kwargs) -> Optional[str]:
         """ Write asynchronously
 
@@ -593,6 +640,8 @@ class CellService(ObjectService):
             error_log_files=list(itertools.chain(*[exception.error_log_files for exception in exceptions])),
             attempts=sum([exception.attempts for exception in exceptions]))
 
+
+    @manage_changeset
     def write_value(self, value: Union[str, float], cube_name: str, element_tuple: Iterable,
                     dimensions: Iterable[str] = None, sandbox_name: str = None, **kwargs) -> Response:
         """ Write value into cube at specified coordinates
@@ -610,10 +659,7 @@ class CellService(ObjectService):
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         body_as_dict = OrderedDict()
         body_as_dict["Cells"] = [{}]
-        body_as_dict["Cells"][0]["Tuple@odata.bind"] = [
-            format_url("Dimensions('{}')/Hierarchies('{}')/Elements('{}')", dim, dim, elem)
-            for dim, elem
-            in zip(dimensions, element_tuple)]
+        body_as_dict["Cells"][0] = self._compose_odata_tuple(cube_name, element_tuple, dimensions, **kwargs)
         body_as_dict["Value"] = str(value) if value else ""
         data = json.dumps(body_as_dict, ensure_ascii=False)
         return self._rest.POST(url=url, data=data, **kwargs)
