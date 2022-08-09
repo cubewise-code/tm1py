@@ -1,4 +1,5 @@
 import configparser
+import json
 import unittest
 from pathlib import Path
 
@@ -3250,6 +3251,38 @@ class TestCellService(unittest.TestCase):
             element_string=f'Hierarchy2::Cons1,ea2')
 
         self.assertEqual('ABC', value)
+
+    def test_trace_cell_calculation_no_depth(self):
+        result = self.tm1.cells.trace_cell_calculation(
+            cube_name=self.cube_with_rules_name,
+            element_tuple=["Element1","Element1","Element1"])
+        trace = json.loads(result)
+        self.assertEqual(trace['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+
+    def test_trace_cell_calculation_shallow_depth(self):
+        result = self.tm1.cells.trace_cell_calculation(
+            cube_name=self.cube_with_rules_name,
+            element_tuple=["Element1","Element1","Element1"],
+            depth = 3)
+        trace = json.loads(result)
+        self.assertEqual(trace['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+
+    def test_trace_cell_calculation_deep_depth(self):
+        result = self.tm1.cells.trace_cell_calculation(
+            cube_name=self.cube_with_rules_name,
+            element_tuple=["Element1","Element1","Element1"],
+            depth = 99)
+        trace = json.loads(result)
+        self.assertEqual(trace['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+
+    def test_trace_cell_calculation_dimensions(self):
+        result = self.tm1.cells.trace_cell_calculation(
+            cube_name=self.cube_with_rules_name,
+            element_tuple=["Element1","Element1","Element1"],
+            dimensions=["TM1py_Tests_Cell_Dimension1","TM1py_Tests_Cell_Dimension2","TM1py_Tests_Cell_Dimension3"])
+        trace = json.loads(result)
+        self.assertEqual(trace['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+
 
     # Delete Cube and Dimensions
     @classmethod
