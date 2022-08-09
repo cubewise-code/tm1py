@@ -3263,7 +3263,7 @@ class TestCellService(unittest.TestCase):
         result = self.tm1.cells.trace_cell_calculation(
             cube_name=self.cube_with_rules_name,
             element_tuple=["Element1","Element1","Element1"],
-            depth = 3)
+            depth=3)
         trace = json.loads(result)
         self.assertEqual(trace['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
 
@@ -3271,7 +3271,7 @@ class TestCellService(unittest.TestCase):
         result = self.tm1.cells.trace_cell_calculation(
             cube_name=self.cube_with_rules_name,
             element_tuple=["Element1","Element1","Element1"],
-            depth = 99)
+            depth=25)
         trace = json.loads(result)
         self.assertEqual(trace['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
 
