@@ -188,9 +188,8 @@ class CellService(ObjectService):
         """
         mdx_template = "SELECT {} ON ROWS, {} ON COLUMNS FROM [{}]"
         mdx_rows_list = []
-        from TM1py.Services.CubeService import CubeService
         if not dimensions:
-            dimensions = CubeService(self._rest).get(cube_name).dimensions
+            dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
         element_selections = element_string.split(',')
 
         # Build the ON ROWS statement:
@@ -238,8 +237,44 @@ class CellService(ObjectService):
         cellset = dict(self.execute_mdx(mdx=mdx, sandbox_name=sandbox_name, **kwargs))
         return next(iter(cellset.values()))["Value"]
 
-    def _compose_odata_tuple(self, cube_name: str, element_tuple: Iterable, dimensions: Iterable[str] = None,
-                             **kwargs) -> OrderedDict:
+    def _compose_odata_tuple_from_string(self, cube_name: str,
+                                         element_string: str,
+                                         dimensions: Iterable[str] = None,
+                                         **kwargs) -> OrderedDict:
+        if not dimensions:
+            dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
+
+        odata_tuple_as_dict = OrderedDict()
+        element_selections = element_string.split(',')
+        tuple_list = []
+        for dimension_name, element_selection in zip(dimensions, element_selections):
+            if "&&" not in element_selection:
+                if '::' in element_selection:
+                    hierarchy_name, element_name = element_selection.split("::")
+                else:
+                    hierarchy_name = dimension_name
+                    element_name = element_selection
+
+                tuple_list.append(format_url("Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
+                                              dimension_name,
+                                              hierarchy_name,
+                                              element_name))
+            else:
+                for element_selection_part in element_selection.split('&&'):
+                    hierarchy_name, element_name = element_selection_part.split('::')
+                    tuple_list.append(format_url("Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
+                                                  dimension_name,
+                                                  hierarchy_name,
+                                                  element_name))
+
+        odata_tuple_as_dict["Tuple@odata.bind"] = tuple_list
+
+        return odata_tuple_as_dict
+
+    def _compose_odata_tuple_from_iterable(self, cube_name: str,
+                                           element_tuple: Iterable,
+                                           dimensions: Iterable[str] = None,
+                                           **kwargs) -> OrderedDict:
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
         odata_tuple_as_dict = OrderedDict()
@@ -249,8 +284,9 @@ class CellService(ObjectService):
             in zip(dimensions, element_tuple)]
         return odata_tuple_as_dict
 
+
     def trace_cell_calculation(self, cube_name: str,
-                               element_tuple: Iterable,
+                               elements: Union[Iterable,str],
                                dimensions: Iterable[str] = None,
                                sandbox_name: str = None,
                                depth: int = 1,
@@ -259,7 +295,14 @@ class CellService(ObjectService):
         """ Trace cell calculation at specified coordinates
 
         :param cube_name: name of the target cube
-        :param element_tuple: target coordinates
+        :param elements:
+        string "Hierarchy1::Element1 && Hierarchy2::Element4, Element9, Element2"
+            - Dimensions are not specified! They are derived from the position.
+            - The , separates the element-selections
+            - If more than one hierarchy is selected per dimension && splits the elementselections
+            - If no Hierarchy is specified. Default Hierarchy will be addressed
+        or
+        Iterable [Element1, Element2, Element3]
         :param dimensions: optional. Dimension names in their natural order. Will speed up the execution!
         :param sandbox_name: str
         :param depth: optional. Depth of the component trace that will be returned. Deeper traces take longer
@@ -281,7 +324,10 @@ class CellService(ObjectService):
                          "{}&$expand=Tuple($select=Name, UniqueName, Type) {}", cube_name, select_query, expand_query)
 
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
-        body_as_dict = self._compose_odata_tuple(cube_name, element_tuple, dimensions)
+        if isinstance(elements, str):
+            body_as_dict = self._compose_odata_tuple_from_string(cube_name, elements, dimensions)
+        else:
+            body_as_dict = self._compose_odata_tuple_from_iterable(cube_name, elements, dimensions)
         data = json.dumps(body_as_dict, ensure_ascii=False)
         return self._rest.POST(url=url, data=data, **kwargs).content
 
@@ -659,7 +705,7 @@ class CellService(ObjectService):
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         body_as_dict = OrderedDict()
         body_as_dict["Cells"] = [{}]
-        body_as_dict["Cells"][0] = self._compose_odata_tuple(cube_name, element_tuple, dimensions, **kwargs)
+        body_as_dict["Cells"][0] = self._compose_odata_tuple_from_string(cube_name, element_tuple, dimensions, **kwargs)
         body_as_dict["Value"] = str(value) if value else ""
         data = json.dumps(body_as_dict, ensure_ascii=False)
         return self._rest.POST(url=url, data=data, **kwargs)
