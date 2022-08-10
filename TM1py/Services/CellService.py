@@ -284,7 +284,6 @@ class CellService(ObjectService):
             in zip(dimensions, element_tuple)]
         return odata_tuple_as_dict
 
-
     def trace_cell_calculation(self, cube_name: str,
                                elements: Union[Iterable,str],
                                dimensions: Iterable[str] = None,
@@ -322,6 +321,40 @@ class CellService(ObjectService):
 
         url = format_url("/api/v1/Cubes('{}')/tm1.TraceCellCalculation?$select=Type,Value,Statements"
                          "{}&$expand=Tuple($select=Name, UniqueName, Type) {}", cube_name, select_query, expand_query)
+
+        url = add_url_parameters(url, **{"!sandbox": sandbox_name})
+        if isinstance(elements, str):
+            body_as_dict = self._compose_odata_tuple_from_string(cube_name, elements, dimensions)
+        else:
+            body_as_dict = self._compose_odata_tuple_from_iterable(cube_name, elements, dimensions)
+        data = json.dumps(body_as_dict, ensure_ascii=False)
+        return self._rest.POST(url=url, data=data, **kwargs).content
+
+    def trace_cell_feeders(self, cube_name: str,
+                               elements: Union[Iterable,str],
+                               dimensions: Iterable[str] = None,
+                               sandbox_name: str = None,
+                               **kwargs) -> str:
+
+        """ Trace feeders from a cell
+
+        :param cube_name: name of the target cube
+        :param elements:
+        string "Hierarchy1::Element1 && Hierarchy2::Element4, Element9, Element2"
+            - Dimensions are not specified! They are derived from the position.
+            - The , separates the element-selections
+            - If more than one hierarchy is selected per dimension && splits the elementselections
+            - If no Hierarchy is specified. Default Hierarchy will be addressed
+        or
+        Iterable [Element1, Element2, Element3]
+        :param dimensions: optional. Dimension names in their natural order. Will speed up the execution!
+        :param sandbox_name: str
+        :return: feeder trace
+        """
+
+        url = format_url("/api/v1/Cubes('{}')/tm1.TraceFeeders?$select=Statements,FedCells"
+                         "&$expand=FedCells/Tuple($select=Name,UniqueName,Type), "
+                         "FedCells/Cube($select=Name)", cube_name)
 
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         if isinstance(elements, str):
