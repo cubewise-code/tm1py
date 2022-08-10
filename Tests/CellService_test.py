@@ -1358,6 +1358,42 @@ class TestCellService(unittest.TestCase):
 
         self.assertEqual(expected_cells, cells)
 
+    def test_execute_mdx_multi_axes_with_where(self):
+        query = MdxBuilder.from_cube(self.cube_with_five_dimensions)
+        query.non_empty(0)
+        query.add_hierarchy_set_to_axis(0, MdxHierarchySet.all_leaves(
+            self.five_dimensions[0],
+            self.five_dimensions[0]))
+
+        query.non_empty(1)
+        query.add_hierarchy_set_to_axis(1, MdxHierarchySet.all_leaves(
+            self.five_dimensions[1],
+            self.five_dimensions[1]))
+
+        query.non_empty(2)
+        query.add_hierarchy_set_to_axis(2, MdxHierarchySet.all_leaves(
+            self.five_dimensions[2],
+            self.five_dimensions[2]))
+
+        query.non_empty(3)
+        query.add_hierarchy_set_to_axis(3, MdxHierarchySet.all_leaves(
+            self.five_dimensions[3],
+            self.five_dimensions[3]))
+
+        query.where(Member(self.five_dimensions[4], self.five_dimensions[4], "e2"))
+
+        cells = self.tm1.cells.execute_mdx(
+            mdx=query.to_mdx(),
+            element_unique_names=False,
+            skip_cell_properties=True,
+            skip_zeros=True)
+
+        expected_cells = {
+            ("e2", "e2", "e2", "e2", "e2"): 2
+        }
+
+        self.assertEqual(expected_cells, cells)
+
     def test_execute_mdx_raw_skip_contexts(self):
         mdx = MdxBuilder.from_cube(self.cube_name) \
             .add_hierarchy_set_to_row_axis(MdxHierarchySet.member(Member.of(self.dimension_names[0], "Element1"))) \
