@@ -3369,6 +3369,41 @@ class TestCellService(unittest.TestCase):
         trace = json.loads(result)
         self.assertEqual(trace['@odata.context'], '../$metadata#ibm.tm1.api.v1.FeederTrace')
 
+    def test_check_feeders_string(self):
+        result = self.tm1.cells.check_cell_feeders(
+            cube_name=self.cube_with_rules_name,
+            elements="Element1,Element1,Element1")
+        trace = json.loads(result)
+        self.assertEqual(trace['@odata.context'], '../$metadata#Collection(ibm.tm1.api.v1.FedCellDescriptor)')
+
+    def test_check_feeders_dimensions_string(self):
+        result = self.tm1.cells.check_cell_feeders(
+            cube_name=self.cube_with_rules_name,
+            elements="Element1,Element1,Element1",
+            dimensions=["TM1py_Tests_Cell_Dimension1","TM1py_Tests_Cell_Dimension2","TM1py_Tests_Cell_Dimension3"])
+        trace = json.loads(result)
+        self.assertEqual(trace['@odata.context'], '../$metadata#Collection(ibm.tm1.api.v1.FedCellDescriptor)')
+
+    def test_check_feeders_dimensions_string_hierarchy(self):
+        result = self.tm1.cells.check_cell_feeders(
+            cube_name=self.cube_with_rules_name,
+            elements="TM1py_Tests_Cell_Dimension1::Element1,"
+                     "TM1py_Tests_Cell_Dimension2::Element3,"
+                     "TM1py_Tests_Cell_Dimension3::Element1",
+            dimensions=["TM1py_Tests_Cell_Dimension1","TM1py_Tests_Cell_Dimension2","TM1py_Tests_Cell_Dimension3"])
+        trace = json.loads(result)
+        self.assertEqual(trace['@odata.context'], '../$metadata#Collection(ibm.tm1.api.v1.FedCellDescriptor)')
+
+    def test_check_feeders_dimensions_string_multi_hierarchy(self):
+        result = self.tm1.cells.check_cell_feeders(
+            cube_name=self.cube_with_rules_name,
+            elements="TM1py_Tests_Cell_Dimension1::Element1 && TM1py_Tests_Cell_Dimension1::Element1,"
+                     "TM1py_Tests_Cell_Dimension2::Element3,"
+                     "TM1py_Tests_Cell_Dimension3::Element1",
+            dimensions=["TM1py_Tests_Cell_Dimension1","TM1py_Tests_Cell_Dimension2","TM1py_Tests_Cell_Dimension3"])
+        trace = json.loads(result)
+        self.assertEqual(trace['@odata.context'], '../$metadata#Collection(ibm.tm1.api.v1.FedCellDescriptor)')
+
 
 
     # Delete Cube and Dimensions
