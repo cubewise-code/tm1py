@@ -278,7 +278,6 @@ def build_content_from_cellset_dict(
 
     cells = raw_cellset_as_dict['Cells']
     axes = extract_axes_from_cellset(raw_cellset_as_dict=raw_cellset_as_dict)
-    num_axes = len(axes)
 
     content_as_dict = CaseAndSpaceInsensitiveTuplesDict()
     for cell_ordinal, cell in enumerate(cells[:top or len(cells)]):
