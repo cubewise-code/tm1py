@@ -289,7 +289,7 @@ class CellService(ObjectService):
                                dimensions: Iterable[str] = None,
                                sandbox_name: str = None,
                                depth: int = 1,
-                               **kwargs) -> str:
+                               **kwargs) -> Dict:
 
         """ Trace cell calculation at specified coordinates
 
@@ -328,13 +328,14 @@ class CellService(ObjectService):
         else:
             body_as_dict = self._compose_odata_tuple_from_iterable(cube_name, elements, dimensions)
         data = json.dumps(body_as_dict, ensure_ascii=False)
-        return self._rest.POST(url=url, data=data, **kwargs).content
+
+        return json.loads(self._rest.POST(url=url, data=data, **kwargs).content)
 
     def trace_cell_feeders(self, cube_name: str,
                                elements: Union[Iterable,str],
                                dimensions: Iterable[str] = None,
                                sandbox_name: str = None,
-                               **kwargs) -> str:
+                               **kwargs) -> Dict:
 
         """ Trace feeders from a cell
 
@@ -362,13 +363,14 @@ class CellService(ObjectService):
         else:
             body_as_dict = self._compose_odata_tuple_from_iterable(cube_name, elements, dimensions)
         data = json.dumps(body_as_dict, ensure_ascii=False)
-        return self._rest.POST(url=url, data=data, **kwargs).content
+
+        return json.loads(self._rest.POST(url=url, data=data, **kwargs).content)
 
     def check_cell_feeders(self, cube_name: str,
                                elements: Union[Iterable,str],
                                dimensions: Iterable[str] = None,
                                sandbox_name: str = None,
-                               **kwargs) -> str:
+                               **kwargs) -> Dict:
 
         """ Check feeders
 
@@ -396,7 +398,8 @@ class CellService(ObjectService):
         else:
             body_as_dict = self._compose_odata_tuple_from_iterable(cube_name, elements, dimensions)
         data = json.dumps(body_as_dict, ensure_ascii=False)
-        return self._rest.POST(url=url, data=data, **kwargs).content
+
+        return json.loads(self._rest.POST(url=url, data=data, **kwargs).content)
 
 
     def relative_proportional_spread(
@@ -773,7 +776,7 @@ class CellService(ObjectService):
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         body_as_dict = OrderedDict()
         body_as_dict["Cells"] = [{}]
-        body_as_dict["Cells"][0] = self._compose_odata_tuple_from_string(cube_name, element_tuple, dimensions, **kwargs)
+        body_as_dict["Cells"][0] = self._compose_odata_tuple_from_iterable(cube_name, element_tuple, dimensions, **kwargs)
         body_as_dict["Value"] = str(value) if value else ""
         data = json.dumps(body_as_dict, ensure_ascii=False)
         return self._rest.POST(url=url, data=data, **kwargs)
