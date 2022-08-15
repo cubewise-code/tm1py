@@ -1,5 +1,4 @@
 import configparser
-import json
 import unittest
 from pathlib import Path
 
@@ -227,7 +226,12 @@ class TestCellService(unittest.TestCase):
     @classmethod
     def build_cube_with_rules(cls):
         cube = Cube(name=cls.cube_with_rules_name, dimensions=cls.dimension_names)
-        cube.rules = f"['{cls.dimension_names[0]}':'Element1'] = N: 1;\r\n"
+
+        cube.rules = f"""
+        ['{cls.dimension_names[0]}':'Element1'] = N: 1;\r\n
+        ['{cls.dimension_names[0]}':'Element2'] = N: ['{cls.dimension_names[0]}':'Element1'] ;\r\n
+        ['{cls.dimension_names[0]}':'Element3'] = N: ['{cls.dimension_names[0]}':'Element2'] ;\r\n
+        """
         cls.tm1.cubes.update_or_create(cube)
 
     @classmethod
@@ -1275,7 +1279,7 @@ class TestCellService(unittest.TestCase):
         query = MdxBuilder.from_cube(self.cube_with_rules_name)
         query = query.add_hierarchy_set_to_row_axis(MdxHierarchySet.members([
             Member.of(self.dimension_names[0], "Element 1"),
-            Member.of(self.dimension_names[0], "Element 2")]))
+            Member.of(self.dimension_names[0], "Element 4")]))
         query = query.add_hierarchy_set_to_column_axis(MdxHierarchySet.member(
             Member.of(self.dimension_names[1], "Element1")))
         query = query.add_member_to_where("[" + self.dimension_names[2] + "].[Element1]")
@@ -3255,31 +3259,41 @@ class TestCellService(unittest.TestCase):
     def test_trace_cell_calculation_no_depth_iterable(self):
         result = self.tm1.cells.trace_cell_calculation(
             cube_name=self.cube_with_rules_name,
-            elements=["Element1","Element1","Element1"])
+            elements=["Element1", "Element1", "Element1"])
 
         self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
 
     def test_trace_cell_calculation_shallow_depth_iterable(self):
+        shallow_depth = 1
         result = self.tm1.cells.trace_cell_calculation(
             cube_name=self.cube_with_rules_name,
-            elements=["Element1","Element1","Element1"],
-            depth=3)
+            elements=["Element3", "Element1", "Element1"],
+            depth=shallow_depth)
 
         self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+        components = result["Components"]
+
+        self.assertNotIn("Components", components)
 
     def test_trace_cell_calculation_deep_depth_iterable(self):
+        shallow_depth = 2
         result = self.tm1.cells.trace_cell_calculation(
             cube_name=self.cube_with_rules_name,
-            elements=["Element1","Element1","Element1"],
-            depth=25)
+            elements=["Element3", "Element1", "Element1"],
+            depth=shallow_depth)
 
         self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+        components = result["Components"]
+        for _ in range(shallow_depth - 1):
+            components = components[0]["Components"]
+
+        self.assertNotIn("Components", components)
 
     def test_trace_cell_calculation_dimensions_iterable(self):
         result = self.tm1.cells.trace_cell_calculation(
             cube_name=self.cube_with_rules_name,
-            elements=["Element1","Element1","Element1"],
-            dimensions=["TM1py_Tests_Cell_Dimension1","TM1py_Tests_Cell_Dimension2","TM1py_Tests_Cell_Dimension3"])
+            elements=["Element1", "Element1", "Element1"],
+            dimensions=["TM1py_Tests_Cell_Dimension1", "TM1py_Tests_Cell_Dimension2", "TM1py_Tests_Cell_Dimension3"])
 
         self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
 
@@ -3291,12 +3305,19 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
 
     def test_trace_cell_calculation_shallow_depth_string(self):
+        shallow_depth = 2
+
         result = self.tm1.cells.trace_cell_calculation(
             cube_name=self.cube_with_rules_name,
-            elements="Element1,Element1,Element1",
-            depth=3)
+            elements="Element3,Element1,Element1",
+            depth=shallow_depth)
 
         self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+        components = result["Components"]
+        for _ in range(shallow_depth - 1):
+            components = components[0]["Components"]
+
+        self.assertNotIn("Components", components)
 
     def test_trace_cell_calculation_deep_depth_string(self):
         result = self.tm1.cells.trace_cell_calculation(
@@ -3310,7 +3331,7 @@ class TestCellService(unittest.TestCase):
         result = self.tm1.cells.trace_cell_calculation(
             cube_name=self.cube_with_rules_name,
             elements="Element1,Element1,Element1",
-            dimensions=["TM1py_Tests_Cell_Dimension1","TM1py_Tests_Cell_Dimension2","TM1py_Tests_Cell_Dimension3"])
+            dimensions=["TM1py_Tests_Cell_Dimension1", "TM1py_Tests_Cell_Dimension2", "TM1py_Tests_Cell_Dimension3"])
 
         self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
 
@@ -3320,7 +3341,7 @@ class TestCellService(unittest.TestCase):
             elements="TM1py_Tests_Cell_Dimension1::Element1,"
                      "TM1py_Tests_Cell_Dimension2::Element3,"
                      "TM1py_Tests_Cell_Dimension3::Element1",
-            dimensions=["TM1py_Tests_Cell_Dimension1","TM1py_Tests_Cell_Dimension2","TM1py_Tests_Cell_Dimension3"])
+            dimensions=["TM1py_Tests_Cell_Dimension1", "TM1py_Tests_Cell_Dimension2", "TM1py_Tests_Cell_Dimension3"])
 
         self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
 
@@ -3330,7 +3351,7 @@ class TestCellService(unittest.TestCase):
             elements="TM1py_Tests_Cell_Dimension1::Element1 && TM1py_Tests_Cell_Dimension1::Element1,"
                      "TM1py_Tests_Cell_Dimension2::Element3,"
                      "TM1py_Tests_Cell_Dimension3::Element1",
-            dimensions=["TM1py_Tests_Cell_Dimension1","TM1py_Tests_Cell_Dimension2","TM1py_Tests_Cell_Dimension3"])
+            dimensions=["TM1py_Tests_Cell_Dimension1", "TM1py_Tests_Cell_Dimension2", "TM1py_Tests_Cell_Dimension3"])
 
         self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
 
@@ -3345,7 +3366,7 @@ class TestCellService(unittest.TestCase):
         result = self.tm1.cells.trace_cell_feeders(
             cube_name=self.cube_with_rules_name,
             elements="Element1,Element1,Element1",
-            dimensions=["TM1py_Tests_Cell_Dimension1","TM1py_Tests_Cell_Dimension2","TM1py_Tests_Cell_Dimension3"])
+            dimensions=["TM1py_Tests_Cell_Dimension1", "TM1py_Tests_Cell_Dimension2", "TM1py_Tests_Cell_Dimension3"])
 
         self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.FeederTrace')
 
@@ -3355,7 +3376,7 @@ class TestCellService(unittest.TestCase):
             elements="TM1py_Tests_Cell_Dimension1::Element1,"
                      "TM1py_Tests_Cell_Dimension2::Element3,"
                      "TM1py_Tests_Cell_Dimension3::Element1",
-            dimensions=["TM1py_Tests_Cell_Dimension1","TM1py_Tests_Cell_Dimension2","TM1py_Tests_Cell_Dimension3"])
+            dimensions=["TM1py_Tests_Cell_Dimension1", "TM1py_Tests_Cell_Dimension2", "TM1py_Tests_Cell_Dimension3"])
 
         self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.FeederTrace')
 
@@ -3365,7 +3386,7 @@ class TestCellService(unittest.TestCase):
             elements="TM1py_Tests_Cell_Dimension1::Element1 && TM1py_Tests_Cell_Dimension1::Element1,"
                      "TM1py_Tests_Cell_Dimension2::Element3,"
                      "TM1py_Tests_Cell_Dimension3::Element1",
-            dimensions=["TM1py_Tests_Cell_Dimension1","TM1py_Tests_Cell_Dimension2","TM1py_Tests_Cell_Dimension3"])
+            dimensions=["TM1py_Tests_Cell_Dimension1", "TM1py_Tests_Cell_Dimension2", "TM1py_Tests_Cell_Dimension3"])
 
         self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.FeederTrace')
 
@@ -3380,7 +3401,7 @@ class TestCellService(unittest.TestCase):
         result = self.tm1.cells.check_cell_feeders(
             cube_name=self.cube_with_rules_name,
             elements="Element1,Element1,Element1",
-            dimensions=["TM1py_Tests_Cell_Dimension1","TM1py_Tests_Cell_Dimension2","TM1py_Tests_Cell_Dimension3"])
+            dimensions=["TM1py_Tests_Cell_Dimension1", "TM1py_Tests_Cell_Dimension2", "TM1py_Tests_Cell_Dimension3"])
 
         self.assertEqual(result['@odata.context'], '../$metadata#Collection(ibm.tm1.api.v1.FedCellDescriptor)')
 
@@ -3390,7 +3411,7 @@ class TestCellService(unittest.TestCase):
             elements="TM1py_Tests_Cell_Dimension1::Element1,"
                      "TM1py_Tests_Cell_Dimension2::Element3,"
                      "TM1py_Tests_Cell_Dimension3::Element1",
-            dimensions=["TM1py_Tests_Cell_Dimension1","TM1py_Tests_Cell_Dimension2","TM1py_Tests_Cell_Dimension3"])
+            dimensions=["TM1py_Tests_Cell_Dimension1", "TM1py_Tests_Cell_Dimension2", "TM1py_Tests_Cell_Dimension3"])
 
         self.assertEqual(result['@odata.context'], '../$metadata#Collection(ibm.tm1.api.v1.FedCellDescriptor)')
 
@@ -3400,11 +3421,9 @@ class TestCellService(unittest.TestCase):
             elements="TM1py_Tests_Cell_Dimension1::Element1 && TM1py_Tests_Cell_Dimension1::Element1,"
                      "TM1py_Tests_Cell_Dimension2::Element3,"
                      "TM1py_Tests_Cell_Dimension3::Element1",
-            dimensions=["TM1py_Tests_Cell_Dimension1","TM1py_Tests_Cell_Dimension2","TM1py_Tests_Cell_Dimension3"])
+            dimensions=["TM1py_Tests_Cell_Dimension1", "TM1py_Tests_Cell_Dimension2", "TM1py_Tests_Cell_Dimension3"])
 
         self.assertEqual(result['@odata.context'], '../$metadata#Collection(ibm.tm1.api.v1.FedCellDescriptor)')
-
-
 
     # Delete Cube and Dimensions
     @classmethod
