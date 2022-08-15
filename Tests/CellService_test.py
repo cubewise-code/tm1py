@@ -3256,63 +3256,63 @@ class TestCellService(unittest.TestCase):
         result = self.tm1.cells.trace_cell_calculation(
             cube_name=self.cube_with_rules_name,
             elements=["Element1","Element1","Element1"])
-        trace = json.loads(result)
-        self.assertEqual(trace['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+
+        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
 
     def test_trace_cell_calculation_shallow_depth_iterable(self):
         result = self.tm1.cells.trace_cell_calculation(
             cube_name=self.cube_with_rules_name,
             elements=["Element1","Element1","Element1"],
             depth=3)
-        trace = json.loads(result)
-        self.assertEqual(trace['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+
+        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
 
     def test_trace_cell_calculation_deep_depth_iterable(self):
         result = self.tm1.cells.trace_cell_calculation(
             cube_name=self.cube_with_rules_name,
             elements=["Element1","Element1","Element1"],
             depth=25)
-        trace = json.loads(result)
-        self.assertEqual(trace['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+
+        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
 
     def test_trace_cell_calculation_dimensions_iterable(self):
         result = self.tm1.cells.trace_cell_calculation(
             cube_name=self.cube_with_rules_name,
             elements=["Element1","Element1","Element1"],
             dimensions=["TM1py_Tests_Cell_Dimension1","TM1py_Tests_Cell_Dimension2","TM1py_Tests_Cell_Dimension3"])
-        trace = json.loads(result)
-        self.assertEqual(trace['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+
+        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
 
     def test_trace_cell_calculation_no_depth_string(self):
         result = self.tm1.cells.trace_cell_calculation(
             cube_name=self.cube_with_rules_name,
             elements="Element1,Element1,Element1")
-        trace = json.loads(result)
-        self.assertEqual(trace['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+
+        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
 
     def test_trace_cell_calculation_shallow_depth_string(self):
         result = self.tm1.cells.trace_cell_calculation(
             cube_name=self.cube_with_rules_name,
             elements="Element1,Element1,Element1",
             depth=3)
-        trace = json.loads(result)
-        self.assertEqual(trace['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+
+        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
 
     def test_trace_cell_calculation_deep_depth_string(self):
         result = self.tm1.cells.trace_cell_calculation(
             cube_name=self.cube_with_rules_name,
             elements="Element1,Element1,Element1",
             depth=25)
-        trace = json.loads(result)
-        self.assertEqual(trace['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+
+        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
 
     def test_trace_cell_calculation_dimensions_string(self):
         result = self.tm1.cells.trace_cell_calculation(
             cube_name=self.cube_with_rules_name,
             elements="Element1,Element1,Element1",
             dimensions=["TM1py_Tests_Cell_Dimension1","TM1py_Tests_Cell_Dimension2","TM1py_Tests_Cell_Dimension3"])
-        trace = json.loads(result)
-        self.assertEqual(trace['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+
+        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
 
     def test_trace_cell_calculation_dimensions_string_hierarchy(self):
         result = self.tm1.cells.trace_cell_calculation(
@@ -3321,8 +3321,8 @@ class TestCellService(unittest.TestCase):
                      "TM1py_Tests_Cell_Dimension2::Element3,"
                      "TM1py_Tests_Cell_Dimension3::Element1",
             dimensions=["TM1py_Tests_Cell_Dimension1","TM1py_Tests_Cell_Dimension2","TM1py_Tests_Cell_Dimension3"])
-        trace = json.loads(result)
-        self.assertEqual(trace['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+
+        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
 
     def test_trace_cell_calculation_dimensions_string_multi_hierarchy(self):
         result = self.tm1.cells.trace_cell_calculation(
@@ -3331,23 +3331,23 @@ class TestCellService(unittest.TestCase):
                      "TM1py_Tests_Cell_Dimension2::Element3,"
                      "TM1py_Tests_Cell_Dimension3::Element1",
             dimensions=["TM1py_Tests_Cell_Dimension1","TM1py_Tests_Cell_Dimension2","TM1py_Tests_Cell_Dimension3"])
-        trace = json.loads(result)
-        self.assertEqual(trace['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+
+        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
 
     def test_trace_feeders_string(self):
         result = self.tm1.cells.trace_cell_feeders(
             cube_name=self.cube_with_rules_name,
             elements="Element1,Element1,Element1")
-        trace = json.loads(result)
-        self.assertEqual(trace['@odata.context'], '../$metadata#ibm.tm1.api.v1.FeederTrace')
+
+        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.FeederTrace')
 
     def test_trace_feeders_dimensions_string(self):
         result = self.tm1.cells.trace_cell_feeders(
             cube_name=self.cube_with_rules_name,
             elements="Element1,Element1,Element1",
             dimensions=["TM1py_Tests_Cell_Dimension1","TM1py_Tests_Cell_Dimension2","TM1py_Tests_Cell_Dimension3"])
-        trace = json.loads(result)
-        self.assertEqual(trace['@odata.context'], '../$metadata#ibm.tm1.api.v1.FeederTrace')
+
+        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.FeederTrace')
 
     def test_trace_feeders_dimensions_string_hierarchy(self):
         result = self.tm1.cells.trace_cell_feeders(
@@ -3356,8 +3356,8 @@ class TestCellService(unittest.TestCase):
                      "TM1py_Tests_Cell_Dimension2::Element3,"
                      "TM1py_Tests_Cell_Dimension3::Element1",
             dimensions=["TM1py_Tests_Cell_Dimension1","TM1py_Tests_Cell_Dimension2","TM1py_Tests_Cell_Dimension3"])
-        trace = json.loads(result)
-        self.assertEqual(trace['@odata.context'], '../$metadata#ibm.tm1.api.v1.FeederTrace')
+
+        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.FeederTrace')
 
     def test_trace_feeders_dimensions_string_multi_hierarchy(self):
         result = self.tm1.cells.trace_cell_feeders(
@@ -3366,23 +3366,23 @@ class TestCellService(unittest.TestCase):
                      "TM1py_Tests_Cell_Dimension2::Element3,"
                      "TM1py_Tests_Cell_Dimension3::Element1",
             dimensions=["TM1py_Tests_Cell_Dimension1","TM1py_Tests_Cell_Dimension2","TM1py_Tests_Cell_Dimension3"])
-        trace = json.loads(result)
-        self.assertEqual(trace['@odata.context'], '../$metadata#ibm.tm1.api.v1.FeederTrace')
+
+        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.FeederTrace')
 
     def test_check_feeders_string(self):
         result = self.tm1.cells.check_cell_feeders(
             cube_name=self.cube_with_rules_name,
             elements="Element1,Element1,Element1")
-        trace = json.loads(result)
-        self.assertEqual(trace['@odata.context'], '../$metadata#Collection(ibm.tm1.api.v1.FedCellDescriptor)')
+
+        self.assertEqual(result['@odata.context'], '../$metadata#Collection(ibm.tm1.api.v1.FedCellDescriptor)')
 
     def test_check_feeders_dimensions_string(self):
         result = self.tm1.cells.check_cell_feeders(
             cube_name=self.cube_with_rules_name,
             elements="Element1,Element1,Element1",
             dimensions=["TM1py_Tests_Cell_Dimension1","TM1py_Tests_Cell_Dimension2","TM1py_Tests_Cell_Dimension3"])
-        trace = json.loads(result)
-        self.assertEqual(trace['@odata.context'], '../$metadata#Collection(ibm.tm1.api.v1.FedCellDescriptor)')
+
+        self.assertEqual(result['@odata.context'], '../$metadata#Collection(ibm.tm1.api.v1.FedCellDescriptor)')
 
     def test_check_feeders_dimensions_string_hierarchy(self):
         result = self.tm1.cells.check_cell_feeders(
@@ -3391,8 +3391,8 @@ class TestCellService(unittest.TestCase):
                      "TM1py_Tests_Cell_Dimension2::Element3,"
                      "TM1py_Tests_Cell_Dimension3::Element1",
             dimensions=["TM1py_Tests_Cell_Dimension1","TM1py_Tests_Cell_Dimension2","TM1py_Tests_Cell_Dimension3"])
-        trace = json.loads(result)
-        self.assertEqual(trace['@odata.context'], '../$metadata#Collection(ibm.tm1.api.v1.FedCellDescriptor)')
+
+        self.assertEqual(result['@odata.context'], '../$metadata#Collection(ibm.tm1.api.v1.FedCellDescriptor)')
 
     def test_check_feeders_dimensions_string_multi_hierarchy(self):
         result = self.tm1.cells.check_cell_feeders(
@@ -3401,8 +3401,8 @@ class TestCellService(unittest.TestCase):
                      "TM1py_Tests_Cell_Dimension2::Element3,"
                      "TM1py_Tests_Cell_Dimension3::Element1",
             dimensions=["TM1py_Tests_Cell_Dimension1","TM1py_Tests_Cell_Dimension2","TM1py_Tests_Cell_Dimension3"])
-        trace = json.loads(result)
-        self.assertEqual(trace['@odata.context'], '../$metadata#Collection(ibm.tm1.api.v1.FedCellDescriptor)')
+
+        self.assertEqual(result['@odata.context'], '../$metadata#Collection(ibm.tm1.api.v1.FedCellDescriptor)')
 
 
 
