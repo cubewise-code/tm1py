@@ -5,6 +5,7 @@ import json
 from typing import Iterable, Dict, List
 
 from TM1py.Objects.TM1Object import TM1Object
+from TM1py.Utils import format_url
 
 
 class Annotation(TM1Object):
@@ -54,6 +55,10 @@ class Annotation(TM1Object):
 
     @property
     def body(self) -> str:
+        return json.dumps(self._construct_body())
+
+    @property
+    def body_as_dict(self) -> Dict:
         return self._construct_body()
 
     @property
@@ -106,7 +111,7 @@ class Annotation(TM1Object):
                 if not source_element or self._dimensional_context[i] == source_element:
                     self._dimensional_context[i] = target_element
 
-    def _construct_body(self) -> str:
+    def _construct_body(self) -> Dict:
         """ construct the ODATA conform JSON represenation for the Annotation entity.
 
             :return: string, the valid JSON
@@ -125,4 +130,23 @@ class Annotation(TM1Object):
         body['commentType'] = self._comment_type
         body['commentValue'] = self._comment_value
         body['objectName'] = self._object_name
-        return json.dumps(body, ensure_ascii=False)
+        return body
+
+    def construct_body_for_post(self, cube_dimensions) -> Dict:
+        body = collections.OrderedDict()
+        body["Text"] = self.text
+        body["ApplicationContext"] = [{
+            "Facet@odata.bind": "ApplicationContextFacets('}Cubes')",
+            "Value": self.object_name}]
+        body["DimensionalContext@odata.bind"] = []
+
+        for dimension, element in zip(cube_dimensions, self.dimensional_context):
+            coordinates = format_url("Dimensions('{}')/Hierarchies('{}')/Members('{}')", dimension, dimension, element)
+            body["DimensionalContext@odata.bind"].append(coordinates)
+
+        body['objectName'] = self.object_name
+        body['commentValue'] = self.comment_value
+        body['commentType'] = 'ANNOTATION'
+        body['commentLocation'] = ','.join(self.dimensional_context)
+
+        return body

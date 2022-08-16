@@ -93,6 +93,27 @@ class TestAnnotationService(unittest.TestCase):
         new_annotation = self.tm1.cubes.annotations.get(annotation_id)
         self.assertEqual(new_annotation.comment_value, random_text)
 
+    def test_create_many(self):
+        """
+        Check that an annotation can be created on the server
+        Check that created annotation has the correct comment_value
+        """
+        pre_annotation_count = len(self.tm1.cubes.annotations.get_all(self.cube_name))
+
+        annotations = list()
+        for _ in range(5):
+            random_intersection = self.tm1.cubes.get_random_intersection(self.cube_name, False)
+            random_text = "".join([random.choice(string.printable) for _ in range(100)])
+
+            annotations.append(Annotation(
+                comment_value=random_text,
+                object_name=self.cube_name,
+                dimensional_context=random_intersection))
+
+        self.tm1.cubes.annotations.create_many(annotations)
+        all_annotations = self.tm1.cubes.annotations.get_all(self.cube_name)
+        self.assertEqual(len(all_annotations), pre_annotation_count + 5)
+
     def test_get(self):
         """
         Check that get returns the test annotation from its id
