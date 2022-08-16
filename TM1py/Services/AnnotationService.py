@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 
-import collections
 import json
-from typing import List
+from typing import List, Iterable
 
 from requests import Response
 
 from TM1py.Objects.Annotation import Annotation
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import format_url
+from TM1py.Utils import format_url, CaseAndSpaceInsensitiveDict
 
 
 class AnnotationService(ObjectService):
@@ -39,25 +38,35 @@ class AnnotationService(ObjectService):
         """
         url = "/api/v1/Annotations"
 
-        payload = collections.OrderedDict()
-        payload["Text"] = annotation.text
-        payload["ApplicationContext"] = [{
-            "Facet@odata.bind": "ApplicationContextFacets('}Cubes')",
-            "Value": annotation.object_name}]
-        payload["DimensionalContext@odata.bind"] = []
         from TM1py import CubeService
         cube_dimensions = CubeService(self._rest).get_dimension_names(
             cube_name=annotation.object_name,
             skip_sandbox_dimension=True)
-        for dimension, element in zip(cube_dimensions, annotation.dimensional_context):
-            coordinates = format_url("Dimensions('{}')/Hierarchies('{}')/Members('{}')", dimension, dimension, element)
-            payload["DimensionalContext@odata.bind"].append(coordinates)
-        payload['objectName'] = annotation.object_name
-        payload['commentValue'] = annotation.comment_value
-        payload['commentType'] = 'ANNOTATION'
-        payload['commentLocation'] = ','.join(annotation.dimensional_context)
 
-        response = self._rest.POST(url, json.dumps(payload, ensure_ascii=False), **kwargs)
+        response = self._rest.POST(url, json.dumps(annotation.construct_body_for_post(cube_dimensions)), **kwargs)
+        return response
+
+    def create_many(self, annotations: Iterable[Annotation], **kwargs) -> Response:
+        """ create an Annotation
+
+        :param annotations: instances of TM1py.Annotation
+        """
+        payload = list()
+        cube_dimensions = CaseAndSpaceInsensitiveDict()
+
+        for annotation in annotations:
+            dimension_names = cube_dimensions.get(annotation.object_name, None)
+            if not dimension_names:
+                from TM1py import CubeService
+                dimension_names = CubeService(self._rest).get_dimension_names(
+                    cube_name=annotation.object_name,
+                    skip_sandbox_dimension=True)
+
+                cube_dimensions[annotation.object_name] = dimension_names
+            payload.append(annotation.construct_body_for_post(dimension_names))
+
+        response = self._rest.POST("/api/v1/Annotations", json.dumps(payload), **kwargs)
+
         return response
 
     def get(self, annotation_id: str, **kwargs) -> Annotation:
