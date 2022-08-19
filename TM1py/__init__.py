@@ -26,6 +26,10 @@ from TM1py.Objects.Cube import Cube
 from TM1py.Objects.Dimension import Dimension
 from TM1py.Objects.Element import Element
 from TM1py.Objects.ElementAttribute import ElementAttribute
+from TM1py.Objects.Git import Git
+from TM1py.Objects.GitCommit import GitCommit
+from TM1py.Objects.GitPlan import GitPlan
+from TM1py.Objects.GitRemote import GitRemote
 from TM1py.Objects.Hierarchy import Hierarchy
 from TM1py.Objects.MDXView import MDXView
 from TM1py.Objects.NativeView import NativeView
@@ -43,7 +47,6 @@ from TM1py.Services.ChoreService import ChoreService
 from TM1py.Services.CubeService import CubeService
 from TM1py.Services.DimensionService import DimensionService
 from TM1py.Services.ElementService import ElementService
-from TM1py.Services.GitService import GitService
 from TM1py.Services.GitService import GitService
 from TM1py.Services.HierarchyService import HierarchyService
 from TM1py.Services.MonitoringService import MonitoringService
