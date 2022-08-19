@@ -229,6 +229,23 @@ class TestElementService(unittest.TestCase):
         self.assertNotIn(self.extra_year, leaf_element_names)
         self.assertNotIn("Total Years", leaf_element_names)
 
+    def test_get_consolidated_element_names(self):
+        consol_element_names = self.tm1.dimensions.hierarchies.elements.get_consolidated_element_names(
+            self.dimension_name,
+            self.hierarchy_name)
+        for consol in consol_element_names:
+            self.assertNotIn(consol, self.years)
+        self.assertIn("Total Years", consol_element_names)
+
+    def test_get_numeric_element_names(self):
+        numeric_element_names = self.tm1.dimensions.hierarchies.elements.get_numeric_element_names(
+            self.dimension_name,
+            self.hierarchy_name)
+        for elem in numeric_element_names:
+            self.assertIn(elem, self.years)
+        self.assertNotIn(self.extra_year, numeric_element_names)
+        self.assertNotIn("Total Years", numeric_element_names)
+
     def test_get_leaf_elements(self):
         leaf_elements = self.tm1.dimensions.hierarchies.elements.get_leaf_elements(
             self.dimension_name,
@@ -239,6 +256,27 @@ class TestElementService(unittest.TestCase):
         leaf_element_names = [element.name for element in leaf_elements]
         self.assertNotIn(self.extra_year, leaf_element_names)
         self.assertNotIn("Total Year", leaf_element_names)
+
+    def test_get_numeric_elements(self):
+        numeric_elements = self.tm1.dimensions.hierarchies.elements.get_numeric_elements(
+            self.dimension_name,
+            self.hierarchy_name)
+        for elem in numeric_elements:
+            self.assertIn(elem.name, self.years)
+            self.assertNotEqual(elem.element_type, "Consolidated")
+        numeric_element_names = [element.name for element in numeric_elements]
+        self.assertNotIn(self.extra_year, numeric_element_names)
+        self.assertNotIn("Total Year", numeric_element_names)
+
+    def test_get_consolidated_elements(self):
+        consol_elements = self.tm1.dimensions.hierarchies.elements.get_consolidated_elements(
+            self.dimension_name,
+            self.hierarchy_name)
+        for consol in consol_elements:
+            self.assertNotIn(consol.name, self.years)
+            self.assertNotEqual(consol.element_type, "Numeric")
+        consol_element_names = [element.name for element in consol_elements]
+        self.assertIn("Total Year", consol_element_names)
 
     def test_element_exists(self):
         for year in self.years:
@@ -364,6 +402,50 @@ class TestElementService(unittest.TestCase):
             self.dimension_name, self.hierarchy_name)
 
         self.assertEqual(number_of_elements, 2)
+
+    def test_get_number_of_numeric_elements(self):
+        number_of_elements = self.tm1.dimensions.hierarchies.elements.get_number_of_numeric_elements(
+            self.dimension_name, self.hierarchy_name)
+
+        self.assertEqual(number_of_elements, 5)
+
+    def test_string_element_functions(self):
+        string_elem = 'string_element'
+        element = Element(string_elem, "String")
+        self.tm1.dimensions.hierarchies.elements.create(
+            self.dimension_name,
+            self.hierarchy_name,
+            element)
+        
+        number_of_elements = self.tm1.dimensions.hierarchies.elements.get_number_of_string_elements(
+            self.dimension_name, self.hierarchy_name)
+        self.assertEqual(number_of_elements, 1)
+
+        string_element_names = self.tm1.dimensions.hierarchies.elements.get_string_element_names(
+            self.dimension_name,
+            self.hierarchy_name)
+        for elem in string_element_names:
+            self.assertIn(elem, [string_elem])
+        self.assertNotIn('Total Years', string_element_names)
+        self.assertNotIn("1989", string_element_names)
+
+        string_elements = self.tm1.dimensions.hierarchies.elements.get_string_elements(
+            self.dimension_name,
+            self.hierarchy_name)
+        for elem in string_elements:
+            self.assertIn(elem.name, [string_elem])
+            self.assertNotEqual(elem.element_type, "Consolidated")
+            self.assertNotEqual(elem.element_type, "Numeric")
+        string_element_names = [element.name for element in string_elements]
+        self.assertNotIn('1989', string_element_names)
+        self.assertNotIn("Total Year", string_element_names)
+
+        self.tm1.dimensions.hierarchies.elements.delete(
+            self.dimension_name,
+            self.hierarchy_name,
+            element.name)
+
+
 
     def test_create_element_attribute(self):
         element_attribute = ElementAttribute("NewAttribute", "String")
@@ -615,6 +697,14 @@ class TestElementService(unittest.TestCase):
                 dimension_name=self.dimension_name,
                 hierarchy_name=self.hierarchy_name,
                 element_name="Not Existing Element")
+
+    def test_get_parents_all_elements_happy_case(self):
+        parents = self.tm1.elements.get_parents_all_elements(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name
+            )
+
+        self.assertEqual(len(parents), 7)
 
     def test_element_is_parent_dim_not_exist(self):
         with self.assertRaises(TM1pyRestException):
