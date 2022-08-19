@@ -388,6 +388,9 @@ class ProcessService(ObjectService):
             return response.text
 
     def debug_process(self, process_name: str, timeout: float = None, **kwargs) -> Dict:
+        """ 
+        Start debug session for specified process; debug session id is returned in response        
+        """
         raw_url = "/api/v1/Processes('{}')/tm1.Debug?$expand=Breakpoints," \
                   "Thread,CallStack($expand=Variables,Process($select=Name))"
         url = format_url(raw_url, process_name)
@@ -406,6 +409,10 @@ class ProcessService(ObjectService):
         return response.json()
 
     def debug_step_over(self, debug_id: str, **kwargs) -> Dict:
+        """ 
+        Runs a single statement in the process
+        If ExecuteProcess is next function, will NOT debug child process        
+        """
         url = format_url("/api/v1/ProcessDebugContexts('{}')/tm1.StepOver", debug_id)
         self._rest.POST(url, **kwargs)
 
@@ -422,7 +429,7 @@ class ProcessService(ObjectService):
 
     def debug_step_out(self, debug_id: str, **kwargs) -> Dict:
         """
-        Resumes execution and runs until next breakpoint or current process has finished.
+        Resumes execution and runs until current process has finished.
         """
         url = format_url("/api/v1/ProcessDebugContexts('{}')/tm1.StepOut", debug_id)
         self._rest.POST(url, **kwargs)
@@ -439,6 +446,10 @@ class ProcessService(ObjectService):
         return response.json()
 
     def debug_continue(self, debug_id: str, **kwargs) -> Dict:
+        """ 
+        Resumes execution until next breakpoint
+        
+        """
         url = format_url("/api/v1/ProcessDebugContexts('{}')/tm1.Continue", debug_id)
         self._rest.POST(url, **kwargs)
 
@@ -560,7 +571,7 @@ class ProcessService(ObjectService):
         """ This function is same functionality as hitting "Evaluate" within variable formula editor in TI
             Function creates temporary TI and then starts a debug session on that TI
             EnableTIDebugging=T must be present in .cfg file
-            Only suited for Deb and one-off uses, don't incorporate into dataframe lambda function
+            Only suited for DEV and one-off uses, don't incorporate into dataframe lambda function
 
         :param formula: a valid tm1 variable formula (no double quotes, no equals sign, semicolon optional)
             e.g. "8*2;", "CellGetN('c1', 'e1', 'e2);", "ATTRS('Region', 'France', 'Currency')"
