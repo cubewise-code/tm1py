@@ -180,6 +180,22 @@ class ElementService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return int(response.text)
 
+    def get_number_of_numeric_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> int:
+        url = format_url(
+            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements/$count?$filter=Type eq 1",
+            dimension_name,
+            hierarchy_name)
+        response = self._rest.GET(url, **kwargs)
+        return int(response.text)
+
+    def get_number_of_string_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> int:
+        url = format_url(
+            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements/$count?$filter=Type eq 2",
+            dimension_name,
+            hierarchy_name)
+        response = self._rest.GET(url, **kwargs)
+        return int(response.text)
+
     def get_all_leaf_element_identifiers(self, dimension_name: str, hierarchy_name: str,
                                          **kwargs) -> CaseAndSpaceInsensitiveSet:
         """ Get all element names and alias values for leaf elements in a hierarchy
