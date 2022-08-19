@@ -1,6 +1,6 @@
 TM1py>=1.6.2
 pandas>=1.2.2
-mdxpy<=0.2
+mdxpy>=0.4
 python-dateutil>=2.8.1
 requests>=2.25.1
 urllib3>=1.26.3
