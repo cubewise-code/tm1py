@@ -530,6 +530,14 @@ class ProcessService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return response.json()['CallStack'][0]['RecordNumber']
 
+    def debug_get_current_breakpoint(self, debug_id: str, **kwargs) -> ProcessDebugBreakpoint:
+        raw_url = "/api/v1/ProcessDebugContexts('{}')?$expand=CurrentBreakpoint"
+
+        url = format_url(raw_url, debug_id)
+
+        response = self._rest.GET(url=url, **kwargs)
+        return ProcessDebugBreakpoint.from_dict(response.json()["CurrentBreakpoint"])
+
     @require_admin
     def evaluate_boolean_ti_expression(self, formula: str):
         prolog_procedure = f"""
