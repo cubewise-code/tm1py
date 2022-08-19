@@ -514,6 +514,14 @@ class ProcessService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return response.json()['CallStack'][0]['Procedure']
 
+    def debug_get_process_line_number(self, debug_id: str, **kwargs) -> str:
+        raw_url = "/api/v1/ProcessDebugContexts('{}')?$expand=" \
+                  "CallStack($select=LineNumber)"
+        url = format_url(raw_url, debug_id)
+
+        response = self._rest.GET(url, **kwargs)
+        return response.json()['CallStack'][0]['LineNumber']
+
     @require_admin
     def evaluate_boolean_ti_expression(self, formula: str):
         prolog_procedure = f"""
