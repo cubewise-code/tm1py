@@ -506,6 +506,14 @@ class ProcessService(ObjectService):
         except:
             raise ValueError(f"'{variable_name}' not found in collection")
 
+    def debug_get_process_procedure(self, debug_id: str, **kwargs) -> str:
+        raw_url = "/api/v1/ProcessDebugContexts('{}')?$expand=" \
+                  "CallStack($select=Procedure)"
+        url = format_url(raw_url, debug_id)
+
+        response = self._rest.GET(url, **kwargs)
+        return response.json()['CallStack'][0]['Procedure']
+
     @require_admin
     def evaluate_boolean_ti_expression(self, formula: str):
         prolog_procedure = f"""
