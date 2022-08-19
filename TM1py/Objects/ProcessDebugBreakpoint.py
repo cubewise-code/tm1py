@@ -163,6 +163,10 @@ class ProcessDebugBreakpoint(TM1Object):
 
     @property
     def body(self) -> str:
+        return json.dumps(self._construct_body())
+
+    @property
+    def body_as_dict(self) -> Dict:
         return self._construct_body()
 
     @enabled.setter
@@ -227,4 +231,4 @@ class ProcessDebugBreakpoint(TM1Object):
             body_as_dict['ObjectType'] = self._object_type
             body_as_dict['LockMode'] = self._lock_mode
 
-        return json.dumps(body_as_dict, ensure_ascii=False)
+        return body_as_dict
