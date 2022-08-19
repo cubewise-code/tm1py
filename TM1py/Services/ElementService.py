@@ -112,6 +112,21 @@ class ElementService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return [e["Name"] for e in response.json()['value']]
 
+    def get_numeric_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[Element]:
+        url = format_url(
+            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*&$filter=Type eq 1",
+            dimension_name,
+            hierarchy_name)
+        response = self._rest.GET(url, **kwargs)
+        return [Element.from_dict(element) for element in response.json()["value"]] 
+
+    def get_numeric_element_names(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
+        url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Type eq 1",
+                         dimension_name,
+                         hierarchy_name)
+        response = self._rest.GET(url, **kwargs)
+        return [e["Name"] for e in response.json()['value']]
+
     def get_element_names(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
         """ Get all element names
 
