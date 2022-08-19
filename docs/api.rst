@@ -58,7 +58,7 @@ TM1 Services
    :members:
    :undoc-members:
 
-.. autoclass:: TM1py.RESTService
+.. autoclass:: TM1py.RestService
    :members:
    :undoc-members:
 
@@ -95,10 +95,6 @@ TM1 Objects
 
 
 .. autoclass:: TM1py.Application
-   :members:
-   :undoc-members:
-
-.. autoclass:: TM1py.Axis
    :members:
    :undoc-members:
 
@@ -187,6 +183,14 @@ TM1 Objects
    :undoc-members:
 
 .. autoclass:: TM1py.View
+   :members:
+   :undoc-members:
+
+.. autoclass:: TM1py.ViewAxisSelection
+   :members:
+   :undoc-members:
+
+.. autoclass:: TM1py.ViewTitleSelection
    :members:
    :undoc-members:
 
