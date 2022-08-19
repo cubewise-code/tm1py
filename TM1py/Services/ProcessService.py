@@ -494,6 +494,18 @@ class ProcessService(ObjectService):
         return response.json()['CallStack'][0]['Variables'] if response.json()['CallStack'] else response.json()[
             'CallStack']
 
+    def debug_get_single_variable_value(self, debug_id: str, variable_name: str, **kwargs) -> str:
+        raw_url = "/api/v1/ProcessDebugContexts('{}')?$expand=" \
+                  "CallStack($expand=Variables($filter=tolower(Name) eq '{}';$select=Value))"
+        url = format_url(raw_url, debug_id, variable_name.lower())
+
+        response = self._rest.GET(url, **kwargs)
+
+        try:
+            return response.json()['CallStack'][0]['Variables'][0]['Value']
+        except:
+            raise ValueError(f"'{variable_name}' not found in collection")
+
     @require_admin
     def evaluate_boolean_ti_expression(self, formula: str):
         prolog_procedure = f"""
