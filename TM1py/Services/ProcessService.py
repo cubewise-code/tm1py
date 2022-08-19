@@ -411,9 +411,28 @@ class ProcessService(ObjectService):
     def debug_step_over(self, debug_id: str, **kwargs) -> Dict:
         """ 
         Runs a single statement in the process
-        If ExecuteProcess is next function, will NOT debug child process        
+        If ExecuteProcess is next function, will NOT debug child process
         """
         url = format_url("/api/v1/ProcessDebugContexts('{}')/tm1.StepOver", debug_id)
+        self._rest.POST(url, **kwargs)
+
+        # digest time  necessary for TM1 <= 11.8
+        # ToDo: remove in later versions of TM1 once issue in TM1 server is resolved
+        time.sleep(0.1)
+
+        raw_url = "/api/v1/ProcessDebugContexts('{}')?$expand=Breakpoints," \
+                  "Thread,CallStack($expand=Variables,Process($select=Name))"
+        url = format_url(raw_url, debug_id)
+        response = self._rest.GET(url, **kwargs)
+
+        return response.json()
+
+    def debug_step_in(self, debug_id: str, **kwargs) -> Dict:
+        """ 
+        Runs a single statement in the process
+        If ExecuteProcess is next function, will pause at first statement inside child process
+        """
+        url = format_url("/api/v1/ProcessDebugContexts('{}')/tm1.StepIn", debug_id)
         self._rest.POST(url, **kwargs)
 
         # digest time  necessary for TM1 <= 11.8
