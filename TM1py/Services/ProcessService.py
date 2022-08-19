@@ -522,7 +522,7 @@ class ProcessService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return response.json()['CallStack'][0]['LineNumber']
 
-    def debug_get_process_record_number(self, debug_id: str, **kwargs) -> str:
+    def debug_get_record_number(self, debug_id: str, **kwargs) -> str:
         raw_url = "/api/v1/ProcessDebugContexts('{}')?$expand=" \
                   "CallStack($select=RecordNumber)"
         url = format_url(raw_url, debug_id)
