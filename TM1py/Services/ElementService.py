@@ -740,9 +740,7 @@ class ElementService(ObjectService):
         second_member = Member.of(dimension_name, hierarchy_name, second_element_name)
 
         if MDXDrillMethod.TM1DRILLDOWNMEMBER.name == mdx_method.upper():
-            query = MdxHierarchySet.members([first_member]).tm1_drill_down_member(
-                all=True,
-                recursive=recursive)
+            query = MdxHierarchySet.members([first_member]).tm1_drill_down_member(recursive=recursive)
 
         elif MDXDrillMethod.DESCENDANTS.name == mdx_method.upper():
             query = MdxHierarchySet.descendants(
