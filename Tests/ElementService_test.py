@@ -698,8 +698,8 @@ class TestElementService(unittest.TestCase):
                 hierarchy_name=self.hierarchy_name,
                 element_name="Not Existing Element")
 
-    def test_get_parents_all_elements_happy_case(self):
-        parents = self.tm1.elements.get_parents_all_elements(
+    def test_get_parents_of_all_elements_happy_case(self):
+        parents = self.tm1.elements.get_parents_of_all_elements(
             dimension_name=self.dimension_name,
             hierarchy_name=self.hierarchy_name
             )
