@@ -713,7 +713,7 @@ class ElementService(ObjectService):
 
         return [record["Name"] for record in response.json()["value"]]
 
-    def get_parents_all_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
+    def get_parents_of_all_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> Dict[str, List[str]]:
         url = format_url(
             f"/api/v1/Dimensions('{dimension_name}')/Hierarchies('{hierarchy_name}')/Elements?$select=Name"
             f"&$expand=Parents($select=Name)",
