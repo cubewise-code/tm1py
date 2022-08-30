@@ -276,7 +276,7 @@ class TestElementService(unittest.TestCase):
             self.assertNotIn(consol.name, self.years)
             self.assertNotEqual(consol.element_type, "Numeric")
         consol_element_names = [element.name for element in consol_elements]
-        self.assertIn("Total Year", consol_element_names)
+        self.assertIn("Total Years", consol_element_names)
 
     def test_element_exists(self):
         for year in self.years:
