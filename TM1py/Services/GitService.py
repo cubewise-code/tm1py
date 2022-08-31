@@ -26,9 +26,11 @@ class GitService(ObjectService):
         """_summary_
         """
         url = '/api/v1/!tm1project'
-        tm1project = self._rest.GET(url)
-        
-        return TM1Project.from_dict(tm1project.json())
+        response = self._rest.GET(url)
+        if not response.content:
+            return None
+
+        return TM1Project.from_dict(response.json())
     
     def tm1project_delete(self):
         url = '/api/v1/!tm1project'
@@ -38,7 +40,7 @@ class GitService(ObjectService):
         response = self._rest.PUT(url, data=body_json)
         return TM1Project.from_dict(response.json())
         
-    def tm1project_put(self, tm1_project: TM1Project) -> Response:
+    def tm1project_put(self, tm1_project: TM1Project) -> TM1Project:
         url = '/api/v1/!tm1project'
         body_json = tm1_project.body
         

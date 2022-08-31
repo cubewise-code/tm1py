@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 
 import json
-from typing import Optional, Iterable, Dict, List, Union
+from typing import Optional, Dict
+
 from TM1py.Objects.TM1Object import TM1Object
 
 
-def cleanNullTerms(d: dict):
+def clean_null_terms(d: Dict):
     clean = {}
     for k, v in d.items():
         if isinstance(v, dict):
-            nested = cleanNullTerms(v)
+            nested = clean_null_terms(v)
             if len(nested.keys()) > 0:
                 clean[k] = nested
         elif v is not None:
@@ -30,13 +31,13 @@ class TM1Project(TM1Object):
                  ignore: Optional[list] = None,
                  files: Optional[list] = None,
                  deployment: Optional[dict] = None,
-                 prepush: Optional[list] = None,
-                 postpush: Optional[list] = None,
-                 prepull: Optional[list] = None,
-                 postpull: Optional[list] = None,
+                 pre_push: Optional[list] = None,
+                 post_push: Optional[list] = None,
+                 pre_pull: Optional[list] = None,
+                 post_pull: Optional[list] = None,
                  dependencies: Optional[list] = None,
                  preconditions: Optional[str] = ''):
-        """_summary_
+        """
 
         Args:
             version (int): _description_
@@ -46,10 +47,10 @@ class TM1Project(TM1Object):
             ignore (list, optional): _description_. Defaults to None.
             files (list, optional): _description_. Defaults to None.
             deployment (dict, optional): _description_. Defaults to None.
-            prepush (list, optional): _description_. Defaults to None.
-            postpush (list, optional): _description_. Defaults to None.
-            prepull (list, optional): _description_. Defaults to None.
-            postpull (list, optional): _description_. Defaults to None.
+            pre_push (list, optional): _description_. Defaults to None.
+            post_push (list, optional): _description_. Defaults to None.
+            pre_pull (list, optional): _description_. Defaults to None.
+            post_pull (list, optional): _description_. Defaults to None.
             dependencies (list, optional): _description_. Defaults to None.
         """
         self._version = version
@@ -60,10 +61,10 @@ class TM1Project(TM1Object):
         self._ignore = ignore
         self._files = files
         self._deployment = deployment
-        self._prepush = prepush
-        self._postpush = postpush
-        self._prepull = prepull
-        self._postpull = postpull
+        self._pre_push = pre_push
+        self._post_push = post_push
+        self._pre_pull = pre_pull
+        self._post_pull = post_pull
         self._dependencies = dependencies
         self._preconditions = preconditions
 
@@ -82,32 +83,35 @@ class TM1Project(TM1Object):
         :param tm1project_as_dict: Dictionary, tm1project as dictionary
         :return: an instance of this class
         """
-        return cls(version=tm1project_as_dict['Version'],
-                   name=tm1project_as_dict.get('Name'),
-                   settings=tm1project_as_dict.get('Settings'),
-                   tasks=tm1project_as_dict.get('Tasks'),
-                   objects=tm1project_as_dict.get('Objects'),
-                   ignore=tm1project_as_dict.get('Ignore'),
-                   files=tm1project_as_dict.get('Files'),
-                   deployment=tm1project_as_dict.get('Deployment'),
-                   prepush=tm1project_as_dict.get('PrePush'),
-                   postpush=tm1project_as_dict.get('PostPush'),
-                   prepull=tm1project_as_dict.get('PrePull'),
-                   postpull=tm1project_as_dict.get('PostPull'),
-                   preconditions=tm1project_as_dict.get('Preconditions'),
-                   dependencies=tm1project_as_dict.get('Dependencies')
-                   )
+        return cls(
+            version=tm1project_as_dict['Version'],
+            name=tm1project_as_dict.get('Name'),
+            settings=tm1project_as_dict.get('Settings'),
+            tasks=tm1project_as_dict.get('Tasks'),
+            objects=tm1project_as_dict.get('Objects'),
+            ignore=tm1project_as_dict.get('Ignore'),
+            files=tm1project_as_dict.get('Files'),
+            deployment=tm1project_as_dict.get('Deployment'),
+            pre_push=tm1project_as_dict.get('PrePush'),
+            post_push=tm1project_as_dict.get('PostPush'),
+            pre_pull=tm1project_as_dict.get('PrePull'),
+            post_pull=tm1project_as_dict.get('PostPull'),
+            preconditions=tm1project_as_dict.get('Preconditions'),
+            dependencies=tm1project_as_dict.get('Dependencies')
+        )
+
     @classmethod
     def to_dict(cls, tm1_project) -> 'Dict':
         tm1_project_as_dict = tm1_project.__dict__
         return tm1_project_as_dict
-    
+
     @classmethod
-    def from_file(cls, filename:str) -> 'TM1Project':
+    def from_file(cls, filename: str) -> 'TM1Project':
         with open(filename, 'r') as file_object:
             json_file = json.load(file_object)
+
         return cls.from_dict(json_file)
-     
+
     @property
     def body(self) -> str:
         return self._construct_body()
@@ -169,36 +173,36 @@ class TM1Project(TM1Object):
         self._deployment = value
 
     @property
-    def prepush(self) -> list:
-        return self._prepush
+    def pre_push(self) -> list:
+        return self._pre_push
 
-    @prepush.setter
-    def prepush(self, value: list):
-        self._prepush = value
-
-    @property
-    def postpush(self) -> list:
-        return self._postpush
-
-    @postpush.setter
-    def postpush(self, value: list):
-        self._postpush = value
+    @pre_push.setter
+    def pre_push(self, value: list):
+        self._pre_push = value
 
     @property
-    def prepull(self) -> list:
-        return self._prepull
+    def post_push(self) -> list:
+        return self._post_push
 
-    @prepull.setter
-    def prepull(self, value: list):
-        self._prepull = value
+    @post_push.setter
+    def post_push(self, value: list):
+        self._post_push = value
 
     @property
-    def postpull(self) -> list:
-        return self._postpull
+    def pre_pull(self) -> list:
+        return self._pre_pull
 
-    @postpull.setter
-    def postpull(self, value: list):
-        self._postpull = value
+    @pre_pull.setter
+    def pre_pull(self, value: list):
+        self._pre_pull = value
+
+    @property
+    def post_pull(self) -> list:
+        return self._post_pull
+
+    @post_pull.setter
+    def post_pull(self, value: list):
+        self._post_pull = value
 
     @property
     def dependencies(self) -> list:
@@ -216,7 +220,7 @@ class TM1Project(TM1Object):
     def preconditions(self, value: str):
         self._preconditions = value
 
-# construct self.body (json) from the class-attributes
+    # construct self.body (json) from the class-attributes
     def _construct_body(self) -> str:
         # general parameters
         body_as_dict_complete = {
@@ -228,12 +232,11 @@ class TM1Project(TM1Object):
             'Ignore': self._ignore,
             'Files': self._files,
             'Deployment': self._deployment,
-            'PrePush': self._prepush,
-            'PostPush': self._postpush,
-            'PrePull': self._prepull,
-            'PostPull': self._postpull,
+            'PrePush': self._pre_push,
+            'PostPush': self._post_push,
+            'PrePull': self._pre_pull,
+            'PostPull': self._post_pull,
             'Dependencies': self._dependencies}
 
-        body_as_dict = cleanNullTerms(body_as_dict_complete)
+        body_as_dict = clean_null_terms(body_as_dict_complete)
         return json.dumps(body_as_dict, ensure_ascii=False)
-    
