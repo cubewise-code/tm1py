@@ -489,13 +489,14 @@ class ProcessService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return [ProcessDebugBreakpoint.from_dict(b) for b in response.json()['value']]
 
-    def debug_add_breakpoint(self, debug_id: str, break_point: Iterable[ProcessDebugBreakpoint] = None, **kwargs) -> Response:
+    def debug_add_breakpoint(self, debug_id: str, break_point: ProcessDebugBreakpoint, **kwargs) -> Response:
+        return self.debug_add_breakpoints(debug_id, [break_point], **kwargs)
+
+    def debug_add_breakpoints(self, debug_id: str, break_points: Iterable[ProcessDebugBreakpoint] = None,
+                              **kwargs) -> Response:
         url = format_url("/api/v1/ProcessDebugContexts('{}')/Breakpoints", debug_id)
 
-        if isinstance(break_point, list):
-            body = json.dumps([breakpoint.body_as_dict for breakpoint in break_point])
-        else:
-            body = json.dumps(break_point.body_as_dict)
+        body = json.dumps([break_point.body_as_dict for break_point in break_points])
 
         response = self._rest.POST(url, body, **kwargs)
         return response

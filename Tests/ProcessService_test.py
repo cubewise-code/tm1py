@@ -427,6 +427,44 @@ class TestProcessService(unittest.TestCase):
         with self.assertRaises(ValueError):
             result = self.tm1.processes.evaluate_ti_expression("")
 
+    def test_debug_continue(self):
+        line_numbers = 4, 5
+
+        result = self.tm1.processes.debug_process(self.p_debug.name)
+        debug_id = result['ID']
+        time.sleep(0.1)
+
+        break_points = []
+        for i, line_number in enumerate(line_numbers):
+            break_points.append(ProcessDebugBreakpoint(
+            breakpoint_id=i,
+            breakpoint_type=BreakPointType.PROCESS_DEBUG_CONTEXT_LINE_BREAK_POINT,
+            process_name=self.p_debug.name,
+            procedure="Prolog",
+            hit_mode=HitMode.BREAK_ALWAYS,
+            line_number=line_number))
+
+        self.tm1.processes.debug_add_breakpoints(debug_id, break_points)
+
+        time.sleep(0.1)
+        result = self.tm1.processes.debug_continue(debug_id=debug_id)
+        self.assertEqual(
+            line_numbers[0],
+            result['CallStack'][0]['LineNumber'])
+        time.sleep(0.1)
+
+        result = self.tm1.processes.debug_continue(debug_id=debug_id)
+        self.assertEqual(
+            line_numbers[1],
+            result['CallStack'][0]['LineNumber'])
+        time.sleep(0.1)
+
+        result = self.tm1.processes.debug_step_out(debug_id=debug_id)
+        self.assertEqual(
+            2,
+            len(result['Breakpoints']))
+        self.assertEqual(result["Status"], "Complete")
+
     def test_debug_add_breakpoint(self):
         line_number = 4
 
