@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import json
-from typing import Optional, Dict
+from enum import Enum
+from typing import Optional, Dict, List
 
 from TM1py.Objects.TM1Object import TM1Object
 
@@ -18,25 +19,92 @@ def clean_null_terms(d: Dict):
     return clean
 
 
+class TM1ProjectTask:
+
+    def __init__(self, task_name: str, chore: str = None, process: str = None, parameters: List[Dict[str, str]] = None,
+                 dependencies: List[str] = None, precondition: str = None):
+        """
+        Defines an action that executes a Process or a Chore with certain parameters.
+
+        A Task MUST either have a Process or a Chore property.
+        The property specifies the reference of the Process or Chore to be executed.
+        The Process or Chore MUST be visible.
+
+        A Task MAY have a Parameters property.
+        The property specifies the parameters to be passed to the Process.
+        This property MUST NOT be specified if the task is to execute a Chore.
+
+        A Task MAY have a Dependencies property.
+        The property specifies an array of URIs of tasks or objects,
+        which will be executed or loaded, respectively, before executing the current task.
+        E.g.: ["Cubes('Cube_A')", "Dimensions('Dimension_C')"]
+
+        A Task MAY have a Precondition property.
+        The server only executes a Task when either the precondition is not specified, or it is evaluated to TRUE.
+
+        The server only executes a Task one time during a deployment.
+        """
+        if precondition:
+            raise NotImplemented("'precondition' property not implemented for TM1ProjectTask")
+
+        if not any([chore, process]):
+            raise ValueError("TM1ProjectTask must either have a 'Process' or a 'Chore' property")
+
+        if all([chore, process]):
+            raise ValueError("TM1ProjectTask must not have a 'Chore' and 'Process' property")
+
+        if all([chore, parameters]):
+            raise ValueError("TM1ProjectTask must not have a 'Chore' and 'Parameters' property")
+
+        self.task_name = task_name
+        self.chore = chore
+        self.process = process
+        self.parameters = parameters
+        self.dependencies = dependencies
+
+    def body(self):
+        return json.dumps(self.construct_body())
+
+    def construct_body(self):
+        inner_body = dict()
+
+        if self.dependencies:
+            inner_body["Dependencies"] = self.dependencies
+
+        if self.chore:
+            inner_body["Chore"] = self.chore
+
+        else:
+            inner_body = {
+                "Process": self.process,
+                "Parameters": self.parameters
+            }
+
+        body = {self.task_name: inner_body}
+
+        return body
+
+
 class TM1Project(TM1Object):
     """ Abstraction of Git tm1project
     """
 
-    def __init__(self,
-                 version: int = 1.0,
-                 name: Optional[str] = '',
-                 settings: Optional[dict] = None,
-                 tasks: Optional[dict] = None,
-                 objects: Optional[dict] = None,
-                 ignore: Optional[list] = None,
-                 files: Optional[list] = None,
-                 deployment: Optional[dict] = None,
-                 pre_push: Optional[list] = None,
-                 post_push: Optional[list] = None,
-                 pre_pull: Optional[list] = None,
-                 post_pull: Optional[list] = None,
-                 dependencies: Optional[list] = None,
-                 preconditions: Optional[str] = ''):
+    def __init__(
+            self,
+            version: int = 1.0,
+            name: Optional[str] = '',
+            settings: Optional[Dict] = None,
+            tasks: Optional[List[TM1ProjectTask]] = None,
+            objects: Optional[Dict] = None,
+            ignore: Optional[List] = None,
+            files: Optional[List] = None,
+            deployment: Optional[Dict] = None,
+            pre_push: Optional[List] = None,
+            post_push: Optional[List] = None,
+            pre_pull: Optional[List] = None,
+            post_pull: Optional[List] = None,
+            dependencies: Optional[List] = None,
+            preconditions: Optional[str] = ''):
         """
 
         Args:
@@ -67,6 +135,67 @@ class TM1Project(TM1Object):
         self._post_pull = post_pull
         self._dependencies = dependencies
         self._preconditions = preconditions
+
+    def add_task(self, project_task: TM1ProjectTask):
+        if project_task.task_name in self._tasks:
+            raise ValueError(f"Task with name '{project_task.task_name}' already exists in TM1 project. "
+                             f"Task name must be unique")
+
+        self._tasks.append(project_task)
+
+    def add_ignore_exception(self, object_class: str, object_name: str):
+        """
+        Specify exceptions to the ignore policy
+
+        Wildcards (`*`) can not be used in the `object_name`
+
+        Example of the ignore property in the tm1project:
+            Exclude all the new Cubes and Views in the source, except Cube_A;
+            include control Process }Drill_Drill_A;
+            and exclude all the new Dimensions which has a name starting with 'Dim'
+
+            "Ignore":
+            [
+              "Cubes/Views",
+              "!Cubes('Cube_A')",
+              "!Processes('}Drill_Drill_A')",
+              "Dimensions('Dim*')"
+            ]
+        """
+        ignore_entry = "!" + object_class
+        if object_name:
+            ignore_entry += f"('{object_name}')"
+
+        self.ignore.append(ignore_entry)
+
+    def add_ignore(self, object_type: str, object_name: str):
+        """
+        Ignore is an optional property in the tm1project
+        It specifies the objects to be excluded from the source, if the object is newly created.
+
+        For the `object_type` pass value like `Dimensions` or `Cubes/Views`
+
+        Wildcards (`*`) can be used in the `object_name`, if the object is not a control object.
+
+
+        Example of the ignore property in the tm1project:
+            Exclude all the new Cubes and Views in the source, except Cube_A;
+            include control Process }Drill_Drill_A;
+            and exclude all the new Dimensions which has a name starting with 'Dim'
+
+            "Ignore":
+            [
+              "Cubes/Views",
+              "!Cubes('Cube_A')",
+              "!Processes('}Drill_Drill_A')",
+              "Dimensions('Dim*')"
+            ]
+        """
+        ignore_entry = object_type
+        if object_name:
+            ignore_entry += f"('{object_name}')"
+
+        self.ignore.append(ignore_entry)
 
     @classmethod
     def from_json(cls, tm1project_as_json: str) -> 'TM1Project':
@@ -137,39 +266,39 @@ class TM1Project(TM1Object):
         return self._settings
 
     @settings.setter
-    def settings(self, value: dict):
+    def settings(self, value: Dict):
         self._settings = value
 
     @property
-    def tasks(self) -> dict:
+    def tasks(self) -> List:
         return self._tasks
 
     @tasks.setter
-    def tasks(self, value: dict):
+    def tasks(self, value: List):
         self._tasks = value
 
     @property
-    def objects(self) -> dict:
+    def objects(self) -> Dict:
         return self._objects
 
     @objects.setter
-    def objects(self, value: dict):
+    def objects(self, value: Dict):
         self._objects = value
 
     @property
-    def ignore(self) -> list:
+    def ignore(self) -> List:
         return self._ignore
 
     @ignore.setter
-    def ignore(self, value: list):
+    def ignore(self, value: List):
         self._ignore = value
 
     @property
-    def deployment(self) -> dict:
+    def deployment(self) -> Dict:
         return self._deployment
 
     @deployment.setter
-    def deployment(self, value: dict):
+    def deployment(self, value: Dict):
         self._deployment = value
 
     @property
@@ -227,7 +356,7 @@ class TM1Project(TM1Object):
             'Version': self._version,
             'Name': self._name,
             'Settings': self._settings,
-            'Tasks': self._tasks,
+            'Tasks': [task.construct_body() for task in self._tasks],
             'Objects': self._objects,
             'Ignore': self._ignore,
             'Files': self._files,
