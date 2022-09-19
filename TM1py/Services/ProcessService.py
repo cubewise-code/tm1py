@@ -6,6 +6,7 @@ import uuid
 from typing import List, Dict, Tuple, Iterable
 
 from requests import Response
+from requests.structures import CaseInsensitiveDict
 
 from TM1py.Exceptions.Exceptions import TM1pyRestException, TM1pyException
 from TM1py.Objects.Process import Process
@@ -516,14 +517,16 @@ class ProcessService(ObjectService):
         response = self._rest.PATCH(url, break_point.body, **kwargs)
         return response
 
-    def debug_get_variable_values(self, debug_id: str, **kwargs) -> Dict:
+    def debug_get_variable_values(self, debug_id: str, **kwargs) -> CaseInsensitiveDict:
         raw_url = "/api/v1/ProcessDebugContexts('{}')?$expand=" \
                   "CallStack($expand=Variables)"
         url = format_url(raw_url, debug_id)
 
         response = self._rest.GET(url, **kwargs)
-        return response.json()['CallStack'][0]['Variables'] if response.json()['CallStack'] else response.json()[
-            'CallStack']
+        result = response.json()
+        call_stack = result['CallStack'][0]['Variables'] if result['CallStack'] else result['CallStack']
+
+        return CaseInsensitiveDict({entry["Name"]: entry["Value"] for entry in call_stack})
 
     def debug_get_single_variable_value(self, debug_id: str, variable_name: str, **kwargs) -> str:
         raw_url = "/api/v1/ProcessDebugContexts('{}')?$expand=" \
@@ -632,7 +635,7 @@ class ProcessService(ObjectService):
             if not result:
                 raise ValueError('unknown error: no formula result found')
             else:
-                return result[-2]['Value']
+                return result['sFunc']
 
         except TM1pyRestException as e:
             raise e
