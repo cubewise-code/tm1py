@@ -173,6 +173,7 @@ class CellService(ObjectService):
         super().__init__(tm1_rest)
 
     def get_value(self, cube_name: str, element_string: str, dimensions: List[str] = None, sandbox_name: str = None,
+                  element_separator: str = ",", hierarchy_separator: str = "&&", hierarchy_element_separator: str = "::", 
                   **kwargs) -> Union[str, float]:
         """ Element_String describes the Dimension-Hierarchy-Element arrangement
 
@@ -184,20 +185,23 @@ class CellService(ObjectService):
             - If no Hierarchy is specified. Default Hierarchy will be addressed
         :param dimensions: List of dimension names in correct order
         :param sandbox_name: str
+        :param element_separator: Alternative separator for the element selections
+        :param hierarchy_separator: Alternative separator for multiple hierarchies
+        :param hierarchy_element_separator: Alternative separator between hierarchy name and element name
         :return:
         """
         mdx_template = "SELECT {} ON ROWS, {} ON COLUMNS FROM [{}]"
         mdx_rows_list = []
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
-        element_selections = element_string.split(',')
+        element_selections = element_string.split(element_separator)
 
         # Build the ON ROWS statement:
         # Loop through the comma separated element selection, except for the last one
         for dimension_name, element_selection in zip(dimensions[:-1], element_selections[:-1]):
-            if "&&" not in element_selection:
-                if '::' in element_selection:
-                    hierarchy_name, element_name = element_selection.split("::")
+            if hierarchy_separator not in element_selection:
+                if hierarchy_element_separator in element_selection:
+                    hierarchy_name, element_name = element_selection.split(hierarchy_element_separator)
                 else:
                     hierarchy_name = dimension_name
                     element_name = element_selection
@@ -205,8 +209,8 @@ class CellService(ObjectService):
                 mdx_rows_list.append("{[" + dimension_name + "].[" + hierarchy_name + "].[" + element_name + "]}")
 
             else:
-                for element_selection_part in element_selection.split('&&'):
-                    hierarchy_name, element_name = element_selection_part.split('::')
+                for element_selection_part in element_selection.split(hierarchy_separator):
+                    hierarchy_name, element_name = element_selection_part.split(hierarchy_element_separator)
                     mdx_rows_list.append("{[" + dimension_name + "].[" + hierarchy_name + "].[" + element_name + "]}")
 
         mdx_rows = "*".join(mdx_rows_list)
@@ -215,9 +219,9 @@ class CellService(ObjectService):
         mdx_columns = ""
         element_selection = element_selections[-1]
         dimension_name = dimensions[-1]
-        if "&&" not in element_selection:
-            if '::' in element_selection:
-                hierarchy_name, element_name = element_selection.split("::")
+        if hierarchy_separator not in element_selection:
+            if hierarchy_element_separator in element_selection:
+                hierarchy_name, element_name = element_selection.split(hierarchy_element_separator)
             else:
                 hierarchy_name = dimension_name
                 element_name = element_selection
@@ -225,8 +229,8 @@ class CellService(ObjectService):
 
         else:
             mdx_columns_list = []
-            for element_selection_part in element_selections[-1].split('&&'):
-                hierarchy_name, element_name = element_selection_part.split('::')
+            for element_selection_part in element_selections[-1].split(hierarchy_separator):
+                hierarchy_name, element_name = element_selection_part.split(hierarchy_element_separator)
                 mdx_columns_list.append("{[" + dimension_name + "].[" + hierarchy_name + "].[" + element_name + "]}")
                 mdx_columns = "*".join(mdx_columns_list)
 
