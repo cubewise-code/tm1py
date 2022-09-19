@@ -425,7 +425,61 @@ class TestProcessService(unittest.TestCase):
 
     def test_ti_formula_no_code(self):
         with self.assertRaises(ValueError):
-            result = self.tm1.processes.evaluate_ti_expression("")
+            _ = self.tm1.processes.evaluate_ti_expression("")
+
+    def test_debug_get_variable_values(self):
+        result = self.tm1.processes.debug_process(self.p_debug.name)
+        debug_id = result['ID']
+        time.sleep(0.1)
+
+        result = self.tm1.processes.debug_get_variable_values(debug_id=debug_id)
+
+        self.assertEqual(result['DATASOURCETYPE'], 'NULL')
+
+        self.tm1.processes.debug_step_out(debug_id=debug_id)
+
+    def test_debug_get_single_variable_value(self):
+        result = self.tm1.processes.debug_process(self.p_debug.name)
+        debug_id = result['ID']
+        time.sleep(0.1)
+
+        value = self.tm1.processes.debug_get_single_variable_value(debug_id=debug_id, variable_name="DATASOURCETYPE")
+
+        self.assertEqual(value, 'NULL')
+
+        self.tm1.processes.debug_step_out(debug_id=debug_id)
+
+    def test_debug_step_over(self):
+        result = self.tm1.processes.debug_process(self.p_debug.name)
+        debug_id = result['ID']
+        time.sleep(0.1)
+
+        result = self.tm1.processes.debug_step_over(debug_id=debug_id)
+        self.assertEqual(
+            4,
+            result['CallStack'][0]['LineNumber'])
+        time.sleep(0.1)
+
+        result = self.tm1.processes.debug_step_over(debug_id=debug_id)
+        self.assertEqual(
+            5,
+            result['CallStack'][0]['LineNumber'])
+        time.sleep(0.1)
+
+        result = self.tm1.processes.debug_step_over(debug_id=debug_id)
+        self.assertEqual(
+            6,
+            result['CallStack'][0]['LineNumber'])
+        time.sleep(0.1)
+
+        result = self.tm1.processes.debug_step_over(debug_id=debug_id)
+        self.assertEqual(
+            7,
+            result['CallStack'][0]['LineNumber'])
+        time.sleep(0.1)
+
+        result = self.tm1.processes.debug_step_out(debug_id=debug_id)
+        self.assertEqual(result["Status"], "Complete")
 
     def test_debug_continue(self):
         line_numbers = 4, 5
@@ -437,12 +491,12 @@ class TestProcessService(unittest.TestCase):
         break_points = []
         for i, line_number in enumerate(line_numbers):
             break_points.append(ProcessDebugBreakpoint(
-            breakpoint_id=i,
-            breakpoint_type=BreakPointType.PROCESS_DEBUG_CONTEXT_LINE_BREAK_POINT,
-            process_name=self.p_debug.name,
-            procedure="Prolog",
-            hit_mode=HitMode.BREAK_ALWAYS,
-            line_number=line_number))
+                breakpoint_id=i,
+                breakpoint_type=BreakPointType.PROCESS_DEBUG_CONTEXT_LINE_BREAK_POINT,
+                process_name=self.p_debug.name,
+                procedure="Prolog",
+                hit_mode=HitMode.BREAK_ALWAYS,
+                line_number=line_number))
 
         self.tm1.processes.debug_add_breakpoints(debug_id, break_points)
 
