@@ -244,17 +244,20 @@ class CellService(ObjectService):
     def _compose_odata_tuple_from_string(self, cube_name: str,
                                          element_string: str,
                                          dimensions: Iterable[str] = None,
+                                         element_separator: str = ",", 
+                                         hierarchy_separator: str = "&&", 
+                                         hierarchy_element_separator: str = "::", 
                                          **kwargs) -> OrderedDict:
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
 
         odata_tuple_as_dict = OrderedDict()
-        element_selections = element_string.split(',')
+        element_selections = element_string.split(element_separator)
         tuple_list = []
         for dimension_name, element_selection in zip(dimensions, element_selections):
-            if "&&" not in element_selection:
-                if '::' in element_selection:
-                    hierarchy_name, element_name = element_selection.split("::")
+            if hierarchy_separator not in element_selection:
+                if hierarchy_element_separator in element_selection:
+                    hierarchy_name, element_name = element_selection.split(hierarchy_element_separator)
                 else:
                     hierarchy_name = dimension_name
                     element_name = element_selection
@@ -264,8 +267,8 @@ class CellService(ObjectService):
                                               hierarchy_name,
                                               element_name))
             else:
-                for element_selection_part in element_selection.split('&&'):
-                    hierarchy_name, element_name = element_selection_part.split('::')
+                for element_selection_part in element_selection.split(hierarchy_separator):
+                    hierarchy_name, element_name = element_selection_part.split(hierarchy_element_separator)
                     tuple_list.append(format_url("Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
                                                   dimension_name,
                                                   hierarchy_name,
@@ -293,6 +296,9 @@ class CellService(ObjectService):
                                dimensions: Iterable[str] = None,
                                sandbox_name: str = None,
                                depth: int = 1,
+                               element_separator: str = ",", 
+                               hierarchy_separator: str = "&&", 
+                               hierarchy_element_separator: str = "::", 
                                **kwargs) -> Dict:
 
         """ Trace cell calculation at specified coordinates
@@ -309,6 +315,9 @@ class CellService(ObjectService):
         :param dimensions: optional. Dimension names in their natural order. Will speed up the execution!
         :param sandbox_name: str
         :param depth: optional. Depth of the component trace that will be returned. Deeper traces take longer
+        :param element_separator: Alternative separator for the elements, if elements are passed as string
+        :param hierarchy_separator: Alternative separator for multiple hierarchies, if elements are passed as string
+        :param hierarchy_element_separator: Alternative separator between hierarchy name and element name, if elements are passed as string
         :return: trace json string
         """
 
@@ -328,7 +337,12 @@ class CellService(ObjectService):
 
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         if isinstance(elements, str):
-            body_as_dict = self._compose_odata_tuple_from_string(cube_name, elements, dimensions)
+            body_as_dict = self._compose_odata_tuple_from_string(cube_name, 
+                                                                 elements, 
+                                                                 dimensions, 
+                                                                 element_separator, 
+                                                                 hierarchy_separator, 
+                                                                 hierarchy_element_separator)
         else:
             body_as_dict = self._compose_odata_tuple_from_iterable(cube_name, elements, dimensions)
         data = json.dumps(body_as_dict, ensure_ascii=False)
@@ -339,6 +353,9 @@ class CellService(ObjectService):
                                elements: Union[Iterable,str],
                                dimensions: Iterable[str] = None,
                                sandbox_name: str = None,
+                               element_separator: str = ",", 
+                               hierarchy_separator: str = "&&", 
+                               hierarchy_element_separator: str = "::", 
                                **kwargs) -> Dict:
 
         """ Trace feeders from a cell
@@ -354,6 +371,9 @@ class CellService(ObjectService):
         Iterable [Element1, Element2, Element3]
         :param dimensions: optional. Dimension names in their natural order. Will speed up the execution!
         :param sandbox_name: str
+        :param element_separator: Alternative separator for the elements, if elements are passed as string
+        :param hierarchy_separator: Alternative separator for multiple hierarchies, if elements are passed as string
+        :param hierarchy_element_separator: Alternative separator between hierarchy name and element name, if elements are passed as string
         :return: feeder trace
         """
 
@@ -363,7 +383,12 @@ class CellService(ObjectService):
 
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         if isinstance(elements, str):
-            body_as_dict = self._compose_odata_tuple_from_string(cube_name, elements, dimensions)
+            body_as_dict = self._compose_odata_tuple_from_string(cube_name, 
+                                                                 elements, 
+                                                                 dimensions, 
+                                                                 element_separator, 
+                                                                 hierarchy_separator, 
+                                                                 hierarchy_element_separator)
         else:
             body_as_dict = self._compose_odata_tuple_from_iterable(cube_name, elements, dimensions)
         data = json.dumps(body_as_dict, ensure_ascii=False)
@@ -374,6 +399,9 @@ class CellService(ObjectService):
                                elements: Union[Iterable,str],
                                dimensions: Iterable[str] = None,
                                sandbox_name: str = None,
+                               element_separator: str = ",", 
+                               hierarchy_separator: str = "&&", 
+                               hierarchy_element_separator: str = "::", 
                                **kwargs) -> Dict:
 
         """ Check feeders
@@ -389,6 +417,9 @@ class CellService(ObjectService):
         Iterable [Element1, Element2, Element3]
         :param dimensions: optional. Dimension names in their natural order. Will speed up the execution!
         :param sandbox_name: str
+        :param element_separator: Alternative separator for the elements, if elements are passed as string
+        :param hierarchy_separator: Alternative separator for multiple hierarchies, if elements are passed as string
+        :param hierarchy_element_separator: Alternative separator between hierarchy name and element name, if elements are passed as string
         :return: fed cell descriptor
         """
 
@@ -398,7 +429,12 @@ class CellService(ObjectService):
 
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         if isinstance(elements, str):
-            body_as_dict = self._compose_odata_tuple_from_string(cube_name, elements, dimensions)
+            body_as_dict = self._compose_odata_tuple_from_string(cube_name, 
+                                                                 elements, 
+                                                                 dimensions, 
+                                                                 element_separator, 
+                                                                 hierarchy_separator, 
+                                                                 hierarchy_element_separator)
         else:
             body_as_dict = self._compose_odata_tuple_from_iterable(cube_name, elements, dimensions)
         data = json.dumps(body_as_dict, ensure_ascii=False)
