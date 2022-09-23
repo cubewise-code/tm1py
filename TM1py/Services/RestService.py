@@ -10,12 +10,13 @@ from typing import Union, Dict, Tuple, Optional
 
 import requests
 import urllib3
+import socket
 from requests import Timeout, Response, ConnectionError
 from requests.adapters import HTTPAdapter
 
 # SSO not supported for Linux
 from TM1py.Exceptions.Exceptions import TM1pyTimeout
-from TM1py.Utils import case_and_space_insensitive_equals, CaseAndSpaceInsensitiveSet
+from TM1py.Utils import case_and_space_insensitive_equals, CaseAndSpaceInsensitiveSet, HTTPAdapterWithSocketOptions
 
 try:
     from requests_negotiate_sspi import HttpNegotiateAuth
@@ -35,7 +36,7 @@ def httpmethod(func):
     """
 
     @functools.wraps(func)
-    def wrapper(self, url: str, data: str = '', encoding='utf-8', async_requests_mode: Optional[bool] = None, **kwargs):
+    def wrapper(self, url: str, data: str = '', encoding='utf-8', async_requests_mode: Optional[bool] = None, tcp_keepalive: Optional[bool] = None, **kwargs):
         # url encoding
         url, data = self._url_and_body(
             url=url,
@@ -47,10 +48,15 @@ def httpmethod(func):
             if async_requests_mode is None:
                 async_requests_mode = self._async_requests_mode
 
+            if tcp_keepalive is None:
+                tcp_keepalive = self._tcp_keepalive
+
             if not async_requests_mode:
                 response = func(self, url, data, **kwargs)
 
             else:
+                # reset tcp_keepalive to False explicitly to turn it off when async_requests_mode is enabled
+                tcp_keepalive = False
                 additional_header = {'Prefer': 'respond-async'}
                 http_headers = kwargs.get('headers', dict())
                 http_headers.update(additional_header)
@@ -138,13 +144,15 @@ class RestService:
         :param logging: boolean - switch on/off verbose http logging into sys.stdout
         :param timeout: Float - Number of seconds that the client will wait to receive the first byte.
         :param async_requests_mode: changes internal REST execution mode to avoid 60s timeout on IBM cloud
+        :param tcp_keepalive: maintain the TCP connection all the time, users should choose either async_requests_mode or tcp_keepalive to run a long-run request
+        If both are True, use async_requests_mode by default
         :param connection_pool_size - In a multithreaded environment, you should set this value to a
         higher number, such as the number of threads
         :param integrated_login: True for IntegratedSecurityMode3
         :param integrated_login_domain: NT Domain name.
-                Default: '.' for local account. 
+                Default: '.' for local account.
         :param integrated_login_service: Kerberos Service type for remote Service Principal Name.
-                Default: 'HTTP' 
+                Default: 'HTTP'
         :param integrated_login_host: Host name for Service Principal Name.
                 Default: Extracted from request URI
         :param integrated_login_delegate: Indicates that the user's credentials are to be delegated to the server.
@@ -158,6 +166,8 @@ class RestService:
         self._verify = False
         self._timeout = None if kwargs.get('timeout', None) is None else float(kwargs.get('timeout'))
         self._async_requests_mode = self.translate_to_boolean(kwargs.get('async_requests_mode', False))
+        self._tcp_keepalive = self.translate_to_boolean(kwargs.get('tcp_keepalive', False))
+        self._connection_pool_size = kwargs.get('connection_pool_size', None)
         # populated on the fly
         if kwargs.get('user'):
             self._is_admin = True if case_and_space_insensitive_equals(kwargs.get('user'), 'ADMIN') else None
@@ -217,21 +227,38 @@ class RestService:
 
         self._sandboxing_disabled = None
 
-        # manage connection pool
-        if "connection_pool_size" in kwargs:
-            self._manage_http_connection_pool(kwargs.get("connection_pool_size"))
+        if self._tcp_keepalive or self._connection_pool_size is not None:
+            self._manage_http_adapter()
 
         # Logging
         if 'logging' in kwargs:
             if self.translate_to_boolean(value=kwargs['logging']):
                 http_client.HTTPConnection.debuglevel = 1
 
-    def _manage_http_connection_pool(self, connection_pool_size: Union[str, int]):
-        self._s.mount(
-            self._base_url,
-            HTTPAdapter(
-                pool_connections=int(connection_pool_size),
-                pool_maxsize=int(connection_pool_size)))
+    def _manage_http_adapter(self):
+        if self._tcp_keepalive:
+            # Set the following socket options
+            # SO_KEEPALIVE: set 1 to enable TCP keepalive
+            # TCP_KEEPIDLE: Time in seconds until the first keepalive is sent
+            # TCP_KEEPINTVL: How often should the keepalive packet be sent
+            # TCP_KEEPCNT: The max number of keepalive packets to send
+            socket_options = urllib3.connection.HTTPConnection.default_socket_options + [(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
+                                                                                         (socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 30),
+                                                                                         (socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 15),
+                                                                                         (socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 60)]
+
+            if self._connection_pool_size is not None:
+                adapter = HTTPAdapterWithSocketOptions(pool_connections=int(self._connection_pool_size),
+                                                       pool_maxsize=int(self._connection_pool_size),
+                                                       socket_options=socket_options)
+            else:
+                adapter = HTTPAdapterWithSocketOptions(socket_options=socket_options)
+
+        else:
+            adapter = HTTPAdapterWithSocketOptions(pool_connections=int(self._connection_pool_size),
+                                                   pool_maxsize=int(self._connection_pool_size))
+
+        self._s.mount(self._base_url, adapter)
 
     def __enter__(self):
         return self
