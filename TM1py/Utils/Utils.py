@@ -13,6 +13,7 @@ from io import StringIO
 from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator, Union
 
 import requests
+from requests.adapters import HTTPAdapter
 from mdxpy import MdxBuilder, Member
 
 from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminException
@@ -1164,3 +1165,14 @@ def frame_to_significant_digits(x, digits=15):
         return str(x).replace('e+', 'E')
     digits -= math.ceil(math.log10(abs(x)))
     return str(round(x, digits)).replace('e+', 'E')
+
+
+class HTTPAdapterWithSocketOptions(HTTPAdapter):
+    def __init__(self, *args, **kwargs):
+        self.socket_options = kwargs.pop("socket_options", None)
+        super(HTTPAdapterWithSocketOptions, self).__init__(*args, **kwargs)
+
+    def init_poolmanager(self, *args, **kwargs):
+        if self.socket_options is not None:
+            kwargs["socket_options"] = self.socket_options
+        super(HTTPAdapterWithSocketOptions, self).init_poolmanager(*args, **kwargs)
