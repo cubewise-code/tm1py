@@ -126,6 +126,14 @@ class RestService:
                'Accept': 'application/json;odata.metadata=none,text/plain',
                'TM1-SessionContext': 'TM1py'}
 
+    # You can reset the following TCP socket options based on your own use cases when tcp_keepalive is eanbled
+    # TCP_KEEPIDLE: Time in seconds until the first keepalive is sent
+    # TCP_KEEPINTVL: How often should the keepalive packet be sent
+    # TCP_KEEPCNT: The max number of keepalive packets to send
+    TCP_SOCKET_OPTIONS = {'TCP_KEEPIDLE': 30,
+                          'TCP_KEEPINTVL': 15,
+                          'TCP_KEEPCNT': 60}
+
     def __init__(self, **kwargs):
         """ Create an instance of RESTService
         :param address: String - address of the TM1 instance
@@ -237,15 +245,11 @@ class RestService:
 
     def _manage_http_adapter(self):
         if self._tcp_keepalive:
-            # Set the following socket options
             # SO_KEEPALIVE: set 1 to enable TCP keepalive
-            # TCP_KEEPIDLE: Time in seconds until the first keepalive is sent
-            # TCP_KEEPINTVL: How often should the keepalive packet be sent
-            # TCP_KEEPCNT: The max number of keepalive packets to send
             socket_options = urllib3.connection.HTTPConnection.default_socket_options + [(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
-                                                                                         (socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 30),
-                                                                                         (socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 15),
-                                                                                         (socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 60)]
+                                                                                         (socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, self.TCP_SOCKET_OPTIONS['TCP_KEEPIDLE']),
+                                                                                         (socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, self.TCP_SOCKET_OPTIONS['TCP_KEEPINTVL']),
+                                                                                         (socket.IPPROTO_TCP, socket.TCP_KEEPCNT, self.TCP_SOCKET_OPTIONS['TCP_KEEPCNT'])]
 
             if self._connection_pool_size is not None:
                 adapter = HTTPAdapterWithSocketOptions(pool_connections=int(self._connection_pool_size),
