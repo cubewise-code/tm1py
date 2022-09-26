@@ -3071,8 +3071,8 @@ class TestCellService(unittest.TestCase):
             }
             self.tm1.cells.clear(cube=self.cube_name, **kwargs)
 
-        self.assertEqual(
-            "{\"error\":{\"code\":\"248\",\"message\":\"\\\"NotExistingElement\\\" : member not found (rte 81)\"}}",
+        self.assertIn(
+            '\\"NotExistingElement\\" : member not found (rte 81)',
             str(e.exception.message))
 
     @skip_if_insufficient_version(version="11.7")
@@ -3085,8 +3085,8 @@ class TestCellService(unittest.TestCase):
             """
             self.tm1.cells.clear_with_mdx(cube=self.cube_name, mdx=mdx)
 
-        self.assertEqual(
-            "{\"error\":{\"code\":\"248\",\"message\":\"\\\"NotExistingElement\\\" : member not found (rte 81)\"}}",
+        self.assertIn(
+            '\\"NotExistingElement\\" : member not found (rte 81)',
             str(e.exception.message))
 
     def test_clear_with_mdx_unsupported_version(self):
