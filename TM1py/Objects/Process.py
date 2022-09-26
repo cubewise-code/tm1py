@@ -17,7 +17,8 @@ class Process(TM1Object):
     BEGIN_GENERATED_STATEMENTS = "#****Begin: Generated Statements***"
     END_GENERATED_STATEMENTS = "#****End: Generated Statements****"
     AUTO_GENERATED_STATEMENTS = "{}\r\n{}\r\n".format(BEGIN_GENERATED_STATEMENTS, END_GENERATED_STATEMENTS)
-    MAX_STATEMENTS = 16380
+    MAX_STATEMENTS = 16_380
+    MAX_STATEMENTS_POST_11_8_15 = 100_000
 
     @staticmethod
     def add_generated_string_to_code(code: str) -> str:

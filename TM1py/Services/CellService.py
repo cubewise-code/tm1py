@@ -30,7 +30,7 @@ from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_nam
     abbreviate_mdx, build_csv_from_cellset_dict, require_version, require_pandas, build_cellset_from_pandas_dataframe, \
     case_and_space_insensitive_equals, get_cube, resembles_mdx, require_admin, extract_compact_json_cellset, \
     cell_is_updateable, build_mdx_from_cellset, build_mdx_and_values_from_cellset, \
-    dimension_names_from_element_unique_names, frame_to_significant_digits
+    dimension_names_from_element_unique_names, frame_to_significant_digits, verify_version
 
 try:
     import pandas as pd
@@ -1114,10 +1114,14 @@ class CellService(ObjectService):
         return element_service.get_element_types_from_all_hierarchies(dimension_name=measure_dimension)
 
     def _execute_write_statements(self, statements: List[str], enable_sandbox: str, kwargs) -> Tuple[bool, str, str]:
+        max_statements = Process.MAX_STATEMENTS
+        if verify_version(required_version="11.8.015", version=self.version):
+            max_statements = Process.MAX_STATEMENTS_POST_11_8_15
+
         process = Process(
             name="",
-            prolog_procedure=enable_sandbox + "\r".join(statements[:Process.MAX_STATEMENTS]),
-            epilog_procedure="\r".join(statements[Process.MAX_STATEMENTS:]))
+            prolog_procedure=enable_sandbox + "\r".join(statements[:max_statements]),
+            epilog_procedure="\r".join(statements[max_statements:]))
 
         return self.execute_unbound_process(process, **kwargs)
 
