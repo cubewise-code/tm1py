@@ -17,8 +17,8 @@ class TestNativeView(unittest.TestCase):
 
         self.assertEqual(
             "SELECT\r\n"
-            "NON EMPTY {[d1].[e1]} ON 0,\r\n"
-            "{[d2].[e2]} ON 1\r\n"
+            "NON EMPTY {[d1].[e1]} DIMENSION PROPERTIES MEMBER_NAME ON 0,\r\n"
+            "{[d2].[e2]} DIMENSION PROPERTIES MEMBER_NAME ON 1\r\n"
             "FROM [c1]\r\n"
             "WHERE ([d3].[d3].[e3])",
             native_view.mdx)
@@ -41,8 +41,8 @@ class TestNativeView(unittest.TestCase):
 
         self.assertEqual(
             "SELECT\r\n"
-            "NON EMPTY {[d1].[e1]} * {[d2].[e2]} ON 0,\r\n"
-            "NON EMPTY {[d3].[e3]} * {[d4].[e4]} ON 1\r\n"
+            "NON EMPTY {[d1].[e1]} * {[d2].[e2]} DIMENSION PROPERTIES MEMBER_NAME ON 0,\r\n"
+            "NON EMPTY {[d3].[e3]} * {[d4].[e4]} DIMENSION PROPERTIES MEMBER_NAME ON 1\r\n"
             "FROM [c1]\r\n"
             "WHERE ([d5].[d5].[e5],[d6].[d6].[e6])",
             native_view.mdx)
@@ -58,7 +58,7 @@ class TestNativeView(unittest.TestCase):
 
         self.assertEqual(
             "SELECT\r\n"
-            "NON EMPTY {[d1].[e1]} ON 0\r\n"
+            "NON EMPTY {[d1].[e1]} DIMENSION PROPERTIES MEMBER_NAME ON 0\r\n"
             "FROM [c1]\r\n"
             "WHERE ([d3].[d3].[e3])",
             native_view.mdx)
@@ -85,7 +85,7 @@ class TestNativeView(unittest.TestCase):
 
         self.assertEqual(
             "SELECT\r\n"
-            "NON EMPTY {[d1].[e1]} ON 0\r\n"
+            "NON EMPTY {[d1].[e1]} DIMENSION PROPERTIES MEMBER_NAME ON 0\r\n"
             "FROM [c1]",
             native_view.mdx)
 
@@ -105,8 +105,8 @@ class TestNativeView(unittest.TestCase):
 
         self.assertEqual(
             "SELECT\r\n"
-            "NON EMPTY {TM1SUBSETTOSET([d2].[d2],\"s2\")} ON 0,\r\n"
-            "{TM1SUBSETTOSET([d3].[d3],\"s3\")} ON 1\r\n"
+            "NON EMPTY {TM1SUBSETTOSET([d2].[d2],\"s2\")} DIMENSION PROPERTIES MEMBER_NAME ON 0,\r\n"
+            "{TM1SUBSETTOSET([d3].[d3],\"s3\")} DIMENSION PROPERTIES MEMBER_NAME ON 1\r\n"
             "FROM [c1]\r\n"
             "WHERE ([d1].[d1].[e1])",
             native_view.mdx)
