@@ -44,7 +44,7 @@ class GitService(ObjectService):
         url = '/api/v1/!tm1project'
         body_json = tm1_project.body
         
-        response = self._rest.PUT(url=url,data=body_json)
+        response = self._rest.PUT(url=url, data=body_json)
         return TM1Project.from_dict(response.json())
 
     def git_init(self, git_url: str, deployment: str, username: str = None, password: str = None,

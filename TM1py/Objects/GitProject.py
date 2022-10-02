@@ -62,23 +62,32 @@ class TM1ProjectTask:
         self.dependencies = dependencies
 
     def construct_body(self) -> Dict:
-        inner_body = dict()
+        body = dict()
 
         if self.dependencies:
-            inner_body["Dependencies"] = self.dependencies
+            body["Dependencies"] = self.dependencies
 
         if self.chore:
-            inner_body["Chore"] = self.chore
+            body["Chore"] = self.chore
 
         else:
-            inner_body = {
-                "Process": self.process,
+            body = {
+                "Process": f"Processes('{self.process}')",
                 "Parameters": self.parameters
             }
 
-        body = {self.task_name: inner_body}
-
         return body
+
+    @classmethod
+    def from_dict(cls, task_name: str, task: Dict):
+        return cls(
+            task_name=task_name,
+            chore=task.get("Chore"),
+            process=task.get("Process"),
+            parameters=task.get("Parameters"),
+            dependencies=task.get("Dependencies"),
+            precondition=task.get("Precondition"),
+        )
 
 
 class TM1Project(TM1Object):
@@ -90,7 +99,7 @@ class TM1Project(TM1Object):
             version: int = 1.0,
             name: Optional[str] = '',
             settings: Optional[Dict] = None,
-            tasks: Optional[List[TM1ProjectTask]] = None,
+            tasks: Optional[Dict[str, TM1ProjectTask]] = None,
             objects: Optional[Dict] = None,
             ignore: Optional[List] = None,
             files: Optional[List] = None,
@@ -134,15 +143,15 @@ class TM1Project(TM1Object):
 
     def add_task(self, project_task: TM1ProjectTask):
         if self._tasks is None:
-            self._tasks = []
+            self._tasks = dict()
 
         if project_task.task_name in self._tasks:
             raise ValueError(f"Task with name '{project_task.task_name}' already exists in TM1 project. "
                              f"Task name must be unique")
 
-        self._tasks.append(project_task)
+        self._tasks[project_task.task_name] = project_task
 
-    def include_attribute_dimensions(self, tm1):
+    def include_all_attribute_dimensions(self, tm1):
         """
         Add an ignore-exception for each attribute dimension
 
@@ -226,7 +235,7 @@ class TM1Project(TM1Object):
         if object_name:
             ignore_entry += f"('{object_name}')"
 
-        if not ignore_entry in self.ignore:
+        if ignore_entry not in self.ignore:
             self.ignore.append(ignore_entry)
 
     @classmethod
@@ -248,7 +257,10 @@ class TM1Project(TM1Object):
             version=tm1project_as_dict['Version'],
             name=tm1project_as_dict.get('Name'),
             settings=tm1project_as_dict.get('Settings'),
-            tasks=tm1project_as_dict.get('Tasks'),
+            tasks={
+                task_name: TM1ProjectTask.from_dict(task_name, task)
+                for task_name, task
+                in tm1project_as_dict.get('Tasks').items()},
             objects=tm1project_as_dict.get('Objects'),
             ignore=tm1project_as_dict.get('Ignore'),
             files=tm1project_as_dict.get('Files'),
@@ -274,7 +286,7 @@ class TM1Project(TM1Object):
             'Version': self._version,
             'Name': self._name,
             'Settings': self._settings,
-            'Tasks': [task.construct_body() for task in self._tasks] if self._tasks else None,
+            'Tasks': {name: task.construct_body() for name, task in self.tasks.items()} if self._tasks else None,
             'Objects': self._objects,
             'Ignore': self._ignore,
             'Files': self._files,
@@ -319,7 +331,7 @@ class TM1Project(TM1Object):
         self._settings = value
 
     @property
-    def tasks(self) -> List:
+    def tasks(self) -> Dict:
         return self._tasks
 
     @tasks.setter
