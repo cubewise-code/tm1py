@@ -3,7 +3,6 @@
 import json
 from typing import Optional, Dict, List
 
-from TM1py import TM1Service
 from TM1py.Objects.TM1Object import TM1Object
 
 
@@ -62,10 +61,7 @@ class TM1ProjectTask:
         self.parameters = parameters
         self.dependencies = dependencies
 
-    def body(self):
-        return json.dumps(self.construct_body())
-
-    def construct_body(self):
+    def construct_body(self) -> Dict:
         inner_body = dict()
 
         if self.dependencies:
@@ -137,13 +133,16 @@ class TM1Project(TM1Object):
         self._preconditions = preconditions
 
     def add_task(self, project_task: TM1ProjectTask):
+        if self._tasks is None:
+            self._tasks = []
+
         if project_task.task_name in self._tasks:
             raise ValueError(f"Task with name '{project_task.task_name}' already exists in TM1 project. "
                              f"Task name must be unique")
 
         self._tasks.append(project_task)
 
-    def include_attribute_dimensions(self, tm1: TM1Service):
+    def include_attribute_dimensions(self, tm1):
         """
         Add an ignore-exception for each attribute dimension
 
@@ -163,14 +162,15 @@ class TM1Project(TM1Object):
 
         Args:
             object_class: class of the object e.g., "Dimensions"
-            object_names: name of the objects e.g., ["Product", "Customer", "Region"]
+            object_names: names of the objects e.g., ["Product", "Customer", "Region"]
 
         Example of the ignore property in the tm1project:
-            Exclude all Dimensions that start with 'Dim', except for dimension 'DimB'
+            Exclude all Dimensions that start with 'Dim', except for dimension 'DimB', 'DimA'
 
             "Ignore":
             [
               "Dimensions('Dim*')",
+              "!Dimensions('DimA')",
               "!Dimensions('DimB')"
             ]
         """
@@ -183,7 +183,10 @@ class TM1Project(TM1Object):
             if object_name:
                 ignore_entry += f"('{object_name}')"
 
-            if not ignore_entry in self.ignore:
+            if self.ignore is None:
+                self.ignore = []
+
+            if ignore_entry not in self.ignore:
                 self.ignore.append(ignore_entry)
 
     def add_ignore(self, object_class: str, object_name: str):
@@ -215,6 +218,9 @@ class TM1Project(TM1Object):
 
         if object_name.startswith("}") and "*" in object_name:
             raise ValueError("'*' character must not be used in object_name for control objects")
+
+        if self.ignore is None:
+            self.ignore = []
 
         ignore_entry = object_class
         if object_name:
@@ -256,20 +262,37 @@ class TM1Project(TM1Object):
         )
 
     @classmethod
-    def to_dict(cls, tm1_project) -> 'Dict':
-        tm1_project_as_dict = tm1_project.__dict__
-        return tm1_project_as_dict
-
-    @classmethod
     def from_file(cls, filename: str) -> 'TM1Project':
         with open(filename, 'r') as file_object:
             json_file = json.load(file_object)
 
         return cls.from_dict(json_file)
 
+    # construct self.body (json) from the class-attributes
+    def _construct_body(self) -> Dict:
+        body = {
+            'Version': self._version,
+            'Name': self._name,
+            'Settings': self._settings,
+            'Tasks': [task.construct_body() for task in self._tasks] if self._tasks else None,
+            'Objects': self._objects,
+            'Ignore': self._ignore,
+            'Files': self._files,
+            'Deployment': self._deployment,
+            'PrePush': self._pre_push,
+            'PostPush': self._post_push,
+            'PrePull': self._pre_pull,
+            'PostPull': self._post_pull,
+            'Dependencies': self._dependencies}
+        return clean_null_terms(body)
+
+    @property
+    def body_as_dict(self) -> Dict:
+        return self._construct_body()
+
     @property
     def body(self) -> str:
-        return self._construct_body()
+        return json.dumps(self.body_as_dict, ensure_ascii=False)
 
     @property
     def version(self) -> int:
@@ -374,24 +397,3 @@ class TM1Project(TM1Object):
     @preconditions.setter
     def preconditions(self, value: str):
         self._preconditions = value
-
-    # construct self.body (json) from the class-attributes
-    def _construct_body(self) -> str:
-        # general parameters
-        body_as_dict_complete = {
-            'Version': self._version,
-            'Name': self._name,
-            'Settings': self._settings,
-            'Tasks': [task.construct_body() for task in self._tasks],
-            'Objects': self._objects,
-            'Ignore': self._ignore,
-            'Files': self._files,
-            'Deployment': self._deployment,
-            'PrePush': self._pre_push,
-            'PostPush': self._post_push,
-            'PrePull': self._pre_pull,
-            'PostPull': self._post_pull,
-            'Dependencies': self._dependencies}
-
-        body_as_dict = clean_null_terms(body_as_dict_complete)
-        return json.dumps(body_as_dict, ensure_ascii=False)
