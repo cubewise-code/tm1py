@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import json
-from enum import Enum
 from typing import Optional, Dict, List
 
+from TM1py import TM1Service
 from TM1py.Objects.TM1Object import TM1Object
 
 
@@ -143,42 +143,63 @@ class TM1Project(TM1Object):
 
         self._tasks.append(project_task)
 
-    def add_ignore_exception(self, object_class: str, object_name: str):
+    def include_attribute_dimensions(self, tm1: TM1Service):
         """
-        Specify exceptions to the ignore policy
+        Add an ignore-exception for each attribute dimension
 
+        """
+        attribute_dimensions = [
+            dimension
+            for dimension
+            in tm1.dimensions.get_all_names()
+            if dimension.lower().startswith("}elementattributes_")]
+
+        self.add_ignore_exceptions("Dimensions", attribute_dimensions)
+
+    def add_ignore_exceptions(self, object_class: str, object_names: List[str]):
+        """
+        Specify exceptions to ignore policy.
         Wildcards (`*`) can not be used in the `object_name`
 
+        Args:
+            object_class: class of the object e.g., "Dimensions"
+            object_names: name of the objects e.g., ["Product", "Customer", "Region"]
+
         Example of the ignore property in the tm1project:
-            Exclude all the new Cubes and Views in the source, except Cube_A;
-            include control Process }Drill_Drill_A;
-            and exclude all the new Dimensions which has a name starting with 'Dim'
+            Exclude all Dimensions that start with 'Dim', except for dimension 'DimB'
 
             "Ignore":
             [
-              "Cubes/Views",
-              "!Cubes('Cube_A')",
-              "!Processes('}Drill_Drill_A')",
-              "Dimensions('Dim*')"
+              "Dimensions('Dim*')",
+              "!Dimensions('DimB')"
             ]
         """
-        ignore_entry = "!" + object_class
-        if object_name:
-            ignore_entry += f"('{object_name}')"
 
-        self.ignore.append(ignore_entry)
+        for object_name in object_names:
+            if "*" in object_name:
+                raise ValueError("'*' character must not be used in object_name")
 
-    def add_ignore(self, object_type: str, object_name: str):
+            ignore_entry = "!" + object_class
+            if object_name:
+                ignore_entry += f"('{object_name}')"
+
+            if not ignore_entry in self.ignore:
+                self.ignore.append(ignore_entry)
+
+    def add_ignore(self, object_class: str, object_name: str):
         """
         Ignore is an optional property in the tm1project
         It specifies the objects to be excluded from the source, if the object is newly created.
+
+        Args:
+            object_class: class of the object e.g., "Dimensions"
+            object_name: name of the object e.g., "Product"
 
         For the `object_type` pass value like `Dimensions` or `Cubes/Views`
 
         Wildcards (`*`) can be used in the `object_name`, if the object is not a control object.
 
-
-        Example of the ignore property in the tm1project:
+        Example of the `ignore` property in the tm1project:
             Exclude all the new Cubes and Views in the source, except Cube_A;
             include control Process }Drill_Drill_A;
             and exclude all the new Dimensions which has a name starting with 'Dim'
@@ -191,11 +212,16 @@ class TM1Project(TM1Object):
               "Dimensions('Dim*')"
             ]
         """
-        ignore_entry = object_type
+
+        if object_name.startswith("}") and "*" in object_name:
+            raise ValueError("'*' character must not be used in object_name for control objects")
+
+        ignore_entry = object_class
         if object_name:
             ignore_entry += f"('{object_name}')"
 
-        self.ignore.append(ignore_entry)
+        if not ignore_entry in self.ignore:
+            self.ignore.append(ignore_entry)
 
     @classmethod
     def from_json(cls, tm1project_as_json: str) -> 'TM1Project':
