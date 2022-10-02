@@ -13,7 +13,7 @@ class TestGitProject(unittest.TestCase):
         expected_body = {
             "Version": 1.0,
             "Name": "TM1py Tests",
-            "Tasks": [{"TaskA": {"Process": "bedrock.server.savedataall", "Parameters": None}}]}
+            "Tasks": {"TaskA": {"Process": "Processes('bedrock.server.savedataall')"}}}
 
         self.assertEqual(expected_body, project.body_as_dict)
 
