@@ -9,6 +9,7 @@ from TM1py.Objects.Cube import Cube
 from TM1py.Objects.Dimension import Dimension
 from TM1py.Objects.Element import Element
 from TM1py.Objects.ElementAttribute import ElementAttribute
+from TM1py.Objects.GitProject import TM1Project, TM1ProjectTask
 from TM1py.Objects.Hierarchy import Hierarchy
 from TM1py.Objects.MDXView import MDXView
 from TM1py.Objects.NativeView import NativeView

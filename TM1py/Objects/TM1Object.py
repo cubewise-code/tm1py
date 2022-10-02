@@ -9,7 +9,7 @@ class TM1Object:
 
     @property
     @abstractmethod
-    def body(self):
+    def body(self) -> str:
         pass
 
     def __hash__(self):
