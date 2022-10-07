@@ -346,6 +346,18 @@ class CubeService(ObjectService):
         url = format_url("/api/v1/Cubes('{}')/tm1.Unlock", cube_name)
         return self._rest.POST(url=url, **kwargs)
 
+    @require_admin
+    def cube_save_data(self, cube_name: str, **kwargs) -> Response:
+        """ Serializes a cube by saving data updates
+
+        :param cube_name:
+        :return: Response
+        """
+        from TM1py.Services import ProcessService
+        ti = "CubeSaveData('{0}');".format(cube_name)
+        process_service = ProcessService(self._rest)
+        return process_service.execute_ti_code(ti, **kwargs)
+
     def get_random_intersection(self, cube_name: str, unique_names: bool = False) -> List[str]:
         """ Get a random Intersection in a cube
         used mostly for regression testing.
