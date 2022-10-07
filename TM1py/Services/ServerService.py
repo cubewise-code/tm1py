@@ -351,6 +351,13 @@ class ServerService(ObjectService):
         return process_service.execute_ti_code(ti, **kwargs)
 
     @require_admin
+    def delete_persistent_feeders(self, **kwargs) -> Response:
+        from TM1py.Services import ProcessService
+        ti = "DeleteAllPersistentFeeders;"
+        process_service = ProcessService(self._rest)
+        return process_service.execute_ti_code(ti, **kwargs)
+
+    @require_admin
     def start_performance_monitor(self):
         config = {
             "Administration": {"PerformanceMonitorOn": True}
