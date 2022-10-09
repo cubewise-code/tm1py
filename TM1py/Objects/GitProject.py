@@ -278,11 +278,14 @@ class TM1Project(TM1Object):
             tasks={
                 task_name: TM1ProjectTask.from_dict(task_name, task)
                 for task_name, task
-                in tm1project_as_dict.get('Tasks').items()},
+                in tm1project_as_dict.get('Tasks').items()} if "Tasks" in tm1project_as_dict else {},
             objects=tm1project_as_dict.get('Objects'),
             ignore=tm1project_as_dict.get('Ignore'),
             files=tm1project_as_dict.get('Files'),
-            deployment=tm1project_as_dict.get('Deployment'),
+            deployment={
+                deployment_name: TM1ProjectDeployment.from_dict(deployment_name, deployment)
+                for deployment_name, deployment
+                in tm1project_as_dict.get('Deployment').items()} if "Deployment" in tm1project_as_dict else {},
             pre_push=tm1project_as_dict.get('PrePush'),
             post_push=tm1project_as_dict.get('PostPush'),
             pre_pull=tm1project_as_dict.get('PrePull'),
