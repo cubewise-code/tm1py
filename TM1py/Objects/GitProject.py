@@ -45,8 +45,6 @@ class TM1ProjectTask:
 
         The server only executes a Task one time during a deployment.
         """
-        if precondition:
-            raise NotImplemented("'precondition' property not implemented for TM1ProjectTask")
 
         if not any([chore, process]):
             raise ValueError("TM1ProjectTask must either have a 'Process' or a 'Chore' property")
@@ -62,6 +60,7 @@ class TM1ProjectTask:
         self.process = process
         self.parameters = parameters
         self.dependencies = dependencies
+        self.precondition = precondition
 
     def construct_body(self) -> Dict:
         body = dict()
@@ -307,7 +306,10 @@ class TM1Project(TM1Object):
             'Objects': self._objects,
             'Ignore': self._ignore,
             'Files': self._files,
-            'Deployment': self._deployment,
+            'Deployment': {
+                name: deployment.construct_body()
+                for name, deployment
+                in self._deployment.items()} if self._deployment else None,
             'PrePush': self._pre_push,
             'PostPush': self._post_push,
             'PrePull': self._pre_pull,
@@ -425,15 +427,17 @@ class TM1ProjectDeployment(TM1Project):
             pre_pull: Optional[List] = None,
             post_pull: Optional[List] = None):
         super().__init__(
-            settings,
-            tasks,
-            objects,
-            ignore,
-            files,
-            pre_push,
-            post_push,
-            pre_pull,
-            post_pull)
+            version=None,
+            name=deployment_name,
+            settings=settings,
+            tasks=tasks,
+            objects=objects,
+            ignore=ignore,
+            files=files,
+            pre_push=pre_push,
+            post_push=post_push,
+            pre_pull=pre_pull,
+            post_pull=post_pull)
 
         self._deployment_name = deployment_name
 
@@ -470,16 +474,14 @@ class TM1ProjectDeployment(TM1Project):
     # construct self.body (json) from the class-attributes
     def construct_body(self) -> Dict:
         body_as_dict = {
-            self._name: {
-                'Settings': self._settings,
-                'Tasks': {name: task.construct_body() for name, task in self.tasks.items()} if self._tasks else None,
-                'Objects': self._objects,
-                'Ignore': self._ignore,
-                'Files': self._files,
-                'PrePush': self._pre_push,
-                'PostPush': self._post_push,
-                'PrePull': self._pre_pull,
-                'PostPull': self._post_pull}
+            'Settings': self._settings,
+            'Tasks': {name: task.construct_body() for name, task in self.tasks.items()} if self._tasks else None,
+            'Objects': self._objects,
+            'Ignore': self._ignore,
+            'Files': self._files,
+            'PrePush': self._pre_push,
+            'PostPush': self._post_push,
+            'PrePull': self._pre_pull,
+            'PostPull': self._post_pull
         }
-        body = clean_null_terms(body_as_dict)
-        return json.dumps(body, ensure_ascii=False)
+        return clean_null_terms(body_as_dict)
