@@ -243,6 +243,14 @@ class TM1Project(TM1Object):
             self.ignore.remove(ignore_entry)
 
     def add_deployment(self, deployment: 'TM1ProjectDeployment'):
+        """
+        "Deployment is an OPTIONAL property. Each of its property defines a named deployment and its specific properties.
+        All the tm1project properties can be redefined for a deployment, except Version.
+        Those properties override the tm1project properties for the specific deployment.
+
+        Current deployment is set by action GitInit."
+
+        """
         if self._deployment is None:
             self._deployment = dict()
 
