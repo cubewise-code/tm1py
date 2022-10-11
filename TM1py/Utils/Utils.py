@@ -278,7 +278,7 @@ def build_content_from_cellset_dict(
     :return:
     """
     cube_dimensions = [dim['Name'] for dim in raw_cellset_as_dict['Cube']['Dimensions']]
-    if skip_sandbox_dimension:
+    if skip_sandbox_dimension and cube_dimensions[0].lower() == "sandboxes":
         cube_dimensions = cube_dimensions[1:]
 
     cells = raw_cellset_as_dict['Cells']
