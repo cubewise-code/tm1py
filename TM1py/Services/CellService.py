@@ -1294,6 +1294,7 @@ class CellService(ObjectService):
                     skip: int = None, skip_zeros: bool = False, skip_consolidated_cells: bool = False,
                     skip_rule_derived_cells: bool = False, sandbox_name: str = None, element_unique_names: bool = True,
                     skip_cell_properties: bool = False, use_compact_json: bool = False,
+                    skip_sandbox_dimension: bool = False,
                     **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
         """ Execute MDX and return the cells with their properties
 
@@ -1309,6 +1310,7 @@ class CellService(ObjectService):
         :param element_unique_names: '[d1].[h1].[e1]' or 'e1'
         :param skip_cell_properties: cell values in result dictionary, instead of cell_properties dictionary
         :param use_compact_json: bool
+        :skip_sandbox_dimension: bool = False
         :return: content in sweet concise structure.
         """
         cellset_id = self.create_cellset(mdx=mdx, sandbox_name=sandbox_name, **kwargs)
@@ -1326,6 +1328,7 @@ class CellService(ObjectService):
             element_unique_names=element_unique_names,
             skip_cell_properties=skip_cell_properties,
             use_compact_json=use_compact_json,
+            skip_sandbox_dimension=skip_sandbox_dimension,
             **kwargs)
 
     def execute_view(self, cube_name: str, view_name: str, private: bool = False, cell_properties: Iterable[str] = None,
@@ -2911,6 +2914,7 @@ class CellService(ObjectService):
             element_unique_names: bool = True,
             skip_cell_properties: bool = False,
             use_compact_json: bool = False,
+            skip_sandbox_dimension: bool = False,
             **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
         """ Execute cellset and return the cells with their properties
 
@@ -2927,7 +2931,8 @@ class CellService(ObjectService):
         :param element_unique_names: '[d1].[h1].[e1]' or 'e1'
         :param skip_cell_properties: cell values in result dictionary, instead of cell_properties dictionary
         :param use_compact_json: bool
-        :return: Content in sweet concise strcuture.
+        :param skip_sandbox_dimension: skip sandbox dimension
+        :return: Content in sweet concise structure.
         """
         if not cell_properties:
             cell_properties = ['Value']
@@ -2953,7 +2958,8 @@ class CellService(ObjectService):
             raw_cellset_as_dict=raw_cellset,
             top=top,
             element_unique_names=element_unique_names,
-            skip_cell_properties=skip_cell_properties)
+            skip_cell_properties=skip_cell_properties,
+            skip_sandbox_dimension=skip_sandbox_dimension)
 
     def create_cellset(self, mdx: str, sandbox_name: str = None, **kwargs) -> str:
         """ Execute MDX in order to create cellset at server. return the cellset-id
