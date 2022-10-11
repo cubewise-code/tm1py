@@ -278,6 +278,8 @@ def build_content_from_cellset_dict(
     :return:
     """
     cube_dimensions = [dim['Name'] for dim in raw_cellset_as_dict['Cube']['Dimensions']]
+    if skip_sandbox_dimension:
+        cube_dimensions = cube_dimensions[1:]
 
     cells = raw_cellset_as_dict['Cells']
     axes = extract_axes_from_cellset(raw_cellset_as_dict=raw_cellset_as_dict)
@@ -303,10 +305,6 @@ def build_content_from_cellset_dict(
                 tuple_ordinal = tuple_ordinal % axis.get('Cardinality')
                 coordinate = extract_unique_names_from_members(axis['Tuples'][tuple_ordinal]['Members'])
                 coordinates.extend(coordinate)
-
-                if skip_sandbox_dimension:
-                    coordinates = [element for element in coordinates if
-                                   "[sandboxes].[sandboxes].[" not in element.lower()]
 
         coordinates = sort_coordinates(cube_dimensions, coordinates, element_unique_names=element_unique_names)
         content_as_dict[coordinates] = cell['Value'] if skip_cell_properties else cell
