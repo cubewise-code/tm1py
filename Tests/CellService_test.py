@@ -358,6 +358,51 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(value, 2)
         self.tm1.cubes.cells.write_value(original_value, self.cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
 
+    def test_get_value_iterator(self):
+        original_value = self.tm1.cubes.cells.get_value(self.cube_name, 'Element1, Element2, Element3')
+        response = self.tm1.cubes.cells.write_value(3, self.cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
+        self.assertTrue(response.ok)
+        value = self.tm1.cubes.cells.get_value(self.cube_name, (
+            (self.dimension_names[0], 'Element1'), 
+            (self.dimension_names[1], 'EleMent2') ,
+            (self.dimension_names[2], 'ELEMENT  3')
+            ))
+        self.assertEqual(value, 3)
+        self.tm1.cubes.cells.write_value(original_value, self.cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
+
+    def test_write_and_get_value_hierarchy(self):
+        original_value = self.tm1.cubes.cells.get_value(self.cube_name, 'Element1,EleMent2,ELEMENT  3')
+        response = self.tm1.cubes.cells.write_value(4, self.cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
+        self.assertTrue(response.ok)
+        value = self.tm1.cubes.cells.get_value(self.cube_name, f'{self.dimension_names[0]}::Element1,EleMent2,{self.dimension_names[2]}::ELEMENT  3')
+        self.assertEqual(value, 4)
+        self.tm1.cubes.cells.write_value(original_value, self.cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
+
+    def test_get_value_iterator_hierarchy(self):
+        original_value = self.tm1.cubes.cells.get_value(self.cube_name, 'Element1, Element2, Element3')
+        response = self.tm1.cubes.cells.write_value(5, self.cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
+        self.assertTrue(response.ok)
+        value = self.tm1.cubes.cells.get_value(self.cube_name, [
+            (self.dimension_names[0], self.dimension_names[0],'Element1'), 
+            (self.dimension_names[1], 'EleMent2'), 
+            Member.of(self.dimension_names[2], self.dimension_names[2], 'ELEMENT  3')
+            ])
+        self.assertEqual(value, 5)
+        self.tm1.cubes.cells.write_value(original_value, self.cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
+
+    def test_write_and_get_value_changed_separator(self):
+        original_value = self.tm1.cubes.cells.get_value(self.cube_name, 'Element1,EleMent2,ELEMENT  3')
+        response = self.tm1.cubes.cells.write_value(6, self.cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
+        self.assertTrue(response.ok)
+        value = self.tm1.cubes.cells.get_value(
+            self.cube_name, 
+            f'{self.dimension_names[0]}$$Element1;EleMent2;{self.dimension_names[2]}  $$ ELEMENT  3',
+            element_separator=";",
+            hierarchy_element_separator="$$"
+        )
+        self.assertEqual(value, 6)
+        self.tm1.cubes.cells.write_value(original_value, self.cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
+
     def test_write_values(self):
         cells = {("Element 2", "Element4", "Element7"): 716}
 
