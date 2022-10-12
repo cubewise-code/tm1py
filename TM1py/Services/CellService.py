@@ -13,7 +13,7 @@ from io import StringIO
 from typing import List, Union, Dict, Iterable, Tuple, Optional
 
 import ijson
-from mdxpy import MdxHierarchySet, MdxBuilder
+from mdxpy import MdxHierarchySet, MdxBuilder, Member
 from requests import Response
 
 from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyWritePartialFailureException, TM1pyWriteFailureException, \
@@ -172,7 +172,7 @@ class CellService(ObjectService):
         """
         super().__init__(tm1_rest)
 
-    def get_value(self, cube_name: str, element_string: str, dimensions: List[str] = None, sandbox_name: str = None,
+    def get_value(self, cube_name: str, element_string: Union[str, Iterable], dimensions: List[str] = None, sandbox_name: str = None,
                   element_separator: str = ",", hierarchy_separator: str = "&&", hierarchy_element_separator: str = "::", 
                   **kwargs) -> Union[str, float]:
         """ Element_String describes the Dimension-Hierarchy-Element arrangement
@@ -183,6 +183,10 @@ class CellService(ObjectService):
             - The , separates the element-selections
             - If more than one hierarchy is selected per dimension && splits the elementselections
             - If no Hierarchy is specified. Default Hierarchy will be addressed
+        or
+        Iterable of type mdxpy.Member or similar
+            - Dimension names must be provided in this case! Example: [(Dimension1, Element1), (Dimension2, Element2), (Dimension3, Element3)]
+            - Hierarchys can be included. Example: [(Dimension1, Hierarchy1, Element1), (Dimension1, Hierarchy2, Element2), (Dimension2, Element3)]
         :param dimensions: List of dimension names in correct order
         :param sandbox_name: str
         :param element_separator: Alternative separator for the element selections
@@ -194,45 +198,59 @@ class CellService(ObjectService):
         mdx_rows_list = []
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
-        element_selections = element_string.split(element_separator)
 
-        # Build the ON ROWS statement:
-        # Loop through the comma separated element selection, except for the last one
-        for dimension_name, element_selection in zip(dimensions[:-1], element_selections[:-1]):
+        if isinstance(element_string, str):
+            element_selections = element_string.split(element_separator)
+
+            # Build the ON ROWS statement:
+            # Loop through the comma separated element selection, except for the last one
+            for dimension_name, element_selection in zip(dimensions[:-1], element_selections[:-1]):
+                if hierarchy_separator not in element_selection:
+                    if hierarchy_element_separator in element_selection:
+                        hierarchy_name, element_name = element_selection.split(hierarchy_element_separator)
+                    else:
+                        hierarchy_name = dimension_name
+                        element_name = element_selection
+
+                    mdx_rows_list.append("{[" + dimension_name + "].[" + hierarchy_name + "].[" + element_name + "]}")
+
+                else:
+                    for element_selection_part in element_selection.split(hierarchy_separator):
+                        hierarchy_name, element_name = element_selection_part.split(hierarchy_element_separator)
+                        mdx_rows_list.append("{[" + dimension_name + "].[" + hierarchy_name + "].[" + element_name + "]}")
+
+            mdx_rows = "*".join(mdx_rows_list)
+
+            # Build the ON COLUMNS statement from last dimension
+            mdx_columns = ""
+            element_selection = element_selections[-1]
+            dimension_name = dimensions[-1]
             if hierarchy_separator not in element_selection:
                 if hierarchy_element_separator in element_selection:
                     hierarchy_name, element_name = element_selection.split(hierarchy_element_separator)
                 else:
                     hierarchy_name = dimension_name
                     element_name = element_selection
-
-                mdx_rows_list.append("{[" + dimension_name + "].[" + hierarchy_name + "].[" + element_name + "]}")
+                mdx_columns = "{[" + dimension_name + "].[" + hierarchy_name + "].[" + element_name + "]}"
 
             else:
-                for element_selection_part in element_selection.split(hierarchy_separator):
+                mdx_columns_list = []
+                for element_selection_part in element_selections[-1].split(hierarchy_separator):
                     hierarchy_name, element_name = element_selection_part.split(hierarchy_element_separator)
-                    mdx_rows_list.append("{[" + dimension_name + "].[" + hierarchy_name + "].[" + element_name + "]}")
-
-        mdx_rows = "*".join(mdx_rows_list)
-
-        # Build the ON COLUMNS statement from last dimension
-        mdx_columns = ""
-        element_selection = element_selections[-1]
-        dimension_name = dimensions[-1]
-        if hierarchy_separator not in element_selection:
-            if hierarchy_element_separator in element_selection:
-                hierarchy_name, element_name = element_selection.split(hierarchy_element_separator)
-            else:
-                hierarchy_name = dimension_name
-                element_name = element_selection
-            mdx_columns = "{[" + dimension_name + "].[" + hierarchy_name + "].[" + element_name + "]}"
+                    mdx_columns_list.append("{[" + dimension_name + "].[" + hierarchy_name + "].[" + element_name + "]}")
+                    mdx_columns = "*".join(mdx_columns_list)
 
         else:
-            mdx_columns_list = []
-            for element_selection_part in element_selections[-1].split(hierarchy_separator):
-                hierarchy_name, element_name = element_selection_part.split(hierarchy_element_separator)
-                mdx_columns_list.append("{[" + dimension_name + "].[" + hierarchy_name + "].[" + element_name + "]}")
-                mdx_columns = "*".join(mdx_columns_list)
+            # Create MDXpy Member from the Iterator entries and get the unique name
+            # The unique name can be used to build the MDX query directly
+            mdx_strings_list = []
+            for element_definition in element_string:
+                if not isinstance(element_definition, Member):
+                    element_definition = Member.of(*element_definition)
+                mdx_strings_list.append("{" + element_definition.unique_name + "}")
+
+            mdx_rows = "*".join(mdx_strings_list[:-1])
+            mdx_columns = mdx_strings_list[-1]
 
         # Construct final MDX
         mdx = mdx_template.format(mdx_rows, mdx_columns, cube_name)
