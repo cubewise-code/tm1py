@@ -195,64 +195,42 @@ class CellService(ObjectService):
         :return:
         """
         mdx_template = "SELECT {} ON ROWS, {} ON COLUMNS FROM [{}]"
-        mdx_rows_list = []
+        mdx_strings_list = []
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
 
+        # Create MDXpy Member from the element string and get the unique name
+        # The unique name can be used to build the MDX query directly
         if isinstance(element_string, str):
             element_selections = element_string.split(element_separator)
-
-            # Build the ON ROWS statement:
-            # Loop through the comma separated element selection, except for the last one
-            for dimension_name, element_selection in zip(dimensions[:-1], element_selections[:-1]):
+            for dimension_name, element_selection in zip(dimensions, element_selections):
                 if hierarchy_separator not in element_selection:
                     if hierarchy_element_separator in element_selection:
                         hierarchy_name, element_name = element_selection.split(hierarchy_element_separator)
                     else:
                         hierarchy_name = dimension_name
                         element_name = element_selection
-
-                    mdx_rows_list.append("{[" + dimension_name + "].[" + hierarchy_name + "].[" + element_name + "]}")
+                    
+                    element_definition = Member.of(dimension_name, hierarchy_name, element_name)
+                    mdx_strings_list.append("{" + element_definition.unique_name + "}")
 
                 else:
                     for element_selection_part in element_selection.split(hierarchy_separator):
                         hierarchy_name, element_name = element_selection_part.split(hierarchy_element_separator)
-                        mdx_rows_list.append("{[" + dimension_name + "].[" + hierarchy_name + "].[" + element_name + "]}")
-
-            mdx_rows = "*".join(mdx_rows_list)
-
-            # Build the ON COLUMNS statement from last dimension
-            mdx_columns = ""
-            element_selection = element_selections[-1]
-            dimension_name = dimensions[-1]
-            if hierarchy_separator not in element_selection:
-                if hierarchy_element_separator in element_selection:
-                    hierarchy_name, element_name = element_selection.split(hierarchy_element_separator)
-                else:
-                    hierarchy_name = dimension_name
-                    element_name = element_selection
-                mdx_columns = "{[" + dimension_name + "].[" + hierarchy_name + "].[" + element_name + "]}"
-
-            else:
-                mdx_columns_list = []
-                for element_selection_part in element_selections[-1].split(hierarchy_separator):
-                    hierarchy_name, element_name = element_selection_part.split(hierarchy_element_separator)
-                    mdx_columns_list.append("{[" + dimension_name + "].[" + hierarchy_name + "].[" + element_name + "]}")
-                    mdx_columns = "*".join(mdx_columns_list)
+                        element_definition = Member.of(dimension_name, hierarchy_name, element_name)
+                        mdx_strings_list.append("{" + element_definition.unique_name + "}")
 
         else:
-            # Create MDXpy Member from the Iterator entries and get the unique name
-            # The unique name can be used to build the MDX query directly
-            mdx_strings_list = []
+            # Create MDXpy Member from the Iterator entries
             for element_definition in element_string:
                 if not isinstance(element_definition, Member):
                     element_definition = Member.of(*element_definition)
                 mdx_strings_list.append("{" + element_definition.unique_name + "}")
 
-            mdx_rows = "*".join(mdx_strings_list[:-1])
-            mdx_columns = mdx_strings_list[-1]
-
-        # Construct final MDX
+        # Build the MDX query
+        # Only the last element is used as the MDX ON COLUMN statement
+        mdx_rows = "*".join(mdx_strings_list[:-1])
+        mdx_columns = mdx_strings_list[-1]
         mdx = mdx_template.format(mdx_rows, mdx_columns, cube_name)
 
         # Execute MDX
