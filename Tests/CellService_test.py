@@ -403,6 +403,15 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(value, 6)
         self.tm1.cubes.cells.write_value(original_value, self.cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
 
+    def test_get_value_old_interface(self):
+        """ Tests if the old function interface with parameter element_string is still usable -> for backwards compatibility """
+        original_value = self.tm1.cubes.cells.get_value(self.cube_name, 'Element1,EleMent2,ELEMENT  3')
+        response = self.tm1.cubes.cells.write_value(7, self.cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
+        self.assertTrue(response.ok)
+        value = self.tm1.cubes.cells.get_value(self.cube_name, element_string = 'Element1,EleMent2,ELEMENT  3')
+        self.assertEqual(value, 7)
+        self.tm1.cubes.cells.write_value(original_value, self.cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
+
     def test_write_values(self):
         cells = {("Element 2", "Element4", "Element7"): 716}
 
