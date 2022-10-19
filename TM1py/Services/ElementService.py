@@ -3,6 +3,7 @@ import json
 from enum import Enum
 from typing import List, Union, Iterable, Optional, Dict, Tuple
 
+import pandas as pd
 from mdxpy import MdxHierarchySet, Member, MdxLevelExpression
 from requests import Response
 
@@ -10,7 +11,8 @@ from TM1py.Exceptions import TM1pyRestException, TM1pyException
 from TM1py.Objects import ElementAttribute, Element
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import CaseAndSpaceInsensitiveDict, format_url, CaseAndSpaceInsensitiveSet, require_admin
+from TM1py.Utils import CaseAndSpaceInsensitiveDict, format_url, CaseAndSpaceInsensitiveSet, require_admin, \
+    dimension_hierarchy_element_tuple_from_unique_name, require_pandas
 from TM1py.Utils import build_element_unique_names, CaseAndSpaceInsensitiveTuplesDict
 
 
@@ -73,6 +75,157 @@ class ElementService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return [Element.from_dict(element) for element in response.json()["value"]]
 
+    @require_pandas
+    def get_elements_dataframe(self, dimension_name: str = None, hierarchy_name: str = None,
+                               member_selection: Iterable = None,
+                               skip_consolidations: bool = True, attributes: Iterable = None,
+                               attribute_column_prefix: str= "", skip_parents: bool = False, level_names=None,
+                               parent_attribute: str = None, skip_weights: bool = False) -> 'pd.DataFrame':
+        """
+
+        :param dimension_name: Name of the dimension
+        :param hierarchy_name: Name of the hierarchy in the dimension
+        :param member_selection: Selection of members. Iterable or valid MDX string
+        :param skip_consolidations: Boolean flag to skip consolidations
+        :param attributes: Selection of attributes. Iterable. If None retrieve all.
+        :param attribute_column_prefix: string to prefix attribute colums to avoid name conflicts
+        :param level_names: List of labels for parent columns. If None use level names from TM1.
+        :param skip_parents: Boolean Flag to skip parent columns.
+        :param parent_attribute: Attribute to be displayed in parent columns. If None, parent name is used.
+        :param skip_weights: include weight columns
+        :return: pandas DataFrame
+        """
+
+        if isinstance(member_selection, str) and not all([dimension_name, hierarchy_name]):
+            record = self.execute_set_mdx(
+                mdx=member_selection,
+                top_records=1,
+                member_properties=["UniqueName"],
+                parent_properties=None,
+                element_properties=None)
+
+            if not record:
+                raise ValueError(f"member_selection invalid: '{member_selection}'")
+
+            unique_name = record[0][0]['UniqueName']
+            dimension_name, hierarchy_name, _ = dimension_hierarchy_element_tuple_from_unique_name(unique_name)
+
+        if not member_selection:
+            member_selection = f"{{ [{dimension_name}].[{hierarchy_name}].Members }}"
+            if skip_consolidations:
+                member_selection = f"{{ Tm1FilterByLevel({member_selection}, 0) }}"
+
+        if not isinstance(member_selection, str):
+            if isinstance(member_selection, Iterable):
+                member_selection = "{" + ",".join(f"[{dimension_name}].[{member}]" for member in member_selection) + "}"
+            else:
+                raise ValueError("Argument 'element_selection' must be None or str")
+
+        if not self.attribute_cube_exists(dimension_name):
+            raise RuntimeError(self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name + " cube must exist")
+
+        members = [tupl[0] for tupl in self.execute_set_mdx(
+            mdx=member_selection,
+            element_properties=None,
+            member_properties=("Name", "UniqueName"),
+            parent_properties=None)]
+
+        element_types = self.get_element_types(
+            dimension_name=dimension_name,
+            hierarchy_name=hierarchy_name,
+            skip_consolidations=skip_consolidations)
+
+        df = pd.DataFrame(
+            data=[(member["Name"], element_types[member["Name"]])
+                  for member
+                  in members
+                  if member["Name"] in element_types],
+            dtype=str,
+            columns=[dimension_name, 'Type'])
+
+        calculated_members_definition = list()
+        calculated_members_selection = list()
+        if not skip_parents:
+            levels = self.get_levels_count(dimension_name, hierarchy_name)
+
+            # potential custom parent names
+            if not level_names:
+                level_names = self.get_level_names(dimension_name, hierarchy_name, descending=True)
+
+            for parent in range(1, levels, 1):
+                name_or_attribute = f"Properties('{parent_attribute}')" if parent_attribute else "Name"
+                member = f"""
+                MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_names[parent]}] 
+                AS [{dimension_name}].CurrentMember.{'Parent.' * parent}{name_or_attribute}
+                """
+                calculated_members_definition.append(member)
+
+                calculated_members_selection.append(
+                    f"[{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_names[parent]}]")
+
+                if not skip_weights:
+                    member_weight = f"""
+                    MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_names[parent]}_Weight] 
+                    AS StrToValue([{dimension_name}].CurrentMember.{'Parent.' * (parent - 1)}Properties('MEMBER_WEIGHT'))"
+                    """
+                    calculated_members_definition.append(member_weight)
+
+                    calculated_members_selection.append(
+                        f"[{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_names[parent]}_Weight]")
+
+        if attributes is None:
+            column_selection = "{Tm1SubsetAll([" + self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name + "])}"
+        else:
+            column_selection = "{" + ",".join(
+                "[" + self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name + "].[" + attribute + "]"
+                for attribute
+                in attributes) + "}"
+
+        if calculated_members_selection:
+            column_selection = column_selection + " + {" + ",".join(calculated_members_selection) + "}"
+        member_selection = ",".join(
+            member["UniqueName"]
+            for member
+            in members)
+
+        mdx_with_block = ""
+        if calculated_members_definition:
+            mdx_with_block = "WITH " + " ".join(calculated_members_definition)
+
+        mdx = f"""
+        {mdx_with_block}
+        SELECT
+        {{ {member_selection} }} ON ROWS,
+        {{ {column_selection} }} ON COLUMNS
+        FROM [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}]  
+        """
+
+        cell_service = self._get_cell_service()
+        df_data = cell_service.execute_mdx_dataframe_shaped(mdx)
+
+        # override columns. hierarchy name with dimension and prefix attributes
+        column_renaming = dict()
+        if attributes and attribute_column_prefix:
+            column_renaming = {attribute: str(attribute_column_prefix) + attribute for attribute in attributes}
+        column_renaming[hierarchy_name] = dimension_name
+        df_data.rename(columns=column_renaming, inplace=True)
+
+        # shift levels to right hand side
+        if not skip_parents:
+            # skip max level (= leaves)
+            level_names = level_names[1:]
+            # iterative approach
+            for _ in level_names:
+                rows_to_shift = df_data[df_data[level_names[-1]] == ''].index
+                if rows_to_shift.empty:
+                    break
+                df_data.iloc[rows_to_shift, -len(level_names):] = df_data.iloc[rows_to_shift, -len(level_names):].shift(
+                    1, axis=1)
+
+            df_data.iloc[:, -len(level_names):] = df_data.iloc[:, -len(level_names):].fillna('')
+
+        return pd.merge(df, df_data, on=dimension_name).drop_duplicates()
+
     def get_edges(self, dimension_name: str, hierarchy_name: str, **kwargs) -> Dict[Tuple[str, str], int]:
         url = format_url(
             "/api/v1/Dimensions('{}')/Hierarchies('{}')/Edges?select=ParentName,ComponentName,Weight",
@@ -103,7 +256,7 @@ class ElementService(ObjectService):
             dimension_name,
             hierarchy_name)
         response = self._rest.GET(url, **kwargs)
-        return [Element.from_dict(element) for element in response.json()["value"]] 
+        return [Element.from_dict(element) for element in response.json()["value"]]
 
     def get_consolidated_element_names(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
         url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Type eq 3",
@@ -118,7 +271,7 @@ class ElementService(ObjectService):
             dimension_name,
             hierarchy_name)
         response = self._rest.GET(url, **kwargs)
-        return [Element.from_dict(element) for element in response.json()["value"]] 
+        return [Element.from_dict(element) for element in response.json()["value"]]
 
     def get_numeric_element_names(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
         url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Type eq 1",
@@ -133,7 +286,7 @@ class ElementService(ObjectService):
             dimension_name,
             hierarchy_name)
         response = self._rest.GET(url, **kwargs)
-        return [Element.from_dict(element) for element in response.json()["value"]] 
+        return [Element.from_dict(element) for element in response.json()["value"]]
 
     def get_string_element_names(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
         url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Type eq 2",
@@ -831,7 +984,6 @@ class ElementService(ObjectService):
         code = f"ElementIsAncestor('{dimension_name}', '{hierarchy_name}', '{ancestor_name}', '{element_name}')=1"
         return process_service.evaluate_boolean_ti_expression(code)
 
-
     def get_process_service(self):
         from TM1py import ProcessService
         return ProcessService(self._rest)
@@ -839,3 +991,7 @@ class ElementService(ObjectService):
     def _get_hierarchy_service(self):
         from TM1py import HierarchyService
         return HierarchyService(self._rest)
+
+    def _get_cell_service(self):
+        from TM1py import CellService
+        return CellService(self._rest)
