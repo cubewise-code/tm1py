@@ -368,7 +368,8 @@ class TestPowerBiService(unittest.TestCase):
             hierarchy_name=self.dimension_name,
             member_selection=None,
             skip_consolidations=False,
-            attributes=None)
+            attributes=None,
+            skip_weights=True)
 
         self.assertEqual(
             tuple(members.columns),

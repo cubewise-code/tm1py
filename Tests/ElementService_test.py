@@ -5,6 +5,7 @@ from pathlib import Path
 from TM1py.Exceptions import TM1pyRestException, TM1pyException
 from TM1py.Objects import Dimension, Hierarchy, Element, ElementAttribute
 from TM1py.Services import TM1Service
+from Tests.Utils import skip_if_no_pandas
 
 
 class TestElementService(unittest.TestCase):
@@ -213,6 +214,37 @@ class TestElementService(unittest.TestCase):
             self.assertIn(year, element_names)
         self.assertNotIn(self.extra_year, element_names)
 
+    @skip_if_no_pandas
+    def test_get_elements_dataframe(self):
+        df = self.tm1.elements.get_elements_dataframe(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            member_selection=["1989", "1990"],
+            skip_consolidations=True,
+            attributes=["Next Year", "Previous Year"],
+            attribute_column_prefix="Attribute ",
+            skip_parents=False,
+            level_names=None,
+            parent_attribute=None,
+            skip_weights=False)
+
+        expected_columns = (
+            "TM1py_unittest_element__dimension",
+            "Type",
+            "Attribute Next Year",
+            "Attribute Previous Year",
+            "level001",
+            "level001_Weight",
+            "level000",
+            "level000_Weight")
+
+        self.assertEqual((2,8), df.shape)
+        self.assertEqual(expected_columns, tuple(df.columns))
+        row = df.loc[df[self.dimension_name] == "1989"]
+        self.assertEqual(
+            tuple(row.values[0]),
+            ('1989', 'Numeric', '', '1988', 'Total Years', '1',  'All Consolidations', '1'))
+
     def test_get_element_names(self):
         element_names = self.tm1.dimensions.hierarchies.elements.get_element_names(
             self.dimension_name,
@@ -416,7 +448,7 @@ class TestElementService(unittest.TestCase):
             self.dimension_name,
             self.hierarchy_name,
             element)
-        
+
         number_of_elements = self.tm1.dimensions.hierarchies.elements.get_number_of_string_elements(
             self.dimension_name, self.hierarchy_name)
         self.assertEqual(number_of_elements, 1)
@@ -444,8 +476,6 @@ class TestElementService(unittest.TestCase):
             self.dimension_name,
             self.hierarchy_name,
             element.name)
-
-
 
     def test_create_element_attribute(self):
         element_attribute = ElementAttribute("NewAttribute", "String")
@@ -702,7 +732,7 @@ class TestElementService(unittest.TestCase):
         parents = self.tm1.elements.get_parents_of_all_elements(
             dimension_name=self.dimension_name,
             hierarchy_name=self.hierarchy_name
-            )
+        )
 
         self.assertEqual(len(parents), 7)
 
