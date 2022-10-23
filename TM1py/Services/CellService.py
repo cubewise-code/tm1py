@@ -1152,7 +1152,7 @@ class CellService(ObjectService):
     def _execute_write_statements(self, statements: List[str], enable_sandbox: str, kwargs) -> Tuple[bool, str, str]:
         max_statements = Process.MAX_STATEMENTS
         if verify_version(required_version="11.8.015", version=self.version):
-            max_statements = Process.MAX_STATEMENTS_POST_11_8_15
+            max_statements = Process.MAX_STATEMENTS_POST_11_8_015
 
         process = Process(
             name="",
