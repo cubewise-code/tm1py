@@ -13,8 +13,8 @@ from io import StringIO
 from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator, Union
 
 import requests
-from requests.adapters import HTTPAdapter
 from mdxpy import MdxBuilder, Member
+from requests.adapters import HTTPAdapter
 
 from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminException
 
@@ -193,12 +193,14 @@ def abbreviate_mdx(mdx: str, size=100) -> str:
         return mdx[:size] + "..."
 
 
-def integerize_version(version: str) -> int:
-    return int(version[0:4].replace(".", ""))
+def integerize_version(version: str, precision: int = 4) -> int:
+    return int(version[:precision].replace(".", ""))
 
 
 def verify_version(required_version: str, version: str) -> bool:
-    return integerize_version(version) >= integerize_version(required_version)
+    expected = integerize_version(required_version, precision=len(required_version))
+    actual = integerize_version(version, precision=len(required_version))
+    return actual >= expected
 
 
 def case_and_space_insensitive_equals(item1: str, item2: str) -> bool:

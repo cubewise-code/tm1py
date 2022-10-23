@@ -87,6 +87,13 @@ class TestUtilsMethods(unittest.TestCase):
         result = verify_version(required_version=required_version, version=version)
         self.assertEqual(True, result)
 
+    def test_verify_version_long(self):
+        required_version = "11.8.015"
+        version = "11.8.00100.13"
+
+        result = verify_version(required_version=required_version, version=version)
+        self.assertEqual(False, result)
+
     def test_get_dimensions_from_where_clause_happy_case(self):
         mdx = """
         SELECT {[dim3].[e2]} ON COLUMNS, {[dim4].[e5]} ON ROWS FROM [cube] WHERE ([dim2].[e1], [dim1].[e4])
