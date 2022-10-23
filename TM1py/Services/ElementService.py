@@ -77,15 +77,15 @@ class ElementService(ObjectService):
 
     @require_pandas
     def get_elements_dataframe(self, dimension_name: str = None, hierarchy_name: str = None,
-                               member_selection: Iterable = None,
-                               skip_consolidations: bool = True, attributes: Iterable = None,
+                               elements: Union[str, Iterable[str]] = None,
+                               skip_consolidations: bool = True, attributes: Iterable[str] = None,
                                attribute_column_prefix: str= "", skip_parents: bool = False, level_names=None,
                                parent_attribute: str = None, skip_weights: bool = False) -> 'pd.DataFrame':
         """
 
-        :param dimension_name: Name of the dimension
-        :param hierarchy_name: Name of the hierarchy in the dimension
-        :param member_selection: Selection of members. Iterable or valid MDX string
+        :param dimension_name: Name of the dimension. Can be derived from elements MDX
+        :param hierarchy_name: Name of the hierarchy in the dimension.Can be derived from elements MDX
+        :param elements: Selection of members. Iterable or valid MDX string
         :param skip_consolidations: Boolean flag to skip consolidations
         :param attributes: Selection of attributes. Iterable. If None retrieve all.
         :param attribute_column_prefix: string to prefix attribute colums to avoid name conflicts
@@ -96,28 +96,28 @@ class ElementService(ObjectService):
         :return: pandas DataFrame
         """
 
-        if isinstance(member_selection, str) and not all([dimension_name, hierarchy_name]):
+        if isinstance(elements, str) and not all([dimension_name, hierarchy_name]):
             record = self.execute_set_mdx(
-                mdx=member_selection,
+                mdx=elements,
                 top_records=1,
                 member_properties=["UniqueName"],
                 parent_properties=None,
                 element_properties=None)
 
             if not record:
-                raise ValueError(f"member_selection invalid: '{member_selection}'")
+                raise ValueError(f"member_selection invalid: '{elements}'")
 
             unique_name = record[0][0]['UniqueName']
             dimension_name, hierarchy_name, _ = dimension_hierarchy_element_tuple_from_unique_name(unique_name)
 
-        if not member_selection:
-            member_selection = f"{{ [{dimension_name}].[{hierarchy_name}].Members }}"
+        if not elements:
+            elements = f"{{ [{dimension_name}].[{hierarchy_name}].Members }}"
             if skip_consolidations:
-                member_selection = f"{{ Tm1FilterByLevel({member_selection}, 0) }}"
+                elements = f"{{ Tm1FilterByLevel({elements}, 0) }}"
 
-        if not isinstance(member_selection, str):
-            if isinstance(member_selection, Iterable):
-                member_selection = "{" + ",".join(f"[{dimension_name}].[{member}]" for member in member_selection) + "}"
+        if not isinstance(elements, str):
+            if isinstance(elements, Iterable):
+                elements = "{" + ",".join(f"[{dimension_name}].[{member}]" for member in elements) + "}"
             else:
                 raise ValueError("Argument 'element_selection' must be None or str")
 
@@ -125,7 +125,7 @@ class ElementService(ObjectService):
             raise RuntimeError(self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name + " cube must exist")
 
         members = [tupl[0] for tupl in self.execute_set_mdx(
-            mdx=member_selection,
+            mdx=elements,
             element_properties=None,
             member_properties=("Name", "UniqueName"),
             parent_properties=None)]
@@ -183,7 +183,7 @@ class ElementService(ObjectService):
 
         if calculated_members_selection:
             column_selection = column_selection + " + {" + ",".join(calculated_members_selection) + "}"
-        member_selection = ",".join(
+        elements = ",".join(
             member["UniqueName"]
             for member
             in members)
@@ -195,7 +195,7 @@ class ElementService(ObjectService):
         mdx = f"""
         {mdx_with_block}
         SELECT
-        {{ {member_selection} }} ON ROWS,
+        {{ {elements} }} ON ROWS,
         {{ {column_selection} }} ON COLUMNS
         FROM [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}]  
         """
