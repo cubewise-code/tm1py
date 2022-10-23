@@ -52,6 +52,6 @@ class PowerBiService:
             raise ValueError("skip_weights must not be False if skip_parents is True")
 
         return self.elements.get_elements_dataframe(
-            dimension_name=dimension_name, hierarchy_name=hierarchy_name, member_selection=member_selection,
+            dimension_name=dimension_name, hierarchy_name=hierarchy_name, elements=member_selection,
             skip_consolidations=skip_consolidations, attributes=attributes, skip_parents=skip_parents,
             level_names=level_names, parent_attribute=parent_attribute, skip_weights=skip_weights)

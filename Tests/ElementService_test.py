@@ -219,7 +219,7 @@ class TestElementService(unittest.TestCase):
         df = self.tm1.elements.get_elements_dataframe(
             dimension_name=self.dimension_name,
             hierarchy_name=self.hierarchy_name,
-            member_selection=["1989", "1990"],
+            elements=["1989", "1990"],
             skip_consolidations=True,
             attributes=["Next Year", "Previous Year"],
             attribute_column_prefix="Attribute ",
