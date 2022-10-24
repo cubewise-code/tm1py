@@ -963,9 +963,11 @@ class CellService(ObjectService):
                 skip_non_updateable=skip_non_updateable)
 
         chunk = list()
+
+        max_statements = Process.max_statements(self.version)
         for n, statement in enumerate(statements):
             chunk.append(statement)
-            if n > 0 and n % (Process.MAX_STATEMENTS * 2) == 0:
+            if n > 0 and n % (max_statements * 2) == 0:
                 success, status, log_file = self._execute_write_statements(chunk, enable_sandbox, kwargs)
                 successes.append(success)
                 if not success:
@@ -1152,9 +1154,7 @@ class CellService(ObjectService):
         return element_service.get_element_types_from_all_hierarchies(dimension_name=measure_dimension)
 
     def _execute_write_statements(self, statements: List[str], enable_sandbox: str, kwargs) -> Tuple[bool, str, str]:
-        max_statements = Process.MAX_STATEMENTS
-        if verify_version(required_version="11.8.015", version=self.version):
-            max_statements = Process.MAX_STATEMENTS_POST_11_8_015
+        max_statements = Process.max_statements(self.version)
 
         process = Process(
             name="",
