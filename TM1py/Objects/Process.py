@@ -5,6 +5,7 @@ import re
 from typing import Optional, Iterable, Dict, List, Union
 
 from TM1py.Objects.TM1Object import TM1Object
+from TM1py.Utils import verify_version
 
 
 class Process(TM1Object):
@@ -19,6 +20,13 @@ class Process(TM1Object):
     AUTO_GENERATED_STATEMENTS = "{}\r\n{}\r\n".format(BEGIN_GENERATED_STATEMENTS, END_GENERATED_STATEMENTS)
     MAX_STATEMENTS = 16_380
     MAX_STATEMENTS_POST_11_8_015 = 100_000
+
+    @staticmethod
+    def max_statements(version: str):
+        if verify_version(required_version="11.8.015", version=version):
+            return Process.MAX_STATEMENTS_POST_11_8_015
+
+        return Process.MAX_STATEMENTS
 
     @staticmethod
     def add_generated_string_to_code(code: str) -> str:
@@ -144,8 +152,10 @@ class Process(TM1Object):
                    datasource_ascii_header_records=process_as_dict['DataSource'].get('asciiHeaderRecords', ''),
                    datasource_ascii_quote_character=process_as_dict['DataSource'].get('asciiQuoteCharacter', ''),
                    datasource_ascii_thousand_separator=process_as_dict['DataSource'].get('asciiThousandSeparator', ''),
-                   datasource_data_source_name_for_client=process_as_dict['DataSource'].get('dataSourceNameForClient',''),
-                   datasource_data_source_name_for_server=process_as_dict['DataSource'].get('dataSourceNameForServer',''),
+                   datasource_data_source_name_for_client=process_as_dict['DataSource'].get('dataSourceNameForClient',
+                                                                                            ''),
+                   datasource_data_source_name_for_server=process_as_dict['DataSource'].get('dataSourceNameForServer',
+                                                                                            ''),
                    datasource_password=process_as_dict['DataSource'].get('password', ''),
                    datasource_user_name=process_as_dict['DataSource'].get('userName', ''),
                    datasource_query=process_as_dict['DataSource'].get('query', ''),
