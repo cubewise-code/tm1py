@@ -154,10 +154,9 @@ class DimensionService(ObjectService):
 
         if skip_control_dims:
             response = self._rest.GET("/api/v1/ModelDimensions()?$select=Name&$top=0&$count", **kwargs)
-            return  response.json()['@odata.count']
+            return response.json()['@odata.count']
 
         return int(self._rest.GET("/api/v1/Dimensions/$count", **kwargs).text)
-
 
     def execute_mdx(self, dimension_name: str, mdx: str, **kwargs) -> List:
         """ Execute MDX against Dimension. 
@@ -196,3 +195,10 @@ class DimensionService(ObjectService):
                           for ea
                           in h.element_attributes]
             process_service.execute_ti_code(lines_prolog=statements, **kwargs)
+
+    def uses_hierarchies(self, dimension_name: str, **kwargs):
+        hierarchy_names = self.hierarchies.get_all_names(dimension_name, **kwargs)
+        if len(hierarchy_names) > 1:
+            return True
+
+        return not case_and_space_insensitive_equals(dimension_name, hierarchy_names[0])
