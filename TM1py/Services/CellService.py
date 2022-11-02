@@ -1662,7 +1662,7 @@ class CellService(ObjectService):
         reader = csv.reader(StringIO(lines), delimiter=element_separator)
 
         # skip header
-        next(reader)
+        next(reader, None)
 
         elements_value_dict = CaseAndSpaceInsensitiveDict()
         for row in reader:
