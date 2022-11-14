@@ -61,3 +61,5 @@ from TM1py.Services.SubsetService import SubsetService
 from TM1py.Services.TM1Service import TM1Service
 from TM1py.Services.ViewService import ViewService
 from TM1py.Utils import Utils
+
+__version__ = "1.10.2"

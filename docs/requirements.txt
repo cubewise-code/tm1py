@@ -1,4 +1,4 @@
-TM1py>=1.6.2
+TM1py>=1.10.1
 pandas>=1.2.2
 mdxpy>=0.4
 python-dateutil>=2.8.1
