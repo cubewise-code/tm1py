@@ -233,17 +233,18 @@ class TestElementService(unittest.TestCase):
             "Type",
             "Attribute Next Year",
             "Attribute Previous Year",
-            "level001",
             "level001_Weight",
-            "level000",
-            "level000_Weight")
+            "level000_Weight",
+            "level001",
+            "level000",)
 
-        self.assertEqual((2,8), df.shape)
+        self.assertEqual((2, 8), df.shape)
         self.assertEqual(expected_columns, tuple(df.columns))
         row = df.loc[df[self.dimension_name] == "1989"]
         self.assertEqual(
-            tuple(row.values[0]),
-            ('1989', 'Numeric', '', '1988', 'Total Years', '1',  'All Consolidations', '1'))
+            ('1989', 'Numeric', '', '1988', '1.000000', '1.000000', 'Total Years', 'All Consolidations'),
+            tuple(row.values[0])
+            )
 
     def test_get_element_names(self):
         element_names = self.tm1.dimensions.hierarchies.elements.get_element_names(

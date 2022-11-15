@@ -79,7 +79,7 @@ class ElementService(ObjectService):
     def get_elements_dataframe(self, dimension_name: str = None, hierarchy_name: str = None,
                                elements: Union[str, Iterable[str]] = None,
                                skip_consolidations: bool = True, attributes: Iterable[str] = None,
-                               attribute_column_prefix: str= "", skip_parents: bool = False, level_names=None,
+                               attribute_column_prefix: str = "", skip_parents: bool = False, level_names=None,
                                parent_attribute: str = None, skip_weights: bool = False) -> 'pd.DataFrame':
         """
 
@@ -152,6 +152,8 @@ class ElementService(ObjectService):
             if not level_names:
                 level_names = self.get_level_names(dimension_name, hierarchy_name, descending=True)
 
+            parent_members = list()
+            weight_members = list()
             for parent in range(1, levels, 1):
                 name_or_attribute = f"Properties('{parent_attribute}')" if parent_attribute else "Name"
                 member = f"""
@@ -160,18 +162,22 @@ class ElementService(ObjectService):
                 """
                 calculated_members_definition.append(member)
 
-                calculated_members_selection.append(
-                    f"[{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_names[parent]}]")
+                parent_members.append(f"[{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_names[parent]}]")
 
                 if not skip_weights:
                     member_weight = f"""
                     MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_names[parent]}_Weight] 
-                    AS StrToValue([{dimension_name}].CurrentMember.{'Parent.' * (parent - 1)}Properties('MEMBER_WEIGHT'))"
+                    AS IIF(
+                    [{dimension_name}].CurrentMember.{'Parent.' * (parent - 1)}Properties('MEMBER_WEIGHT') = '',
+                    0,
+                    [{dimension_name}].CurrentMember.{'Parent.' * (parent - 1)}Properties('MEMBER_WEIGHT'))
                     """
                     calculated_members_definition.append(member_weight)
 
-                    calculated_members_selection.append(
+                    weight_members.append(
                         f"[{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_names[parent]}_Weight]")
+            calculated_members_selection.extend(weight_members)
+            calculated_members_selection.extend(parent_members)
 
         if attributes is None:
             column_selection = "{Tm1SubsetAll([" + self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name + "])}"
