@@ -55,15 +55,18 @@ class TestServerService(unittest.TestCase):
             cls.tm1.dimensions.update_or_create(d)
 
         if not cls.tm1.cubes.exists(cls.cube_name):
-            cube = Cube(cls.cube_name, [cls.dimension_name1, cls.dimension_name2])
+            cube = Cube(cls.cube_name, [
+                        cls.dimension_name1, cls.dimension_name2])
             cls.tm1.cubes.update_or_create(cube)
 
         # inject process with ItemReject
-        cls.process1 = Process(name=cls.process_name1, prolog_procedure="ItemReject('TM1py Tests');")
+        cls.process1 = Process(name=cls.process_name1,
+                               prolog_procedure="ItemReject('TM1py Tests');")
         cls.tm1.processes.update_or_create(cls.process1)
 
         # inject process that does nothing and runs successful
-        cls.process2 = Process(name=cls.process_name2, prolog_procedure="sText = 'text';")
+        cls.process2 = Process(name=cls.process_name2,
+                               prolog_procedure="sText = 'text';")
         cls.tm1.processes.update_or_create(cls.process2)
 
         cls.tm1.server.activate_audit_log()
@@ -92,7 +95,8 @@ class TestServerService(unittest.TestCase):
         self.assertGreater(len(data_directory), 0)
 
         active_configuration = self.tm1.server.get_active_configuration()
-        self.assertEqual(data_directory, active_configuration["Administration"]["DataBaseDirectory"])
+        self.assertEqual(
+            data_directory, active_configuration["Administration"]["DataBaseDirectory"])
 
     def test_get_static_configuration(self):
         static_configuration = self.tm1.server.get_static_configuration()
@@ -118,7 +122,8 @@ class TestServerService(unittest.TestCase):
                     }
                 }
             }
-            response = self.tm1.server.update_static_configuration(config_changes)
+            response = self.tm1.server.update_static_configuration(
+                config_changes)
             self.assertTrue(response.ok)
 
             active_config = self.tm1.server.get_active_configuration()
@@ -137,19 +142,22 @@ class TestServerService(unittest.TestCase):
                 raise e
         # TM1 takes one second to write to the message-log
         time.sleep(1)
-        log_entry = self.tm1.server.get_last_process_message_from_messagelog(self.process_name1)
+        log_entry = self.tm1.server.get_last_process_message_from_messagelog(
+            self.process_name1)
         regex = re.compile('TM1ProcessError_.*.log')
         self.assertTrue(regex.search(log_entry))
 
         self.tm1.processes.execute(self.process_name2)
         # TM1 takes one second to write to the message-log
         time.sleep(1)
-        log_entry = self.tm1.server.get_last_process_message_from_messagelog(self.process_name2)
+        log_entry = self.tm1.server.get_last_process_message_from_messagelog(
+            self.process_name2)
         regex = re.compile('TM1ProcessError_.*.log')
         self.assertFalse(regex.search(log_entry))
 
     def test_get_last_transaction_log_entries(self):
-        self.tm1.processes.execute_ti_code(lines_prolog="CubeSetLogChanges('{}', {});".format(self.cube_name, 1))
+        self.tm1.processes.execute_ti_code(
+            lines_prolog="CubeSetLogChanges('{}', {});".format(self.cube_name, 1))
 
         tmstp = datetime.datetime.utcnow()
 
@@ -208,10 +216,26 @@ class TestServerService(unittest.TestCase):
         for v1, v2, v3 in zip(random_values, reversed(values_from_top), reversed(values_from_since)):
             self.assertAlmostEqual(v1, v2, delta=0.000000001)
 
+        # Query transaction log with Since and Elements filter
+        entries = self.tm1.server.get_transaction_log_entries(
+            reverse=True,
+            cube=cube,
+            elements={'2001': 'eq'},
+            since=tmstp,
+            top=10)
+        values_from_elements = [entry['NewValue'] for entry in entries]
+        self.assertEqual(len(values_from_elements), 1)
+
+        # Compare value written to cube vs. value from filtered log
+        # second value written to cube was  ('2001', 'Value'): random_values[1]
+        self.assertAlmostEqual(values_from_elements[0], random_values[1])
+
     def test_get_transaction_log_entries_from_today(self):
         # get datetime from today at 00:00:00
-        today = datetime.datetime.combine(datetime.date.today(), datetime.time(0, 0))
-        entries = self.tm1.server.get_transaction_log_entries(reverse=True, since=today)
+        today = datetime.datetime.combine(
+            datetime.date.today(), datetime.time(0, 0))
+        entries = self.tm1.server.get_transaction_log_entries(
+            reverse=True, since=today)
         self.assertTrue(len(entries) > 0)
         for entry in entries:
             entry_timestamp = parser.parse(entry['TimeStamp'])
@@ -222,7 +246,8 @@ class TestServerService(unittest.TestCase):
 
     def test_get_audit_log_entries_from_today(self):
         # get datetime from today at 00:00:00
-        today = datetime.datetime.combine(datetime.date.today(), datetime.time(0, 0))
+        today = datetime.datetime.combine(
+            datetime.date.today(), datetime.time(0, 0))
         entries = self.tm1.server.get_audit_log_entries(since=today)
         self.assertTrue(len(entries) > 0)
         for entry in entries:
@@ -253,8 +278,10 @@ class TestServerService(unittest.TestCase):
 
     def test_get_transaction_log_entries_until_yesterday(self):
         # get datetime until yesterday at 00:00:00
-        yesterday = datetime.datetime.combine(datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
-        entries = self.tm1.server.get_transaction_log_entries(reverse=True, until=yesterday)
+        yesterday = datetime.datetime.combine(
+            datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
+        entries = self.tm1.server.get_transaction_log_entries(
+            reverse=True, until=yesterday)
         self.assertTrue(len(entries) > 0)
         for entry in entries:
             # skip invalid timestamps from log
@@ -268,8 +295,10 @@ class TestServerService(unittest.TestCase):
 
     def test_get_message_log_entries_from_today(self):
         # get datetime from today at 00:00:00
-        today = datetime.datetime.combine(datetime.date.today(), datetime.time(0, 0))
-        entries = self.tm1.server.get_message_log_entries(reverse=True, since=today)
+        today = datetime.datetime.combine(
+            datetime.date.today(), datetime.time(0, 0))
+        entries = self.tm1.server.get_message_log_entries(
+            reverse=True, since=today)
 
         for entry in entries:
             entry_timestamp = parser.parse(entry['TimeStamp'])
@@ -280,9 +309,11 @@ class TestServerService(unittest.TestCase):
 
     def test_get_message_log_entries_until_yesterday(self):
         # get datetime until yesterday at 00:00:00
-        yesterday = datetime.datetime.combine(datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
+        yesterday = datetime.datetime.combine(
+            datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
 
-        entries = self.tm1.server.get_message_log_entries(reverse=True, until=yesterday)
+        entries = self.tm1.server.get_message_log_entries(
+            reverse=True, until=yesterday)
         self.assertTrue(len(entries) > 0)
         for entry in entries:
             # skip invalid timestamps from log
@@ -296,10 +327,13 @@ class TestServerService(unittest.TestCase):
 
     def test_get_message_log_entries_only_yesterday(self):
         # get datetime only yesterday at 00:00:00
-        yesterday = datetime.datetime.combine(datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
-        today = datetime.datetime.combine(datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
+        yesterday = datetime.datetime.combine(
+            datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
+        today = datetime.datetime.combine(
+            datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
 
-        entries = self.tm1.server.get_message_log_entries(reverse=True, since=yesterday, until=today)
+        entries = self.tm1.server.get_message_log_entries(
+            reverse=True, since=yesterday, until=today)
         for entry in entries:
             entry_timestamp = parser.parse(entry['TimeStamp'])
             entry_date = entry_timestamp.date()
