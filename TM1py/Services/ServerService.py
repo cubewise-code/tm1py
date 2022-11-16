@@ -203,16 +203,16 @@ class ServerService(ObjectService):
         return timestamp_utc
 
     @require_admin
-    def get_transaction_log_entries(self, reverse: bool = True, user: str = None, cube: str = None,
+    def get_transaction_log_entries(self, reverse: bool = True, user: str = None, cube: str = None, elements: Dict = None,
                                     since: datetime = None, until: datetime = None, top: int = None, **kwargs) -> Dict:
         """
         :param reverse: Boolean
         :param user: UserName
         :param cube: CubeName
+        :param elements: of type dict. Filtervalue as key and comparison operator as value tuple={'Filtervalue1':'eq','Filtervalue2': 'ge'}
         :param since: of type datetime. If it doesn't have tz information, UTC is assumed.
         :param until: of type datetime. If it doesn't have tz information, UTC is assumed.
         :param top: int
-        :param tuple: of type dict. Filtervalue as key and comparison operator as value tuple={'Filtervalue1':'eq','Filtervalue2': 'ge'}
         :return:
         """
         reverse = 'desc' if reverse else 'asc'
@@ -225,9 +225,9 @@ class ServerService(ObjectService):
                 log_filters.append(format_url("User eq '{}'", user))
             if cube:
                 log_filters.append(format_url("Cube eq '{}'", cube))
-            if kwargs.get('tuple', None):
+            if elements:
                 log_filters.append(format_url(
-                    "Tuple/any(t: {})".format(" or ".join([f"t {v} '{k}'" for k, v in kwargs.get('tuple').items()]))))
+                    "Tuple/any(t: {})".format(" or ".join([f"t {v} '{k}'" for k, v in elements.items()]))))
             if since:
                 # If since doesn't have tz information, UTC is assumed
                 if not since.tzinfo:
