@@ -38,7 +38,7 @@ def odata_track_changes_header(func):
 
 class ServerService(ObjectService):
     """ Service to query common information from the TM1 Server
-    
+
     """
 
     def __init__(self, rest: RestService):
@@ -54,12 +54,15 @@ class ServerService(ObjectService):
             url += "?$filter={}".format(filter)
         response = self._rest.GET(url=url, **kwargs)
         # Read the next delta-request-url from the response
-        self.tlog_last_delta_request = response.text[response.text.rfind("TransactionLogEntries/!delta('"):-2]
+        self.tlog_last_delta_request = response.text[response.text.rfind(
+            "TransactionLogEntries/!delta('"):-2]
 
     @odata_track_changes_header
     def execute_transaction_log_delta_request(self, **kwargs) -> Dict:
-        response = self._rest.GET(url="/api/v1/" + self.tlog_last_delta_request, **kwargs)
-        self.tlog_last_delta_request = response.text[response.text.rfind("TransactionLogEntries/!delta('"):-2]
+        response = self._rest.GET(
+            url="/api/v1/" + self.tlog_last_delta_request, **kwargs)
+        self.tlog_last_delta_request = response.text[response.text.rfind(
+            "TransactionLogEntries/!delta('"):-2]
         return response.json()['value']
 
     @odata_track_changes_header
@@ -69,12 +72,15 @@ class ServerService(ObjectService):
             url += "?$filter={}".format(filter)
         response = self._rest.GET(url=url, **kwargs)
         # Read the next delta-request-url from the response
-        self.alog_last_delta_request = response.text[response.text.rfind("AuditLogEntries/!delta('"):-2]
+        self.alog_last_delta_request = response.text[response.text.rfind(
+            "AuditLogEntries/!delta('"):-2]
 
     @odata_track_changes_header
     def execute_audit_log_delta_request(self, **kwargs) -> Dict:
-        response = self._rest.GET(url="/api/v1/" + self.alog_last_delta_request, **kwargs)
-        self.alog_last_delta_request = response.text[response.text.rfind("AuditLogEntries/!delta('"):-2]
+        response = self._rest.GET(
+            url="/api/v1/" + self.alog_last_delta_request, **kwargs)
+        self.alog_last_delta_request = response.text[response.text.rfind(
+            "AuditLogEntries/!delta('"):-2]
         return response.json()['value']
 
     @odata_track_changes_header
@@ -84,12 +90,15 @@ class ServerService(ObjectService):
             url += "?$filter={}".format(filter)
         response = self._rest.GET(url=url, **kwargs)
         # Read the next delta-request-url from the response
-        self.mlog_last_delta_request = response.text[response.text.rfind("MessageLogEntries/!delta('"):-2]
+        self.mlog_last_delta_request = response.text[response.text.rfind(
+            "MessageLogEntries/!delta('"):-2]
 
     @odata_track_changes_header
     def execute_message_log_delta_request(self, **kwargs) -> Dict:
-        response = self._rest.GET(url="/api/v1/" + self.mlog_last_delta_request, **kwargs)
-        self.mlog_last_delta_request = response.text[response.text.rfind("MessageLogEntries/!delta('"):-2]
+        response = self._rest.GET(
+            url="/api/v1/" + self.mlog_last_delta_request, **kwargs)
+        self.mlog_last_delta_request = response.text[response.text.rfind(
+            "MessageLogEntries/!delta('"):-2]
         return response.json()['value']
 
     @require_admin
@@ -112,7 +121,8 @@ class ServerService(ObjectService):
         """
         msg_contains_operator = msg_contains_operator.strip().lower()
         if msg_contains_operator not in ("and", "or"):
-            raise ValueError("'msg_contains_operator' must be either 'AND' or 'OR'")
+            raise ValueError(
+                "'msg_contains_operator' must be either 'AND' or 'OR'")
 
         reverse = 'desc' if reverse else 'asc'
         url = '/api/v1/MessageLogEntries?$orderby=TimeStamp {}'.format(reverse)
@@ -124,13 +134,15 @@ class ServerService(ObjectService):
                 # If since doesn't have tz information, UTC is assumed
                 if not since.tzinfo:
                     since = self.utc_localize_time(since)
-                log_filters.append(format_url("TimeStamp ge {}", since.strftime("%Y-%m-%dT%H:%M:%SZ")))
+                log_filters.append(format_url(
+                    "TimeStamp ge {}", since.strftime("%Y-%m-%dT%H:%M:%SZ")))
 
             if until:
                 # If until doesn't have tz information, UTC is assumed
                 if not until.tzinfo:
                     until = self.utc_localize_time(until)
-                log_filters.append(format_url("TimeStamp le {}", until.strftime("%Y-%m-%dT%H:%M:%SZ")))
+                log_filters.append(format_url(
+                    "TimeStamp le {}", until.strftime("%Y-%m-%dT%H:%M:%SZ")))
 
             if logger:
                 log_filters.append(format_url("Logger eq '{}'", logger))
@@ -144,11 +156,13 @@ class ServerService(ObjectService):
 
             if msg_contains:
                 if isinstance(msg_contains, str):
-                    log_filters.append(format_url("contains(toupper(Message),toupper('{}'))", msg_contains))
+                    log_filters.append(format_url(
+                        "contains(toupper(Message),toupper('{}'))", msg_contains))
                 else:
                     msg_filters = [format_url("contains(toupper(Message),toupper('{}'))", wildcard)
                                    for wildcard in msg_contains]
-                    log_filters.append("({})".format(f" {msg_contains_operator} ".join(msg_filters)))
+                    log_filters.append("({})".format(
+                        f" {msg_contains_operator} ".join(msg_filters)))
 
             url += "&$filter={}".format(" and ".join(log_filters))
 
@@ -164,19 +178,23 @@ class ServerService(ObjectService):
         :param level: string, FATAL, ERROR, WARN, INFO, DEBUG
         :param message: string
         :return:
-        """    
+        """
 
-        valid_levels = CaseAndSpaceInsensitiveSet({'FATAL', 'ERROR', 'WARN', 'INFO', 'DEBUG'})
+        valid_levels = CaseAndSpaceInsensitiveSet(
+            {'FATAL', 'ERROR', 'WARN', 'INFO', 'DEBUG'})
         if level not in valid_levels:
             raise ValueError(f"Invalid level: '{level}'")
 
         from TM1py.Services import ProcessService
         process_service = ProcessService(self._rest)
-        process = Process(name="", prolog_procedure="LogOutput('{}', '{}');".format(level, message))
-        success, status, _ = process_service.execute_process_with_return(process, **kwargs)
+        process = Process(
+            name="", prolog_procedure="LogOutput('{}', '{}');".format(level, message))
+        success, status, _ = process_service.execute_process_with_return(
+            process, **kwargs)
 
         if not success:
-            raise RuntimeError(f"Failed to write to TM1 Message Log through unbound process. Status: '{status}'")
+            raise RuntimeError(
+                f"Failed to write to TM1 Message Log through unbound process. Status: '{status}'")
 
     @staticmethod
     def utc_localize_time(timestamp):
@@ -194,10 +212,12 @@ class ServerService(ObjectService):
         :param since: of type datetime. If it doesn't have tz information, UTC is assumed.
         :param until: of type datetime. If it doesn't have tz information, UTC is assumed.
         :param top: int
+        :param tuple: of type dict. Filtervalue as key and comparison operator as value tuple={'Filtervalue1':'eq','Filtervalue2': 'ge'}
         :return:
         """
         reverse = 'desc' if reverse else 'asc'
-        url = '/api/v1/TransactionLogEntries?$orderby=TimeStamp {} '.format(reverse)
+        url = '/api/v1/TransactionLogEntries?$orderby=TimeStamp {} '.format(
+            reverse)
         # filter on user, cube and time
         if user or cube or since or until:
             log_filters = []
@@ -205,16 +225,21 @@ class ServerService(ObjectService):
                 log_filters.append(format_url("User eq '{}'", user))
             if cube:
                 log_filters.append(format_url("Cube eq '{}'", cube))
+            if kwargs.get('tuple', None):
+                log_filters.append(format_url(
+                    "Tuple/any(t: {})".format(" or ".join([f"t {v} '{k}'" for k, v in kwargs.get('tuple').items()]))))
             if since:
                 # If since doesn't have tz information, UTC is assumed
                 if not since.tzinfo:
                     since = self.utc_localize_time(since)
-                log_filters.append(format_url("TimeStamp ge {}", since.strftime("%Y-%m-%dT%H:%M:%SZ")))
+                log_filters.append(format_url(
+                    "TimeStamp ge {}", since.strftime("%Y-%m-%dT%H:%M:%SZ")))
             if until:
                 # If until doesn't have tz information, UTC is assumed
                 if not until.tzinfo:
                     until = self.utc_localize_time(until)
-                log_filters.append(format_url("TimeStamp le {}", until.strftime("%Y-%m-%dT%H:%M:%SZ")))
+                log_filters.append(format_url(
+                    "TimeStamp le {}", until.strftime("%Y-%m-%dT%H:%M:%SZ")))
             url += "&$filter={}".format(" and ".join(log_filters))
         # top limit
         if top:
@@ -243,19 +268,23 @@ class ServerService(ObjectService):
             if user:
                 log_filters.append(format_url("UserName eq '{}'", user))
             if object_type:
-                log_filters.append(format_url("ObjectType eq '{}'", object_type))
+                log_filters.append(format_url(
+                    "ObjectType eq '{}'", object_type))
             if object_name:
-                log_filters.append(format_url("ObjectName eq '{}'", object_name))
+                log_filters.append(format_url(
+                    "ObjectName eq '{}'", object_name))
             if since:
                 # If since doesn't have tz information, UTC is assumed
                 if not since.tzinfo:
                     since = self.utc_localize_time(since)
-                log_filters.append(format_url("TimeStamp ge {}", since.strftime("%Y-%m-%dT%H:%M:%SZ")))
+                log_filters.append(format_url(
+                    "TimeStamp ge {}", since.strftime("%Y-%m-%dT%H:%M:%SZ")))
             if until:
                 # If until doesn't have tz information, UTC is assumed
                 if not until.tzinfo:
                     until = self.utc_localize_time(until)
-                log_filters.append(format_url("TimeStamp le {}", until.strftime("%Y-%m-%dT%H:%M:%SZ")))
+                log_filters.append(format_url(
+                    "TimeStamp le {}", until.strftime("%Y-%m-%dT%H:%M:%SZ")))
             url += "&$filter={}".format(" and ".join(log_filters))
         # top limit
         if top:
