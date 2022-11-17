@@ -35,6 +35,9 @@ class HierarchyService(ObjectService):
         """
         url = format_url("/api/v1/Dimensions('{}')/Hierarchies", hierarchy.dimension_name)
         response = self._rest.POST(url, hierarchy.body, **kwargs)
+
+        self.update_element_attributes(hierarchy, **kwargs)
+
         return response
 
     def get(self, dimension_name: str, hierarchy_name: str, **kwargs) -> Hierarchy:
