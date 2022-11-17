@@ -205,7 +205,8 @@ class ServerService(ObjectService):
     @require_admin
     def get_transaction_log_entries(self, reverse: bool = True, user: str = None, cube: str = None,
                                     since: datetime = None, until: datetime = None, top: int = None,
-                                    elements: Dict[str, str] = None, **kwargs) -> Dict:
+                                    element_tuple_filter: Dict[str, str] = None,
+                                    element_position_filter: Dict[int, Dict[str, str]] = None, **kwargs) -> Dict:
         """
         :param reverse: Boolean
         :param user: UserName
@@ -213,22 +214,27 @@ class ServerService(ObjectService):
         :param since: of type datetime. If it doesn't have tz information, UTC is assumed.
         :param until: of type datetime. If it doesn't have tz information, UTC is assumed.
         :param top: int
-        :param elements: of type dict. Element name as key and comparison operator as value
+        :param element_tuple_filter: of type dict. Element name as key and comparison operator as value
+        :param element_position_filter: not yet implemented
         tuple={'Actual':'eq','2020': 'ge'}
         :return:
         """
+        if element_position_filter:
+            raise NotImplementedError("Feature expected in upcoming releases of TM1, TM1py")
+
         reverse = 'desc' if reverse else 'asc'
         url = '/api/v1/TransactionLogEntries?$orderby=TimeStamp {} '.format(reverse)
-        # filter on user, cube and time
-        if user or cube or since or until:
+
+        # filter on user, cube, time and elements
+        if any([user, cube, since, until, element_tuple_filter, element_position_filter]):
             log_filters = []
             if user:
                 log_filters.append(format_url("User eq '{}'", user))
             if cube:
                 log_filters.append(format_url("Cube eq '{}'", cube))
-            if elements:
+            if element_tuple_filter:
                 log_filters.append(format_url(
-                    "Tuple/any(e: {})".format(" or ".join([f"e {v} '{k}'" for k, v in elements.items()]))))
+                    "Tuple/any(e: {})".format(" or ".join([f"e {v} '{k}'" for k, v in element_tuple_filter.items()]))))
             if since:
                 # If since doesn't have tz information, UTC is assumed
                 if not since.tzinfo:
