@@ -203,7 +203,7 @@ class TestServerService(unittest.TestCase):
         entries = self.tm1.server.get_transaction_log_entries(
             reverse=True,
             cube=cube,
-            elements={'2001': 'eq'},
+            element_tuple_filter={'2001': 'eq'},
             since=tmstp,
             top=10)
         values_from_elements = [entry['NewValue'] for entry in entries]
