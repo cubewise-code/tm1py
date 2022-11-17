@@ -8,8 +8,8 @@ from typing import Dict, Optional
 
 import pytz
 from requests import Response
-from TM1py.Objects.Process import Process
 
+from TM1py.Objects.Process import Process
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import format_url
@@ -203,21 +203,22 @@ class ServerService(ObjectService):
         return timestamp_utc
 
     @require_admin
-    def get_transaction_log_entries(self, reverse: bool = True, user: str = None, cube: str = None, elements: Dict = None,
-                                    since: datetime = None, until: datetime = None, top: int = None, **kwargs) -> Dict:
+    def get_transaction_log_entries(self, reverse: bool = True, user: str = None, cube: str = None,
+                                    since: datetime = None, until: datetime = None, top: int = None,
+                                    elements: Dict[str, str] = None, **kwargs) -> Dict:
         """
         :param reverse: Boolean
         :param user: UserName
         :param cube: CubeName
-        :param elements: of type dict. Filtervalue as key and comparison operator as value tuple={'Filtervalue1':'eq','Filtervalue2': 'ge'}
         :param since: of type datetime. If it doesn't have tz information, UTC is assumed.
         :param until: of type datetime. If it doesn't have tz information, UTC is assumed.
         :param top: int
+        :param elements: of type dict. Element name as key and comparison operator as value
+        tuple={'Actual':'eq','2020': 'ge'}
         :return:
         """
         reverse = 'desc' if reverse else 'asc'
-        url = '/api/v1/TransactionLogEntries?$orderby=TimeStamp {} '.format(
-            reverse)
+        url = '/api/v1/TransactionLogEntries?$orderby=TimeStamp {} '.format(reverse)
         # filter on user, cube and time
         if user or cube or since or until:
             log_filters = []
@@ -227,7 +228,7 @@ class ServerService(ObjectService):
                 log_filters.append(format_url("Cube eq '{}'", cube))
             if elements:
                 log_filters.append(format_url(
-                    "Tuple/any(t: {})".format(" or ".join([f"t {v} '{k}'" for k, v in elements.items()]))))
+                    "Tuple/any(e: {})".format(" or ".join([f"e {v} '{k}'" for k, v in elements.items()]))))
             if since:
                 # If since doesn't have tz information, UTC is assumed
                 if not since.tzinfo:
