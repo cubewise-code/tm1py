@@ -279,10 +279,10 @@ class TestDimensionService(unittest.TestCase):
             self.tm1.dimensions.delete(dimension_name=dim_name)
 
     def test_uses_hierarchies_true(self):
-        self.assertTrue(self.tm1.dimensions.uses_hierarchies(dimension_name=self.dimension_name_with_multi_hierarchy))
+        self.assertTrue(self.tm1.dimensions.uses_alternate_hierarchies(dimension_name=self.dimension_name_with_multi_hierarchy))
 
     def test_uses_hierarchies_false(self):
-        self.assertFalse(self.tm1.dimensions.uses_hierarchies(dimension_name=self.dimension_name))
+        self.assertFalse(self.tm1.dimensions.uses_alternate_hierarchies(dimension_name=self.dimension_name))
 
     @classmethod
     def tearDownClass(cls):

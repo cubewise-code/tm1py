@@ -196,7 +196,7 @@ class DimensionService(ObjectService):
                           in h.element_attributes]
             process_service.execute_ti_code(lines_prolog=statements, **kwargs)
 
-    def uses_hierarchies(self, dimension_name: str, **kwargs):
+    def uses_alternate_hierarchies(self, dimension_name: str, **kwargs) -> bool:
         hierarchy_names = self.hierarchies.get_all_names(dimension_name, **kwargs)
         if len(hierarchy_names) > 1:
             return True
