@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+    # -*- coding: utf-8 -*-
 
 import json
 from typing import Optional, Dict, List
@@ -69,13 +69,20 @@ class TM1ProjectTask:
             body["Dependencies"] = self.dependencies
 
         if self.chore:
-            body["Chore"] = self.chore
-
+            if not self.chore.startswith("Chores('"):
+                body = {
+                    "Chore": f"Chores('{self.chore}')"
+                }
+            else:
+                body["Chore"] = self.chore
         else:
-            body = {
-                "Process": f"Processes('{self.process}')",
-                "Parameters": self.parameters
-            }
+            if not self.process.startswith("Processes('"):
+                body = {
+                    "Process": f"Processes('{self.process}')",
+                }
+            else:
+                body["Process"] = self.process
+            body.update({"Parameters": self.parameters})
 
         return body
 
