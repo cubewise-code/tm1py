@@ -4,7 +4,7 @@ import functools
 import json
 from collections.abc import Iterable
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import pytz
 from requests import Response
@@ -205,7 +205,7 @@ class ServerService(ObjectService):
     @require_admin
     def get_transaction_log_entries(self, reverse: bool = True, user: str = None, cube: str = None,
                                     since: datetime = None, until: datetime = None, top: int = None,
-                                    element_tuple_filter: Dict[str, str] = None,
+                                    element_tuple_filter: List[Dict[str, str]] = None,
                                     element_position_filter: Dict[int, Dict[str, str]] = None, **kwargs) -> Dict:
         """
         :param reverse: Boolean
@@ -214,16 +214,18 @@ class ServerService(ObjectService):
         :param since: of type datetime. If it doesn't have tz information, UTC is assumed.
         :param until: of type datetime. If it doesn't have tz information, UTC is assumed.
         :param top: int
-        :param element_tuple_filter: of type dict. Element name as key and comparison operator as value
+        :param element_tuple_filter: of type List[Dict[str,str]]. Element name as key and comparison operator as value
         :param element_position_filter: not yet implemented
         tuple={'Actual':'eq','2020': 'ge'}
         :return:
         """
         if element_position_filter:
-            raise NotImplementedError("Feature expected in upcoming releases of TM1, TM1py")
+            raise NotImplementedError(
+                "Feature expected in upcoming releases of TM1, TM1py")
 
         reverse = 'desc' if reverse else 'asc'
-        url = '/api/v1/TransactionLogEntries?$orderby=TimeStamp {} '.format(reverse)
+        url = '/api/v1/TransactionLogEntries?$orderby=TimeStamp {} '.format(
+            reverse)
 
         # filter on user, cube, time and elements
         if any([user, cube, since, until, element_tuple_filter, element_position_filter]):
@@ -233,8 +235,9 @@ class ServerService(ObjectService):
             if cube:
                 log_filters.append(format_url("Cube eq '{}'", cube))
             if element_tuple_filter:
-                log_filters.append(format_url(
-                    "Tuple/any(e: {})".format(" or ".join([f"e {v} '{k}'" for k, v in element_tuple_filter.items()]))))
+                for tuple_filter in element_tuple_filter:
+                    log_filters.append(format_url(
+                        "Tuple/any(e: {})".format(" or ".join([f"e {v} '{k}'" for k, v in tuple_filter.items()]))))
             if since:
                 # If since doesn't have tz information, UTC is assumed
                 if not since.tzinfo:

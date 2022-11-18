@@ -55,21 +55,18 @@ class TestServerService(unittest.TestCase):
             cls.tm1.dimensions.update_or_create(d)
 
         if not cls.tm1.cubes.exists(cls.cube_name):
-            cube = Cube(
-                cls.cube_name,
-                [cls.dimension_name1, cls.dimension_name2])
+            cube = Cube(cls.cube_name, [
+                        cls.dimension_name1, cls.dimension_name2])
             cls.tm1.cubes.update_or_create(cube)
 
         # inject process with ItemReject
-        cls.process1 = Process(
-            name=cls.process_name1,
-            prolog_procedure="ItemReject('TM1py Tests');")
+        cls.process1 = Process(name=cls.process_name1,
+                               prolog_procedure="ItemReject('TM1py Tests');")
         cls.tm1.processes.update_or_create(cls.process1)
 
         # inject process that does nothing and runs successful
-        cls.process2 = Process(
-            name=cls.process_name2,
-            prolog_procedure="sText = 'text';")
+        cls.process2 = Process(name=cls.process_name2,
+                               prolog_procedure="sText = 'text';")
         cls.tm1.processes.update_or_create(cls.process2)
 
         cls.tm1.server.activate_audit_log()
@@ -159,7 +156,36 @@ class TestServerService(unittest.TestCase):
         self.assertFalse(regex.search(log_entry))
 
     def test_get_last_transaction_log_entries(self):
-        random_values, tmstp = self.write_values_to_cube()
+        self.tm1.processes.execute_ti_code(
+            lines_prolog="CubeSetLogChanges('{}', {});".format(self.cube_name, 1))
+
+        tmstp = datetime.datetime.utcnow()
+
+        # Generate 3 random numbers
+        random_values = [random.uniform(-10, 10) for _ in range(3)]
+        # Write value 1 to cube
+        cellset = {
+            ('2000', 'Value'): random_values[0]
+        }
+        self.tm1.cubes.cells.write_values(self.cube_name, cellset)
+
+        # Digest time in TM1
+        time.sleep(1)
+
+        # Write value 2 to cube
+        cellset = {
+            ('2001', 'Value'): random_values[1]
+        }
+        self.tm1.cubes.cells.write_values(self.cube_name, cellset)
+
+        # Digest time in TM1
+        time.sleep(1)
+
+        # Write value 3 to cube
+        cellset = {
+            ('2002', 'Value'): random_values[2]
+        }
+        self.tm1.cubes.cells.write_values(self.cube_name, cellset)
 
         # Digest time in TM1
         time.sleep(8)
@@ -190,61 +216,19 @@ class TestServerService(unittest.TestCase):
         for v1, v2, v3 in zip(random_values, reversed(values_from_top), reversed(values_from_since)):
             self.assertAlmostEqual(v1, v2, delta=0.000000001)
 
-    def test_get_last_transaction_log_entries_filter_by_elements(self):
-        random_values, tmstp = self.write_values_to_cube()
-
-        # Digest time in TM1
-        time.sleep(8)
-
-        user = self.config['tm1srv01']['user']
-        cube = self.cube_name
-
         # Query transaction log with Since and Elements filter
         entries = self.tm1.server.get_transaction_log_entries(
             reverse=True,
             cube=cube,
-            element_tuple_filter={'2001': 'eq'},
+            elements=[{'2001': 'eq'}],
             since=tmstp,
             top=10)
         values_from_elements = [entry['NewValue'] for entry in entries]
         self.assertEqual(len(values_from_elements), 1)
 
         # Compare value written to cube vs. value from filtered log
-        # second value written to cube was  ('2001', 'Value'): random_values[1]
+        # second value written to cube was'2001','Value
         self.assertAlmostEqual(values_from_elements[0], random_values[1])
-
-    def write_values_to_cube(self):
-        self.tm1.processes.execute_ti_code(
-            lines_prolog="CubeSetLogChanges('{}', {});".format(self.cube_name, 1))
-        tmstp = datetime.datetime.utcnow()
-
-        # Generate 3 random numbers
-        random_values = [random.uniform(-10, 10) for _ in range(3)]
-
-        # Write value 1 to cube
-        cellset = {
-            ('2000', 'Value'): random_values[0]
-        }
-        self.tm1.cubes.cells.write_values(self.cube_name, cellset)
-
-        # Digest time in TM1
-        time.sleep(1)
-
-        # Write value 2 to cube
-        cellset = {
-            ('2001', 'Value'): random_values[1]
-        }
-        self.tm1.cubes.cells.write_values(self.cube_name, cellset)
-
-        # Digest time in TM1
-        time.sleep(1)
-
-        # Write value 3 to cube
-        cellset = {
-            ('2002', 'Value'): random_values[2]
-        }
-        self.tm1.cubes.cells.write_values(self.cube_name, cellset)
-        return random_values, tmstp
 
     def test_get_transaction_log_entries_from_today(self):
         # get datetime from today at 00:00:00
