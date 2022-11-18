@@ -220,7 +220,7 @@ class TestServerService(unittest.TestCase):
         entries = self.tm1.server.get_transaction_log_entries(
             reverse=True,
             cube=cube,
-            elements=[{'2001': 'eq'}],
+            element_tuple_filter={'2001': 'eq'},
             since=tmstp,
             top=10)
         values_from_elements = [entry['NewValue'] for entry in entries]
@@ -229,6 +229,22 @@ class TestServerService(unittest.TestCase):
         # Compare value written to cube vs. value from filtered log
         # second value written to cube was'2001','Value
         self.assertAlmostEqual(values_from_elements[0], random_values[1])
+
+        # Query transaction log with Since and Elements position filter
+        entries = self.tm1.server.get_transaction_log_entries(
+            reverse=True,
+            cube=cube,
+            element_position_filter={1: {'2002': 'eq'}},
+            since=tmstp,
+            top=10)
+        values_from_elements_position = [
+            entry['NewValue'] for entry in entries]
+        self.assertEqual(len(values_from_elements_position), 1)
+
+        # Compare value written to cube vs. value from filtered log
+        # second value written to cube was'2002','Value
+        self.assertAlmostEqual(
+            values_from_elements_position[0], random_values[2])
 
     def test_get_transaction_log_entries_from_today(self):
         # get datetime from today at 00:00:00
