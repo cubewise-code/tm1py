@@ -79,8 +79,9 @@ class ElementService(ObjectService):
     def get_elements_dataframe(self, dimension_name: str = None, hierarchy_name: str = None,
                                elements: Union[str, Iterable[str]] = None,
                                skip_consolidations: bool = True, attributes: Iterable[str] = None,
-                               attribute_column_prefix: str = "", skip_parents: bool = False, level_names=None,
-                               parent_attribute: str = None, skip_weights: bool = False) -> 'pd.DataFrame':
+                               attribute_column_prefix: str = "", skip_parents: bool = False,
+                               level_names: List[str] = None, parent_attribute: str = None,
+                               skip_weights: bool = False) -> 'pd.DataFrame':
         """
 
         :param dimension_name: Name of the dimension. Can be derived from elements MDX
