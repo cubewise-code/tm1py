@@ -391,17 +391,21 @@ class TestUtilsMethods(unittest.TestCase):
         framed_value = frame_to_significant_digits(1234, 2)
         self.assertEqual('1200', framed_value)
 
-    def test_frame_to_significant_digits_too_many_digits(self):
-        framed_value = frame_to_significant_digits(1234, 2)
-        self.assertEqual('1200', framed_value)
-
     def test_frame_to_significant_digits_scientific_too_many_digits(self):
         framed_value = frame_to_significant_digits(1.2345E-1, 2)
         self.assertEqual('0.12', framed_value)
 
-    def test_frame_to_significant_digits_scientific_too_many_digits(self):
+    def test_frame_to_significant_digits_scientific_too_many_digits_large(self):
         framed_value = frame_to_significant_digits(1.2345E3, 2)
         self.assertEqual('1200.0', framed_value)
+
+    def test_element_name_from_element_unique_name_happy_case(self):
+        element_name = Utils.element_name_from_element_unique_name("[d1].[e1]")
+        self.assertEqual("e1", element_name)
+
+    def test_element_name_from_element_unique_name_with_double_closing_square_bracket(self):
+        element_name = Utils.element_name_from_element_unique_name("[d1].[other [please specify]]]")
+        self.assertEqual("other [please specify]", element_name)
 
     @classmethod
     def tearDownClass(cls):

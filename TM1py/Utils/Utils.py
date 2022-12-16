@@ -619,7 +619,7 @@ def hierarchy_name_from_element_unique_name(element_unique_name: str) -> str:
 
 
 def element_name_from_element_unique_name(element_unique_name: str) -> str:
-    return element_unique_name[element_unique_name.rfind('].[') + 3:-1]
+    return element_unique_name[element_unique_name.rfind('].[') + 3:-1].replace("]]", "]")
 
 
 def element_names_from_element_unique_names(element_unique_names: Iterable[str]) -> Tuple[str]:
