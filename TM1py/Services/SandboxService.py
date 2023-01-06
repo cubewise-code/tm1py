@@ -135,3 +135,12 @@ class SandboxService(ObjectService):
         """
         url = format_url("/api/v1/Sandboxes('{}')/tm1.Load", sandbox_name)
         return self._rest.POST(url=url, **kwargs)
+    
+    def unload(self, sandbox_name: str, **kwargs) -> Response:
+        """ unload sandbox from memory
+        
+        :param sandbox_name: str
+        :return: response
+        """
+        url = format_url("/api/v1/Sandboxes('{}')/tm1.Unload", sandbox_name)
+        return self._rest.POST(url=url, **kwargs)
