@@ -19,6 +19,7 @@ class TestSandboxService(unittest.TestCase):
         prefix + "dimension3"]
     sandbox_name1 = prefix + "sandbox1"
     sandbox_name2 = prefix + "sandbox2"
+    sandbox_name3 = prefix + "sandbox3"
 
     @classmethod
     def setUp(cls):
@@ -184,9 +185,31 @@ class TestSandboxService(unittest.TestCase):
         values = self.tm1.cells.execute_mdx_values(mdx=mdx, sandbox_name=self.sandbox_name2)
         self.assertEqual(5, values[0])
 
+    def test_unload_sandbox(self):
+        sandbox3 = Sandbox(self.sandbox_name3, True)
+        self.tm1.sandboxes.create(sandbox3)
+        self.tm1.sandboxes.unload(sandbox3)
+        
+        loaded = (self.tm1.sandboxes.get(self.sandbox_name3)).loaded
+        self.assertFalse(loaded)
+
+    def test_load_sandbox(self):
+        self.tm1.sandboxes.create(sandbox3)
+        self.tm1.sandboxes.load(sandbox3)
+        
+        loaded = (self.tm1.sandboxes.get(self.sandbox_name3)).loaded
+        self.assertTrue(loaded)
+
+    def test_active_queued(self):
+        active = (self.tm1.sandboxes.get(self.sandbox_name3)).active
+        self.assertFalse(active)
+
+        queued = (self.tm1.sandboxes.get(self.sandbox_name3)).queued
+        self.assertFalse(queued)
+
     @classmethod
     def tearDown(cls):
-        for sandbox_name in [cls.sandbox_name1, cls.sandbox_name2]:
+        for sandbox_name in [cls.sandbox_name1, cls.sandbox_name2, cls.sandbox_name3]:
             if cls.tm1.sandboxes.exists(sandbox_name):
                 cls.tm1.sandboxes.delete(sandbox_name)
 
