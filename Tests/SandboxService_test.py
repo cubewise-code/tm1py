@@ -189,18 +189,22 @@ class TestSandboxService(unittest.TestCase):
         sandbox3 = Sandbox(self.sandbox_name3, True)
         self.tm1.sandboxes.create(sandbox3)
         self.tm1.sandboxes.unload(sandbox3)
-        
+
         loaded = (self.tm1.sandboxes.get(self.sandbox_name3)).loaded
         self.assertFalse(loaded)
 
     def test_load_sandbox(self):
+        sandbox3 = Sandbox(self.sandbox_name3, False)
         self.tm1.sandboxes.create(sandbox3)
-        self.tm1.sandboxes.load(sandbox3)
-        
+
+        self.tm1.sandboxes.load(sandbox3.name)
         loaded = (self.tm1.sandboxes.get(self.sandbox_name3)).loaded
         self.assertTrue(loaded)
 
     def test_active_queued(self):
+        sandbox3 = Sandbox(self.sandbox_name3, True, active=True, queued=True)
+        self.tm1.sandboxes.create(sandbox3)
+
         active = (self.tm1.sandboxes.get(self.sandbox_name3)).active
         self.assertFalse(active)
 
