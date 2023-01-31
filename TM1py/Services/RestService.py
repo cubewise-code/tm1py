@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import functools
 import re
+import socket
 import time
 import warnings
 from base64 import b64encode, b64decode
@@ -10,7 +11,6 @@ from typing import Union, Dict, Tuple, Optional
 
 import requests
 import urllib3
-import socket
 from requests import Timeout, Response, ConnectionError
 from requests.adapters import HTTPAdapter
 
@@ -36,7 +36,8 @@ def httpmethod(func):
     """
 
     @functools.wraps(func)
-    def wrapper(self, url: str, data: str = '', encoding='utf-8', async_requests_mode: Optional[bool] = None, tcp_keepalive: Optional[bool] = None, **kwargs):
+    def wrapper(self, url: str, data: str = '', encoding='utf-8', async_requests_mode: Optional[bool] = None,
+                tcp_keepalive: Optional[bool] = None, **kwargs):
         # url encoding
         url, data = self._url_and_body(
             url=url,
@@ -62,6 +63,10 @@ def httpmethod(func):
                 http_headers.update(additional_header)
                 kwargs['headers'] = http_headers
                 response = func(self, url, data, **kwargs)
+                # reconnect in case of session timeout
+                if self._re_connect_on_session_timeout and response.status_code == 401:
+                    self.connect()
+                    response = func(self, url, data, **kwargs)
                 self.verify_response(response=response)
 
                 if 'Location' not in response.headers or "'" not in response.headers['Location']:
@@ -166,8 +171,11 @@ class RestService:
         :param integrated_login_delegate: Indicates that the user's credentials are to be delegated to the server.
                 Default: False
         :param impersonate: Name of user to impersonate
+        :param re_connect_on_session_timeout: attempt to reconnect once if session is timed out
         """
+        # store kwargs for future use e.g. re_connect on 401 session timeout
         self._kwargs = kwargs
+
         self._ssl = self.translate_to_boolean(kwargs.get('ssl', True))
         self._address = kwargs.get('address', None)
         self._port = kwargs.get('port', None)
@@ -176,6 +184,7 @@ class RestService:
         self._async_requests_mode = self.translate_to_boolean(kwargs.get('async_requests_mode', False))
         self._tcp_keepalive = self.translate_to_boolean(kwargs.get('tcp_keepalive', False))
         self._connection_pool_size = kwargs.get('connection_pool_size', None)
+        self._re_connect_on_session_timeout = kwargs.get('re_connect_on_session_timeout', True)
         # populated on the fly
         if kwargs.get('user'):
             self._is_admin = True if case_and_space_insensitive_equals(kwargs.get('user'), 'ADMIN') else None
@@ -211,28 +220,15 @@ class RestService:
             self._headers["TM1-SessionContext"] = kwargs["session_context"]
 
         self.disable_http_warnings()
-        # re-use or create tm1 http session
+
         self._s = requests.session()
-        if "session_id" in kwargs:
-            self._s.cookies.set("TM1SessionId", kwargs["session_id"])
-        else:
-            self._start_session(
-                user=kwargs.get("user", None),
-                password=kwargs.get("password", None),
-                namespace=kwargs.get("namespace", None),
-                gateway=kwargs.get("gateway", None),
-                cam_passport=kwargs.get("cam_passport", None),
-                decode_b64=self.translate_to_boolean(kwargs.get("decode_b64", False)),
-                integrated_login=self.translate_to_boolean(kwargs.get("integrated_login", False)),
-                integrated_login_domain=kwargs.get("integrated_login_domain"),
-                integrated_login_service=kwargs.get("integrated_login_service"),
-                integrated_login_host=kwargs.get("integrated_login_host"),
-                integrated_login_delegate=kwargs.get("integrated_login_delegate"),
-                impersonate=kwargs.get("impersonate", None))
+
+        self.connect()
 
         if not self._version:
             self.set_version()
 
+        # is retrieved on demand and cached
         self._sandboxing_disabled = None
 
         if self._tcp_keepalive or self._connection_pool_size is not None:
@@ -243,24 +239,45 @@ class RestService:
             if self.translate_to_boolean(value=kwargs['logging']):
                 http_client.HTTPConnection.debuglevel = 1
 
+    def connect(self):
+        if "session_id" in self._kwargs:
+            self._s.cookies.set("TM1SessionId", self._kwargs["session_id"])
+        else:
+            self._start_session(
+                user=self._kwargs.get("user", None),
+                password=self._kwargs.get("password", None),
+                namespace=self._kwargs.get("namespace", None),
+                gateway=self._kwargs.get("gateway", None),
+                cam_passport=self._kwargs.get("cam_passport", None),
+                decode_b64=self.translate_to_boolean(self._kwargs.get("decode_b64", False)),
+                integrated_login=self.translate_to_boolean(self._kwargs.get("integrated_login", False)),
+                integrated_login_domain=self._kwargs.get("integrated_login_domain"),
+                integrated_login_service=self._kwargs.get("integrated_login_service"),
+                integrated_login_host=self._kwargs.get("integrated_login_host"),
+                integrated_login_delegate=self._kwargs.get("integrated_login_delegate"),
+                impersonate=self._kwargs.get("impersonate", None))
+
     def _manage_http_adapter(self):
         if self._tcp_keepalive:
             # SO_KEEPALIVE: set 1 to enable TCP keepalive
-            socket_options = urllib3.connection.HTTPConnection.default_socket_options + [(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
-                                                                                         (socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, self.TCP_SOCKET_OPTIONS['TCP_KEEPIDLE']),
-                                                                                         (socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, self.TCP_SOCKET_OPTIONS['TCP_KEEPINTVL']),
-                                                                                         (socket.IPPROTO_TCP, socket.TCP_KEEPCNT, self.TCP_SOCKET_OPTIONS['TCP_KEEPCNT'])]
+            socket_options = urllib3.connection.HTTPConnection.default_socket_options + [
+                (socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
+                (socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, self.TCP_SOCKET_OPTIONS['TCP_KEEPIDLE']),
+                (socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, self.TCP_SOCKET_OPTIONS['TCP_KEEPINTVL']),
+                (socket.IPPROTO_TCP, socket.TCP_KEEPCNT, self.TCP_SOCKET_OPTIONS['TCP_KEEPCNT'])]
 
             if self._connection_pool_size is not None:
-                adapter = HTTPAdapterWithSocketOptions(pool_connections=int(self._connection_pool_size),
-                                                       pool_maxsize=int(self._connection_pool_size),
-                                                       socket_options=socket_options)
+                adapter = HTTPAdapterWithSocketOptions(
+                    pool_connections=int(self._connection_pool_size),
+                    pool_maxsize=int(self._connection_pool_size),
+                    socket_options=socket_options)
             else:
                 adapter = HTTPAdapterWithSocketOptions(socket_options=socket_options)
 
         else:
-            adapter = HTTPAdapterWithSocketOptions(pool_connections=int(self._connection_pool_size),
-                                                   pool_maxsize=int(self._connection_pool_size))
+            adapter = HTTPAdapterWithSocketOptions(
+                pool_connections=int(self._connection_pool_size),
+                pool_maxsize=int(self._connection_pool_size))
 
         self._s.mount(self._base_url, adapter)
 
