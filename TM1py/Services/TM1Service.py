@@ -83,5 +83,7 @@ class TM1Service:
         self.git = GitService(self._tm1_rest)
 
     def re_authenticate(self):
-        self._tm1_rest = RestService(**self.connection._kwargs)
-        self._instantiate_services()
+        self._tm1_rest.connect()
+
+    def re_connect(self):
+        self._tm1_rest.connect()
