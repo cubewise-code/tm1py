@@ -3,7 +3,13 @@ import json
 from enum import Enum
 from typing import List, Union, Iterable, Optional, Dict, Tuple
 
-import pandas as pd
+try:
+    import pandas as pd
+
+    _has_pandas = True
+except ImportError:
+    _has_pandas = False
+
 from mdxpy import MdxHierarchySet, Member, MdxLevelExpression
 from requests import Response
 
