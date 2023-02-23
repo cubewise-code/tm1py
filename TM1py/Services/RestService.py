@@ -54,6 +54,9 @@ def httpmethod(func):
 
             if not async_requests_mode:
                 response = func(self, url, data, **kwargs)
+                if self._re_connect_on_session_timeout and response.status_code == 401:
+                    self.connect()
+                    response = func(self, url, data, **kwargs)
 
             else:
                 # reset tcp_keepalive to False explicitly to turn it off when async_requests_mode is enabled
@@ -413,7 +416,14 @@ class RestService:
             if impersonate:
                 additional_headers["TM1-Impersonate"] = impersonate
 
-            response = self.GET(url=url, headers=additional_headers)
+            # skip re_connect to avoid infinite recursion in case of invalid credentials
+            original_value = self._re_connect_on_session_timeout
+            try:
+                self._re_connect_on_session_timeout = False
+                response = self.GET(url=url, headers=additional_headers)
+            finally:
+                self._re_connect_on_session_timeout = original_value
+
             if response is None:
                 raise ValueError(f"No response returned from URL: '{self._base_url + url}'. "
                                  f"Please double check your address and port number in the URL.")
