@@ -872,8 +872,11 @@ class ElementService(ObjectService):
 
     def get_parents(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> List[str]:
         url = format_url(
-            f"/api/v1/Dimensions('{dimension_name}')/Hierarchies('{hierarchy_name}')/Elements('{element_name}')/Parents"
+            "/api/v1/Dimensions('{dimension_name}')/Hierarchies('{hierarchy_name}')/Elements('{element_name}')/Parents"
             f"?$select=Name",
+            dimension_name=dimension_name,
+            hierarchy_name=hierarchy_name,
+            element_name=element_name
         )
         response = self._rest.GET(url=url, **kwargs)
 
