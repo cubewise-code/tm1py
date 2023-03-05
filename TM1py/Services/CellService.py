@@ -3125,3 +3125,66 @@ class CellService(ObjectService):
                 **kwargs)
 
         return attributes_by_dimension
+
+    def extracting_dataframe_with_consolidated_elements(self, mdx):
+        from TM1py.Services.ElementService import ElementService
+
+        #Pulling the data from the initial cube view
+        df = self.execute_mdx_dataframe_pivot(mdx)
+        df = df.reset_index()
+
+        #Detect the name of dimensions on rows in the cube view
+        dim = []
+        for col in df.columns:
+            if col[1] == "":
+                dim.append(col[0])
+
+        #Some cleaning
+        val = df['Values']
+        df_child = df[dim]
+        part1 = pd.DataFrame()
+
+        for item in df_child.columns:
+            part1[item[0]] = df_child[item]
+
+        res = pd.concat([part1, val], axis = 1)
+
+        #Function to build the dataframe that is actually the hierarchy
+        def getting_parents(df, child):
+            child_list = df[child].unique()
+            
+            res = ElementService(tm1_rest).get_elements_dataframe(dimension_name=child, hierarchy_name=child, skip_weights=True)    
+            
+            try:
+                res = res.drop(columns = ['Dash', "Security", "Type"])
+            except:
+                res = res
+            
+            return res
+
+        #Merging the dataframe of the hierarchy with the initial cube view, and giving as result a dataframe with a easy format to understand
+        def adding_columns(source, dim):
+            temp_dim = getting_parents(source, dim)
+            
+            for col in temp_dim.columns:
+                temp = pd.merge(temp_dim.drop_duplicates(), source, left_on=col , right_on=dim, how = "right")
+                if (temp.isna().sum() != 0).sum() != 0:
+                    temp_dim = temp_dim.drop(columns = col)
+                else:
+                    source = pd.merge(temp_dim.drop_duplicates(), source, left_on=col , right_on=dim, how = "right")
+                    break   
+            
+            col_added = pd.Series(list(set(temp_dim.columns) - set([dim]))).sort_values(ascending=False).tolist()
+            for col in col_added:
+                temp_col = source.pop(col)
+                source.insert(0, f'{col}', temp_col)
+            
+            source = source.loc[:, ~(source == '').any()]
+            return source.rename(columns = {item : dim+"_" + item for item in temp_dim.columns if 'level' in item})
+
+        #Doing the work for all the dimensions on rows detected
+        df_final = res.copy()
+        for item in dim:
+            df_final = adding_columns(df_final, item)
+
+        return df_final
