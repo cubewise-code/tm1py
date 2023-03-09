@@ -43,10 +43,14 @@ class TestSecurityService(unittest.TestCase):
                 cls.tm1.security.delete_group(group)
 
     def setUp(self):
-        self.tm1.security.create_group(self.group_name1)
-        self.tm1.security.create_group(self.group_name2)
-        self.tm1.security.create_user(self.user)
-        self.tm1.security.create_user(self.read_only_user)
+        if not self.tm1.security.group_exists(self.group_name1):
+            self.tm1.security.create_group(self.group_name1)
+        if not self.tm1.security.group_exists(self.group_name2):
+            self.tm1.security.create_group(self.group_name2)
+        if not self.tm1.security.user_exists(self.user.name):
+            self.tm1.security.create_user(self.user)
+        if not self.tm1.security.user_exists(self.read_only_user.name):
+            self.tm1.security.create_user(self.read_only_user)
         self.tm1.cells.write_values(
             cube_name="}ClientProperties",
             cellset_as_dict={(self.read_only_user_name, "ReadOnlyUser"): 1})
