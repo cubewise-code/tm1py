@@ -85,6 +85,7 @@ class TestElementService(unittest.TestCase):
             Hierarchy(
                 name="Hierarchy1",
                 dimension_name=dimension.name,
+                element_attributes=[ElementAttribute("Attr1", "String")],
                 elements=[Element("Elem1", "Numeric"), Element("Elem2", "Numeric"), Element("Elem3", "Numeric")]))
         dimension.add_hierarchy(
             Hierarchy(
@@ -95,8 +96,11 @@ class TestElementService(unittest.TestCase):
             Hierarchy(
                 name="Hierarchy3",
                 dimension_name=dimension.name,
+                element_attributes=[ElementAttribute("Attr2", "String")],
                 elements=[Element("Elem5", "Numeric"), Element("Cons2", "Consolidated"),
-                          Element("Cons3", "Consolidated")]))
+                          Element("Cons3", "Consolidated")],
+                edges={("Cons3", "Elem5"): 1}),
+        )
         cls.tm1.dimensions.update_or_create(dimension)
 
     def test_create_and_delete_element(self):
@@ -244,7 +248,34 @@ class TestElementService(unittest.TestCase):
         self.assertEqual(
             ('1989', 'Numeric', '', '1988', '1.000000', '1.000000', 'Total Years', 'All Consolidations'),
             tuple(row.values[0])
-            )
+        )
+
+    @skip_if_no_pandas
+    def test_get_elements_dataframe_alternate_hierarchy(self):
+        df = self.tm1.elements.get_elements_dataframe(
+            dimension_name=self.dimension_with_hierarchies_name,
+            hierarchy_name="Hierarchy3",
+            elements=["Elem5"],
+            skip_consolidations=True,
+            attributes=[],
+            skip_parents=False,
+            level_names=None,
+            parent_attribute=None,
+            skip_weights=False)
+
+        expected_columns = (
+            self.dimension_with_hierarchies_name,
+            "Type",
+            "level000_Weight",
+            "level000",)
+
+        self.assertEqual((1, 4), df.shape)
+        self.assertEqual(expected_columns, tuple(df.columns))
+        row = df.loc[df[self.dimension_with_hierarchies_name] == "Elem5"]
+        self.assertEqual(
+            ('Elem5', 'Numeric', '1.000000', 'Cons3'),
+            tuple(row.values[0])
+        )
 
     def test_get_element_names(self):
         element_names = self.tm1.dimensions.hierarchies.elements.get_element_names(

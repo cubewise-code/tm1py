@@ -124,7 +124,7 @@ class ElementService(ObjectService):
 
         if not isinstance(elements, str):
             if isinstance(elements, Iterable):
-                elements = "{" + ",".join(f"[{dimension_name}].[{member}]" for member in elements) + "}"
+                elements = "{" + ",".join(f"[{dimension_name}].[{hierarchy_name}].[{member}]" for member in elements) + "}"
             else:
                 raise ValueError("Argument 'element_selection' must be None or str")
 
@@ -165,7 +165,7 @@ class ElementService(ObjectService):
                 name_or_attribute = f"Properties('{parent_attribute}')" if parent_attribute else "Name"
                 member = f"""
                 MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_names[parent]}] 
-                AS [{dimension_name}].CurrentMember.{'Parent.' * parent}{name_or_attribute}
+                AS [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * parent}{name_or_attribute}
                 """
                 calculated_members_definition.append(member)
 
@@ -175,9 +175,9 @@ class ElementService(ObjectService):
                     member_weight = f"""
                     MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_names[parent]}_Weight] 
                     AS IIF(
-                    [{dimension_name}].CurrentMember.{'Parent.' * (parent - 1)}Properties('MEMBER_WEIGHT') = '',
+                    [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * (parent - 1)}Properties('MEMBER_WEIGHT') = '',
                     0,
-                    [{dimension_name}].CurrentMember.{'Parent.' * (parent - 1)}Properties('MEMBER_WEIGHT'))
+                    [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * (parent - 1)}Properties('MEMBER_WEIGHT'))
                     """
                     calculated_members_definition.append(member_weight)
 
