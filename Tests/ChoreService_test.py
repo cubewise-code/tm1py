@@ -49,14 +49,11 @@ class TestChoreService(unittest.TestCase):
         # create processes
         p1 = Process(name=cls.process_name1)
         p1.add_parameter('pRegion', 'pRegion (String)', value='US')
-        if cls.tm1.processes.exists(p1.name):
-            cls.tm1.processes.delete(p1.name)
-        cls.tm1.processes.create(p1)
+
+        cls.tm1.processes.update_or_create(p1)
         p2 = Process(name=cls.process_name2)
         p2.add_parameter('pRegion', 'pRegion (String)', value='UK')
-        if cls.tm1.processes.exists(p2.name):
-            cls.tm1.processes.delete(p2.name)
-        cls.tm1.processes.create(p2)
+        cls.tm1.processes.update_or_create(p2)
 
     @classmethod
     def setUp(cls):
@@ -69,7 +66,7 @@ class TestChoreService(unittest.TestCase):
                    execution_mode=Chore.MULTIPLE_COMMIT,
                    frequency=cls.frequency,
                    tasks=cls.tasks)
-        cls.tm1.chores.create(c1)
+        cls.tm1.chores.update_or_create(c1)
 
         c2 = Chore(name=cls.chore_name2,
                    start_time=ChoreStartTime(cls.start_time.year, cls.start_time.month, cls.start_time.day,
@@ -79,13 +76,13 @@ class TestChoreService(unittest.TestCase):
                    execution_mode=Chore.SINGLE_COMMIT,
                    frequency=cls.frequency,
                    tasks=cls.tasks)
-        cls.tm1.chores.create(c2)
+        cls.tm1.chores.update_or_create(c2)
 
         # chore without tasks
         c3 = copy.copy(c2)
         c3.name = cls.chore_name3
         c3.tasks = []
-        cls.tm1.chores.create(c3)
+        cls.tm1.chores.update_or_create(c3)
 
     @classmethod
     def tearDown(cls):
@@ -423,6 +420,9 @@ class TestChoreService(unittest.TestCase):
 
     @classmethod
     def teardown_class(cls):
+        for chore_name in [cls.chore_name1, cls.chore_name2, cls.chore_name3, cls.chore_name4]:
+            if cls.tm1.chores.exists(chore_name):
+                cls.tm1.chores.delete(chore_name)
         cls.tm1.processes.delete(cls.process_name1)
         cls.tm1.processes.delete(cls.process_name2)
         cls.tm1.logout()
