@@ -166,7 +166,7 @@ def update_server_on_adminhost(adminhost: str = 'localhost', server_as_dict: Dic
 
 
 def build_url_friendly_object_name(object_name: str) -> str:
-    return object_name.replace("'", "''").replace('%', '%25').replace('#', '%23')
+    return object_name.replace("'", "''").replace('%', '%25').replace('#', '%23').replace('?', '%3F')
 
 
 def format_url(url, *args: str, **kwargs: str) -> str:
