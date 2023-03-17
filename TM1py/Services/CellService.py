@@ -825,7 +825,7 @@ class CellService(ObjectService):
 
     def write(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None, increment: bool = False,
               deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
-              sandbox_name: str = None, use_ti=False, use_changeset: bool = False, precision: int = None,
+              sandbox_name: str = None, use_ti=False, use_blob=False, use_changeset: bool = False, precision: int = None,
               skip_non_updateable: bool = False, measure_dimension_elements: Dict = None, **kwargs) -> Optional[str]:
         """ Write values to a cube
 
@@ -866,6 +866,19 @@ class CellService(ObjectService):
                 measure_dimension_elements=measure_dimension_elements,
                 **kwargs)
 
+        if use_blob:
+            return self.write_through_blob(
+                cube_name=cube_name,
+                cellset_as_dict=cellset_as_dict,
+                increment=increment,
+                sandbox_name=sandbox_name,
+                deactivate_transaction_log=deactivate_transaction_log,
+                reactivate_transaction_log=reactivate_transaction_log,
+                precision=precision,
+                skip_non_updateable=skip_non_updateable,
+                measure_dimension_elements=measure_dimension_elements,
+                **kwargs)
+
         return self.write_through_cellset(cube_name, cellset_as_dict, dimensions, increment, deactivate_transaction_log,
                                           reactivate_transaction_log, sandbox_name, use_changeset, skip_non_updateable,
                                           **kwargs)
@@ -890,6 +903,8 @@ class CellService(ObjectService):
             sandbox_name=sandbox_name,
             use_changeset=use_changeset,
             **kwargs)
+
+
 
     def drop_non_updateable_cells(self, cells: Dict, cube_name: str, dimensions: List[str]):
         mdx = build_mdx_from_cellset(cells, cube_name, dimensions)
@@ -990,6 +1005,25 @@ class CellService(ObjectService):
 
         if not all(successes):
             raise TM1pyWritePartialFailureException(statuses, log_files, len(successes))
+
+    @require_admin
+    @manage_transaction_log
+    def write_through_blob(self, cube_name: str, cellset_as_dict: Dict, increment: bool = False,
+                                      sandbox_name: str = None, precision: int = None,
+                                      skip_non_updateable: bool = False,
+                                      measure_dimension_elements: Dict = None, is_attribute_cube: bool = None,
+                                      **kwargs):
+
+        # todo
+        # upload data as CSV to TM1 server using ApplicationService:
+        # create_document_from_file(self, path_to_file: str, application_path: str, application_name: str,
+        #                                   private: bool = False, **kwargs) -> Response:
+        # inject a small bedrock-like process into the TM1 server to load CSV into the cube
+        # call the bedrock-like process
+        # delete the process
+        # delete the CSV file on the TM1 server
+
+        pass
 
     @staticmethod
     def _build_attribute_update_statements(cube_name, cellset_as_dict, precision: int = None,
