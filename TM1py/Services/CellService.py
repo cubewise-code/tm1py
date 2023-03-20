@@ -1014,6 +1014,7 @@ class CellService(ObjectService):
                                       measure_dimension_elements: Dict = None, is_attribute_cube: bool = None,
                                       **kwargs):
 
+        df = build_pandas_dataframe_from_cellset(cellset_as_dict)
         # todo
         # upload data as CSV to TM1 server using ApplicationService:
         # create_document_from_file(self, path_to_file: str, application_path: str, application_name: str,
