@@ -5,8 +5,10 @@ import functools
 import itertools
 import json
 import math
+import random
 import uuid
 import warnings
+from builtins import type
 from collections import OrderedDict
 from concurrent.futures.thread import ThreadPoolExecutor
 from io import StringIO
@@ -16,6 +18,7 @@ import ijson
 from mdxpy import MdxHierarchySet, MdxBuilder, Member
 from requests import Response
 
+import TM1py
 from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyWritePartialFailureException, TM1pyWriteFailureException, \
     TM1pyRestException
 from TM1py.Objects.MDXView import MDXView
@@ -24,6 +27,7 @@ from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.SandboxService import SandboxService
 from TM1py.Services.ViewService import ViewService
+from TM1py.Services.ApplicationService import ApplicationService
 from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url, add_url_parameters
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
     CaseAndSpaceInsensitiveDict, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, \
@@ -172,8 +176,10 @@ class CellService(ObjectService):
         """
         super().__init__(tm1_rest)
 
-    def get_value(self, cube_name: str, elements : Union[str, Iterable] = None, dimensions: List[str] = None, sandbox_name: str = None,
-                  element_separator: str = ",", hierarchy_separator: str = "&&", hierarchy_element_separator: str = "::",
+    def get_value(self, cube_name: str, elements: Union[str, Iterable] = None, dimensions: List[str] = None,
+                  sandbox_name: str = None,
+                  element_separator: str = ",", hierarchy_separator: str = "&&",
+                  hierarchy_element_separator: str = "::",
                   **kwargs) -> Union[str, float]:
         """ Returns cube value from specified coordinates
 
@@ -216,7 +222,7 @@ class CellService(ObjectService):
                     else:
                         hierarchy_name = dimension_name
                         element_name = element_selection
-                    
+
                     element_definition = Member.of(dimension_name, hierarchy_name, element_name)
                     mdx_strings_list.append("{" + element_definition.unique_name + "}")
 
@@ -246,9 +252,9 @@ class CellService(ObjectService):
     def _compose_odata_tuple_from_string(self, cube_name: str,
                                          element_string: str,
                                          dimensions: Iterable[str] = None,
-                                         element_separator: str = ",", 
-                                         hierarchy_separator: str = "&&", 
-                                         hierarchy_element_separator: str = "::", 
+                                         element_separator: str = ",",
+                                         hierarchy_separator: str = "&&",
+                                         hierarchy_element_separator: str = "::",
                                          **kwargs) -> OrderedDict:
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
@@ -265,16 +271,16 @@ class CellService(ObjectService):
                     element_name = element_selection
 
                 tuple_list.append(format_url("Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
-                                              dimension_name,
-                                              hierarchy_name,
-                                              element_name))
+                                             dimension_name,
+                                             hierarchy_name,
+                                             element_name))
             else:
                 for element_selection_part in element_selection.split(hierarchy_separator):
                     hierarchy_name, element_name = element_selection_part.split(hierarchy_element_separator)
                     tuple_list.append(format_url("Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
-                                                  dimension_name,
-                                                  hierarchy_name,
-                                                  element_name))
+                                                 dimension_name,
+                                                 hierarchy_name,
+                                                 element_name))
 
         odata_tuple_as_dict["Tuple@odata.bind"] = tuple_list
 
@@ -294,13 +300,13 @@ class CellService(ObjectService):
         return odata_tuple_as_dict
 
     def trace_cell_calculation(self, cube_name: str,
-                               elements: Union[Iterable,str],
+                               elements: Union[Iterable, str],
                                dimensions: Iterable[str] = None,
                                sandbox_name: str = None,
                                depth: int = 1,
-                               element_separator: str = ",", 
-                               hierarchy_separator: str = "&&", 
-                               hierarchy_element_separator: str = "::", 
+                               element_separator: str = ",",
+                               hierarchy_separator: str = "&&",
+                               hierarchy_element_separator: str = "::",
                                **kwargs) -> Dict:
 
         """ Trace cell calculation at specified coordinates
@@ -339,11 +345,11 @@ class CellService(ObjectService):
 
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         if isinstance(elements, str):
-            body_as_dict = self._compose_odata_tuple_from_string(cube_name, 
-                                                                 elements, 
-                                                                 dimensions, 
-                                                                 element_separator, 
-                                                                 hierarchy_separator, 
+            body_as_dict = self._compose_odata_tuple_from_string(cube_name,
+                                                                 elements,
+                                                                 dimensions,
+                                                                 element_separator,
+                                                                 hierarchy_separator,
                                                                  hierarchy_element_separator)
         else:
             body_as_dict = self._compose_odata_tuple_from_iterable(cube_name, elements, dimensions)
@@ -352,13 +358,13 @@ class CellService(ObjectService):
         return json.loads(self._rest.POST(url=url, data=data, **kwargs).content)
 
     def trace_cell_feeders(self, cube_name: str,
-                               elements: Union[Iterable,str],
-                               dimensions: Iterable[str] = None,
-                               sandbox_name: str = None,
-                               element_separator: str = ",", 
-                               hierarchy_separator: str = "&&", 
-                               hierarchy_element_separator: str = "::", 
-                               **kwargs) -> Dict:
+                           elements: Union[Iterable, str],
+                           dimensions: Iterable[str] = None,
+                           sandbox_name: str = None,
+                           element_separator: str = ",",
+                           hierarchy_separator: str = "&&",
+                           hierarchy_element_separator: str = "::",
+                           **kwargs) -> Dict:
 
         """ Trace feeders from a cell
 
@@ -385,11 +391,11 @@ class CellService(ObjectService):
 
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         if isinstance(elements, str):
-            body_as_dict = self._compose_odata_tuple_from_string(cube_name, 
-                                                                 elements, 
-                                                                 dimensions, 
-                                                                 element_separator, 
-                                                                 hierarchy_separator, 
+            body_as_dict = self._compose_odata_tuple_from_string(cube_name,
+                                                                 elements,
+                                                                 dimensions,
+                                                                 element_separator,
+                                                                 hierarchy_separator,
                                                                  hierarchy_element_separator)
         else:
             body_as_dict = self._compose_odata_tuple_from_iterable(cube_name, elements, dimensions)
@@ -398,13 +404,13 @@ class CellService(ObjectService):
         return json.loads(self._rest.POST(url=url, data=data, **kwargs).content)
 
     def check_cell_feeders(self, cube_name: str,
-                               elements: Union[Iterable,str],
-                               dimensions: Iterable[str] = None,
-                               sandbox_name: str = None,
-                               element_separator: str = ",", 
-                               hierarchy_separator: str = "&&", 
-                               hierarchy_element_separator: str = "::", 
-                               **kwargs) -> Dict:
+                           elements: Union[Iterable, str],
+                           dimensions: Iterable[str] = None,
+                           sandbox_name: str = None,
+                           element_separator: str = ",",
+                           hierarchy_separator: str = "&&",
+                           hierarchy_element_separator: str = "::",
+                           **kwargs) -> Dict:
 
         """ Check feeders
 
@@ -431,18 +437,17 @@ class CellService(ObjectService):
 
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         if isinstance(elements, str):
-            body_as_dict = self._compose_odata_tuple_from_string(cube_name, 
-                                                                 elements, 
-                                                                 dimensions, 
-                                                                 element_separator, 
-                                                                 hierarchy_separator, 
+            body_as_dict = self._compose_odata_tuple_from_string(cube_name,
+                                                                 elements,
+                                                                 dimensions,
+                                                                 element_separator,
+                                                                 hierarchy_separator,
                                                                  hierarchy_element_separator)
         else:
             body_as_dict = self._compose_odata_tuple_from_iterable(cube_name, elements, dimensions)
         data = json.dumps(body_as_dict, ensure_ascii=False)
 
         return json.loads(self._rest.POST(url=url, data=data, **kwargs).content)
-
 
     def relative_proportional_spread(
             self,
@@ -799,7 +804,6 @@ class CellService(ObjectService):
             error_log_files=list(itertools.chain(*[exception.error_log_files for exception in exceptions])),
             attempts=sum([exception.attempts for exception in exceptions]))
 
-
     @manage_changeset
     def write_value(self, value: Union[str, float], cube_name: str, element_tuple: Iterable,
                     dimensions: Iterable[str] = None, sandbox_name: str = None, **kwargs) -> Response:
@@ -818,14 +822,16 @@ class CellService(ObjectService):
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         body_as_dict = OrderedDict()
         body_as_dict["Cells"] = [{}]
-        body_as_dict["Cells"][0] = self._compose_odata_tuple_from_iterable(cube_name, element_tuple, dimensions, **kwargs)
+        body_as_dict["Cells"][0] = self._compose_odata_tuple_from_iterable(cube_name, element_tuple, dimensions,
+                                                                           **kwargs)
         body_as_dict["Value"] = str(value) if value else ""
         data = json.dumps(body_as_dict, ensure_ascii=False)
         return self._rest.POST(url=url, data=data, **kwargs)
 
     def write(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None, increment: bool = False,
               deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
-              sandbox_name: str = None, use_ti=False, use_blob=False, use_changeset: bool = False, precision: int = None,
+              sandbox_name: str = None, use_ti=False, use_blob=False, use_changeset: bool = False,
+              precision: int = None,
               skip_non_updateable: bool = False, measure_dimension_elements: Dict = None, **kwargs) -> Optional[str]:
         """ Write values to a cube
 
@@ -843,6 +849,7 @@ class CellService(ObjectService):
         :param reactivate_transaction_log: reactivate after writing
         :param sandbox_name: str
         :param use_ti: Use unbound process to write. Requires admin permissions. causes massive performance improvement.
+        :param use_blob: Upload CSV to tm1 server and runs an unbound process to write. Requires admin permissions. It causes massive performance improvement.
         :param use_changeset: Enable ChangesetID: True or False
         :param precision: max precision when writhing through unbound process.
         Necessary when dealing with large numbers to avoid "number too long" TI syntax error.
@@ -874,9 +881,7 @@ class CellService(ObjectService):
                 sandbox_name=sandbox_name,
                 deactivate_transaction_log=deactivate_transaction_log,
                 reactivate_transaction_log=reactivate_transaction_log,
-                precision=precision,
                 skip_non_updateable=skip_non_updateable,
-                measure_dimension_elements=measure_dimension_elements,
                 **kwargs)
 
         return self.write_through_cellset(cube_name, cellset_as_dict, dimensions, increment, deactivate_transaction_log,
@@ -903,8 +908,6 @@ class CellService(ObjectService):
             sandbox_name=sandbox_name,
             use_changeset=use_changeset,
             **kwargs)
-
-
 
     def drop_non_updateable_cells(self, cells: Dict, cube_name: str, dimensions: List[str]):
         mdx = build_mdx_from_cellset(cells, cube_name, dimensions)
@@ -1008,23 +1011,137 @@ class CellService(ObjectService):
 
     @require_admin
     @manage_transaction_log
-    def write_through_blob(self, cube_name: str, cellset_as_dict: Dict, increment: bool = False,
-                                      sandbox_name: str = None, precision: int = None,
-                                      skip_non_updateable: bool = False,
-                                      measure_dimension_elements: Dict = None, is_attribute_cube: bool = None,
-                                      **kwargs):
+    @require_pandas
+    def write_through_blob(self, cube_name: str, cellset_as_dict: dict, increment: bool = False,
+                           sandbox_name: str = None, skip_non_updateable: bool = False,
+                           **kwargs):
+        """
+        Writes data back to TM1 via an unbound TI process having an uploaded CSV as data source
+        :param cube_name: str
+        :param cellset_as_dict:
+        :param increment: increment or update cell values
+        :param sandbox_name: str
+        :param skip_non_updateable skip cells that are not updateable (e.g. rule derived or consolidated)
+        :param kwargs:
+        :return: Success: bool, Messages: list, ChangeSet: None
+        """
+        from TM1py.Objects.Application import FolderApplication
+        from TM1py import ApplicationService
+        from TM1py import ProcessService
+        import os
+        application_service = ApplicationService(self._rest)
+        process_service = ProcessService(self._rest)
+        cube_service = self.get_cube_service()
+
+        # Transform the cellset dict into a pandas dataframe and export to CSV
+
+        # Generate a random key to name uniquely the data extract file
+        random_key = random.randint(1000, 9999).__str__()
+        # Transform the cellset into a dictionary and export to CSV
+        df = build_pandas_dataframe_from_cellset(cellset_as_dict, multiindex=False)
+        # Define the path and file name
+        export_path = '.\\'
+        export_filename = 'data-source-extract-' + random_key + '.csv'
+        export_path_to_file = export_path + export_filename
+        # export cell dataframe to csv without indexes adn with all values with doublequotes
+        df.to_csv(export_path_to_file, index=False, sep=',', quoting=csv.QUOTE_ALL)
+
+        # Upload CSV to TM1 server using ApplicationService:
+        # Create a folder TM1py
+        tm1py_folder = FolderApplication(path='', name='TM1py')
+        if not application_service.exists(path='', application_type='FOLDER', name=tm1py_folder.name):
+            application_service.create(tm1py_folder)
+        # Update or create the CSV file inside the TM1py folder
+        application_service.update_or_create_document_from_file(path=tm1py_folder.name, name=export_filename,
+                                                                path_to_file=export_path_to_file)
+        # Retrieve the file ID to be used as data source in the TI process. Default folder is .\Externals
+        blob_filename = application_service.get_document(path=tm1py_folder.name, name=export_filename).file_id
+
+        # Create a TI processto load CSV  data into the cube
+        dataload_process_name = 'cube.' + cube_name + '.load.fromfile.' + random_key + 'test'
+        dataload_process = Process(name=dataload_process_name,
+                                   datasource_type='ASCII',
+                                   datasource_data_source_name_for_server='.\\}Externals\\' + blob_filename,
+                                   datasource_data_source_name_for_client='.\\}Externals\\' + blob_filename,
+                                   datasource_ascii_delimiter_char=',',
+                                   datasource_ascii_decimal_separator='.',
+                                   datasource_ascii_thousand_separator='',
+                                   datasource_ascii_quote_character='"')
+
+        # Get cube dimensions
+        cube_dimensions = cube_service.get(cube_name).dimensions
+        # Get cube measure dimension
+        cube_measure = cube_service.get_measure_dimension(cube_name)
+
+        # Create variables, all String
+        variable_prefix = 'v'
+        variable_cube_measure = variable_prefix + cube_measure
+        variable_list = []
+        for n, dimension in enumerate(cube_dimensions):
+            variable_list.append(variable_prefix + dimension.replace(' ', ''))
+            dataload_process.add_variable(name=variable_list[n], variable_type='String')
 
         df = build_pandas_dataframe_from_cellset(cellset_as_dict)
-        # todo
-        # upload data as CSV to TM1 server using ApplicationService:
-        # create_document_from_file(self, path_to_file: str, application_path: str, application_name: str,
-        #                                   private: bool = False, **kwargs) -> Response:
-        # inject a small bedrock-like process into the TM1 server to load CSV into the cube
-        # call the bedrock-like process
-        # delete the process
-        # delete the CSV file on the TM1 server
+        # Create a comma separated list of variables
+        comma_sep_var_elements = ",".join(variable_list)
 
-        pass
+        # Add value variable, type String to make possible to load both Numeric and String
+        variable_value = 'vValue'
+        dataload_process.add_variable(name=variable_value, variable_type='String')
+
+        # Write the statement for Cell Is Updateable
+        if skip_non_updateable:
+            cell_is_updateable_pre = f"If( CellIsUpdateable('{cube_name}',{comma_sep_var_elements}) = 1 );"
+            cell_is_updateable_post = '\rElse;\r' \
+                                      '   ItemSkip;\r' \
+                                      'EndIf;\r'
+        else:
+            cell_is_updateable_pre = ""
+            cell_is_updateable_post = ""
+
+        # Define TI write function based on parameter 'increment'
+        function_str = "CellIncrementN" if increment else "CellPutN"
+
+        # Define input statement depending on measure element's type: numeric or string
+        input_statement = f"""
+        If( ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'N' );
+
+                nValue = StringToNumber({variable_value});
+                {function_str}(nValue,'{cube_name}',{comma_sep_var_elements});
+
+        ElseIf( ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'S' );
+
+                sValue = {variable_value};
+                CellPutS(sValue,'{cube_name}',{comma_sep_var_elements});
+
+        EndIf;"""
+
+        # Define statement for Data section
+        data_statement = cell_is_updateable_pre + input_statement + cell_is_updateable_post
+        dataload_process.data_procedure = data_statement
+
+        # Define active sandbox function on Prolog section
+        enable_sandbox = self.generate_enable_sandbox_ti(sandbox_name)
+        dataload_process.prolog_procedure = '\r' + enable_sandbox
+
+        # Create or update TI process
+        process_service.update_or_create(process=dataload_process)
+
+        # Call the TI process with result
+        success, status, log_file = process_service.execute_process_with_return(process=dataload_process)
+        if not success:
+            if status == 'HasMinorErrors':
+                raise TM1pyWritePartialFailureException(status, log_file, success)
+            else:
+                raise TM1pyWriteFailureException(status, log_file)
+
+        # Delete CSV file on TM1 server
+        application_service.delete(path='TM1py', application_type='DOCUMENT', application_name=export_filename)
+        # Optinally delete the folder TM1py
+        # application_service.delete(path='', application_type='FOLDER', application_name='TM1py')
+
+        # Delete CSV file local
+        os.remove(export_path_to_file)
 
     @staticmethod
     def _build_attribute_update_statements(cube_name, cellset_as_dict, precision: int = None,
