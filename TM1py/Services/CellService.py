@@ -5,10 +5,8 @@ import functools
 import itertools
 import json
 import math
-import random
 import uuid
 import warnings
-from builtins import type
 from collections import OrderedDict
 from concurrent.futures.thread import ThreadPoolExecutor
 from io import StringIO
@@ -18,7 +16,6 @@ import ijson
 from mdxpy import MdxHierarchySet, MdxBuilder, Member
 from requests import Response
 
-import TM1py
 from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyWritePartialFailureException, TM1pyWriteFailureException, \
     TM1pyRestException
 from TM1py.Objects.MDXView import MDXView
@@ -27,7 +24,6 @@ from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.SandboxService import SandboxService
 from TM1py.Services.ViewService import ViewService
-from TM1py.Services.ApplicationService import ApplicationService
 from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url, add_url_parameters
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
     CaseAndSpaceInsensitiveDict, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, \
@@ -1029,6 +1025,7 @@ class CellService(ObjectService):
         from TM1py import ApplicationService
         from TM1py import ProcessService
         import os
+        import random
         application_service = ApplicationService(self._rest)
         process_service = ProcessService(self._rest)
         cube_service = self.get_cube_service()
