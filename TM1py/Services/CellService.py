@@ -621,7 +621,7 @@ class CellService(ObjectService):
     def write_dataframe(self, cube_name: str, data: 'pd.DataFrame', dimensions: Iterable[str] = None,
                         increment: bool = False, deactivate_transaction_log: bool = False,
                         reactivate_transaction_log: bool = False, sandbox_name: str = None,
-                        use_ti: bool = False, use_changeset: bool = False, precision: int = None,
+                        use_ti: bool = False, use_blob = False, use_changeset: bool = False, precision: int = None,
                         skip_non_updateable: bool = False, measure_dimension_elements: Dict = None,
                         sum_numeric_duplicates: bool = True, **kwargs) -> str:
         """
@@ -636,6 +636,8 @@ class CellService(ObjectService):
         :param reactivate_transaction_log:
         :param sandbox_name:
         :param use_ti:
+        :param use_blob: Upload CSV and runs an unbound process to write. Requires admin permissions.
+        It causes massive performance improvement.
         :param use_changeset: Enable ChangesetID: True or False
         :param precision: max precision when writhing through unbound process.
         Necessary when dealing with large numbers to avoid "number too long" TI syntax error.
@@ -665,6 +667,7 @@ class CellService(ObjectService):
                           reactivate_transaction_log=reactivate_transaction_log,
                           sandbox_name=sandbox_name,
                           use_ti=use_ti,
+                          use_blob=use_blob,
                           use_changeset=use_changeset,
                           precision=precision,
                           skip_non_updateable=skip_non_updateable,
@@ -826,8 +829,7 @@ class CellService(ObjectService):
 
     def write(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None, increment: bool = False,
               deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
-              sandbox_name: str = None, use_ti=False, use_blob=False, use_changeset: bool = False,
-              precision: int = None,
+              sandbox_name: str = None, use_ti = False, use_blob = False, use_changeset: bool = False, precision: int = None,
               skip_non_updateable: bool = False, measure_dimension_elements: Dict = None, **kwargs) -> Optional[str]:
         """ Write values to a cube
 
@@ -845,7 +847,8 @@ class CellService(ObjectService):
         :param reactivate_transaction_log: reactivate after writing
         :param sandbox_name: str
         :param use_ti: Use unbound process to write. Requires admin permissions. causes massive performance improvement.
-        :param use_blob: Upload CSV to tm1 server and runs an unbound process to write. Requires admin permissions. It causes massive performance improvement.
+        :param use_blob: Upload CSV to tm1 server and runs an unbound process to write. Requires admin permissions.
+        It causes massive performance improvement.
         :param use_changeset: Enable ChangesetID: True or False
         :param precision: max precision when writhing through unbound process.
         Necessary when dealing with large numbers to avoid "number too long" TI syntax error.
@@ -1139,6 +1142,7 @@ class CellService(ObjectService):
 
         # Delete CSV file local
         os.remove(export_path_to_file)
+
 
     @staticmethod
     def _build_attribute_update_statements(cube_name, cellset_as_dict, precision: int = None,
