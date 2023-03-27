@@ -621,7 +621,7 @@ class CellService(ObjectService):
     def write_dataframe(self, cube_name: str, data: 'pd.DataFrame', dimensions: Iterable[str] = None,
                         increment: bool = False, deactivate_transaction_log: bool = False,
                         reactivate_transaction_log: bool = False, sandbox_name: str = None,
-                        use_ti: bool = False, use_blob = False, use_changeset: bool = False, precision: int = None,
+                        use_ti: bool = False, use_blob: bool = False, use_changeset: bool = False, precision: int = None,
                         skip_non_updateable: bool = False, measure_dimension_elements: Dict = None,
                         sum_numeric_duplicates: bool = True, **kwargs) -> str:
         """
@@ -636,8 +636,7 @@ class CellService(ObjectService):
         :param reactivate_transaction_log:
         :param sandbox_name:
         :param use_ti:
-        :param use_blob: Upload CSV and runs an unbound process to write. Requires admin permissions.
-        It causes massive performance improvement.
+        :param use_blob:
         :param use_changeset: Enable ChangesetID: True or False
         :param precision: max precision when writhing through unbound process.
         Necessary when dealing with large numbers to avoid "number too long" TI syntax error.
@@ -829,8 +828,9 @@ class CellService(ObjectService):
 
     def write(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None, increment: bool = False,
               deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
-              sandbox_name: str = None, use_ti = False, use_blob = False, use_changeset: bool = False, precision: int = None,
-              skip_non_updateable: bool = False, measure_dimension_elements: Dict = None, **kwargs) -> Optional[str]:
+              sandbox_name: str = None, use_ti: bool = False, use_blob: bool = False, use_changeset: bool = False,
+              precision: int = None,skip_non_updateable: bool = False, measure_dimension_elements: Dict = None,
+              **kwargs) -> Optional[str]:
         """ Write values to a cube
 
         Same signature as `write_values` method, but faster since it uses `write_values_through_cellset`
@@ -1142,7 +1142,6 @@ class CellService(ObjectService):
 
         # Delete CSV file local
         os.remove(export_path_to_file)
-
 
     @staticmethod
     def _build_attribute_update_statements(cube_name, cellset_as_dict, precision: int = None,
@@ -2951,7 +2950,8 @@ class CellService(ObjectService):
     @tidy_cellset
     @require_pandas
     def extract_cellset_dataframe_shaped(self, cellset_id: str, sandbox_name: str = None,
-                                         display_attribute: bool = False, infer_dtype: bool = False, **kwargs) -> 'pd.DataFrame':
+                                         display_attribute: bool = False, infer_dtype: bool = False,
+                                         **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cellset in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
 
