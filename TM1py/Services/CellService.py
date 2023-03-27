@@ -2,9 +2,10 @@
 import asyncio
 import csv
 import functools
+import hashlib
 import itertools
 import json
-import math
+import threading
 import uuid
 import warnings
 from collections import OrderedDict
@@ -18,9 +19,12 @@ from requests import Response
 
 from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyWritePartialFailureException, TM1pyWriteFailureException, \
     TM1pyRestException
+from TM1py.Objects.Application import DocumentApplication, FolderApplication
 from TM1py.Objects.MDXView import MDXView
 from TM1py.Objects.Process import Process
+from TM1py.Services.ApplicationService import ApplicationService
 from TM1py.Services.ObjectService import ObjectService
+from TM1py.Services.ProcessService import ProcessService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.SandboxService import SandboxService
 from TM1py.Services.ViewService import ViewService
@@ -30,7 +34,7 @@ from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_nam
     abbreviate_mdx, build_csv_from_cellset_dict, require_version, require_pandas, build_cellset_from_pandas_dataframe, \
     case_and_space_insensitive_equals, get_cube, resembles_mdx, require_admin, extract_compact_json_cellset, \
     cell_is_updateable, build_mdx_from_cellset, build_mdx_and_values_from_cellset, \
-    dimension_names_from_element_unique_names, frame_to_significant_digits, verify_version
+    dimension_names_from_element_unique_names, frame_to_significant_digits
 
 try:
     import pandas as pd
@@ -173,10 +177,8 @@ class CellService(ObjectService):
         super().__init__(tm1_rest)
 
     def get_value(self, cube_name: str, elements: Union[str, Iterable] = None, dimensions: List[str] = None,
-                  sandbox_name: str = None,
-                  element_separator: str = ",", hierarchy_separator: str = "&&",
-                  hierarchy_element_separator: str = "::",
-                  **kwargs) -> Union[str, float]:
+                  sandbox_name: str = None, element_separator: str = ",", hierarchy_separator: str = "&&",
+                  hierarchy_element_separator: str = "::", **kwargs) -> Union[str, float]:
         """ Returns cube value from specified coordinates
 
         :param cube_name: Name of the cube
@@ -621,7 +623,8 @@ class CellService(ObjectService):
     def write_dataframe(self, cube_name: str, data: 'pd.DataFrame', dimensions: Iterable[str] = None,
                         increment: bool = False, deactivate_transaction_log: bool = False,
                         reactivate_transaction_log: bool = False, sandbox_name: str = None,
-                        use_ti: bool = False, use_blob: bool = False, use_changeset: bool = False, precision: int = None,
+                        use_ti: bool = False, use_blob: bool = False, use_changeset: bool = False,
+                        precision: int = None,
                         skip_non_updateable: bool = False, measure_dimension_elements: Dict = None,
                         sum_numeric_duplicates: bool = True, **kwargs) -> str:
         """
@@ -829,7 +832,7 @@ class CellService(ObjectService):
     def write(self, cube_name: str, cellset_as_dict: Dict, dimensions: Iterable[str] = None, increment: bool = False,
               deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
               sandbox_name: str = None, use_ti: bool = False, use_blob: bool = False, use_changeset: bool = False,
-              precision: int = None,skip_non_updateable: bool = False, measure_dimension_elements: Dict = None,
+              precision: int = None, skip_non_updateable: bool = False, measure_dimension_elements: Dict = None,
               **kwargs) -> Optional[str]:
         """ Write values to a cube
 
@@ -1024,71 +1027,101 @@ class CellService(ObjectService):
         :param kwargs:
         :return: Success: bool, Messages: list, ChangeSet: None
         """
-        from TM1py.Objects.Application import FolderApplication
-        from TM1py import ApplicationService
-        from TM1py import ProcessService
-        import os
-        import random
+
         application_service = ApplicationService(self._rest)
         process_service = ProcessService(self._rest)
         cube_service = self.get_cube_service()
 
-        # Transform the cellset dict into a pandas dataframe and export to CSV
+        # Generate hash based on tm1-session-id and local-thread guarantee unique name
+        # ToDo: is this reliably unique?
+        unique_string = f"{self._rest.session_id}{threading.get_ident()}"
+        unique_hash = hashlib.sha256(unique_string.encode('utf-8')).hexdigest()[:8]
 
-        # Generate a random key to name uniquely the data extract file
-        random_key = random.randint(1000, 9999).__str__()
         # Transform the cellset into a dictionary and export to CSV
-        df = build_pandas_dataframe_from_cellset(cellset_as_dict, multiindex=False)
+        csv_content = StringIO()
+        csv_writer = csv.writer(
+            csv_content,
+            delimiter=",",
+            quoting=csv.QUOTE_ALL)
+        csv_writer.writerows(
+            list(elements) + [value.replace('\r', '').replace('\n', '') if isinstance(value, str) else value]
+            for elements, value
+            in cellset_as_dict.items())
+
         # Define the path and file name
-        export_path = '.\\'
-        export_filename = 'data-source-extract-' + random_key + '.csv'
-        export_path_to_file = export_path + export_filename
-        # export cell dataframe to csv without indexes adn with all values with doublequotes
-        df.to_csv(export_path_to_file, index=False, sep=',', quoting=csv.QUOTE_ALL)
+        filename = f'{unique_hash}.csv'
 
         # Upload CSV to TM1 server using ApplicationService:
         # Create a folder TM1py
         tm1py_folder = FolderApplication(path='', name='TM1py')
         if not application_service.exists(path='', application_type='FOLDER', name=tm1py_folder.name):
             application_service.create(tm1py_folder)
+
         # Update or create the CSV file inside the TM1py folder
-        application_service.update_or_create_document_from_file(path=tm1py_folder.name, name=export_filename,
-                                                                path_to_file=export_path_to_file)
-        # Retrieve the file ID to be used as data source in the TI process. Default folder is .\Externals
-        blob_filename = application_service.get_document(path=tm1py_folder.name, name=export_filename).file_id
+        application = DocumentApplication(
+            path=tm1py_folder.name,
+            name=filename,
+            content=csv_content.getvalue().encode('utf-8'))
 
-        # Create a TI processto load CSV  data into the cube
-        dataload_process_name = 'cube.' + cube_name + '.load.fromfile.' + random_key + 'test'
-        dataload_process = Process(name=dataload_process_name,
-                                   datasource_type='ASCII',
-                                   datasource_data_source_name_for_server='.\\}Externals\\' + blob_filename,
-                                   datasource_data_source_name_for_client='.\\}Externals\\' + blob_filename,
-                                   datasource_ascii_delimiter_char=',',
-                                   datasource_ascii_decimal_separator='.',
-                                   datasource_ascii_thousand_separator='',
-                                   datasource_ascii_quote_character='"')
+        application_service.create(application=application, private=True, **kwargs)
+        try:
+            # Retrieve the file ID to be used as data source in the TI process. Default folder is .\Externals
+            blob_filename = application_service.get_document(
+                path=tm1py_folder.name,
+                name=filename,
+                private=True).file_id
 
-        # Get cube dimensions
-        cube_dimensions = cube_service.get(cube_name).dimensions
-        # Get cube measure dimension
-        cube_measure = cube_service.get_measure_dimension(cube_name)
+            # Create a TI process to load CSV  data into the cube
+            process_name = f"}}tm1py.{unique_hash}"
+            process = self._create_blob_write_process(cube_name, process_name, blob_filename,
+                                                      cube_service.get_dimension_names(cube_name), increment,
+                                                      skip_non_updateable, sandbox_name)
 
-        # Create variables, all String
+            # Call the TI process with result
+            # process_service.create(process)
+            success, status, log_file = process_service.execute_process_with_return(process=process)
+            if not success:
+                if status in ['HasMinorErrors']:
+                    raise TM1pyWritePartialFailureException([status], [log_file], 1)
+                else:
+                    raise TM1pyWriteFailureException([status], [log_file])
+
+        # delete application in TM1
+        finally:
+            application_service.delete(
+                path='TM1py',
+                application_type='DOCUMENT',
+                application_name=filename,
+                private=True)
+
+    def _create_blob_write_process(self, cube_name, dataload_process_name, blob_filename, cube_dimensions, increment,
+                                   skip_non_updateable, sandbox_name):
+        dataload_process = Process(
+            name=dataload_process_name,
+            datasource_type='ASCII',
+            datasource_ascii_header_records=0,
+            datasource_data_source_name_for_server='.\\}Externals\\' + blob_filename,
+            datasource_data_source_name_for_client='.\\}Externals\\' + blob_filename,
+            datasource_ascii_delimiter_char=',',
+            datasource_ascii_decimal_separator='.',
+            datasource_ascii_thousand_separator='',
+            datasource_ascii_quote_character='"')
+        cube_measure = cube_dimensions[-1]
+
+        # Create variables as all String
         variable_prefix = 'v'
-        variable_cube_measure = variable_prefix + cube_measure
-        variable_list = []
-        for n, dimension in enumerate(cube_dimensions):
-            variable_list.append(variable_prefix + dimension.replace(' ', ''))
-            dataload_process.add_variable(name=variable_list[n], variable_type='String')
+        dimension_variables = [
+            f"{variable_prefix}{n}"
+            for n
+            in range(1, len(cube_dimensions) + 1)]
+        for variable in dimension_variables:
+            dataload_process.add_variable(name=variable, variable_type='String')
+        variable_cube_measure = dimension_variables[-1]
 
-        df = build_pandas_dataframe_from_cellset(cellset_as_dict)
-        # Create a comma separated list of variables
-        comma_sep_var_elements = ",".join(variable_list)
-
+        comma_sep_var_elements = ",".join(dimension_variables)
         # Add value variable, type String to make possible to load both Numeric and String
-        variable_value = 'vValue'
-        dataload_process.add_variable(name=variable_value, variable_type='String')
-
+        value_variable = 'vValue'
+        dataload_process.add_variable(name=value_variable, variable_type='String')
         # Write the statement for Cell Is Updateable
         if skip_non_updateable:
             cell_is_updateable_pre = f"If( CellIsUpdateable('{cube_name}',{comma_sep_var_elements}) = 1 );"
@@ -1098,47 +1131,35 @@ class CellService(ObjectService):
         else:
             cell_is_updateable_pre = ""
             cell_is_updateable_post = ""
-
         # Define TI write function based on parameter 'increment'
-        function_str = "CellIncrementN" if increment else "CellPutN"
-
+        if cube_name.lower().startswith("}elementattributes_"):
+            function_str = "CellPut"
+        else:
+            function_str = "CellIncrement" if increment else "CellPut"
         # Define input statement depending on measure element's type: numeric or string
+        # For Consolidated non-existing-element attempt to write , to trigger error
         input_statement = f"""
-        If( ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'N' );
-
-                nValue = StringToNumber({variable_value});
-                {function_str}(nValue,'{cube_name}',{comma_sep_var_elements});
-
-        ElseIf( ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'S' );
-
-                sValue = {variable_value};
-                CellPutS(sValue,'{cube_name}',{comma_sep_var_elements});
-
-        EndIf;"""
-
+            If( 
+                ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'N' %
+                ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'AN' %
+                ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'C' % 
+                ElementType('{cube_measure}', '', {variable_cube_measure}) @= '' );
+                    nValue = StringToNumber({value_variable});
+                    {function_str}N(nValue,'{cube_name}',{comma_sep_var_elements});
+            ElseIf( 
+                ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'S' % 
+                ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'AS' % 
+                ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'AA');
+                    sValue = {value_variable};
+                    CellPutS(sValue,'{cube_name}',{comma_sep_var_elements});
+            EndIf;"""
         # Define statement for Data section
         data_statement = cell_is_updateable_pre + input_statement + cell_is_updateable_post
         dataload_process.data_procedure = data_statement
-
         # Define active sandbox function on Prolog section
         enable_sandbox = self.generate_enable_sandbox_ti(sandbox_name)
         dataload_process.prolog_procedure = '\r' + enable_sandbox
-
-        # Call the TI process with result
-        success, status, log_file = process_service.execute_process_with_return(process=dataload_process)
-        if not success:
-            if status == 'HasMinorErrors':
-                raise TM1pyWritePartialFailureException(status, log_file, success)
-            else:
-                raise TM1pyWriteFailureException(status, log_file)
-
-        # Delete CSV file on TM1 server
-        application_service.delete(path='TM1py', application_type='DOCUMENT', application_name=export_filename)
-        # Optinally delete the folder TM1py
-        # application_service.delete(path='', application_type='FOLDER', application_name='TM1py')
-
-        # Delete CSV file local
-        os.remove(export_path_to_file)
+        return dataload_process
 
     @staticmethod
     def _build_attribute_update_statements(cube_name, cellset_as_dict, precision: int = None,
