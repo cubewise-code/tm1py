@@ -1124,9 +1124,6 @@ class CellService(ObjectService):
         enable_sandbox = self.generate_enable_sandbox_ti(sandbox_name)
         dataload_process.prolog_procedure = '\r' + enable_sandbox
 
-        # Create or update TI process
-        process_service.update_or_create(process=dataload_process)
-
         # Call the TI process with result
         success, status, log_file = process_service.execute_process_with_return(process=dataload_process)
         if not success:
