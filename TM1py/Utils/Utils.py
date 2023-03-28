@@ -288,8 +288,6 @@ def build_content_from_cellset_dict(
 
     content_as_dict = CaseAndSpaceInsensitiveTuplesDict()
     for cell_ordinal, cell in enumerate(cells[:top or len(cells)]):
-        # if skip is used in execution we must use the original ordinal from the cell, if not we can simply enumerate
-        cell_ordinal = cell.get("Ordinal", cell_ordinal)
 
         coordinates = []
         for axis_ordinal, axis in enumerate(axes):

@@ -2217,10 +2217,11 @@ class CellService(ObjectService):
         url = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
               "Cube($select=Name;$expand=Dimensions($select=Name))," \
               "Axes({filter_axis}$expand={hierarchies}Tuples($expand=Members({select_member_properties}" \
-              "{expand_elem_properties}{top_rows})))," \
+              "{expand_elem_properties}){top_rows}{skip_rows}))," \
               "Cells($select={cell_properties}{top_cells}{skip_cells}{filter_cells})" \
             .format(cellset_id=cellset_id,
-                    top_rows=f";$top={top}" if top and not skip else "",
+                    top_rows=f";$top={top}" if top else "",
+                    skip_rows=f";$skip={skip}" if skip else "",
                     cell_properties=",".join(cell_properties),
                     filter_axis=filter_axis,
                     hierarchies=expand_hierarchies,
@@ -2341,9 +2342,10 @@ class CellService(ObjectService):
         url = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
               "Cube($select=Name;$expand=Dimensions($select=Name))," \
               "Axes({filter_axis}$expand={hierarchies}Tuples($expand=Members({select_member_properties}" \
-              "{expand_elem_properties}{top_rows})))" \
+              "{expand_elem_properties}){top_rows}{skip_rows}))" \
             .format(cellset_id=cellset_id,
-                    top_rows=f";$top={top}" if top and not skip else "",
+                    top_rows=f";$top={top}" if top else "",
+                    skip_rows=f";$skip={skip}" if skip else "",
                     filter_axis=filter_axis,
                     hierarchies=expand_hierarchies,
                     select_member_properties=select_member_properties,
