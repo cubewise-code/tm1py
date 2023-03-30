@@ -57,3 +57,4 @@ class TestApplicationService(unittest.TestCase):
             self.tm1.files.delete(self.FILE_NAME1)
         if self.tm1.files.exists(self.FILE_NAME2):
             self.tm1.files.delete(self.FILE_NAME2)
+        self.tm1.logout()
