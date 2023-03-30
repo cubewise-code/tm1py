@@ -19,10 +19,9 @@ from requests import Response
 
 from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyWritePartialFailureException, TM1pyWriteFailureException, \
     TM1pyRestException
-from TM1py.Objects.Application import DocumentApplication, FolderApplication
 from TM1py.Objects.MDXView import MDXView
 from TM1py.Objects.Process import Process
-from TM1py.Services.ApplicationService import ApplicationService
+from TM1py.Services.FileService import FileService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.ProcessService import ProcessService
 from TM1py.Services.RestService import RestService
@@ -1017,8 +1016,7 @@ class CellService(ObjectService):
     @require_pandas
     def write_through_blob(self, cube_name: str, cellset_as_dict: dict, increment: bool = False,
                            sandbox_name: str = None, skip_non_updateable: bool = False,
-                           folder_name: str = "tm1py", delete_blob=True, dimensions: str = None,
-                           **kwargs):
+                           delete_blob=True, dimensions: str = None, **kwargs):
         """
         Writes data back to TM1 via an unbound TI process having an uploaded CSV as data source
         :param cube_name: str
@@ -1033,9 +1031,9 @@ class CellService(ObjectService):
         :return: Success: bool, Messages: list, ChangeSet: None
         """
 
-        application_service = ApplicationService(self._rest)
         process_service = ProcessService(self._rest)
         cube_service = self.get_cube_service()
+        file_service = FileService(self._rest)
 
         # Generate hash based on tm1-session-id and local-thread guarantee unique name
         unique_string = f"{self._rest.session_id}{threading.get_ident()}"
@@ -1053,41 +1051,29 @@ class CellService(ObjectService):
             in cellset_as_dict.items())
 
         # Define the path and file name
-        filename = f'{unique_hash}.csv'
+        file_name = f'{unique_hash}.csv'
 
-        # Upload CSV to TM1 server using ApplicationService:
-        # Create a folder TM1py
-        tm1py_folder = FolderApplication(path='', name=folder_name)
-        if not application_service.exists(path='', application_type='FOLDER', name=tm1py_folder.name):
-            application_service.create(tm1py_folder)
+        # Upload CSV to TM1 server using FileService:
+        file_service.create(
+            file_name=file_name,
+            file_content=csv_content.getvalue().encode('utf-8'),
+            **kwargs)
 
-        # Update or create the CSV file inside the TM1py folder
-        application = DocumentApplication(
-            path=tm1py_folder.name,
-            name=filename,
-            content=csv_content.getvalue().encode('utf-8'))
-
-        application_service.create(application=application, private=True, **kwargs)
         try:
-            # Retrieve the file ID to be used as data source in the TI process. Default folder is .\Externals
-            blob_filename = application_service.get_document(
-                path=tm1py_folder.name,
-                name=filename,
-                private=True).file_id
-
             # Create a TI process to load CSV  data into the cube
             process_name = f"}}tm1py.{unique_hash}"
-            process = self._create_blob_write_process(
+            process = self._create_write_process(
                 cube_name=cube_name,
                 process_name=process_name,
-                blob_filename=blob_filename,
+                blob_filename=file_name,
                 dimensions=dimensions or cube_service.get_dimension_names(cube_name),
                 increment=increment,
                 skip_non_updateable=skip_non_updateable,
-                sandbox_name=sandbox_name)
+                sandbox_name=sandbox_name,
+                **kwargs)
 
             # Call the TI process with result
-            success, status, log_file = process_service.execute_process_with_return(process=process)
+            success, status, log_file = process_service.execute_process_with_return(process=process, **kwargs)
             if not success:
                 if status in ['HasMinorErrors']:
                     raise TM1pyWritePartialFailureException([status], [log_file], 1)
@@ -1097,20 +1083,16 @@ class CellService(ObjectService):
         # delete application in TM1
         finally:
             if delete_blob:
-                application_service.delete(
-                    path=folder_name,
-                    application_type='DOCUMENT',
-                    application_name=filename,
-                    private=True)
+                file_service.delete(file_name=file_name)
 
-    def _create_blob_write_process(self, cube_name: str, process_name: str, blob_filename: str, dimensions: List[str],
-                                   increment: bool, skip_non_updateable: bool, sandbox_name: str):
+    def _create_write_process(self, cube_name: str, process_name: str, blob_filename: str, dimensions: List[str],
+                              increment: bool, skip_non_updateable: bool, sandbox_name: str):
         dataload_process = Process(
             name=process_name,
             datasource_type='ASCII',
             datasource_ascii_header_records=0,
-            datasource_data_source_name_for_server='.\\}Externals\\' + blob_filename,
-            datasource_data_source_name_for_client='.\\}Externals\\' + blob_filename,
+            datasource_data_source_name_for_server=f"{blob_filename}.blb",
+            datasource_data_source_name_for_client=f"{blob_filename}.blb",
             datasource_ascii_delimiter_char=',',
             datasource_ascii_decimal_separator='.',
             datasource_ascii_thousand_separator='',
