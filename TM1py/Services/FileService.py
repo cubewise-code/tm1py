@@ -16,6 +16,13 @@ class FileService(ObjectService):
         super().__init__(tm1_rest)
         self._rest = tm1_rest
 
+    def get(self, file_name: str, **kwargs) -> bytes:
+        url = format_url(
+            "/api/v1/Contents('Blobs')/Contents('{name}')/Content",
+            name=file_name)
+
+        return self._rest.GET(url, **kwargs).content
+
     def create(self, file_name: str, file_content: bytes, **kwargs):
         url = format_url(
             "/api/v1/Contents('Blobs')/Contents",
