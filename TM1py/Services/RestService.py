@@ -36,8 +36,7 @@ def httpmethod(func):
     """
 
     @functools.wraps(func)
-    def wrapper(self, url: str, data: str = '', encoding='utf-8', async_requests_mode: Optional[bool] = None,
-                tcp_keepalive: Optional[bool] = None, **kwargs):
+    def wrapper(self, url: str, data: str = '', encoding='utf-8', async_requests_mode: Optional[bool] = None, **kwargs):
         # url encoding
         url, data = self._url_and_body(
             url=url,
@@ -49,9 +48,6 @@ def httpmethod(func):
             if async_requests_mode is None:
                 async_requests_mode = self._async_requests_mode
 
-            if tcp_keepalive is None:
-                tcp_keepalive = self._tcp_keepalive
-
             if not async_requests_mode:
                 response = func(self, url, data, **kwargs)
                 if self._re_connect_on_session_timeout and response.status_code == 401:
@@ -59,8 +55,6 @@ def httpmethod(func):
                     response = func(self, url, data, **kwargs)
 
             else:
-                # reset tcp_keepalive to False explicitly to turn it off when async_requests_mode is enabled
-                tcp_keepalive = False
                 additional_header = {'Prefer': 'respond-async'}
                 http_headers = kwargs.get('headers', dict())
                 http_headers.update(additional_header)
@@ -185,7 +179,8 @@ class RestService:
         self._verify = False
         self._timeout = None if kwargs.get('timeout', None) is None else float(kwargs.get('timeout'))
         self._async_requests_mode = self.translate_to_boolean(kwargs.get('async_requests_mode', False))
-        self._tcp_keepalive = self.translate_to_boolean(kwargs.get('tcp_keepalive', False))
+        # Set tcp_keepalive to False explicitly to turn it off when async_requests_mode is enabled
+        self._tcp_keepalive = self.translate_to_boolean(kwargs.get('tcp_keepalive', False)) if self._async_requests_mode is not True else False
         self._connection_pool_size = kwargs.get('connection_pool_size', None)
         self._re_connect_on_session_timeout = kwargs.get('re_connect_on_session_timeout', True)
         # populated on the fly
