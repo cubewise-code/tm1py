@@ -519,7 +519,6 @@ class TestCellService(unittest.TestCase):
 
         self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [211])
 
-
     def test_write_through_unbound_process_happy_case(self):
         cells = dict()
         cells["Element 1", "Element4", "Element9"] = 719
@@ -651,7 +650,7 @@ class TestCellService(unittest.TestCase):
             f"[{self.dimensions_with_consolidations_names[1]}].[Element 8]",
             f"[{self.dimensions_with_consolidations_names[2]}].[Element 9]")
 
-        self.assertEqual([8],self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()))
+        self.assertEqual([8], self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()))
 
     def test_write_through_unbound_process_write_partial_failure_exception(self):
         cells = dict()
@@ -685,7 +684,6 @@ class TestCellService(unittest.TestCase):
             f"[{self.string_dimension_names[2]}].[d3e3]")
 
         self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), ['TM1py #Test'])
-
 
     def test_write_through_blob_happy_case(self):
         cells = dict()
@@ -821,7 +819,7 @@ class TestCellService(unittest.TestCase):
             f"[{self.dimensions_with_consolidations_names[1]}].[Element 8]",
             f"[{self.dimensions_with_consolidations_names[2]}].[Element 9]")
 
-        self.assertEqual([8],self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()))
+        self.assertEqual([8], self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()))
 
     def test_write_through_blob_write_partial_failure_exception(self):
         cells = dict()
