@@ -850,7 +850,6 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :param use_ti: Use unbound process to write. Requires admin permissions. causes massive performance improvement.
         :param use_blob: Uses blob to write. Requires admin permissions. 10x faster compared to use_ti
-        It causes massive performance improvement.
         :param use_changeset: Enable ChangesetID: True or False
         :param precision: max precision when writhing through unbound process.
         Necessary when dealing with large numbers to avoid "number too long" TI syntax error.
@@ -1024,7 +1023,6 @@ class CellService(ObjectService):
         :param increment: increment or update cell values
         :param sandbox_name: str
         :param skip_non_updateable skip cells that are not updateable (e.g. rule derived or consolidated)
-        :param folder_name
         :param delete_blob: choose False for debugging purposes
         :param dimensions: optional. Dimension names in their natural order. Will speed up the execution!
         :param kwargs:
@@ -1035,11 +1033,11 @@ class CellService(ObjectService):
         cube_service = self.get_cube_service()
         file_service = FileService(self._rest)
 
-        # Generate hash based on tm1-session-id and local-thread guarantee unique name
+        # Generate hash based on tm1-session-id and local-thread to guarantee unique name
         unique_string = f"{self._rest.session_id}{threading.get_ident()}"
         unique_hash = hashlib.sha256(unique_string.encode('utf-8')).hexdigest()[:12]
 
-        # Transform the cellset into a dictionary and export to CSV
+        # Transform cells to format that's consumable for TI
         csv_content = StringIO()
         csv_writer = csv.writer(
             csv_content,
@@ -1050,19 +1048,16 @@ class CellService(ObjectService):
             for elements, value
             in cellset_as_dict.items())
 
-        # Define the path and file name
         file_name = f'{unique_hash}.csv'
-
-        # Upload CSV to TM1 server using FileService:
         file_service.create(
             file_name=file_name,
             file_content=csv_content.getvalue().encode('utf-8'),
             **kwargs)
 
         try:
-            # Create a TI process to load CSV  data into the cube
+            # Create and execute unbound TI process to load blob file to cube
             process_name = f"}}tm1py.{unique_hash}"
-            process = self._create_write_process(
+            process = self._build_blob_write_process(
                 cube_name=cube_name,
                 process_name=process_name,
                 blob_filename=file_name,
@@ -1072,7 +1067,6 @@ class CellService(ObjectService):
                 sandbox_name=sandbox_name,
                 **kwargs)
 
-            # Call the TI process with result
             success, status, log_file = process_service.execute_process_with_return(process=process, **kwargs)
             if not success:
                 if status in ['HasMinorErrors']:
@@ -1080,13 +1074,12 @@ class CellService(ObjectService):
                 else:
                     raise TM1pyWriteFailureException([status], [log_file])
 
-        # delete application in TM1
         finally:
             if delete_blob:
                 file_service.delete(file_name=file_name)
 
-    def _create_write_process(self, cube_name: str, process_name: str, blob_filename: str, dimensions: List[str],
-                              increment: bool, skip_non_updateable: bool, sandbox_name: str):
+    def _build_blob_write_process(self, cube_name: str, process_name: str, blob_filename: str, dimensions: List[str],
+                                  increment: bool, skip_non_updateable: bool, sandbox_name: str):
         dataload_process = Process(
             name=process_name,
             datasource_type='ASCII',
@@ -1109,7 +1102,7 @@ class CellService(ObjectService):
         variable_cube_measure = dimension_variables[-1]
 
         comma_sep_var_elements = ",".join(dimension_variables)
-        # Add value variable, type String to make possible to load both Numeric and String
+        # Add value variable as type String to enable numeric and string cell updates
         value_variable = 'vValue'
         dataload_process.add_variable(name=value_variable, variable_type='String')
         # Write the statement for Cell Is Updateable
@@ -1121,11 +1114,13 @@ class CellService(ObjectService):
         else:
             cell_is_updateable_pre = ""
             cell_is_updateable_post = ""
-        # Define TI write function based on parameter 'increment'
+
+        # Define TI write function based on parameter 'increment' and nature of the cube
         if cube_name.lower().startswith("}elementattributes_"):
             function_str = "CellPut"
         else:
             function_str = "CellIncrement" if increment else "CellPut"
+
         # Define input statement depending on measure element's type: numeric or string
         # For Consolidated non-existing-element attempt to write , to trigger error
         input_statement = f"""
@@ -1143,12 +1138,15 @@ class CellService(ObjectService):
                     sValue = {value_variable};
                     CellPutS(sValue,'{cube_name}',{comma_sep_var_elements});
             EndIf;"""
-        # Define statement for Data section
+
+        # Define Data section
         data_statement = cell_is_updateable_pre + input_statement + cell_is_updateable_post
         dataload_process.data_procedure = data_statement
+
         # Define active sandbox function on Prolog section
         enable_sandbox = self.generate_enable_sandbox_ti(sandbox_name)
         dataload_process.prolog_procedure = '\r' + enable_sandbox
+
         return dataload_process
 
     @staticmethod

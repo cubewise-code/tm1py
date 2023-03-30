@@ -24,9 +24,7 @@ class FileService(ObjectService):
         return self._rest.GET(url, **kwargs).content
 
     def create(self, file_name: str, file_content: bytes, **kwargs):
-        url = format_url(
-            "/api/v1/Contents('Blobs')/Contents",
-            name=file_name)
+        url = "/api/v1/Contents('Blobs')/Contents"
         body = {
             "@odata.type": "#ibm.tm1.api.v1.Document",
             "ID": file_name,

@@ -3668,6 +3668,7 @@ class TestCellService(unittest.TestCase):
         cls.remove_string_cube()
         cls.remove_cube_with_rules()
         cls.remove_cube_with_consolidations()
+        cls.remove_cube_with_five_dimensions()
         for dimension_name in cls.dimension_names:
             cls.tm1.dimensions.delete(dimension_name)
         cls.remove_assets_for_relative_proportional_spread()
