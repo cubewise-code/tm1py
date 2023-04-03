@@ -2,10 +2,8 @@
 import asyncio
 import csv
 import functools
-import hashlib
 import itertools
 import json
-import threading
 import uuid
 import warnings
 from collections import OrderedDict
@@ -1033,9 +1031,7 @@ class CellService(ObjectService):
         cube_service = self.get_cube_service()
         file_service = FileService(self._rest)
 
-        # Generate hash based on tm1-session-id and local-thread to guarantee unique name
-        unique_string = f"{self._rest.session_id}{threading.get_ident()}"
-        unique_hash = hashlib.sha256(unique_string.encode('utf-8')).hexdigest()[:12]
+        unique_name = self.suggest_unique_object_name()
 
         # Transform cells to format that's consumable for TI
         csv_content = StringIO()
@@ -1048,7 +1044,7 @@ class CellService(ObjectService):
             for elements, value
             in cellset_as_dict.items())
 
-        file_name = f'{unique_hash}.csv'
+        file_name = f'{unique_name}.csv'
         file_service.create(
             file_name=file_name,
             file_content=csv_content.getvalue().encode('utf-8'),
@@ -1056,8 +1052,8 @@ class CellService(ObjectService):
 
         try:
             # Create and execute unbound TI process to load blob file to cube
-            process_name = f"}}tm1py.{unique_hash}"
-            process = self._build_blob_write_process(
+            process_name = f"}}tm1py.{unique_name}"
+            process = self._build_blob_to_cube_process(
                 cube_name=cube_name,
                 process_name=process_name,
                 blob_filename=file_name,
@@ -1078,8 +1074,8 @@ class CellService(ObjectService):
             if delete_blob:
                 file_service.delete(file_name=file_name)
 
-    def _build_blob_write_process(self, cube_name: str, process_name: str, blob_filename: str, dimensions: List[str],
-                                  increment: bool, skip_non_updateable: bool, sandbox_name: str):
+    def _build_blob_to_cube_process(self, cube_name: str, process_name: str, blob_filename: str, dimensions: List[str],
+                                    increment: bool, skip_non_updateable: bool, sandbox_name: str):
         dataload_process = Process(
             name=process_name,
             datasource_type='ASCII',
@@ -1148,6 +1144,44 @@ class CellService(ObjectService):
         dataload_process.prolog_procedure = '\r' + enable_sandbox
 
         return dataload_process
+
+    def _build_cube_to_blob_process(self, cube, variables, top, skip, skip_zeros,
+                                    skip_consolidated_cells, skip_rule_derived_cells, value_separator,
+                                    process_name: str, view_name: str, file_name: str, sandbox_name=None):
+        process = Process(
+            name=process_name,
+            datasource_type='TM1CubeView',
+            datasource_view=view_name,
+            datasource_data_source_name_for_server=cube,
+            datasource_data_source_name_for_client=cube,
+            datasource_ascii_delimiter_char=',',
+            datasource_ascii_decimal_separator='.',
+            datasource_ascii_thousand_separator='',
+            datasource_ascii_quote_character='')
+
+        # Create variables as all String
+        for variable in variables:
+            process.add_variable(name=variable, variable_type='String')
+
+        prolog_procedure = f"""
+        SetOutputCharacterSet('{file_name}.blb','TM1CS_UTF8');
+        {self.generate_enable_sandbox_ti(sandbox_name)}
+        ViewExtractSkipCalcsSet('{cube}', '{view_name}', {'1' if skip_consolidated_cells else '0'});
+        ViewExtractSkipRuleValuesSet('{cube}', '{view_name}', {'1' if skip_rule_derived_cells else '0'});
+        ViewExtractSkipZeroesSet ('{cube}', '{view_name}', {'1' if skip_zeros else '0'});
+        nRecord=0;
+        """
+        process.prolog_procedure = prolog_procedure
+
+        comma_sep_variables = value_separator.join(variables)
+        # ToDo: include top and skip
+        data_procedure = f"""
+        TextOutput('{file_name}.blb',{comma_sep_variables},SVALUE);
+        nRecord = nRecord + 1;
+        """
+        process.data_procedure = data_procedure
+
+        return process
 
     @staticmethod
     def _build_attribute_update_statements(cube_name, cellset_as_dict, precision: int = None,
@@ -1715,11 +1749,11 @@ class CellService(ObjectService):
         return self.extract_cellset_rows_and_values(cellset_id, element_unique_names, delete_cellset=True,
                                                     sandbox_name=sandbox_name, **kwargs)
 
-    def execute_mdx_csv(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
+    def execute_mdx_csv(self, mdx: Union[str, MdxBuilder], top: int = None, skip: int = None, skip_zeros: bool = True,
                         skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
                         csv_dialect: 'csv.Dialect' = None, line_separator: str = "\r\n", value_separator: str = ",",
                         sandbox_name: str = None, include_attributes: bool = False, use_iterative_json: bool = False,
-                        use_compact_json: bool = False, **kwargs) -> str:
+                        use_compact_json: bool = False, use_blob: bool = False, **kwargs) -> str:
         """ Optimized for performance. Get csv string of coordinates and values.
 
         :param mdx: Valid MDX Query
@@ -1739,6 +1773,23 @@ class CellService(ObjectService):
         :param use_compact_json: bool
         :return: String
         """
+        if use_blob:
+            if not isinstance(mdx, MdxBuilder):
+                raise ValueError("'mdx' must be of type 'MdxBuilder' to leverage 'use_blob' feature")
+            if include_attributes:
+                raise ValueError("'include_attributes' must not be True to leverage 'use_blob' feature")
+            if use_iterative_json:
+                raise ValueError("'use_iterative_json' must be False to leverage 'use_blob' feature")
+            if use_compact_json:
+                raise ValueError("'use_compact_json' must be False to leverage 'use_blob' feature")
+            if csv_dialect:
+                raise ValueError("'csv_dialect' must not be None to leverage 'use_blob' feature")
+
+            # ToDo: implement me
+            return self._execute_mdx_use_blob(
+                mdx, top, skip, skip_zeros, skip_consolidated_cells, skip_rule_derived_cells, line_separator,
+                value_separator, sandbox_name, **kwargs)
+
         cellset_id = self.create_cellset(mdx, sandbox_name=sandbox_name, **kwargs)
 
         if use_iterative_json:
@@ -2646,7 +2697,8 @@ class CellService(ObjectService):
         return result
 
     @tidy_cellset
-    def extract_cellset_composition(self, cellset_id: str, sandbox_name: str = None, **kwargs):
+    def extract_cellset_composition(self, cellset_id: str, sandbox_name: str = None,
+                                    **kwargs) -> Tuple[str, List[str], List[str], List[str]]:
         """ Retrieve composition of dimensions on the axes in the cellset
 
         :param cellset_id:
@@ -3127,7 +3179,7 @@ class CellService(ObjectService):
             skip_cell_properties=skip_cell_properties,
             skip_sandbox_dimension=skip_sandbox_dimension)
 
-    def create_cellset(self, mdx: str, sandbox_name: str = None, **kwargs) -> str:
+    def create_cellset(self, mdx: Union[str, MdxBuilder], sandbox_name: str = None, **kwargs) -> str:
         """ Execute MDX in order to create cellset at server. return the cellset-id
 
         :param mdx: MDX Query, as string
@@ -3137,7 +3189,7 @@ class CellService(ObjectService):
         url = '/api/v1/ExecuteMDX'
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         data = {
-            'MDX': mdx
+            'MDX': mdx.to_mdx() if isinstance(mdx, MdxBuilder) else mdx
         }
         response = self._rest.POST(url=url, data=json.dumps(data, ensure_ascii=False), **kwargs)
         cellset_id = response.json()['ID']
@@ -3289,3 +3341,61 @@ class CellService(ObjectService):
                 **kwargs)
 
         return attributes_by_dimension
+
+    def _execute_mdx_use_blob(self, mdx: MdxBuilder, top: int, skip: int, skip_zeros: bool,
+                              skip_consolidated_cells: bool, skip_rule_derived_cells: bool,
+                              line_separator: str, value_separator: str, sandbox_name: str, **kwargs):
+        file_service = FileService(self._rest)
+        view_service = ViewService(self._rest)
+        process_service = ProcessService(self._rest)
+
+        cellset_id = self.create_cellset(mdx.to_mdx(head=1))
+        cube, titles, rows, columns = self.extract_cellset_composition(cellset_id)
+
+        dimension_with_ordinal = CaseAndSpaceInsensitiveDict({
+            dimension: i
+            for i, dimension
+            in enumerate(self.get_dimension_names_for_writing(cube), start=1)})
+
+        # ToDo: Add default dimensions somewhere if necessary
+
+        variables = [
+            f'v{dimension_with_ordinal[dimension_name_from_element_unique_name(dimension)]}'
+            for dimension
+            in columns + rows + titles]
+
+        view_name = self.suggest_unique_object_name()
+        view = MDXView(cube, view_name, mdx.to_mdx(skip_dimension_properties=True))
+
+        file_name = f"{view_name}.csv"
+
+        try:
+            file_service.create(
+                file_name=file_name,
+                file_content="".encode('utf-8'))
+            view_service.update_or_create(view=view, private=False)
+            process = self._build_cube_to_blob_process(
+                cube=cube,
+                variables=variables,
+                top=top,
+                skip=skip,
+                skip_zeros=skip_zeros,
+                skip_consolidated_cells=skip_consolidated_cells,
+                skip_rule_derived_cells=skip_rule_derived_cells,
+                value_separator=value_separator,
+                sandbox_name=sandbox_name,
+                process_name=view_name,
+                view_name=view_name,
+                file_name=file_name)
+
+            process_service.create(process)
+            success, status, error_log_file = process_service.execute_process_with_return(process)
+            if not success:
+                raise RuntimeError(f"Failed writing to blob with TI. Status: '{status}' log: '{error_log_file}'")
+
+            content = file_service.get(file_name)
+            return content.decode("UTF-8")
+
+        finally:
+            view_service.delete(cube_name=cube, view_name=view_name, private=False)
+            file_service.delete(file_name)
