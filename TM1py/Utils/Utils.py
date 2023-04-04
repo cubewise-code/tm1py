@@ -367,7 +367,10 @@ def build_csv_from_cellset_dict(
         return ""
 
     if csv_dialect is None:
-        csv.register_dialect("TM1py", delimiter=value_separator, lineterminator=line_separator)
+        csv.register_dialect(
+            "TM1py",
+            delimiter=value_separator,
+            lineterminator=line_separator)
         csv_dialect = csv.get_dialect("TM1py")
 
     csv_content = StringIO()
@@ -420,6 +423,18 @@ def build_csv_from_cellset_dict(
         csv_writer.writerow(line)
 
     return csv_content.getvalue().strip()
+
+
+def build_dataframe_from_csv(raw_csv, sep='~', **kwargs) -> 'pd.DataFrame':
+    if not raw_csv:
+        return pd.DataFrame()
+
+    memory_file = StringIO(raw_csv)
+    # make sure all element names are strings and values column is derived from data
+    if 'dtype' not in kwargs:
+        kwargs['dtype'] = {'Value': None, **{col: str for col in range(999)}}
+
+    return pd.read_csv(memory_file, sep=sep, na_values=["", None], keep_default_na=False, **kwargs)
 
 
 def _build_csv_line_items_from_axis_tuple(members: Dict, include_attributes: bool = False) -> List[str]:

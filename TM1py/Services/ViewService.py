@@ -63,7 +63,7 @@ class ViewService(ObjectService):
 
     def get(self, cube_name: str, view_name: str, private: bool = False, **kwargs) -> View:
         view_type = "PrivateViews" if private else "Views"
-        url = format_url("/api/v1/Cubes('{}')/{}('{}')?$expand=*,ViewAxisSelection", cube_name, view_type, view_name)
+        url = format_url("/api/v1/Cubes('{}')/{}('{}')?$expand=*", cube_name, view_type, view_name)
         response = self._rest.GET(url, **kwargs)
         view_as_dict = response.json()
         if "MDX" in view_as_dict:
