@@ -25,15 +25,15 @@ class ObjectService:
         """
         self._rest = rest_service
 
-    def suggest_unique_object_name(self, random_seed: float = None):
+    def suggest_unique_object_name(self, random_seed: float = None) -> str:
         """
         Generate hash based on tm1-session-id, local-thread-id and random id to guarantee unique name
         avoids name conflicts in multithreading operations
         """
         if not random_seed:
             random_seed = random.random()
-        unique_string = f"tm1py.{self._rest.session_id}{threading.get_ident()}{random_seed}"
-        unique_hash = hashlib.sha256(unique_string.encode('utf-8')).hexdigest()[:12]
+        unique_string = f"{self._rest.session_id}{threading.get_ident()}{random_seed}"
+        unique_hash = "tm1py." + hashlib.sha256(unique_string.encode('utf-8')).hexdigest()[:12]
         return unique_hash
 
     def determine_actual_object_name(self, object_class: str, object_name: str, **kwargs) -> str:
