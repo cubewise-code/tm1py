@@ -1,4 +1,5 @@
 import configparser
+import time
 import unittest
 from pathlib import Path
 
@@ -54,7 +55,10 @@ class TestSandboxService(unittest.TestCase):
         sandbox = self.tm1.sandboxes.get(self.sandbox_name1)
 
         self.assertEqual(self.sandbox_name1, sandbox.name)
-        self.assertTrue(True, sandbox.include_in_sandbox_dimension)
+        self.assertTrue(sandbox.include_in_sandbox_dimension)
+        self.assertTrue(sandbox.loaded)
+        self.assertFalse(sandbox.active)
+        self.assertFalse(sandbox.queued)
 
     def test_get_all_names(self):
         sandbox_names = self.tm1.sandboxes.get_all_names()
@@ -188,7 +192,8 @@ class TestSandboxService(unittest.TestCase):
     def test_unload_sandbox(self):
         sandbox3 = Sandbox(self.sandbox_name3, True)
         self.tm1.sandboxes.create(sandbox3)
-        self.tm1.sandboxes.unload(sandbox3)
+        time.sleep(1)
+        self.tm1.sandboxes.unload(sandbox3.name)
 
         loaded = (self.tm1.sandboxes.get(self.sandbox_name3)).loaded
         self.assertFalse(loaded)

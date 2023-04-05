@@ -277,7 +277,7 @@ class TestChoreService(unittest.TestCase):
         c = self.tm1.chores.get(self.chore_name1)
         # update all properties
         # update start time
-        start_time = datetime.now()
+        start_time = datetime(2023,4,5, 12,5,30)
         c._start_time = ChoreStartTime(start_time.year, start_time.month, start_time.day,
                                        start_time.hour, start_time.minute, start_time.second)
         c.dst_sensitivity = True

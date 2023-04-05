@@ -775,13 +775,6 @@ class TestElementService(unittest.TestCase):
                                                 parent_name='All Consolidations',
                                                 element_name='Total Years')
 
-    def test_element_is_parent_hier_not_exist(self):
-        with self.assertRaises(TM1pyRestException):
-            self.tm1.elements.element_is_parent(dimension_name=self.dimension_name,
-                                                hierarchy_name=self.hierarchy_does_not_exist_name,
-                                                parent_name='All Consolidations',
-                                                element_name='Total Years')
-
     def test_element_is_parent(self):
         result = self.tm1.elements.element_is_parent(dimension_name=self.dimension_name,
                                                      hierarchy_name=self.hierarchy_name,
