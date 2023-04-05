@@ -3453,8 +3453,8 @@ class CellService(ObjectService):
     def _execute_view_csv_use_blob(self, cube_name: str, view_name: str, top: int, skip: int, skip_zeros: bool,
                                    skip_consolidated_cells: bool, skip_rule_derived_cells: bool,
                                    value_separator: str, cube_dimensions: List[str] = None,
-                                   include_headers: bool = True,
-                                   sandbox_name: str = None, **kwargs):
+                                   include_headers: bool = True, sandbox_name: str = None, quote_character: str = '"',
+                                   **kwargs):
         """ Execute existing view and retrieve result as csv, using blobs.
         Function has up to 40% better performance than default execute_view_csv on datasets > 1M cells
         and significantly lower memory footprint in all cases.
@@ -3466,6 +3466,7 @@ class CellService(ObjectService):
         :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in view)
         :param skip_consolidated_cells: skip consolidated cells in cellset
         :param value_separator:
+        :param quote_character:
         :param cube_dimensions: pass dimensions in cube, to allow TM1py to skip retrieval and speed up the execution
         :param sandbox_name: str
         :include_headers: include header line in csv result
@@ -3530,6 +3531,7 @@ class CellService(ObjectService):
                 skip_zeros=skip_zeros,
                 skip_consolidated_cells=skip_consolidated_cells,
                 skip_rule_derived_cells=skip_rule_derived_cells,
+                quote_character=quote_character,
                 value_separator=value_separator,
                 sandbox_name=sandbox_name,
                 process_name=unique_name,
