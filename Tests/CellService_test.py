@@ -3208,6 +3208,33 @@ class TestCellService(unittest.TestCase):
         # check if sum of retrieved values is sum of written values
         self.assertEqual(self.total_value, sum(values))
 
+    def test_execute_view_csv_use_blob(self):
+        csv = self.tm1.cubes.cells._execute_view_csv_use_blob(
+            top=None,
+            skip=None,
+            skip_zeros=True,
+            skip_consolidated_cells=False,
+            skip_rule_derived_cells=False,
+            value_separator=",",
+            cube_name=self.cube_name,
+            view_name=self.view_name,
+            quote_character='')
+
+        # check type
+        self.assertIsInstance(csv, str)
+        records = csv.split('\r\n')[1:]
+        coordinates = {tuple(record.split(',')[0:3]) for record in records if record != '' and records[4] != 0}
+
+        # check number of coordinates (with values)
+        self.assertEqual(len(coordinates), len(self.target_coordinates))
+
+        # check if coordinates are the same
+        self.assertTrue(coordinates.issubset(self.target_coordinates))
+        values = [float(record.split(',')[3]) for record in records if record != '']
+
+        # check if sum of retrieved values is sum of written values
+        self.assertEqual(self.total_value, sum(values))
+
     def test_execute_view_elements_value_dict(self):
         values = self.tm1.cubes.cells.execute_view_elements_value_dict(
             cube_name=self.cube_name,
@@ -3264,6 +3291,43 @@ class TestCellService(unittest.TestCase):
         df = self.tm1.cubes.cells.execute_view_dataframe(
             cube_name=self.cube_name,
             view_name=self.view_name,
+            top=2,
+            private=False)
+
+        # check row count
+        self.assertTrue(len(df) == 2)
+
+        # check type
+        self.assertIsInstance(df, pd.DataFrame)
+
+    @skip_if_no_pandas
+    def test_execute_view_dataframe_use_blob(self):
+        df = self.tm1.cubes.cells.execute_view_dataframe(
+            cube_name=self.cube_name,
+            view_name=self.view_name,
+            use_blob=True,
+            private=False)
+
+        # check type
+        self.assertIsInstance(df, pd.DataFrame)
+
+        # check coordinates
+        coordinates = {tuple(row)
+                       for row
+                       in df[[*self.dimension_names]].values}
+        self.assertEqual(len(coordinates), len(self.target_coordinates))
+        self.assertTrue(coordinates.issubset(self.target_coordinates))
+
+        # check values
+        values = df[["Value"]].values
+        self.assertEqual(self.total_value, sum(values))
+
+    @skip_if_no_pandas
+    def test_execute_view_dataframe_with_top_argument_use_blob(self):
+        df = self.tm1.cubes.cells.execute_view_dataframe(
+            cube_name=self.cube_name,
+            view_name=self.view_name,
+            use_blob=True,
             top=2,
             private=False)
 
