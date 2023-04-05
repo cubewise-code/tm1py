@@ -1,8 +1,14 @@
 import configparser
 import unittest
+from io import StringIO
+from math import nan
 from pathlib import Path
 
-from TM1py import MDXView
+import numpy as np
+import pandas as pd
+from pandas import DataFrame
+
+from TM1py import MDXView, NativeView, AnonymousSubset
 from TM1py.Objects import Cube, Dimension, Element, Hierarchy, ElementAttribute
 from TM1py.Services import TM1Service
 from .Utils import skip_if_no_pandas
@@ -13,6 +19,7 @@ class TestPowerBiService(unittest.TestCase):
     prefix = 'TM1py_Tests_PowerBiService_'
     cube_name = prefix + "Cube"
     view_name = prefix + "View"
+    native_view_name = prefix + "NativeView"
     dimension_name = prefix + "Dimension"
     dimension_names = [
         prefix + 'Dimension1',
@@ -149,7 +156,26 @@ class TestPowerBiService(unittest.TestCase):
         cls.tm1.cubes.cells.write_value('1991/92', '}ElementAttributes_' + cls.dimension_name,
                                         ('1992', 'Financial Year'))
 
-    #    @skip_if_no_pandas
+        # create native view
+        view = NativeView(cls.cube_name, cls.native_view_name)
+        view.add_row(
+            dimension_name=cls.dimension_names[0],
+            subset=AnonymousSubset(
+                dimension_name=cls.dimension_names[0],
+                expression=f"{{[{cls.dimension_names[0]}].[Element1],[{cls.dimension_names[0]}].[Element2]}}"))
+        view.add_row(
+            dimension_name=cls.dimension_names[1],
+            subset=AnonymousSubset(
+                dimension_name=cls.dimension_names[1],
+                expression=f"{{[{cls.dimension_names[1]}].[Element1],[{cls.dimension_names[1]}].[Element2]}}"))
+        view.add_column(
+            dimension_name=cls.dimension_names[2],
+            subset=AnonymousSubset(
+                dimension_name=cls.dimension_names[2],
+                expression=f"{{[{cls.dimension_names[2]}].[Element1],[{cls.dimension_names[2]}].[Element2]}}"))
+
+        cls.tm1.views.update_or_create(view, False)
+
     def add_unbalanced_hierarchy(self, hierarchy_name):
         dimension = self.tm1.dimensions.get(self.dimension_name)
         # other hierarchy
@@ -184,6 +210,18 @@ class TestPowerBiService(unittest.TestCase):
         self.assertEqual(
             tuple(element1.values[0]),
             ("Element 1", "1.0", None))
+
+    @skip_if_no_pandas
+    def test_execute_native_view(self):
+        df = self.tm1.power_bi.execute_view(self.cube_name, self.native_view_name, use_blob=True, private=False)
+
+        expected_df = DataFrame(
+            {'TM1py_Tests_PowerBiService_Dimension1': {0: 'Element 1', 1: 'Element 1', 2: 'Element 2', 3: 'Element 2'},
+             'TM1py_Tests_PowerBiService_Dimension2': {0: 'Element 1', 1: 'Element 2', 2: 'Element 1', 3: 'Element 2'},
+             'Element 1': {0: '1.0', 1: nan, 2: nan, 3: nan},
+             'Element 2': {0: nan, 1: nan, 2: nan, 3: '1.0'}})
+
+        self.assertEqual(expected_df.to_markdown(), df.to_markdown())
 
     @skip_if_no_pandas
     def test_execute_view(self):

@@ -425,7 +425,7 @@ def build_csv_from_cellset_dict(
     return csv_content.getvalue().strip()
 
 
-def build_dataframe_from_csv(raw_csv, sep='~', **kwargs) -> 'pd.DataFrame':
+def build_dataframe_from_csv(raw_csv, sep='~', shaped: bool = False, **kwargs) -> 'pd.DataFrame':
     if not raw_csv:
         return pd.DataFrame()
 
@@ -434,7 +434,16 @@ def build_dataframe_from_csv(raw_csv, sep='~', **kwargs) -> 'pd.DataFrame':
     if 'dtype' not in kwargs:
         kwargs['dtype'] = {'Value': None, **{col: str for col in range(999)}}
 
-    return pd.read_csv(memory_file, sep=sep, na_values=["", None], keep_default_na=False, **kwargs)
+    df = pd.read_csv(memory_file, sep=sep, na_values=["", None], keep_default_na=False, **kwargs)
+    if not shaped:
+        return df
+
+    # due to csv creation logic, last column is bottom dimension from the column selection
+    return df.pivot_table(
+        index=tuple(df.columns[:-2]),
+        columns=df.columns[-2],
+        values=df.columns[-1],
+        sort=False).reset_index()
 
 
 def _build_csv_line_items_from_axis_tuple(members: Dict, include_attributes: bool = False) -> List[str]:
@@ -1186,6 +1195,11 @@ def frame_to_significant_digits(x, digits=15):
         return str(x).replace('e+', 'E')
     digits -= math.ceil(math.log10(abs(x)))
     return str(round(x, digits)).replace('e+', 'E')
+
+
+def drop_dimension_properties(mdx: str):
+    pattern = re.compile(r"(?i)DIMENSION\s+PROPERTIES\s+.*?\s+ON")
+    return pattern.sub("ON", mdx)
 
 
 class HTTPAdapterWithSocketOptions(HTTPAdapter):

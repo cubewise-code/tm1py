@@ -34,7 +34,8 @@ from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_nam
     abbreviate_mdx, build_csv_from_cellset_dict, require_version, require_pandas, build_cellset_from_pandas_dataframe, \
     case_and_space_insensitive_equals, get_cube, resembles_mdx, require_admin, extract_compact_json_cellset, \
     cell_is_updateable, build_mdx_from_cellset, build_mdx_and_values_from_cellset, \
-    dimension_names_from_element_unique_names, frame_to_significant_digits, build_dataframe_from_csv
+    dimension_names_from_element_unique_names, frame_to_significant_digits, build_dataframe_from_csv, \
+    drop_dimension_properties
 
 try:
     import pandas as pd
@@ -1945,7 +1946,7 @@ class CellService(ObjectService):
                               skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
                               sandbox_name: str = None, include_attributes: bool = False,
                               use_iterative_json: bool = False, use_compact_json: bool = False,
-                              use_blob: bool = False, **kwargs) -> 'pd.DataFrame':
+                              use_blob: bool = False, shaped: bool = False, **kwargs) -> 'pd.DataFrame':
         """ Optimized for performance. Get Pandas DataFrame from MDX Query.
 
         Takes all arguments from the pandas.read_csv method:
@@ -1978,7 +1979,8 @@ class CellService(ObjectService):
                 line_separator="\r\n",
                 value_separator="~",
                 use_blob=use_blob)
-            return build_dataframe_from_csv(raw_csv, sep='~', **kwargs)
+
+            return build_dataframe_from_csv(raw_csv, sep='~', shaped=shaped, **kwargs)
 
         cellset_id = self.create_cellset(mdx, sandbox_name=sandbox_name, **kwargs)
         return self.extract_cellset_dataframe(cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
@@ -1986,6 +1988,7 @@ class CellService(ObjectService):
                                               skip_rule_derived_cells=skip_rule_derived_cells,
                                               sandbox_name=sandbox_name, include_attributes=include_attributes,
                                               use_iterative_json=use_iterative_json, use_compact_json=use_compact_json,
+                                              shaped=shaped,
                                               **kwargs)
 
     @require_pandas
@@ -2006,7 +2009,8 @@ class CellService(ObjectService):
 
     @require_pandas
     def execute_view_dataframe_shaped(self, cube_name: str, view_name: str, private: bool = False,
-                                      sandbox_name: str = None,
+                                      sandbox_name: str = None, use_iterative_json: bool = False,
+                                      use_blob: bool = False,
                                       **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cube in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
@@ -2015,12 +2019,59 @@ class CellService(ObjectService):
         :param view_name:
         :param private:
         :param sandbox_name: str
+        :param use_blob
         :param kwargs:
         :return:
         """
-        cellset_id = self.create_cellset_from_view(cube_name, view_name, private, sandbox_name=sandbox_name)
-        return self.extract_cellset_dataframe_shaped(cellset_id, delete_cellset=True, sandbox_name=sandbox_name,
-                                                     **kwargs)
+        if not use_blob and not use_iterative_json:
+            cellset_id = self.create_cellset_from_view(
+                cube_name=cube_name,
+                view_name=view_name,
+                private=private,
+                sandbox_name=sandbox_name)
+            return self.extract_cellset_dataframe_shaped(
+                cellset_id=cellset_id,
+                delete_cellset=True,
+                sandbox_name=sandbox_name,
+                **kwargs)
+
+        if use_blob and use_iterative_json:
+            raise ValueError("'use_blob' and 'use_iterative_json' must not be used together")
+
+        if use_iterative_json:
+            return self.execute_view_dataframe(
+                cube_name=cube_name,
+                view_name=view_name,
+                private=private,
+                shaped=True,
+                sandbox_name=sandbox_name,
+                use_iterative_json=use_iterative_json,
+                # use blob for public views
+                use_blob=False)
+
+        # case use_blob
+        if private:
+            raise ValueError("view must be public when 'use_blob' argument is True")
+
+        view_service = ViewService(self._rest)
+        view = view_service.get(cube_name=cube_name, view_name=view_name, private=False)
+
+        if isinstance(view, MDXView):
+            mdx = view.MDX
+            return self.execute_mdx_dataframe_shaped(
+                mdx=mdx,
+                sandbox_name=sandbox_name,
+                use_blob=True,
+                display_attribute=False)
+
+        return self.execute_view_dataframe(
+            cube_name=cube_name,
+            view_name=view_name,
+            private=private,
+            shaped=True,
+            sandbox_name=sandbox_name,
+            # use blob for public views
+            use_blob=True)
 
     @require_pandas
     def execute_view_dataframe_pivot(self, cube_name: str, view_name: str, private: bool = False, dropna: bool = False,
@@ -2108,7 +2159,8 @@ class CellService(ObjectService):
     def execute_view_dataframe(self, cube_name: str, view_name: str, private: bool = False, top: int = None,
                                skip: int = None, skip_zeros: bool = True, skip_consolidated_cells: bool = False,
                                skip_rule_derived_cells: bool = False, sandbox_name: str = None,
-                               use_iterative_json: bool = False, use_blob: bool = False, **kwargs) -> 'pd.DataFrame':
+                               use_iterative_json: bool = False, use_blob: bool = False, shaped: bool = False,
+                               **kwargs) -> 'pd.DataFrame':
         """ Optimized for performance. Get Pandas DataFrame from an existing Cube View
         Context dimensions are omitted in the resulting Dataframe !
         Cells with Zero/null are omitted !
@@ -2143,8 +2195,9 @@ class CellService(ObjectService):
                 use_iterative_json=use_iterative_json,
                 line_separator="\r\n",
                 value_separator="~",
-                use_blob=True)
-            return build_dataframe_from_csv(raw_csv, sep='~', **kwargs)
+                use_blob=True,
+                **kwargs)
+            return build_dataframe_from_csv(raw_csv, sep='~', shaped=shaped, **kwargs)
 
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
                                                    sandbox_name=sandbox_name, **kwargs)
@@ -2152,7 +2205,7 @@ class CellService(ObjectService):
                                               skip_consolidated_cells=skip_consolidated_cells,
                                               skip_rule_derived_cells=skip_rule_derived_cells,
                                               sandbox_name=sandbox_name, use_iterative_json=use_iterative_json,
-                                              **kwargs)
+                                              shaped=shaped, **kwargs)
 
     def execute_view_cellcount(self, cube_name: str, view_name: str, private: bool = False, sandbox_name: str = None,
                                **kwargs) -> int:
@@ -3081,6 +3134,7 @@ class CellService(ObjectService):
             include_attributes: bool = False,
             use_iterative_json: bool = False,
             use_compact_json: bool = False,
+            shaped: bool = False,
             **kwargs) -> 'pd.DataFrame':
         """ Build pandas data frame from cellset_id
 
@@ -3113,7 +3167,7 @@ class CellService(ObjectService):
                 value_separator='~', sandbox_name=sandbox_name, include_attributes=include_attributes,
                 use_compact_json=use_compact_json, **kwargs)
 
-        return build_dataframe_from_csv(raw_csv, **kwargs)
+        return build_dataframe_from_csv(raw_csv, sep="~", shaped=shaped, **kwargs)
 
     @tidy_cellset
     @require_pandas
@@ -3624,11 +3678,18 @@ class CellService(ObjectService):
             in columns + rows]
 
         unique_name = self.suggest_unique_object_name()
+
+        # dimension properties must be skipped as they produce extra variableS in TI data source
+        # and tear up the variable definition
+        if isinstance(mdx, MdxBuilder):
+            mdx = mdx.to_mdx(skip_dimension_properties=True)
+        else:
+            mdx = drop_dimension_properties(mdx)
+
         view = MDXView(
             cube_name=cube,
             view_name=unique_name,
-            # dimension properties must be skipped as they produce an extra variable in TI data source
-            MDX=mdx.to_mdx(skip_dimension_properties=True) if isinstance(mdx, MdxBuilder) else mdx)
+            MDX=mdx)
 
         file_name = f"{unique_name}.csv"
         if include_headers:
