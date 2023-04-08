@@ -1189,6 +1189,8 @@ class CellService(ObjectService):
             ENDIF;
             """
         if top:
+            if skip:
+                top += skip
             data_procedure_pre += f"""
             IF (nRecord > {top});
               ProcessBreak;
