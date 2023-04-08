@@ -2759,6 +2759,22 @@ class TestCellService(unittest.TestCase):
             self.total_value,
             sum(values))
 
+    def test_execute_mdx_dataframe_use_blob_with_top_skip(self):
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.tm1_subset_all(self.dimension_names[0])) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(self.dimension_names[1], "Element3"))) \
+            .where(Member.of(self.dimension_names[2], "Element3")) \
+            .to_mdx()
+
+        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx=mdx, top=1, skip=2, use_blob=True, skip_zeros=False)
+        self.assertEqual(len(df), 1)
+
+        expected_df = pd.DataFrame({
+            'TM1py_Tests_Cell_Dimension1': {0: 'Element 3'},
+            'TM1py_Tests_Cell_Dimension2': {0: 'Element 3'},
+            'Value': {0: 1.0}})
+        self.assertEqual(expected_df.to_csv(), df.to_csv())
+
     def test_execute_mdx_cellcount(self):
         mdx = MdxBuilder.from_cube(self.cube_name) \
             .rows_non_empty() \
