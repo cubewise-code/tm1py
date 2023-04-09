@@ -270,3 +270,18 @@ class ViewService(ObjectService):
                         public_views.append(view)
 
         return private_views, public_views
+
+    def is_mdx_view(self, cube_name: str, view_name: str, private=False, **kwargs):
+        url_template = "/api/v1/Cubes('{}')/{}('{}')?select=Name"
+        if private is not None:
+            url = format_url(url_template, cube_name, "PrivateViews" if private else "Views", view_name)
+
+        response = self._rest.GET(url, **kwargs)
+        # e.g.: "ibm.tm1.api.v1.NativeView"
+        odata_type = response.json()["@odata.type"]
+        if odata_type.split('.')[-1] == "NativeView":
+            return False
+        return True
+
+    def is_native_view(self, cube_name: str, view_name: str, private=False):
+        return not self.is_mdx_view(cube_name, view_name, private)

@@ -21,6 +21,7 @@ from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyWritePartialFailure
 from TM1py.Objects.MDXView import MDXView
 from TM1py.Objects.NativeView import NativeView
 from TM1py.Objects.Process import Process
+from TM1py.Objects.Subset import AnonymousSubset
 from TM1py.Services.FileService import FileService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.ProcessService import ProcessService
@@ -1184,7 +1185,7 @@ class CellService(ObjectService):
         """
         if header_line:
             data_procedure_pre += f"""
-            IF ( nRecord = 1);
+            IF (nRecord = 1);
               TextOutput('{file_name}.blb',{header_line});
             ENDIF;
             """
@@ -3474,7 +3475,15 @@ class CellService(ObjectService):
         :include_headers: include header line in csv result
 
         """
-        file_service, process_service, _ = self._prepare_blob_services()
+        file_service, process_service, view_service = self._prepare_blob_services()
+
+        if view_service.is_mdx_view(cube_name, view_name):
+            mdx = view_service.get_mdx_view(cube_name, view_name, private=False).mdx
+            return self._execute_mdx_csv_use_blob(
+                mdx=mdx, top=top, skip=skip, skip_zeros=skip_zeros,
+                skip_consolidated_cells=skip_consolidated_cells, skip_rule_derived_cells=skip_rule_derived_cells,
+                value_separator=value_separator, cube_dimensions=cube_dimensions, sandbox_name=sandbox_name,
+                include_headers=include_headers)
 
         cube, titles, rows, columns = self._derive_cellset_composition_from_native_view(cube_name, view_name, False)
 
@@ -3495,6 +3504,16 @@ class CellService(ObjectService):
             in cube_dimensions]
 
         unique_name = self.suggest_unique_object_name()
+
+        # alter native-view to assure only one element per dimension in title
+        native_view = view_service.get_native_view(cube_name=cube_name, view_name=view_name, private=False)
+        for title in native_view.titles:
+            title.subset = AnonymousSubset(
+                dimension_name=title.dimension_name,
+                elements=[title.selected])
+        native_view.name = view_name = unique_name
+
+        view_service.create(view=native_view, private=False, **kwargs)
 
         file_name = f"{unique_name}.csv"
         if include_headers:
@@ -3548,7 +3567,10 @@ class CellService(ObjectService):
                     f"Status: '{status}' log: '{error_log_file}'")
 
             return file_service.get(file_name).decode("UTF-8")
+
         finally:
+            with suppress(Exception):
+                view_service.delete(view_name)
             with suppress(Exception):
                 file_service.delete(file_name)
 
