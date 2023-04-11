@@ -27,7 +27,8 @@ class PowerBiService:
         return self.cells.execute_mdx_dataframe_shaped(mdx, **kwargs)
 
     @require_pandas
-    def execute_view(self, cube_name, view_name, private, use_iterative_json=False, use_blob=False, **kwargs) -> 'pd.DataFrame':
+    def execute_view(self, cube_name: str, view_name: str, private: bool, use_iterative_json=False, use_blob=False,
+                     **kwargs) -> 'pd.DataFrame':
         return self.cells.execute_view_dataframe_shaped(
             cube_name,
             view_name,

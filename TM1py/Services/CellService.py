@@ -1964,6 +1964,7 @@ class CellService(ObjectService):
         Comes at a cost of 3-5% performance.
         :param use_compact_json: bool
         :param use_blob: Has better performance on datasets > 1M cells and lower memory footprint in any case.
+        :param shaped: preserve shape of view/mdx in data frame
         :return: Pandas Dataframe
         """
         if use_blob:
@@ -1980,7 +1981,7 @@ class CellService(ObjectService):
                 value_separator="~",
                 use_blob=use_blob)
 
-            return build_dataframe_from_csv(raw_csv, sep='~', shaped=shaped, **kwargs)
+            return build_dataframe_from_csv(raw_csv, sep='~', skip_zeros=skip_zeros, shaped=shaped, **kwargs)
 
         cellset_id = self.create_cellset(mdx, sandbox_name=sandbox_name, **kwargs)
         return self.extract_cellset_dataframe(cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
@@ -1993,25 +1994,59 @@ class CellService(ObjectService):
 
     @require_pandas
     def execute_mdx_dataframe_shaped(self, mdx: str, sandbox_name: str = None, display_attribute: bool = False,
+                                     use_iterative_json: bool = False, use_blob: bool = False,
                                      **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cube in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
 
         :param mdx:
         :param sandbox_name: str
+        :param use_blob
+        :param use_iterative_json
         :param display_attribute: bool, show element name or first attribute from MDX PROPERTIES clause
         :param kwargs:
         :return:
         """
-        cellset_id = self.create_cellset(mdx, sandbox_name=sandbox_name)
-        return self.extract_cellset_dataframe_shaped(cellset_id, delete_cellset=True, sandbox_name=sandbox_name,
-                                                     display_attribute=display_attribute, **kwargs)
+        if display_attribute and any([use_blob, use_iterative_json]):
+            raise ValueError("When 'use_blob' or 'use_iterative_json' is True, 'display_attribute' must be False")
+
+        # default case
+        if not any([use_blob, use_iterative_json]):
+            cellset_id = self.create_cellset(
+                mdx=mdx,
+                sandbox_name=sandbox_name)
+            return self.extract_cellset_dataframe_shaped(
+                cellset_id=cellset_id,
+                delete_cellset=True,
+                sandbox_name=sandbox_name,
+                display_attribute=display_attribute,
+                **kwargs)
+
+        if all([use_blob, use_iterative_json]):
+            raise ValueError("'use_blob' and 'use_iterative_json' must not be used together")
+
+        # ijson approach
+        if use_iterative_json:
+            return self.execute_mdx_dataframe(
+                mdx=mdx,
+                shaped=True,
+                sandbox_name=sandbox_name,
+                use_iterative_json=use_iterative_json,
+                use_blob=False,
+                **kwargs)
+
+        # blob approach
+        return self.execute_mdx_dataframe(
+            mdx=mdx,
+            shaped=True,
+            sandbox_name=sandbox_name,
+            use_blob=True,
+            **kwargs)
 
     @require_pandas
     def execute_view_dataframe_shaped(self, cube_name: str, view_name: str, private: bool = False,
                                       sandbox_name: str = None, use_iterative_json: bool = False,
-                                      use_blob: bool = False,
-                                      **kwargs) -> 'pd.DataFrame':
+                                      use_blob: bool = False, **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cube in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
 
@@ -2020,10 +2055,13 @@ class CellService(ObjectService):
         :param private:
         :param sandbox_name: str
         :param use_blob
+        :param use_iterative_json
         :param kwargs:
         :return:
         """
-        if not use_blob and not use_iterative_json:
+
+        # default approach
+        if not any([use_blob, use_iterative_json]):
             cellset_id = self.create_cellset_from_view(
                 cube_name=cube_name,
                 view_name=view_name,
@@ -2035,9 +2073,10 @@ class CellService(ObjectService):
                 sandbox_name=sandbox_name,
                 **kwargs)
 
-        if use_blob and use_iterative_json:
+        if all([use_blob, use_iterative_json]):
             raise ValueError("'use_blob' and 'use_iterative_json' must not be used together")
 
+        # ijson approach
         if use_iterative_json:
             return self.execute_view_dataframe(
                 cube_name=cube_name,
@@ -2046,23 +2085,12 @@ class CellService(ObjectService):
                 shaped=True,
                 sandbox_name=sandbox_name,
                 use_iterative_json=use_iterative_json,
-                # use blob for public views
-                use_blob=False)
+                use_blob=False,
+                **kwargs)
 
-        # case use_blob
+        # blob approach
         if private:
             raise ValueError("view must be public when 'use_blob' argument is True")
-
-        view_service = ViewService(self._rest)
-        view = view_service.get(cube_name=cube_name, view_name=view_name, private=False)
-
-        if isinstance(view, MDXView):
-            mdx = view.MDX
-            return self.execute_mdx_dataframe_shaped(
-                mdx=mdx,
-                sandbox_name=sandbox_name,
-                use_blob=True,
-                display_attribute=False)
 
         return self.execute_view_dataframe(
             cube_name=cube_name,
@@ -2070,8 +2098,8 @@ class CellService(ObjectService):
             private=private,
             shaped=True,
             sandbox_name=sandbox_name,
-            # use blob for public views
-            use_blob=True)
+            use_blob=True,
+            **kwargs)
 
     @require_pandas
     def execute_view_dataframe_pivot(self, cube_name: str, view_name: str, private: bool = False, dropna: bool = False,
@@ -2197,7 +2225,7 @@ class CellService(ObjectService):
                 value_separator="~",
                 use_blob=True,
                 **kwargs)
-            return build_dataframe_from_csv(raw_csv, sep='~', shaped=shaped, **kwargs)
+            return build_dataframe_from_csv(raw_csv, sep='~', skip_zeros=skip_zeros, shaped=shaped, **kwargs)
 
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
                                                    sandbox_name=sandbox_name, **kwargs)
@@ -3167,7 +3195,7 @@ class CellService(ObjectService):
                 value_separator='~', sandbox_name=sandbox_name, include_attributes=include_attributes,
                 use_compact_json=use_compact_json, **kwargs)
 
-        return build_dataframe_from_csv(raw_csv, sep="~", shaped=shaped, **kwargs)
+        return build_dataframe_from_csv(raw_csv, sep="~", skip_zeros=skip_zeros, shaped=shaped, **kwargs)
 
     @tidy_cellset
     @require_pandas
@@ -3562,7 +3590,7 @@ class CellService(ObjectService):
         # alter native-view to assure only one element per dimension in title
         native_view = view_service.get_native_view(cube_name=cube_name, view_name=view_name, private=False)
         for title in native_view.titles:
-            title.subset = AnonymousSubset(
+            title._subset = AnonymousSubset(
                 dimension_name=title.dimension_name,
                 elements=[title.selected])
         native_view.name = view_name = unique_name
