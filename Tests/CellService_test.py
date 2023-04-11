@@ -25,6 +25,7 @@ class TestCellService(unittest.TestCase):
     prefix = 'TM1py_Tests_Cell_'
     cube_name = prefix + "Cube"
     view_name = prefix + "View"
+    mdx_view_name = prefix + "MdxView"
     dimension_names = [
         prefix + 'Dimension1',
         prefix + 'Dimension2',
@@ -142,6 +143,21 @@ class TestCellService(unittest.TestCase):
             cls.tm1.cubes.views.update_or_create(
                 view=view,
                 private=False)
+            
+        # build mdx cube view
+        query = MdxBuilder.from_cube(cls.cube_name)
+        query = query.rows_non_empty().columns_non_empty()
+        query.add_hierarchy_set_to_row_axis(MdxHierarchySet.all_members(
+            cls.dimension_names[0],
+            cls.dimension_names[0]))
+        query.add_hierarchy_set_to_row_axis(MdxHierarchySet.all_members(
+            cls.dimension_names[1],
+            cls.dimension_names[1]))
+        query.add_hierarchy_set_to_column_axis(MdxHierarchySet.all_members(
+            cls.dimension_names[2],
+            cls.dimension_names[2]))
+        mdx_view = MDXView(cls.cube_name, cls.mdx_view_name, query.to_mdx())
+        cls.tm1.views.update_or_create(mdx_view, private=False)
 
         cls.build_cube_with_rules()
 
@@ -3234,6 +3250,33 @@ class TestCellService(unittest.TestCase):
             value_separator=",",
             cube_name=self.cube_name,
             view_name=self.view_name,
+            quote_character='')
+
+        # check type
+        self.assertIsInstance(csv, str)
+        records = csv.split('\r\n')[1:]
+        coordinates = {tuple(record.split(',')[0:3]) for record in records if record != '' and records[4] != 0}
+
+        # check number of coordinates (with values)
+        self.assertEqual(len(coordinates), len(self.target_coordinates))
+
+        # check if coordinates are the same
+        self.assertTrue(coordinates.issubset(self.target_coordinates))
+        values = [float(record.split(',')[3]) for record in records if record != '']
+
+        # check if sum of retrieved values is sum of written values
+        self.assertEqual(self.total_value, sum(values))
+
+    def test_execute_view_csv_mdx_view_use_blob(self):
+        csv = self.tm1.cubes.cells._execute_view_csv_use_blob(
+            top=None,
+            skip=None,
+            skip_zeros=True,
+            skip_consolidated_cells=False,
+            skip_rule_derived_cells=False,
+            value_separator=",",
+            cube_name=self.cube_name,
+            view_name=self.mdx_view_name,
             quote_character='')
 
         # check type

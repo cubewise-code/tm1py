@@ -3483,7 +3483,7 @@ class CellService(ObjectService):
                 mdx=mdx, top=top, skip=skip, skip_zeros=skip_zeros,
                 skip_consolidated_cells=skip_consolidated_cells, skip_rule_derived_cells=skip_rule_derived_cells,
                 value_separator=value_separator, cube_dimensions=cube_dimensions, sandbox_name=sandbox_name,
-                include_headers=include_headers)
+                include_headers=include_headers, quote_character=quote_character)
 
         cube, titles, rows, columns = self._derive_cellset_composition_from_native_view(cube_name, view_name, False)
 
@@ -3579,7 +3579,7 @@ class CellService(ObjectService):
                                   skip_consolidated_cells: bool, skip_rule_derived_cells: bool,
                                   value_separator: str, cube_dimensions: List[str] = None,
                                   sandbox_name: str = None, include_headers: bool = True,
-                                  **kwargs):
+                                  quote_character='"', **kwargs):
         """ Execute MDX and retrieve result as csv, using blobs.
         Function has up to 40% better performance than default execute_mdx_csv on datasets > 1M cells
         and significantly lower memory footprint in all cases.
@@ -3588,8 +3588,10 @@ class CellService(ObjectService):
         :param top: Int, number of cells to return (counting from top)
         :param skip: Int, number of cells to skip (counting from top)
         :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
-        :param skip_consolidated_cells: skip consolidated cells in cellset
+        :param skip_consolidated_cells: skip consolidated cells in result set
+        :param skip_rule_derived_cells: skip rule derived cells result set
         :param value_separator:
+        :param quote_character:
         :param cube_dimensions: pass dimensions in cube, to allow TM1py to skip retrieval and speed up the execution
         :param sandbox_name: str
         :include_headers: include header line in csv result
@@ -3662,7 +3664,8 @@ class CellService(ObjectService):
                 process_name=unique_name,
                 view_name=unique_name,
                 file_name=file_name,
-                header_line=header_line)
+                header_line=header_line,
+                quote_character=quote_character)
 
             success, status, error_log_file = process_service.execute_process_with_return(process, **kwargs)
             if not success:
