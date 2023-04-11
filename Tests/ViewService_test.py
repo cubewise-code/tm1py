@@ -100,11 +100,11 @@ class TestViewService(unittest.TestCase):
             # Suppress Null Values
             native_view.suppress_empty_cells = True
             # create native view on Server
-            self.tm1.cubes.views.create(
+            self.tm1.views.create(
                 view=native_view,
                 private=private)
             # create instance of MDXView
-            nv_view = self.tm1.cubes.views.get_native_view(
+            nv_view = self.tm1.views.get_native_view(
                 cube_name=self.cube_name,
                 view_name=self.native_view_name,
                 private=private)
@@ -114,49 +114,49 @@ class TestViewService(unittest.TestCase):
                 view_name=self.mdx_view_name,
                 MDX=mdx)
             # create mdx view on Server
-            self.tm1.cubes.views.create(
+            self.tm1.views.create(
                 view=mdx_view,
                 private=private)
 
     def test_view_exists(self):
         for private in (True, False):
-            self.assertTrue(self.tm1.cubes.views.exists(
+            self.assertTrue(self.tm1.views.exists(
                 cube_name=self.cube_name,
                 view_name=self.native_view_name,
                 private=private))
-            self.assertTrue(self.tm1.cubes.views.exists(
+            self.assertTrue(self.tm1.views.exists(
                 cube_name=self.cube_name,
                 view_name=self.mdx_view_name,
                 private=private))
-        exists_as_private, exists_as_public = self.tm1.cubes.views.exists(
+        exists_as_private, exists_as_public = self.tm1.views.exists(
             cube_name=self.cube_name,
             view_name=self.mdx_view_name)
         self.assertTrue(exists_as_private)
         self.assertTrue(exists_as_public)
-        exists_as_private, exists_as_public = self.tm1.cubes.views.exists(
+        exists_as_private, exists_as_public = self.tm1.views.exists(
             cube_name=self.cube_name,
             view_name=self.native_view_name)
         self.assertTrue(exists_as_private)
         self.assertTrue(exists_as_public)
 
     def test_get_all_views(self):
-        private_views, public_views = self.tm1.cubes.views.get_all(self.cube_name)
+        private_views, public_views = self.tm1.views.get_all(self.cube_name)
         self.assertGreater(len(public_views + private_views), 0)
 
-        private_view_names, public_view_names = self.tm1.cubes.views.get_all_names(self.cube_name)
+        private_view_names, public_view_names = self.tm1.views.get_all_names(self.cube_name)
         self.assertEqual(len(public_views), len(public_view_names))
         self.assertEqual(len(private_views), len(private_view_names))
 
     def test_get_native_view(self):
         for private in (True, False):
             # generic get
-            view = self.tm1.cubes.views.get(
+            view = self.tm1.views.get(
                 cube_name=self.cube_name,
                 view_name=self.native_view_name,
                 private=private)
 
             # get native view
-            native_view = self.tm1.cubes.views.get_native_view(
+            native_view = self.tm1.views.get_native_view(
                 cube_name=self.cube_name,
                 view_name=self.native_view_name,
                 private=private)
@@ -169,13 +169,13 @@ class TestViewService(unittest.TestCase):
     def test_get_mdx_view(self):
         for private in (True, False):
             # generic get
-            view = self.tm1.cubes.views.get(
+            view = self.tm1.views.get(
                 cube_name=self.cube_name,
                 view_name=self.mdx_view_name,
                 private=private)
 
             # get mdx view
-            mdx_view = self.tm1.cubes.views.get_mdx_view(
+            mdx_view = self.tm1.views.get_mdx_view(
                 cube_name=self.cube_name,
                 view_name=self.mdx_view_name,
                 private=private)
@@ -205,7 +205,7 @@ class TestViewService(unittest.TestCase):
     def test_update_nativeview(self):
         for private in (True, False):
             # get native view
-            native_view_original = self.tm1.cubes.views.get_native_view(
+            native_view_original = self.tm1.views.get_native_view(
                 cube_name=self.cube_name,
                 view_name=self.native_view_name,
                 private=private)
@@ -227,7 +227,7 @@ class TestViewService(unittest.TestCase):
                 dimension_name=self.dimension_names[0],
                 subset=subset)
             # update it on Server
-            self.tm1.cubes.views.update(
+            self.tm1.views.update(
                 view=native_view_original,
                 private=private)
             # Get it and check if its different
@@ -243,7 +243,7 @@ class TestViewService(unittest.TestCase):
     def test_update_mdxview(self):
         for private in (True, False):
             # Get mdx view
-            mdx_view_original = self.tm1.cubes.views.get_mdx_view(
+            mdx_view_original = self.tm1.views.get_mdx_view(
                 cube_name=self.cube_name,
                 view_name=self.mdx_view_name,
                 private=private)
@@ -260,9 +260,9 @@ class TestViewService(unittest.TestCase):
                                                      self.cube_name, self.dimension_names[2])
             mdx_view_original.MDX = mdx
             # Update mdx view on Server
-            self.tm1.cubes.views.update(mdx_view_original, private=private)
+            self.tm1.views.update(mdx_view_original, private=private)
             # Get it and check if its different
-            mdx_view_updated = self.tm1.cubes.views.get_mdx_view(
+            mdx_view_updated = self.tm1.views.get_mdx_view(
                 cube_name=self.cube_name,
                 view_name=self.mdx_view_name,
                 private=private)
@@ -352,10 +352,23 @@ class TestViewService(unittest.TestCase):
         self.assertEqual(0, len(private_views))
         self.assertEqual(0, len(public_views))
 
+    def test_is_native_view(self):
+        for private in (True, False):
+            self.assertTrue(self.tm1.views.is_native_view(
+                cube_name=self.cube_name,
+                view_name=self.native_view_name,
+                private=private))
+
+            self.assertTrue(self.tm1.views.is_mdx_view(
+                cube_name=self.cube_name,
+                view_name=self.mdx_view_name,
+                private=private))
+
+    
     def tearDown(self):
         for private in (True, False):
-            self.tm1.cubes.views.delete(cube_name=self.cube_name, view_name=self.native_view_name, private=private)
-            self.tm1.cubes.views.delete(cube_name=self.cube_name, view_name=self.mdx_view_name, private=private)
+            self.tm1.views.delete(cube_name=self.cube_name, view_name=self.native_view_name, private=private)
+            self.tm1.views.delete(cube_name=self.cube_name, view_name=self.mdx_view_name, private=private)
 
     @classmethod
     def teardown_class(cls):
@@ -363,7 +376,6 @@ class TestViewService(unittest.TestCase):
         for dimension_name in cls.dimension_names:
             cls.tm1.dimensions.delete(dimension_name)
         cls.tm1.logout()
-
 
 if __name__ == '__main__':
     unittest.main()
