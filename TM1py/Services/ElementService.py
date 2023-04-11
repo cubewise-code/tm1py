@@ -124,7 +124,8 @@ class ElementService(ObjectService):
 
         if not isinstance(elements, str):
             if isinstance(elements, Iterable):
-                elements = "{" + ",".join(f"[{dimension_name}].[{hierarchy_name}].[{member}]" for member in elements) + "}"
+                elements = "{" + ",".join(
+                    f"[{dimension_name}].[{hierarchy_name}].[{member}]" for member in elements) + "}"
             else:
                 raise ValueError("Argument 'element_selection' must be None or str")
 
@@ -534,10 +535,11 @@ class ElementService(ObjectService):
     def get_element_types(self, dimension_name: str, hierarchy_name: str,
                           skip_consolidations: bool = False, **kwargs) -> CaseAndSpaceInsensitiveDict:
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name,Type{}",
+            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name,Type",
             dimension_name,
-            hierarchy_name,
-            "&$filter=Type ne 3" if skip_consolidations else "")
+            hierarchy_name)
+        if skip_consolidations:
+            url += "&$filter=Type ne 3"
         response = self._rest.GET(url, **kwargs)
 
         result = CaseAndSpaceInsensitiveDict()
@@ -548,9 +550,9 @@ class ElementService(ObjectService):
     def get_element_types_from_all_hierarchies(
             self, dimension_name: str, skip_consolidations: bool = False, **kwargs) -> CaseAndSpaceInsensitiveDict:
         url = format_url(
-            "/api/v1/Dimensions('{}')?$expand=Hierarchies($select=Elements;$expand=Elements($select=Name,Type{}",
-            dimension_name,
-            ";$filter=Type ne 3))" if skip_consolidations else "))")
+            "/api/v1/Dimensions('{}')?$expand=Hierarchies($select=Elements;$expand=Elements($select=Name,Type",
+            dimension_name)
+        url += ";$filter=Type ne 3))" if skip_consolidations else "))"
         response = self._rest.GET(url, **kwargs)
 
         result = CaseAndSpaceInsensitiveDict()

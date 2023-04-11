@@ -7,6 +7,7 @@ import unittest
 from datetime import timedelta
 from pathlib import Path
 
+import pytest
 from dateutil import parser
 
 from TM1py.Exceptions import TM1pyRestException
@@ -14,6 +15,7 @@ from TM1py.Objects import Cube, Dimension, Hierarchy, Process
 from TM1py.Services import TM1Service
 
 
+@pytest.mark.skip(reason="Too slow for regular tests. Only run before releases")
 class TestServerService(unittest.TestCase):
     tm1: TM1Service
 
