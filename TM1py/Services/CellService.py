@@ -1091,6 +1091,12 @@ class CellService(ObjectService):
             datasource_ascii_quote_character='"')
         cube_measure = dimensions[-1]
 
+        # Define encoding and active sandbox in Prolog section
+        dataload_process.prolog_procedure = f"""
+        SetInputCharacterSet('TM1CS_UTF8');
+        {self.generate_enable_sandbox_ti(sandbox_name)}
+        """
+
         # Create variables as all String
         dimension_variables = [
             f"v{n}"
@@ -1141,10 +1147,6 @@ class CellService(ObjectService):
         # Define Data section
         data_statement = cell_is_updateable_pre + input_statement + cell_is_updateable_post
         dataload_process.data_procedure = data_statement
-
-        # Define active sandbox function on Prolog section
-        enable_sandbox = self.generate_enable_sandbox_ti(sandbox_name)
-        dataload_process.prolog_procedure = '\r' + enable_sandbox
 
         return dataload_process
 
