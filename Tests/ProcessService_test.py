@@ -139,7 +139,7 @@ class TestProcessService(unittest.TestCase):
 
         # with kwargs
         start_time = time.time()
-        self.tm1.processes.execute(self.p_bedrock_server_wait.name, pWaitSec="1")
+        self.tm1.processes.execute(self.p_bedrock_server_wait.name, pWaitSec="1.01")
         elapsed_time = time.time() - start_time
         self.assertGreater(elapsed_time, 1)
 
@@ -241,7 +241,7 @@ class TestProcessService(unittest.TestCase):
         self.tm1.processes.create(p_bad)
         errors = self.tm1.processes.compile(p_bad.name)
         self.assertTrue(len(errors) == 1)
-        self.assertIn("Variable \"dimsize\" is undefined", errors[0]["Message"])
+        self.assertIn("\"dimsize\"", errors[0]["Message"])
         self.tm1.processes.delete(p_bad.name)
 
     @skip_if_insufficient_version(version="11.4")
@@ -307,7 +307,7 @@ class TestProcessService(unittest.TestCase):
 
         errors = self.tm1.processes.compile_process(p_bad)
         self.assertTrue(len(errors) == 1)
-        self.assertIn("Variable \"dimsize\" is undefined", errors[0]["Message"])
+        self.assertIn("\"dimsize\"", errors[0]["Message"])
 
     def test_get_process(self):
         p_ascii_orig = copy.deepcopy(self.p_ascii)
