@@ -64,7 +64,7 @@ class HierarchyService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return [hierarchy["Name"] for hierarchy in response.json()["value"]]
 
-    def update(self, hierarchy: Hierarchy, **kwargs) -> List[Response]:
+    def update(self, hierarchy: Hierarchy, keep_existing_attributes=False, **kwargs) -> List[Response]:
         """ update a hierarchy. It's a two step process: 
         1. Update Hierarchy
         2. Update Element-Attributes
@@ -73,6 +73,7 @@ class HierarchyService(ObjectService):
         https://www.ibm.com/developerworks/community/forums/html/topic?id=75f2b99e-6961-4c71-9364-1d5e1e083eff
 
         :param hierarchy: instance of TM1py.Hierarchy
+        :param keep_existing_attributes: True to make sure existing attributes are not removed
         :return: list of responses
         """
         # functions returns multiple responses
@@ -86,7 +87,10 @@ class HierarchyService(ObjectService):
         responses.append(self._rest.PATCH(url, json.dumps(hierarchy_body), **kwargs))
 
         # 2. Update Attributes
-        responses.append(self.update_element_attributes(hierarchy=hierarchy, **kwargs))
+        responses.append(self.update_element_attributes(
+            hierarchy=hierarchy,
+            keep_existing_attributes=keep_existing_attributes,
+            **kwargs))
 
         # Workaround EDGES
         if self.version[0:8] in self.EDGES_WORKAROUND_VERSIONS:
@@ -141,10 +145,11 @@ class HierarchyService(ObjectService):
                 for hierarchy_property
                 in hierarchy_properties}
 
-    def update_element_attributes(self, hierarchy: Hierarchy, **kwargs):
+    def update_element_attributes(self, hierarchy: Hierarchy, keep_existing_attributes=False, **kwargs):
         """ Update the elementattributes of a hierarchy
 
         :param hierarchy: Instance of TM1py.Hierarchy
+        :param keep_existing_attributes: True to make sure existing attributes are not removed
         :return:
         """
         # get existing attributes first
@@ -168,10 +173,11 @@ class HierarchyService(ObjectService):
                 attributes_to_update.append(element_attribute)
                 continue
 
-        for existing_element_attribute in existing_element_attributes:
-            if existing_element_attribute not in CaseAndSpaceInsensitiveSet(
-                    [ea.name for ea in hierarchy.element_attributes]):
-                attributes_to_delete.append(existing_element_attribute)
+        if not keep_existing_attributes:
+            for existing_element_attribute in existing_element_attributes:
+                if existing_element_attribute not in CaseAndSpaceInsensitiveSet(
+                        [ea.name for ea in hierarchy.element_attributes]):
+                    attributes_to_delete.append(existing_element_attribute)
 
         for element_attribute in attributes_to_create:
             self.elements.create_element_attribute(

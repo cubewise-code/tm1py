@@ -218,10 +218,10 @@ class Hierarchy(TM1Object):
         self._elements = CaseAndSpaceInsensitiveDict()
         self.remove_all_edges()
 
-    def add_edge(self, parent: str, component: str, weight: int):
+    def add_edge(self, parent: str, component: str, weight: float):
         self._edges[(parent, component)] = weight
 
-    def update_edge(self, parent: str, component: str, weight: int):
+    def update_edge(self, parent: str, component: str, weight: float):
         self._edges[(parent, component)] = weight
 
     def remove_edge(self, parent: str, component: str):

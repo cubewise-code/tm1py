@@ -60,10 +60,11 @@ class DimensionService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return Dimension.from_json(response.text)
 
-    def update(self, dimension: Dimension, **kwargs):
+    def update(self, dimension: Dimension, keep_existing_attributes=False, **kwargs):
         """ Update an existing dimension
 
         :param dimension: instance of TM1py.Dimension
+        :param keep_existing_attributes: True to make sure existing attributes are not removed
         :return: None
         """
         # delete hierarchies that have been removed from the dimension object
