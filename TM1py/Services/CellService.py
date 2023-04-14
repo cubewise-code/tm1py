@@ -627,7 +627,7 @@ class CellService(ObjectService):
                         use_ti: bool = False, use_blob: bool = False, use_changeset: bool = False,
                         precision: int = None,
                         skip_non_updateable: bool = False, measure_dimension_elements: Dict = None,
-                        sum_numeric_duplicates: bool = True, **kwargs) -> str:
+                        sum_numeric_duplicates: bool = True, remove_blob: bool = True, **kwargs) -> str:
         """
         Function expects same shape as `execute_mdx_dataframe` returns.
         Column order must match dimensions in the target cube with an additional column for the values.
@@ -648,7 +648,8 @@ class CellService(ObjectService):
         :param measure_dimension_elements: dictionary of measure elements and their types to improve
         performance when `use_ti` is `True`.
         When all written values are numeric you can pass a default dict with default key 'Numeric'
-        :sum_numeric_duplicates: Aggregate numerical values for duplicated intersections
+        :param sum_numeric_duplicates: Aggregate numerical values for duplicated intersections
+        :param remove_blob: remove blob file after writing with use_blob=True
         :return: changeset or None
         """
         if not isinstance(data, pd.DataFrame):
@@ -671,6 +672,7 @@ class CellService(ObjectService):
                           sandbox_name=sandbox_name,
                           use_ti=use_ti,
                           use_blob=use_blob,
+                          remove_blob=remove_blob,
                           use_changeset=use_changeset,
                           precision=precision,
                           skip_non_updateable=skip_non_updateable,
@@ -834,7 +836,7 @@ class CellService(ObjectService):
               deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
               sandbox_name: str = None, use_ti: bool = False, use_blob: bool = False, use_changeset: bool = False,
               precision: int = None, skip_non_updateable: bool = False, measure_dimension_elements: Dict = None,
-              **kwargs) -> Optional[str]:
+              remove_blob: bool = True, **kwargs) -> Optional[str]:
         """ Write values to a cube
 
         Same signature as `write_values` method, but faster since it uses `write_values_through_cellset`
@@ -859,6 +861,7 @@ class CellService(ObjectService):
         :param measure_dimension_elements: dictionary of measure elements and their types to improve
         performance when `use_ti` is `True`.
         When all written values are numeric you can pass a default dict with default key 'Numeric'
+        :param remove_blob: remove blob file after writing with use_blob=True
         :return: changeset or None
         """
 
@@ -885,6 +888,7 @@ class CellService(ObjectService):
                 reactivate_transaction_log=reactivate_transaction_log,
                 skip_non_updateable=skip_non_updateable,
                 dimensions=dimensions,
+                remove_blob=remove_blob,
                 **kwargs)
 
         return self.write_through_cellset(cube_name, cellset_as_dict, dimensions, increment, deactivate_transaction_log,
@@ -1017,7 +1021,7 @@ class CellService(ObjectService):
     @require_pandas
     def write_through_blob(self, cube_name: str, cellset_as_dict: dict, increment: bool = False,
                            sandbox_name: str = None, skip_non_updateable: bool = False,
-                           delete_blob=True, dimensions: str = None, **kwargs):
+                           remove_blob=True, dimensions: str = None, **kwargs):
         """
         Writes data back to TM1 via an unbound TI process having an uploaded CSV as data source
         :param cube_name: str
@@ -1025,7 +1029,7 @@ class CellService(ObjectService):
         :param increment: increment or update cell values
         :param sandbox_name: str
         :param skip_non_updateable skip cells that are not updateable (e.g. rule derived or consolidated)
-        :param delete_blob: choose False for debugging purposes
+        :param remove_blob: choose False to persist blob after write. Can be helpful for troubleshooting.
         :param dimensions: optional. Dimension names in their natural order. Will speed up the execution!
         :param kwargs:
         :return: Success: bool, Messages: list, ChangeSet: None
@@ -1074,7 +1078,7 @@ class CellService(ObjectService):
                     raise TM1pyWriteFailureException([status], [log_file])
 
         finally:
-            if delete_blob:
+            if remove_blob:
                 file_service.delete(file_name=file_name)
 
     def _build_blob_to_cube_process(self, cube_name: str, process_name: str, blob_filename: str, dimensions: List[str],
@@ -1954,6 +1958,9 @@ class CellService(ObjectService):
         Takes all arguments from the pandas.read_csv method:
         https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html
 
+        If 'use_blob' and 'shaped' are True, 'skip_zeros' will be overruled to False.
+        This is necessary to assure column order is in line with cube view in TM1
+
         :param mdx: Valid MDX Query
         :param top: Int, number of cells to return (counting from top)
         :param skip: Int, number of cells to skip (counting from top)
@@ -1970,6 +1977,10 @@ class CellService(ObjectService):
         :return: Pandas Dataframe
         """
         if use_blob:
+            # necessary to assure column order in line with cube view
+            if shaped:
+                skip_zeros = False
+
             raw_csv = self.execute_mdx_csv(
                 mdx=mdx,
                 top=top,
@@ -2195,6 +2206,9 @@ class CellService(ObjectService):
         Context dimensions are omitted in the resulting Dataframe !
         Cells with Zero/null are omitted !
 
+        If 'use_blob' and 'shaped' are True, 'skip_zeros' will be overruled to False.
+        This is necessary to assure column order is in line with cube view in TM1
+
         Takes all arguments from the pandas.read_csv method:
         https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html
 
@@ -2213,6 +2227,10 @@ class CellService(ObjectService):
         :return: Pandas Dataframe
         """
         if use_blob:
+            # necessary to assure column order in line with cube view
+            if shaped:
+                skip_zeros = False
+
             raw_csv = self.execute_view_csv(
                 cube_name=cube_name,
                 view_name=view_name,
