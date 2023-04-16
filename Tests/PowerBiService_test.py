@@ -1,8 +1,12 @@
 import configparser
+import math
 import unittest
+from math import nan
 from pathlib import Path
 
-from TM1py import MDXView
+from pandas import DataFrame
+
+from TM1py import MDXView, NativeView, AnonymousSubset
 from TM1py.Objects import Cube, Dimension, Element, Hierarchy, ElementAttribute
 from TM1py.Services import TM1Service
 from .Utils import skip_if_no_pandas
@@ -12,26 +16,13 @@ class TestPowerBiService(unittest.TestCase):
     tm1: TM1Service
     prefix = 'TM1py_Tests_PowerBiService_'
     cube_name = prefix + "Cube"
-    view_name = prefix + "View"
+    mdx_view_name = prefix + "MDXView"
+    native_view_name = prefix + "NativeView"
     dimension_name = prefix + "Dimension"
     dimension_names = [
         prefix + 'Dimension1',
         prefix + 'Dimension2',
         prefix + 'Dimension3']
-    string_cube_name = prefix + "StringCube"
-    string_dimension_names = [
-        prefix + 'StringDimension1',
-        prefix + 'StringDimension2',
-        prefix + 'StringDimension3']
-    cells_in_string_cube = {
-        ('d1e1', 'd2e1', 'd3e1'): 'String1',
-        ('d1e2', 'd2e2', 'd3e2'): 'String2',
-        ('d1e3', 'd2e3', 'd3e3'): 'String3'}
-
-    cube_name_rps1 = prefix + "Cube" + "_RPS1"
-    cube_name_rps2 = prefix + "Cube" + "_RPS2"
-    dimension_name_rps1 = prefix + "Dimension" + "_RPS1"
-    dimension_name_rps2 = prefix + "Dimension" + "_RPS2"
 
     MDX_TEMPLATE = """
     SELECT 
@@ -149,7 +140,38 @@ class TestPowerBiService(unittest.TestCase):
         cls.tm1.cubes.cells.write_value('1991/92', '}ElementAttributes_' + cls.dimension_name,
                                         ('1992', 'Financial Year'))
 
-    #    @skip_if_no_pandas
+        # create native view
+        view = NativeView(cls.cube_name, cls.native_view_name)
+        view.add_row(
+            dimension_name=cls.dimension_names[0],
+            subset=AnonymousSubset(
+                dimension_name=cls.dimension_names[0],
+                expression=f"{{[{cls.dimension_names[0]}].[Element1],[{cls.dimension_names[0]}].[Element2]}}"))
+        view.add_row(
+            dimension_name=cls.dimension_names[1],
+            subset=AnonymousSubset(
+                dimension_name=cls.dimension_names[1],
+                expression=f"{{[{cls.dimension_names[1]}].[Element1],[{cls.dimension_names[1]}].[Element2]}}"))
+        view.add_column(
+            dimension_name=cls.dimension_names[2],
+            subset=AnonymousSubset(
+                dimension_name=cls.dimension_names[2],
+                expression=f"{{[{cls.dimension_names[2]}].[Element1],[{cls.dimension_names[2]}].[Element2]}}"))
+
+        cls.tm1.views.update_or_create(view, False)
+
+        mdx = cls.MDX_TEMPLATE.format(
+            rows="{[" + cls.dimension_names[0] + "].[Element1], [" + cls.dimension_names[0] + "].[Element2]}",
+            columns="{[" + cls.dimension_names[1] + "].[Element1], [" + cls.dimension_names[1] + "].[Element2]}",
+            cube=cls.cube_name,
+            where="[" + cls.dimension_names[2] + "].[Element1]")
+        cls.tm1.cubes.views.update_or_create(
+            MDXView(
+                cls.cube_name,
+                cls.mdx_view_name,
+                mdx),
+            private=False)
+
     def add_unbalanced_hierarchy(self, hierarchy_name):
         dimension = self.tm1.dimensions.get(self.dimension_name)
         # other hierarchy
@@ -186,16 +208,20 @@ class TestPowerBiService(unittest.TestCase):
             ("Element 1", "1.0", None))
 
     @skip_if_no_pandas
+    def test_execute_native_view(self):
+        df = self.tm1.power_bi.execute_view(self.cube_name, self.native_view_name, use_blob=False, private=False)
+
+        expected_df = DataFrame(
+            {'TM1py_Tests_PowerBiService_Dimension1': {0: 'Element 1', 1: 'Element 1', 2: 'Element 2', 3: 'Element 2'},
+             'TM1py_Tests_PowerBiService_Dimension2': {0: 'Element 1', 1: 'Element 2', 2: 'Element 1', 3: 'Element 2'},
+             'Element 1': {0: '1.0', 1: nan, 2: nan, 3: nan},
+             'Element 2': {0: nan, 1: nan, 2: nan, 3: '1.0'}})
+
+        self.assertEqual(expected_df.to_markdown(), df.to_markdown())
+
+    @skip_if_no_pandas
     def test_execute_view(self):
-        mdx = self.MDX_TEMPLATE.format(
-            rows="{[" + self.dimension_names[0] + "].[Element1], [" + self.dimension_names[0] + "].[Element2]}",
-            columns="{[" + self.dimension_names[1] + "].[Element1], [" + self.dimension_names[1] + "].[Element2]}",
-            cube=self.cube_name,
-            where="[" + self.dimension_names[2] + "].[Element1]")
-
-        self.tm1.cubes.views.create(MDXView(self.cube_name, self.view_name, mdx), private=False)
-
-        df = self.tm1.power_bi.execute_view(self.cube_name, self.view_name, private=False)
+        df = self.tm1.power_bi.execute_view(self.cube_name, self.mdx_view_name, private=False)
 
         self.assertEqual(len(df), 2)
 
@@ -207,6 +233,118 @@ class TestPowerBiService(unittest.TestCase):
         self.assertEqual(
             tuple(element1.values[0]),
             ("Element 1", "1.0", None))
+
+    @skip_if_no_pandas
+    def test_execute_mdx_use_blob(self):
+        mdx = self.MDX_TEMPLATE.format(
+            rows="{[" + self.dimension_names[0] + "].[Element1], [" + self.dimension_names[0] + "].[Element2]}",
+            columns="{[" + self.dimension_names[1] + "].[Element1], [" + self.dimension_names[1] + "].[Element2]}",
+            cube=self.cube_name,
+            where="[" + self.dimension_names[2] + "].[Element1]")
+        df = self.tm1.power_bi.execute_mdx(mdx, use_blob=True, skip_zeros=False)
+
+        self.assertEqual(len(df), 2)
+
+        self.assertEqual(
+            tuple(df.columns),
+            (self.dimension_names[0], "Element 1", "Element 2"))
+
+        element1 = df.loc[df[self.dimension_names[0]] == "Element 1"]
+        self.assertEqual(
+            ("Element 1", 1.0, 0.0),
+            tuple(element1.values[0])
+        )
+
+    @skip_if_no_pandas
+    def test_execute_native_view_use_blob(self):
+        df = self.tm1.power_bi.execute_view(self.cube_name, self.native_view_name,
+                                            use_blob=True, skip_zeros=False, private=False)
+
+        expected_df = DataFrame(
+            {'TM1py_Tests_PowerBiService_Dimension1': {0: 'Element 1', 1: 'Element 1', 2: 'Element 2', 3: 'Element 2'},
+             'TM1py_Tests_PowerBiService_Dimension2': {0: 'Element 1', 1: 'Element 2', 2: 'Element 1', 3: 'Element 2'},
+             'Element 1': {0: 1.0, 1: 0, 2: 0, 3: 0},
+             'Element 2': {0: 0, 1: 0, 2: 0, 3: 1.0}})
+
+        self.assertEqual(expected_df.to_markdown(), df.to_markdown())
+
+    @skip_if_no_pandas
+    def test_execute_view_use_blob(self):
+        df = self.tm1.power_bi.execute_view(
+            cube_name=self.cube_name,
+            view_name=self.mdx_view_name,
+            private=False,
+            use_blob=True,
+            skip_zeros=False)
+
+        self.assertEqual(len(df), 2)
+
+        self.assertEqual(
+            tuple(df.columns),
+            (self.dimension_names[0], "Element 1", "Element 2"))
+
+        element1 = df.loc[df[self.dimension_names[0]] == "Element 1"]
+        self.assertEqual(
+            ("Element 1", 1.0, 0),
+            tuple(element1.values[0])
+        )
+
+    @skip_if_no_pandas
+    def test_execute_mdx_use_iterative_json(self):
+        mdx = self.MDX_TEMPLATE.format(
+            rows="{[" + self.dimension_names[0] + "].[Element1], [" + self.dimension_names[0] + "].[Element2]}",
+            columns="{[" + self.dimension_names[1] + "].[Element1], [" + self.dimension_names[1] + "].[Element2]}",
+            cube=self.cube_name,
+            where="[" + self.dimension_names[2] + "].[Element1]")
+        df = self.tm1.power_bi.execute_mdx(mdx, skip_zeros=False, use_iterative_json=True)
+
+        self.assertEqual(len(df), 2)
+
+        self.assertEqual(
+            tuple(df.columns),
+            (self.dimension_names[0], "Element 1", "Element 2"))
+
+        row1 = df.loc[df[self.dimension_names[0]] == "Element 1"]
+        self.assertEqual(
+            ("Element 1", 1.0, 0.0),
+            tuple(row1.values[0])
+        )
+
+    @skip_if_no_pandas
+    def test_execute_native_view_use_iterative_json(self):
+        df = self.tm1.power_bi.execute_view(self.cube_name, self.native_view_name, use_iterative_json=True,
+                                            private=False, skip_zeros=False)
+
+        expected_df = DataFrame(
+            {'TM1py_Tests_PowerBiService_Dimension1': {0: 'Element 1', 1: 'Element 1', 2: 'Element 2', 3: 'Element 2'},
+             'TM1py_Tests_PowerBiService_Dimension2': {0: 'Element 1', 1: 'Element 2', 2: 'Element 1', 3: 'Element 2'},
+             'Element 1': {0: '1.0', 1: 0, 2: 0, 3: 0},
+             'Element 2': {0: 0, 1: 0, 2: 0, 3: '1.0'}})
+
+        self.assertEqual(expected_df.to_markdown(), df.to_markdown())
+
+    @skip_if_no_pandas
+    def test_execute_view_use_iterative_json(self):
+        df = self.tm1.power_bi.execute_view(
+            cube_name=self.cube_name,
+            view_name=self.mdx_view_name,
+            private=False,
+            skip_zeros=False,
+            use_iterative_json=True)
+
+        self.assertEqual(len(df), 2)
+
+        self.assertEqual(
+            tuple(df.columns),
+            (self.dimension_names[0], "Element 1", "Element 2"))
+
+        row1 = df.loc[df[self.dimension_names[0]] == "Element 1"]
+        row1 = df.loc[df[self.dimension_names[0]] == "Element 1"]
+        self.assertEqual(
+            ("Element 1", 1.0, 0.0),
+            tuple(row1.values[0])
+        )
+
 
     @skip_if_no_pandas
     def test_get_member_properties_default(self):

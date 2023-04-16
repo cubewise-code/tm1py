@@ -9,7 +9,7 @@ from TM1py.Utils import (
     integerize_version,
     verify_version, get_cube, resembles_mdx, format_url, add_url_parameters, extract_cell_updateable_property,
     CellUpdateableProperty, cell_is_updateable, extract_cell_properties_from_odata_context,
-    map_cell_properties_to_compact_json_response, frame_to_significant_digits
+    map_cell_properties_to_compact_json_response, frame_to_significant_digits, drop_dimension_properties
 )
 
 
@@ -406,6 +406,142 @@ class TestUtilsMethods(unittest.TestCase):
     def test_element_name_from_element_unique_name_with_double_closing_square_bracket(self):
         element_name = Utils.element_name_from_element_unique_name("[d1].[other [please specify]]]")
         self.assertEqual("other [please specify]", element_name)
+
+    def test_drop_dimension_properties_member_name(self):
+        mdx = """
+        SELECT
+        {[d1].[e1]} DIMENSION PROPERTIES MEMBER_NAME ON 0,
+        {[d2].[e1]} DIMENSION PROPERTIES MEMBER_NAME ON 1
+        FROM [c1]
+        """
+        expected_mdx = """
+        SELECT
+        {[d1].[e1]} ON 0,
+        {[d2].[e1]} ON 1
+        FROM [c1]
+        """
+        self.assertEqual(
+            expected_mdx,
+            drop_dimension_properties(mdx))
+
+    def test_drop_dimension_properties_member_name_lower_case(self):
+        mdx = """
+        SELECT
+        {[d1].[e1]} dimension properties member_name ON 0,
+        {[d2].[e1]} dimension properties member_name ON 1
+        FROM [c1]
+        """
+        expected_mdx = """
+        SELECT
+        {[d1].[e1]} ON 0,
+        {[d2].[e1]} ON 1
+        FROM [c1]
+        """
+        self.assertEqual(
+            expected_mdx,
+            drop_dimension_properties(mdx))
+
+    def test_drop_dimension_properties_one_axis(self):
+        mdx = """
+        SELECT
+        {[d1].[e1]} * {[d2].[e1]} dimension properties member_name ON 0
+        FROM [c1]
+        """
+        expected_mdx = """
+        SELECT
+        {[d1].[e1]} * {[d2].[e1]} ON 0
+        FROM [c1]
+        """
+        self.assertEqual(
+            expected_mdx,
+            drop_dimension_properties(mdx))
+
+    def test_drop_dimension_properties_attributes(self):
+        mdx = """
+            SELECT
+            NON EMPTY {[dim2].[dim2].[elem2]} DIMENSION PROPERTIES [dim2].[dim2].[name] ON 0,
+            NON EMPTY {TM1FILTERBYLEVEL({TM1SUBSETALL([dim1].[dim1])},0)} DIMENSION PROPERTIES [dim1].[dim1].[codeandname] ON 1
+            FROM [cube]
+            WHERE ([dim3].[dim3].[elem3],[dim4].[dim4].[elem4])
+        """
+        expected_mdx = """
+            SELECT
+            NON EMPTY {[dim2].[dim2].[elem2]}  ON 0,
+            NON EMPTY {TM1FILTERBYLEVEL({TM1SUBSETALL([dim1].[dim1])},0)}  ON 1
+            FROM [cube]
+            WHERE ([dim3].[dim3].[elem3],[dim4].[dim4].[elem4])
+        """
+        self.assertEqual(
+            expected_mdx,
+            drop_dimension_properties(mdx))
+
+    def test_drop_dimension_properties_member_name(self):
+        mdx = """
+        SELECT
+        {[d1].[e1]} PROPERTIES MEMBER_NAME ON 0,
+        {[d2].[e1]} PROPERTIES MEMBER_NAME ON 1
+        FROM [c1]
+        """
+        expected_mdx = """
+        SELECT
+        {[d1].[e1]} ON 0,
+        {[d2].[e1]} ON 1
+        FROM [c1]
+        """
+        self.assertEqual(
+            expected_mdx,
+            drop_dimension_properties(mdx))
+
+    def test_drop_dimension_properties_member_name_lower_case(self):
+        mdx = """
+        SELECT
+        {[d1].[e1]} properties member_name ON 0,
+        {[d2].[e1]} properties member_name ON 1
+        FROM [c1]
+        """
+        expected_mdx = """
+        SELECT
+        {[d1].[e1]} ON 0,
+        {[d2].[e1]} ON 1
+        FROM [c1]
+        """
+        self.assertEqual(
+            expected_mdx,
+            drop_dimension_properties(mdx))
+
+    def test_drop_dimension_properties_one_axis(self):
+        mdx = """
+        SELECT
+        {[d1].[e1]} * {[d2].[e1]} properties member_name ON 0
+        FROM [c1]
+        """
+        expected_mdx = """
+        SELECT
+        {[d1].[e1]} * {[d2].[e1]} ON 0
+        FROM [c1]
+        """
+        self.assertEqual(
+            expected_mdx,
+            drop_dimension_properties(mdx))
+
+    def test_drop_properties_attributes(self):
+        mdx = """
+            SELECT
+            NON EMPTY {[dim2].[dim2].[elem2]} PROPERTIES [dim2].[dim2].[name] ON 0,
+            NON EMPTY {TM1FILTERBYLEVEL({TM1SUBSETALL([dim1].[dim1])},0)} PROPERTIES [dim1].[dim1].[codeandname] ON 1
+            FROM [cube]
+            WHERE ([dim3].[dim3].[elem3],[dim4].[dim4].[elem4])
+        """
+        expected_mdx = """
+            SELECT
+            NON EMPTY {[dim2].[dim2].[elem2]} ON 0,
+            NON EMPTY {TM1FILTERBYLEVEL({TM1SUBSETALL([dim1].[dim1])},0)} ON 1
+            FROM [cube]
+            WHERE ([dim3].[dim3].[elem3],[dim4].[dim4].[elem4])
+        """
+        self.assertEqual(
+            expected_mdx,
+            drop_dimension_properties(mdx))
 
     @classmethod
     def tearDownClass(cls):

@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import hashlib
+import random
+import threading
 
 from TM1py.Exceptions import TM1pyRestException
 from TM1py.Services import RestService
@@ -21,6 +24,17 @@ class ObjectService:
         :param rest_service: 
         """
         self._rest = rest_service
+
+    def suggest_unique_object_name(self, random_seed: float = None) -> str:
+        """
+        Generate hash based on tm1-session-id, local-thread-id and random id to guarantee unique name
+        avoids name conflicts in multithreading operations
+        """
+        if not random_seed:
+            random_seed = random.random()
+        unique_string = f"{self._rest.session_id}{threading.get_ident()}{random_seed}"
+        unique_hash = "tm1py." + hashlib.sha256(unique_string.encode('utf-8')).hexdigest()[:12]
+        return unique_hash
 
     def determine_actual_object_name(self, object_class: str, object_name: str, **kwargs) -> str:
         url = format_url(

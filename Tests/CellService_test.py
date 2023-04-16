@@ -25,6 +25,7 @@ class TestCellService(unittest.TestCase):
     prefix = 'TM1py_Tests_Cell_'
     cube_name = prefix + "Cube"
     view_name = prefix + "View"
+    mdx_view_name = prefix + "MdxView"
     dimension_names = [
         prefix + 'Dimension1',
         prefix + 'Dimension2',
@@ -142,6 +143,21 @@ class TestCellService(unittest.TestCase):
             cls.tm1.cubes.views.update_or_create(
                 view=view,
                 private=False)
+            
+        # build mdx cube view
+        query = MdxBuilder.from_cube(cls.cube_name)
+        query = query.rows_non_empty().columns_non_empty()
+        query.add_hierarchy_set_to_row_axis(MdxHierarchySet.all_members(
+            cls.dimension_names[0],
+            cls.dimension_names[0]))
+        query.add_hierarchy_set_to_row_axis(MdxHierarchySet.all_members(
+            cls.dimension_names[1],
+            cls.dimension_names[1]))
+        query.add_hierarchy_set_to_column_axis(MdxHierarchySet.all_members(
+            cls.dimension_names[2],
+            cls.dimension_names[2]))
+        mdx_view = MDXView(cls.cube_name, cls.mdx_view_name, query.to_mdx())
+        cls.tm1.views.update_or_create(mdx_view, private=False)
 
         cls.build_cube_with_rules()
 
@@ -363,10 +379,10 @@ class TestCellService(unittest.TestCase):
         response = self.tm1.cubes.cells.write_value(3, self.cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
         self.assertTrue(response.ok)
         value = self.tm1.cubes.cells.get_value(self.cube_name, (
-            (self.dimension_names[0], 'Element1'), 
-            (self.dimension_names[1], 'EleMent2') ,
+            (self.dimension_names[0], 'Element1'),
+            (self.dimension_names[1], 'EleMent2'),
             (self.dimension_names[2], 'ELEMENT  3')
-            ))
+        ))
         self.assertEqual(value, 3)
         self.tm1.cubes.cells.write_value(original_value, self.cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
 
@@ -374,7 +390,8 @@ class TestCellService(unittest.TestCase):
         original_value = self.tm1.cubes.cells.get_value(self.cube_name, 'Element1,EleMent2,ELEMENT  3')
         response = self.tm1.cubes.cells.write_value(4, self.cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
         self.assertTrue(response.ok)
-        value = self.tm1.cubes.cells.get_value(self.cube_name, f'{self.dimension_names[0]}::Element1,EleMent2,{self.dimension_names[2]}::ELEMENT  3')
+        value = self.tm1.cubes.cells.get_value(self.cube_name,
+                                               f'{self.dimension_names[0]}::Element1,EleMent2,{self.dimension_names[2]}::ELEMENT  3')
         self.assertEqual(value, 4)
         self.tm1.cubes.cells.write_value(original_value, self.cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
 
@@ -383,10 +400,10 @@ class TestCellService(unittest.TestCase):
         response = self.tm1.cubes.cells.write_value(5, self.cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
         self.assertTrue(response.ok)
         value = self.tm1.cubes.cells.get_value(self.cube_name, [
-            (self.dimension_names[0], self.dimension_names[0],'Element1'), 
-            (self.dimension_names[1], 'EleMent2'), 
+            (self.dimension_names[0], self.dimension_names[0], 'Element1'),
+            (self.dimension_names[1], 'EleMent2'),
             Member.of(self.dimension_names[2], self.dimension_names[2], 'ELEMENT  3')
-            ])
+        ])
         self.assertEqual(value, 5)
         self.tm1.cubes.cells.write_value(original_value, self.cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
 
@@ -395,7 +412,7 @@ class TestCellService(unittest.TestCase):
         response = self.tm1.cubes.cells.write_value(6, self.cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
         self.assertTrue(response.ok)
         value = self.tm1.cubes.cells.get_value(
-            self.cube_name, 
+            self.cube_name,
             f'{self.dimension_names[0]}$$Element1;EleMent2;{self.dimension_names[2]}  $$ ELEMENT  3',
             element_separator=";",
             hierarchy_element_separator="$$"
@@ -408,7 +425,7 @@ class TestCellService(unittest.TestCase):
         original_value = self.tm1.cubes.cells.get_value(self.cube_name, 'Element1,EleMent2,ELEMENT  3')
         response = self.tm1.cubes.cells.write_value(7, self.cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
         self.assertTrue(response.ok)
-        value = self.tm1.cubes.cells.get_value(self.cube_name, element_string = 'Element1,EleMent2,ELEMENT  3')
+        value = self.tm1.cubes.cells.get_value(self.cube_name, element_string='Element1,EleMent2,ELEMENT  3')
         self.assertEqual(value, 7)
         self.tm1.cubes.cells.write_value(original_value, self.cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
 
@@ -439,6 +456,18 @@ class TestCellService(unittest.TestCase):
     def test_write_use_ti(self):
         cells = {("Element 1", "Element4", "Element9"): 1234}
         self.tm1.cubes.cells.write(self.cube_name, cells, use_ti=True, use_changeset=False)
+
+        query = MdxBuilder.from_cube(self.cube_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[Element 1]",
+            f"[{self.dimension_names[1]}].[Element 4]",
+            f"[{self.dimension_names[2]}].[Element 9]")
+
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [1234])
+
+    def test_write_use_blob(self):
+        cells = {("Element 1", "Element4", "Element9"): 1234}
+        self.tm1.cubes.cells.write(self.cube_name, cells, use_blob=True, use_changeset=False)
 
         query = MdxBuilder.from_cube(self.cube_name)
         query.add_member_tuple_to_columns(
@@ -637,7 +666,7 @@ class TestCellService(unittest.TestCase):
             f"[{self.dimensions_with_consolidations_names[1]}].[Element 8]",
             f"[{self.dimensions_with_consolidations_names[2]}].[Element 9]")
 
-        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [None])
+        self.assertEqual([8], self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()))
 
     def test_write_through_unbound_process_write_partial_failure_exception(self):
         cells = dict()
@@ -663,6 +692,175 @@ class TestCellService(unittest.TestCase):
         cells["d1e1", "d2e4", "d3e3"] = 'TM1py \r\n#Test'
 
         self.tm1.cubes.cells.write_through_unbound_process(self.string_cube_name, cells)
+
+        query = MdxBuilder.from_cube(self.string_cube_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.string_dimension_names[0]}].[d1e1]",
+            f"[{self.string_dimension_names[1]}].[d2e4]",
+            f"[{self.string_dimension_names[2]}].[d3e3]")
+
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), ['TM1py #Test'])
+
+    def test_write_through_blob_happy_case(self):
+        cells = dict()
+        cells["Element 1", "Element4", "Element9"] = 719
+        self.tm1.cubes.cells.write_through_blob(self.cube_name, cells)
+
+        query = MdxBuilder.from_cube(self.cube_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[Element 1]",
+            f"[{self.dimension_names[1]}].[Element 4]",
+            f"[{self.dimension_names[2]}].[Element 9]")
+
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [719])
+
+    def test_write_through_blob_sandbox(self):
+        cells = dict()
+        cells["Element 1", "Element4", "Element9"] = 7192
+        self.tm1.cubes.cells.write_through_blob(self.cube_name, cells, sandbox_name=self.sandbox_name)
+
+        query = MdxBuilder.from_cube(self.cube_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[Element 1]",
+            f"[{self.dimension_names[1]}].[Element 4]",
+            f"[{self.dimension_names[2]}].[Element 9]")
+
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx(), sandbox_name=self.sandbox_name), [7192])
+
+    def test_write_through_blob_long_digit_as_str(self):
+        cells = dict()
+        cells["Element 1", "Element4", "Element9"] = '10000.123456789123456789123456789'
+        self.tm1.cubes.cells.write_through_blob(self.cube_name, cells)
+
+        query = MdxBuilder.from_cube(self.cube_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[Element 1]",
+            f"[{self.dimension_names[1]}].[Element 4]",
+            f"[{self.dimension_names[2]}].[Element 9]")
+
+        self.assertAlmostEqual(
+            self.tm1.cells.execute_mdx_values(mdx=query.to_mdx())[0],
+            10000.1234567891,
+            8)
+
+    def test_write_through_blob_str(self):
+        cells = dict()
+        cells["d1e1", "d2e4", "d3e3"] = 'TM1py Test'
+        self.tm1.cubes.cells.write_through_blob(self.string_cube_name, cells)
+
+        query = MdxBuilder.from_cube(self.string_cube_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.string_dimension_names[0]}].[d1e1]",
+            f"[{self.string_dimension_names[1]}].[d2e4]",
+            f"[{self.string_dimension_names[2]}].[d3e3]")
+
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), ['TM1py Test'])
+
+    def test_write_through_blob_attributes(self):
+        cells = dict()
+        cells["element1", "Attr1"] = 'Text 1'
+        cells["element1", "Attr2"] = 1
+        cells["element1", "Attr3"] = 2
+        cells["element2", "Attr1"] = ""
+        cells["element2", "Attr2"] = 0
+        cells["element2", "Attr3"] = None
+        self.tm1.cubes.cells.write_through_blob("}ElementAttributes_" + self.dimension_names[0], cells)
+
+        query = MdxBuilder.from_cube("}ElementAttributes_" + self.dimension_names[0])
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[element1]",
+            f"[}}ElementAttributes_{self.dimension_names[0]}].[Attr1]")
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[element1]",
+            f"[}}ElementAttributes_{self.dimension_names[0]}].[Attr2]")
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[element1]",
+            f"[}}ElementAttributes_{self.dimension_names[0]}].[Attr3]")
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[element2]",
+            f"[}}ElementAttributes_{self.dimension_names[0]}].[Attr1]")
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[element2]",
+            f"[}}ElementAttributes_{self.dimension_names[0]}].[Attr2]")
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_names[0]}].[element2]",
+            f"[}}ElementAttributes_{self.dimension_names[0]}].[Attr3]")
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), ['Text 1', 1, 2, "", None, None])
+
+    def test_write_through_blob_to_consolidation(self):
+        cells = dict()
+        cells["Element 1", "Element4", "TOTAL_" + self.dimensions_with_consolidations_names[2]] = 5
+        cells["Element 1", "Element4", "Element3"] = 8
+
+        with self.assertRaises(TM1pyWritePartialFailureException):
+            self.tm1.cubes.cells.write_through_blob(self.cube_with_consolidations_name, cells)
+
+        query = MdxBuilder.from_cube(self.cube_with_consolidations_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimensions_with_consolidations_names[0]}].[Element 1]",
+            f"[{self.dimensions_with_consolidations_names[1]}].[Element 4]",
+            f"[{self.dimensions_with_consolidations_names[2]}].[Element 3]")
+
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [8])
+
+    def test_write_through_blob_to_not_existing_element(self):
+        cells = dict()
+        cells["Element 1", "Element4", "element6"] = 5
+        cells["Element 1", "Element4", "Not Existing Element"] = 8
+
+        with self.assertRaises(TM1pyWritePartialFailureException):
+            self.tm1.cubes.cells.write_through_blob(self.cube_with_consolidations_name, cells)
+
+        query = MdxBuilder.from_cube(self.cube_with_consolidations_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimensions_with_consolidations_names[0]}].[Element 1]",
+            f"[{self.dimensions_with_consolidations_names[1]}].[Element 4]",
+            f"[{self.dimensions_with_consolidations_names[2]}].[Element 6]")
+
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [5])
+
+    def test_write_through_blob_write_failure_exception(self):
+        cells = dict()
+        cells["Element 1", "Element4", "Not Existing Element 1"] = "Text 1"
+        cells["Element 2", "Element8", "Element 9"] = 8
+
+        with self.assertRaises(TM1pyWritePartialFailureException) as ex:
+            self.tm1.cubes.cells.write_through_blob(self.cube_with_consolidations_name, cells)
+        self.assertEqual(ex.exception.statuses, ['HasMinorErrors'])
+        self.assertIn(".log", ex.exception.error_log_files[0])
+
+        query = MdxBuilder.from_cube(self.cube_with_consolidations_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimensions_with_consolidations_names[0]}].[Element 2]",
+            f"[{self.dimensions_with_consolidations_names[1]}].[Element 8]",
+            f"[{self.dimensions_with_consolidations_names[2]}].[Element 9]")
+
+        self.assertEqual([8], self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()))
+
+    def test_write_through_blob_write_partial_failure_exception(self):
+        cells = dict()
+        cells["Element 2", "Element8", "Not Existing Element"] = 2
+        cells["Element 2", "Element8", "Element 5"] = 8
+
+        with self.assertRaises(TM1pyWritePartialFailureException) as ex:
+            self.tm1.cubes.cells.write_through_blob(self.cube_with_consolidations_name, cells)
+        self.assertEqual(ex.exception.statuses, ['HasMinorErrors'])
+        self.assertEqual(ex.exception.attempts, 1)
+        self.assertIn(".log", ex.exception.error_log_files[0])
+
+        query = MdxBuilder.from_cube(self.cube_with_consolidations_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimensions_with_consolidations_names[0]}].[Element 2]",
+            f"[{self.dimensions_with_consolidations_names[1]}].[Element 8]",
+            f"[{self.dimensions_with_consolidations_names[2]}].[Element 5]")
+
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [8])
+
+    def test_write_through_blob_line_break_hashmark_combo(self):
+        cells = dict()
+        cells["d1e1", "d2e4", "d3e3"] = 'TM1py \r\n#Test'
+
+        self.tm1.cubes.cells.write_through_blob(self.string_cube_name, cells)
 
         query = MdxBuilder.from_cube(self.string_cube_name)
         query.add_member_tuple_to_columns(
@@ -716,11 +914,11 @@ class TestCellService(unittest.TestCase):
             f"[{self.dimension_names[2]}].[Element 15]")
         self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [None])
 
-    def test_write_through_unbound_process_multi_str(self):
+    def test_write_through_blob_multi_str(self):
         cells = dict()
         cells["d1e1", "d2e4", "d3e3"] = 'TM1py Test1'
         cells["d1e1", "d2e2", "d3e3"] = 'TM1py Test2'
-        self.tm1.cubes.cells.write_through_unbound_process(self.string_cube_name, cells)
+        self.tm1.cubes.cells.write_through_blob(self.string_cube_name, cells)
 
         query = MdxBuilder.from_cube(self.string_cube_name)
         query.add_member_tuple_to_columns(
@@ -734,10 +932,10 @@ class TestCellService(unittest.TestCase):
 
         self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), ['TM1py Test1', 'TM1py Test2'])
 
-    def test_write_through_unbound_process_scientific_notation_small(self):
+    def test_write_through_blob_scientific_notation_small(self):
         cells = dict()
         cells["Element 1", "Element4", "Element9"] = "{:e}".format(0.00000001)
-        self.tm1.cubes.cells.write_through_unbound_process(self.cube_name, cells)
+        self.tm1.cubes.cells.write_through_blob(self.cube_name, cells)
 
         query = MdxBuilder.from_cube(self.cube_name)
         query.add_member_tuple_to_columns(
@@ -747,10 +945,10 @@ class TestCellService(unittest.TestCase):
 
         self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [0.00000001])
 
-    def test_write_through_unbound_process_scientific_notation_large(self):
+    def test_write_through_blob_scientific_notation_large(self):
         cells = dict()
         cells["Element 1", "Element4", "Element9"] = "{:e}".format(12_300_000_000)
-        self.tm1.cubes.cells.write_through_unbound_process(self.cube_name, cells)
+        self.tm1.cubes.cells.write_through_blob(self.cube_name, cells)
 
         query = MdxBuilder.from_cube(self.cube_name)
         query.add_member_tuple_to_columns(
@@ -760,11 +958,11 @@ class TestCellService(unittest.TestCase):
 
         self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [12_300_000_000])
 
-    def test_write_through_unbound_process_multi_cells(self):
+    def test_write_through_blob_multi_cells(self):
         cells = dict()
         cells["Element 1", "Element4", "Element9"] = 702
         cells["Element 2", "Element4", "Element7"] = 701
-        self.tm1.cubes.cells.write_through_unbound_process(self.cube_name, cells)
+        self.tm1.cubes.cells.write_through_blob(self.cube_name, cells)
 
         query = MdxBuilder.from_cube(self.cube_name)
         query.add_member_tuple_to_columns(
@@ -780,11 +978,11 @@ class TestCellService(unittest.TestCase):
             f"[{self.dimension_names[2]}].[Element 7]")
         self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [701])
 
-    def test_write_through_unbound_process_increment_true(self):
+    def test_write_through_blob_increment_true(self):
         cells = {("Element 1", "Element5", "Element8"): 111}
 
-        self.tm1.cubes.cells.write_through_unbound_process(self.cube_name, cells)
-        self.tm1.cubes.cells.write_through_unbound_process(self.cube_name, cells, increment=True)
+        self.tm1.cubes.cells.write_through_blob(self.cube_name, cells)
+        self.tm1.cubes.cells.write_through_blob(self.cube_name, cells, increment=True)
 
         query = MdxBuilder.from_cube(self.cube_name)
         query.add_member_tuple_to_columns(
@@ -794,11 +992,11 @@ class TestCellService(unittest.TestCase):
 
         self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [222])
 
-    def test_write_through_unbound_process_increment_false(self):
+    def test_write_through_blob_increment_false(self):
         cells = {("Element 1", "Element5", "Element8"): 109}
 
-        self.tm1.cubes.cells.write_through_unbound_process(self.cube_name, cells)
-        self.tm1.cubes.cells.write_through_unbound_process(self.cube_name, cells, increment=False)
+        self.tm1.cubes.cells.write_through_blob(self.cube_name, cells)
+        self.tm1.cubes.cells.write_through_blob(self.cube_name, cells, increment=False)
 
         query = MdxBuilder.from_cube(self.cube_name)
         query.add_member_tuple_to_columns(
@@ -1989,6 +2187,235 @@ class TestCellService(unittest.TestCase):
         for value in values:
             self.assertEqual(value, 3)
 
+    def test_execute_mdx_csv_use_blob(self):
+        query = MdxBuilder.from_cube(self.cube_name) \
+            .rows_non_empty() \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0])) \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1])) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2]))
+        csv = self.tm1.cubes.cells.execute_mdx_csv(query, use_blob=True)
+
+        # check header
+        header = csv.split('\r\n')[0]
+        self.assertEqual(
+            # check case-insensitive
+            ",".join(self.dimension_names + ["Value"]),
+            # ignore double quote in comparison
+            header.replace('"', ''))
+
+        # check type
+        self.assertIsInstance(csv, str)
+
+        records = csv.replace('"', '').split('\r\n')[1:]
+        coordinates = {tuple(record.lower().split(',')[0:3])
+                       for record
+                       in records if record != '' and records[4] != 0}
+
+        # check number of coordinates (with values)
+        self.assertEqual(
+            len(coordinates),
+            len(self.target_coordinates))
+
+        values = [float(record.split(',')[3])
+                  for record
+                  in records if record != '']
+
+        # check if sum of retrieved values is sum of written values
+        self.assertEqual(
+            self.total_value,
+            sum(values))
+
+    def test_execute_mdx_csv_use_blob_pass_mdx_as_str(self):
+        query = MdxBuilder.from_cube(self.cube_name) \
+            .rows_non_empty() \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0])) \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1])) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2]))
+        csv = self.tm1.cubes.cells.execute_mdx_csv(query.to_mdx(skip_dimension_properties=True), use_blob=True)
+
+        # check header
+        header = csv.split('\r\n')[0]
+        self.assertEqual(
+            ",".join(self.dimension_names + ["Value"]),
+            # ignore double quote in comparison
+            header.replace('"', ''))
+
+        # check type
+        self.assertIsInstance(csv, str)
+
+        records = csv.replace('"', '').split('\r\n')[1:]
+        coordinates = {tuple(record.split(',')[0:3])
+                       for record
+                       in records if record != '' and records[4] != 0}
+
+        # check number of coordinates (with values)
+        self.assertEqual(
+            len(coordinates),
+            len(self.target_coordinates))
+
+        # check if coordinates are the same
+        self.assertTrue(coordinates.issubset(self.target_coordinates))
+        values = [float(record.split(',')[3])
+                  for record
+                  in records if record != '']
+
+        # check if sum of retrieved values is sum of written values
+        self.assertEqual(
+            self.total_value,
+            sum(values))
+
+    def test_execute_mdx_csv_with_title_use_blob(self):
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .rows_non_empty() \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(self.dimension_names[0], "Element 2"))) \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.member(Member.of(self.dimension_names[1], "Element 2"))) \
+            .where(Member.of(self.dimension_names[2], "Element 2"))
+
+        csv = self.tm1.cubes.cells.execute_mdx_csv(mdx, use_blob=True)
+
+        # ignore double quote in comparison and drop \r\n at file end
+        records = csv.strip().replace('"', '').split('\r\n')
+        self.assertEqual(2, len(records))
+
+        # check header
+        self.assertEqual(
+            ",".join([self.dimension_names[1], self.dimension_names[0], "Value"]),
+            records[0])
+
+        # check type
+        self.assertIsInstance(csv, str)
+
+        # check data
+        self.assertEqual(
+            "Element 2,Element 2,1",
+            records[1]
+        )
+
+    def test_execute_mdx_csv_with_title_use_blob_pass_mdx_as_str(self):
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .rows_non_empty() \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(self.dimension_names[0], "Element 2"))) \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.member(Member.of(self.dimension_names[1], "Element 2"))) \
+            .where(Member.of(self.dimension_names[2], "Element 2"))
+
+        csv = self.tm1.cubes.cells.execute_mdx_csv(mdx.to_mdx(skip_dimension_properties=True), use_blob=True)
+
+        # ignore double quote in comparison and drop \r\n at file end
+        records = csv.strip().replace('"', '').split('\r\n')
+        self.assertEqual(2, len(records))
+
+        # check header
+        self.assertEqual(
+            # check case-insensitive
+            ",".join([self.dimension_names[1], self.dimension_names[0], "Value"]),
+            records[0])
+
+        # check type
+        self.assertIsInstance(csv, str)
+
+        # check data
+        self.assertEqual(
+            "Element 2,Element 2,1",
+            records[1]
+        )
+
+    def test_execute_mdx_csv_empty_cellset_use_blob(self):
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .rows_non_empty() \
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.member(Member.of(self.dimension_names[0], "Element9"))) \
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.member(Member.of(self.dimension_names[1], "Element 18"))) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(self.dimension_names[2], "Element 2")))
+        csv = self.tm1.cubes.cells.execute_mdx_csv(mdx, use_blob=True)
+
+        self.assertEqual("", csv)
+
+    def test_execute_mdx_csv_skip_rule_derived_use_blob(self):
+        mdx = MdxBuilder.from_cube(self.cube_with_rules_name) \
+            .rows_non_empty() \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1]).head(100)) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2]).head(100)) \
+            .add_member_to_where(Member.of(self.dimension_names[0], "Element1"))
+
+        csv = self.tm1.cubes.cells.execute_mdx_csv(mdx, use_blob=True, skip_rule_derived_cells=True)
+
+        self.assertEqual("", csv)
+
+    def test_execute_mdx_csv_top_use_blob(self):
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1]).head(10)) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2]).head(10)) \
+            .add_member_to_where(Member.of(self.dimension_names[0], "Element1"))
+
+        csv = self.tm1.cubes.cells.execute_mdx_csv(mdx, use_blob=True, top=10, skip_zeros=False)
+
+        records = csv.strip().strip().split("\r\n")
+        self.assertEqual(11, len(records))
+
+    def test_execute_mdx_csv_skip_use_blob(self):
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1]).head(10)) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2]).head(10)) \
+            .add_member_to_where(Member.of(self.dimension_names[0], "Element1"))
+
+        csv = self.tm1.cubes.cells.execute_mdx_csv(mdx, use_blob=True, skip=10, skip_zeros=False)
+
+        records = csv.strip().split("\r\n")
+        self.assertEqual(91, len(records))
+
+    def test_execute_mdx_csv_with_calculated_member_use_blob(self):
+        # MDX Query with calculated MEMBER
+        mdx = MdxBuilder.from_cube(self.cube_name).with_member(CalculatedMember.lookup_attribute(
+            self.dimension_names[1],
+            self.dimension_names[1],
+            "Calculated Member",
+            self.dimension_names[0],
+            "Attr3")) \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0])) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(self.dimension_names[1], "Calculated Member")))
+
+        csv = self.tm1.cubes.cells.execute_mdx_csv(mdx, use_blob=True, )
+
+        # check header
+        header = csv.split('\r\n')[0]
+        self.assertEqual(
+            ",".join(self.dimension_names[0:2] + ["Value"]),
+            # ignore double quote in comparison
+            header.replace('"', ''))
+
+        # check coordinates
+        records = csv.replace('"', '').split('\r\n')[1:]
+        coordinates = {tuple(record.split(',')[0:2])
+                       for record
+                       in records if record != '' and records[4] != 0}
+
+        # check number of coordinates (with values)
+        self.assertEqual(len(coordinates), 1000)
+
+        # Check if retrieved values are equal to attribute value
+        values = [float(record.split(',')[2])
+                  for record
+                  in records if record != ""]
+        for value in values:
+            self.assertEqual(value, 3)
+
     def test_execute_mdx_elements_value_dict(self):
         mdx = MdxBuilder.from_cube(self.cube_name) \
             .rows_non_empty() \
@@ -2269,6 +2696,100 @@ class TestCellService(unittest.TestCase):
 
         pivot = self.tm1.cubes.cells.execute_mdx_dataframe_pivot(mdx=mdx)
         self.assertEqual(pivot.shape, (7, 5 * 5))
+
+    @skip_if_no_pandas
+    def test_execute_mdx_dataframe_use_blob(self):
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .rows_non_empty() \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0])) \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1])) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2]))
+        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, use_blob=True)
+
+        # check type
+        self.assertIsInstance(df, pd.DataFrame)
+
+        # check coordinates in df are equal to target coordinates
+        coordinates = {
+            tuple(row)
+            for row
+            in df[[*self.dimension_names]].values}
+        self.assertEqual(
+            len(coordinates),
+            len(self.target_coordinates))
+        self.assertTrue(coordinates.issubset(self.target_coordinates))
+
+        # check if total values are equal
+        values = df[["Value"]].values
+        self.assertEqual(
+            self.total_value,
+            sum(values))
+
+    @skip_if_no_pandas
+    def test_execute_mdx_dataframe_use_blob_na_element_name(self):
+        attribute_dimension = "}ElementAttributes_" + self.dimension_names[0]
+        query = MdxBuilder.from_cube(attribute_dimension)
+        query.add_hierarchy_set_to_column_axis(MdxHierarchySet.member(f"[{attribute_dimension}].[NA]"))
+        query.add_hierarchy_set_to_column_axis(MdxHierarchySet.member(f"[{self.dimension_names[0]}].[Element 1]"))
+
+        df = self.tm1.cubes.cells.execute_mdx_dataframe(query, use_blob=True)
+        self.assertEqual(
+            [["NA", "Element 1", 4.0]],
+            df.values.tolist())
+
+    @skip_if_no_pandas
+    def test_execute_mdx_dataframe_use_blob_column_only(self):
+        mdx = MdxBuilder.from_cube(self.cube_name)
+        mdx.columns_non_empty()
+        mdx.add_hierarchy_set_to_column_axis(MdxHierarchySet.all_members(
+            self.dimension_names[0],
+            self.dimension_names[0]))
+        mdx.add_hierarchy_set_to_column_axis(MdxHierarchySet.all_members(
+            self.dimension_names[1],
+            self.dimension_names[1]))
+        mdx.add_hierarchy_set_to_column_axis(MdxHierarchySet.all_members(
+            self.dimension_names[2],
+            self.dimension_names[2]))
+
+        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, use_blob=True)
+
+        # check type
+        self.assertIsInstance(df, pd.DataFrame)
+
+        # check coordinates in df are equal to target coordinates
+        coordinates = {
+            tuple(row)
+            for row
+            in df[[*self.dimension_names]].values}
+        self.assertEqual(
+            len(coordinates),
+            len(self.target_coordinates))
+        self.assertTrue(coordinates.issubset(self.target_coordinates))
+
+        # check if total values are equal
+        values = df[["Value"]].values
+        self.assertEqual(
+            self.total_value,
+            sum(values))
+
+    def test_execute_mdx_dataframe_use_blob_with_top_skip(self):
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.tm1_subset_all(self.dimension_names[0])) \
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(self.dimension_names[1], "Element3"))) \
+            .where(Member.of(self.dimension_names[2], "Element3")) \
+            .to_mdx()
+
+        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx=mdx, top=1, skip=2, use_blob=True, skip_zeros=False)
+        self.assertEqual(len(df), 1)
+
+        expected_df = pd.DataFrame({
+            'TM1py_Tests_Cell_Dimension1': {0: 'Element 3'},
+            'TM1py_Tests_Cell_Dimension2': {0: 'Element 3'},
+            'Value': {0: 1.0}})
+        self.assertEqual(expected_df.to_csv(), df.to_csv())
 
     def test_execute_mdx_cellcount(self):
         mdx = MdxBuilder.from_cube(self.cube_name) \
@@ -2719,6 +3240,60 @@ class TestCellService(unittest.TestCase):
         # check if sum of retrieved values is sum of written values
         self.assertEqual(self.total_value, sum(values))
 
+    def test_execute_view_csv_use_blob(self):
+        csv = self.tm1.cubes.cells._execute_view_csv_use_blob(
+            top=None,
+            skip=None,
+            skip_zeros=True,
+            skip_consolidated_cells=False,
+            skip_rule_derived_cells=False,
+            value_separator=",",
+            cube_name=self.cube_name,
+            view_name=self.view_name,
+            quote_character='')
+
+        # check type
+        self.assertIsInstance(csv, str)
+        records = csv.split('\r\n')[1:]
+        coordinates = {tuple(record.split(',')[0:3]) for record in records if record != '' and records[4] != 0}
+
+        # check number of coordinates (with values)
+        self.assertEqual(len(coordinates), len(self.target_coordinates))
+
+        # check if coordinates are the same
+        self.assertTrue(coordinates.issubset(self.target_coordinates))
+        values = [float(record.split(',')[3]) for record in records if record != '']
+
+        # check if sum of retrieved values is sum of written values
+        self.assertEqual(self.total_value, sum(values))
+
+    def test_execute_view_csv_mdx_view_use_blob(self):
+        csv = self.tm1.cubes.cells._execute_view_csv_use_blob(
+            top=None,
+            skip=None,
+            skip_zeros=True,
+            skip_consolidated_cells=False,
+            skip_rule_derived_cells=False,
+            value_separator=",",
+            cube_name=self.cube_name,
+            view_name=self.mdx_view_name,
+            quote_character='')
+
+        # check type
+        self.assertIsInstance(csv, str)
+        records = csv.split('\r\n')[1:]
+        coordinates = {tuple(record.split(',')[0:3]) for record in records if record != '' and records[4] != 0}
+
+        # check number of coordinates (with values)
+        self.assertEqual(len(coordinates), len(self.target_coordinates))
+
+        # check if coordinates are the same
+        self.assertTrue(coordinates.issubset(self.target_coordinates))
+        values = [float(record.split(',')[3]) for record in records if record != '']
+
+        # check if sum of retrieved values is sum of written values
+        self.assertEqual(self.total_value, sum(values))
+
     def test_execute_view_elements_value_dict(self):
         values = self.tm1.cubes.cells.execute_view_elements_value_dict(
             cube_name=self.cube_name,
@@ -2775,6 +3350,43 @@ class TestCellService(unittest.TestCase):
         df = self.tm1.cubes.cells.execute_view_dataframe(
             cube_name=self.cube_name,
             view_name=self.view_name,
+            top=2,
+            private=False)
+
+        # check row count
+        self.assertTrue(len(df) == 2)
+
+        # check type
+        self.assertIsInstance(df, pd.DataFrame)
+
+    @skip_if_no_pandas
+    def test_execute_view_dataframe_use_blob(self):
+        df = self.tm1.cubes.cells.execute_view_dataframe(
+            cube_name=self.cube_name,
+            view_name=self.view_name,
+            use_blob=True,
+            private=False)
+
+        # check type
+        self.assertIsInstance(df, pd.DataFrame)
+
+        # check coordinates
+        coordinates = {tuple(row)
+                       for row
+                       in df[[*self.dimension_names]].values}
+        self.assertEqual(len(coordinates), len(self.target_coordinates))
+        self.assertTrue(coordinates.issubset(self.target_coordinates))
+
+        # check values
+        values = df[["Value"]].values
+        self.assertEqual(self.total_value, sum(values))
+
+    @skip_if_no_pandas
+    def test_execute_view_dataframe_with_top_argument_use_blob(self):
+        df = self.tm1.cubes.cells.execute_view_dataframe(
+            cube_name=self.cube_name,
+            view_name=self.view_name,
+            use_blob=True,
             top=2,
             private=False)
 
@@ -3126,7 +3738,7 @@ class TestCellService(unittest.TestCase):
             self.tm1.cells.clear(cube=self.cube_name, **kwargs)
 
         self.assertIn(
-            '\\"NotExistingElement\\" : member not found (rte 81)',
+            '\\"NotExistingElement\\" :',
             str(e.exception.message))
 
     @skip_if_insufficient_version(version="11.7")
@@ -3140,7 +3752,7 @@ class TestCellService(unittest.TestCase):
             self.tm1.cells.clear_with_mdx(cube=self.cube_name, mdx=mdx)
 
         self.assertIn(
-            '\\"NotExistingElement\\" : member not found (rte 81)',
+            '\\"NotExistingElement\\" :',
             str(e.exception.message))
 
     def test_clear_with_mdx_unsupported_version(self):
@@ -3486,6 +4098,7 @@ class TestCellService(unittest.TestCase):
         cls.remove_string_cube()
         cls.remove_cube_with_rules()
         cls.remove_cube_with_consolidations()
+        cls.remove_cube_with_five_dimensions()
         for dimension_name in cls.dimension_names:
             cls.tm1.dimensions.delete(dimension_name)
         cls.remove_assets_for_relative_proportional_spread()

@@ -27,7 +27,7 @@ class TestSecurityService(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """
-        Establishes a connection to TM1 and creates TM! objects to use across all tests
+        Establishes a connection to TM1 and creates TM1 objects to use across all tests
         """
 
         # Connection to TM1

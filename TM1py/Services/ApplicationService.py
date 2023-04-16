@@ -229,7 +229,7 @@ class ApplicationService(ObjectService):
         else:
             url = "/api/v1/Contents('Applications')" + mid + "/" + contents
             response = self._rest.POST(url, application.body, **kwargs)
-            
+
         return response
 
     def update_or_create_document_from_file(self, path: str, name: str,
@@ -245,10 +245,10 @@ class ApplicationService(ObjectService):
 
         if self.exists(path=path, application_type=ApplicationTypes.DOCUMENT, name=name, private=private):
             response = self.update_document_from_file(path_to_file=path_to_file, application_path=path,
-                                                    application_name=name, private=private)
+                                                      application_name=name, private=private)
         else:
             response = self.create_document_from_file(path_to_file=path_to_file, application_path=path,
-                                                    application_name=name, private=private)
+                                                      application_name=name, private=private)
 
         return response
 
@@ -290,7 +290,7 @@ class ApplicationService(ObjectService):
         """
         with open(path_to_file, 'rb') as file:
             application = DocumentApplication(path=application_path, name=application_name, content=file.read())
-            return self.create(application=application, private=private, **kwargs)            
+            return self.create(application=application, private=private, **kwargs)
 
     def update_document_from_file(self, path_to_file: str, application_path: str, application_name: str,
                                   private: bool = False, **kwargs) -> Response:

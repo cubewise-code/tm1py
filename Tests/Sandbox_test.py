@@ -20,17 +20,26 @@ class TestSandboxMethods(unittest.TestCase):
             sandbox.body)
 
     def test_from_json_include_in_sandbox_dimension_true(self):
-        sandbox = Sandbox.from_json('{"Name": "sandbox", "IncludeInSandboxDimension": true}')
+        sandbox = Sandbox.from_dict({
+            "Name": "sandbox",
+            "IncludeInSandboxDimension": True,
+            "IsLoaded": True,
+            "IsActive": False,
+            "IsQueued": False})
 
         self.assertEqual(sandbox.name, "sandbox")
         self.assertTrue(sandbox._include_in_sandbox_dimension)
 
     def test_from_json_include_in_sandbox_dimension_false(self):
-        sandbox = Sandbox.from_json('{"Name": "sandbox", "IncludeInSandboxDimension": true}')
+        sandbox = Sandbox.from_dict({
+            "Name": "sandbox",
+            "IncludeInSandboxDimension": False,
+            "IsLoaded": True,
+            "IsActive": False,
+            "IsQueued": False})
 
-        self.assertEqual(
-            '{"Name": "sandbox", "IncludeInSandboxDimension": true}',
-            sandbox.body)
+        self.assertEqual(sandbox.name, "sandbox")
+        self.assertFalse(sandbox._include_in_sandbox_dimension)
 
     def test_change_name(self):
         sandbox = Sandbox("sandbox", True)

@@ -33,7 +33,7 @@ class SandboxService(ObjectService):
 
         :return: List of TM1py.Sandbox instances
         """
-        url = "/api/v1/Sandboxes?$select=Name,IncludeInSandboxDimension"
+        url = "/api/v1/Sandboxes?$select=Name,IncludeInSandboxDimension,IsLoaded,IsActive,IsQueued"
         response = self._rest.GET(url, **kwargs)
         sandboxes = [
             Sandbox.from_dict(sandbox_as_dict=sandbox)
