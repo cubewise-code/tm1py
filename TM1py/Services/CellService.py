@@ -1174,7 +1174,6 @@ class CellService(ObjectService):
             process.add_variable(name=variable, variable_type='String')
 
         prolog_procedure = f"""
-        SetOutputCharacterSet('{file_name}.blb','TM1CS_UTF8');
         {self.generate_enable_sandbox_ti(sandbox_name)}
         ViewExtractSkipCalcsSet('{cube}', '{view_name}', {'1' if skip_consolidated_cells else '0'});
         ViewExtractSkipRuleValuesSet('{cube}', '{view_name}', {'1' if skip_rule_derived_cells else '0'});
@@ -1187,7 +1186,10 @@ class CellService(ObjectService):
 
         # ignore some variable in file and output variables ordered by their ordinal e.g. v2,v4,v5,v11
         comma_sep_variables = ",".join(sorted(set(variables) - set(skip_variables), key=lambda v: int(v[1:])))
-        data_procedure_pre = """
+        data_procedure_pre = f"""
+        IF (nRecord = 0);
+          SetOutputCharacterSet('{file_name}.blb','TM1CS_UTF8');
+        ENDIF;
         nRecord = nRecord + 1;
         """
         if header_line:
