@@ -78,7 +78,7 @@ def httpmethod(func):
 
                 # all wait times consumed and still no 200
                 if response.status_code not in [200, 201]:
-                    if kwargs.get("cancel_at_timeout", False):
+                    if kwargs.get("cancel_at_timeout", self._cancel_at_timeout):
                         self.cancel_async_operation(async_id)
                     raise TM1pyTimeout(method=func.__name__, url=url, timeout=kwargs['timeout'])
 
@@ -92,16 +92,16 @@ def httpmethod(func):
             return response
 
         except Timeout:
-            if kwargs.get("cancel_at_timeout", False):
+            if kwargs.get("cancel_at_timeout", self._cancel_at_timeout):
                 self.cancel_running_operation()
-            raise TM1pyTimeout(method=func.__name__, url=url, timeout=kwargs['timeout'])
+            raise TM1pyTimeout(method=func.__name__, url=url, timeout=kwargs.get('timeout', self._timeout))
 
         except ConnectionError as e:
             # cater for issue in requests library: https://github.com/psf/requests/issues/5430
             if re.search('Read timed out', str(e), re.IGNORECASE):
                 if kwargs.get("cancel_at_timeout", False):
                     self.cancel_running_operation()
-                raise TM1pyTimeout(method=func.__name__, url=url, timeout=kwargs['timeout'])
+                raise TM1pyTimeout(method=func.__name__, url=url, timeout=kwargs.get('timeout', self._timeout))
 
     return wrapper
 
@@ -153,6 +153,7 @@ class RestService:
         :param verify: path to .cer file or 'True' / True / 'False' / False (if no ssl verification is required)
         :param logging: boolean - switch on/off verbose http logging into sys.stdout
         :param timeout: Float - Number of seconds that the client will wait to receive the first byte.
+        :param cancel_at_timeout: Abort operation in TM1 when timeout is reached
         :param async_requests_mode: changes internal REST execution mode to avoid 60s timeout on IBM cloud
         :param tcp_keepalive: maintain the TCP connection all the time, users should choose either async_requests_mode or tcp_keepalive to run a long-run request
         If both are True, use async_requests_mode by default
@@ -178,6 +179,7 @@ class RestService:
         self._port = kwargs.get('port', None)
         self._verify = False
         self._timeout = None if kwargs.get('timeout', None) is None else float(kwargs.get('timeout'))
+        self._cancel_at_timeout = kwargs.get('cancel_at_timeout', False)
         self._async_requests_mode = self.translate_to_boolean(kwargs.get('async_requests_mode', False))
         # Set tcp_keepalive to False explicitly to turn it off when async_requests_mode is enabled
         self._tcp_keepalive = self.translate_to_boolean(kwargs.get('tcp_keepalive', False)) if self._async_requests_mode is not True else False

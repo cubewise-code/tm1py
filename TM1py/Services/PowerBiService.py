@@ -42,7 +42,8 @@ class PowerBiService:
                               member_selection: Iterable = None,
                               skip_consolidations: bool = True, attributes: Iterable = None,
                               skip_parents: bool = False, level_names=None,
-                              parent_attribute: str = None, skip_weights=True) -> 'pd.DataFrame':
+                              parent_attribute: str = None, skip_weights=True, use_blob=False,
+                              **kwargs) -> 'pd.DataFrame':
         """
 
         :param dimension_name: Name of the dimension
@@ -53,6 +54,9 @@ class PowerBiService:
         :param level_names: List of labels for parent columns. If None use level names from TM1.
         :param skip_parents: Boolean Flag to skip parent columns.
         :param parent_attribute: Attribute to be displayed in parent columns. If None, parent name is used.
+        :param skip_weights: include weight columns
+        :param use_blob: Better performance on large sets and lower memory footprint in any case. Requires admin permissions
+
         :return: pandas DataFrame
         """
         if not skip_weights and skip_parents:
@@ -61,4 +65,5 @@ class PowerBiService:
         return self.elements.get_elements_dataframe(
             dimension_name=dimension_name, hierarchy_name=hierarchy_name, elements=member_selection,
             skip_consolidations=skip_consolidations, attributes=attributes, skip_parents=skip_parents,
-            level_names=level_names, parent_attribute=parent_attribute, skip_weights=skip_weights)
+            level_names=level_names, parent_attribute=parent_attribute, skip_weights=skip_weights,
+            use_blob=use_blob, **kwargs)
