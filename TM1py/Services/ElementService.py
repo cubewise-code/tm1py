@@ -87,7 +87,7 @@ class ElementService(ObjectService):
                                skip_consolidations: bool = True, attributes: Iterable[str] = None,
                                attribute_column_prefix: str = "", skip_parents: bool = False,
                                level_names: List[str] = None, parent_attribute: str = None,
-                               skip_weights: bool = False) -> 'pd.DataFrame':
+                               skip_weights: bool = False, use_blob: bool=False, **kwargs) -> 'pd.DataFrame':
         """
 
         :param dimension_name: Name of the dimension. Can be derived from elements MDX
@@ -100,6 +100,7 @@ class ElementService(ObjectService):
         :param skip_parents: Boolean Flag to skip parent columns.
         :param parent_attribute: Attribute to be displayed in parent columns. If None, parent name is used.
         :param skip_weights: include weight columns
+        :param use_blob: Up to 40% better performance and lower memory footprint in any case. Requires admin permissions
         :return: pandas DataFrame
         """
 
@@ -215,7 +216,7 @@ class ElementService(ObjectService):
         """
 
         cell_service = self._get_cell_service()
-        df_data = cell_service.execute_mdx_dataframe_shaped(mdx)
+        df_data = cell_service.execute_mdx_dataframe(mdx, shaped=True, use_blob=use_blob, **kwargs)
 
         # override columns. hierarchy name with dimension and prefix attributes
         column_renaming = dict()

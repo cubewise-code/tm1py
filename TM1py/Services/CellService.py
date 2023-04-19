@@ -1978,11 +1978,11 @@ class CellService(ObjectService):
         :param shaped: preserve shape of view/mdx in data frame
         :return: Pandas Dataframe
         """
-        if use_blob:
-            # necessary to assure column order in line with cube view
-            if shaped:
-                skip_zeros = False
+        # necessary to assure column order in line with cube view
+        if shaped:
+            skip_zeros = False
 
+        if use_blob:
             raw_csv = self.execute_mdx_csv(
                 mdx=mdx,
                 top=top,
@@ -2228,11 +2228,11 @@ class CellService(ObjectService):
         :param use_blob: Has 40% better performance and lower memory footprint in any case. Requires admin permissions.
         :return: Pandas Dataframe
         """
-        if use_blob:
-            # necessary to assure column order in line with cube view
-            if shaped:
-                skip_zeros = False
+        # necessary to assure column order in line with cube view
+        if shaped:
+            skip_zeros = False
 
+        if use_blob:
             raw_csv = self.execute_view_csv(
                 cube_name=cube_name,
                 view_name=view_name,
@@ -3670,7 +3670,7 @@ class CellService(ObjectService):
                     f"Failed writing to blob with TI. "
                     f"Status: '{status}' log: '{error_log_file}'")
 
-            return file_service.get(file_name).decode("UTF-8")
+            return file_service.get(file_name).decode("UTF-8-sig")
 
         finally:
             with suppress(Exception):
