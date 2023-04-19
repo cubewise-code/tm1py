@@ -345,7 +345,6 @@ class TestPowerBiService(unittest.TestCase):
             tuple(row1.values[0])
         )
 
-
     @skip_if_no_pandas
     def test_get_member_properties_default(self):
         members = self.tm1.power_bi.get_member_properties(

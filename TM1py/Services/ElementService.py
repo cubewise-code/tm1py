@@ -216,7 +216,11 @@ class ElementService(ObjectService):
         """
 
         cell_service = self._get_cell_service()
-        df_data = cell_service.execute_mdx_dataframe(mdx, shaped=True, use_blob=use_blob, **kwargs)
+        # responses are similar but not equivalent. Therefor only use execute_mdx_dataframe when use_blob=True
+        if use_blob:
+            df_data = cell_service.execute_mdx_dataframe(mdx, shaped=True, use_blob=True, **kwargs)
+        else:
+            df_data = cell_service.execute_mdx_dataframe_shaped(mdx, **kwargs)
 
         # override columns. hierarchy name with dimension and prefix attributes
         column_renaming = dict()
