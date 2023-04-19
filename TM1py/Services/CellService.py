@@ -3784,7 +3784,7 @@ class CellService(ObjectService):
                     f"Failed writing to blob with TI. "
                     f"Status: '{status}' log: '{error_log_file}'")
 
-            return file_service.get(file_name).decode("UTF-8")
+            return file_service.get(file_name).decode("UTF-8-sig")
 
         finally:
             with suppress(Exception):
