@@ -880,6 +880,8 @@ class CellService(ObjectService):
                 precision=precision,
                 skip_non_updateable=skip_non_updateable,
                 measure_dimension_elements=measure_dimension_elements,
+                dimensions=dimensions,
+                allow_spread=allow_spread,
                 **kwargs)
 
         if use_blob:
@@ -948,6 +950,8 @@ class CellService(ObjectService):
                                       sandbox_name: str = None, precision: int = None,
                                       skip_non_updateable: bool = False,
                                       measure_dimension_elements: Dict = None, is_attribute_cube: bool = None,
+                                      dimensions: List = None,
+                                      allow_spread: bool = False,
                                       **kwargs):
         """
         Writes data back to TM1 via an unbound TI process
@@ -960,6 +964,7 @@ class CellService(ObjectService):
         :param measure_dimension_elements: pass dictionary of measure elements and their types to improve performance
         When all written values are numeric you can pass a defaultdict with default key: 'Numeric'
         :param is_attribute_cube bool or None
+        :param allow_spread: allow TI process in use_blob or use_ti to use CellPutProportionalSpread on C elements
         :param kwargs:
         :return: Success: bool, Messages: list, ChangeSet: None
         """
@@ -990,7 +995,9 @@ class CellService(ObjectService):
                 increment=increment,
                 measure_dimension_elements=measure_dimension_elements,
                 precision=precision,
-                skip_non_updateable=skip_non_updateable)
+                skip_non_updateable=skip_non_updateable,
+                dimensions=dimensions,
+                allow_spread=allow_spread)
 
         chunk = list()
 
@@ -1325,7 +1332,9 @@ class CellService(ObjectService):
     @staticmethod
     def _build_cell_update_statements(cube_name: str, cellset_as_dict: Dict, increment: bool,
                                       measure_dimension_elements: Dict, precision: int = None,
-                                      skip_non_updateable: bool = False):
+                                      skip_non_updateable: bool = False,
+                                      dimensions: List = None,
+                                      allow_spread: bool = False):
         statements = list()
 
         for coordinates, value in cellset_as_dict.items():
@@ -1349,6 +1358,7 @@ class CellService(ObjectService):
             # by default assume numeric, to trigger minor errors on write operations to C elements
             else:
                 function_str = "CellIncrementN(" if increment else "CellPutN("
+
                 # number strings must not exceed float range
                 if isinstance(value, str):
                     try:
@@ -1374,14 +1384,34 @@ class CellService(ObjectService):
                 cell_is_updateable_pre = f"IF(CellIsUpdateable('{cube_name}', {comma_separated_elements})=1,"
                 cell_is_updateable_post = ",0);"
 
+            if allow_spread:
+                any_c_element_in_write = '% \n'.join([f"ElementType('{dim}', '', '{ele}') @= 'C'" for dim, ele in
+                                                      zip(dimensions, coordinates)])
+
+                consolidated_spread_check_start = f"""
+                                IF({any_c_element_in_write});
+                                    CellPutProportionalSpread({value_str},'{cube_name}',{comma_separated_elements});
+                                ELSE;
+                                """
+
+                consolidated_spread_check_end = "ENDIF;"
+            else:
+                consolidated_spread_check_start = ''
+                consolidated_spread_check_end = ''
+
+
+
             statement = "".join([
                 cell_is_updateable_pre,
+                consolidated_spread_check_start,
                 function_str,
                 value_str,
                 f",'{cube_name}',",
                 comma_separated_elements,
                 ")",
-                cell_is_updateable_post])
+                cell_is_updateable_post,
+                consolidated_spread_check_end
+            ])
 
             statements.append(statement)
 
