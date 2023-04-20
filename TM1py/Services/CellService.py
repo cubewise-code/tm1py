@@ -627,7 +627,8 @@ class CellService(ObjectService):
                         use_ti: bool = False, use_blob: bool = False, use_changeset: bool = False,
                         precision: int = None,
                         skip_non_updateable: bool = False, measure_dimension_elements: Dict = None,
-                        sum_numeric_duplicates: bool = True, remove_blob: bool = True, **kwargs) -> str:
+                        sum_numeric_duplicates: bool = True, remove_blob: bool = True, allow_spread: bool = False,
+                        **kwargs) -> str:
         """
         Function expects same shape as `execute_mdx_dataframe` returns.
         Column order must match dimensions in the target cube with an additional column for the values.
@@ -650,6 +651,7 @@ class CellService(ObjectService):
         When all written values are numeric you can pass a default dict with default key 'Numeric'
         :param sum_numeric_duplicates: Aggregate numerical values for duplicated intersections
         :param remove_blob: remove blob file after writing with use_blob=True
+        :param allow_spread: allow TI process in use_blob or use_ti to use CellPutProportionalSpread on C elements
         :return: changeset or None
         """
         if not isinstance(data, pd.DataFrame):
@@ -677,6 +679,7 @@ class CellService(ObjectService):
                           precision=precision,
                           skip_non_updateable=skip_non_updateable,
                           measure_dimension_elements=measure_dimension_elements,
+                          allow_spread=allow_spread,
                           **kwargs)
 
     @manage_transaction_log
@@ -836,7 +839,7 @@ class CellService(ObjectService):
               deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
               sandbox_name: str = None, use_ti: bool = False, use_blob: bool = False, use_changeset: bool = False,
               precision: int = None, skip_non_updateable: bool = False, measure_dimension_elements: Dict = None,
-              remove_blob: bool = True, **kwargs) -> Optional[str]:
+              remove_blob: bool = True, allow_spread:bool=False, **kwargs) -> Optional[str]:
         """ Write values to a cube
 
         Same signature as `write_values` method, but faster since it uses `write_values_through_cellset`
@@ -862,6 +865,7 @@ class CellService(ObjectService):
         performance when `use_ti` is `True`.
         When all written values are numeric you can pass a default dict with default key 'Numeric'
         :param remove_blob: remove blob file after writing with use_blob=True
+        :param allow_spread: allow TI process in use_blob or use_ti to use CellPutProportionalSpread on C elements
         :return: changeset or None
         """
 
@@ -889,6 +893,7 @@ class CellService(ObjectService):
                 skip_non_updateable=skip_non_updateable,
                 dimensions=dimensions,
                 remove_blob=remove_blob,
+                allow_spread=allow_spread,
                 **kwargs)
 
         return self.write_through_cellset(cube_name, cellset_as_dict, dimensions, increment, deactivate_transaction_log,
@@ -1021,7 +1026,7 @@ class CellService(ObjectService):
     @require_pandas
     def write_through_blob(self, cube_name: str, cellset_as_dict: dict, increment: bool = False,
                            sandbox_name: str = None, skip_non_updateable: bool = False,
-                           remove_blob=True, dimensions: str = None, **kwargs):
+                           remove_blob=True, dimensions: str = None, allow_spread: bool=False, **kwargs):
         """
         Writes data back to TM1 via an unbound TI process having an uploaded CSV as data source
         :param cube_name: str
@@ -1031,6 +1036,7 @@ class CellService(ObjectService):
         :param skip_non_updateable skip cells that are not updateable (e.g. rule derived or consolidated)
         :param remove_blob: choose False to persist blob after write. Can be helpful for troubleshooting.
         :param dimensions: optional. Dimension names in their natural order. Will speed up the execution!
+        :param allow_spread: allow TI process in use_blob or use_ti to use CellPutProportionalSpread on C elements.
         :param kwargs:
         :return: Success: bool, Messages: list, ChangeSet: None
         """
@@ -1068,7 +1074,7 @@ class CellService(ObjectService):
                 increment=increment,
                 skip_non_updateable=skip_non_updateable,
                 sandbox_name=sandbox_name,
-                **kwargs)
+                allow_spread=allow_spread)
 
             success, status, log_file = process_service.execute_process_with_return(process=process, **kwargs)
             if not success:
@@ -1082,7 +1088,8 @@ class CellService(ObjectService):
                 file_service.delete(file_name=file_name)
 
     def _build_blob_to_cube_process(self, cube_name: str, process_name: str, blob_filename: str, dimensions: List[str],
-                                    increment: bool, skip_non_updateable: bool, sandbox_name: str) -> Process:
+                                    increment: bool, skip_non_updateable: bool, sandbox_name: str,
+                                    allow_spread: bool) -> Process:
         dataload_process = Process(
             name=process_name,
             datasource_type='ASCII',
@@ -1102,10 +1109,8 @@ class CellService(ObjectService):
         """
 
         # Create variables as all String
-        dimension_variables = [
-            f"v{n}"
-            for n
-            in range(1, len(dimensions) + 1)]
+        dimension_variables = [f"v{n}" for n in range(1, len(dimensions) + 1)]
+
         for variable in dimension_variables:
             dataload_process.add_variable(name=variable, variable_type='String')
         variable_cube_measure = dimension_variables[-1]
@@ -1125,28 +1130,52 @@ class CellService(ObjectService):
             cell_is_updateable_post = ""
 
         # Define TI write function based on parameter 'increment' and nature of the cube
-        if cube_name.lower().startswith("}elementattributes_"):
-            function_str = "CellPut"
-        else:
-            function_str = "CellIncrement" if increment else "CellPut"
+
+        numeric_function_str = "CellPutN" if cube_name.lower().startswith("}elementattributes_") else  "CellIncrementN"
 
         # Define input statement depending on measure element's type: numeric or string
-        # For Consolidated non-existing-element attempt to write , to trigger error
-        input_statement = f"""
-            If( 
-                ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'N' %
-                ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'AN' %
-                ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'C' % 
-                ElementType('{cube_measure}', '', {variable_cube_measure}) @= '' );
-                    nValue = StringToNumber({value_variable});
-                    {function_str}N(nValue,'{cube_name}',{comma_sep_var_elements});
-            ElseIf( 
+        # For non-existing-element attempt to write to trigger error
+        # For consolidated elements spread if allowed else let fail.
+
+        measure_type_equal = f"ElementType('{cube_measure}', '', {variable_cube_measure}) @= "
+        n_write_types = ["'N'", "'AN'", "'C'", "''"]
+        numeric_write_condition = '% \n'.join([measure_type_equal + possible_type for possible_type in
+                                               n_write_types])
+
+        any_c_element_in_write = '% \n'.join([f"ElementType('{dim}', '', {ele}) @= 'C'" for dim, ele in
+                                              zip(dimensions, dimension_variables)])
+
+        numeric_write_statement_with_spread = f"""
+                nValue = StringToNumber({value_variable});
+                IF({any_c_element_in_write});
+                    CellPutProportionalSpread(nValue,'{cube_name}',{comma_sep_var_elements});
+                ELSE;
+                    {numeric_function_str}(nValue,'{cube_name}',{comma_sep_var_elements});
+                ENDIF;
+                """
+
+        numeric_write_statement_without_spread = f"""
+                nValue = StringToNumber({value_variable});
+                {numeric_function_str}(nValue,'{cube_name}',{comma_sep_var_elements});
+                """
+
+        string_write_condition = f"""
                 ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'S' % 
                 ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'AS' % 
-                ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'AA');
-                    sValue = {value_variable};
-                    CellPutS(sValue,'{cube_name}',{comma_sep_var_elements});
-            EndIf;"""
+                ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'AA'
+                """
+
+        string_write_statement = f"""
+                sValue = {value_variable};
+                CellPutS(sValue,'{cube_name}',{comma_sep_var_elements}); 
+                """
+
+        input_statement = f"""
+        If({numeric_write_condition});
+            {numeric_write_statement_with_spread if allow_spread else numeric_write_statement_without_spread}
+        ElseIf({string_write_condition});
+            {string_write_statement}
+        EndIf;"""
 
         # Define Data section
         data_statement = cell_is_updateable_pre + input_statement + cell_is_updateable_post
