@@ -839,7 +839,7 @@ class CellService(ObjectService):
               deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
               sandbox_name: str = None, use_ti: bool = False, use_blob: bool = False, use_changeset: bool = False,
               precision: int = None, skip_non_updateable: bool = False, measure_dimension_elements: Dict = None,
-              remove_blob: bool = True, allow_spread:bool=False, **kwargs) -> Optional[str]:
+              remove_blob: bool = True, allow_spread: bool=False, **kwargs) -> Optional[str]:
         """ Write values to a cube
 
         Same signature as `write_values` method, but faster since it uses `write_values_through_cellset`
@@ -989,6 +989,8 @@ class CellService(ObjectService):
                 skip_non_updateable=skip_non_updateable)
 
         else:
+            if not dimensions and allow_spread:
+                dimensions = self.get_dimension_names_for_writing(cube_name=cube_name, **kwargs)
             statements = self._build_cell_update_statements(
                 cube_name=cube_name,
                 cellset_as_dict=cellset_as_dict,

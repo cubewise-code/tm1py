@@ -477,6 +477,38 @@ class TestCellService(unittest.TestCase):
 
         self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [1234])
 
+    def test_write_use_blob_allow_spread(self):
+        cells = {("Element 1", "Element4", "Element9"): 1,
+                 ("Element 1", "Element4", "TOTAL_TM1py_Tests_Cell_Dimension3_With_Consolidations"): 54321}
+        try:
+            self.tm1.cubes.cells.write(self.cube_with_consolidations_name, cells, use_blob=True, allow_spread=True)
+        except (TM1pyWriteFailureException, TM1pyWritePartialFailureException) as ex:
+            for log_file in ex.error_log_files:
+                print(self.tm1.processes.get_error_log_file_content(log_file))
+        query = MdxBuilder.from_cube(self.cube_with_consolidations_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimensions_with_consolidations_names[0]}].[Element 1]",
+            f"[{self.dimensions_with_consolidations_names[1]}].[Element 4]",
+            f"[{self.dimensions_with_consolidations_names[2]}].[TOTAL_TM1py_Tests_Cell_Dimension3_With_Consolidations]")
+
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [54321])
+
+    def test_write_use_ti_allow_spread(self):
+        cells = {("Element 1", "Element4", "Element9"): 1,
+                 ("Element 1", "Element4", "TOTAL_TM1py_Tests_Cell_Dimension3_With_Consolidations"): 54321}
+        try:
+            self.tm1.cubes.cells.write(self.cube_with_consolidations_name, cells, use_ti=True, allow_spread=True)
+        except (TM1pyWriteFailureException, TM1pyWritePartialFailureException) as ex:
+            for log_file in ex.error_log_files:
+                print(self.tm1.processes.get_error_log_file_content(log_file))
+        query = MdxBuilder.from_cube(self.cube_with_consolidations_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimensions_with_consolidations_names[0]}].[Element 1]",
+            f"[{self.dimensions_with_consolidations_names[1]}].[Element 4]",
+            f"[{self.dimensions_with_consolidations_names[2]}].[TOTAL_TM1py_Tests_Cell_Dimension3_With_Consolidations]")
+
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), [54321])
+
     def test_write_use_ti_skip_non_updateable(self):
         cells = CaseAndSpaceInsensitiveTuplesDict()
         cells["Element 1", "Element4", "TOTAL_" + self.dimensions_with_consolidations_names[2]] = 5
