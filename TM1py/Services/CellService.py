@@ -1140,7 +1140,10 @@ class CellService(ObjectService):
 
         # Define TI write function based on parameter 'increment' and nature of the cube
 
-        numeric_function_str = "CellPutN" if cube_name.lower().startswith("}elementattributes_") else  "CellIncrementN"
+        if cube_name.lower().startswith("}elementattributes_"):
+            numeric_function_str = "CellPutN"
+        else:
+            numeric_function_str = "CellIncrementN" if increment else "CellPutN"
 
         # Define input statement depending on measure element's type: numeric or string
         # For non-existing-element attempt to write to trigger error
