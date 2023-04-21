@@ -1148,39 +1148,42 @@ class CellService(ObjectService):
         # Define input statement depending on measure element's type: numeric or string
         # For non-existing-element attempt to write to trigger error
         # For consolidated elements spread if allowed else let fail.
-
         measure_type_equal = f"ElementType('{cube_measure}', '', {variable_cube_measure}) @= "
         n_write_types = ["'N'", "'AN'", "'C'", "''"]
-        numeric_write_condition = '% \n'.join([measure_type_equal + possible_type for possible_type in
-                                               n_write_types])
+        numeric_write_condition = '% \n'.join([
+            measure_type_equal + possible_type
+            for possible_type
+            in n_write_types])
 
-        any_c_element_in_write = '% \n'.join([f"ElementType('{dim}', '', {ele}) @= 'C'" for dim, ele in
-                                              zip(dimensions, dimension_variables)])
+        any_c_element_in_write = '% \n'.join([
+            f"ElementType('{dim}', '', {ele}) @= 'C'"
+            for dim, ele in
+            zip(dimensions, dimension_variables)])
 
         numeric_write_statement_with_spread = f"""
-                nValue = StringToNumber({value_variable});
-                IF({any_c_element_in_write});
-                    CellPutProportionalSpread(nValue,'{cube_name}',{comma_sep_var_elements});
-                ELSE;
-                    {numeric_function_str}(nValue,'{cube_name}',{comma_sep_var_elements});
-                ENDIF;
-                """
+            nValue = StringToNumber({value_variable});
+            IF({any_c_element_in_write});
+                CellPutProportionalSpread(nValue,'{cube_name}',{comma_sep_var_elements});
+            ELSE;
+                {numeric_function_str}(nValue,'{cube_name}',{comma_sep_var_elements});
+            ENDIF;
+            """
 
         numeric_write_statement_without_spread = f"""
-                nValue = StringToNumber({value_variable});
-                {numeric_function_str}(nValue,'{cube_name}',{comma_sep_var_elements});
-                """
+            nValue = StringToNumber({value_variable});
+            {numeric_function_str}(nValue,'{cube_name}',{comma_sep_var_elements});
+            """
 
         string_write_condition = f"""
-                ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'S' % 
-                ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'AS' % 
-                ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'AA'
-                """
+            ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'S' % 
+            ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'AS' % 
+            ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'AA'
+            """
 
         string_write_statement = f"""
-                sValue = {value_variable};
-                CellPutS(sValue,'{cube_name}',{comma_sep_var_elements}); 
-                """
+            sValue = {value_variable};
+            CellPutS(sValue,'{cube_name}',{comma_sep_var_elements}); 
+            """
 
         input_statement = f"""
         If({numeric_write_condition});
@@ -1338,8 +1341,7 @@ class CellService(ObjectService):
     def _build_cell_update_statements(cube_name: str, cellset_as_dict: Dict, increment: bool,
                                       measure_dimension_elements: Dict, precision: int = None,
                                       skip_non_updateable: bool = False,
-                                      dimensions: List = None,
-                                      allow_spread: bool = False):
+                                      dimensions: List = None, allow_spread: bool = False):
         statements = list()
 
         for coordinates, value in cellset_as_dict.items():
@@ -1394,17 +1396,15 @@ class CellService(ObjectService):
                                                       zip(dimensions, coordinates)])
 
                 consolidated_spread_check_start = f"""
-                                IF({any_c_element_in_write});
-                                    CellPutProportionalSpread({value_str},'{cube_name}',{comma_separated_elements});
-                                ELSE;
-                                """
+                    IF({any_c_element_in_write});
+                        CellPutProportionalSpread({value_str},'{cube_name}',{comma_separated_elements});
+                    ELSE;
+                    """
 
                 consolidated_spread_check_end = "ENDIF;"
             else:
                 consolidated_spread_check_start = ''
                 consolidated_spread_check_end = ''
-
-
 
             statement = "".join([
                 cell_is_updateable_pre,
