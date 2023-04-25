@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import functools
+import json
 import re
 import socket
 import time
@@ -7,11 +8,12 @@ import warnings
 from base64 import b64encode, b64decode
 from http.client import HTTPResponse
 from io import BytesIO
+from json import JSONDecodeError
 from typing import Union, Dict, Tuple, Optional
 
 import requests
 import urllib3
-from requests import Timeout, Response, ConnectionError
+from requests import Timeout, Response, ConnectionError, Session
 from requests.adapters import HTTPAdapter
 
 # SSO not supported for Linux
@@ -42,6 +44,7 @@ def httpmethod(func):
             url=url,
             data=data,
             encoding=encoding)
+
         # execute request
         try:
             # determine async_requests_mode
@@ -149,16 +152,16 @@ class RestService:
         :param cam_passport: String - the cam passport
         :param session_id: String - TM1SessionId e.g. q7O6e1w49AixeuLVxJ1GZg
         :param session_context: String - Name of the Application. Controls "Context" column in Arc / TM1top.
-        If None, use default: TM1py
+                If None, use default: TM1py
         :param verify: path to .cer file or 'True' / True / 'False' / False (if no ssl verification is required)
         :param logging: boolean - switch on/off verbose http logging into sys.stdout
         :param timeout: Float - Number of seconds that the client will wait to receive the first byte.
         :param cancel_at_timeout: Abort operation in TM1 when timeout is reached
         :param async_requests_mode: changes internal REST execution mode to avoid 60s timeout on IBM cloud
         :param tcp_keepalive: maintain the TCP connection all the time, users should choose either async_requests_mode or tcp_keepalive to run a long-run request
-        If both are True, use async_requests_mode by default
-        :param connection_pool_size - In a multithreaded environment, you should set this value to a
-        higher number, such as the number of threads
+                If both are True, use async_requests_mode by default
+        :param connection_pool_size - In a multi threaded environment, you should set this value to a
+                higher number, such as the number of threads
         :param integrated_login: True for IntegratedSecurityMode3
         :param integrated_login_domain: NT Domain name.
                 Default: '.' for local account.
@@ -170,6 +173,8 @@ class RestService:
                 Default: False
         :param impersonate: Name of user to impersonate
         :param re_connect_on_session_timeout: attempt to reconnect once if session is timed out
+        :param proxies: pass a dictionary with proxies e.g.
+                {'http': 'http://proxy.example.com:8080', 'https': 'http://secureproxy.example.com:8090'}
         """
         # store kwargs for future use e.g. re_connect on 401 session timeout
         self._kwargs = kwargs
@@ -182,9 +187,23 @@ class RestService:
         self._cancel_at_timeout = kwargs.get('cancel_at_timeout', False)
         self._async_requests_mode = self.translate_to_boolean(kwargs.get('async_requests_mode', False))
         # Set tcp_keepalive to False explicitly to turn it off when async_requests_mode is enabled
-        self._tcp_keepalive = self.translate_to_boolean(kwargs.get('tcp_keepalive', False)) if self._async_requests_mode is not True else False
+        self._tcp_keepalive = self.translate_to_boolean(
+            kwargs.get('tcp_keepalive', False)) \
+            if self._async_requests_mode is not True \
+            else False
         self._connection_pool_size = kwargs.get('connection_pool_size', None)
         self._re_connect_on_session_timeout = kwargs.get('re_connect_on_session_timeout', True)
+
+        self._proxies = kwargs.get('proxies', None)
+        # handle invalid types and potential string argument
+        if not isinstance(self._proxies, (dict, str, type(None))):
+            raise ValueError("Argument of 'proxies' must be None, dictionary or JSON string")
+        elif isinstance(self._proxies, str):
+            try:
+                self._proxies = json.loads(self._proxies)
+            except JSONDecodeError:
+                raise ValueError("Invalid JSON passed for argument 'proxies': %s", self._proxies)
+
         # populated on the fly
         if kwargs.get('user'):
             self._is_admin = True if case_and_space_insensitive_equals(kwargs.get('user'), 'ADMIN') else None
@@ -221,7 +240,9 @@ class RestService:
 
         self.disable_http_warnings()
 
-        self._s = requests.session()
+        self._s = Session()
+        if self._proxies:
+            self._s.proxies = self._proxies
 
         self.connect()
 
