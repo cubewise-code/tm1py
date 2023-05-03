@@ -10,9 +10,10 @@ from requests import Response
 from TM1py.Objects import Chore, ChoreTask
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import format_url
+from TM1py.Utils import format_url, decohints
 
 
+@decohints
 def deactivate_activate(func):
     """ Higher Order function to handle activation and deactivation of chores before updating them
 

@@ -18,7 +18,8 @@ from requests.adapters import HTTPAdapter
 
 # SSO not supported for Linux
 from TM1py.Exceptions.Exceptions import TM1pyTimeout
-from TM1py.Utils import case_and_space_insensitive_equals, CaseAndSpaceInsensitiveSet, HTTPAdapterWithSocketOptions
+from TM1py.Utils import case_and_space_insensitive_equals, CaseAndSpaceInsensitiveSet, HTTPAdapterWithSocketOptions, \
+    decohints
 
 try:
     from requests_negotiate_sspi import HttpNegotiateAuth
@@ -30,6 +31,7 @@ from TM1py.Exceptions import TM1pyRestException
 import http.client as http_client
 
 
+@decohints
 def httpmethod(func):
     """ Higher Order Function to wrap the GET, POST, PATCH, PUT, DELETE methods
         Takes care of:

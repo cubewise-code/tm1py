@@ -10,7 +10,7 @@ import urllib.parse as urlparse
 from contextlib import suppress
 from enum import Enum, unique
 from io import StringIO
-from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator, Union
+from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator, Union, Callable
 
 import requests
 from mdxpy import MdxBuilder, Member
@@ -27,6 +27,16 @@ except ImportError:
     _has_pandas = False
 
 
+def decohints(decorator: Callable) -> Callable:
+    """
+    Decorator for decorators to see parameters of decorated functions in PyCharm
+
+    Implementation of https://github.com/gri-gus/decohints
+    """
+    return decorator
+
+
+@decohints
 def require_admin(func):
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
@@ -37,6 +47,7 @@ def require_admin(func):
     return wrapper
 
 
+@decohints
 def require_version(version):
     """ Higher order function to check required version for TM1py function
     """
@@ -53,6 +64,7 @@ def require_version(version):
     return wrap
 
 
+@decohints
 def require_pandas(func):
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
