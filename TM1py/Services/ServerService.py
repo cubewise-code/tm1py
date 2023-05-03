@@ -13,9 +13,11 @@ from TM1py.Objects.Process import Process
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import format_url
-from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, CaseAndSpaceInsensitiveSet, require_admin, require_version
+from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, CaseAndSpaceInsensitiveSet, require_admin, require_version, \
+    decohints
 
 
+@decohints
 def odata_track_changes_header(func):
     """ Higher Order function to handle addition and removal of odata.track-changes HTTP Header
 

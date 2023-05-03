@@ -35,7 +35,7 @@ from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_nam
     case_and_space_insensitive_equals, get_cube, resembles_mdx, require_admin, extract_compact_json_cellset, \
     cell_is_updateable, build_mdx_from_cellset, build_mdx_and_values_from_cellset, \
     dimension_names_from_element_unique_names, frame_to_significant_digits, build_dataframe_from_csv, \
-    drop_dimension_properties
+    drop_dimension_properties, decohints
 
 try:
     import pandas as pd
@@ -45,6 +45,7 @@ except ImportError:
     _has_pandas = False
 
 
+@decohints
 def tidy_cellset(func):
     """ Higher order function to tidy up cellset after usage
     """
@@ -68,6 +69,7 @@ def tidy_cellset(func):
     return wrapper
 
 
+@decohints
 def manage_transaction_log(func):
     """ Control state of transaction log during and after write operation for a given cube through:
     `deactivate_transaction_log` and `reactivate_transaction_log`.
@@ -103,6 +105,7 @@ def manage_transaction_log(func):
     return wrapper
 
 
+@decohints
 def manage_changeset(func):
     """ Control the start and end of change sets which goups write events together in the TM1 transaction log.
 
@@ -124,6 +127,7 @@ def manage_changeset(func):
     return wrapper
 
 
+@decohints
 def odata_compact_json(return_as_dict: bool):
     """ Higher order function to manage header and response when using compact JSON
 
