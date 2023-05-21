@@ -196,6 +196,11 @@ class RestService:
         self._connection_pool_size = kwargs.get('connection_pool_size', None)
         self._re_connect_on_session_timeout = kwargs.get('re_connect_on_session_timeout', True)
 
+        # Logging
+        if 'logging' in kwargs:
+            if self.translate_to_boolean(value=kwargs['logging']):
+                http_client.HTTPConnection.debuglevel = 1
+
         self._proxies = kwargs.get('proxies', None)
         # handle invalid types and potential string argument
         if not isinstance(self._proxies, (dict, str, type(None))):
@@ -256,11 +261,6 @@ class RestService:
 
         if self._tcp_keepalive or self._connection_pool_size is not None:
             self._manage_http_adapter()
-
-        # Logging
-        if 'logging' in kwargs:
-            if self.translate_to_boolean(value=kwargs['logging']):
-                http_client.HTTPConnection.debuglevel = 1
 
     def connect(self):
         if "session_id" in self._kwargs:
