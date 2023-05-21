@@ -15,6 +15,7 @@ import requests
 import urllib3
 from requests import Timeout, Response, ConnectionError, Session
 from requests.adapters import HTTPAdapter
+from urllib3._collections import HTTPHeaderDict
 
 # SSO not supported for Linux
 from TM1py.Exceptions.Exceptions import TM1pyTimeout
@@ -630,12 +631,27 @@ class RestService:
 
     @staticmethod
     def urllib3_response_from_bytes(data: bytes) -> HTTPResponse:
+        """ Build urllib3.HTTPResponse based on raw bytes string
+
+        """
         sock = BytesIOSocket(data)
 
         response = HTTPResponse(sock)
         response.begin()
 
-        return urllib3.HTTPResponse.from_httplib(response)
+        headers = response.msg
+        if not isinstance(headers, HTTPHeaderDict):
+            headers = HTTPHeaderDict(headers.items())
+
+        urllib3_http_response = urllib3.HTTPResponse(
+            body=response,
+            headers=headers,
+            status=response.status,
+            version=response.version,
+            reason=response.reason,
+            original_response=response
+        )
+        return urllib3_http_response
 
     @staticmethod
     def build_response_from_raw_bytes(data: bytes) -> Response:
