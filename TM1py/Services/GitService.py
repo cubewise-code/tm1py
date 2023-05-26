@@ -43,8 +43,10 @@ class GitService(ObjectService):
     def tm1project_put(self, tm1_project: TM1Project) -> TM1Project:
         url = '/api/v1/!tm1project'
         body_json = tm1_project.body
-        
-        response = self._rest.PUT(url=url, data=body_json)
+
+        # we need to ensure that async_requests_mode=False for this specific request as the response will not include
+        # the Location field with the async_id.
+        response = self._rest.PUT(url=url, data=body_json, async_requests_mode=False)
         return TM1Project.from_dict(response.json())
 
     def git_init(self, git_url: str, deployment: str, username: str = None, password: str = None,
