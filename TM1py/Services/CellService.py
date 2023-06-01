@@ -2689,13 +2689,17 @@ class CellService(ObjectService):
         else:
             expand_hierarchies = ""
 
+        # top_tuples parameter is used as an optimization trick:
+        # if top_cells is set to N => it will be sufficient to get only the first N tuples in Axes, top_tuples does this
+        # if skip_cells is used => trick not applicable, all tuples must be extracted
+
         url = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
               "Cube($select=Name;$expand=Dimensions($select=Name))," \
               "Axes({filter_axis}$expand={hierarchies}Tuples($expand=Members({select_member_properties}" \
-              "{expand_elem_properties}{top_rows})))," \
+              "{expand_elem_properties}){top_tuples}))," \
               "Cells($select={cell_properties}{top_cells}{skip_cells}{filter_cells})" \
             .format(cellset_id=cellset_id,
-                    top_rows=f";$top={top}" if top and not skip else "",
+                    top_tuples=f";$top={top}" if top and not skip else "",
                     cell_properties=",".join(cell_properties),
                     filter_axis=filter_axis,
                     hierarchies=expand_hierarchies,
@@ -2813,12 +2817,16 @@ class CellService(ObjectService):
 
         filter_axis = "$filter=Ordinal ne 2;" if skip_contexts else ""
 
+        # top_tuples parameter is used as an optimization trick:
+        # if top_cells is set to N => it will be sufficient to get only the first N tuples in Axes, top_tuples does this
+        # if skip_cells is used => trick not applicable, all tuples must be extracted
+
         url = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
               "Cube($select=Name;$expand=Dimensions($select=Name))," \
               "Axes({filter_axis}$expand={hierarchies}Tuples($expand=Members({select_member_properties}" \
-              "{expand_elem_properties}{top_rows})))" \
+              "{expand_elem_properties}){top_tuples}))" \
             .format(cellset_id=cellset_id,
-                    top_rows=f";$top={top}" if top and not skip else "",
+                    top_tuples=f";$top={top}" if top and not skip else "",
                     filter_axis=filter_axis,
                     hierarchies=expand_hierarchies,
                     select_member_properties=select_member_properties,
