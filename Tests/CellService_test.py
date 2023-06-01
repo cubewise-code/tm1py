@@ -1716,6 +1716,31 @@ class TestCellService(unittest.TestCase):
             self.assertEqual(self.dimension_names[axis_counter], hierarchies[0]['Name'])
             self.assertEqual(self.dimension_names[axis_counter], hierarchies[0]['Dimension']['Name'])
 
+    def test_execute_mdx_raw_top(self):
+        # write cube content
+        self.tm1.cubes.cells.write_values(self.cube_name, self.cellset)
+
+        # MDX Query that gets full cube content with zero suppression
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .rows_non_empty() \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0])) \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1])) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
+            .to_mdx()
+
+        # MDX with top
+        raw_response = self.tm1.cubes.cells.execute_mdx_raw(mdx, top=5)
+
+        # Check if the Axes length is equal to the "top" value
+        for axis in raw_response["Axes"]:
+            self.assertEqual(len(axis['Tuples']), 5)
+
+        # Check if the Cells length is equal to the "top" value
+        self.assertEqual(len(raw_response["Cells"]), 5)
+
     def test_execute_mdx_rows_and_values_one_cell(self):
         mdx = MdxBuilder.from_cube(self.cube_name) \
             .add_hierarchy_set_to_axis(1, MdxHierarchySet.member(Member.of(self.dimension_names[0], "Element1"))) \
