@@ -77,7 +77,7 @@ class DimensionService(ObjectService):
         for hierarchy in dimension:
             if not case_and_space_insensitive_equals(hierarchy.name, "Leaves"):
                 if self.hierarchies.exists(hierarchy.dimension_name, hierarchy.name, **kwargs):
-                    self.hierarchies.update(hierarchy, **kwargs)
+                    self.hierarchies.update(hierarchy, keep_existing_attributes=keep_existing_attributes, **kwargs)
                 else:
                     self.hierarchies.create(hierarchy, **kwargs)
 
