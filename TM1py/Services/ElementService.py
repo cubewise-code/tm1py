@@ -87,7 +87,7 @@ class ElementService(ObjectService):
                                skip_consolidations: bool = True, attributes: Iterable[str] = None,
                                attribute_column_prefix: str = "", skip_parents: bool = False,
                                level_names: List[str] = None, parent_attribute: str = None,
-                               skip_weights: bool = False, use_blob: bool=False, **kwargs) -> 'pd.DataFrame':
+                               skip_weights: bool = False, use_blob: bool = False, **kwargs) -> 'pd.DataFrame':
         """
 
         :param dimension_name: Name of the dimension. Can be derived from elements MDX
@@ -699,6 +699,48 @@ class ElementService(ObjectService):
         """
         return self.get_members_under_consolidation(dimension_name, hierarchy_name, consolidation, max_depth, True,
                                                     **kwargs)
+
+    def get_edges_under_consolidation(self, dimension_name: str, hierarchy_name: str, consolidation: str,
+                                      max_depth: int = None, **kwargs) -> List[str]:
+        """ Get all members under a consolidated element
+
+        :param dimension_name: name of dimension
+        :param hierarchy_name: name of hierarchy
+        :param consolidation: name of consolidated Element
+        :param max_depth: 99 if not passed
+        :return:
+        """
+        depth = max_depth or 99
+
+        # edges to return
+        edges = CaseAndSpaceInsensitiveTuplesDict()
+
+        # build url
+        bare_url = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')?"
+        url = format_url(bare_url, dimension_name, hierarchy_name, consolidation)
+        for d in range(depth):
+            if d == 0:
+                url += "$select=Edges&$expand=Edges($expand=Component("
+            else:
+                url += "$select=Edges;$expand=Edges($expand=Component("
+
+        url = url[:-1] + ")" * (depth * 2 - 1)
+
+        response = self._rest.GET(url, **kwargs)
+        consolidation_tree = response.json()
+
+        # recursive function to parse consolidation sub_tree
+        def get_edges(sub_trees):
+            for sub_tree in sub_trees:
+                edges[sub_tree["ParentName"], sub_tree["ComponentName"]] = sub_tree["Weight"]
+
+                if "Edges" not in sub_tree["Component"]:
+                    return
+
+                get_edges(sub_trees=sub_tree["Component"]["Edges"])
+
+        get_edges(consolidation_tree["Edges"])
+        return edges
 
     def get_members_under_consolidation(self, dimension_name: str, hierarchy_name: str, consolidation: str,
                                         max_depth: int = None, leaves_only: bool = False, **kwargs) -> List[str]:

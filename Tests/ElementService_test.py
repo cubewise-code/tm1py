@@ -358,6 +358,34 @@ class TestElementService(unittest.TestCase):
         for year in self.years:
             self.assertIn(year, leaves)
 
+    def test_get_edges_under_consolidation(self):
+        edges = self.tm1.dimensions.hierarchies.elements.get_edges_under_consolidation(
+            self.dimension_name,
+            self.hierarchy_name,
+            "All Consolidations")
+
+        self.assertEqual(len(self.years) + 1, len(edges))
+        self.assertEqual(1, edges["All Consolidations", "Total Years"])
+        for year in self.years:
+            self.assertEqual(1, edges["Total Years", year])
+
+    def test_get_edges_under_consolidation_max_depth_1(self):
+        edges = self.tm1.dimensions.hierarchies.elements.get_edges_under_consolidation(
+            self.dimension_name,
+            self.hierarchy_name,
+            "All Consolidations",
+            max_depth=1)
+
+        self.assertEqual(1, len(edges))
+        self.assertEqual(1, edges["All Consolidations", "Total Years"])
+
+    def test_get_edges_under_consolidation_not_existing_consolidation(self):
+        with self.assertRaises(TM1pyRestException) as _:
+            self.tm1.dimensions.hierarchies.elements.get_edges_under_consolidation(
+                self.dimension_name,
+                self.hierarchy_name,
+                "NotExistingConsolidation")
+
     def test_get_members_under_consolidation(self):
         leaves = self.tm1.dimensions.hierarchies.elements.get_members_under_consolidation(
             self.dimension_name,
