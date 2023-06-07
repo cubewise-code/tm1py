@@ -380,6 +380,17 @@ class TestElementService(unittest.TestCase):
         self.assertEqual(1, len(edges))
         self.assertEqual(1, edges["All Consolidations", "Total Years"])
 
+    def test_get_edges_under_consolidation_max_depth_1_with_n_components(self):
+        edges = self.tm1.dimensions.hierarchies.elements.get_edges_under_consolidation(
+            self.dimension_name,
+            self.hierarchy_name,
+            "Total Years",
+            max_depth=1)
+
+        self.assertEqual(len(self.years), len(edges))
+        for year in self.years:
+            self.assertEqual(1, edges["Total Years", year])
+
     def test_get_edges_under_consolidation_not_existing_consolidation(self):
         with self.assertRaises(TM1pyRestException) as _:
             self.tm1.dimensions.hierarchies.elements.get_edges_under_consolidation(
