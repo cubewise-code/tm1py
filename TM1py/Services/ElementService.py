@@ -735,7 +735,7 @@ class ElementService(ObjectService):
                 edges[sub_tree["ParentName"], sub_tree["ComponentName"]] = sub_tree["Weight"]
 
                 if "Edges" not in sub_tree["Component"]:
-                    return
+                    continue
 
                 get_edges(sub_trees=sub_tree["Component"]["Edges"])
 
