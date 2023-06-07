@@ -1,4 +1,5 @@
 import configparser
+import copy
 import unittest
 from pathlib import Path
 
@@ -385,6 +386,21 @@ class TestElementService(unittest.TestCase):
                 self.dimension_name,
                 self.hierarchy_name,
                 "NotExistingConsolidation")
+
+    def test_get_edges_under_consolidation_remove_read(self):
+        edges = self.tm1.dimensions.hierarchies.elements.get_edges_under_consolidation(
+            self.dimension_name,
+            self.hierarchy_name,
+            "All Consolidations",
+            max_depth=99)
+        h = self.tm1.hierarchies.get(self.dimension_name, self.hierarchy_name)
+        h_original = copy.deepcopy(h)
+
+        h.remove_all_edges()
+        for edge, weight in edges.items():
+            h.add_edge(edge[0], edge[1], weight=weight)
+
+        self.assertEqual(h_original.edges, h.edges)
 
     def test_get_members_under_consolidation(self):
         leaves = self.tm1.dimensions.hierarchies.elements.get_members_under_consolidation(
