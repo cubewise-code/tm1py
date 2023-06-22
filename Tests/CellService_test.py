@@ -2796,7 +2796,7 @@ class TestCellService(unittest.TestCase):
 
         df = self.tm1.cubes.cells.execute_mdx_dataframe(query, use_blob=True)
         self.assertEqual(
-            [["NA", "Element 1", 4.0]],
+            [["Element 1", "NA", 4.0]],
             df.values.tolist())
 
     @skip_if_no_pandas
