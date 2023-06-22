@@ -37,7 +37,7 @@ class DimensionService(ObjectService):
         # If not all subsequent calls successful -> undo everything that has been done in this function
         try:
             # Create Dimension, Hierarchies, Elements, Edges.
-            url = "/api/v1/Dimensions"
+            url = "/Dimensions"
             response = self._rest.POST(url, dimension.body, **kwargs)
             # Create ElementAttributes
             for hierarchy in dimension:
@@ -56,7 +56,7 @@ class DimensionService(ObjectService):
         :param dimension_name:
         :return:
         """
-        url = format_url("/api/v1/Dimensions('{}')?$expand=Hierarchies($expand=*)", dimension_name)
+        url = format_url("/Dimensions('{}')?$expand=Hierarchies($expand=*)", dimension_name)
         response = self._rest.GET(url, **kwargs)
         return Dimension.from_json(response.text)
 
@@ -118,7 +118,7 @@ class DimensionService(ObjectService):
         :param dimension_name: Name of the dimension
         :return:
         """
-        url = format_url("/api/v1/Dimensions('{}')", dimension_name)
+        url = format_url("/Dimensions('{}')", dimension_name)
         return self._rest.DELETE(url, **kwargs)
 
     def exists(self, dimension_name: str, **kwargs) -> bool:
@@ -126,7 +126,7 @@ class DimensionService(ObjectService):
         
         :return: 
         """
-        url = format_url("/api/v1/Dimensions('{}')", dimension_name)
+        url = format_url("/Dimensions('{}')", dimension_name)
         return self._exists(url, **kwargs)
 
     def get_all_names(self, skip_control_dims: bool = False, **kwargs) -> List[str]:
@@ -137,7 +137,7 @@ class DimensionService(ObjectService):
             List of Strings
         """
         url = format_url(
-            "/api/v1/{}?$select=Name",
+            "/{}?$select=Name",
             'ModelDimensions()' if skip_control_dims else 'Dimensions'
         )
 
@@ -154,10 +154,10 @@ class DimensionService(ObjectService):
         """
 
         if skip_control_dims:
-            response = self._rest.GET("/api/v1/ModelDimensions()?$select=Name&$top=0&$count", **kwargs)
+            response = self._rest.GET("/ModelDimensions()?$select=Name&$top=0&$count", **kwargs)
             return response.json()['@odata.count']
 
-        return int(self._rest.GET("/api/v1/Dimensions/$count", **kwargs).text)
+        return int(self._rest.GET("/Dimensions/$count", **kwargs).text)
 
     def execute_mdx(self, dimension_name: str, mdx: str, **kwargs) -> List:
         """ Execute MDX against Dimension. 
@@ -176,7 +176,7 @@ class DimensionService(ObjectService):
                        "{{ [}}ElementAttributes_{}].DefaultMember }} ON COLUMNS  " \
                        "FROM [}}ElementAttributes_{}]"
         mdx_full = mdx_skeleton.format(mdx, dimension_name, dimension_name)
-        request = '/api/v1/ExecuteMDX?$expand=Axes(' \
+        request = '/ExecuteMDX?$expand=Axes(' \
                   '$filter=Ordinal eq 1;' \
                   '$expand=Tuples($expand=Members($select=Ordinal;$expand=Element($select=Name))))'
         payload = {"MDX": mdx_full}

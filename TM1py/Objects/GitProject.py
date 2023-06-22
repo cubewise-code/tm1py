@@ -274,7 +274,7 @@ class TM1Project(TM1Object):
     @classmethod
     def from_json(cls, tm1project_as_json: str) -> 'TM1Project':
         """
-        :param tm1project_as_json: response of /api/v1/!tm1project
+        :param tm1project_as_json: response of /!tm1project
         :return: an instance of this class
         """
         tm1project_as_dict = json.loads(tm1project_as_json)

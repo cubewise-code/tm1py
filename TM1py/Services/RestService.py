@@ -346,7 +346,7 @@ class RestService:
     @httpmethod
     def PATCH(self, url: str, data: Union[str, bytes], headers: Dict = None, timeout: float = None, **kwargs):
         """ PATCH request against the TM1 instance
-        :param url: String, for instance : /api/v1/Dimensions('plan_business_unit')
+        :param url: String, for instance : /Dimensions('plan_business_unit')
         :param data: the payload
         :param headers: custom headers
         :param timeout: Number of seconds that the client will wait to receive the first byte.
@@ -362,7 +362,7 @@ class RestService:
     @httpmethod
     def PUT(self, url: str, data: Union[str, bytes], headers: Dict = None, timeout: float = None, **kwargs):
         """ PUT request against the TM1 instance
-        :param url: String, for instance : /api/v1/Dimensions('plan_business_unit')
+        :param url: String, for instance : /Dimensions('plan_business_unit')
         :param data: the payload
         :param headers: custom headers
         :param timeout: Number of seconds that the client will wait to receive the first byte.
@@ -378,7 +378,7 @@ class RestService:
     @httpmethod
     def DELETE(self, url: str, data: Union[str, bytes], headers: Dict = None, timeout: float = None, **kwargs):
         """ Delete request against TM1 instance
-        :param url:  String, for instance : /api/v1/Dimensions('plan_business_unit')
+        :param url:  String, for instance : /Dimensions('plan_business_unit')
         :param data: the payload
         :param headers: custom headers
         :param timeout: Number of seconds that the client will wait to receive the first byte.
@@ -397,7 +397,7 @@ class RestService:
         # Easier to ask for forgiveness than permission
         try:
             # ProductVersion >= TM1 10.2.2 FP 6
-            self.POST('/api/v1/ActiveSession/tm1.Close', '', headers={"Connection": "close"}, timeout=timeout,
+            self.POST('/ActiveSession/tm1.Close', '', headers={"Connection": "close"}, timeout=timeout,
                       async_requests_mode=False, **kwargs)
         except TM1pyRestException:
             # ProductVersion < TM1 10.2.2 FP 6
@@ -431,7 +431,7 @@ class RestService:
                 self._verify)
             self.add_http_header('Authorization', token)
 
-        url = '/api/v1/Configuration/ProductVersion/$value'
+        url = '/Configuration/ProductVersion/$value'
         try:
             additional_headers = dict()
             if impersonate:
@@ -469,13 +469,13 @@ class RestService:
             Boolean
         """
         try:
-            self.GET('/api/v1/Configuration/ServerName/$value')
+            self.GET('/Configuration/ServerName/$value')
             return True
         except:
             return False
 
     def set_version(self):
-        url = '/api/v1/Configuration/ProductVersion/$value'
+        url = '/Configuration/ProductVersion/$value'
         response = self.GET(url=url)
         self._version = response.text
 
@@ -486,7 +486,7 @@ class RestService:
     @property
     def is_admin(self) -> bool:
         if self._is_admin is None:
-            response = self.GET("/api/v1/ActiveUser/Groups")
+            response = self.GET("/ActiveUser/Groups")
             self._is_admin = "ADMIN" in CaseAndSpaceInsensitiveSet(
                 *[group["Name"] for group in response.json()["value"]])
 
@@ -495,7 +495,7 @@ class RestService:
     @property
     def sandboxing_disabled(self):
         if self._sandboxing_disabled is None:
-            value = self.GET("/api/v1/ActiveConfiguration/Administration/DisableSandboxing/$value")
+            value = self.GET("/ActiveConfiguration/Administration/DisableSandboxing/$value")
             self._sandboxing_disabled = value
 
         return self._sandboxing_disabled
@@ -607,11 +607,11 @@ class RestService:
         return original_header
 
     def retrieve_async_response(self, async_id: str, **kwargs) -> Response:
-        url = self._base_url + f"/api/v1/_async('{async_id}')"
+        url = self._base_url + f"/_async('{async_id}')"
         return self._s.get(url, **kwargs)
 
     def cancel_async_operation(self, async_id: str, **kwargs):
-        url = self._base_url + f"/api/v1/_async('{async_id}')"
+        url = self._base_url + f"/_async('{async_id}')"
         response = self._s.delete(url, **kwargs)
         self.verify_response(response)
 

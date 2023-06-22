@@ -25,7 +25,7 @@ class GitService(ObjectService):
     def tm1project_get(self) -> TM1Project:
         """_summary_
         """
-        url = '/api/v1/!tm1project'
+        url = '/!tm1project'
         response = self._rest.GET(url)
         if not response.content:
             return None
@@ -33,7 +33,7 @@ class GitService(ObjectService):
         return TM1Project.from_dict(response.json())
     
     def tm1project_delete(self):
-        url = '/api/v1/!tm1project'
+        url = '/!tm1project'
         empty_dict = {}
         body_json = json.dumps(empty_dict)
         
@@ -41,7 +41,7 @@ class GitService(ObjectService):
         return TM1Project.from_dict(response.json())
         
     def tm1project_put(self, tm1_project: TM1Project) -> TM1Project:
-        url = '/api/v1/!tm1project'
+        url = '/!tm1project'
         body_json = tm1_project.body
 
         # we need to ensure that async_requests_mode=False for this specific request as the response will not include
@@ -63,7 +63,7 @@ class GitService(ObjectService):
         :param force: reset git context on True
         :param config: Dictionary containing git configuration parameters
         """
-        url = "/api/v1/GitInit"
+        url = "/GitInit"
         body = {'URL': git_url, 'Deployment': deployment}
 
         for key, value in locals().items():
@@ -80,7 +80,7 @@ class GitService(ObjectService):
 
         :param force: clean up git context when True
         """
-        url = "/api/v1/GitUninit"
+        url = "/GitUninit"
         body = json.dumps(force)
         return self._rest.POST(url=url, data=body, **kwargs)
 
@@ -93,7 +93,7 @@ class GitService(ObjectService):
         :param private_key: SSH private key, available from PAA V2.0.9.4
         :param passphrase: Passphrase for decrypting private key, if set
         """
-        url = "/api/v1/GitStatus"
+        url = "/GitStatus"
         body = {}
 
         for key, value in locals().items():
@@ -124,7 +124,7 @@ class GitService(ObjectService):
         :param execute: Executes the plan right away if True
 
         """
-        url = "/api/v1/GitPush"
+        url = "/GitPush"
         body = {}
 
         for key, value in locals().items():
@@ -152,7 +152,7 @@ class GitService(ObjectService):
         :param private_key: SSH private key, available from PAA V2.0.9.4
         :param passphrase: Passphrase for decrypting private key, if set
         """
-        url = "/api/v1/GitPull"
+        url = "/GitPull"
         body = {}
 
         for key, value in locals().items():
@@ -172,13 +172,13 @@ class GitService(ObjectService):
         """ Executes a plan based on the planid
         :param plan_id: GitPlan id
         """
-        url = format_url("/api/v1/GitPlans('{}')/tm1.Execute", plan_id)
+        url = format_url("/GitPlans('{}')/tm1.Execute", plan_id)
         return self._rest.POST(url=url, **kwargs)
 
     def git_get_plans(self, **kwargs) -> List[GitPlan]:
         """ Gets a list of currently available GIT plans
         """
-        url = "/api/v1/GitPlans"
+        url = "/GitPlans"
         plans = []
 
         response = self._rest.GET(url=url, **kwargs)

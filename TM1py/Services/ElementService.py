@@ -37,21 +37,21 @@ class ElementService(ObjectService):
 
     def get(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> Element:
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')?$expand=*",
+            "/Dimensions('{}')/Hierarchies('{}')/Elements('{}')?$expand=*",
             dimension_name, hierarchy_name, element_name)
         response = self._rest.GET(url, **kwargs)
         return Element.from_dict(response.json())
 
     def create(self, dimension_name: str, hierarchy_name: str, element: Element, **kwargs) -> Response:
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements",
+            "/Dimensions('{}')/Hierarchies('{}')/Elements",
             dimension_name,
             hierarchy_name)
         return self._rest.POST(url, element.body, **kwargs)
 
     def update(self, dimension_name: str, hierarchy_name: str, element: Element, **kwargs) -> Response:
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
+            "/Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
             dimension_name,
             hierarchy_name,
             element.name)
@@ -59,7 +59,7 @@ class ElementService(ObjectService):
 
     def exists(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> bool:
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
+            "/Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
             dimension_name,
             hierarchy_name,
             element_name)
@@ -67,7 +67,7 @@ class ElementService(ObjectService):
 
     def delete(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> Response:
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
+            "/Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
             dimension_name,
             hierarchy_name,
             element_name)
@@ -75,7 +75,7 @@ class ElementService(ObjectService):
 
     def get_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[Element]:
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?select=Name,Type",
+            "/Dimensions('{}')/Hierarchies('{}')/Elements?select=Name,Type",
             dimension_name,
             hierarchy_name)
         response = self._rest.GET(url, **kwargs)
@@ -247,7 +247,7 @@ class ElementService(ObjectService):
 
     def get_edges(self, dimension_name: str, hierarchy_name: str, **kwargs) -> Dict[Tuple[str, str], int]:
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Edges?select=ParentName,ComponentName,Weight",
+            "/Dimensions('{}')/Hierarchies('{}')/Edges?select=ParentName,ComponentName,Weight",
             dimension_name,
             hierarchy_name)
         response = self._rest.GET(url, **kwargs)
@@ -256,14 +256,14 @@ class ElementService(ObjectService):
 
     def get_leaf_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[Element]:
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*&$filter=Type ne 3",
+            "/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*&$filter=Type ne 3",
             dimension_name,
             hierarchy_name)
         response = self._rest.GET(url, **kwargs)
         return [Element.from_dict(element) for element in response.json()["value"]]
 
     def get_leaf_element_names(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
-        url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Type ne 3",
+        url = format_url("/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Type ne 3",
                          dimension_name,
                          hierarchy_name)
         response = self._rest.GET(url, **kwargs)
@@ -271,14 +271,14 @@ class ElementService(ObjectService):
 
     def get_consolidated_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[Element]:
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*&$filter=Type eq 3",
+            "/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*&$filter=Type eq 3",
             dimension_name,
             hierarchy_name)
         response = self._rest.GET(url, **kwargs)
         return [Element.from_dict(element) for element in response.json()["value"]]
 
     def get_consolidated_element_names(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
-        url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Type eq 3",
+        url = format_url("/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Type eq 3",
                          dimension_name,
                          hierarchy_name)
         response = self._rest.GET(url, **kwargs)
@@ -286,14 +286,14 @@ class ElementService(ObjectService):
 
     def get_numeric_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[Element]:
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*&$filter=Type eq 1",
+            "/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*&$filter=Type eq 1",
             dimension_name,
             hierarchy_name)
         response = self._rest.GET(url, **kwargs)
         return [Element.from_dict(element) for element in response.json()["value"]]
 
     def get_numeric_element_names(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
-        url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Type eq 1",
+        url = format_url("/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Type eq 1",
                          dimension_name,
                          hierarchy_name)
         response = self._rest.GET(url, **kwargs)
@@ -301,14 +301,14 @@ class ElementService(ObjectService):
 
     def get_string_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[Element]:
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*&$filter=Type eq 2",
+            "/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*&$filter=Type eq 2",
             dimension_name,
             hierarchy_name)
         response = self._rest.GET(url, **kwargs)
         return [Element.from_dict(element) for element in response.json()["value"]]
 
     def get_string_element_names(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
-        url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Type eq 2",
+        url = format_url("/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Type eq 2",
                          dimension_name,
                          hierarchy_name)
         response = self._rest.GET(url, **kwargs)
@@ -322,7 +322,7 @@ class ElementService(ObjectService):
         :return: Generator of element-names
         """
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name",
+            "/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name",
             dimension_name,
             hierarchy_name)
         response = self._rest.GET(url, **kwargs)
@@ -330,7 +330,7 @@ class ElementService(ObjectService):
 
     def get_number_of_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> int:
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements/$count",
+            "/Dimensions('{}')/Hierarchies('{}')/Elements/$count",
             dimension_name,
             hierarchy_name)
         response = self._rest.GET(url, **kwargs)
@@ -338,7 +338,7 @@ class ElementService(ObjectService):
 
     def get_number_of_consolidated_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> int:
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements/$count?$filter=Type eq 3",
+            "/Dimensions('{}')/Hierarchies('{}')/Elements/$count?$filter=Type eq 3",
             dimension_name,
             hierarchy_name)
         response = self._rest.GET(url, **kwargs)
@@ -346,7 +346,7 @@ class ElementService(ObjectService):
 
     def get_number_of_leaf_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> int:
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements/$count?$filter=Type ne 3",
+            "/Dimensions('{}')/Hierarchies('{}')/Elements/$count?$filter=Type ne 3",
             dimension_name,
             hierarchy_name)
         response = self._rest.GET(url, **kwargs)
@@ -354,7 +354,7 @@ class ElementService(ObjectService):
 
     def get_number_of_numeric_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> int:
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements/$count?$filter=Type eq 1",
+            "/Dimensions('{}')/Hierarchies('{}')/Elements/$count?$filter=Type eq 1",
             dimension_name,
             hierarchy_name)
         response = self._rest.GET(url, **kwargs)
@@ -362,7 +362,7 @@ class ElementService(ObjectService):
 
     def get_number_of_string_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> int:
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements/$count?$filter=Type eq 2",
+            "/Dimensions('{}')/Hierarchies('{}')/Elements/$count?$filter=Type eq 2",
             dimension_name,
             hierarchy_name)
         response = self._rest.GET(url, **kwargs)
@@ -388,7 +388,7 @@ class ElementService(ObjectService):
         :return: List of element names
         """
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Level eq {}",
+            "/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Level eq {}",
             dimension_name,
             hierarchy_name,
             str(level))
@@ -409,7 +409,7 @@ class ElementService(ObjectService):
         if level is not None:
             filter_elements = filter_elements + f" and Level eq {level}"
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=" + filter_elements,
+            "/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=" + filter_elements,
             dimension_name,
             hierarchy_name)
         response = self._rest.GET(url, **kwargs)
@@ -523,7 +523,7 @@ class ElementService(ObjectService):
 
     def get_level_names(self, dimension_name: str, hierarchy_name: str, descending: bool = True, **kwargs) -> List[str]:
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Levels?$select=Name",
+            "/Dimensions('{}')/Hierarchies('{}')/Levels?$select=Name",
             dimension_name,
             hierarchy_name)
         response = self._rest.GET(url, **kwargs)
@@ -533,14 +533,14 @@ class ElementService(ObjectService):
             return [level["Name"] for level in response.json()["value"]]
 
     def get_levels_count(self, dimension_name: str, hierarchy_name: str, **kwargs) -> int:
-        url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')/Levels/$count", dimension_name, hierarchy_name)
+        url = format_url("/Dimensions('{}')/Hierarchies('{}')/Levels/$count", dimension_name, hierarchy_name)
         response = self._rest.GET(url, **kwargs)
         return int(response.text)
 
     def get_element_types(self, dimension_name: str, hierarchy_name: str,
                           skip_consolidations: bool = False, **kwargs) -> CaseAndSpaceInsensitiveDict:
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name,Type",
+            "/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name,Type",
             dimension_name,
             hierarchy_name)
         if skip_consolidations:
@@ -555,7 +555,7 @@ class ElementService(ObjectService):
     def get_element_types_from_all_hierarchies(
             self, dimension_name: str, skip_consolidations: bool = False, **kwargs) -> CaseAndSpaceInsensitiveDict:
         url = format_url(
-            "/api/v1/Dimensions('{}')?$expand=Hierarchies($select=Elements;$expand=Elements($select=Name,Type",
+            "/Dimensions('{}')?$expand=Hierarchies($select=Elements;$expand=Elements($select=Name,Type",
             dimension_name)
         url += ";$filter=Type ne 3))" if skip_consolidations else "))"
         response = self._rest.GET(url, **kwargs)
@@ -567,7 +567,7 @@ class ElementService(ObjectService):
         return result
 
     def attribute_cube_exists(self, dimension_name: str, **kwargs) -> bool:
-        url = format_url("/api/v1/Cubes('{}')", self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name)
+        url = format_url("/Cubes('{}')", self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name)
         return self._exists(url, **kwargs)
 
     def _retrieve_mdx_rows_and_cell_values_as_string_set(self, mdx: str, exclude_empty_cells=True, **kwargs):
@@ -598,7 +598,7 @@ class ElementService(ObjectService):
         :return:
         """
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/ElementAttributes",
+            "/Dimensions('{}')/Hierarchies('{}')/ElementAttributes",
             dimension_name,
             hierarchy_name)
         response = self._rest.GET(url, **kwargs)
@@ -613,7 +613,7 @@ class ElementService(ObjectService):
         :return:
         """
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/ElementAttributes?$select=Name",
+            "/Dimensions('{}')/Hierarchies('{}')/ElementAttributes?$select=Name",
             dimension_name,
             hierarchy_name)
         response = self._rest.GET(url, **kwargs)
@@ -660,7 +660,7 @@ class ElementService(ObjectService):
         :return:
         """
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/ElementAttributes",
+            "/Dimensions('{}')/Hierarchies('{}')/ElementAttributes",
             dimension_name,
             hierarchy_name)
         return self._rest.POST(url, element_attribute.body, **kwargs)
@@ -675,7 +675,7 @@ class ElementService(ObjectService):
         :return:
         """
         url = format_url(
-            "/api/v1/Dimensions('}}ElementAttributes_{}')/Hierarchies('}}ElementAttributes_{}')/Elements('{}')",
+            "/Dimensions('}}ElementAttributes_{}')/Hierarchies('}}ElementAttributes_{}')/Elements('{}')",
             dimension_name,
             hierarchy_name,
             element_attribute)
@@ -716,7 +716,7 @@ class ElementService(ObjectService):
         edges = CaseAndSpaceInsensitiveTuplesDict()
 
         # build url
-        bare_url = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')?"
+        bare_url = "/Dimensions('{}')/Hierarchies('{}')/Elements('{}')?"
         url = format_url(bare_url, dimension_name, hierarchy_name, consolidation)
         for d in range(depth):
             if d == 0:
@@ -757,7 +757,7 @@ class ElementService(ObjectService):
         # members to return
         members = []
         # build url
-        bare_url = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')?$select=Name,Type&$expand=Components("
+        bare_url = "/Dimensions('{}')/Hierarchies('{}')/Elements('{}')?$select=Name,Type&$expand=Components("
         url = format_url(bare_url, dimension_name, hierarchy_name, consolidation)
         for _ in range(depth):
             url += "$select=Name,Type;$expand=Components("
@@ -844,7 +844,7 @@ class ElementService(ObjectService):
         else:
             expand_properties = ""
 
-        url = f'/api/v1/ExecuteMDXSetExpression?$expand=Tuples({top}' \
+        url = f'/ExecuteMDXSetExpression?$expand=Tuples({top}' \
               f'$expand=Members({select_member_properties}' \
               f'{expand_properties}))'
 
@@ -864,7 +864,7 @@ class ElementService(ObjectService):
         """
 
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')/Edges(ParentName='{}',ComponentName='{}')",
+            "/Dimensions('{}')/Hierarchies('{}')/Elements('{}')/Edges(ParentName='{}',ComponentName='{}')",
             dimension_name,
             hierarchy_name,
             parent,
@@ -885,7 +885,7 @@ class ElementService(ObjectService):
         if not hierarchy_name:
             hierarchy_name = dimension_name
 
-        url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')/Edges", dimension_name, hierarchy_name)
+        url = format_url("/Dimensions('{}')/Hierarchies('{}')/Edges", dimension_name, hierarchy_name)
         body = [{"ParentName": parent, "ComponentName": component, "Weight": float(weight)}
                 for (parent, component), weight
                 in edges.items()]
@@ -900,7 +900,7 @@ class ElementService(ObjectService):
         :param elements:
         :return:
         """
-        url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements", dimension_name, hierarchy_name)
+        url = format_url("/Dimensions('{}')/Hierarchies('{}')/Elements", dimension_name, hierarchy_name)
         body = [element.body_as_dict for element in elements]
 
         return self._rest.POST(url=url, data=json.dumps(body), **kwargs)
@@ -914,14 +914,14 @@ class ElementService(ObjectService):
         :param element_attributes:
         :return:
         """
-        url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')/ElementAttributes", dimension_name, hierarchy_name)
+        url = format_url("/Dimensions('{}')/Hierarchies('{}')/ElementAttributes", dimension_name, hierarchy_name)
         body = [element_attribute.body_as_dict for element_attribute in element_attributes]
 
         return self._rest.POST(url=url, data=json.dumps(body), **kwargs)
 
     def get_parents(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> List[str]:
         url = format_url(
-            "/api/v1/Dimensions('{dimension_name}')/Hierarchies('{hierarchy_name}')/Elements('{element_name}')/Parents"
+            "/Dimensions('{dimension_name}')/Hierarchies('{hierarchy_name}')/Elements('{element_name}')/Parents"
             f"?$select=Name",
             dimension_name=dimension_name,
             hierarchy_name=hierarchy_name,
@@ -933,7 +933,7 @@ class ElementService(ObjectService):
 
     def get_parents_of_all_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> Dict[str, List[str]]:
         url = format_url(
-            f"/api/v1/Dimensions('{dimension_name}')/Hierarchies('{hierarchy_name}')/Elements?$select=Name"
+            f"/Dimensions('{dimension_name}')/Hierarchies('{hierarchy_name}')/Elements?$select=Name"
             f"&$expand=Parents($select=Name)",
         )
         response = self._rest.GET(url=url, **kwargs)
@@ -945,7 +945,7 @@ class ElementService(ObjectService):
         return element.name
 
     def _get_mdx_set_cardinality(self, mdx: str) -> int:
-        url = format_url("/api/v1/ExecuteMDXSetExpression?$select=Cardinality")
+        url = format_url("/ExecuteMDXSetExpression?$select=Cardinality")
         payload = {"MDX": mdx}
         response = self._rest.POST(url, json.dumps(payload, ensure_ascii=False))
         return response.json()['Cardinality']

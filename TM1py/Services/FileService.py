@@ -18,13 +18,13 @@ class FileService(ObjectService):
 
     def get(self, file_name: str, **kwargs) -> bytes:
         url = format_url(
-            "/api/v1/Contents('Blobs')/Contents('{name}')/Content",
+            "/Contents('Blobs')/Contents('{name}')/Content",
             name=file_name)
 
         return self._rest.GET(url, **kwargs).content
 
     def create(self, file_name: str, file_content: bytes, **kwargs):
-        url = "/api/v1/Contents('Blobs')/Contents"
+        url = "/Contents('Blobs')/Contents"
         body = {
             "@odata.type": "#ibm.tm1.api.v1.Document",
             "ID": file_name,
@@ -33,14 +33,14 @@ class FileService(ObjectService):
         self._rest.POST(url, json.dumps(body), **kwargs)
 
         url = format_url(
-            "/api/v1/Contents('Blobs')/Contents('{name}')/Content",
+            "/Contents('Blobs')/Contents('{name}')/Content",
             name=file_name)
 
         return self._rest.PUT(url, file_content, headers=self.BINARY_HTTP_HEADER, **kwargs)
 
     def update(self, file_name: str, file_content: bytes, **kwargs):
         url = format_url(
-            "/api/v1/Contents('Blobs')/Contents('{name}')/Content",
+            "/Contents('Blobs')/Contents('{name}')/Content",
             name=file_name)
 
         return self._rest.PUT(url, file_content, headers=self.BINARY_HTTP_HEADER, **kwargs)
@@ -53,14 +53,14 @@ class FileService(ObjectService):
 
     def exists(self, file_name: str, **kwargs):
         url = format_url(
-            "/api/v1/Contents('Blobs')/Contents('{name}')",
+            "/Contents('Blobs')/Contents('{name}')",
             name=file_name)
 
         return self._exists(url, **kwargs)
 
     def delete(self, file_name: str, **kwargs):
         url = format_url(
-            "/api/v1/Contents('Blobs')/Contents('{name}')",
+            "/Contents('Blobs')/Contents('{name}')",
             name=file_name)
 
         return self._rest.DELETE(url, **kwargs)
