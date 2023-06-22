@@ -236,7 +236,7 @@ class RestService:
             self._base_url = kwargs['base_url']
             self._ssl = self._determine_ssl_based_on_base_url()
         else:
-            self._base_url = "http{}://{}:{}".format(
+            self._base_url = "http{}://{}:{}/api/v1".format(
                 's' if self._ssl else '',
                 'localhost' if len(self._address) == 0 else self._address,
                 self._port)
