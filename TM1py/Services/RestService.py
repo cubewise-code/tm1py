@@ -14,6 +14,7 @@ from typing import Union, Dict, Tuple, Optional
 import requests
 import urllib3
 from requests import Timeout, Response, ConnectionError, Session
+from requests.auth import HTTPBasicAuth
 from requests.adapters import HTTPAdapter
 from urllib3._collections import HTTPHeaderDict
 
@@ -21,6 +22,7 @@ from urllib3._collections import HTTPHeaderDict
 from TM1py.Exceptions.Exceptions import TM1pyTimeout
 from TM1py.Utils import case_and_space_insensitive_equals, CaseAndSpaceInsensitiveSet, HTTPAdapterWithSocketOptions, \
     decohints
+from Utils import verify_version
 
 try:
     from requests_negotiate_sspi import HttpNegotiateAuth
@@ -146,14 +148,19 @@ class RestService:
         """ Create an instance of RESTService
         :param address: String - address of the TM1 instance
         :param port: Int - HTTPPortNumber as specified in the tm1s.cfg
-        :param base_url - base url e.g. https://localhost:12354/api/v1
+        :param ssl: boolean -  as specified in the tm1s.cfg
+        :param instance: string -  planing analytics engine (v12) instance name
+        :param database: string -  planing analytics engine (v12) database name
+        :param base_url - base url
+        :param auth_url - auth url for planning analytics engine (v12)
         :param user: String - name of the user
         :param password String - password of the user
         :param decode_b64 - whether password argument is b64 encoded
         :param namespace String - optional CAM namespace
-        :param ssl: boolean -  as specified in the tm1s.cfg
         :param cam_passport: String - the cam passport
         :param session_id: String - TM1SessionId e.g. q7O6e1w49AixeuLVxJ1GZg
+        :param application_client_id - planning analytics engine (v12) named application client ID created via manage service
+        :param application_client_secret - planning analytics engine (v12) named application secret created via manage service
         :param session_context: String - Name of the Application. Controls "Context" column in Arc / TM1top.
                 If None, use default: TM1py
         :param verify: path to .cer file or 'True' / True / 'False' / False (if no ssl verification is required)
@@ -185,6 +192,11 @@ class RestService:
         self._ssl = self.translate_to_boolean(kwargs.get('ssl', True))
         self._address = kwargs.get('address', None)
         self._port = kwargs.get('port', None)
+        self._base_url = kwargs.get('base_url', None)
+        self._auth_url = kwargs.get('auth_url', None)
+        self._instance = kwargs.get('instance', None)
+        self._database = kwargs.get('database', None)
+
         self._verify = False
         self._timeout = None if kwargs.get('timeout', None) is None else float(kwargs.get('timeout'))
         self._cancel_at_timeout = kwargs.get('cancel_at_timeout', False)
@@ -232,14 +244,13 @@ class RestService:
             else:
                 raise ValueError("verify argument must be of type str or bool")
 
-        if 'base_url' in kwargs:
-            self._base_url = kwargs['base_url']
-            self._ssl = self._determine_ssl_based_on_base_url()
-        else:
-            self._base_url = "http{}://{}:{}/api/v1".format(
-                's' if self._ssl else '',
-                'localhost' if len(self._address) == 0 else self._address,
-                self._port)
+        self._construct_service_and_auth_root(ssl=self._ssl,
+                                              address=self._address,
+                                              port=self._port,
+                                              base_url=self._base_url,
+                                              instance=self._instance,
+                                              database=self._database,
+                                              auth_url=self._auth_url)
 
         self._version = None
         self._headers = self.HEADERS.copy()
@@ -279,7 +290,55 @@ class RestService:
                 integrated_login_service=self._kwargs.get("integrated_login_service"),
                 integrated_login_host=self._kwargs.get("integrated_login_host"),
                 integrated_login_delegate=self._kwargs.get("integrated_login_delegate"),
-                impersonate=self._kwargs.get("impersonate", None))
+                impersonate=self._kwargs.get("impersonate", None),
+                application_client_id=self._kwargs.get("application_client_id", None),
+                application_client_secret=self._kwargs.get("application_client_secret", None))
+
+    def _construct_service_and_auth_root(self, ssl, address, port, base_url, instance, database, auth_url):
+        """  Create the service root URL (base_url) for all versions of TM1
+        If a base_url is passed then it is assumed to be the complete service root
+        for accessing the API
+        """
+        # all versions
+        if base_url is not None:
+            if "api/v1/Databases" in base_url:
+                if not auth_url:
+                    raise ValueError("auth_url missing, when connecting to planning analytics engine and using the "
+                                     "base_url"
+                                     " you must specify a corresponding auth url")
+            elif base_url.endswith("api/v1"):
+                self._auth_url = f"{base_url}/Configuration/ProductVersion/$value"
+                self._use_v12_auth = False
+            else:
+                self._base_url += "/api/v1"
+                self._auth_url = f"{base_url}/api/v1/Configuration/ProductVersion/$value"
+                self._use_v12_auth = False
+
+        # version 11
+        elif address is not None and instance is None and database is None:
+            # URL Format: http{ssl}://{address}:{port}/api/v1
+            self._base_url = "http{}://{}{}/api/v1".format(
+                's' if ssl else '',
+                'localhost' if len(address) == 0 else address,
+                f':{port}')
+            self._auth_url = f"{self._base_url}/Configuration/ProductVersion/$value"
+            self._use_v12_auth = False
+        # version 12+
+        else:
+            # URL Format: http{ssl}://{address}:{port}/{instance}/api/v1/Databases('{database}')
+            self._base_url = "http{}://{}{}/{}/api/v1/Databases('{}')".format(
+                's' if ssl else '',
+                'localhost' if len(address) == 0 else address,
+                f':{port}' if port is not None else '',
+                instance,
+                database)
+
+            self._auth_url = 'http{}://{}{}/{}/auth/v1/session'.format(
+                's' if ssl else '',
+                'localhost' if len(address) == 0 else address,
+                f':{port}' if port is not None else '',
+                instance)
+            self._use_v12_auth = True
 
     def _manage_http_adapter(self):
         if self._tcp_keepalive:
@@ -409,7 +468,8 @@ class RestService:
                        gateway: str = None, cam_passport: str = None, integrated_login: bool = None,
                        integrated_login_domain: str = None, integrated_login_service: str = None,
                        integrated_login_host: str = None, integrated_login_delegate: bool = None,
-                       impersonate: str = None):
+                       impersonate: str = None,
+                       application_client_id: str = None, application_client_secret: str = None):
         """ perform a simple GET request (Ask for the TM1 Version) to start a session
         """
         # Authorization with integrated_login
@@ -419,6 +479,10 @@ class RestService:
                 service=integrated_login_service,
                 host=integrated_login_host,
                 delegate=integrated_login_delegate)
+
+        elif application_client_id is not None and application_client_id is not None:
+            application_auth = HTTPBasicAuth(application_client_id, application_client_secret)
+            self._s.auth = application_auth
 
         # Authorization [Basic, CAM] through Headers
         else:
@@ -431,25 +495,43 @@ class RestService:
                 self._verify)
             self.add_http_header('Authorization', token)
 
-        url = '/Configuration/ProductVersion/$value'
-        try:
-            additional_headers = dict()
-            if impersonate:
-                additional_headers["TM1-Impersonate"] = impersonate
+        # process additional headers
+        if impersonate:
+            self.add_http_header('TM1-Impersonate', impersonate)
 
+        try:
             # skip re_connect to avoid infinite recursion in case of invalid credentials
             original_value = self._re_connect_on_session_timeout
             try:
                 self._re_connect_on_session_timeout = False
-                response = self.GET(url=url, headers=additional_headers)
+                if self._use_v12_auth:
+                    payload = {"User": user}
+                    response = self._s.post(url=self._auth_url,
+                                           headers=self._headers,
+                                           verify=self._verify,
+                                           timeout=self._timeout,
+                                           json=payload)
+                    self.verify_response(response)
+
+
+                    # test if CookieJar was updated
+
+                else:
+                    response = self._s.get(url=self._auth_url,
+                                           headers=self._headers,
+                                           verify=self._verify,
+                                           timeout=self._timeout)
+                    self.verify_response(response)
+                    self._version = response.text
+
             finally:
                 self._re_connect_on_session_timeout = original_value
 
             if response is None:
-                raise ValueError(f"No response returned from URL: '{self._base_url + url}'. "
+                raise ValueError(f"No response returned from URL: '{self._auth_url}'. "
                                  f"Please double check your address and port number in the URL.")
 
-            self._version = response.text
+
         finally:
             # After we have session cookie, drop the Authorization Header
             self.remove_http_header('Authorization')
