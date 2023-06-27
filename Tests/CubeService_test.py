@@ -149,7 +149,7 @@ class TestCubeService(unittest.TestCase):
         self.tm1.cubes.delete(cube_name)
 
         cube = self.tm1.cubes.get(self.control_cube_name)
-        cube.rules = "#find_control_comment"
+        cube.rules = "SKIPCHECK"
         self.tm1.cubes.update(cube)
         self.assertNotEqual(self.tm1.cubes.get_all_names_with_rules(),
                             self.tm1.cubes.get_all_names_with_rules(skip_control_cubes=True))
