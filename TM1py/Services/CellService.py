@@ -35,7 +35,7 @@ from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_nam
     case_and_space_insensitive_equals, get_cube, resembles_mdx, require_admin, extract_compact_json_cellset, \
     cell_is_updateable, build_mdx_from_cellset, build_mdx_and_values_from_cellset, \
     dimension_names_from_element_unique_names, frame_to_significant_digits, build_dataframe_from_csv, \
-    drop_dimension_properties, decohints
+    drop_dimension_properties, decohints, verify_version
 
 try:
     import pandas as pd
@@ -1103,12 +1103,17 @@ class CellService(ObjectService):
     def _build_blob_to_cube_process(self, cube_name: str, process_name: str, blob_filename: str, dimensions: List[str],
                                     increment: bool, skip_non_updateable: bool, sandbox_name: str,
                                     allow_spread: bool) -> Process:
+
+        # v11 automatically adds blb file extensions to documents created via the contents api
+        if not verify_version(required_version="12", version=self.version):
+            blob_filename += ".blb"
+
         dataload_process = Process(
             name=process_name,
             datasource_type='ASCII',
             datasource_ascii_header_records=0,
-            datasource_data_source_name_for_server=f"{blob_filename}.blb",
-            datasource_data_source_name_for_client=f"{blob_filename}.blb",
+            datasource_data_source_name_for_server=f"{blob_filename}",
+            datasource_data_source_name_for_client=f"{blob_filename}",
             datasource_ascii_delimiter_char=',',
             datasource_ascii_decimal_separator='.',
             datasource_ascii_thousand_separator='',
@@ -1217,6 +1222,10 @@ class CellService(ObjectService):
             datasource_ascii_decimal_separator='.',
             datasource_ascii_thousand_separator='')
 
+        # v11 automatically adds blb file extensions to documents created via the contents api
+        if not verify_version(required_version="12", version=self.version):
+            file_name += ".blb"
+
         # Create variables in process data source as all String
         for variable in variables:
             process.add_variable(name=variable, variable_type='String')
@@ -1236,14 +1245,14 @@ class CellService(ObjectService):
         comma_sep_variables = ",".join(sorted(set(variables) - set(skip_variables), key=lambda v: int(v[1:])))
         data_procedure_pre = f"""
         IF (nRecord = 0);
-          SetOutputCharacterSet('{file_name}.blb','TM1CS_UTF8');
+          SetOutputCharacterSet('{file_name}','TM1CS_UTF8');
         ENDIF;
         nRecord = nRecord + 1;
         """
         if header_line:
             data_procedure_pre += f"""
             IF (nRecord = 1);
-              TextOutput('{file_name}.blb',{header_line});
+              TextOutput('{file_name}',{header_line});
             ENDIF;
             """
         if top:
@@ -1262,7 +1271,7 @@ class CellService(ObjectService):
             """
 
         data_procedure = f"""
-        TextOutput('{file_name}.blb',{comma_sep_variables},SVALUE);
+        TextOutput('{file_name}',{comma_sep_variables},SVALUE);
         """
         process.data_procedure = data_procedure_pre + data_procedure
 
