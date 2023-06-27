@@ -11,6 +11,7 @@ from io import BytesIO
 from json import JSONDecodeError
 from typing import Union, Dict, Tuple, Optional
 
+
 import requests
 import urllib3
 from requests import Timeout, Response, ConnectionError, Session
@@ -29,7 +30,7 @@ try:
 except ImportError:
     warnings.warn("requests_negotiate_sspi failed to import. SSO will not work", ImportWarning)
 
-from TM1py.Exceptions import TM1pyRestException
+from TM1py.Exceptions import TM1pyRestException, TM1pyException
 
 import http.client as http_client
 
@@ -512,9 +513,12 @@ class RestService:
                                            timeout=self._timeout,
                                            json=payload)
                     self.verify_response(response)
+                    if 'TM1SessionId' not in self._s.cookies:
+                        warnings.warn(f"TM1SessionId has failed to be added to the session cookies, future requests "
+                                      "using this TM1Service instance will fail due to authentication. "
+                                      "Check the tm1-gateway domain settings are correct "
+                                      "in the container orchestrator ")
 
-
-                    # test if CookieJar was updated
 
                 else:
                     response = self._s.get(url=self._auth_url,
