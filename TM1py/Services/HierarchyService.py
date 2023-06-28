@@ -247,11 +247,10 @@ class HierarchyService(ObjectService):
                                        **kwargs) -> Response:
 
         url = format_url("/Dimensions('{dimension}')/Hierarchies('{hierarchy}')",
-            dimension = dimension_name,
-            hierarchy = hierarchy_name if hierarchy_name else dimension_name)
+                         dimension=dimension_name,
+                         hierarchy=hierarchy_name if hierarchy_name else dimension_name)
 
-        payload = {f"@odata.context":f"../$metadata#Dimensions('{dimension_name}')/Hierarchies(DefaultMemberName)/$entity",
-                   "DefaultMemberName":member_name}
+        payload = {"DefaultMemberName": member_name}
 
         return self._rest.PATCH(url=url, data=json.dumps(payload))
 
