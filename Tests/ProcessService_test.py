@@ -13,6 +13,7 @@ from .Utils import skip_if_insufficient_version
 from TM1py.Utils import verify_version
 
 
+
 class TestProcessService(unittest.TestCase):
     tm1: TM1Service
 
@@ -108,7 +109,7 @@ class TestProcessService(unittest.TestCase):
         cls.tm1.processes.delete(cls.p_view.name)
         cls.tm1.processes.delete(cls.p_odbc.name)
         cls.tm1.processes.delete(cls.p_subset.name)
-        cls.tm1.processes.update_or_create(cls.p_debug)
+        cls.tm1.processes.delete(cls.p_debug.name)
 
     def test_update_or_create(self):
         if self.tm1.processes.exists(self.p_bedrock_server_wait.name):
@@ -150,8 +151,7 @@ class TestProcessService(unittest.TestCase):
     @skip_if_insufficient_version(version="11.4")
     def test_execute_with_return_success(self):
         process = self.p_bedrock_server_wait
-        if not self.tm1.processes.exists(process.name):
-            self.tm1.processes.create(process)
+        self.tm1.processes.update_or_create(process)
         # with parameters
         success, status, error_log_file = self.tm1.processes.execute_with_return(
             process_name=process.name,
@@ -173,16 +173,13 @@ class TestProcessService(unittest.TestCase):
     def test_execute_with_return_compile_error(self):
         process = Process(name=str(uuid.uuid4()))
         process.prolog_procedure = "sText = 'text';sText = 2;"
+        self.tm1.processes.update_or_create(process)
 
-        if not self.tm1.processes.exists(process.name):
-            self.tm1.processes.create(process)
         # with parameters
         success, status, error_log_file = self.tm1.processes.execute_with_return(process_name=process.name)
         self.assertFalse(success)
         self.assertEqual(status, "Aborted")
-        # v12 returns a log file for every process execution
-        if not verify_version(required_version="12", version=self.tm1.version):
-            self.assertIsNone(error_log_file)
+        self.assertIsNotNone(error_log_file)
 
         self.tm1.processes.delete(process.name)
 
@@ -190,8 +187,7 @@ class TestProcessService(unittest.TestCase):
         process = Process(name=str(uuid.uuid4()))
         process.epilog_procedure = "ItemReject('Not Relevant');"
 
-        if not self.tm1.processes.exists(process.name):
-            self.tm1.processes.create(process)
+        self.tm1.processes.update_or_create(process)
         # with parameters
         success, status, error_log_file = self.tm1.processes.execute_with_return(process_name=process.name)
         self.assertFalse(success)
@@ -205,8 +201,7 @@ class TestProcessService(unittest.TestCase):
         process = Process(name=str(uuid.uuid4()))
         process.prolog_procedure = "sText = 'Something'; ProcessBreak;"
 
-        if not self.tm1.processes.exists(process.name):
-            self.tm1.processes.create(process)
+        self.tm1.processes.update_or_create(process)
         # with parameters
         success, status, error_log_file = self.tm1.processes.execute_with_return(
             process_name=process.name)
@@ -223,8 +218,7 @@ class TestProcessService(unittest.TestCase):
         process = Process(name=str(uuid.uuid4()))
         process.prolog_procedure = "sText = 'Something'; ProcessQuit;"
 
-        if not self.tm1.processes.exists(process.name):
-            self.tm1.processes.create(process)
+        self.tm1.processes.update_or_create(process)
         # with parameters
         success, status, error_log_file = self.tm1.processes.execute_with_return(
             process_name=process.name)
@@ -240,7 +234,7 @@ class TestProcessService(unittest.TestCase):
         p_good = Process(
             name=str(uuid.uuid4()),
             prolog_procedure="nPro = DimSiz('}Processes');")
-        self.tm1.processes.create(p_good)
+        self.tm1.processes.update_or_create(p_good)
         errors = self.tm1.processes.compile(p_good.name)
         self.assertTrue(len(errors) == 0)
         self.tm1.processes.delete(p_good.name)
@@ -249,7 +243,7 @@ class TestProcessService(unittest.TestCase):
         p_bad = Process(
             name=str(uuid.uuid4()),
             prolog_procedure="nPro = DimSize('}Processes');")
-        self.tm1.processes.create(p_bad)
+        self.tm1.processes.update_or_create(p_bad)
         errors = self.tm1.processes.compile(p_bad.name)
         self.assertTrue(len(errors) == 1)
         self.assertIn("\"dimsize\"", errors[0]["Message"])
@@ -362,15 +356,12 @@ class TestProcessService(unittest.TestCase):
         process = Process(name=str(uuid.uuid4()))
         process.epilog_procedure = "ItemReject('Not Relevant');"
 
-        if not self.tm1.processes.exists(process.name):
-            self.tm1.processes.create(process)
+        self.tm1.processes.update_or_create(process)
         # with parameters
         success, status, error_log_file = self.tm1.processes.execute_with_return(process_name=process.name)
         self.assertFalse(success)
         self.assertEqual(status, "CompletedWithMessages")
-        # v12 returns a log file for every process execution
-        if not verify_version(required_version="12", version=self.tm1.version):
-            self.assertIsNone(error_log_file)
+        self.assertIsNotNone(error_log_file)
 
         content = self.tm1.processes.get_error_log_file_content(file_name=error_log_file)
         self.assertIn("Not Relevant", content)
@@ -381,15 +372,12 @@ class TestProcessService(unittest.TestCase):
         process = Process(name=str(uuid.uuid4()))
         process.epilog_procedure = "ItemReject('Not Relevant');"
 
-        if not self.tm1.processes.exists(process.name):
-            self.tm1.processes.create(process)
+        self.tm1.processes.update_or_create(process)
         # with parameters
         success, status, error_log_file = self.tm1.processes.execute_with_return(process_name=process.name)
         self.assertFalse(success)
         self.assertEqual(status, "CompletedWithMessages")
-        # v12 returns a log file for every process execution
-        if not verify_version(required_version="12", version=self.tm1.version):
-            self.assertIsNone(error_log_file)
+        self.assertIsNotNone(error_log_file)
 
         content = self.tm1.processes.get_last_message_from_processerrorlog(process_name=process.name)
         self.assertIn("Not Relevant", content)
@@ -399,8 +387,7 @@ class TestProcessService(unittest.TestCase):
     def test_delete_process(self):
         process = self.p_bedrock_server_wait
         process.name = str(uuid.uuid4())
-        if not self.tm1.processes.exists(process.name):
-            self.tm1.processes.create(process)
+        self.tm1.processes.update_or_create(process)
         self.tm1.processes.delete(process.name)
 
     def test_search_string_in_name_no_match_startswith(self):
@@ -434,10 +421,14 @@ class TestProcessService(unittest.TestCase):
         self.assertEqual([self.p_ascii.name], process_names)
 
     def test_get_all_names(self):
+        process = Process(name='}' + f'{self.prefix}_ControlProcess')
+        process.epilog_procedure = "#Empty Process"
+        self.tm1.processes.update_or_create(process)
         self.assertNotEqual(self.tm1.processes.get_all_names(),
                             self.tm1.processes.get_all_names(skip_control_processes=True))
         self.assertNotEqual('}', self.tm1.processes.get_all_names(skip_control_processes=True)[-1][0][0])
         self.assertEqual('}', self.tm1.processes.get_all_names()[-1][0][0])
+        self.tm1.processes.delete(process.name)
 
     def test_ti_formula(self):
         result = self.tm1.processes.evaluate_ti_expression("2+2")
