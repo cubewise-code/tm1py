@@ -10,7 +10,7 @@ from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.SubsetService import SubsetService
 from TM1py.Utils.Utils import case_and_space_insensitive_equals, format_url, CaseAndSpaceInsensitiveDict, \
-    CaseAndSpaceInsensitiveSet
+    CaseAndSpaceInsensitiveSet, verify_version
 
 
 class HierarchyService(ObjectService):
@@ -223,16 +223,9 @@ class HierarchyService(ObjectService):
             return None
         return response.json()["Name"]
 
-    def update_default_member(self, dimension_name: str, hierarchy_name: str = None, member_name: str = "",
-                              **kwargs) -> Response:
-        """ Update the default member of a hierarchy.
-        Currently implemented through TI, since TM1 API does not supports default member updates yet.
-
-        :param dimension_name:
-        :param hierarchy_name:
-        :param member_name:
-        :return:
-        """
+    def _update_default_member_via_props_cube(self, dimension_name: str, hierarchy_name: str = None,
+                                              member_name: str = "",
+                                              **kwargs) -> Response:
         from TM1py import ProcessService, CellService
         if hierarchy_name and not case_and_space_insensitive_equals(dimension_name, hierarchy_name):
             dimension = "{}:{}".format(dimension_name, hierarchy_name)
@@ -249,6 +242,32 @@ class HierarchyService(ObjectService):
         return ProcessService(self._rest).execute_ti_code(
             lines_prolog=format_url("RefreshMdxHierarchy('{}');", dimension_name),
             **kwargs)
+
+    def _update_default_member_via_api(self, dimension_name: str, hierarchy_name: str = None, member_name: str = "",
+                                       **kwargs) -> Response:
+
+        url = format_url("/Dimensions('{dimension}')/Hierarchies('{hierarchy}')",
+            dimension = dimension_name,
+            hierarchy = hierarchy_name if hierarchy_name else dimension_name)
+
+        payload = {f"@odata.context":f"../$metadata#Dimensions('{dimension_name}')/Hierarchies(DefaultMemberName)/$entity",
+                   "DefaultMemberName":member_name}
+
+        return self._rest.PATCH(url=url, data=json.dumps(payload))
+
+    def update_default_member(self, dimension_name: str, hierarchy_name: str = None, member_name: str = "",
+                              **kwargs) -> Response:
+        """ Update the default member of a hierarchy.
+
+        :param dimension_name:
+        :param hierarchy_name:
+        :param member_name:
+        :return:
+        """
+        if verify_version(required_version='12', version=self.version):
+            return self._update_default_member_via_api(dimension_name, hierarchy_name, member_name)
+        else:
+            return self._update_default_member_via_props_cube(dimension_name, hierarchy_name, member_name)
 
     def remove_all_edges(self, dimension_name: str, hierarchy_name: str = None, **kwargs) -> Response:
         if not hierarchy_name:

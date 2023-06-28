@@ -10,6 +10,7 @@ from TM1py.Exceptions import TM1pyException
 from TM1py.Objects import Process, Subset, ProcessDebugBreakpoint, BreakPointType, HitMode
 from TM1py.Services import TM1Service
 from .Utils import skip_if_insufficient_version
+from TM1py.Utils import verify_version
 
 
 class TestProcessService(unittest.TestCase):
@@ -157,13 +158,17 @@ class TestProcessService(unittest.TestCase):
             pWaitSec=2)
         self.assertTrue(success)
         self.assertEqual(status, "CompletedSuccessfully")
-        self.assertIsNone(error_log_file)
+        # v12 returns a log file for every process execution
+        if not verify_version(required_version="12", version=self.tm1.version):
+            self.assertIsNone(error_log_file)
         # without parameters
         success, status, error_log_file = self.tm1.processes.execute_with_return(
             process_name=process.name)
         self.assertTrue(success)
         self.assertEqual(status, "CompletedSuccessfully")
-        self.assertIsNone(error_log_file)
+        # v12 returns a log file for every process execution
+        if not verify_version(required_version="12", version=self.tm1.version):
+            self.assertIsNone(error_log_file)
 
     def test_execute_with_return_compile_error(self):
         process = Process(name=str(uuid.uuid4()))
@@ -175,7 +180,9 @@ class TestProcessService(unittest.TestCase):
         success, status, error_log_file = self.tm1.processes.execute_with_return(process_name=process.name)
         self.assertFalse(success)
         self.assertEqual(status, "Aborted")
-        self.assertIsNotNone(error_log_file)
+        # v12 returns a log file for every process execution
+        if not verify_version(required_version="12", version=self.tm1.version):
+            self.assertIsNone(error_log_file)
 
         self.tm1.processes.delete(process.name)
 
@@ -205,7 +212,9 @@ class TestProcessService(unittest.TestCase):
             process_name=process.name)
         self.assertTrue(success)
         self.assertEqual(status, "CompletedSuccessfully")
-        self.assertIsNone(error_log_file)
+        # v12 returns a log file for every process execution
+        if not verify_version(required_version="12", version=self.tm1.version):
+            self.assertIsNone(error_log_file)
 
         self.tm1.processes.delete(process.name)
 
@@ -221,7 +230,9 @@ class TestProcessService(unittest.TestCase):
             process_name=process.name)
         self.assertFalse(success)
         self.assertEqual(status, "QuitCalled")
-        self.assertIsNone(error_log_file)
+        # v12 returns a log file for every process execution
+        if not verify_version(required_version="12", version=self.tm1.version):
+            self.assertIsNone(error_log_file)
 
         self.tm1.processes.delete(process.name)
 
@@ -252,7 +263,9 @@ class TestProcessService(unittest.TestCase):
         success, status, error_log_file = self.tm1.processes.execute_process_with_return(process)
         self.assertTrue(success)
         self.assertEqual(status, "CompletedSuccessfully")
-        self.assertIsNone(error_log_file)
+        # v12 returns a log file for every process execution
+        if not verify_version(required_version="12", version=self.tm1.version):
+            self.assertIsNone(error_log_file)
 
     def test_execute_process_with_return_compile_error(self):
         process = Process(name=str(uuid.uuid4()))
@@ -280,7 +293,9 @@ class TestProcessService(unittest.TestCase):
         success, status, error_log_file = self.tm1.processes.execute_process_with_return(process)
         self.assertTrue(success)
         self.assertEqual(status, "CompletedSuccessfully")
-        self.assertIsNone(error_log_file)
+        # v12 returns a log file for every process execution
+        if not verify_version(required_version="12", version=self.tm1.version):
+            self.assertIsNone(error_log_file)
 
     @skip_if_insufficient_version(version="11.4")
     def test_execute_process_with_return_with_process_quit(self):
@@ -290,7 +305,9 @@ class TestProcessService(unittest.TestCase):
         success, status, error_log_file = self.tm1.processes.execute_process_with_return(process)
         self.assertFalse(success)
         self.assertEqual(status, "QuitCalled")
-        self.assertIsNone(error_log_file)
+        # v12 returns a log file for every process execution
+        if not verify_version(required_version="12", version=self.tm1.version):
+            self.assertIsNone(error_log_file)
 
     def test_compile_process_success(self):
         p_good = Process(
@@ -351,7 +368,9 @@ class TestProcessService(unittest.TestCase):
         success, status, error_log_file = self.tm1.processes.execute_with_return(process_name=process.name)
         self.assertFalse(success)
         self.assertEqual(status, "CompletedWithMessages")
-        self.assertIsNotNone(error_log_file)
+        # v12 returns a log file for every process execution
+        if not verify_version(required_version="12", version=self.tm1.version):
+            self.assertIsNone(error_log_file)
 
         content = self.tm1.processes.get_error_log_file_content(file_name=error_log_file)
         self.assertIn("Not Relevant", content)
@@ -368,7 +387,9 @@ class TestProcessService(unittest.TestCase):
         success, status, error_log_file = self.tm1.processes.execute_with_return(process_name=process.name)
         self.assertFalse(success)
         self.assertEqual(status, "CompletedWithMessages")
-        self.assertIsNotNone(error_log_file)
+        # v12 returns a log file for every process execution
+        if not verify_version(required_version="12", version=self.tm1.version):
+            self.assertIsNone(error_log_file)
 
         content = self.tm1.processes.get_last_message_from_processerrorlog(process_name=process.name)
         self.assertIn("Not Relevant", content)
