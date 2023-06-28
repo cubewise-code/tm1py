@@ -9,7 +9,7 @@ from TM1py.Objects.Application import DocumentApplication, ApplicationTypes, Cub
     Application
 from TM1py.Services import RestService
 from TM1py.Services.ObjectService import ObjectService
-from TM1py.Utils import format_url
+from TM1py.Utils import format_url, verify_version
 
 
 class ApplicationService(ObjectService):
@@ -23,6 +23,21 @@ class ApplicationService(ObjectService):
         """
         super().__init__(tm1_rest)
         self._rest = tm1_rest
+
+    def get_all_public_root_names(self, **kwargs):
+
+        url = "/Contents('Applications')/Contents"
+        response = self._rest.GET(url, **kwargs)
+        applications = list(application['Name'] for application in response.json()['value'])
+        return applications
+
+    def get_all_private_root_names(self, **kwargs):
+
+        url = "/Contents('Applications')/PrivateContents"
+        response = self._rest.GET(url, **kwargs)
+        applications = list(application['Name'] for application in response.json()['value'])
+        return applications
+
 
     def get(self, path: str, application_type: Union[str, ApplicationTypes], name: str, private: bool = False,
             **kwargs) -> Application:
@@ -41,7 +56,7 @@ class ApplicationService(ObjectService):
         if application_type == ApplicationTypes.DOCUMENT:
             return self.get_document(path=path, name=name, private=private, **kwargs)
 
-        if not application_type == ApplicationTypes.FOLDER:
+        if not application_type == ApplicationTypes.FOLDER and not verify_version(required_version='12', version=self.version):
             name += application_type.suffix
 
         contents = 'PrivateContents' if private else 'Contents'
@@ -112,7 +127,7 @@ class ApplicationService(ObjectService):
         :param private: boolean
         :return: Return DocumentApplication
         """
-        if not name.endswith(ApplicationTypes.DOCUMENT.suffix):
+        if not name.endswith(ApplicationTypes.DOCUMENT.suffix) and not verify_version(required_version='12', version=self.version):
             name += ApplicationTypes.DOCUMENT.suffix
 
         contents = 'PrivateContents' if private else 'Contents'
@@ -150,7 +165,7 @@ class ApplicationService(ObjectService):
         # raise ValueError if not a valid ApplicationType
         application_type = ApplicationTypes(application_type)
 
-        if not application_type == ApplicationTypes.FOLDER:
+        if not application_type == ApplicationTypes.FOLDER and not verify_version(required_version='12', version=self.version):
             application_name += application_type.suffix
 
         contents = 'PrivateContents' if private else 'Contents'
@@ -168,7 +183,7 @@ class ApplicationService(ObjectService):
         # raise ValueError if not a valid ApplicationType
         application_type = ApplicationTypes(application_type)
 
-        if not application_type == ApplicationTypes.FOLDER:
+        if not application_type == ApplicationTypes.FOLDER and not verify_version(required_version='12', version=self.version):
             application_name += application_type.suffix
 
         contents = 'PrivateContents' if private else 'Contents'
@@ -201,8 +216,9 @@ class ApplicationService(ObjectService):
 
         if application.application_type == ApplicationTypes.DOCUMENT:
             url = format_url(
-                "/Contents('Applications')" + mid + "/" + contents + "('{name}.blob')/Document/Content",
-                name=application.name)
+                "/Contents('Applications')" + mid + "/" + contents + "('{name}{suffix}')/Document/Content",
+                name=application.name,
+                suffix='.blob' if not verify_version(required_version='12', version=self.version) else '')
             response = self._rest.PUT(url, application.content, headers=self.BINARY_HTTP_HEADER, **kwargs)
 
         return response
@@ -265,7 +281,7 @@ class ApplicationService(ObjectService):
         # raise ValueError if not a valid ApplicationType
         application_type = ApplicationTypes(application_type)
 
-        if not application_type == ApplicationTypes.FOLDER:
+        if not application_type == ApplicationTypes.FOLDER and not verify_version(required_version='12', version=self.version):
             name += application_type.suffix
 
         contents = 'PrivateContents' if private else 'Contents'
