@@ -5,6 +5,7 @@ import json
 from collections.abc import Iterable
 from datetime import datetime
 from typing import Dict, Optional
+from enum import Enum
 
 import pytz
 from requests import Response
@@ -16,6 +17,13 @@ from TM1py.Utils import format_url
 from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, CaseAndSpaceInsensitiveSet, require_admin, require_version, \
     decohints
 
+class LogLevel(Enum):
+    FATAL = "fatal"
+    ERROR = "error"
+    WARNING = "warning"
+    INFO = "info"
+    DEBUG = "debug"
+    OFF = "off"
 
 @decohints
 def odata_track_changes_header(func):
@@ -371,6 +379,15 @@ class ServerService(ObjectService):
         del config["@odata.context"]
         return config
 
+    def get_api_metadata(self, **kwargs):
+        """ Read effective(!) TM1 config settings as dictionary from TM1 Server
+
+        :return: config as dictionary
+        """
+        url = '/$metadata'
+        metadata = self._rest.GET(url, **kwargs).content.decode("utf-8")
+        return json.loads(metadata)
+
     @require_admin
     def update_static_configuration(self, configuration: Dict) -> Response:
         """ Update the .cfg file and triggers TM1 to re-read the file.
@@ -418,3 +435,30 @@ class ServerService(ObjectService):
     def deactivate_audit_log(self):
         config = {'Administration': {'AuditLog': {'Enable': False}}}
         self.update_static_configuration(config)
+
+    @require_admin
+    def update_message_logger_level(self, logger, level):
+        '''
+        Updates tm1 message log levels
+        :param logger:
+        :param level:
+        :return:
+        '''
+
+        payload = {"Level": level}
+        url = f"/Loggers('{logger}')"
+        return self._rest.PATCH(url, json.dumps(payload))
+
+    @require_admin
+    def get_all_message_logger_level(self):
+        '''
+        Get tm1 message log levels
+        :param logger:
+        :param level:
+        :return:
+        '''
+        url = f"/Loggers"
+        return self._rest.GET(url).content
+
+
+
