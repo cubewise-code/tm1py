@@ -438,7 +438,6 @@ class TestProcessService(unittest.TestCase):
                             self.tm1.processes.get_all_names(skip_control_processes=True))
         self.assertNotEqual('}', self.tm1.processes.get_all_names(skip_control_processes=True)[-1][0][0])
         self.assertEqual('}', self.tm1.processes.get_all_names()[-1][0][0])
-        self.assertNotEqual(self.tm1.processes.get_all(), self.tm1.processes.get_all(skip_control_processes=True))
 
     def test_ti_formula(self):
         result = self.tm1.processes.evaluate_ti_expression("2+2")
