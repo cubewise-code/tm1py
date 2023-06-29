@@ -16,28 +16,34 @@ class ManageService:
         self._auth_header = HTTPBasicAuth(self._root_client, self._root_secret)
         self._root_url = f"{self._domain}/manage/v1"
 
-    def get_instances(self, **kwargs):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        pass
+
+    def get_instances(self):
         url = f"{self._root_url}/Instances"
         response = requests.get(url=url, auth=self._auth_header)
         return json.loads(response.content).get('value')
 
-    def get_instance(self, instance_name, **kwargs):
+    def get_instance(self, instance_name):
         url = f"{self._root_url}/Instances('{instance_name}')"
         response = requests.get(url=url, auth=self._auth_header)
         return json.loads(response.content)
 
-    def create_instance(self, instance_name, **kwargs):
+    def create_instance(self, instance_name):
         url = f"{self._root_url}/Instances"
         payload = {"Name": instance_name}
         response = requests.post(url=url, json=payload, auth=self._auth_header)
         return response
 
-    def delete_instance(self, instance_name, **kwargs):
+    def delete_instance(self, instance_name):
         url = f"{self._root_url}/Instances('{instance_name}')"
         response = requests.delete(url=url, auth=self._auth_header)
         return response
 
-    def instance_exists(self, instance_name, **kwargs):
+    def instance_exists(self, instance_name):
         url = f"{self._root_url}/Instances('{instance_name}')"
         response = requests.get(url=url, auth=self._auth_header)
         if response.ok:
@@ -45,12 +51,12 @@ class ManageService:
         else:
             return False
 
-    def get_databases(self, instance_name, **kwargs):
+    def get_databases(self, instance_name):
         url = f"{self._root_url}/Instances('{instance_name}')/Databases"
         response = requests.get(url=url, auth=self._auth_header)
         return json.loads(response.content).get('value')
 
-    def get_database(self, instance_name, database_name, **kwargs):
+    def get_database(self, instance_name, database_name):
         url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')"
         response = requests.get(url=url, auth=self._auth_header)
         return json.loads(response.content)
@@ -64,8 +70,7 @@ class ManageService:
                         cpu_limits="2000m",
                         memory_requests="1G",
                         memory_limits="2G",
-                        storage_size="20Gi",
-                        **kwargs):
+                        storage_size="20Gi"):
 
         url = f"{self._root_url}/Instances('{instance_name}')/Databases"
 
@@ -92,12 +97,12 @@ class ManageService:
 
         return response
 
-    def delete_database(self, instance_name, database_name, **kwargs):
+    def delete_database(self, instance_name, database_name):
         url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')"
         response = requests.delete(url=url, auth=self._auth_header)
         return response
 
-    def database_exists(self, instance_name, database_name, **kwargs):
+    def database_exists(self, instance_name, database_name):
         url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')"
         response = requests.get(url=url, auth=self._auth_header)
         if response.ok:
@@ -105,18 +110,52 @@ class ManageService:
         else:
             return False
 
-    def get_applications(self, instance_name, **kwargs):
+    def upgrade_database(self, instance_name: str, database_name: str, target_version: str):
+        url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')/tm1.Upgrade"
+        payload = {"ProductVersion": target_version}
+        response = requests.post(url=url, json=payload, auth=self._auth_header)
+        return response
+
+    def create_database_backup(self, instance_name: str, database_name: str, backup_url: str):
+        url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')/tm1.Backup"
+        payload = {"URL": backup_url}
+        response = requests.post(url=url, json=payload, auth=self._auth_header)
+        return response
+
+    def create_and_upload_database_backup_set_file(self, instance_name: str, database_name: str, backup_set_name: str):
+        create_url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')" \
+                     f"/Contents('Files')/Contents('.backupsets')/Contents"
+        payload = {"@odata.type": "#ibm.tm1.api.v1.Document", "Name": f"{backup_set_name}.tgz"}
+        requests.post(url=create_url, json=payload, auth=self._auth_header)
+
+        upload_url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')" \
+                     f"/Contents('Files')/Contents('.backupsets')/Contents('{backup_set_name}.tgz')/Content"
+        response = requests.post(url=upload_url, json=payload, auth=self._auth_header)
+        return response
+
+    def restore_database(self, instance_name: str, database_name: str, backup_url: str):
+        url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')/tm1.Restore"
+        payload = {"URL": backup_url}
+        response = requests.post(url=url, json=payload, auth=self._auth_header)
+        return response
+
+    def scale_database(self, instance_name: str, database_name: str, replicas: int):
+        url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')"
+        payload = {"Replicas": replicas}
+        response = requests.patch(url=url, json=payload, auth=self._auth_header)
+        return response
+
+    def get_applications(self, instance_name):
         url = f"{self._root_url}/Instances('{instance_name}')/Applications"
         response = requests.get(url=url, auth=self._auth_header)
         return json.loads(response.content)
 
-    def create_application(self, instance_name, application_name, **kwargs):
+    def create_application(self, instance_name, application_name):
         url = f"{self._root_url}/Instances('{instance_name}')/Applications"
         payload = {"Name": application_name}
         response = requests.post(url=url, json=payload, auth=self._auth_header)
         response_json = json.loads(response.content)
         return response_json['ClientID'], response_json['ClientSecret']
-
 
 
 
