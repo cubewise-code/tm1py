@@ -386,6 +386,7 @@ class TestSecurityService(unittest.TestCase):
     def test_group_exists_false(self):
         self.assertFalse(self.tm1.security.group_exists(group_name="NotAValidName"))
 
+    @skip_if_deprecated_in_version(version='12')
     def test_impersonate(self):
         tm1 = TM1Service(**self.config['tm1srv01'])
         self.assertNotEqual(self.user_name, tm1.whoami.name)

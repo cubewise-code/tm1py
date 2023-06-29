@@ -9,7 +9,7 @@ from pathlib import Path
 from TM1py.Exceptions import TM1pyException
 from TM1py.Objects import Process, Subset, ProcessDebugBreakpoint, BreakPointType, HitMode
 from TM1py.Services import TM1Service
-from .Utils import skip_if_insufficient_version
+from .Utils import skip_if_insufficient_version, skip_if_deprecated_in_version
 from TM1py.Utils import verify_version
 
 
@@ -368,6 +368,7 @@ class TestProcessService(unittest.TestCase):
 
         self.tm1.processes.delete(process.name)
 
+    @skip_if_deprecated_in_version(version='12')
     def test_get_last_message_from_processerrorlog(self):
         process = Process(name=str(uuid.uuid4()))
         process.epilog_procedure = "ItemReject('Not Relevant');"

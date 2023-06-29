@@ -16,7 +16,7 @@ import requests
 from mdxpy import MdxBuilder, Member
 from requests.adapters import HTTPAdapter
 
-from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminException
+from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminException, TM1pyVersionDeprecationException
 
 try:
     import pandas as pd
@@ -57,6 +57,22 @@ def require_version(version):
         def wrapper(self, *args, **kwargs):
             if not verify_version(required_version=version, version=self.version):
                 raise TM1pyVersionException(func.__name__, version)
+            return func(self, *args, **kwargs)
+
+        return wrapper
+
+    return wrap
+
+@decohints
+def deprecated_in_version(version):
+    """ Higher order function to check required version for TM1py function
+    """
+
+    def wrap(func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            if verify_version(required_version=version, version=self.version):
+                raise TM1pyVersionDeprecationException(func.__name__, version)
             return func(self, *args, **kwargs)
 
         return wrapper

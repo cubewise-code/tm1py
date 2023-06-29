@@ -20,7 +20,7 @@ from requests.adapters import HTTPAdapter
 from urllib3._collections import HTTPHeaderDict
 
 # SSO not supported for Linux
-from TM1py.Exceptions.Exceptions import TM1pyTimeout
+from TM1py.Exceptions.Exceptions import TM1pyTimeout, TM1pyVersionDeprecationException
 from TM1py.Utils import case_and_space_insensitive_equals, CaseAndSpaceInsensitiveSet, HTTPAdapterWithSocketOptions, \
     decohints
 from Utils import verify_version
@@ -295,6 +295,7 @@ class RestService:
                 application_client_id=self._kwargs.get("application_client_id", None),
                 application_client_secret=self._kwargs.get("application_client_secret", None))
 
+
     def _construct_service_and_auth_root(self, ssl, address, port, base_url, instance, database, auth_url):
         """  Create the service root URL (base_url) for all versions of TM1
         If a base_url is passed then it is assumed to be the complete service root
@@ -498,7 +499,10 @@ class RestService:
 
         # process additional headers
         if impersonate:
-            self.add_http_header('TM1-Impersonate', impersonate)
+            if self._use_v12_auth:
+                raise TM1pyVersionDeprecationException('User Impersonation', '12')
+            else:
+                self.add_http_header('TM1-Impersonate', impersonate)
 
         try:
             # skip re_connect to avoid infinite recursion in case of invalid credentials

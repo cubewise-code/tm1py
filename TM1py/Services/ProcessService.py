@@ -14,7 +14,7 @@ from TM1py.Objects.ProcessDebugBreakpoint import ProcessDebugBreakpoint
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import format_url, require_admin
-from TM1py.Utils.Utils import require_version
+from TM1py.Utils.Utils import require_version, deprecated_in_version
 
 
 class ProcessService(ObjectService):
@@ -363,6 +363,7 @@ class ProcessService(ObjectService):
         response = self._rest.GET(url=url, **kwargs)
         return response.text
 
+    @deprecated_in_version(version="12")
     def get_processerrorlogs(self, process_name: str, **kwargs) -> List:
         """ Get all ProcessErrorLog entries for a process
 
@@ -373,6 +374,7 @@ class ProcessService(ObjectService):
         response = self._rest.GET(url=url, **kwargs)
         return response.json()['value']
 
+    @deprecated_in_version(version="12")
     def get_last_message_from_processerrorlog(self, process_name: str, **kwargs) -> str:
         """ Get the latest ProcessErrorLog from a process entity
 
