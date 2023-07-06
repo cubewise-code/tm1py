@@ -110,14 +110,14 @@ class ManageService:
         else:
             return False
 
-    def upgrade_database(self, instance_name: str, database_name: str, target_version: str):
-        url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')/tm1.Upgrade"
+    def upgrade_database(self, instance_name: str, database_name: str, target_version: str = ""):
+        url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')/tm1s.Upgrade"
         payload = {"ProductVersion": target_version}
         response = requests.post(url=url, json=payload, auth=self._auth_header)
         return response
 
     def create_database_backup(self, instance_name: str, database_name: str, backup_url: str):
-        url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')/tm1.Backup"
+        url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')/tm1s.Backup"
         payload = {"URL": backup_url}
         response = requests.post(url=url, json=payload, auth=self._auth_header)
         return response
@@ -134,7 +134,7 @@ class ManageService:
         return response
 
     def restore_database(self, instance_name: str, database_name: str, backup_url: str):
-        url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')/tm1.Restore"
+        url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')/tm1s.Restore"
         payload = {"URL": backup_url}
         response = requests.post(url=url, json=payload, auth=self._auth_header)
         return response

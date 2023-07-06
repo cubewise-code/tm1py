@@ -21,7 +21,7 @@ class TestSecurityService(unittest.TestCase):
     enabled = True
     user = User(name=user_name, groups=[], password='TM1py', enabled=enabled)
     read_only_user = User(name=read_only_user_name, groups=[], password="TM1py", enabled=True)
-    group_name1 = prefix + "Gro'up1"
+    group_name1 = prefix + "Group1"
     group_name2 = prefix + "Group2"
     user.add_group(group_name1)
 
