@@ -11,7 +11,6 @@ from io import BytesIO
 from json import JSONDecodeError
 from typing import Union, Dict, Tuple, Optional
 
-
 import requests
 import urllib3
 from requests import Timeout, Response, ConnectionError, Session
@@ -245,13 +244,7 @@ class RestService:
             else:
                 raise ValueError("verify argument must be of type str or bool")
 
-        self._construct_service_and_auth_root(ssl=self._ssl,
-                                              address=self._address,
-                                              port=self._port,
-                                              base_url=self._base_url,
-                                              instance=self._instance,
-                                              database=self._database,
-                                              auth_url=self._auth_url)
+        self._construct_service_and_auth_root()
 
         self._version = None
         self._headers = self.HEADERS.copy()
@@ -295,52 +288,67 @@ class RestService:
                 application_client_id=self._kwargs.get("application_client_id", None),
                 application_client_secret=self._kwargs.get("application_client_secret", None))
 
+    def _construct_v12_service_and_auth_root(self):
+        if self._instance is None or self._database is None:
+            raise ValueError("Instance and Database Name is required for v12 authentication using an Address")
+        else:
+            # URL Format: http{ssl}://{address}:{port}/{instance}/api/v1/Databases('{database}')
+            self._base_url = "http{}://{}{}/{}/api/v1/Databases('{}')".format(
+                's' if self._ssl else '',
+                'localhost' if len(self._address) == 0 else self._address,
+                f':{self._port}' if self._port is not None else '',
+                self._instance,
+                self._database)
 
-    def _construct_service_and_auth_root(self, ssl, address, port, base_url, instance, database, auth_url):
+            self._auth_url = 'http{}://{}{}/{}/auth/v1/session'.format(
+                's' if self._ssl else '',
+                'localhost' if len(self._address) == 0 else self._address,
+                f':{self._port}' if self._port is not None else '',
+                self._instance)
+            self._use_v12_auth = True
+
+    def _construct_v11_service_and_auth_root(self):
+        # URL Format: http{ssl}://{address}:{port}/api/v1
+        self._base_url = "http{}://{}{}/api/v1".format(
+            's' if self._ssl else '',
+            'localhost' if len(self._address) == 0 else self._address,
+            f':{self._port}')
+        self._auth_url = f"{self._base_url}/Configuration/ProductVersion/$value"
+        self._use_v12_auth = False
+
+    def _construct_all_version_service_and_auth_root_from_base_url(self):
+        if self._address is not None:
+            raise ValueError('Base URL and Address can not be specified at the same time')
+        # v12 requires an auth URL be provided if a base URL is specified
+        elif "api/v1/Databases" in self._base_url:
+            if not self._auth_url:
+                raise ValueError("Auth_url missing, when connecting to planning analytics engine and using the "
+                                 "base_url"
+                                 " you must specify a corresponding auth url")
+            self._use_v12_auth = True
+        elif self._base_url.endswith("/api/v1"):
+            self._auth_url = f"{self._base_url}/Configuration/ProductVersion/$value"
+            self._use_v12_auth = False
+        else:
+            self._base_url += "/api/v1"
+            self._auth_url = f"{self._base_url}/Configuration/ProductVersion/$value"
+            self._use_v12_auth = False
+
+    def _construct_service_and_auth_root(self):
         """  Create the service root URL (base_url) for all versions of TM1
         If a base_url is passed then it is assumed to be the complete service root
         for accessing the API
         """
-        # all versions
-        if base_url is not None:
-            if "api/v1/Databases" in base_url:
-                if not auth_url:
-                    raise ValueError("auth_url missing, when connecting to planning analytics engine and using the "
-                                     "base_url"
-                                     " you must specify a corresponding auth url")
-            elif base_url.endswith("api/v1"):
-                self._auth_url = f"{base_url}/Configuration/ProductVersion/$value"
-                self._use_v12_auth = False
-            else:
-                self._base_url += "/api/v1"
-                self._auth_url = f"{base_url}/api/v1/Configuration/ProductVersion/$value"
-                self._use_v12_auth = False
-
-        # version 11
-        elif address is not None and instance is None and database is None:
-            # URL Format: http{ssl}://{address}:{port}/api/v1
-            self._base_url = "http{}://{}{}/api/v1".format(
-                's' if ssl else '',
-                'localhost' if len(address) == 0 else address,
-                f':{port}')
-            self._auth_url = f"{self._base_url}/Configuration/ProductVersion/$value"
-            self._use_v12_auth = False
-        # version 12+
+        # if the base URL is provided when the REST service is created
+        if self._base_url is not None:
+            self._construct_all_version_service_and_auth_root_from_base_url()
+        # If an address and no instance or database information is provided, we assume this is a v11 connection
+        elif self._address is not None and self._instance is None and self._database is None:
+            self._construct_v11_service_and_auth_root()
+        # If an address and database and instances are specified then we create a v12 connection
         else:
-            # URL Format: http{ssl}://{address}:{port}/{instance}/api/v1/Databases('{database}')
-            self._base_url = "http{}://{}{}/{}/api/v1/Databases('{}')".format(
-                's' if ssl else '',
-                'localhost' if len(address) == 0 else address,
-                f':{port}' if port is not None else '',
-                instance,
-                database)
+            self._construct_v12_service_and_auth_root()
 
-            self._auth_url = 'http{}://{}{}/{}/auth/v1/session'.format(
-                's' if ssl else '',
-                'localhost' if len(address) == 0 else address,
-                f':{port}' if port is not None else '',
-                instance)
-            self._use_v12_auth = True
 
     def _manage_http_adapter(self):
         if self._tcp_keepalive:
@@ -512,10 +520,10 @@ class RestService:
                 if self._use_v12_auth:
                     payload = {"User": user}
                     response = self._s.post(url=self._auth_url,
-                                           headers=self._headers,
-                                           verify=self._verify,
-                                           timeout=self._timeout,
-                                           json=payload)
+                                            headers=self._headers,
+                                            verify=self._verify,
+                                            timeout=self._timeout,
+                                            json=payload)
                     self.verify_response(response)
                     if 'TM1SessionId' not in self._s.cookies:
                         warnings.warn(f"TM1SessionId has failed to be added to the session cookies, future requests "
