@@ -538,8 +538,8 @@ class RestService:
                                             json=payload)
                     self.verify_response(response)
                     if 'TM1SessionId' not in self._s.cookies:
-                        warnings.warn(
-                            f"TM1SessionId has failed to be automatically added to the session cookies, future requests "
+                        raise TM1pyException(
+                            f"TM1SessionId has failed to be automaticallyadded to the session cookies, future requests "
                             "using this TM1Service instance will fail due to authentication. "
                             "Check the tm1-gateway domain settings are correct "
                             "in the container orchestrator ")
