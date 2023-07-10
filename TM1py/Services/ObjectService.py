@@ -38,7 +38,7 @@ class ObjectService:
 
     def determine_actual_object_name(self, object_class: str, object_name: str, **kwargs) -> str:
         url = format_url(
-            "/api/v1/{}?$filter=tolower(replace(Name, ' ', '')) eq '{}'",
+            "/{}?$filter=tolower(replace(Name, ' ', '')) eq '{}'",
             object_class,
             object_name.replace(" ", "").lower())
         response = self._rest.GET(url, **kwargs)
