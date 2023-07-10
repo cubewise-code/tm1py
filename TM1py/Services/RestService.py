@@ -348,7 +348,6 @@ class RestService:
         else:
             self._construct_v12_service_and_auth_root()
 
-
     def _manage_http_adapter(self):
         if self._tcp_keepalive:
             # SO_KEEPALIVE: set 1 to enable TCP keepalive
@@ -525,10 +524,11 @@ class RestService:
                                             json=payload)
                     self.verify_response(response)
                     if 'TM1SessionId' not in self._s.cookies:
-                        warnings.warn(f"TM1SessionId has failed to be added to the session cookies, future requests "
-                                      "using this TM1Service instance will fail due to authentication. "
-                                      "Check the tm1-gateway domain settings are correct "
-                                      "in the container orchestrator ")
+                        raise TM1pyException(
+                            f"TM1SessionId has failed to be added to the session cookies, future requests "
+                            "using this TM1Service instance will fail due to authentication. "
+                            "Check the tm1-gateway domain settings are correct "
+                            "in the container orchestrator ")
 
 
                 else:
