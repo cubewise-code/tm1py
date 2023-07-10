@@ -14,7 +14,7 @@ from TM1py.Objects.ProcessDebugBreakpoint import ProcessDebugBreakpoint
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import format_url, require_admin
-from TM1py.Utils.Utils import require_version
+from TM1py.Utils.Utils import require_version, deprecated_in_version
 
 
 class ProcessService(ObjectService):
@@ -32,7 +32,7 @@ class ProcessService(ObjectService):
         :return: Instance of the TM1py.Process
         """
         url = format_url(
-            "/api/v1/Processes('{}')?$select=*,UIData,VariablesUIData,"
+            "/Processes('{}')?$select=*,UIData,VariablesUIData,"
             "DataSource/dataSourceNameForServer,"
             "DataSource/dataSourceNameForClient,"
             "DataSource/asciiDecimalSeparator,"
@@ -58,7 +58,7 @@ class ProcessService(ObjectService):
         """
         model_process_filter = "&$filter=startswith(Name,'}') eq false and startswith(Name,'{') eq false"
 
-        url = "/api/v1/Processes?$select=*,UIData,VariablesUIData," \
+        url = "/Processes?$select=*,UIData,VariablesUIData," \
               "DataSource/dataSourceNameForServer," \
               "DataSource/dataSourceNameForClient," \
               "DataSource/asciiDecimalSeparator," \
@@ -86,7 +86,7 @@ class ProcessService(ObjectService):
             List of Strings
         """
         model_process_filter = "&$filter=startswith(Name,'}') eq false and startswith(Name,'{') eq false"
-        url = "/api/v1/Processes?$select=Name{}".format(model_process_filter if skip_control_processes else "")
+        url = "/Processes?$select=Name{}".format(model_process_filter if skip_control_processes else "")
 
         response = self._rest.GET(url, **kwargs)
         processes = list(process['Name'] for process in response.json()['value'])
@@ -103,7 +103,7 @@ class ProcessService(ObjectService):
         """
         search_string = search_string.lower().replace(' ', '')
         model_process_filter = "and (startswith(Name,'}') eq false and startswith(Name,'{') eq false)"
-        url = format_url("/api/v1/Processes?$select=Name&$filter="
+        url = format_url("/Processes?$select=Name&$filter="
                          "contains(tolower(replace(PrologProcedure, ' ', '')),'{}') "
                          "or contains(tolower(replace(MetadataProcedure, ' ', '')),'{}') "
                          "or contains(tolower(replace(DataProcedure, ' ', '')),'{}') "
@@ -130,7 +130,7 @@ class ProcessService(ObjectService):
         if name_contains_operator not in ("and", "or"):
             raise ValueError("'name_contains_operator' must be either 'AND' or 'OR'")
 
-        url = "/api/v1/Processes?$select=Name"
+        url = "/Processes?$select=Name"
         name_filters = []
 
         if name_startswith:
@@ -159,7 +159,7 @@ class ProcessService(ObjectService):
         :param process: Instance of TM1py.Process class
         :return: Response
         """
-        url = "/api/v1/Processes"
+        url = "/Processes"
         # Adjust process body if TM1 version is lower than 11 due to change in Process Parameters structure
         # https://www.ibm.com/developerworks/community/forums/html/topic?id=9188d139-8905-4895-9229-eaaf0e7fa683
         if int(self.version[0:2]) < 11:
@@ -173,7 +173,7 @@ class ProcessService(ObjectService):
         :param process: Instance of TM1py.Process class
         :return: Response
         """
-        url = format_url("/api/v1/Processes('{}')", process.name)
+        url = format_url("/Processes('{}')", process.name)
         # Adjust process body if TM1 version is lower than 11 due to change in Process Parameters structure
         # https://www.ibm.com/developerworks/community/forums/html/topic?id=9188d139-8905-4895-9229-eaaf0e7fa683
         if int(self.version[0:2]) < 11:
@@ -198,7 +198,7 @@ class ProcessService(ObjectService):
         :param name: 
         :return: Response
         """
-        url = format_url("/api/v1/Processes('{}')", name)
+        url = format_url("/Processes('{}')", name)
         response = self._rest.DELETE(url, **kwargs)
         return response
 
@@ -208,7 +208,7 @@ class ProcessService(ObjectService):
         :param name: 
         :return: 
         """
-        url = format_url("/api/v1/Processes('{}')", name)
+        url = format_url("/Processes('{}')", name)
         return self._exists(url, **kwargs)
 
     def compile(self, name: str, **kwargs) -> List:
@@ -217,7 +217,7 @@ class ProcessService(ObjectService):
         :param name: 
         :return: 
         """
-        url = format_url("/api/v1/Processes('{}')/tm1.Compile", name)
+        url = format_url("/Processes('{}')/tm1.Compile", name)
         response = self._rest.POST(url, **kwargs)
         syntax_errors = response.json()["value"]
         return syntax_errors
@@ -228,7 +228,7 @@ class ProcessService(ObjectService):
         :param process:
         :return:
         """
-        url = "/api/v1/CompileProcess"
+        url = "/CompileProcess"
 
         payload = json.loads('{"Process":' + process.body + '}')
 
@@ -251,7 +251,7 @@ class ProcessService(ObjectService):
         :param cancel_at_timeout: Abort operation in TM1 when timeout is reached
         :return:
         """
-        url = format_url("/api/v1/Processes('{}')/tm1.Execute", process_name)
+        url = format_url("/Processes('{}')/tm1.Execute", process_name)
         if not parameters:
             if kwargs:
                 parameters = {"Parameters": []}
@@ -273,7 +273,7 @@ class ProcessService(ObjectService):
         :param kwargs: dictionary of process parameters and values
         :return: success (boolean), status (String), error_log_file (String)
         """
-        url = "/api/v1/ExecuteProcessWithReturn?$expand=*"
+        url = "/ExecuteProcessWithReturn?$expand=*"
         if kwargs:
             for parameter_name, parameter_value in kwargs.items():
                 process.remove_parameter(name=parameter_name)
@@ -313,7 +313,7 @@ class ProcessService(ObjectService):
         :param kwargs: dictionary of process parameters and values
         :return: success (boolean), status (String), error_log_file (String)
         """
-        url = format_url("/api/v1/Processes('{}')/tm1.ExecuteWithReturn?$expand=*", process_name)
+        url = format_url("/Processes('{}')/tm1.ExecuteWithReturn?$expand=*", process_name)
         parameters = dict()
         if kwargs:
             parameters = {"Parameters": []}
@@ -359,20 +359,22 @@ class ProcessService(ObjectService):
         :param file_name: name of the error log file in the TM1 log directory
         :return: String, content of the file
         """
-        url = format_url("/api/v1/ErrorLogFiles('{}')/Content", file_name)
+        url = format_url("/ErrorLogFiles('{}')/Content", file_name)
         response = self._rest.GET(url=url, **kwargs)
         return response.text
 
+    @deprecated_in_version(version="12")
     def get_processerrorlogs(self, process_name: str, **kwargs) -> List:
         """ Get all ProcessErrorLog entries for a process
 
         :param process_name: name of the process
         :return: list - Collection of ProcessErrorLogs
         """
-        url = format_url("/api/v1/Processes('{}')/ErrorLogs", process_name)
+        url = format_url("/Processes('{}')/ErrorLogs", process_name)
         response = self._rest.GET(url=url, **kwargs)
         return response.json()['value']
 
+    @deprecated_in_version(version="12")
     def get_last_message_from_processerrorlog(self, process_name: str, **kwargs) -> str:
         """ Get the latest ProcessErrorLog from a process entity
 
@@ -383,7 +385,7 @@ class ProcessService(ObjectService):
         logs_as_list = self.get_processerrorlogs(process_name, **kwargs)
         if len(logs_as_list) > 0:
             timestamp = logs_as_list[-1]['Timestamp']
-            url = format_url("/api/v1/Processes('{}')/ErrorLogs('{}')/Content", process_name, timestamp)
+            url = format_url("/Processes('{}')/ErrorLogs('{}')/Content", process_name, timestamp)
             # response is plain text - due to entity type Edm.Stream
             response = self._rest.GET(url=url, **kwargs)
             return response.text
@@ -392,7 +394,7 @@ class ProcessService(ObjectService):
         """ 
         Start debug session for specified process; debug session id is returned in response        
         """
-        raw_url = "/api/v1/Processes('{}')/tm1.Debug?$expand=Breakpoints," \
+        raw_url = "/Processes('{}')/tm1.Debug?$expand=Breakpoints," \
                   "Thread,CallStack($expand=Variables,Process($select=Name))"
         url = format_url(raw_url, process_name)
 
@@ -414,14 +416,14 @@ class ProcessService(ObjectService):
         Runs a single statement in the process
         If ExecuteProcess is next function, will NOT debug child process
         """
-        url = format_url("/api/v1/ProcessDebugContexts('{}')/tm1.StepOver", debug_id)
+        url = format_url("/ProcessDebugContexts('{}')/tm1.StepOver", debug_id)
         self._rest.POST(url, **kwargs)
 
         # digest time  necessary for TM1 <= 11.8
         # ToDo: remove in later versions of TM1 once issue in TM1 server is resolved
         time.sleep(0.1)
 
-        raw_url = "/api/v1/ProcessDebugContexts('{}')?$expand=Breakpoints," \
+        raw_url = "/ProcessDebugContexts('{}')?$expand=Breakpoints," \
                   "Thread,CallStack($expand=Variables,Process($select=Name))"
         url = format_url(raw_url, debug_id)
         response = self._rest.GET(url, **kwargs)
@@ -433,14 +435,14 @@ class ProcessService(ObjectService):
         Runs a single statement in the process
         If ExecuteProcess is next function, will pause at first statement inside child process
         """
-        url = format_url("/api/v1/ProcessDebugContexts('{}')/tm1.StepIn", debug_id)
+        url = format_url("/ProcessDebugContexts('{}')/tm1.StepIn", debug_id)
         self._rest.POST(url, **kwargs)
 
         # digest time  necessary for TM1 <= 11.8
         # ToDo: remove in later versions of TM1 once issue in TM1 server is resolved
         time.sleep(0.1)
 
-        raw_url = "/api/v1/ProcessDebugContexts('{}')?$expand=Breakpoints," \
+        raw_url = "/ProcessDebugContexts('{}')?$expand=Breakpoints," \
                   "Thread,CallStack($expand=Variables,Process($select=Name))"
         url = format_url(raw_url, debug_id)
         response = self._rest.GET(url, **kwargs)
@@ -451,14 +453,14 @@ class ProcessService(ObjectService):
         """
         Resumes execution and runs until current process has finished.
         """
-        url = format_url("/api/v1/ProcessDebugContexts('{}')/tm1.StepOut", debug_id)
+        url = format_url("/ProcessDebugContexts('{}')/tm1.StepOut", debug_id)
         self._rest.POST(url, **kwargs)
 
         # digest time  necessary for TM1 <= 11.8
         # ToDo: remove in later versions of TM1 once issue in TM1 server is resolved
         time.sleep(0.1)
 
-        raw_url = "/api/v1/ProcessDebugContexts('{}')?$expand=Breakpoints," \
+        raw_url = "/ProcessDebugContexts('{}')?$expand=Breakpoints," \
                   "Thread,CallStack($expand=Variables,Process($select=Name))"
         url = format_url(raw_url, debug_id)
         response = self._rest.GET(url, **kwargs)
@@ -470,14 +472,14 @@ class ProcessService(ObjectService):
         Resumes execution until next breakpoint
         
         """
-        url = format_url("/api/v1/ProcessDebugContexts('{}')/tm1.Continue", debug_id)
+        url = format_url("/ProcessDebugContexts('{}')/tm1.Continue", debug_id)
         self._rest.POST(url, **kwargs)
 
         # digest time  necessary for TM1 <= 11.8
         # ToDo: remove in later versions of TM1 once issue in TM1 server is resolved
         time.sleep(0.1)
 
-        raw_url = "/api/v1/ProcessDebugContexts('{}')?$expand=Breakpoints," \
+        raw_url = "/ProcessDebugContexts('{}')?$expand=Breakpoints," \
                   "Thread,CallStack($expand=Variables,Process($select=Name))"
         url = format_url(raw_url, debug_id)
         response = self._rest.GET(url, **kwargs)
@@ -485,7 +487,7 @@ class ProcessService(ObjectService):
         return response.json()
 
     def debug_get_breakpoints(self, debug_id: str, **kwargs) -> List[ProcessDebugBreakpoint]:
-        url = format_url("/api/v1/ProcessDebugContexts('{}')/Breakpoints", debug_id)
+        url = format_url("/ProcessDebugContexts('{}')/Breakpoints", debug_id)
 
         response = self._rest.GET(url, **kwargs)
         return [ProcessDebugBreakpoint.from_dict(b) for b in response.json()['value']]
@@ -495,7 +497,7 @@ class ProcessService(ObjectService):
 
     def debug_add_breakpoints(self, debug_id: str, break_points: Iterable[ProcessDebugBreakpoint] = None,
                               **kwargs) -> Response:
-        url = format_url("/api/v1/ProcessDebugContexts('{}')/Breakpoints", debug_id)
+        url = format_url("/ProcessDebugContexts('{}')/Breakpoints", debug_id)
 
         body = json.dumps([break_point.body_as_dict for break_point in break_points])
 
@@ -503,14 +505,14 @@ class ProcessService(ObjectService):
         return response
 
     def debug_remove_breakpoint(self, debug_id: str, breakpoint_id: int, **kwargs) -> Response:
-        url = format_url("/api/v1/ProcessDebugContexts('{}')/Breakpoints('{}')", debug_id, str(breakpoint_id))
+        url = format_url("/ProcessDebugContexts('{}')/Breakpoints('{}')", debug_id, str(breakpoint_id))
 
         response = self._rest.DELETE(url, **kwargs)
         return response
 
     def debug_update_breakpoint(self, debug_id: str, break_point: ProcessDebugBreakpoint, **kwargs) -> Response:
         url = format_url(
-            "/api/v1/ProcessDebugContexts('{}')/Breakpoints('{}')",
+            "/ProcessDebugContexts('{}')/Breakpoints('{}')",
             debug_id,
             str(break_point.breakpoint_id))
 
@@ -518,7 +520,7 @@ class ProcessService(ObjectService):
         return response
 
     def debug_get_variable_values(self, debug_id: str, **kwargs) -> CaseInsensitiveDict:
-        raw_url = "/api/v1/ProcessDebugContexts('{}')?$expand=" \
+        raw_url = "/ProcessDebugContexts('{}')?$expand=" \
                   "CallStack($expand=Variables)"
         url = format_url(raw_url, debug_id)
 
@@ -529,7 +531,7 @@ class ProcessService(ObjectService):
         return CaseInsensitiveDict({entry["Name"]: entry["Value"] for entry in call_stack})
 
     def debug_get_single_variable_value(self, debug_id: str, variable_name: str, **kwargs) -> str:
-        raw_url = "/api/v1/ProcessDebugContexts('{}')?$expand=" \
+        raw_url = "/ProcessDebugContexts('{}')?$expand=" \
                   "CallStack($expand=Variables($filter=tolower(Name) eq '{}';$select=Value))"
         url = format_url(raw_url, debug_id, variable_name.lower())
 
@@ -541,7 +543,7 @@ class ProcessService(ObjectService):
             raise ValueError(f"'{variable_name}' not found in collection")
 
     def debug_get_process_procedure(self, debug_id: str, **kwargs) -> str:
-        raw_url = "/api/v1/ProcessDebugContexts('{}')?$expand=" \
+        raw_url = "/ProcessDebugContexts('{}')?$expand=" \
                   "CallStack($select=Procedure)"
         url = format_url(raw_url, debug_id)
 
@@ -549,7 +551,7 @@ class ProcessService(ObjectService):
         return response.json()['CallStack'][0]['Procedure']
 
     def debug_get_process_line_number(self, debug_id: str, **kwargs) -> str:
-        raw_url = "/api/v1/ProcessDebugContexts('{}')?$expand=" \
+        raw_url = "/ProcessDebugContexts('{}')?$expand=" \
                   "CallStack($select=LineNumber)"
         url = format_url(raw_url, debug_id)
 
@@ -557,7 +559,7 @@ class ProcessService(ObjectService):
         return response.json()['CallStack'][0]['LineNumber']
 
     def debug_get_record_number(self, debug_id: str, **kwargs) -> str:
-        raw_url = "/api/v1/ProcessDebugContexts('{}')?$expand=" \
+        raw_url = "/ProcessDebugContexts('{}')?$expand=" \
                   "CallStack($select=RecordNumber)"
         url = format_url(raw_url, debug_id)
 
@@ -565,7 +567,7 @@ class ProcessService(ObjectService):
         return response.json()['CallStack'][0]['RecordNumber']
 
     def debug_get_current_breakpoint(self, debug_id: str, **kwargs) -> ProcessDebugBreakpoint:
-        raw_url = "/api/v1/ProcessDebugContexts('{}')?$expand=CurrentBreakpoint"
+        raw_url = "/ProcessDebugContexts('{}')?$expand=CurrentBreakpoint"
 
         url = format_url(raw_url, debug_id)
 

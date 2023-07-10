@@ -22,7 +22,9 @@ class TestMonitoringService(unittest.TestCase):
 
     def test_get_threads(self):
         threads = self.tm1.monitoring.get_threads()
-        self.assertTrue(any(thread["Function"] == "GET /api/v1/Threads" for thread in threads))
+        self.assertTrue(any(thread["Function"] == "GET /api/v1/Threads" for thread in threads)
+                        or
+                        any(thread["Function"] == "GET /Threads" for thread in threads))
 
     def test_get_active_users(self):
         current_user = self.tm1.security.get_current_user()

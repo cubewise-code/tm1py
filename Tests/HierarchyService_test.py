@@ -31,6 +31,7 @@ class TestHierarchyService(unittest.TestCase):
 
     @classmethod
     def setUp(cls):
+        cls.delete_dimension()
         cls.create_dimension()
         cls.create_subset()
 
@@ -55,7 +56,8 @@ class TestHierarchyService(unittest.TestCase):
 
     @classmethod
     def delete_dimension(cls):
-        cls.tm1.dimensions.delete(cls.dimension_name)
+        if cls.tm1.dimensions.exists(cls.dimension_name):
+            cls.tm1.dimensions.delete(cls.dimension_name)
 
     @classmethod
     def create_subset(cls):
