@@ -21,7 +21,7 @@ from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.SubsetService import SubsetService
 from TM1py.Utils.Utils import case_and_space_insensitive_equals, format_url, CaseAndSpaceInsensitiveDict, \
-    CaseAndSpaceInsensitiveSet, CaseAndSpaceInsensitiveTuplesDict, require_pandas, require_admin
+    CaseAndSpaceInsensitiveSet, CaseAndSpaceInsensitiveTuplesDict, require_pandas, require_admin, verify_version
 
 
 class HierarchyService(ObjectService):
@@ -85,7 +85,7 @@ class HierarchyService(ObjectService):
         :param hierarchy:
         :return:
         """
-        url = format_url("/api/v1/Dimensions('{}')/Hierarchies", hierarchy.dimension_name)
+        url = format_url("/Dimensions('{}')/Hierarchies", hierarchy.dimension_name)
         response = self._rest.POST(url, hierarchy.body, **kwargs)
 
         self.update_element_attributes(hierarchy, **kwargs)
@@ -100,7 +100,7 @@ class HierarchyService(ObjectService):
         :return:
         """
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')?$expand=Edges,Elements,ElementAttributes,Subsets,DefaultMember",
+            "/Dimensions('{}')/Hierarchies('{}')?$expand=Edges,Elements,ElementAttributes,Subsets,DefaultMember",
             dimension_name,
             hierarchy_name)
         response = self._rest.GET(url, **kwargs)
@@ -112,7 +112,7 @@ class HierarchyService(ObjectService):
         :param dimension_name:
         :return:
         """
-        url = format_url("/api/v1/Dimensions('{}')/Hierarchies?$select=Name", dimension_name)
+        url = format_url("/Dimensions('{}')/Hierarchies?$select=Name", dimension_name)
         response = self._rest.GET(url, **kwargs)
         return [hierarchy["Name"] for hierarchy in response.json()["value"]]
 
@@ -131,7 +131,7 @@ class HierarchyService(ObjectService):
         # functions returns multiple responses
         responses = list()
         # 1. Update Hierarchy
-        url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')", hierarchy.dimension_name, hierarchy.name)
+        url = format_url("/Dimensions('{}')/Hierarchies('{}')", hierarchy.dimension_name, hierarchy.name)
         # Workaround EDGES: Handle Issue, that Edges cant be created in one batch with the Hierarchy in certain versions
         hierarchy_body = hierarchy.body_as_dict
         if self.version[0:8] in self.EDGES_WORKAROUND_VERSIONS:
@@ -177,7 +177,7 @@ class HierarchyService(ObjectService):
         :param hierarchy_name:
         :return:
         """
-        url = format_url("/api/v1/Dimensions('{}')/Hierarchies?$select=Name", dimension_name)
+        url = format_url("/Dimensions('{}')/Hierarchies?$select=Name", dimension_name)
 
         try:
             response = self._rest.GET(url, **kwargs)
@@ -193,13 +193,13 @@ class HierarchyService(ObjectService):
         return hierarchy_name in existing_hierarchies
 
     def delete(self, dimension_name: str, hierarchy_name: str, **kwargs) -> Response:
-        url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')", dimension_name, hierarchy_name)
+        url = format_url("/Dimensions('{}')/Hierarchies('{}')", dimension_name, hierarchy_name)
         return self._rest.DELETE(url, **kwargs)
 
     def get_hierarchy_summary(self, dimension_name: str, hierarchy_name: str, **kwargs) -> Dict[str, int]:
         hierarchy_properties = ("Elements", "Edges", "ElementAttributes", "Members", "Levels")
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')?$expand=Edges/$count,Elements/$count,"
+            "/Dimensions('{}')/Hierarchies('{}')?$expand=Edges/$count,Elements/$count,"
             "ElementAttributes/$count,Members/$count,Levels/$count&$select=Cardinality",
             dimension_name,
             hierarchy_name)
@@ -278,7 +278,7 @@ class HierarchyService(ObjectService):
         :return: String, name of Member
         """
         url = format_url(
-            "/api/v1/Dimensions('{dimension}')/Hierarchies('{hierarchy}')/DefaultMember",
+            "/Dimensions('{dimension}')/Hierarchies('{hierarchy}')/DefaultMember",
             dimension=dimension_name,
             hierarchy=hierarchy_name if hierarchy_name else dimension_name)
         response = self._rest.GET(url=url, **kwargs)
@@ -287,16 +287,9 @@ class HierarchyService(ObjectService):
             return None
         return response.json()["Name"]
 
-    def update_default_member(self, dimension_name: str, hierarchy_name: str = None, member_name: str = "",
-                              **kwargs) -> Response:
-        """ Update the default member of a hierarchy.
-        Currently implemented through TI, since TM1 API does not supports default member updates yet.
-
-        :param dimension_name:
-        :param hierarchy_name:
-        :param member_name:
-        :return:
-        """
+    def _update_default_member_via_props_cube(self, dimension_name: str, hierarchy_name: str = None,
+                                              member_name: str = "",
+                                              **kwargs) -> Response:
         from TM1py import ProcessService, CellService
         if hierarchy_name and not case_and_space_insensitive_equals(dimension_name, hierarchy_name):
             dimension = "{}:{}".format(dimension_name, hierarchy_name)
@@ -314,10 +307,35 @@ class HierarchyService(ObjectService):
             lines_prolog=format_url("RefreshMdxHierarchy('{}');", dimension_name),
             **kwargs)
 
+    def _update_default_member_via_api(self, dimension_name: str, hierarchy_name: str = None, member_name: str = "",
+                                       **kwargs) -> Response:
+
+        url = format_url("/Dimensions('{dimension}')/Hierarchies('{hierarchy}')",
+                         dimension=dimension_name,
+                         hierarchy=hierarchy_name if hierarchy_name else dimension_name)
+
+        payload = {"DefaultMemberName": member_name}
+
+        return self._rest.PATCH(url=url, data=json.dumps(payload))
+
+    def update_default_member(self, dimension_name: str, hierarchy_name: str = None, member_name: str = "",
+                              **kwargs) -> Response:
+        """ Update the default member of a hierarchy.
+
+        :param dimension_name:
+        :param hierarchy_name:
+        :param member_name:
+        :return:
+        """
+        if verify_version(required_version='12', version=self.version):
+            return self._update_default_member_via_api(dimension_name, hierarchy_name, member_name)
+        else:
+            return self._update_default_member_via_props_cube(dimension_name, hierarchy_name, member_name)
+
     def remove_all_edges(self, dimension_name: str, hierarchy_name: str = None, **kwargs) -> Response:
         if not hierarchy_name:
             hierarchy_name = dimension_name
-        url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')", dimension_name, hierarchy_name)
+        url = format_url("/Dimensions('{}')/Hierarchies('{}')", dimension_name, hierarchy_name)
         body = {
             "Edges": []
         }
@@ -384,7 +402,7 @@ class HierarchyService(ObjectService):
         :return:
         """
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/Structure/$value",
+            "/Dimensions('{}')/Hierarchies('{}')/Structure/$value",
             dimension_name,
             hierarchy_name)
         structure = int(self._rest.GET(url, **kwargs).text)

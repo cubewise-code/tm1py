@@ -14,20 +14,22 @@ from typing import Union, Dict, Tuple, Optional
 import requests
 import urllib3
 from requests import Timeout, Response, ConnectionError, Session
+from requests.auth import HTTPBasicAuth
 from requests.adapters import HTTPAdapter
 from urllib3._collections import HTTPHeaderDict
 
 # SSO not supported for Linux
-from TM1py.Exceptions.Exceptions import TM1pyTimeout
+from TM1py.Exceptions.Exceptions import TM1pyTimeout, TM1pyVersionDeprecationException
 from TM1py.Utils import case_and_space_insensitive_equals, CaseAndSpaceInsensitiveSet, HTTPAdapterWithSocketOptions, \
     decohints
+from Utils import verify_version
 
 try:
     from requests_negotiate_sspi import HttpNegotiateAuth
 except ImportError:
     warnings.warn("requests_negotiate_sspi failed to import. SSO will not work", ImportWarning)
 
-from TM1py.Exceptions import TM1pyRestException
+from TM1py.Exceptions import TM1pyRestException, TM1pyException
 
 import http.client as http_client
 
@@ -146,14 +148,19 @@ class RestService:
         """ Create an instance of RESTService
         :param address: String - address of the TM1 instance
         :param port: Int - HTTPPortNumber as specified in the tm1s.cfg
-        :param base_url - base url e.g. https://localhost:12354/api/v1
+        :param ssl: boolean -  as specified in the tm1s.cfg
+        :param instance: string -  planing analytics engine (v12) instance name
+        :param database: string -  planing analytics engine (v12) database name
+        :param base_url - base url
+        :param auth_url - auth url for planning analytics engine (v12)
         :param user: String - name of the user
         :param password String - password of the user
         :param decode_b64 - whether password argument is b64 encoded
         :param namespace String - optional CAM namespace
-        :param ssl: boolean -  as specified in the tm1s.cfg
         :param cam_passport: String - the cam passport
         :param session_id: String - TM1SessionId e.g. q7O6e1w49AixeuLVxJ1GZg
+        :param application_client_id - planning analytics engine (v12) named application client ID created via manage service
+        :param application_client_secret - planning analytics engine (v12) named application secret created via manage service
         :param session_context: String - Name of the Application. Controls "Context" column in Arc / TM1top.
                 If None, use default: TM1py
         :param verify: path to .cer file or 'True' / True / 'False' / False (if no ssl verification is required)
@@ -185,6 +192,11 @@ class RestService:
         self._ssl = self.translate_to_boolean(kwargs.get('ssl', True))
         self._address = kwargs.get('address', None)
         self._port = kwargs.get('port', None)
+        self._base_url = kwargs.get('base_url', None)
+        self._auth_url = kwargs.get('auth_url', None)
+        self._instance = kwargs.get('instance', None)
+        self._database = kwargs.get('database', None)
+
         self._verify = False
         self._timeout = None if kwargs.get('timeout', None) is None else float(kwargs.get('timeout'))
         self._cancel_at_timeout = kwargs.get('cancel_at_timeout', False)
@@ -232,14 +244,7 @@ class RestService:
             else:
                 raise ValueError("verify argument must be of type str or bool")
 
-        if 'base_url' in kwargs:
-            self._base_url = kwargs['base_url']
-            self._ssl = self._determine_ssl_based_on_base_url()
-        else:
-            self._base_url = "http{}://{}:{}".format(
-                's' if self._ssl else '',
-                'localhost' if len(self._address) == 0 else self._address,
-                self._port)
+        self._construct_service_and_auth_root()
 
         self._version = None
         self._headers = self.HEADERS.copy()
@@ -279,7 +284,71 @@ class RestService:
                 integrated_login_service=self._kwargs.get("integrated_login_service"),
                 integrated_login_host=self._kwargs.get("integrated_login_host"),
                 integrated_login_delegate=self._kwargs.get("integrated_login_delegate"),
-                impersonate=self._kwargs.get("impersonate", None))
+                impersonate=self._kwargs.get("impersonate", None),
+                application_client_id=self._kwargs.get("application_client_id", None),
+                application_client_secret=self._kwargs.get("application_client_secret", None))
+
+    def _construct_v12_service_and_auth_root(self):
+        if self._instance is None or self._database is None:
+            raise ValueError("Instance and Database Name is required for v12 authentication using an Address")
+        else:
+            # URL Format: http{ssl}://{address}:{port}/{instance}/api/v1/Databases('{database}')
+            self._base_url = "http{}://{}{}/{}/api/v1/Databases('{}')".format(
+                's' if self._ssl else '',
+                'localhost' if len(self._address) == 0 else self._address,
+                f':{self._port}' if self._port is not None else '',
+                self._instance,
+                self._database)
+
+            self._auth_url = 'http{}://{}{}/{}/auth/v1/session'.format(
+                's' if self._ssl else '',
+                'localhost' if len(self._address) == 0 else self._address,
+                f':{self._port}' if self._port is not None else '',
+                self._instance)
+            self._use_v12_auth = True
+
+    def _construct_v11_service_and_auth_root(self):
+        # URL Format: http{ssl}://{address}:{port}/api/v1
+        self._base_url = "http{}://{}{}/api/v1".format(
+            's' if self._ssl else '',
+            'localhost' if len(self._address) == 0 else self._address,
+            f':{self._port}')
+        self._auth_url = f"{self._base_url}/Configuration/ProductVersion/$value"
+        self._use_v12_auth = False
+
+    def _construct_all_version_service_and_auth_root_from_base_url(self):
+        if self._address is not None:
+            raise ValueError('Base URL and Address can not be specified at the same time')
+        # v12 requires an auth URL be provided if a base URL is specified
+        elif "api/v1/Databases" in self._base_url:
+            if not self._auth_url:
+                raise ValueError("Auth_url missing, when connecting to planning analytics engine and using the "
+                                 "base_url"
+                                 " you must specify a corresponding auth url")
+            self._use_v12_auth = True
+        elif self._base_url.endswith("/api/v1"):
+            self._auth_url = f"{self._base_url}/Configuration/ProductVersion/$value"
+            self._use_v12_auth = False
+        else:
+            self._base_url += "/api/v1"
+            self._auth_url = f"{self._base_url}/Configuration/ProductVersion/$value"
+            self._use_v12_auth = False
+
+    def _construct_service_and_auth_root(self):
+        """  Create the service root URL (base_url) for all versions of TM1
+        If a base_url is passed then it is assumed to be the complete service root
+        for accessing the API
+        """
+        # if the base URL is provided when the REST service is created
+        if self._base_url is not None:
+            self._construct_all_version_service_and_auth_root_from_base_url()
+        # If an address and no instance or database information is provided, we assume this is a v11 connection
+        elif self._address is not None and self._instance is None and self._database is None:
+            self._construct_v11_service_and_auth_root()
+        # If an address and database and instances are specified then we create a v12 connection
+        else:
+            self._construct_v12_service_and_auth_root()
+
 
     def _manage_http_adapter(self):
         if self._tcp_keepalive:
@@ -346,7 +415,7 @@ class RestService:
     @httpmethod
     def PATCH(self, url: str, data: Union[str, bytes], headers: Dict = None, timeout: float = None, **kwargs):
         """ PATCH request against the TM1 instance
-        :param url: String, for instance : /api/v1/Dimensions('plan_business_unit')
+        :param url: String, for instance : /Dimensions('plan_business_unit')
         :param data: the payload
         :param headers: custom headers
         :param timeout: Number of seconds that the client will wait to receive the first byte.
@@ -362,7 +431,7 @@ class RestService:
     @httpmethod
     def PUT(self, url: str, data: Union[str, bytes], headers: Dict = None, timeout: float = None, **kwargs):
         """ PUT request against the TM1 instance
-        :param url: String, for instance : /api/v1/Dimensions('plan_business_unit')
+        :param url: String, for instance : /Dimensions('plan_business_unit')
         :param data: the payload
         :param headers: custom headers
         :param timeout: Number of seconds that the client will wait to receive the first byte.
@@ -378,7 +447,7 @@ class RestService:
     @httpmethod
     def DELETE(self, url: str, data: Union[str, bytes], headers: Dict = None, timeout: float = None, **kwargs):
         """ Delete request against TM1 instance
-        :param url:  String, for instance : /api/v1/Dimensions('plan_business_unit')
+        :param url:  String, for instance : /Dimensions('plan_business_unit')
         :param data: the payload
         :param headers: custom headers
         :param timeout: Number of seconds that the client will wait to receive the first byte.
@@ -397,7 +466,7 @@ class RestService:
         # Easier to ask for forgiveness than permission
         try:
             # ProductVersion >= TM1 10.2.2 FP 6
-            self.POST('/api/v1/ActiveSession/tm1.Close', '', headers={"Connection": "close"}, timeout=timeout,
+            self.POST('/ActiveSession/tm1.Close', '', headers={"Connection": "close"}, timeout=timeout,
                       async_requests_mode=False, **kwargs)
         except TM1pyRestException:
             # ProductVersion < TM1 10.2.2 FP 6
@@ -409,7 +478,8 @@ class RestService:
                        gateway: str = None, cam_passport: str = None, integrated_login: bool = None,
                        integrated_login_domain: str = None, integrated_login_service: str = None,
                        integrated_login_host: str = None, integrated_login_delegate: bool = None,
-                       impersonate: str = None):
+                       impersonate: str = None,
+                       application_client_id: str = None, application_client_secret: str = None):
         """ perform a simple GET request (Ask for the TM1 Version) to start a session
         """
         # Authorization with integrated_login
@@ -419,6 +489,10 @@ class RestService:
                 service=integrated_login_service,
                 host=integrated_login_host,
                 delegate=integrated_login_delegate)
+
+        elif application_client_id is not None and application_client_id is not None:
+            application_auth = HTTPBasicAuth(application_client_id, application_client_secret)
+            self._s.auth = application_auth
 
         # Authorization [Basic, CAM] through Headers
         else:
@@ -431,25 +505,49 @@ class RestService:
                 self._verify)
             self.add_http_header('Authorization', token)
 
-        url = '/api/v1/Configuration/ProductVersion/$value'
-        try:
-            additional_headers = dict()
-            if impersonate:
-                additional_headers["TM1-Impersonate"] = impersonate
+        # process additional headers
+        if impersonate:
+            if self._use_v12_auth:
+                raise TM1pyVersionDeprecationException('User Impersonation', '12')
+            else:
+                self.add_http_header('TM1-Impersonate', impersonate)
 
+        try:
             # skip re_connect to avoid infinite recursion in case of invalid credentials
             original_value = self._re_connect_on_session_timeout
             try:
                 self._re_connect_on_session_timeout = False
-                response = self.GET(url=url, headers=additional_headers)
+                if self._use_v12_auth:
+                    payload = {"User": user}
+                    response = self._s.post(url=self._auth_url,
+                                            headers=self._headers,
+                                            verify=self._verify,
+                                            timeout=self._timeout,
+                                            json=payload)
+                    self.verify_response(response)
+                    if 'TM1SessionId' not in self._s.cookies:
+                        warnings.warn(f"TM1SessionId has failed to be added to the session cookies, future requests "
+                                      "using this TM1Service instance will fail due to authentication. "
+                                      "Check the tm1-gateway domain settings are correct "
+                                      "in the container orchestrator ")
+
+
+                else:
+                    response = self._s.get(url=self._auth_url,
+                                           headers=self._headers,
+                                           verify=self._verify,
+                                           timeout=self._timeout)
+                    self.verify_response(response)
+                    self._version = response.text
+
             finally:
                 self._re_connect_on_session_timeout = original_value
 
             if response is None:
-                raise ValueError(f"No response returned from URL: '{self._base_url + url}'. "
+                raise ValueError(f"No response returned from URL: '{self._auth_url}'. "
                                  f"Please double check your address and port number in the URL.")
 
-            self._version = response.text
+
         finally:
             # After we have session cookie, drop the Authorization Header
             self.remove_http_header('Authorization')
@@ -469,13 +567,13 @@ class RestService:
             Boolean
         """
         try:
-            self.GET('/api/v1/Configuration/ServerName/$value')
+            self.GET('/Configuration/ServerName/$value')
             return True
         except:
             return False
 
     def set_version(self):
-        url = '/api/v1/Configuration/ProductVersion/$value'
+        url = '/Configuration/ProductVersion/$value'
         response = self.GET(url=url)
         self._version = response.text
 
@@ -486,7 +584,7 @@ class RestService:
     @property
     def is_admin(self) -> bool:
         if self._is_admin is None:
-            response = self.GET("/api/v1/ActiveUser/Groups")
+            response = self.GET("/ActiveUser/Groups")
             self._is_admin = "ADMIN" in CaseAndSpaceInsensitiveSet(
                 *[group["Name"] for group in response.json()["value"]])
 
@@ -495,7 +593,7 @@ class RestService:
     @property
     def sandboxing_disabled(self):
         if self._sandboxing_disabled is None:
-            value = self.GET("/api/v1/ActiveConfiguration/Administration/DisableSandboxing/$value")
+            value = self.GET("/ActiveConfiguration/Administration/DisableSandboxing/$value")
             self._sandboxing_disabled = value
 
         return self._sandboxing_disabled
@@ -607,11 +705,11 @@ class RestService:
         return original_header
 
     def retrieve_async_response(self, async_id: str, **kwargs) -> Response:
-        url = self._base_url + f"/api/v1/_async('{async_id}')"
+        url = self._base_url + f"/_async('{async_id}')"
         return self._s.get(url, **kwargs)
 
     def cancel_async_operation(self, async_id: str, **kwargs):
-        url = self._base_url + f"/api/v1/_async('{async_id}')"
+        url = self._base_url + f"/_async('{async_id}')"
         response = self._s.delete(url, **kwargs)
         self.verify_response(response)
 

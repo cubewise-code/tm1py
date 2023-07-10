@@ -35,7 +35,7 @@ from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_nam
     case_and_space_insensitive_equals, get_cube, resembles_mdx, require_admin, extract_compact_json_cellset, \
     cell_is_updateable, build_mdx_from_cellset, build_mdx_and_values_from_cellset, \
     dimension_names_from_element_unique_names, frame_to_significant_digits, build_dataframe_from_csv, \
-    drop_dimension_properties, decohints
+    drop_dimension_properties, decohints, verify_version
 
 try:
     import pandas as pd
@@ -343,7 +343,7 @@ class CellService(ObjectService):
                 component_fields = f'{component_depth}/Type, {component_depth}/Value, {component_depth}/Statements'
                 select_query = ','.join([select_query, component_fields])
 
-        url = format_url("/api/v1/Cubes('{}')/tm1.TraceCellCalculation?$select=Type,Value,Statements"
+        url = format_url("/Cubes('{}')/tm1.TraceCellCalculation?$select=Type,Value,Statements"
                          "{}&$expand=Tuple($select=Name, UniqueName, Type) {}", cube_name, select_query, expand_query)
 
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
@@ -388,7 +388,7 @@ class CellService(ObjectService):
         :return: feeder trace
         """
 
-        url = format_url("/api/v1/Cubes('{}')/tm1.TraceFeeders?$select=Statements,FedCells"
+        url = format_url("/Cubes('{}')/tm1.TraceFeeders?$select=Statements,FedCells"
                          "&$expand=FedCells/Tuple($select=Name,UniqueName,Type), "
                          "FedCells/Cube($select=Name)", cube_name)
 
@@ -434,7 +434,7 @@ class CellService(ObjectService):
         :return: fed cell descriptor
         """
 
-        url = format_url("/api/v1/Cubes('{}')/tm1.CheckFeeders"
+        url = format_url("/Cubes('{}')/tm1.CheckFeeders"
                          "?$select=Fed"
                          "&$expand=Tuple($select=Name,UniqueName,Type),Cube($select=Name)", cube_name)
 
@@ -608,7 +608,7 @@ class CellService(ObjectService):
         :param kwargs:
         :return:
         """
-        url = format_url("/api/v1/Cellsets('{}')/tm1.Update", cellset_id)
+        url = format_url("/Cellsets('{}')/tm1.Update", cellset_id)
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         return self._rest.POST(url=url, data=json.dumps(payload), **kwargs)
 
@@ -831,7 +831,7 @@ class CellService(ObjectService):
         """
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
-        url = format_url("/api/v1/Cubes('{}')/tm1.Update", cube_name)
+        url = format_url("/Cubes('{}')/tm1.Update", cube_name)
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         body_as_dict = OrderedDict()
         body_as_dict["Cells"] = [{}]
@@ -1114,12 +1114,16 @@ class CellService(ObjectService):
     def _build_blob_to_cube_process(self, cube_name: str, process_name: str, blob_filename: str, dimensions: List[str],
                                     increment: bool, skip_non_updateable: bool, sandbox_name: str,
                                     allow_spread: bool, clear_view: str) -> Process:
+
+        # v11 automatically adds blb file extensions to documents created via the contents api
+        if not verify_version(required_version="12", version=self.version):
+            blob_filename += ".blb"
         dataload_process = Process(
             name=process_name,
             datasource_type='ASCII',
             datasource_ascii_header_records=0,
-            datasource_data_source_name_for_server=f"{blob_filename}.blb",
-            datasource_data_source_name_for_client=f"{blob_filename}.blb",
+            datasource_data_source_name_for_server=f"{blob_filename}",
+            datasource_data_source_name_for_client=f"{blob_filename}",
             datasource_ascii_delimiter_char=',',
             datasource_ascii_decimal_separator='.',
             datasource_ascii_thousand_separator='',
@@ -1231,6 +1235,10 @@ class CellService(ObjectService):
             datasource_ascii_decimal_separator='.',
             datasource_ascii_thousand_separator='')
 
+        # v11 automatically adds blb file extensions to documents created via the contents api
+        if not verify_version(required_version="12", version=self.version):
+            file_name += ".blb"
+
         # Create variables in process data source as all String
         for variable in variables:
             process.add_variable(name=variable, variable_type='String')
@@ -1250,14 +1258,14 @@ class CellService(ObjectService):
         comma_sep_variables = ",".join(sorted(set(variables) - set(skip_variables), key=lambda v: int(v[1:])))
         data_procedure_pre = f"""
         IF (nRecord = 0);
-          SetOutputCharacterSet('{file_name}.blb','TM1CS_UTF8');
+          SetOutputCharacterSet('{file_name}','TM1CS_UTF8');
         ENDIF;
         nRecord = nRecord + 1;
         """
         if header_line:
             data_procedure_pre += f"""
             IF (nRecord = 1);
-              TextOutput('{file_name}.blb',{header_line});
+              TextOutput('{file_name}',{header_line});
             ENDIF;
             """
         if top:
@@ -1276,7 +1284,7 @@ class CellService(ObjectService):
             """
 
         data_procedure = f"""
-        TextOutput('{file_name}.blb',{comma_sep_variables},SVALUE);
+        TextOutput('{file_name}',{comma_sep_variables},SVALUE);
         """
         process.data_procedure = data_procedure_pre + data_procedure
 
@@ -1512,7 +1520,7 @@ class CellService(ObjectService):
         """
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name, **kwargs)
-        url = format_url("/api/v1/Cubes('{}')/tm1.Update", cube_name)
+        url = format_url("/Cubes('{}')/tm1.Update", cube_name)
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         url = add_url_parameters(url, **{"!ChangeSet": changeset})
 
@@ -1591,7 +1599,7 @@ class CellService(ObjectService):
         :return:
         """
 
-        url = format_url("/api/v1/Cellsets('{}')/Cells", cellset_id)
+        url = format_url("/Cellsets('{}')/Cells", cellset_id)
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         url = add_url_parameters(url, **{"!ChangeSet": changeset})
         data = []
@@ -2764,7 +2772,7 @@ class CellService(ObjectService):
         # if top_cells is set to N => it will be sufficient to get only the first N tuples in Axes, top_tuples does this
         # if skip_cells is used => trick not applicable, all tuples must be extracted
 
-        url = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
+        url = "/Cellsets('{cellset_id}')?$expand=" \
               "Cube($select=Name;$expand=Dimensions($select=Name))," \
               "Axes({filter_axis}$expand={hierarchies}Tuples($expand=Members({select_member_properties}" \
               "{expand_elem_properties}){top_tuples}))," \
@@ -2892,7 +2900,7 @@ class CellService(ObjectService):
         # if top_cells is set to N => it will be sufficient to get only the first N tuples in Axes, top_tuples does this
         # if skip_cells is used => trick not applicable, all tuples must be extracted
 
-        url = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
+        url = "/Cellsets('{cellset_id}')?$expand=" \
               "Cube($select=Name;$expand=Dimensions($select=Name))," \
               "Axes({filter_axis}$expand={hierarchies}Tuples($expand=Members({select_member_properties}" \
               "{expand_elem_properties}){top_tuples}))" \
@@ -2919,7 +2927,7 @@ class CellService(ObjectService):
                                   sandbox_name: str = None) -> Dict:
         """
         Method to extract a cellset partition. Cellset partitions are a collection of cellset cells where they have
-        a defined top left boundary, and bottom right boundary. 
+        a defined top left boundary, and bottom right boundary.
         Read More: https://www.ibm.com/docs/en/planning-analytics/2.0.0?topic=data-cellsets#dg_tm1_odata_get_cells__title__1
         :param partition_start_ordinal: top left cell boundary
         :param partition_end_ordinal: bottom right cell boundary
@@ -3008,7 +3016,7 @@ class CellService(ObjectService):
 
             filter_cells = " and ".join(filters)
 
-        url = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
+        url = "/Cellsets('{cellset_id}')?$expand=" \
               "Cells($select={cell_properties}{top_cells}{skip_cells}{filter_cells})" \
             .format(cellset_id=cellset_id,
                     cell_properties=",".join(cell_properties),
@@ -3049,7 +3057,7 @@ class CellService(ObjectService):
             filter_cells = " and ".join(filters)
 
         url = format_url(
-            "/api/v1/Cellsets('{}')?$expand=Cells($select=Value{})",
+            "/Cellsets('{}')?$expand=Cells($select=Value{})",
             cellset_id,
             f";$filter={filter_cells}" if filter_cells else "")
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
@@ -3072,7 +3080,7 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return:
         """
-        url = "/api/v1/Cellsets('{}')?$expand=" \
+        url = "/Cellsets('{}')?$expand=" \
               "Axes($filter=Ordinal eq 1;$expand=Tuples(" \
               "$expand=Members($select=Element;$expand=Element($select={}))))," \
               "Cells($select=Value)".format(cellset_id, "UniqueName" if element_unique_names else "Name")
@@ -3116,7 +3124,7 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return:
         """
-        url = "/api/v1/Cellsets('{}')?$expand=" \
+        url = "/Cellsets('{}')?$expand=" \
               "Cube($select=Name)," \
               "Axes($expand=Hierarchies($select=UniqueName))".format(cellset_id)
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
@@ -3146,7 +3154,7 @@ class CellService(ObjectService):
         :param kwargs:
         :return:
         """
-        url = "/api/v1/Cellsets('{}')/Cells/$count".format(cellset_id)
+        url = "/Cellsets('{}')/Cells/$count".format(cellset_id)
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url, **kwargs)
         return int(response.content)
@@ -3453,7 +3461,7 @@ class CellService(ObjectService):
         :param infer_dtype: bool, if True, lets pandas infer dtypes, otherwise all columns will be of type str.
 
         """
-        url = "/api/v1/Cellsets('{}')?$expand=" \
+        url = "/Cellsets('{}')?$expand=" \
               "Axes($filter=Ordinal eq 0 or Ordinal eq 1;$expand=Tuples(" \
               "$expand=Members($select=Name{})),Hierarchies($select=Name,Dimension;$expand=Dimension($select=Name)))," \
               "Cells($select=Value)".format(cellset_id, ',Attributes' if display_attribute else '')
@@ -3629,7 +3637,7 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return:
         """
-        url = '/api/v1/ExecuteMDX'
+        url = '/ExecuteMDX'
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         data = {
             'MDX': mdx.to_mdx() if isinstance(mdx, MdxBuilder) else mdx
@@ -3649,7 +3657,7 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return:
         """
-        url = format_url("/api/v1/Cubes('{cube_name}')/{views}('{view_name}')/tm1.Execute",
+        url = format_url("/Cubes('{cube_name}')/{views}('{view_name}')/tm1.Execute",
                          cube_name=cube_name,
                          views='PrivateViews' if private else 'Views',
                          view_name=view_name)
@@ -3690,7 +3698,7 @@ class CellService(ObjectService):
         :return: Change set ID
         """
 
-        url = "/api/v1/BeginChangeSet"
+        url = "/BeginChangeSet"
         return self._rest.POST(url).json()['value']
 
     def end_changeset(self, change_set: str) -> Response:
@@ -3699,7 +3707,7 @@ class CellService(ObjectService):
         :return: Change set ID
         """
 
-        url = "/api/v1/EndChangeSet"
+        url = "/EndChangeSet"
         data = {"ChangeSetID": change_set}
         return self._rest.POST(url, data=json.dumps(data, ensure_ascii=False))
 
@@ -3709,7 +3717,7 @@ class CellService(ObjectService):
         :return: Change set ID
         """
 
-        url = "/api/v1/UndoChangeSet"
+        url = "/UndoChangeSet"
         data = {"ChangeSetID": changeset}
         return self._rest.POST(url, data=json.dumps(data, ensure_ascii=False))
 
@@ -3720,7 +3728,7 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return:
         """
-        url = "/api/v1/Cellsets('{}')".format(cellset_id)
+        url = "/Cellsets('{}')".format(cellset_id)
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         return self._rest.DELETE(url, **kwargs)
 
