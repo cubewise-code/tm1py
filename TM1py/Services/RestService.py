@@ -22,7 +22,6 @@ from urllib3._collections import HTTPHeaderDict
 from TM1py.Exceptions.Exceptions import TM1pyTimeout, TM1pyVersionDeprecationException
 from TM1py.Utils import case_and_space_insensitive_equals, CaseAndSpaceInsensitiveSet, HTTPAdapterWithSocketOptions, \
     decohints
-from Utils import verify_version
 
 try:
     from requests_negotiate_sspi import HttpNegotiateAuth
