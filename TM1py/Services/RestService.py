@@ -22,7 +22,6 @@ from urllib3._collections import HTTPHeaderDict
 from TM1py.Exceptions.Exceptions import TM1pyTimeout, TM1pyVersionDeprecationException
 from TM1py.Utils import case_and_space_insensitive_equals, CaseAndSpaceInsensitiveSet, HTTPAdapterWithSocketOptions, \
     decohints
-from Utils import verify_version
 
 try:
     from requests_negotiate_sspi import HttpNegotiateAuth
@@ -526,7 +525,7 @@ class RestService:
                                             json=payload)
                     self.verify_response(response)
                     if 'TM1SessionId' not in self._s.cookies:
-                        warnings.warn(f"TM1SessionId has failed to be added to the session cookies, future requests "
+                        raise TM1pyException(f"TM1SessionId has failed to be added to the session cookies, future requests "
                                       "using this TM1Service instance will fail due to authentication. "
                                       "Check the tm1-gateway domain settings are correct "
                                       "in the container orchestrator ")
