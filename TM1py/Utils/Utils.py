@@ -224,7 +224,7 @@ def abbreviate_mdx(mdx: str, size=100) -> str:
 
 
 def integerize_version(version: str, precision: int = 4) -> int:
-    return int(version[:precision].replace(".", ""))
+    return int(version[:precision].replace(".", "").ljust(precision, "0"))
 
 
 def verify_version(required_version: str, version: str) -> bool:
