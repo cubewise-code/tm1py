@@ -228,22 +228,30 @@ class ElementService(ObjectService):
             # potential custom parent names
             if not level_names:
                 level_names = self.get_level_names(dimension_name, hierarchy_name, descending=True)
+                level_calculated_member_names = []
+                for level in range(0, levels, 1):
+                    level_calculated_member_names.append(f"L{str(level).zfill(3)}")
+                level_dict = dict(zip(level_calculated_member_names, level_names))
 
             parent_members = list()
             weight_members = list()
             for parent in range(1, levels, 1):
-                name_or_attribute = f"Properties('{parent_attribute}')" if parent_attribute else "Name"
+                name_or_attribute = f"Properties('{parent_attribute}')" if parent_attribute else "NAME"
                 member = f"""
-                MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_names[parent]}] 
-                AS [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * parent}{name_or_attribute}
+                MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[L{str(parent).zfill(3)}] 
+                AS [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * parent}PROPERTIES('{name_or_attribute}')
                 """
                 calculated_members_definition.append(member)
 
-                parent_members.append(f"[{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_names[parent]}]")
+                parent_members.append(f"[{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[L{str(parent).zfill(3)}]")
+                # AS IIF(
+                # [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * (parent - 1)}Properties('MEMBER_WEIGHT') = '',
+                # 0,
+                # [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * (parent - 1)}Properties('MEMBER_WEIGHT'))
 
                 if not skip_weights:
                     member_weight = f"""
-                    MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_names[parent]}_Weight] 
+                    MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_names[parent]}_Weight]
                     AS IIF(
                     [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * (parent - 1)}Properties('MEMBER_WEIGHT') = '',
                     0,
@@ -265,7 +273,11 @@ class ElementService(ObjectService):
                 in attributes) + "}"
 
         if calculated_members_selection:
-            column_selection = column_selection + " + {" + ",".join(calculated_members_selection) + "}"
+            if column_selection == "{}":
+                column_selection = "{" + ",".join(calculated_members_selection) + "}"
+            else:
+                column_selection = column_selection + " + {" + ",".join(calculated_members_selection) + "}"
+
         elements = ",".join(
             member["UniqueName"]
             for member
@@ -289,6 +301,17 @@ class ElementService(ObjectService):
             df_data = cell_service.execute_mdx_dataframe(mdx, shaped=True, use_blob=True, **kwargs)
         else:
             df_data = cell_service.execute_mdx_dataframe_shaped(mdx, **kwargs)
+
+        # rename level names to conform sto strandard levels "1" -> "level0001"
+        df_data.rename(columns=level_dict, inplace=True)
+
+        #format weights
+        # Find columns with certain names
+        cols_to_format = [col for col in df_data.columns if '_Weight' in col]
+
+        # Format the columns
+        df_data[cols_to_format] = df_data[cols_to_format].apply(pd.to_numeric)
+        df_data[cols_to_format] = df_data[cols_to_format].applymap(lambda x: '{:.6f}'.format(x))
 
         # override columns. hierarchy name with dimension and prefix attributes
         column_renaming = dict()
@@ -719,11 +742,11 @@ class ElementService(ObjectService):
         if isinstance(attribute_value, str):
             mdx = (
                 f"{{FILTER({{TM1SUBSETALL([{dimension_name}].[{hierarchy_name}])}},"
-                f"[{dimension_name}].[{hierarchy_name}].[{attribute_name}] = \"{attribute_value}\")}}")
+                f"[{dimension_name}].[{hierarchy_name}].CURRENTMEMBER.PROPERTIES(\"{attribute_name}\") = \"{attribute_value}\")}}")
         else:
             mdx = (
                 f"{{FILTER({{TM1SUBSETALL([{dimension_name}].[{hierarchy_name}])}},"
-                f"[{dimension_name}].[{hierarchy_name}].[{attribute_name}] = {attribute_value})}}")
+                f"STRTOVALUE([{dimension_name}].[{hierarchy_name}].CURRENTMEMBER.PROPERTIES(\"{attribute_name}\")) = {attribute_value})}}")
 
         elems = self.execute_set_mdx(
             mdx=mdx,
@@ -1030,7 +1053,7 @@ class ElementService(ObjectService):
         url = format_url("/ExecuteMDXSetExpression?$select=Cardinality")
         payload = {"MDX": mdx}
         response = self._rest.POST(url, json.dumps(payload, ensure_ascii=False))
-        return response.json()['Cardinality']
+        return (response.json()).get('Cardinality')
 
     @staticmethod
     def _build_drill_intersection_mdx(dimension_name: str, hierarchy_name: str, first_element_name: str,
@@ -1106,7 +1129,17 @@ class ElementService(ObjectService):
                 if not self.hierarchy_exists(dimension_name, hierarchy_name):
                     raise TM1pyException(f"Hierarchy '{hierarchy_name}' does not exist in dimension '{dimension_name}'")
 
-                # case element doesn't exist
+                # case element or ancestor doesn't exist
+                return False
+
+        if method.upper() == "TM1DRILLDOWNMEMBER":
+            if not self.exists(dimension_name, hierarchy_name, element_name):
+
+                # case dimension or hierarchy doesn't exist
+                if not self.hierarchy_exists(dimension_name, hierarchy_name):
+                    raise TM1pyException(f"Hierarchy '{hierarchy_name}' does not exist in dimension '{dimension_name}'")
+
+                # case element or ancestor doesn't exist
                 return False
 
         mdx = self._build_drill_intersection_mdx(
