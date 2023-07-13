@@ -746,7 +746,9 @@ class ElementService(ObjectService):
         else:
             mdx = (
                 f"{{FILTER({{TM1SUBSETALL([{dimension_name}].[{hierarchy_name}])}},"
-                f"STRTOVALUE([{dimension_name}].[{hierarchy_name}].CURRENTMEMBER.PROPERTIES(\"{attribute_name}\")) = {attribute_value})}}")
+                f"(IIF([{dimension_name}].[{hierarchy_name}].CURRENTMEMBER.PROPERTIES(\"{attribute_name}\")=\"\", 0.0," 
+                f"STRTOVALUE([{dimension_name}].[{hierarchy_name}].CURRENTMEMBER.PROPERTIES(\"{attribute_name}\"))) = 1))}}"
+            )
 
         elems = self.execute_set_mdx(
             mdx=mdx,
