@@ -73,6 +73,13 @@ class ElementService(ObjectService):
             element_name)
         return self._rest.DELETE(url, **kwargs)
 
+    def delete_elements(self, dimension_name: str, hierarchy_name: str, elements: str= None, **kwargs):
+        h_service = self._get_hierarchy_service()
+        h = h_service.get(dimension_name, hierarchy_name)
+        for ele in elements:
+            h.remove_element(ele)
+        h_service.update(h)
+
     def get_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[Element]:
         url = format_url(
             "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?select=Name,Type",
