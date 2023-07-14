@@ -38,35 +38,35 @@ class TestUtilsMethods(unittest.TestCase):
     def test_integerize_version(self):
         version = "11.0.00000.918"
         integerized_version = integerize_version(version)
-        self.assertEqual(110, integerized_version)
+        self.assertEqual(1100, integerized_version)
 
         version = "11.0.00100.927-0"
         integerized_version = integerize_version(version)
-        self.assertEqual(110, integerized_version)
+        self.assertEqual(1100, integerized_version)
 
         version = "11.1.00004.2"
         integerized_version = integerize_version(version)
-        self.assertEqual(111, integerized_version)
+        self.assertEqual(1110, integerized_version)
 
         version = "11.2.00000.27"
         integerized_version = integerize_version(version)
-        self.assertEqual(112, integerized_version)
+        self.assertEqual(1120, integerized_version)
 
         version = "11.3.00003.1"
         integerized_version = integerize_version(version)
-        self.assertEqual(113, integerized_version)
+        self.assertEqual(1130, integerized_version)
 
         version = "11.4.00003.8"
         integerized_version = integerize_version(version)
-        self.assertEqual(114, integerized_version)
+        self.assertEqual(1140, integerized_version)
 
         version = "11.7.00002.1"
         integerized_version = integerize_version(version)
-        self.assertEqual(117, integerized_version)
+        self.assertEqual(1170, integerized_version)
 
         version = "11.8.00000.33"
         integerized_version = integerize_version(version)
-        self.assertEqual(118, integerized_version)
+        self.assertEqual(1180, integerized_version)
 
     def test_verify_version_true(self):
         required_version = "11.7.00002.1"
