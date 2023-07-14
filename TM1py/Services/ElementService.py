@@ -22,7 +22,8 @@ from TM1py.Services.RestService import RestService
 from TM1py.Utils import CaseAndSpaceInsensitiveDict, format_url, CaseAndSpaceInsensitiveSet, require_admin, \
     dimension_hierarchy_element_tuple_from_unique_name, require_pandas, require_version
 from TM1py.Utils import build_element_unique_names, CaseAndSpaceInsensitiveTuplesDict
-
+from itertools import islice
+from collections import OrderedDict
 
 class MDXDrillMethod(Enum):
     TM1DRILLDOWNMEMBER = 1
@@ -222,45 +223,56 @@ class ElementService(ObjectService):
 
         calculated_members_definition = list()
         calculated_members_selection = list()
+        levels_dict = {}
         if not skip_parents:
             levels = self.get_levels_count(dimension_name, hierarchy_name)
 
-            # potential custom parent names
+            #Generic Level names can't be used directly as a Calculated Member name as they conflict with an internal name
+            #Therefore, we create a map that relates the level name to the calculated member name L000 = level000
             if not level_names:
                 level_names = self.get_level_names(dimension_name, hierarchy_name, descending=True)
                 level_calculated_member_names = []
-                for level in range(0, levels, 1):
-                    level_calculated_member_names.append(f"L{str(level).zfill(3)}")
-                level_dict = dict(zip(level_calculated_member_names, level_names))
 
+                #Create a map of MDX Calculated Member Names and Desired Pandas Names
+                for level in reversed(range(levels)):
+                    level_calculated_member_names.append(f"L{str(level).zfill(3)}")
+                all_level_dict = OrderedDict(zip(level_calculated_member_names, level_names))
+
+            #if a specific parent names are provided the calculated member name is = to the data frame column name
+            else:
+                all_level_dict = OrderedDict(zip(level_names, level_names))
+
+            # Remove the highest level (leafs) to create proper MDX calculated members
+            levels_dict = {k: all_level_dict[k] for k in list(all_level_dict)[1:]}
+
+            #iterate the map of levels to create an MDX calculation and a related column axis definition
             parent_members = list()
             weight_members = list()
-            for parent in range(1, levels, 1):
+            depth = 0
+            for calculated_name, level_name in levels_dict.items():
+                depth += 1
                 name_or_attribute = f"Properties('{parent_attribute}')" if parent_attribute else "NAME"
                 member = f"""
-                MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[L{str(parent).zfill(3)}] 
-                AS [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * parent}PROPERTIES('{name_or_attribute}')
+                MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{calculated_name}] 
+                AS [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * depth}PROPERTIES('{name_or_attribute}')
                 """
                 calculated_members_definition.append(member)
 
-                parent_members.append(f"[{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[L{str(parent).zfill(3)}]")
-                # AS IIF(
-                # [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * (parent - 1)}Properties('MEMBER_WEIGHT') = '',
-                # 0,
-                # [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * (parent - 1)}Properties('MEMBER_WEIGHT'))
+                parent_members.append(f"[{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{calculated_name}]")
 
                 if not skip_weights:
                     member_weight = f"""
-                    MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_names[parent]}_Weight]
+                    MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_name}_Weight]
                     AS IIF(
-                    [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * (parent - 1)}Properties('MEMBER_WEIGHT') = '',
+                    [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * ( depth - 1)}Properties('MEMBER_WEIGHT') = '',
                     0,
-                    [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * (parent - 1)}Properties('MEMBER_WEIGHT'))
+                    [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * ( depth - 1)}Properties('MEMBER_WEIGHT'))
                     """
                     calculated_members_definition.append(member_weight)
 
                     weight_members.append(
-                        f"[{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_names[parent]}_Weight]")
+                        f"[{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_name}_Weight]")
+
             calculated_members_selection.extend(weight_members)
             calculated_members_selection.extend(parent_members)
 
@@ -296,14 +308,16 @@ class ElementService(ObjectService):
         """
 
         cell_service = self._get_cell_service()
+
         # responses are similar but not equivalent. Therefor only use execute_mdx_dataframe when use_blob=True
         if use_blob:
             df_data = cell_service.execute_mdx_dataframe(mdx, shaped=True, use_blob=True, **kwargs)
         else:
             df_data = cell_service.execute_mdx_dataframe_shaped(mdx, **kwargs)
 
-        # rename level names to conform sto strandard levels "1" -> "level0001"
-        df_data.rename(columns=level_dict, inplace=True)
+        if levels_dict:
+            # rename level names to conform sto strandard levels "1" -> "level0001"
+            df_data.rename(columns=levels_dict, inplace=True)
 
         #format weights
         # Find columns with certain names
@@ -327,7 +341,8 @@ class ElementService(ObjectService):
 
             # iterative approach
             for _ in level_columns:
-                rows_to_shift = df_data[df_data[level_columns[-1]] == ''].index
+
+                rows_to_shift = df_data[df_data[level_columns[-1]].isin(['', None])].index
                 if rows_to_shift.empty:
                     break
                 shifted_cols = df_data.iloc[rows_to_shift, -len(level_columns):].shift(1, axis=1)
