@@ -2850,6 +2850,118 @@ class TestCellService(unittest.TestCase):
             'Value': {0: 1.0}})
         self.assertEqual(expected_df.to_csv(), df.to_csv())
 
+    @skip_if_no_pandas
+    def test_execute_mdx_dataframe_async(self):
+
+        # build a reference "single-threaded" df for comparison
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .rows_non_empty() \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0])) \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1])) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
+            .to_mdx()
+
+        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx)
+
+        # build 4 non-empty + 1 empty mdx queries to pass to async df
+        mdx_list = []
+        chunk_size = int(len(self.target_coordinates)/4)
+
+        for chunk in range(5):
+            mdx = MdxBuilder.from_cube(self.cube_name) \
+                .rows_non_empty() \
+                .add_hierarchy_set_to_row_axis(
+                MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0])) \
+                .add_hierarchy_set_to_row_axis(
+                MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1]).subset(chunk*chunk_size,chunk_size)) \
+                .add_hierarchy_set_to_column_axis(
+                MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
+                .to_mdx()
+            mdx_list.append(mdx)
+
+        # check execution with different max_worker parameter
+        df_async1 = self.tm1.cubes.cells.execute_mdx_dataframe_async(mdx_list, max_workers=2)
+        df_async2 = self.tm1.cubes.cells.execute_mdx_dataframe_async(mdx_list, max_workers=5)
+        df_async3 = self.tm1.cubes.cells.execute_mdx_dataframe_async(mdx_list, max_workers=8)
+
+        # check type
+        self.assertIsInstance(df_async1, pd.DataFrame)
+        self.assertIsInstance(df_async2, pd.DataFrame)
+        self.assertIsInstance(df_async3, pd.DataFrame)
+
+        # check async df are equal to reference df
+        self.assertTrue(df_async1.equals(df))
+        self.assertTrue(df_async2.equals(df))
+        self.assertTrue(df_async3.equals(df))
+
+    @skip_if_no_pandas
+    def test_execute_mdx_dataframe_async_use_blob(self):
+
+        # build a reference "single-threaded" df for comparison
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .rows_non_empty() \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0])) \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1])) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
+            .to_mdx()
+
+        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, use_blob=True)
+
+        # build 4 non-empty + 1 empty mdx queries to pass to async df
+        mdx_list = []
+        chunk_size = int(len(self.target_coordinates)/4)
+
+        for chunk in range(5):
+            mdx = MdxBuilder.from_cube(self.cube_name) \
+                .rows_non_empty() \
+                .add_hierarchy_set_to_row_axis(
+                MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0])) \
+                .add_hierarchy_set_to_row_axis(
+                MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1]).subset(chunk*chunk_size,chunk_size)) \
+                .add_hierarchy_set_to_column_axis(
+                MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
+                .to_mdx()
+            mdx_list.append(mdx)
+
+        # check execution with different max_worker parameter
+        df_async1 = self.tm1.cubes.cells.execute_mdx_dataframe_async(mdx_list, max_workers=2, use_blob=True)
+        df_async2 = self.tm1.cubes.cells.execute_mdx_dataframe_async(mdx_list, max_workers=5, use_blob=True)
+        df_async3 = self.tm1.cubes.cells.execute_mdx_dataframe_async(mdx_list, max_workers=8, use_blob=True)
+
+        # check type
+        self.assertIsInstance(df_async1, pd.DataFrame)
+        self.assertIsInstance(df_async2, pd.DataFrame)
+        self.assertIsInstance(df_async3, pd.DataFrame)
+
+        # check async df are equal to reference df
+        self.assertTrue(df_async1.equals(df))
+        self.assertTrue(df_async2.equals(df))
+        self.assertTrue(df_async3.equals(df))
+
+    @skip_if_no_pandas
+    def test_execute_mdx_dataframe_async_column_only(self):
+        mdx = """SELECT
+                       NON EMPTY {[TM1PY_TESTS_CELL_DIMENSION1].[TM1PY_TESTS_CELL_DIMENSION1].MEMBERS} * 
+                       {[TM1PY_TESTS_CELL_DIMENSION2].[TM1PY_TESTS_CELL_DIMENSION2].MEMBERS} * 
+                       {[TM1PY_TESTS_CELL_DIMENSION3].[TM1PY_TESTS_CELL_DIMENSION3].MEMBERS} ON 0
+                       FROM [TM1PY_TESTS_CELL_CUBE]"""
+        # build a reference "single-threaded" df for comparison
+        df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx)
+        # build a reference "single-threaded" df for comparison
+        df_async = self.tm1.cubes.cells.execute_mdx_dataframe_async([mdx])
+
+        # check type
+        self.assertIsInstance(df_async, pd.DataFrame)
+
+        # check async df is equal to reference df
+        self.assertTrue(df_async.equals(df))
+
     def test_execute_mdx_cellcount(self):
         mdx = MdxBuilder.from_cube(self.cube_name) \
             .rows_non_empty() \
