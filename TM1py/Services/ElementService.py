@@ -21,7 +21,7 @@ from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import CaseAndSpaceInsensitiveDict, format_url, CaseAndSpaceInsensitiveSet, require_admin, \
     dimension_hierarchy_element_tuple_from_unique_name, require_pandas, require_version
-from TM1py.Utils import build_element_unique_names, CaseAndSpaceInsensitiveTuplesDict
+from TM1py.Utils import build_element_unique_names, CaseAndSpaceInsensitiveTuplesDict, verify_version
 from itertools import islice
 from collections import OrderedDict
 
@@ -252,22 +252,37 @@ class ElementService(ObjectService):
             for calculated_name, level_name in levels_dict.items():
                 depth += 1
                 name_or_attribute = f"Properties('{parent_attribute}')" if parent_attribute else "NAME"
-                member = f"""
-                MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{calculated_name}] 
-                AS [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * depth}PROPERTIES('{name_or_attribute}')
-                """
+                if not verify_version(required_version='12', version=self.version):
+                    member = f"""
+                    MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{calculated_name}] 
+                    AS [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * depth}{name_or_attribute}
+                    """
+                else:
+                    member = f"""
+                    MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{calculated_name}] 
+                    AS [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * depth}PROPERTIES('{name_or_attribute}')
+                    """
                 calculated_members_definition.append(member)
 
                 parent_members.append(f"[{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{calculated_name}]")
 
                 if not skip_weights:
-                    member_weight = f"""
-                    MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_name}_Weight]
-                    AS IIF(
-                    [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * ( depth - 1)}Properties('MEMBER_WEIGHT') = '',
-                    0,
-                    [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * ( depth - 1)}Properties('MEMBER_WEIGHT'))
-                    """
+                    if not verify_version(required_version='12', version=self.version):
+                        member_weight = f"""
+                        MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_name}_Weight] 
+                        AS IIF(
+                        [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * (depth - 1)}Properties('MEMBER_WEIGHT') = '',
+                        0,
+                        [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * (depth - 1)}Properties('MEMBER_WEIGHT'))
+                        """
+                    else:
+                        member_weight = f"""
+                        MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_name}_Weight]
+                        AS IIF(
+                        [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * ( depth - 1)}Properties('MEMBER_WEIGHT') = '',
+                        0,
+                        [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * ( depth - 1)}Properties('MEMBER_WEIGHT'))
+                        """
                     calculated_members_definition.append(member_weight)
 
                     weight_members.append(
