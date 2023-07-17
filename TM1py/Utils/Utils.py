@@ -12,7 +12,6 @@ from enum import Enum, unique
 from io import StringIO
 from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator, Union, Callable
 from urllib.parse import unquote
-
 import requests
 from mdxpy import MdxBuilder, Member
 from requests.adapters import HTTPAdapter
@@ -94,6 +93,7 @@ def require_pandas(func):
     return wrapper
 
 
+
 def get_all_servers_from_adminhost(adminhost='localhost', port=None, use_ssl=False) -> List:
     from TM1py.Objects import Server
     """ Ask Adminhost for TM1 Servers
@@ -107,7 +107,7 @@ def get_all_servers_from_adminhost(adminhost='localhost', port=None, use_ssl=Fal
         conn = http_client.HTTPConnection(adminhost, port or 5895)
     else:
         conn = http_client.HTTPSConnection(adminhost, port or 5898, context=ssl._create_unverified_context())
-    request = '/Servers'
+    request = 'api/v1/Servers'
     conn.request('GET', request, body='')
     response = conn.getresponse().read().decode('utf-8')
     response_as_dict = json.loads(response)
