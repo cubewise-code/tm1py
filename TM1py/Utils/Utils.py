@@ -107,7 +107,7 @@ def get_all_servers_from_adminhost(adminhost='localhost', port=None, use_ssl=Fal
         conn = http_client.HTTPConnection(adminhost, port or 5895)
     else:
         conn = http_client.HTTPSConnection(adminhost, port or 5898, context=ssl._create_unverified_context())
-    request = 'api/v1/Servers'
+    request = '/api/v1/Servers'
     conn.request('GET', request, body='')
     response = conn.getresponse().read().decode('utf-8')
     response_as_dict = json.loads(response)
