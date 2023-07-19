@@ -29,10 +29,10 @@ class TestProcessService(unittest.TestCase):
                       datasource_ascii_header_records=2,
                       datasource_ascii_quote_character='^',
                       datasource_ascii_thousand_separator='~',
-                      prolog_procedure="sTestProlog = 'test prolog procedure'",
-                      metadata_procedure="sTestMeta = 'test metadata procedure'",
-                      data_procedure="sTestData =  'test data procedure'",
-                      epilog_procedure="sTestEpilog = 'test epilog procedure'",
+                      prolog_procedure="sTestProlog = 'test prolog procedure';",
+                      metadata_procedure="sTestMeta = 'test metadata procedure';",
+                      data_procedure="sTestData =  'test data procedure';",
+                      epilog_procedure="sTestEpilog = 'test epilog procedure';",
                       datasource_data_source_name_for_server=r'C:\Data\file.csv',
                       datasource_data_source_name_for_client=r'C:\Data\file.csv')
     p_ascii.add_variable('v_1', 'Numeric')

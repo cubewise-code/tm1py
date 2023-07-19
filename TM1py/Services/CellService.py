@@ -843,7 +843,7 @@ class CellService(ObjectService):
               deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
               sandbox_name: str = None, use_ti: bool = False, use_blob: bool = False, use_changeset: bool = False,
               precision: int = None, skip_non_updateable: bool = False, measure_dimension_elements: Dict = None,
-              remove_blob: bool = True, allow_spread: bool=False, **kwargs) -> Optional[str]:
+              remove_blob: bool = True, allow_spread: bool = False, **kwargs) -> Optional[str]:
         """ Write values to a cube
 
         Same signature as `write_values` method, but faster since it uses `write_values_through_cellset`
@@ -1039,7 +1039,7 @@ class CellService(ObjectService):
     @require_pandas
     def write_through_blob(self, cube_name: str, cellset_as_dict: dict, increment: bool = False,
                            sandbox_name: str = None, skip_non_updateable: bool = False,
-                           remove_blob=True, dimensions: str = None, allow_spread: bool=False, **kwargs):
+                           remove_blob=True, dimensions: str = None, allow_spread: bool = False, **kwargs):
         """
         Writes data back to TM1 via an unbound TI process having an uploaded CSV as data source
         :param cube_name: str
@@ -2928,7 +2928,8 @@ class CellService(ObjectService):
             "/Cellsets('{}')?$expand=Cells($select=Value{})",
             cellset_id,
             f";$filter={filter_cells}" if filter_cells else "")
-        url = add_url_parameters(url, **{"!sandbox": sandbox_name})
+        if sandbox_name:
+            url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url=url, **kwargs)
 
         if not use_compact_json:

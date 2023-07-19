@@ -19,8 +19,9 @@ from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import CaseAndSpaceInsensitiveDict, format_url, CaseAndSpaceInsensitiveSet, require_admin, \
     dimension_hierarchy_element_tuple_from_unique_name, require_pandas
-from TM1py.Utils import build_element_unique_names, CaseAndSpaceInsensitiveTuplesDict
-
+from TM1py.Utils import build_element_unique_names, CaseAndSpaceInsensitiveTuplesDict, verify_version
+from itertools import islice
+from collections import OrderedDict
 
 class MDXDrillMethod(Enum):
     TM1DRILLDOWNMEMBER = 1
@@ -154,37 +155,71 @@ class ElementService(ObjectService):
 
         calculated_members_definition = list()
         calculated_members_selection = list()
+        levels_dict = {}
         if not skip_parents:
             levels = self.get_levels_count(dimension_name, hierarchy_name)
 
-            # potential custom parent names
+            #Generic Level names can't be used directly as a Calculated Member name as they conflict with an internal name
+            #Therefore, we create a map that relates the level name to the calculated member name L000 = level000
             if not level_names:
                 level_names = self.get_level_names(dimension_name, hierarchy_name, descending=True)
+                level_calculated_member_names = []
 
+                #Create a map of MDX Calculated Member Names and Desired Pandas Names
+                for level in reversed(range(levels)):
+                    level_calculated_member_names.append(f"L{str(level).zfill(3)}")
+                all_level_dict = OrderedDict(zip(level_calculated_member_names, level_names))
+
+            #if a specific parent names are provided the calculated member name is = to the data frame column name
+            else:
+                all_level_dict = OrderedDict(zip(level_names, level_names))
+
+            # Remove the highest level (leafs) to create proper MDX calculated members
+            levels_dict = {k: all_level_dict[k] for k in list(all_level_dict)[1:]}
+
+            #iterate the map of levels to create an MDX calculation and a related column axis definition
             parent_members = list()
             weight_members = list()
-            for parent in range(1, levels, 1):
-                name_or_attribute = f"Properties('{parent_attribute}')" if parent_attribute else "Name"
-                member = f"""
-                MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_names[parent]}] 
-                AS [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * parent}{name_or_attribute}
-                """
+            depth = 0
+            for calculated_name, level_name in levels_dict.items():
+                depth += 1
+                name_or_attribute = f"Properties('{parent_attribute}')" if parent_attribute else "NAME"
+                if not verify_version(required_version='12', version=self.version):
+                    member = f"""
+                    MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{calculated_name}] 
+                    AS [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * depth}{name_or_attribute}
+                    """
+                else:
+                    member = f"""
+                    MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{calculated_name}] 
+                    AS [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * depth}PROPERTIES('{name_or_attribute}')
+                    """
                 calculated_members_definition.append(member)
 
-                parent_members.append(f"[{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_names[parent]}]")
+                parent_members.append(f"[{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{calculated_name}]")
 
                 if not skip_weights:
-                    member_weight = f"""
-                    MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_names[parent]}_Weight] 
-                    AS IIF(
-                    [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * (parent - 1)}Properties('MEMBER_WEIGHT') = '',
-                    0,
-                    [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * (parent - 1)}Properties('MEMBER_WEIGHT'))
-                    """
+                    if not verify_version(required_version='12', version=self.version):
+                        member_weight = f"""
+                        MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_name}_Weight] 
+                        AS IIF(
+                        [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * (depth - 1)}Properties('MEMBER_WEIGHT') = '',
+                        0,
+                        [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * (depth - 1)}Properties('MEMBER_WEIGHT'))
+                        """
+                    else:
+                        member_weight = f"""
+                        MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_name}_Weight]
+                        AS IIF(
+                        [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * ( depth - 1)}Properties('MEMBER_WEIGHT') = '',
+                        0,
+                        [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * ( depth - 1)}Properties('MEMBER_WEIGHT'))
+                        """
                     calculated_members_definition.append(member_weight)
 
                     weight_members.append(
-                        f"[{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_names[parent]}_Weight]")
+                        f"[{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_name}_Weight]")
+
             calculated_members_selection.extend(weight_members)
             calculated_members_selection.extend(parent_members)
 
@@ -197,7 +232,11 @@ class ElementService(ObjectService):
                 in attributes) + "}"
 
         if calculated_members_selection:
-            column_selection = column_selection + " + {" + ",".join(calculated_members_selection) + "}"
+            if column_selection == "{}":
+                column_selection = "{" + ",".join(calculated_members_selection) + "}"
+            else:
+                column_selection = column_selection + " + {" + ",".join(calculated_members_selection) + "}"
+
         elements = ",".join(
             member["UniqueName"]
             for member
@@ -216,11 +255,24 @@ class ElementService(ObjectService):
         """
 
         cell_service = self._get_cell_service()
+
         # responses are similar but not equivalent. Therefor only use execute_mdx_dataframe when use_blob=True
         if use_blob:
             df_data = cell_service.execute_mdx_dataframe(mdx, shaped=True, use_blob=True, **kwargs)
         else:
             df_data = cell_service.execute_mdx_dataframe_shaped(mdx, **kwargs)
+
+        if levels_dict:
+            # rename level names to conform sto strandard levels "1" -> "level0001"
+            df_data.rename(columns=levels_dict, inplace=True)
+
+        #format weights
+        # Find columns with certain names
+        cols_to_format = [col for col in df_data.columns if '_Weight' in col]
+
+        # Format the columns
+        df_data[cols_to_format] = df_data[cols_to_format].apply(pd.to_numeric)
+        df_data[cols_to_format] = df_data[cols_to_format].applymap(lambda x: '{:.6f}'.format(x))
 
         # override columns. hierarchy name with dimension and prefix attributes
         column_renaming = dict()
@@ -235,7 +287,8 @@ class ElementService(ObjectService):
             level_names = level_names[1:]
             # iterative approach
             for _ in level_names:
-                rows_to_shift = df_data[df_data[level_names[-1]] == ''].index
+
+                rows_to_shift = df_data[df_data[level_names[-1]].isin(['', None])].index
                 if rows_to_shift.empty:
                     break
                 df_data.iloc[rows_to_shift, -len(level_names):] = df_data.iloc[rows_to_shift, -len(level_names):].shift(
@@ -637,11 +690,13 @@ class ElementService(ObjectService):
         if isinstance(attribute_value, str):
             mdx = (
                 f"{{FILTER({{TM1SUBSETALL([{dimension_name}].[{hierarchy_name}])}},"
-                f"[{dimension_name}].[{hierarchy_name}].[{attribute_name}] = \"{attribute_value}\")}}")
+                f"[{dimension_name}].[{hierarchy_name}].CURRENTMEMBER.PROPERTIES(\"{attribute_name}\") = \"{attribute_value}\")}}")
         else:
             mdx = (
                 f"{{FILTER({{TM1SUBSETALL([{dimension_name}].[{hierarchy_name}])}},"
-                f"[{dimension_name}].[{hierarchy_name}].[{attribute_name}] = {attribute_value})}}")
+                f"(IIF([{dimension_name}].[{hierarchy_name}].CURRENTMEMBER.PROPERTIES(\"{attribute_name}\")=\"\", 0.0," 
+                f"STRTOVALUE([{dimension_name}].[{hierarchy_name}].CURRENTMEMBER.PROPERTIES(\"{attribute_name}\"))) = 1))}}"
+            )
 
         elems = self.execute_set_mdx(
             mdx=mdx,
@@ -948,7 +1003,7 @@ class ElementService(ObjectService):
         url = format_url("/ExecuteMDXSetExpression?$select=Cardinality")
         payload = {"MDX": mdx}
         response = self._rest.POST(url, json.dumps(payload, ensure_ascii=False))
-        return response.json()['Cardinality']
+        return (response.json()).get('Cardinality')
 
     @staticmethod
     def _build_drill_intersection_mdx(dimension_name: str, hierarchy_name: str, first_element_name: str,
@@ -1024,7 +1079,17 @@ class ElementService(ObjectService):
                 if not self.hierarchy_exists(dimension_name, hierarchy_name):
                     raise TM1pyException(f"Hierarchy '{hierarchy_name}' does not exist in dimension '{dimension_name}'")
 
-                # case element doesn't exist
+                # case element or ancestor doesn't exist
+                return False
+
+        if method.upper() == "TM1DRILLDOWNMEMBER":
+            if not self.exists(dimension_name, hierarchy_name, element_name):
+
+                # case dimension or hierarchy doesn't exist
+                if not self.hierarchy_exists(dimension_name, hierarchy_name):
+                    raise TM1pyException(f"Hierarchy '{hierarchy_name}' does not exist in dimension '{dimension_name}'")
+
+                # case element or ancestor doesn't exist
                 return False
 
         mdx = self._build_drill_intersection_mdx(
