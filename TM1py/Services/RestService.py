@@ -5,6 +5,7 @@ import re
 import socket
 import time
 import warnings
+from http.cookies import SimpleCookie
 from base64 import b64encode, b64decode
 from http.client import HTTPResponse
 from io import BytesIO
@@ -348,7 +349,6 @@ class RestService:
         else:
             self._construct_v12_service_and_auth_root()
 
-
     def _manage_http_adapter(self):
         if self._tcp_keepalive:
             # SO_KEEPALIVE: set 1 to enable TCP keepalive
@@ -473,6 +473,19 @@ class RestService:
         finally:
             self._s.close()
 
+    @staticmethod
+    def _extract_tm1_session_id_from_set_cookie_header(auth_response_headers: object) -> str:
+        if auth_response_headers["set-cookie"]:
+            cookie = SimpleCookie()
+            #remove invalid domain from cookie
+            cookie.load(auth_response_headers["set-cookie"].split(";")[0])
+            tm1_session_id = cookie['TM1SessionId'].value
+            return tm1_session_id
+        else:
+            return None
+
+
+
     def _start_session(self, user: str, password: str, decode_b64: bool = False, namespace: str = None,
                        gateway: str = None, cam_passport: str = None, integrated_login: bool = None,
                        integrated_login_domain: str = None, integrated_login_service: str = None,
@@ -525,11 +538,15 @@ class RestService:
                                             json=payload)
                     self.verify_response(response)
                     if 'TM1SessionId' not in self._s.cookies:
-                        raise TM1pyException(f"TM1SessionId has failed to be added to the session cookies, future requests "
-                                      "using this TM1Service instance will fail due to authentication. "
-                                      "Check the tm1-gateway domain settings are correct "
-                                      "in the container orchestrator ")
+                        warnings.warn(
+                            f"TM1SessionId has failed to be automatically added to the session cookies, future requests "
+                            "using this TM1Service instance will fail due to authentication. "
+                            "Check the tm1-gateway domain settings are correct "
+                            "in the container orchestrator ")
 
+                        #if session had incorrect domain due to CP4D extract it and add it to cookie jar
+                        self._s.cookies.set("TM1SessionId",
+                                            self._extract_tm1_session_id_from_set_cookie_header(auth_response_headers=response.headers))
 
                 else:
                     response = self._s.get(url=self._auth_url,
