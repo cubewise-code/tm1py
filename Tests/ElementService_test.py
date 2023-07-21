@@ -576,6 +576,53 @@ class TestElementService(unittest.TestCase):
             self.dimension_name)
 
         self.assertIn(element_attribute, element_attributes)
+    def test_delete_elements(self):
+        self.assertIn(
+            "1989",
+            self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name))
+
+        self.assertIn(
+            "1990",
+            self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name))
+
+        element_names = ["1989", "1990"]
+        self.tm1.elements.delete_elements(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            element_names=element_names,
+            use_ti=False
+        )
+        self.assertNotIn(
+            "1989",
+            self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name))
+
+        self.assertNotIn(
+            "1990",
+            self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name))
+
+    def test_delete_elements_use_ti(self):
+        self.assertIn(
+            "1989",
+            self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name))
+
+        self.assertIn(
+            "1990",
+            self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name))
+
+        element_names = ["1989", "1990"]
+        self.tm1.elements.delete_elements(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            element_names=element_names,
+            use_ti=True
+        )
+        self.assertNotIn(
+            "1989",
+            self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name))
+
+        self.assertNotIn(
+            "1990",
+            self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name))
 
     def test_delete_element_attribute(self):
         element_attribute = ElementAttribute("NewAttribute", "String")
