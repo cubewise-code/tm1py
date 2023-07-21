@@ -3,6 +3,8 @@ import json
 from enum import Enum
 from typing import List, Union, Iterable, Optional, Dict, Tuple
 
+from TM1py import Subset, Process
+
 try:
     import pandas as pd
 
@@ -18,7 +20,7 @@ from TM1py.Objects import ElementAttribute, Element
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import CaseAndSpaceInsensitiveDict, format_url, CaseAndSpaceInsensitiveSet, require_admin, \
-    dimension_hierarchy_element_tuple_from_unique_name, require_pandas
+    dimension_hierarchy_element_tuple_from_unique_name, require_pandas, require_version
 from TM1py.Utils import build_element_unique_names, CaseAndSpaceInsensitiveTuplesDict
 
 
@@ -73,12 +75,35 @@ class ElementService(ObjectService):
             element_name)
         return self._rest.DELETE(url, **kwargs)
 
-    def delete_elements(self, dimension_name: str, hierarchy_name: str, elements: str= None, **kwargs):
+    @require_version("11.4")
+    def delete_elements(self, dimension_name: str, hierarchy_name: str, element_names: List[str] = None,
+                        use_ti: bool = False, **kwargs):
+        if use_ti:
+            return self.delete_elements_use_ti(dimension_name, hierarchy_name, element_names, **kwargs)
+
         h_service = self._get_hierarchy_service()
-        h = h_service.get(dimension_name, hierarchy_name)
-        for ele in elements:
+        h = h_service.get(dimension_name, hierarchy_name, **kwargs)
+        for ele in element_names:
             h.remove_element(ele)
-        h_service.update(h)
+        h_service.update(h, **kwargs)
+
+    def delete_elements_use_ti(self, dimension_name: str, hierarchy_name: str, element_names: List[str] = None,
+                               **kwargs):
+        subset_service = self._get_subset_service()
+        unbound_process_name = subset_name = self.suggest_unique_object_name()
+        subset = Subset(subset_name, dimension_name, hierarchy_name, elements=element_names)
+        subset_service.update_or_create(subset, private=False, **kwargs)
+        try:
+            process_service = self._get_process_service()
+            process = Process(
+                name=unbound_process_name,
+                prolog_procedure=f"HierarchyDeleteElements('{dimension_name}', '{hierarchy_name}', '{subset_name}');")
+            success, status, error_log_file = process_service.execute_process_with_return(process, **kwargs)
+            if not success:
+                raise TM1pyException(f"Failed to delete elements through unbound process. Error: '{error_log_file}'")
+
+        finally:
+            subset_service.delete(subset_name, dimension_name, hierarchy_name, private=False, **kwargs)
 
     def get_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[Element]:
         url = format_url(
@@ -1063,6 +1088,14 @@ class ElementService(ObjectService):
     def _get_hierarchy_service(self):
         from TM1py import HierarchyService
         return HierarchyService(self._rest)
+
+    def _get_subset_service(self):
+        from TM1py import SubsetService
+        return SubsetService(self._rest)
+
+    def _get_process_service(self):
+        from TM1py import ProcessService
+        return ProcessService(self._rest)
 
     def _get_cell_service(self):
         from TM1py import CellService
