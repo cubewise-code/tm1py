@@ -899,7 +899,7 @@ class ElementService(ObjectService):
 
         return self._rest.POST(url=url, data=json.dumps(body), **kwargs)
 
-    def add_elements(self, dimension_name: str, hierarchy_name: str, elements: List[Element], **kwargs):
+    def add_elements(self, dimension_name: str, hierarchy_name: str, elements: Iterable[Element], **kwargs):
         """ Add elements to hierarchy. Fails if one element already exists.
 
         :param dimension_name:
