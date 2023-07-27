@@ -916,16 +916,17 @@ class CellService(ObjectService):
         if skip_non_updateable:
             cellset_as_dict = self.drop_non_updateable_cells(cellset_as_dict, cube_name, dimensions)
 
-        mdx, values = build_mdx_and_values_from_cellset(cellset_as_dict, cube_name, dimensions)
-        return self.write_values_through_cellset(
-            mdx=mdx,
-            values=values,
-            increment=increment,
-            deactivate_transaction_log=deactivate_transaction_log,
-            reactivate_transaction_log=reactivate_transaction_log,
-            sandbox_name=sandbox_name,
-            use_changeset=use_changeset,
-            **kwargs)
+        if cellset_as_dict:
+            mdx, values = build_mdx_and_values_from_cellset(cellset_as_dict, cube_name, dimensions)
+            return self.write_values_through_cellset(
+                mdx=mdx,
+                values=values,
+                increment=increment,
+                deactivate_transaction_log=deactivate_transaction_log,
+                reactivate_transaction_log=reactivate_transaction_log,
+                sandbox_name=sandbox_name,
+                use_changeset=use_changeset,
+                **kwargs)
 
     def drop_non_updateable_cells(self, cells: Dict, cube_name: str, dimensions: List[str]):
         mdx = build_mdx_from_cellset(cells, cube_name, dimensions)
