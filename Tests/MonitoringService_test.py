@@ -43,6 +43,7 @@ class TestMonitoringService(unittest.TestCase):
     def test_disconnect_all_users(self):
         self.tm1.monitoring.disconnect_all_users()
 
+    @skip_if_deprecated_in_version(version="12.0.0")
     def test_cancel_all_running_threads(self):
         self.tm1.monitoring.cancel_all_running_threads()
 
