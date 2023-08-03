@@ -28,6 +28,7 @@ class MonitoringService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return response.json()['value']
 
+    @deprecated_in_version(version="12.0.0")
     def get_active_threads(self, **kwargs):
         """Return a list of non-idle threads from the TM1 Server
 
@@ -38,6 +39,7 @@ class MonitoringService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return response.json()['value']
 
+    @deprecated_in_version(version="12.0.0")
     def cancel_thread(self, thread_id: int, **kwargs) -> Response:
         """ Kill a running thread
         
@@ -48,6 +50,7 @@ class MonitoringService(ObjectService):
         response = self._rest.POST(url, **kwargs)
         return response
 
+    @deprecated_in_version(version="12.0.0")
     def cancel_all_running_threads(self, **kwargs) -> list:
         running_threads = self.get_threads(**kwargs)
         canceled_threads = list()
