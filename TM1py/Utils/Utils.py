@@ -876,6 +876,10 @@ def extract_compact_json_cellset(context: str, response: Dict, return_as_dict: b
     if len(props) == 1:
         return [value[0] for value in cells_data]
 
+    if props == ['Ordinal', 'Value']:
+        return [value[1] for value in cells_data]
+
+
     return cells_data
 
 

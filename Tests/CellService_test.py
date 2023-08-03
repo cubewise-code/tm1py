@@ -11,7 +11,7 @@ from TM1py.Objects import (AnonymousSubset, Cube, Dimension, Element,
                            ElementAttribute, Hierarchy, MDXView, NativeView)
 from TM1py.Services import TM1Service
 from TM1py.Utils import Utils, element_names_from_element_unique_names, CaseAndSpaceInsensitiveDict, \
-    CaseAndSpaceInsensitiveTuplesDict
+    CaseAndSpaceInsensitiveTuplesDict, verify_version
 from .Utils import skip_if_insufficient_version, skip_if_no_pandas, skip_if_deprecated_in_version
 
 try:
@@ -650,7 +650,12 @@ class TestCellService(unittest.TestCase):
         query.add_member_tuple_to_columns(
             f"[{self.dimension_names[0]}].[element2]",
             f"[}}ElementAttributes_{self.dimension_names[0]}].[Attr3]")
-        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), ['Text 1', 1, 2, "", None, None])
+        values = self.tm1.cells.execute_mdx_values(mdx=query.to_mdx())
+
+        if verify_version(required_version="12",version=self.tm1.version):
+            self.assertEqual(values, ['Text 1', 1, 2, "", 0, 0])
+        else:
+            self.assertEqual(values, ['Text 1', 1, 2, "", None, None])
 
     def test_write_through_unbound_process_to_consolidation(self):
         cells = dict()
@@ -1463,6 +1468,8 @@ class TestCellService(unittest.TestCase):
             self.assertIn("[TM1py_Tests_Cell_Dimension2].", coordinates[1])
             self.assertIn("[TM1py_Tests_Cell_Dimension3].", coordinates[2])
 
+    @skip_if_deprecated_in_version(version="12")
+    #v12 does not support empty row sets
     def test_execute_mdx_with_empty_rows(self):
         # write cube content
         self.tm1.cubes.cells.write_values(self.cube_name, self.cellset)
@@ -1491,6 +1498,7 @@ class TestCellService(unittest.TestCase):
             self.assertIn("[TM1py_Tests_Cell_Dimension2].", coordinates[1])
             self.assertIn("[TM1py_Tests_Cell_Dimension3].", coordinates[2])
 
+    @skip_if_deprecated_in_version(version="12")
     def test_execute_mdx_with_empty_columns(self):
         # write cube content
         self.tm1.cubes.cells.write_values(self.cube_name, self.cellset)
@@ -2658,6 +2666,9 @@ class TestCellService(unittest.TestCase):
             'TM1py_Tests_Cell_Dimension1': {0: 'Element 1'},
             'Attr1': {0: 'TM1py'},
             'Value': {0: 1.0}}
+
+
+
         self.assertEqual(expected, df.to_dict())
 
     @skip_if_no_pandas
@@ -2699,15 +2710,16 @@ class TestCellService(unittest.TestCase):
 
         df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, include_attributes=True, use_iterative_json=True)
 
-        expected = {
+        df_test = pd.DataFrame({
             'TM1py_Tests_Cell_Dimension1': {0: 'Element 1'},
             'Attr1': {0: 'TM1py'},
             'TM1py_Tests_Cell_Dimension2': {0: 'Element 1'},
             'Attr2': {0: '2'},
             'TM1py_Tests_Cell_Dimension3': {0: 'Element 1'},
             'Attr3': {0: '3'},
-            'Value': {0: 1.0}}
-        self.assertEqual(expected, df.to_dict())
+            'Value': {0: 1.0}})
+
+        self.assertTrue(df_test.equals(df))
 
     @skip_if_no_pandas
     def test_execute_mdx_dataframe_include_attributes_iter_json_no_attributes(self):
@@ -3467,17 +3479,17 @@ class TestCellService(unittest.TestCase):
             dimension_name=self.dimension_names[0],
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[0],
-                expression='{ HEAD ( {[' + self.dimension_names[0] + '].Members}, 10) } }'))
+                expression=MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0]).head(10).to_mdx()))
         view.add_row(
             dimension_name=self.dimension_names[1],
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[1],
-                expression='{ HEAD ( { [' + self.dimension_names[1] + '].Members}, 10 ) }'))
+                expression=MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1]).head(10).to_mdx()))
         view.add_column(
             dimension_name=self.dimension_names[2],
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[2],
-                expression='{ HEAD ( {[' + self.dimension_names[2] + '].Members}, 10 ) }'))
+                expression=MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2]).head(10).to_mdx()))
         self.tm1.cubes.views.update_or_create(view, private=False)
 
         pivot = self.tm1.cubes.cells.execute_view_dataframe_pivot(
@@ -3497,17 +3509,17 @@ class TestCellService(unittest.TestCase):
             dimension_name=self.dimension_names[0],
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[0],
-                expression='{ HEAD ( {[' + self.dimension_names[0] + '].Members}, 10) } }'))
+                expression=MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0]).head(10).to_mdx()))
         view.add_column(
             dimension_name=self.dimension_names[1],
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[1],
-                expression='{ HEAD ( { [' + self.dimension_names[1] + '].Members}, 10 ) }'))
+                expression=MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1]).head(10).to_mdx()))
         view.add_column(
             dimension_name=self.dimension_names[2],
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[2],
-                expression='{ HEAD ( {[' + self.dimension_names[2] + '].Members}, 10 ) }'))
+                expression=MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2]).head(10).to_mdx()))
         self.tm1.cubes.views.update_or_create(
             view=view,
             private=False)
@@ -3525,16 +3537,21 @@ class TestCellService(unittest.TestCase):
             view_name=view_name,
             suppress_empty_columns=False,
             suppress_empty_rows=False)
+
         view.add_row(
             dimension_name=self.dimension_names[0],
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[0],
-                expression='{ HEAD ( {[' + self.dimension_names[0] + '].Members}, 10) } }'))
+                expression=MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0]).head(10).to_mdx()
+            )
+        )
         view.add_column(
             dimension_name=self.dimension_names[1],
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[1],
-                expression='{ HEAD ( { [' + self.dimension_names[1] + '].Members}, 10 ) }'))
+                expression=MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1]).head(10).to_mdx()
+            )
+        )
         view.add_title(
             dimension_name=self.dimension_names[2],
             selection="Element 1",
@@ -3790,6 +3807,8 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(value, None)
 
     @skip_if_insufficient_version(version="11.7")
+    @skip_if_deprecated_in_version(version="12")
+    # skip if version 12 as invalid element names do not raise an exception
     def test_clear_invalid_element_name(self):
 
         with self.assertRaises(TM1pyException) as e:
@@ -3809,14 +3828,11 @@ class TestCellService(unittest.TestCase):
         with self.assertRaises(TM1pyException) as e:
             mdx = f"""
             SELECT
-            {{[{self.dimension_names[0]}].[NotExistingElement]}} ON 0
+            {{[{self.dimension_names[0]}].MissingSquareBracket]}} ON 0
             FROM [{self.cube_name}]
             """
             self.tm1.cells.clear_with_mdx(cube=self.cube_name, mdx=mdx)
 
-        self.assertIn(
-            '\\"NotExistingElement\\" :',
-            str(e.exception.message))
 
     def test_clear_with_mdx_unsupported_version(self):
 
@@ -3838,6 +3854,8 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(
             str(e.exception),
             str(TM1pyVersionException(function="clear_with_mdx", required_version="11.7")))
+
+        self.tm1._tm1_rest.set_version()
 
     def test_execute_mdx_with_skip(self):
         mdx = MdxBuilder.from_cube(self.cube_name) \
