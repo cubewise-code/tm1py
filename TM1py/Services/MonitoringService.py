@@ -6,7 +6,7 @@ from requests import Response
 from TM1py.Objects.User import User
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import format_url, case_and_space_insensitive_equals, require_admin
+from TM1py.Utils import format_url, case_and_space_insensitive_equals, require_admin, deprecated_in_version
 
 
 class MonitoringService(ObjectService):
@@ -17,6 +17,7 @@ class MonitoringService(ObjectService):
     def __init__(self, rest: RestService):
         super().__init__(rest)
 
+    @deprecated_in_version(version="12.0.0")
     def get_threads(self, **kwargs) -> List:
         """ Return a dict of the currently running threads from the TM1 Server
 
