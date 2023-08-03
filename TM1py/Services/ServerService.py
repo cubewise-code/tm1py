@@ -15,7 +15,8 @@ from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import format_url
 from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, CaseAndSpaceInsensitiveSet, require_admin, require_version, \
-    decohints
+    decohints, deprecated_in_version
+
 
 class LogLevel(Enum):
     FATAL = "fatal"
@@ -24,6 +25,7 @@ class LogLevel(Enum):
     INFO = "info"
     DEBUG = "debug"
     OFF = "off"
+
 
 @decohints
 def odata_track_changes_header(func):
@@ -57,6 +59,7 @@ class ServerService(ObjectService):
         self.mlog_last_delta_request = None
         self.alog_last_delta_request = None
 
+    @deprecated_in_version(version="12.0.0")
     @odata_track_changes_header
     def initialize_transaction_log_delta_requests(self, filter=None, **kwargs):
         url = "/TailTransactionLog()"
@@ -67,6 +70,7 @@ class ServerService(ObjectService):
         self.tlog_last_delta_request = response.text[response.text.rfind(
             "TransactionLogEntries/!delta('"):-2]
 
+    @deprecated_in_version(version="12.0.0")
     @odata_track_changes_header
     def execute_transaction_log_delta_request(self, **kwargs) -> Dict:
         response = self._rest.GET(
@@ -75,6 +79,7 @@ class ServerService(ObjectService):
             "TransactionLogEntries/!delta('"):-2]
         return response.json()['value']
 
+    @deprecated_in_version(version="12.0.0")
     @odata_track_changes_header
     def initialize_audit_log_delta_requests(self, filter=None, **kwargs):
         url = "/TailAuditLog()"
@@ -85,6 +90,7 @@ class ServerService(ObjectService):
         self.alog_last_delta_request = response.text[response.text.rfind(
             "AuditLogEntries/!delta('"):-2]
 
+    @deprecated_in_version(version="12.0.0")
     @odata_track_changes_header
     def execute_audit_log_delta_request(self, **kwargs) -> Dict:
         response = self._rest.GET(
@@ -93,6 +99,7 @@ class ServerService(ObjectService):
             "AuditLogEntries/!delta('"):-2]
         return response.json()['value']
 
+    @deprecated_in_version(version="12.0.0")
     @odata_track_changes_header
     def initialize_message_log_delta_requests(self, filter=None, **kwargs):
         url = "/TailMessageLog()"
@@ -103,6 +110,7 @@ class ServerService(ObjectService):
         self.mlog_last_delta_request = response.text[response.text.rfind(
             "MessageLogEntries/!delta('"):-2]
 
+    @deprecated_in_version(version="12.0.0")
     @odata_track_changes_header
     def execute_message_log_delta_request(self, **kwargs) -> Dict:
         response = self._rest.GET(
@@ -111,6 +119,7 @@ class ServerService(ObjectService):
             "MessageLogEntries/!delta('"):-2]
         return response.json()['value']
 
+    @deprecated_in_version(version="12.0.0")
     @require_admin
     def get_message_log_entries(self, reverse: bool = True, since: datetime = None,
                                 until: datetime = None, top: int = None, logger: str = None,
@@ -212,6 +221,7 @@ class ServerService(ObjectService):
         timestamp_utc = timestamp.astimezone(pytz.utc)
         return timestamp_utc
 
+    @deprecated_in_version(version="12.0.0")
     @require_admin
     def get_transaction_log_entries(self, reverse: bool = True, user: str = None, cube: str = None,
                                     since: datetime = None, until: datetime = None, top: int = None,
@@ -265,6 +275,7 @@ class ServerService(ObjectService):
         return response.json()['value']
 
     @require_admin
+    @deprecated_in_version(version="12.0.0")
     @require_version(version="11.6")
     def get_audit_log_entries(self, user: str = None, object_type: str = None, object_name: str = None,
                               since: datetime = None, until: datetime = None, top: int = None, **kwargs) -> Dict:
@@ -310,6 +321,7 @@ class ServerService(ObjectService):
         return response.json()['value']
 
     @require_admin
+    @deprecated_in_version(version="12.0.0")
     def get_last_process_message_from_messagelog(self, process_name: str, **kwargs) -> Optional[str]:
         """ Get the latest message log entry for a process
 
@@ -343,10 +355,12 @@ class ServerService(ObjectService):
         url = '/Configuration/ProductVersion/$value'
         return self._rest.GET(url, **kwargs).text
 
+    @deprecated_in_version(version="12.0.0")
     def get_admin_host(self, **kwargs) -> str:
         url = '/Configuration/AdminHost/$value'
         return self._rest.GET(url, **kwargs).text
 
+    @deprecated_in_version(version="12.0.0")
     def get_data_directory(self, **kwargs) -> str:
         url = '/Configuration/DataBaseDirectory/$value'
         return self._rest.GET(url, **kwargs).text
@@ -398,6 +412,7 @@ class ServerService(ObjectService):
         url = '/StaticConfiguration'
         return self._rest.PATCH(url, json.dumps(configuration))
 
+    @deprecated_in_version(version="12.0.0")
     @require_admin
     def save_data(self, **kwargs) -> Response:
         from TM1py.Services import ProcessService
@@ -425,6 +440,7 @@ class ServerService(ObjectService):
             "Administration": {"PerformanceMonitorOn": False}
         }
         self.update_static_configuration(config)
+
 
     @require_admin
     def activate_audit_log(self):
@@ -459,6 +475,3 @@ class ServerService(ObjectService):
         '''
         url = f"/Loggers"
         return self._rest.GET(url).content
-
-
-
