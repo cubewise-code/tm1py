@@ -11,7 +11,7 @@ from TM1py.Objects import (AnonymousSubset, Cube, Dimension, Element,
                            ElementAttribute, Hierarchy, MDXView, NativeView)
 from TM1py.Services import TM1Service
 from TM1py.Utils import Utils, element_names_from_element_unique_names, CaseAndSpaceInsensitiveDict, \
-    CaseAndSpaceInsensitiveTuplesDict
+    CaseAndSpaceInsensitiveTuplesDict, verify_version
 from .Utils import skip_if_insufficient_version, skip_if_no_pandas, skip_if_deprecated_in_version
 
 try:
@@ -659,7 +659,12 @@ class TestCellService(unittest.TestCase):
         query.add_member_tuple_to_columns(
             f"[{self.dimension_names[0]}].[element2]",
             f"[}}ElementAttributes_{self.dimension_names[0]}].[Attr3]")
-        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), ['Text 1', 1, 2, "", None, None])
+        values = self.tm1.cells.execute_mdx_values(mdx=query.to_mdx())
+
+        if verify_version(required_version="12",version=self.tm1.version):
+            self.assertEqual(values, ['Text 1', 1, 2, "", 0, 0])
+        else:
+            self.assertEqual(values, ['Text 1', 1, 2, "", None, None])
 
     def test_write_through_unbound_process_to_consolidation(self):
         cells = dict()
