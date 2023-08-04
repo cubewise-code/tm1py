@@ -37,9 +37,15 @@ class ChoreTask(TM1Object):
         self._parameters = parameters
 
     @classmethod
-    def from_dict(cls, chore_task_as_dict: Dict):
-        return cls(step=int(chore_task_as_dict['Step']),
-                   process_name=chore_task_as_dict['Process']['Name'],
+    def from_dict(cls, chore_task_as_dict: Dict, step: int = None):
+        if 'Process' in chore_task_as_dict:
+            process_name = chore_task_as_dict['Process']['Name']
+        else:
+            # Extract "ProcessName" from "Processes('ProcessName')"
+            process_name = chore_task_as_dict['Process@odata.bind'][11:-2]
+
+        return cls(step=step if step is not None else int(chore_task_as_dict['Step']),
+                   process_name=process_name,
                    parameters=[{'Name': p['Name'], 'Value': p['Value']} for p in chore_task_as_dict['Parameters']])
 
     @property
