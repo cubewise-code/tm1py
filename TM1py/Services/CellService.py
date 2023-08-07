@@ -255,7 +255,7 @@ class CellService(ObjectService):
     def get_values(self, cube_name: str, element_list: Union[str, Iterable] = None, dimensions: List[str] = None,
                   sandbox_name: str = None, element_separator: str = ",", hierarchy_separator: str = "&&",
                   hierarchy_element_separator: str = "::", **kwargs) -> Union[str, float]:
-        """ Returns cube value from specified coordinates
+        """ Returns list of cube values from specified coordinates list.  will be in same order as original list
 
         :param cube_name: Name of the cube
         :param elements: Iterable of comma or element_separator separated elements to describe data point.
