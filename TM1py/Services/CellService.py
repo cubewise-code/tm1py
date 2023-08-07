@@ -258,16 +258,8 @@ class CellService(ObjectService):
         """ Returns cube value from specified coordinates
 
         :param cube_name: Name of the cube
-        :param elements: Describes the Dimension-Hierarchy-Element arrangement
-            - Example: "Hierarchy1::Element1 && Hierarchy2::Element4, Element9, Element2"
-            - Dimensions are not specified! They are derived from the position.
-            - The , separates the element-selections
-            - If more than one hierarchy is selected per dimension && splits the elementselections
-            - If no Hierarchy is specified. Default Hierarchy will be addressed
-        or
-        Iterable of type mdxpy.Member or similar
-            - Dimension names must be provided in this case! Example: [(Dimension1, Element1), (Dimension2, Element2), (Dimension3, Element3)]
-            - Hierarchys can be included. Example: [(Dimension1, Hierarchy1, Element1), (Dimension1, Hierarchy2, Element2), (Dimension2, Element3)]
+        :param elements: Iterable of comma or element_separator separated elements to describe data point.
+            - Must be in cube dimension order
         :param dimensions: List of dimension names in correct order
         :param sandbox_name: str
         :param element_separator: Alternative separator for the element selections
