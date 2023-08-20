@@ -4262,6 +4262,152 @@ class TestCellService(unittest.TestCase):
 
         self.assertEqual(result['@odata.context'], '../$metadata#Collection(ibm.tm1.api.v1.FedCellDescriptor)')
 
+    def test_extract_cellset_axes_raw_async(self):
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .rows_non_empty() \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0])) \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1])) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
+            .to_mdx()
+
+        cellset_id = self.tm1.cells.create_cellset(mdx=mdx)
+        data_async0 = self.tm1.cubes.cells.extract_cellset_axes_raw_async(cellset_id=cellset_id, async_axis=0)
+        data_async1 = self.tm1.cubes.cells.extract_cellset_axes_raw_async(cellset_id=cellset_id)
+        data = self.tm1.cubes.cells.extract_cellset_metadata_raw(cellset_id=cellset_id)
+        self.assertEqual(
+            data['Axes'], data_async0['Axes'])
+        self.assertEqual(
+            data['Axes'], data_async1['Axes'])
+
+    def test_extract_cellset_axes_raw_async_without_rows(self):
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .columns_non_empty() \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0])) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1])) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
+            .to_mdx()
+
+        cellset_id = self.tm1.cells.create_cellset(mdx=mdx)
+        data_async0 = self.tm1.cubes.cells.extract_cellset_axes_raw_async(cellset_id=cellset_id, async_axis=0)
+        data = self.tm1.cubes.cells.extract_cellset_metadata_raw(cellset_id=cellset_id)
+        self.assertEqual(
+            data['Axes'], data_async0['Axes'])
+        print('axes empty row', len(data['Axes']))
+        with self.assertRaises(ValueError) as _:
+            self.tm1.cubes.cells.extract_cellset_axes_raw_async(cellset_id=cellset_id)
+
+    def test_extract_cellset_axes_raw_async_with_empty_columns(self):
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .rows_non_empty().add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0])) \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1])) \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
+            .columns_non_empty().add_hierarchy_set_to_column_axis(MdxHierarchySet.from_str("", "", "{}")) \
+            .to_mdx()
+
+        cellset_id = self.tm1.cells.create_cellset(mdx=mdx)
+        data_async0 = self.tm1.cubes.cells.extract_cellset_axes_raw_async(cellset_id=cellset_id, async_axis=0)
+        data_async1 = self.tm1.cubes.cells.extract_cellset_axes_raw_async(cellset_id=cellset_id)
+        data = self.tm1.cubes.cells.extract_cellset_metadata_raw(cellset_id=cellset_id)
+        self.assertEqual(
+            data['Axes'], data_async0['Axes'])
+        self.assertEqual(
+            data['Axes'], data_async1['Axes'])
+
+    def test_extract_cellset_axes_raw_async_with_member_properties_with_elem_properties(self):
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .rows_non_empty() \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0])) \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1])) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
+            .to_mdx()
+
+        cellset_id = self.tm1.cells.create_cellset(mdx=mdx)
+        elem_properties = ["Name", "UniqueName", "Attributes/Attr1", "Attributes/Attr2"]
+        member_properties = ["Name", "Ordinal", "Weight"]
+        data_async0 = self.tm1.cubes.cells.extract_cellset_axes_raw_async(cellset_id=cellset_id, async_axis=0,
+                                                                          elem_properties=elem_properties,
+                                                                          member_properties=member_properties)
+        data_async1 = self.tm1.cubes.cells.extract_cellset_axes_raw_async(cellset_id=cellset_id,
+                                                                          elem_properties=elem_properties,
+                                                                          member_properties=member_properties)
+        data = self.tm1.cubes.cells.extract_cellset_metadata_raw(cellset_id=cellset_id,
+                                                                 elem_properties=elem_properties,
+                                                                 member_properties=member_properties)
+        self.assertEqual(
+            data['Axes'], data_async0['Axes'])
+        self.assertEqual(
+            data['Axes'], data_async1['Axes'])
+
+    def test_extract_cellset_cells_raw_async(self):
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .rows_non_empty() \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0])) \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1])) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
+            .to_mdx()
+
+        cellset_id = self.tm1.cells.create_cellset(mdx=mdx)
+        data_async = self.tm1.cubes.cells.extract_cellset_cells_raw_async(cellset_id=cellset_id)
+        data = self.tm1.cubes.cells.extract_cellset_cells_raw(cellset_id=cellset_id)
+        self.assertEqual(
+            data['Cells'], data_async['Cells'])
+
+    def test_extract_cellset_cells_raw_async_with_cell_properties(self):
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .rows_non_empty() \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0])) \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1])) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
+            .to_mdx()
+
+        cellset_id = self.tm1.cells.create_cellset(mdx=mdx)
+        cell_properties = ['Value', 'Updateable', 'Consolidated', 'RuleDerived']
+        data_async = self.tm1.cubes.cells.extract_cellset_cells_raw_async(cellset_id=cellset_id,
+                                                                          cell_properties=cell_properties)
+        data = self.tm1.cubes.cells.extract_cellset_cells_raw(cellset_id=cellset_id,
+                                                              cell_properties=cell_properties)
+        self.assertEqual(
+            data['Cells'], data_async['Cells'])
+
+    def test_extract_cellset_cells_raw_async_skip_consolidated(self):
+        self.tm1.cells.write_values(self.cube_with_consolidations_name, self.cellset)
+        mdx = MdxBuilder.from_cube(self.cube_with_consolidations_name) \
+            .rows_non_empty() \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimensions_with_consolidations_names[0],
+                                        self.dimensions_with_consolidations_names[0])) \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimensions_with_consolidations_names[1],
+                                        self.dimensions_with_consolidations_names[1])) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimensions_with_consolidations_names[2],
+                                        self.dimensions_with_consolidations_names[2])) \
+            .to_mdx()
+
+        cellset_id = self.tm1.cells.create_cellset(mdx=mdx)
+        data_async = self.tm1.cubes.cells.extract_cellset_cells_raw_async(cellset_id=cellset_id)
+        data = self.tm1.cubes.cells.extract_cellset_cells_raw(cellset_id=cellset_id)
+        self.assertEqual(
+            data['Cells'], data_async['Cells'])
+
     # Delete Cube and Dimensions
     @classmethod
     def tearDownClass(cls):
