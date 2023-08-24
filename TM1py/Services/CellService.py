@@ -1859,7 +1859,8 @@ class CellService(ObjectService):
                         skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
                         csv_dialect: 'csv.Dialect' = None, line_separator: str = "\r\n", value_separator: str = ",",
                         sandbox_name: str = None, include_attributes: bool = False, use_iterative_json: bool = False,
-                        use_compact_json: bool = False, use_blob: bool = False, **kwargs) -> str:
+                        use_compact_json: bool = False, use_blob: bool = False, mdx_headers: bool = False,
+                        **kwargs) -> str:
         """ Optimized for performance. Get csv string of coordinates and values.
 
         :param mdx: Valid MDX Query
@@ -1878,6 +1879,7 @@ class CellService(ObjectService):
         Comes at a cost of 3-5% performance.
         :param use_compact_json: bool
         :param use_blob: Has better performance on datasets > 1M cells and lower memory footprint in any case.
+        :param mdx_headers: boolean, fully qualified hierarchy name as header instead of simple dimension name
         :return: String
         """
         if use_blob:
@@ -1901,6 +1903,7 @@ class CellService(ObjectService):
                 skip_rule_derived_cells=skip_rule_derived_cells,
                 value_separator=value_separator,
                 sandbox_name=sandbox_name,
+                mdx_headers=mdx_headers,
                 **kwargs)
 
         cellset_id = self.create_cellset(mdx, sandbox_name=sandbox_name, **kwargs)
@@ -1924,7 +1927,7 @@ class CellService(ObjectService):
                          skip_rule_derived_cells: bool = False, csv_dialect: 'csv.Dialect' = None,
                          line_separator: str = "\r\n", value_separator: str = ",", sandbox_name: str = None,
                          use_iterative_json: bool = False, use_compact_json: bool = False, use_blob: bool = False,
-                         **kwargs) -> str:
+                         arranged_axes: Tuple[List, List, List] = None, mdx_headers: bool = False, **kwargs) -> str:
         """ Optimized for performance. Get csv string of coordinates and values.
 
         :param cube_name: String, name of the cube
@@ -1944,6 +1947,10 @@ class CellService(ObjectService):
         Comes at a cost of 3-5% performance.
         :param use_compact_json: bool
         :param use_blob: Has 40% better performance and lower memory footprint in any case. Requires admin permissions.
+        :param arranged_axes: Tuple of dimension names on all axes as 3 lists: Titles, Rows, Columns.
+         Allows function to skip retrieval of cellset composition.
+         E.g.: arranged_axes=(["Year"], ["Region","Product"], ["Period", "Version"])
+        :param mdx_headers: boolean, fully qualified hierarchy name as header instead of simple dimension name
         :return: String
         """
         if use_blob:
@@ -1968,6 +1975,8 @@ class CellService(ObjectService):
                 skip_rule_derived_cells=skip_rule_derived_cells,
                 value_separator=value_separator,
                 sandbox_name=sandbox_name,
+                arranged_axes=arranged_axes,
+                mdx_headers=mdx_headers,
                 **kwargs)
 
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
@@ -2023,7 +2032,8 @@ class CellService(ObjectService):
                               skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
                               sandbox_name: str = None, include_attributes: bool = False,
                               use_iterative_json: bool = False, use_compact_json: bool = False,
-                              use_blob: bool = False, shaped: bool = False, **kwargs) -> 'pd.DataFrame':
+                              use_blob: bool = False, shaped: bool = False, mdx_headers: bool = False,
+                              **kwargs) -> 'pd.DataFrame':
         """ Optimized for performance. Get Pandas DataFrame from MDX Query.
 
         Takes all arguments from the pandas.read_csv method:
@@ -2045,6 +2055,7 @@ class CellService(ObjectService):
         :param use_compact_json: bool
         :param use_blob: Has better performance on datasets > 1M cells and lower memory footprint in any case.
         :param shaped: preserve shape of view/mdx in data frame
+        :param mdx_headers: boolean, fully qualified hierarchy name as header instead of simple dimension name
         :return: Pandas Dataframe
         """
         # necessary to assure column order in line with cube view
@@ -2063,7 +2074,8 @@ class CellService(ObjectService):
                 include_attributes=include_attributes,
                 line_separator="\r\n",
                 value_separator="~",
-                use_blob=use_blob)
+                use_blob=use_blob,
+                mdx_headers=mdx_headers)
 
             return build_dataframe_from_csv(raw_csv, sep='~', skip_zeros=skip_zeros, shaped=shaped, **kwargs)
 
@@ -2303,7 +2315,8 @@ class CellService(ObjectService):
                                skip: int = None, skip_zeros: bool = True, skip_consolidated_cells: bool = False,
                                skip_rule_derived_cells: bool = False, sandbox_name: str = None,
                                use_iterative_json: bool = False, use_blob: bool = False, shaped: bool = False,
-                               **kwargs) -> 'pd.DataFrame':
+                               arranged_axes: Tuple[List, List, List] = None,
+                               mdx_headers: bool = False, **kwargs) -> 'pd.DataFrame':
         """ Optimized for performance. Get Pandas DataFrame from an existing Cube View
         Context dimensions are omitted in the resulting Dataframe !
         Cells with Zero/null are omitted !
@@ -2326,6 +2339,11 @@ class CellService(ObjectService):
         :param use_iterative_json: use iterative json parsing to reduce memory consumption significantly.
         Comes at a cost of 3-5% performance.
         :param use_blob: Has 40% better performance and lower memory footprint in any case. Requires admin permissions.
+        :param shaped: Shape rows and columns of data frame as specified in cube view / MDX
+        :param arranged_axes: Tuple of dimension names on all axes as 3 lists: Titles, Rows, Columns.
+         Allows function to skip retrieval of cellset composition in use_blob mode.
+         E.g.: axes=(["Year"], ["Region","Product"], ["Period", "Version"])
+         :param mdx_headers: boolean, fully qualified hierarchy name as header instead of simple dimension name
         :return: Pandas Dataframe
         """
         # necessary to assure column order in line with cube view
@@ -2346,6 +2364,8 @@ class CellService(ObjectService):
                 line_separator="\r\n",
                 value_separator="~",
                 use_blob=True,
+                arranged_axes=arranged_axes,
+                mdx_headers=mdx_headers,
                 **kwargs)
             return build_dataframe_from_csv(raw_csv, sep='~', skip_zeros=skip_zeros, shaped=shaped, **kwargs)
 
@@ -3669,7 +3689,7 @@ class CellService(ObjectService):
                                    skip_consolidated_cells: bool, skip_rule_derived_cells: bool,
                                    value_separator: str, cube_dimensions: List[str] = None,
                                    include_headers: bool = True, sandbox_name: str = None, quote_character: str = '"',
-                                   **kwargs):
+                                   arranged_axes: Tuple[List, List, List] = None, mdx_headers=False, **kwargs):
         """ Execute existing view and retrieve result as csv, using blobs.
         Function has up to 40% better performance than default execute_view_csv on datasets > 1M cells
         and significantly lower memory footprint in all cases.
@@ -3684,7 +3704,12 @@ class CellService(ObjectService):
         :param quote_character:
         :param cube_dimensions: pass dimensions in cube, to allow TM1py to skip retrieval and speed up the execution
         :param sandbox_name: str
-        :include_headers: include header line in csv result
+        :param include_headers: include header line in csv result
+        :param quote_character: Quote character
+        :param arranged_axes: Tuple of dimension names on all axes as 3 lists: Titles, Rows, Columns.
+         Allows function to skip retrieval of cellset composition.
+         E.g.: axes=(["Year"], ["Region","Product"], ["Period", "Version"])
+        :param mdx_headers: boolean, fully qualified hierarchy name as header instead of simple dimension name
 
         """
         file_service, process_service, view_service = self._prepare_blob_services()
@@ -3695,12 +3720,16 @@ class CellService(ObjectService):
                 mdx=mdx, top=top, skip=skip, skip_zeros=skip_zeros,
                 skip_consolidated_cells=skip_consolidated_cells, skip_rule_derived_cells=skip_rule_derived_cells,
                 value_separator=value_separator, cube_dimensions=cube_dimensions, sandbox_name=sandbox_name,
-                include_headers=include_headers, quote_character=quote_character)
+                include_headers=include_headers, quote_character=quote_character,
+                arranged_axes=arranged_axes, mdx_headers=mdx_headers)
 
-        cube, titles, rows, columns = self._derive_cellset_composition_from_native_view(cube_name, view_name, False)
+        if arranged_axes:
+            titles, rows, columns = arranged_axes
+        else:
+            _, titles, rows, columns = self._derive_cellset_composition_from_native_view(cube_name, view_name, False)
 
         if not cube_dimensions:
-            cube_dimensions = self.get_dimension_names_for_writing(cube)
+            cube_dimensions = self.get_dimension_names_for_writing(cube_name)
 
         # ordinal is desired position in csv output
         # desired column position in CSV is: rows, columns and no title sections (as in legacy '/content' API call)
@@ -3755,7 +3784,7 @@ class CellService(ObjectService):
                 if f"[{dimension}].[{dimension}]" in CaseAndSpaceInsensitiveSet(titles)]
 
             process = self._build_cube_to_blob_process(
-                cube=cube,
+                cube=cube_name,
                 variables=variables,
                 # exclude title variables in blob
                 skip_variables=skip_variables,
@@ -3791,7 +3820,8 @@ class CellService(ObjectService):
                                   skip_consolidated_cells: bool, skip_rule_derived_cells: bool,
                                   value_separator: str, cube_dimensions: List[str] = None,
                                   sandbox_name: str = None, include_headers: bool = True,
-                                  quote_character='"', **kwargs):
+                                  quote_character='"', arranged_axes: Tuple[List, List, List] = None,
+                                  mdx_headers: bool = False, **kwargs):
         """ Execute MDX and retrieve result as csv, using blobs.
         Function has up to 40% better performance than default execute_mdx_csv on datasets > 1M cells
         and significantly lower memory footprint in all cases.
@@ -3806,14 +3836,21 @@ class CellService(ObjectService):
         :param quote_character:
         :param cube_dimensions: pass dimensions in cube, to allow TM1py to skip retrieval and speed up the execution
         :param sandbox_name: str
+        :param arranged_axes: Tuple
+        :param mdx_headers: boolean, fully qualified hierarchy name as header instead of simple dimension name
         :include_headers: include header line in csv result
 
         """
         file_service, process_service, view_service = self._prepare_blob_services()
 
         try:
-            # attempt to derive axes setup from MdxBuilder (fast)
-            cube, _, rows, columns = self._attempt_derive_cellset_composition_from_mdx(mdx)
+            if arranged_axes:
+                _, rows, columns = arranged_axes
+                cube = Utils.get_cube(mdx)
+            else:
+                # attempt to derive axes setup from MdxBuilder (fast)
+                cube, _, rows, columns = self._attempt_derive_cellset_composition_from_mdx(mdx)
+
         except:
             # fallback: execute MDX and extract axes setup (slow)
             cellset_id = self.create_cellset(mdx)
@@ -3824,15 +3861,15 @@ class CellService(ObjectService):
 
         # ordinal is desired position in csv output
         # desired column position in CSV is: rows, columns and no title sections (as in legacy '/content' API call)
-        dimensions_with_ordinal = CaseAndSpaceInsensitiveDict({
-            dimension_name_from_element_unique_name(dimension): i
+        hierarchy_with_ordinal = CaseAndSpaceInsensitiveDict({
+            dimension: i
             for i, dimension
             in enumerate(rows + columns, start=1)})
 
         # Assign 'v1' to 'vN' names according to desired column position in CSV. E.g. [v4, v2, v3, v1]
         variables = [
-            f'v{dimensions_with_ordinal[dimension_name_from_element_unique_name(dimension)]}'
-            for dimension
+            f'v{hierarchy_with_ordinal[hierarchy]}'
+            for hierarchy
             in columns + rows]
 
         unique_name = self.suggest_unique_object_name()
@@ -3850,19 +3887,24 @@ class CellService(ObjectService):
             MDX=mdx)
 
         file_name = f"{unique_name}.csv"
+        header_line = ""
         if include_headers:
-            case_insensitive_dimensions = CaseAndSpaceInsensitiveDict(
-                {dimension: dimension
-                 for dimension
-                 in cube_dimensions})
+            if mdx_headers:
 
-            # headers must correspond with element order in blob
-            header_line = ",".join(
-                [f"'{case_insensitive_dimensions[dimension_name_from_element_unique_name(header)]}'"
-                 for header
-                 in rows + columns] + ["'Value'"])
-        else:
-            header_line = ""
+                # headers must correspond with element order in blob
+                header_line = ",".join([f"'{header}'" for header in rows + columns] + ["'Value'"])
+
+            else:
+                case_insensitive_dimensions = CaseAndSpaceInsensitiveDict(
+                    {dimension: dimension
+                     for dimension
+                     in cube_dimensions})
+
+                # headers must correspond with element order in blob
+                header_line = ",".join(
+                    [f"'{case_insensitive_dimensions[dimension_name_from_element_unique_name(header)]}'"
+                     for header
+                     in rows + columns] + ["'Value'"])
 
         try:
             file_service.create(
