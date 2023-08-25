@@ -11,6 +11,7 @@ from contextlib import suppress
 from enum import Enum, unique
 from io import StringIO
 from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator, Union, Callable
+from urllib.parse import unquote
 
 import requests
 from mdxpy import MdxBuilder, Member
@@ -178,7 +179,8 @@ def update_server_on_adminhost(adminhost: str = 'localhost', server_as_dict: Dic
 
 
 def build_url_friendly_object_name(object_name: str) -> str:
-    return object_name.replace("'", "''").replace('%', '%25').replace('#', '%23').replace('?', '%3F').replace('&', '%26')
+    return object_name.replace("'", "''").replace('%', '%25').replace('#', '%23').replace('?', '%3F').replace('&',
+                                                                                                              '%26')
 
 
 def format_url(url, *args: str, **kwargs: str) -> str:
@@ -1225,6 +1227,14 @@ def drop_dimension_properties(mdx: str):
 
     pattern = re.compile(r"(?i)\s+PROPERTIES\s+.*?\s+ON")
     return pattern.sub(" ON", mdx)
+
+
+def read_object_name_from_url(url: str, pattern: str) -> str:
+    match = re.match(pattern, url)
+    if not match:
+        return None
+
+    return unquote(match.group(1))
 
 
 class HTTPAdapterWithSocketOptions(HTTPAdapter):
