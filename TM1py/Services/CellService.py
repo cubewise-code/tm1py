@@ -2132,7 +2132,7 @@ class CellService(ObjectService):
 
     @require_pandas
     def execute_mdx_dataframe_shaped(self, mdx: str, sandbox_name: str = None, display_attribute: bool = False,
-                                     use_iterative_json: bool = False, use_blob: bool = False,
+                                     use_iterative_json: bool = False, use_blob: bool = False, mdx_headers: bool=False,
                                      **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cube in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
@@ -2158,6 +2158,7 @@ class CellService(ObjectService):
                 delete_cellset=True,
                 sandbox_name=sandbox_name,
                 display_attribute=display_attribute,
+                mdx_headers=mdx_headers,
                 **kwargs)
 
         if all([use_blob, use_iterative_json]):
@@ -2171,6 +2172,7 @@ class CellService(ObjectService):
                 sandbox_name=sandbox_name,
                 use_iterative_json=use_iterative_json,
                 use_blob=False,
+                mdx_headers=mdx_headers,
                 **kwargs)
 
         # blob approach
@@ -2179,6 +2181,7 @@ class CellService(ObjectService):
             shaped=True,
             sandbox_name=sandbox_name,
             use_blob=True,
+            mdx_headers=mdx_headers,
             **kwargs)
 
     @require_pandas
@@ -3376,7 +3379,7 @@ class CellService(ObjectService):
     @require_pandas
     def extract_cellset_dataframe_shaped(self, cellset_id: str, sandbox_name: str = None,
                                          display_attribute: bool = False, infer_dtype: bool = False,
-                                         **kwargs) -> 'pd.DataFrame':
+                                         mdx_headers: bool=False, **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cellset in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
 
@@ -3388,7 +3391,7 @@ class CellService(ObjectService):
         """
         url = "/api/v1/Cellsets('{}')?$expand=" \
               "Axes($filter=Ordinal eq 0 or Ordinal eq 1;$expand=Tuples(" \
-              "$expand=Members($select=Name{})),Hierarchies($select=Name))," \
+              "$expand=Members($select=Name{})),Hierarchies($select=Name,Dimension;$expand=Dimension($select=Name)))," \
               "Cells($select=Value)".format(cellset_id, ',Attributes' if display_attribute else '')
 
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
@@ -3405,7 +3408,16 @@ class CellService(ObjectService):
                 column_headers.append(member['Name'])
 
         rows = response_json['Axes'][1]['Tuples']
-        row_headers = [hierarchy['Name'] for hierarchy in response_json['Axes'][1]['Hierarchies']]
+        if mdx_headers:
+            row_headers = [
+                f"[{hierarchy['Dimension']['Name']}].[{hierarchy['Name']}]"
+                for hierarchy
+                in response_json['Axes'][1]['Hierarchies']]
+        else:
+            row_headers = [
+                hierarchy['Dimension']['Name']
+                for hierarchy
+                in response_json['Axes'][1]['Hierarchies']]
         cell_values = [cell['Value'] for cell in response_json['Cells']]
 
         headers = row_headers + column_headers
