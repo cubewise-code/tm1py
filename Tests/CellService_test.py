@@ -26,6 +26,7 @@ class TestCellService(unittest.TestCase):
     cube_name = prefix + "Cube"
     view_name = prefix + "View"
     mdx_view_name = prefix + "MdxView"
+    mdx_view_2_name = prefix + "MdxView2"
     dimension_names = [
         prefix + 'Dimension1',
         prefix + 'Dimension2',
@@ -158,6 +159,14 @@ class TestCellService(unittest.TestCase):
             cls.dimension_names[2]))
         mdx_view = MDXView(cls.cube_name, cls.mdx_view_name, query.to_mdx())
         cls.tm1.views.update_or_create(mdx_view, private=False)
+
+        mdx = MdxBuilder.from_cube(cls.cube_name) \
+            .add_member_tuple_to_columns(Member.of(cls.dimension_names[0], "Element1")) \
+            .add_member_tuple_to_rows(Member.of(cls.dimension_names[1], "Element1")) \
+            .add_member_to_where(Member.of(cls.dimension_names[2], "Element1")) \
+            .to_mdx()
+        mdx_view = MDXView(cls.cube_name, view_name=cls.mdx_view_2_name, MDX=mdx)
+        cls.tm1.views.update_or_create(mdx_view)
 
         cls.build_cube_with_rules()
 
@@ -4327,6 +4336,117 @@ class TestCellService(unittest.TestCase):
             dimensions=["TM1py_Tests_Cell_Dimension1", "TM1py_Tests_Cell_Dimension2", "TM1py_Tests_Cell_Dimension3"])
 
         self.assertEqual(result['@odata.context'], '../$metadata#Collection(ibm.tm1.api.v1.FedCellDescriptor)')
+
+    def test_execute_mdx_csv_mdx_headers(self):
+        self.tm1.cubes.cells.write_values(
+            self.cube_name,
+            {("Element1", "Element1", "Element1"): 245}
+        )
+
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .add_member_tuple_to_columns(Member.of(self.dimension_names[0], "Element1")) \
+            .add_member_tuple_to_rows(Member.of(self.dimension_names[1], "Element1")) \
+            .add_member_to_where(Member.of(self.dimension_names[2], "Element1")) \
+            .to_mdx()
+
+        result = self.tm1.cells.execute_mdx_csv(mdx, mdx_headers=True)
+
+        expected_result = "[TM1py_Tests_Cell_Dimension2].[TM1py_Tests_Cell_Dimension2]," \
+                          "[TM1py_Tests_Cell_Dimension1].[TM1py_Tests_Cell_Dimension1]," \
+                          "Value\r\n" \
+                          "Element 1,Element 1,245"
+
+        self.assertEqual(expected_result, result)
+
+    def test_execute_mdx_csv_mdx_headers_use_blob(self):
+        self.tm1.cubes.cells.write_values(
+            self.cube_name,
+            {("Element1", "Element1", "Element1"): 245}
+        )
+
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .add_member_tuple_to_columns(Member.of(self.dimension_names[0], "Element1")) \
+            .add_member_tuple_to_rows(Member.of(self.dimension_names[1], "Element1")) \
+            .add_member_to_where(Member.of(self.dimension_names[2], "Element1")) \
+            .to_mdx()
+
+        result = self.tm1.cells.execute_mdx_csv(mdx, use_blob=True, mdx_headers=True)
+
+        expected_result = '"[TM1py_Tests_Cell_Dimension2].[TM1py_Tests_Cell_Dimension2]",' \
+                          '"[TM1py_Tests_Cell_Dimension1].[TM1py_Tests_Cell_Dimension1]",' \
+                          '"Value"\r\n' \
+                          '"Element 1","Element 1","245"\r\n'
+
+        self.assertEqual(expected_result, result)
+
+    def test_execute_mdx_csv_mdx_headers_iterative_json(self):
+        self.tm1.cubes.cells.write_values(
+            self.cube_name,
+            {("Element1", "Element1", "Element1"): 245}
+        )
+
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .add_member_tuple_to_columns(Member.of(self.dimension_names[0], "Element1")) \
+            .add_member_tuple_to_rows(Member.of(self.dimension_names[1], "Element1")) \
+            .add_member_to_where(Member.of(self.dimension_names[2], "Element1")) \
+            .to_mdx()
+
+        result = self.tm1.cells.execute_mdx_csv(mdx, use_iterative_json=True, mdx_headers=True)
+
+        expected_result = "[TM1py_Tests_Cell_Dimension2].[TM1py_Tests_Cell_Dimension2]," \
+                          "[TM1py_Tests_Cell_Dimension1].[TM1py_Tests_Cell_Dimension1]," \
+                          "Value\r\n" \
+                          "Element 1,Element 1,245"
+
+        self.assertEqual(expected_result, result)
+
+    def test_execute_mview_csv_mdx_headers(self):
+        self.tm1.cubes.cells.write_values(
+            self.cube_name,
+            {("Element1", "Element1", "Element1"): 245}
+        )
+
+        result = self.tm1.cells.execute_view_csv(cube_name=self.cube_name, view_name=self.mdx_view_2_name,
+                                                 mdx_headers=True)
+
+        expected_result = "[TM1py_Tests_Cell_Dimension2].[TM1py_Tests_Cell_Dimension2]," \
+                          "[TM1py_Tests_Cell_Dimension1].[TM1py_Tests_Cell_Dimension1]," \
+                          "Value\r\n" \
+                          "Element 1,Element 1,245"
+
+        self.assertEqual(expected_result, result)
+
+    def test_execute_view_csv_mdx_headers_use_blob(self):
+        self.tm1.cubes.cells.write_values(
+            self.cube_name,
+            {("Element1", "Element1", "Element1"): 245}
+        )
+
+        result = self.tm1.cells.execute_view_csv(cube_name=self.cube_name, view_name=self.mdx_view_2_name,
+                                                 use_blob=True, mdx_headers=True)
+
+        expected_result = '"[TM1py_Tests_Cell_Dimension2].[TM1py_Tests_Cell_Dimension2]",' \
+                          '"[TM1py_Tests_Cell_Dimension1].[TM1py_Tests_Cell_Dimension1]",' \
+                          '"Value"\r\n' \
+                          '"Element 1","Element 1","245"\r\n'
+
+        self.assertEqual(expected_result, result)
+
+    def test_execute_view_csv_mdx_headers_iterative_json(self):
+        self.tm1.cubes.cells.write_values(
+            self.cube_name,
+            {("Element1", "Element1", "Element1"): 245}
+        )
+
+        result = self.tm1.cells.execute_view_csv(cube_name=self.cube_name, view_name=self.mdx_view_2_name,
+                                                 use_iterative_json=True, mdx_headers=True)
+
+        expected_result = "[TM1py_Tests_Cell_Dimension2].[TM1py_Tests_Cell_Dimension2]," \
+                          "[TM1py_Tests_Cell_Dimension1].[TM1py_Tests_Cell_Dimension1]," \
+                          "Value\r\n" \
+                          "Element 1,Element 1,245"
+
+        self.assertEqual(expected_result, result)
 
     # Delete Cube and Dimensions
     @classmethod

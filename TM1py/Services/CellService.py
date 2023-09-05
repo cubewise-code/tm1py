@@ -1924,14 +1924,14 @@ class CellService(ObjectService):
                 cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                 skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
                 csv_dialect=csv_dialect, line_separator=line_separator, value_separator=value_separator,
-                sandbox_name=sandbox_name, include_attributes=include_attributes, **kwargs)
+                sandbox_name=sandbox_name, include_attributes=include_attributes, mdx_headers=mdx_headers, **kwargs)
 
         return self.extract_cellset_csv(
             cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
             skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
             csv_dialect=csv_dialect, line_separator=line_separator, value_separator=value_separator,
             sandbox_name=sandbox_name, include_attributes=include_attributes,
-            use_compact_json=use_compact_json, **kwargs)
+            use_compact_json=use_compact_json, mdx_headers=mdx_headers, **kwargs)
 
     def execute_view_csv(self, cube_name: str, view_name: str, private: bool = False, top: int = None, skip: int = None,
                          skip_zeros: bool = True, skip_consolidated_cells: bool = False,
@@ -1998,14 +1998,14 @@ class CellService(ObjectService):
                 skip_consolidated_cells=skip_consolidated_cells,
                 skip_rule_derived_cells=skip_rule_derived_cells, csv_dialect=csv_dialect,
                 line_separator=line_separator, value_separator=value_separator,
-                sandbox_name=sandbox_name, **kwargs)
+                sandbox_name=sandbox_name, mdx_headers=mdx_headers, **kwargs)
 
         return self.extract_cellset_csv(
             cellset_id=cellset_id, skip_zeros=skip_zeros, top=top, skip=skip,
             skip_consolidated_cells=skip_consolidated_cells,
             skip_rule_derived_cells=skip_rule_derived_cells, csv_dialect=csv_dialect,
             line_separator=line_separator, value_separator=value_separator, sandbox_name=sandbox_name,
-            use_compact_json=use_compact_json, **kwargs)
+            use_compact_json=use_compact_json, mdx_headers=mdx_headers, **kwargs)
 
     def execute_mdx_elements_value_dict(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
                                         skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
@@ -2096,8 +2096,7 @@ class CellService(ObjectService):
                                               skip_rule_derived_cells=skip_rule_derived_cells,
                                               sandbox_name=sandbox_name, include_attributes=include_attributes,
                                               use_iterative_json=use_iterative_json, use_compact_json=use_compact_json,
-                                              shaped=shaped,
-                                              **kwargs)
+                                              shaped=shaped, mdx_headers=mdx_headers, **kwargs)
 
     @require_pandas
     def execute_mdx_dataframe_async(self, mdx_list: List[Union[str, MdxBuilder]], max_workers: int = 8,
@@ -2106,7 +2105,8 @@ class CellService(ObjectService):
                                     skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
                                     sandbox_name: str = None, include_attributes: bool = False,
                                     use_iterative_json: bool = False, use_compact_json: bool = False,
-                                    use_blob: bool = False, shaped: bool = False, **kwargs) -> 'pd.DataFrame':
+                                    use_blob: bool = False, shaped: bool = False, mdx_headers: bool = False,
+                                    **kwargs) -> 'pd.DataFrame':
 
         def _execute_mdx_dataframe(mdx: Union[str, MdxBuilder]):
             return self.execute_mdx_dataframe(mdx=mdx, top=top, skip=skip, skip_zeros=skip_zeros,
@@ -2114,7 +2114,7 @@ class CellService(ObjectService):
                                               skip_rule_derived_cells=skip_rule_derived_cells,
                                               sandbox_name=sandbox_name, include_attributes=include_attributes,
                                               use_iterative_json=use_iterative_json, use_compact_json=use_compact_json,
-                                              use_blob=use_blob, shaped=shaped, **kwargs)
+                                              use_blob=use_blob, shaped=shaped, mdx_headers=mdx_headers, **kwargs)
 
         async def _exec_mdx_dataframe_async():
             loop = asyncio.get_event_loop()
@@ -2184,7 +2184,7 @@ class CellService(ObjectService):
     @require_pandas
     def execute_view_dataframe_shaped(self, cube_name: str, view_name: str, private: bool = False,
                                       sandbox_name: str = None, use_iterative_json: bool = False,
-                                      use_blob: bool = False, **kwargs) -> 'pd.DataFrame':
+                                      use_blob: bool = False, mdx_headers: bool = False, **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cube in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
 
@@ -2209,6 +2209,7 @@ class CellService(ObjectService):
                 cellset_id=cellset_id,
                 delete_cellset=True,
                 sandbox_name=sandbox_name,
+                mdx_headers=mdx_headers,
                 **kwargs)
 
         if all([use_blob, use_iterative_json]):
@@ -2223,6 +2224,7 @@ class CellService(ObjectService):
                 shaped=True,
                 sandbox_name=sandbox_name,
                 use_iterative_json=use_iterative_json,
+                mdx_headers=mdx_headers,
                 use_blob=False,
                 **kwargs)
 
@@ -2236,6 +2238,7 @@ class CellService(ObjectService):
             private=private,
             shaped=True,
             sandbox_name=sandbox_name,
+            mdx_headers=mdx_headers,
             use_blob=True,
             **kwargs)
 
@@ -2386,7 +2389,7 @@ class CellService(ObjectService):
                                               skip_consolidated_cells=skip_consolidated_cells,
                                               skip_rule_derived_cells=skip_rule_derived_cells,
                                               sandbox_name=sandbox_name, use_iterative_json=use_iterative_json,
-                                              shaped=shaped, **kwargs)
+                                              shaped=shaped, mdx_headers=mdx_headers, **kwargs)
 
     def execute_view_cellcount(self, cube_name: str, view_name: str, private: bool = False, sandbox_name: str = None,
                                **kwargs) -> int:
@@ -3096,6 +3099,7 @@ class CellService(ObjectService):
             include_attributes: bool = False,
             use_compact_json: bool = False,
             include_headers: bool = True,
+            mdx_headers: bool = False,
             **kwargs) -> str:
         """ Execute cellset and return only the 'Content', in csv format
 
@@ -3111,8 +3115,9 @@ class CellService(ObjectService):
         :param value_separator
         :param sandbox_name: str
         :param include_attributes: include attribute columns
-        :param use_compact_json: bool
-        :param include_headers: bool
+        :param use_compact_json: boolean
+        :param include_headers: boolean
+        :param mdx_headers: boolean. Fully qualified hierarchy name as header instead of simple dimension name
         :return: Raw format from TM1.
         """
         if 'delete_cellset' in kwargs:
@@ -3150,7 +3155,8 @@ class CellService(ObjectService):
             value_separator=value_separator,
             top=top,
             include_attributes=include_attributes,
-            include_headers=include_headers)
+            include_headers=include_headers,
+            mdx_headers=mdx_headers)
 
     def extract_cellset_csv_iter_json(
             self,
@@ -3165,6 +3171,7 @@ class CellService(ObjectService):
             value_separator: str = ",",
             sandbox_name: str = None,
             include_attributes: bool = False,
+            mdx_headers: bool = False,
             **kwargs) -> str:
         """ Execute cellset and return only the 'Content', in csv format
 
@@ -3180,6 +3187,7 @@ class CellService(ObjectService):
         :param value_separator
         :param sandbox_name: str
         :param include_attributes: boolean
+        :param mdx_headers: boolean. Fully qualified hierarchy name as header instead of simple dimension name
         :return: Raw format from TM1.
         """
         cube, _, rows, columns = self.extract_cellset_composition(
@@ -3198,8 +3206,12 @@ class CellService(ObjectService):
             member_properties=['Name', 'Attributes'] if include_attributes else ['Name'],
             **kwargs)
 
-        row_headers = list(dimension_names_from_element_unique_names(rows))
-        column_headers = list(dimension_names_from_element_unique_names(columns))
+        if not mdx_headers:
+            row_headers = list(dimension_names_from_element_unique_names(rows))
+            column_headers = list(dimension_names_from_element_unique_names(columns))
+        else:
+            row_headers = rows
+            column_headers = columns
 
         if csv_dialect is None:
             csv.register_dialect(
@@ -3324,6 +3336,7 @@ class CellService(ObjectService):
             use_iterative_json: bool = False,
             use_compact_json: bool = False,
             shaped: bool = False,
+            mdx_headers: bool = False,
             **kwargs) -> 'pd.DataFrame':
         """ Build pandas data frame from cellset_id
 
@@ -3348,13 +3361,14 @@ class CellService(ObjectService):
             raw_csv = self.extract_cellset_csv_iter_json(
                 cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                 skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
-                value_separator='~', sandbox_name=sandbox_name, include_attributes=include_attributes, **kwargs)
+                value_separator='~', sandbox_name=sandbox_name, include_attributes=include_attributes,
+                mdx_headers=mdx_headers, **kwargs)
         else:
             raw_csv = self.extract_cellset_csv(
                 cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                 skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
                 value_separator='~', sandbox_name=sandbox_name, include_attributes=include_attributes,
-                use_compact_json=use_compact_json, **kwargs)
+                use_compact_json=use_compact_json, mdx_headers=mdx_headers, **kwargs)
 
         return build_dataframe_from_csv(raw_csv, sep="~", skip_zeros=skip_zeros, shaped=shaped, **kwargs)
 
