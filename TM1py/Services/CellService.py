@@ -1040,7 +1040,8 @@ class CellService(ObjectService):
     @require_pandas
     def write_through_blob(self, cube_name: str, cellset_as_dict: dict, increment: bool = False,
                            sandbox_name: str = None, skip_non_updateable: bool = False,
-                           remove_blob=True, dimensions: str = None, allow_spread: bool = False, **kwargs):
+                           remove_blob=True, dimensions: str = None, allow_spread: bool = False, 
+                           clear_view: str = None, **kwargs):
         """
         Writes data back to TM1 via an unbound TI process having an uploaded CSV as data source
         :param cube_name: str
@@ -1051,6 +1052,7 @@ class CellService(ObjectService):
         :param remove_blob: choose False to persist blob after write. Can be helpful for troubleshooting.
         :param dimensions: optional. Dimension names in their natural order. Will speed up the execution!
         :param allow_spread: allow TI process in use_blob or use_ti to use CellPutProportionalSpread on C elements.
+        :param clear_view: name of cube view to clear before writing
         :param kwargs:
         :return: Success: bool, Messages: list, ChangeSet: None
         """
@@ -1088,7 +1090,8 @@ class CellService(ObjectService):
                 increment=increment,
                 skip_non_updateable=skip_non_updateable,
                 sandbox_name=sandbox_name,
-                allow_spread=allow_spread)
+                allow_spread=allow_spread,
+                clear_view=clear_view)
 
             success, status, log_file = process_service.execute_process_with_return(process=process, **kwargs)
             if not success:
@@ -1103,7 +1106,7 @@ class CellService(ObjectService):
 
     def _build_blob_to_cube_process(self, cube_name: str, process_name: str, blob_filename: str, dimensions: List[str],
                                     increment: bool, skip_non_updateable: bool, sandbox_name: str,
-                                    allow_spread: bool) -> Process:
+                                    allow_spread: bool, clear_view: str) -> Process:
         dataload_process = Process(
             name=process_name,
             datasource_type='ASCII',
@@ -1121,6 +1124,9 @@ class CellService(ObjectService):
         SetInputCharacterSet('TM1CS_UTF8');
         {self.generate_enable_sandbox_ti(sandbox_name)}
         """
+
+        if clear_view:
+            dataload_process.prolog_procedure = dataload_process.prolog_procedure + f"\rViewZeroOut('{cube_name}', '{clear_view}');\r"
 
         # Create variables as all String
         dimension_variables = [f"v{n}" for n in range(1, len(dimensions) + 1)]
