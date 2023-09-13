@@ -843,7 +843,7 @@ class CellService(ObjectService):
               deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
               sandbox_name: str = None, use_ti: bool = False, use_blob: bool = False, use_changeset: bool = False,
               precision: int = None, skip_non_updateable: bool = False, measure_dimension_elements: Dict = None,
-              remove_blob: bool = True, allow_spread: bool = False, **kwargs) -> Optional[str]:
+              remove_blob: bool = True, allow_spread: bool = False, clear_view: str = None, **kwargs) -> Optional[str]:
         """ Write values to a cube
 
         Same signature as `write_values` method, but faster since it uses `write_values_through_cellset`
@@ -870,9 +870,13 @@ class CellService(ObjectService):
         When all written values are numeric you can pass a default dict with default key 'Numeric'
         :param remove_blob: remove blob file after writing with use_blob=True
         :param allow_spread: allow TI process in use_blob or use_ti to use CellPutProportionalSpread on C elements
+        :param clear_view: name of cube view to clear before writing
         :return: changeset or None
         """
 
+        if clear_view and not use_blob:
+            raise ValueError("'clear_view' can only be used in conjunction with 'use_blob'")
+        
         if use_ti:
             return self.write_through_unbound_process(
                 cube_name=cube_name,
@@ -900,6 +904,7 @@ class CellService(ObjectService):
                 dimensions=dimensions,
                 remove_blob=remove_blob,
                 allow_spread=allow_spread,
+                clear_view=clear_view,
                 **kwargs)
 
         return self.write_through_cellset(cube_name, cellset_as_dict, dimensions, increment, deactivate_transaction_log,
