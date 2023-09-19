@@ -796,6 +796,50 @@ class TestHierarchyService(unittest.TestCase):
                 element_types_column="ElementType",
                 unwind=True)
 
+    def test_update_or_create_hierarchy_from_dataframe_circular_reference(self):
+        columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n", "level001",
+                   "level000", "level001_weight", "level000_weight"]
+        data = [
+            ['France', "Numeric", "Frankreich", "EUR", 60_000_000, "EU", "World", 1, 1],
+            ['England', 'Numeric', "Schweiz", "CHF", 50_000_000, "UK", "World", 0, 1],
+            ['Wales', 'Numeric', "Deutschland", "EUR", 5_000_000, "UK", "World", 0, 1],
+            ["World", "Consolidated", "", "", "", "EU", "", 0, 0],
+            ["World", "Consolidated", "", "", "", "UK", "", 0, 0],
+        ]
+        df = DataFrame(data=data, columns=columns)
+
+        with self.assertRaises(ValueError):
+            self.tm1.hierarchies.update_or_create_hierarchy_from_dataframe(
+                dimension_name=self.region_dimension_name,
+                hierarchy_name=self.region_dimension_name,
+                df=df,
+                element_column=self.region_dimension_name,
+                element_types_column="ElementType",
+                unwind=True
+            )
+
+    def test_update_or_create_hierarchy_from_dataframe_circular_references(self):
+        columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n", "level001",
+                   "level000", "level001_weight", "level000_weight"]
+        data = [
+            ['France', "Numeric", "Frankreich", "EUR", 60_000_000, "Europe", "World", 1, 1],
+            ['Switzerland', 'Numeric', "Schweiz", "CHF", 9_000_000, "Europe", "World", 1, 1],
+            ['Germany', 'Numeric', "Deutschland", "EUR", 84_000_000, "Europe", "World", 1, 1],
+            ["World", "Consolidated", "", "", "", "Europe", "", 0, 0],
+            ["World", "Consolidated", "", "", "", "Europe", "", 0, 0],
+        ]
+        df = DataFrame(data=data, columns=columns)
+
+        with self.assertRaises(ValueError):
+            self.tm1.hierarchies.update_or_create_hierarchy_from_dataframe(
+                dimension_name=self.region_dimension_name,
+                hierarchy_name=self.region_dimension_name,
+                df=df,
+                element_column=self.region_dimension_name,
+                element_types_column="ElementType",
+                unwind=True
+            )
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -11,6 +11,7 @@ import json
 import math
 from typing import Dict, Tuple, List, Optional
 
+import networkx as nx
 from requests import Response
 
 from TM1py.Exceptions import TM1pyRestException
@@ -36,6 +37,22 @@ class HierarchyService(ObjectService):
         super().__init__(rest)
         self.subsets = SubsetService(rest)
         self.elements = ElementService(rest)
+
+    @staticmethod
+    def _validate_edges(df: 'pd.DataFrame'):
+        graph = nx.DiGraph()
+        for _, *record in df.itertuples():
+            child = record[0]
+            for parent in record[1:]:
+                if not parent:
+                    continue
+
+                graph.add_edge(child, parent)
+                child = parent
+
+        cycles = list(nx.simple_cycles(graph))
+        if cycles:
+            raise ValueError(f"Circular reference{'s' if len(cycles) > 1 else ''} found in edges: {cycles}")
 
     @staticmethod
     def _validate_alias_uniqueness(df: 'pd.DataFrame'):
@@ -375,6 +392,7 @@ class HierarchyService(ObjectService):
             df: pd.DataFrame,
             element_column: str = None,
             verify_unique_elements: bool = False,
+            verify_edges: bool = True,
             element_types_column: str = 'ElementType',
             unwind: bool = False):
         """
@@ -386,6 +404,8 @@ class HierarchyService(ObjectService):
             The column name in the df which specifies which element is which type. If None, all will be considered N level.
         :param element_column: str
             The column name of the element ID. If None, assumes first column is the element ID.
+        :param verify_unique_elements: Abort early if element names are not unique
+        :param verify_edges: Abort early if edges have circular reference
         :param unwind: bool
             Unwind hierarch before creating new edges
         :return:
@@ -423,6 +443,9 @@ class HierarchyService(ObjectService):
 
         if not len(level_columns) == len(level_weight_columns):
             raise ValueError("Number of level columns must be equal to number of level weight columns")
+
+        if verify_edges:
+            self._validate_edges(df=df[[element_column, *level_columns]])
 
         hierarchy_exists = self.exists(dimension_name, hierarchy_name)
 
@@ -473,20 +496,6 @@ class HierarchyService(ObjectService):
                     for element_name, element_type in
                     elements_to_create.items()))
 
-        # identify level columns
-        level_columns = []
-        level_weight_columns = []
-        # sort to assure right order of levels
-        for column in sorted(df.columns, reverse=True):
-            if column.lower().startswith('level') and column[5:8].isdigit():
-                if len(column) == 8:
-                    level_columns.append(column)
-                elif len(column) == 15 and column.lower().endswith('_weight'):
-                    level_weight_columns.append(column)
-
-        if not len(level_columns) == len(level_weight_columns):
-            raise ValueError("Number of level columns must be equal to number of level weight columns")
-
         # define the attribute columns in df. Applies to all elements in df, not only new ones.
         attribute_columns = df.columns.drop(
             labels=[element_column] + [element_types_column] + level_columns + level_weight_columns,
@@ -530,7 +539,7 @@ class HierarchyService(ObjectService):
             id_vars=element_column,
             value_vars=attribute_columns,
             var_name='}ElementAttributes_' + dimension_name,
-            value_name='attribute_value',)
+            value_name='attribute_value', )
         attributes_df.fillna('', inplace=True)
 
         # drop ':' suffix in attribute column

@@ -40,7 +40,8 @@ setup(
         'requests',
         'pytz',
         'requests_negotiate_sspi;platform_system=="Windows"',
-        'mdxpy>=1.3.1'],
+        'mdxpy>=1.3.1',
+        'networkx'],
     extras_require={
         "pandas": ["pandas"]
     },
