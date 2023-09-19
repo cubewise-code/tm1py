@@ -393,19 +393,34 @@ class HierarchyService(ObjectService):
             element_column: str = None,
             verify_unique_elements: bool = False,
             verify_edges: bool = True,
-            element_types_column: str = 'ElementType',
+            element_type_column: str = 'ElementType',
             unwind: bool = False):
-        """
+        """ Update or Create a hierarchy based on a dataframe, while never deleting existing elements.
 
         :param dimension_name:
+            Name of the dimension
         :param hierarchy_name:
-        :param df: pd.DataFrame
-        :param element_types_column: str
-            The column name in the df which specifies which element is which type. If None, all will be considered N level.
+            Name of the hierarchy
+        :param df: pd.DataFrame the data frame. Example:
+            |    | Region  | ElementType | Alias:a     | Currency:s | population:n | level001 | level000 | level001_weight | level000_weight |
+            |---:|:--------|:------------|:------------|:-----------|-------------:|:---------|:---------|----------------:|----------------:|
+            |  0 | France  | Numeric     | Frankreich  | EUR        |     60000000 | Europe   | World    |               1 |               1 |
+            |  1 | Belgium | Numeric     | Schweiz     | CHF        |      9000000 | Europe   | World    |               1 |               1 |
+            |  2 | Germany | Numeric     | Deutschland | EUR        |     84000000 | Europe   | World    |               1 |               1 |
+
+            Names for the parent columns (level001, level000) are not configurable and `level000` is the top node.
+            All columns except for the element_column, element_type_colums and parent columns are attribute columns.
+            On attribute columns, you specify the type as a suffix. If no type is provided string attributes are created
+
+        :param element_type_column: str
+            The column name in the df which specifies which element is which type.
+            If None, all will be considered N level.
         :param element_column: str
             The column name of the element ID. If None, assumes first column is the element ID.
-        :param verify_unique_elements: Abort early if element names are not unique
-        :param verify_edges: Abort early if edges have circular reference
+        :param verify_unique_elements:
+            Abort early if element names are not unique
+        :param verify_edges:
+            Abort early if edges have circular reference
         :param unwind: bool
             Unwind hierarch before creating new edges
         :return:
@@ -416,8 +431,8 @@ class HierarchyService(ObjectService):
         df[element_column] = df[element_column].astype(str)
 
         # assume all Numeric if no type is provided
-        if element_types_column not in df.columns:
-            df[element_types_column] = "Numeric"
+        if element_type_column not in df.columns:
+            df[element_type_column] = "Numeric"
 
         # verify uniqueness of element names
         if verify_unique_elements:
@@ -472,7 +487,7 @@ class HierarchyService(ObjectService):
             for element_name, element_type
             in df.loc[
                 ~df[element_column].isin(existing_element_identifiers),
-                (element_column, element_types_column)
+                (element_column, element_type_column)
             ].itertuples(index=False)
         })
 
@@ -498,7 +513,7 @@ class HierarchyService(ObjectService):
 
         # define the attribute columns in df. Applies to all elements in df, not only new ones.
         attribute_columns = df.columns.drop(
-            labels=[element_column] + [element_types_column] + level_columns + level_weight_columns,
+            labels=[element_column] + [element_type_column] + level_columns + level_weight_columns,
             errors='ignore')
 
         # new attributes are created as strings if no type is provided
