@@ -554,7 +554,7 @@ class TestHierarchyService(unittest.TestCase):
             hierarchy_name=self.region_dimension_name,
             df=df,
             element_column=self.region_dimension_name,
-            element_types_column="ElementType",
+            element_type_column="ElementType",
             unwind=True
         )
         hierarchy = self.tm1.hierarchies.get(self.region_dimension_name, self.region_dimension_name)
@@ -597,7 +597,7 @@ class TestHierarchyService(unittest.TestCase):
             hierarchy_name=self.region_dimension_name,
             df=df,
             element_column=self.region_dimension_name,
-            element_types_column="ElementType",
+            element_type_column="ElementType",
             unwind=True
         )
 
@@ -623,7 +623,7 @@ class TestHierarchyService(unittest.TestCase):
             hierarchy_name=self.region_dimension_name,
             df=df,
             element_column=self.region_dimension_name,
-            element_types_column="ElementType",
+            element_type_column="ElementType",
             unwind=True
         )
 
@@ -721,7 +721,7 @@ class TestHierarchyService(unittest.TestCase):
                 hierarchy_name=self.region_dimension_name,
                 df=df,
                 element_column=self.region_dimension_name,
-                element_types_column="ElementType",
+                element_type_column="ElementType",
                 unwind=True)
 
     def test_update_or_create_hierarchy_from_dataframe_duplicate_records(self):
@@ -740,7 +740,7 @@ class TestHierarchyService(unittest.TestCase):
             hierarchy_name=self.region_dimension_name,
             df=df,
             element_column=self.region_dimension_name,
-            element_types_column="ElementType",
+            element_type_column="ElementType",
             unwind=True)
 
         hierarchy = self.tm1.hierarchies.get(
@@ -766,7 +766,7 @@ class TestHierarchyService(unittest.TestCase):
             hierarchy_name=self.region_dimension_name,
             df=df,
             element_column=self.region_dimension_name,
-            element_types_column="ElementType",
+            element_type_column="ElementType",
             unwind=True)
 
         hierarchy = self.tm1.hierarchies.get(
@@ -793,7 +793,7 @@ class TestHierarchyService(unittest.TestCase):
                 hierarchy_name=self.region_dimension_name,
                 df=df,
                 element_column=self.region_dimension_name,
-                element_types_column="ElementType",
+                element_type_column="ElementType",
                 unwind=True)
 
     def test_update_or_create_hierarchy_from_dataframe_circular_reference(self):
@@ -814,7 +814,7 @@ class TestHierarchyService(unittest.TestCase):
                 hierarchy_name=self.region_dimension_name,
                 df=df,
                 element_column=self.region_dimension_name,
-                element_types_column="ElementType",
+                element_type_column="ElementType",
                 unwind=True
             )
 
@@ -836,7 +836,7 @@ class TestHierarchyService(unittest.TestCase):
                 hierarchy_name=self.region_dimension_name,
                 df=df,
                 element_column=self.region_dimension_name,
-                element_types_column="ElementType",
+                element_type_column="ElementType",
                 unwind=True
             )
 
