@@ -2801,11 +2801,11 @@ class TestCellService(unittest.TestCase):
         attribute_dimension = "}ElementAttributes_" + self.dimension_names[0]
         query = MdxBuilder.from_cube(attribute_dimension)
         query.add_hierarchy_set_to_column_axis(MdxHierarchySet.member(f"[{attribute_dimension}].[NA]"))
-        query.add_hierarchy_set_to_column_axis(MdxHierarchySet.member(f"[{self.dimension_names[0]}].[Element 1]"))
+        query.add_hierarchy_set_to_row_axis(MdxHierarchySet.member(f"[{self.dimension_names[0]}].[Element 1]"))
 
         df = self.tm1.cubes.cells.execute_mdx_dataframe(query, use_blob=True)
         self.assertEqual(
-            [["Element 1", "NA", 4.0]],
+            [["Element 1","NA", 4.0]],
             df.values.tolist())
 
     @skip_if_no_pandas
@@ -3592,18 +3592,20 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(self.total_value, sum(values))
 
     @skip_if_no_pandas
-    def test_execute_view_dataframe_with_top_argument(self):
-        df = self.tm1.cubes.cells.execute_view_dataframe(
+    def test_execute_view_dataframe_shaped_mdx_headers(self):
+        df = self.tm1.cubes.cells.execute_view_dataframe_shaped(
             cube_name=self.cube_name,
             view_name=self.view_name,
-            top=2,
-            private=False)
+            private=False,
+            mdx_headers=True)
 
-        # check row count
-        self.assertTrue(len(df) == 2)
+        dimension_names = [f"[{dimension_name}].[{dimension_name}]"
+                           for dimension_name
+                           in self.dimension_names[:2]]
+        # check headers
+        expected_headers = dimension_names + ["Element " + str(e) for e in range(1, 101)]
 
-        # check type
-        self.assertIsInstance(df, pd.DataFrame)
+        self.assertEqual(expected_headers, list(df.columns))
 
     @skip_if_no_pandas
     def test_execute_view_dataframe_use_blob(self):
