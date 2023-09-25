@@ -46,7 +46,8 @@ class HierarchyService(ObjectService):
             for parent in record[1:]:
                 if not parent:
                     continue
-
+                if isinstance(parent, float) and math.isnan(parent):
+                    continue
                 graph.add_edge(child, parent)
                 child = parent
 
