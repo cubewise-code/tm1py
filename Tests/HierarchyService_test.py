@@ -485,6 +485,56 @@ class TestHierarchyService(unittest.TestCase):
             self.assertEqual('9000000', str(attribute_values["Switzerland", "Population"]))
             self.assertEqual('84000000', str(attribute_values["Germany", "Population"]))
 
+    def test_update_or_create_hierarchy_from_dataframe(self):
+        columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n", "level001",
+                   "level000", "level001_weight", "level000_weight"]
+        data = [
+            ['France', "Numeric", "Frankreich", "EUR", 60_000_000, "Europe", "World", 1, 1],
+            ['Switzerland', 'Numeric', "Schweiz", "CHF", 9_000_000, "Europe", "World", 1, 1],
+            ['Germany', 'Numeric', "Deutschland", "EUR", 84_000_000, "Europe", "World", 1, 1],
+        ]
+        df = DataFrame(data=data, columns=columns)
+
+        self.tm1.hierarchies.update_or_create_hierarchy_from_dataframe(
+            dimension_name=self.region_dimension_name,
+            hierarchy_name=self.region_dimension_name,
+            df=df,
+            element_column=self.region_dimension_name,
+            element_type_column="ElementType",
+            unwind=True
+        )
+
+        hierarchy = self.tm1.hierarchies.get(
+            dimension_name=self.region_dimension_name,
+            hierarchy_name=self.region_dimension_name)
+        self._verify_region_dimension(hierarchy)
+
+    def test_update_or_create_hierarchy_from_dataframe_no_attributes(self):
+        columns = [self.region_dimension_name, "ElementType", "level001",
+                   "level000", "level001_weight", "level000_weight"]
+        data = [
+            ['France', "Numeric", "Europe", "World", 1, 1],
+            ['Switzerland', 'Numeric', "Europe", "World", 1, 1],
+            ['Germany', 'Numeric', "Europe", "World", 1, 1],
+        ]
+        df = DataFrame(data=data, columns=columns)
+
+        self.tm1.hierarchies.update_or_create_hierarchy_from_dataframe(
+            dimension_name=self.region_dimension_name,
+            hierarchy_name=self.region_dimension_name,
+            df=df,
+            element_column=self.region_dimension_name,
+            element_type_column="ElementType",
+            unwind=True
+        )
+
+        hierarchy = self.tm1.hierarchies.get(
+            dimension_name=self.region_dimension_name,
+            hierarchy_name=self.region_dimension_name)
+
+        self._verify_region_elements(hierarchy)
+        self._verify_region_edges(hierarchy)
+
     def test_update_or_create_hierarchy_from_dataframe_with_attributes_without_suffix(self):
         columns = [self.region_dimension_name, "Alias", "Currency", "population"]
         data = [
@@ -581,30 +631,6 @@ class TestHierarchyService(unittest.TestCase):
 
         # assert that no edges exist
         self.assertEqual(dict(), hierarchy.edges)
-
-    def test_update_or_create_hierarchy_from_dataframe(self):
-        columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n", "level001",
-                   "level000", "level001_weight", "level000_weight"]
-        data = [
-            ['France', "Numeric", "Frankreich", "EUR", 60_000_000, "Europe", "World", 1, 1],
-            ['Switzerland', 'Numeric', "Schweiz", "CHF", 9_000_000, "Europe", "World", 1, 1],
-            ['Germany', 'Numeric', "Deutschland", "EUR", 84_000_000, "Europe", "World", 1, 1],
-        ]
-        df = DataFrame(data=data, columns=columns)
-
-        self.tm1.hierarchies.update_or_create_hierarchy_from_dataframe(
-            dimension_name=self.region_dimension_name,
-            hierarchy_name=self.region_dimension_name,
-            df=df,
-            element_column=self.region_dimension_name,
-            element_type_column="ElementType",
-            unwind=True
-        )
-
-        hierarchy = self.tm1.hierarchies.get(
-            dimension_name=self.region_dimension_name,
-            hierarchy_name=self.region_dimension_name)
-        self._verify_region_dimension(hierarchy)
 
     def test_update_or_create_hierarchy_from_dataframe_with_consolidations(self):
         columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n", "level001",
