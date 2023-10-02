@@ -483,7 +483,7 @@ class HierarchyService(ObjectService):
                 self.create(hierarchy)
 
         # determine new elements based on Element Name column
-        elements_to_create = CaseAndSpaceInsensitiveDict({
+        new_elements = CaseAndSpaceInsensitiveDict({
             element_name: Element.Types(element_type)
             for element_name, element_type
             in df.loc[
@@ -498,11 +498,11 @@ class HierarchyService(ObjectService):
                 continue
             if element_name in existing_element_identifiers:
                 continue
-            if element_name in elements_to_create and elements_to_create[element_name] != Element.Types.CONSOLIDATED:
+            if element_name in new_elements and new_elements[element_name] != Element.Types.CONSOLIDATED:
                 raise ValueError(f"Inconsistent Type for element: '{element_name}' in hierarchy '{hierarchy_name}'")
-            elements_to_create[element_name] = Element.Types.CONSOLIDATED
+            new_elements[element_name] = Element.Types.CONSOLIDATED
 
-        if elements_to_create:
+        if new_elements:
             # add these elements to hierarchy in tm1
             self.elements.add_elements(
                 dimension_name=dimension_name,
@@ -510,7 +510,7 @@ class HierarchyService(ObjectService):
                 elements=(
                     Element(element_name, element_type)
                     for element_name, element_type in
-                    elements_to_create.items()))
+                    new_elements.items()))
 
         # define the attribute columns in df. Applies to all elements in df, not only new ones.
         attribute_columns = df.columns.drop(
@@ -541,10 +541,11 @@ class HierarchyService(ObjectService):
             if attribute_name not in existing_attributes:
                 new_attributes.append(ElementAttribute(attribute_name, attribute_type))
 
-        self.elements.add_element_attributes(
-            dimension_name=dimension_name,
-            hierarchy_name=hierarchy_name,
-            element_attributes=new_attributes)
+        if new_attributes:
+            self.elements.add_element_attributes(
+                dimension_name=dimension_name,
+                hierarchy_name=hierarchy_name,
+                element_attributes=new_attributes)
 
         # define attributes df with ID + attribute columns.
         id_attribute_cols = [element_column] + list(attribute_columns.values)
@@ -563,12 +564,13 @@ class HierarchyService(ObjectService):
         attributes_df[attribute_column] = attributes_df[attribute_column].apply(lambda x: x.rsplit(':', 1)[0])
 
         # write attributes to cube
-        cell_service = self.get_cell_service()
-        cell_service.write_dataframe(
-            cube_name='}ElementAttributes_' + dimension_name,
-            data=attributes_df,
-            sum_numeric_duplicates=False,
-            use_blob=True)
+        if not attributes_df.empty:
+            cell_service = self.get_cell_service()
+            cell_service.write_dataframe(
+                cube_name='}ElementAttributes_' + dimension_name,
+                data=attributes_df,
+                sum_numeric_duplicates=False,
+                use_blob=True)
 
         if unwind:
             self.remove_all_edges(dimension_name, hierarchy_name)
@@ -607,7 +609,8 @@ class HierarchyService(ObjectService):
                 for (k, v), w
                 in edges.items()
                 if (k, v) not in current_edges or w != current_edges[(k, v)]}
-            self.elements.add_edges(dimension_name=dimension_name, hierarchy_name=hierarchy_name, edges=new_edges)
+            if new_edges:
+                self.elements.add_edges(dimension_name=dimension_name, hierarchy_name=hierarchy_name, edges=new_edges)
 
     def get_dimension_service(self):
         from TM1py import DimensionService
