@@ -26,7 +26,7 @@ from TM1py.Utils.Utils import case_and_space_insensitive_equals, format_url, Cas
 
 class HierarchyService(ObjectService):
     """ Service to handle Object Updates for TM1 Hierarchies
-    
+
     """
 
     # Tuple with TM1 Versions where Edges need to be created through TI, due to bug:
@@ -117,7 +117,7 @@ class HierarchyService(ObjectService):
         return [hierarchy["Name"] for hierarchy in response.json()["value"]]
 
     def update(self, hierarchy: Hierarchy, keep_existing_attributes=False, **kwargs) -> List[Response]:
-        """ update a hierarchy. It's a two step process: 
+        """ update a hierarchy. It's a two step process:
         1. Update Hierarchy
         2. Update Element-Attributes
 
@@ -173,9 +173,9 @@ class HierarchyService(ObjectService):
     def exists(self, dimension_name: str, hierarchy_name: str, **kwargs) -> bool:
         """
 
-        :param dimension_name: 
-        :param hierarchy_name: 
-        :return: 
+        :param dimension_name:
+        :param hierarchy_name:
+        :return:
         """
         url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')", dimension_name, hierarchy_name)
         return self._exists(url, **kwargs)
@@ -456,6 +456,13 @@ class HierarchyService(ObjectService):
                     level_columns.append(column)
                 elif len(column) == 15 and column.lower().endswith('_weight'):
                     level_weight_columns.append(column)
+
+        # case: no level weight columns. All weights are 1
+        if len(level_weight_columns) == 0:
+            for level_column in level_columns:
+                level_weight_column = level_column + "_weight"
+                level_weight_columns.append(level_weight_column)
+                df[level_weight_column] = 1
 
         if not len(level_columns) == len(level_weight_columns):
             raise ValueError("Number of level columns must be equal to number of level weight columns")
