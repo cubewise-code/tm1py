@@ -876,7 +876,7 @@ class CellService(ObjectService):
 
         if clear_view and not use_blob:
             raise ValueError("'clear_view' can only be used in conjunction with 'use_blob'")
-        
+
         if use_ti:
             return self.write_through_unbound_process(
                 cube_name=cube_name,
@@ -1045,7 +1045,7 @@ class CellService(ObjectService):
     @require_pandas
     def write_through_blob(self, cube_name: str, cellset_as_dict: dict, increment: bool = False,
                            sandbox_name: str = None, skip_non_updateable: bool = False,
-                           remove_blob=True, dimensions: str = None, allow_spread: bool = False, 
+                           remove_blob=True, dimensions: str = None, allow_spread: bool = False,
                            clear_view: str = None, **kwargs):
         """
         Writes data back to TM1 via an unbound TI process having an uploaded CSV as data source
@@ -2904,6 +2904,53 @@ class CellService(ObjectService):
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url=url, **kwargs)
         return response.json()
+
+    def extract_cellset_partition(self, cellset_id: str,
+                                  partition_start_ordinal: int,
+                                  partition_end_ordinal: int,
+                                  cell_properties: Iterable[str] = None,
+                                  top: int = None,
+                                  skip: int = None,
+                                  skip_zeros: bool = False,
+                                  skip_consolidated_cells: bool = False,
+                                  skip_rule_derived_cells: bool = False,
+                                  sandbox_name: str = None):
+
+        if not cell_properties:
+            cell_properties = ['Value', 'Ordinal']
+
+        if skip_rule_derived_cells:
+            cell_properties.append("RuleDerived")
+            # necessary due to bug in TM1 11.8: If only RuleDerived is retrieved it occasionally produces wrong results
+            cell_properties.append("Updateable")
+
+        if skip_consolidated_cells:
+            cell_properties.append("Consolidated")
+
+        filter_cells = ""
+        if skip_zeros or skip_consolidated_cells or skip_rule_derived_cells:
+            filters = []
+            if skip_zeros:
+                filters.append("Value ne 0 and Value ne null and Value ne ''")
+            if skip_consolidated_cells:
+                filters.append("Consolidated eq false")
+            if skip_rule_derived_cells:
+                filters.append("RuleDerived eq false")
+
+            filter_cells = " and ".join(filters)
+
+        url = ("/api/v1/Cellsets('{cellset_id}')/tm1.GetPartition{cell_partition}?$select={cell_properties}{"
+               "top_cells}{skip_cells}{filter_cells}") \
+            .format(cellset_id=cellset_id,
+                    cell_partition=f"(Begin={partition_start_ordinal}, End={partition_end_ordinal})",
+                    cell_properties=",".join(cell_properties),
+                    top_cells=f"&$top={top}" if top else "",
+                    skip_cells=f"&$skip={skip}" if skip else "",
+                    filter_cells=f"&$filter={filter_cells}" if filter_cells else "")
+
+        url = add_url_parameters(url, **{"!sandbox": sandbox_name})
+        response = self._rest.GET(url=url)
+        return response.json()['value']
 
     @odata_compact_json(return_as_dict=True)
     def extract_cellset_cells_raw(
