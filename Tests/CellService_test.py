@@ -4450,6 +4450,42 @@ class TestCellService(unittest.TestCase):
 
         self.assertEqual(expected_result, result)
 
+    def test_extract_cellset_partition(self):
+        # write cube content
+        self.tm1.cubes.cells.write_values(self.cube_name, self.cellset)
+
+        # MDX Query that gets full cube content with zero suppression
+        mdx = MdxBuilder.from_cube(self.cube_name) \
+            .rows_non_empty() \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0])) \
+            .add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1])) \
+            .add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
+            .to_mdx()
+
+        #create cellset
+        cellset = self.tm1.cells.create_cellset(mdx)
+
+        partition = self.tm1.cells.extract_cellset_partition(cellset_id=cellset,
+                                                            partition_start_ordinal=0,
+                                                            partition_end_ordinal=1)
+
+        expected_result = [{'Ordinal': 0, 'Value': 1}, {'Ordinal': 1, 'Value': None}]
+        self.assertEqual(partition, expected_result)
+
+        partition_skip_zero = self.tm1.cells.extract_cellset_partition(cellset_id=cellset,
+                                                            partition_start_ordinal=0,
+                                                            partition_end_ordinal=1,
+                                                            skip_zeros=True)
+
+        expected_result_skip_zero = [{'Ordinal': 0, 'Value': 1}]
+        self.assertEqual(partition_skip_zero, expected_result_skip_zero)
+
+
+
+
     # Delete Cube and Dimensions
     @classmethod
     def tearDownClass(cls):
