@@ -2914,7 +2914,21 @@ class CellService(ObjectService):
                                   skip_zeros: bool = False,
                                   skip_consolidated_cells: bool = False,
                                   skip_rule_derived_cells: bool = False,
-                                  sandbox_name: str = None):
+                                  sandbox_name: str = None) -> object: """
+        Method to extract a cellset partition. Cellset partitions are a collection of cellset cells where they have
+        a defined top left boundary, and bottom right boundary. 
+        Read More: https://www.ibm.com/docs/en/planning-analytics/2.0.0?topic=data-cellsets#dg_tm1_odata_get_cells__title__1
+        :param partition_start_ordinal: top left cell boundary
+        :param partition_end_ordinal: bottom right cell boundary
+        :param cell_properties: cell properties to include, default: Orginal, Value
+        :param top: Integer limiting the number of cells and the number or rows returned
+        :param skip: Integer limiting the number of cells and the number or rows returned
+        :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
+        :param skip_consolidated_cells: skip consolidated cells in cellset
+        :param skip_rule_derived_cells: skip rule derived cells in cellset
+        :param sandbox_name: str
+        :return: CellSet Dictionary
+        """
 
         if not cell_properties:
             cell_properties = ['Value', 'Ordinal']
