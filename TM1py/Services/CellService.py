@@ -2914,7 +2914,8 @@ class CellService(ObjectService):
                                   skip_zeros: bool = False,
                                   skip_consolidated_cells: bool = False,
                                   skip_rule_derived_cells: bool = False,
-                                  sandbox_name: str = None) -> object: """
+                                  sandbox_name: str = None) -> Dict:
+        """
         Method to extract a cellset partition. Cellset partitions are a collection of cellset cells where they have
         a defined top left boundary, and bottom right boundary. 
         Read More: https://www.ibm.com/docs/en/planning-analytics/2.0.0?topic=data-cellsets#dg_tm1_odata_get_cells__title__1

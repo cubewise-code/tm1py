@@ -390,7 +390,7 @@ class HierarchyService(ObjectService):
             self,
             dimension_name: str,
             hierarchy_name: str,
-            df: pd.DataFrame,
+            df: 'pd.DataFrame',
             element_column: str = None,
             verify_unique_elements: bool = False,
             verify_edges: bool = True,
