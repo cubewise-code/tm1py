@@ -11,6 +11,7 @@ from contextlib import suppress
 from enum import Enum, unique
 from io import StringIO
 from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator, Union, Callable
+from urllib.parse import unquote
 
 import requests
 from mdxpy import MdxBuilder, Member
@@ -178,7 +179,8 @@ def update_server_on_adminhost(adminhost: str = 'localhost', server_as_dict: Dic
 
 
 def build_url_friendly_object_name(object_name: str) -> str:
-    return object_name.replace("'", "''").replace('%', '%25').replace('#', '%23').replace('?', '%3F').replace('&', '%26')
+    return object_name.replace("'", "''").replace('%', '%25').replace('#', '%23').replace('?', '%3F').replace('&',
+                                                                                                              '%26')
 
 
 def format_url(url, *args: str, **kwargs: str) -> str:
@@ -326,9 +328,9 @@ def build_content_from_cellset_dict(
 
 
 def _build_headers_for_csv(row_axis: Dict, column_axis: Dict, row_dimensions: List[str], column_dimensions: List[str],
-                           include_attributes: bool):
+                           include_attributes: bool, mdx_headers: bool = False):
     if not include_attributes:
-        return [dimension_name_from_element_unique_name(dimension)
+        return [dimension if mdx_headers else dimension_name_from_element_unique_name(dimension)
                 for dimension
                 in row_dimensions + column_dimensions] + ['Value']
 
@@ -336,15 +338,29 @@ def _build_headers_for_csv(row_axis: Dict, column_axis: Dict, row_dimensions: Li
     if row_axis:
         members = row_axis["Tuples"][0]['Members']
         for dimension, member in zip(row_dimensions, members):
-            headers.append(dimension_name_from_element_unique_name(dimension))
-            for attribute in member['Attributes']:
-                headers.append(attribute)
+            # headers in verbose syntax e.g. [Product].[Product]
+            if mdx_headers:
+                headers.append(dimension)
+                for attribute in member['Attributes']:
+                    headers.append(dimension + ".[" + attribute + "]")
+            # headers in concise syntax e.g. Product
+            else:
+                headers.append(dimension_name_from_element_unique_name(dimension))
+                for attribute in member['Attributes']:
+                    headers.append(attribute)
 
     members = column_axis["Tuples"][0]['Members']
     for dimension, member in zip(column_dimensions, members):
-        headers.append(dimension_name_from_element_unique_name(dimension))
-        for attribute in member['Attributes']:
-            headers.append(attribute)
+        # headers in verbose syntax e.g. [Product].[Product]
+        if mdx_headers:
+            headers.append(dimension)
+            for attribute in member['Attributes']:
+                headers.append(dimension + ".[" + attribute + "]")
+        # headers in concise syntax e.g. Product
+        else:
+            headers.append(dimension_name_from_element_unique_name(dimension))
+            for attribute in member['Attributes']:
+                headers.append(attribute)
 
     return headers + ['Value']
 
@@ -358,7 +374,8 @@ def build_csv_from_cellset_dict(
         line_separator: str = "\r\n",
         value_separator: str = ",",
         include_attributes: bool = False,
-        include_headers: bool = True) -> str:
+        include_headers: bool = True,
+        mdx_headers: bool = False) -> str:
     """ transform raw cellset data into concise dictionary
     :param column_dimensions:
     :param row_dimensions:
@@ -370,6 +387,7 @@ def build_csv_from_cellset_dict(
     :param value_separator:
     :param include_attributes: include attribute columns
     :param include_headers: bool
+    :param mdx_headers: boolean. Fully qualified hierarchy name as header instead of simple dimension name
     :return:
     """
 
@@ -397,7 +415,13 @@ def build_csv_from_cellset_dict(
 
     num_headers = 0
     if include_headers:
-        headers = _build_headers_for_csv(row_axis, column_axis, row_dimensions, column_dimensions, include_attributes)
+        headers = _build_headers_for_csv(
+            row_axis=row_axis,
+            column_axis=column_axis,
+            row_dimensions=row_dimensions,
+            column_dimensions=column_dimensions,
+            include_attributes=include_attributes,
+            mdx_headers=mdx_headers)
         csv_writer.writerow(headers)
         num_headers = len(headers)
 
@@ -1225,6 +1249,14 @@ def drop_dimension_properties(mdx: str):
 
     pattern = re.compile(r"(?i)\s+PROPERTIES\s+.*?\s+ON")
     return pattern.sub(" ON", mdx)
+
+
+def read_object_name_from_url(url: str, pattern: str) -> str:
+    match = re.match(pattern, url)
+    if not match:
+        return None
+
+    return unquote(match.group(1))
 
 
 class HTTPAdapterWithSocketOptions(HTTPAdapter):

@@ -50,7 +50,9 @@ class Chore(TM1Object):
                    active=chore_as_dict['Active'],
                    execution_mode=chore_as_dict['ExecutionMode'],
                    frequency=ChoreFrequency.from_string(chore_as_dict['Frequency']),
-                   tasks=[ChoreTask.from_dict(task) for task in chore_as_dict['Tasks']])
+                   tasks=[ChoreTask.from_dict(task, step)
+                          for step, task in
+                          enumerate(chore_as_dict['Tasks'])])
 
     @property
     def name(self) -> str:

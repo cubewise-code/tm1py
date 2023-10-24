@@ -1,4 +1,5 @@
 import configparser
+import copy
 import unittest
 from pathlib import Path
 
@@ -358,6 +359,60 @@ class TestElementService(unittest.TestCase):
         for year in self.years:
             self.assertIn(year, leaves)
 
+    def test_get_edges_under_consolidation(self):
+        edges = self.tm1.dimensions.hierarchies.elements.get_edges_under_consolidation(
+            self.dimension_name,
+            self.hierarchy_name,
+            "All Consolidations")
+
+        self.assertEqual(len(self.years) + 1, len(edges))
+        self.assertEqual(1, edges["All Consolidations", "Total Years"])
+        for year in self.years:
+            self.assertEqual(1, edges["Total Years", year])
+
+    def test_get_edges_under_consolidation_max_depth_1(self):
+        edges = self.tm1.dimensions.hierarchies.elements.get_edges_under_consolidation(
+            self.dimension_name,
+            self.hierarchy_name,
+            "All Consolidations",
+            max_depth=1)
+
+        self.assertEqual(1, len(edges))
+        self.assertEqual(1, edges["All Consolidations", "Total Years"])
+
+    def test_get_edges_under_consolidation_max_depth_1_with_n_components(self):
+        edges = self.tm1.dimensions.hierarchies.elements.get_edges_under_consolidation(
+            self.dimension_name,
+            self.hierarchy_name,
+            "Total Years",
+            max_depth=1)
+
+        self.assertEqual(len(self.years), len(edges))
+        for year in self.years:
+            self.assertEqual(1, edges["Total Years", year])
+
+    def test_get_edges_under_consolidation_not_existing_consolidation(self):
+        with self.assertRaises(TM1pyRestException) as _:
+            self.tm1.dimensions.hierarchies.elements.get_edges_under_consolidation(
+                self.dimension_name,
+                self.hierarchy_name,
+                "NotExistingConsolidation")
+
+    def test_get_edges_under_consolidation_remove_read(self):
+        edges = self.tm1.dimensions.hierarchies.elements.get_edges_under_consolidation(
+            self.dimension_name,
+            self.hierarchy_name,
+            "All Consolidations",
+            max_depth=99)
+        h = self.tm1.hierarchies.get(self.dimension_name, self.hierarchy_name)
+        h_original = copy.deepcopy(h)
+
+        h.remove_all_edges()
+        for edge, weight in edges.items():
+            h.add_edge(edge[0], edge[1], weight=weight)
+
+        self.assertEqual(h_original.edges, h.edges)
+
     def test_get_members_under_consolidation(self):
         leaves = self.tm1.dimensions.hierarchies.elements.get_members_under_consolidation(
             self.dimension_name,
@@ -521,6 +576,53 @@ class TestElementService(unittest.TestCase):
             self.dimension_name)
 
         self.assertIn(element_attribute, element_attributes)
+    def test_delete_elements(self):
+        self.assertIn(
+            "1989",
+            self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name))
+
+        self.assertIn(
+            "1990",
+            self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name))
+
+        element_names = ["1989", "1990"]
+        self.tm1.elements.delete_elements(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            element_names=element_names,
+            use_ti=False
+        )
+        self.assertNotIn(
+            "1989",
+            self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name))
+
+        self.assertNotIn(
+            "1990",
+            self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name))
+
+    def test_delete_elements_use_ti(self):
+        self.assertIn(
+            "1989",
+            self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name))
+
+        self.assertIn(
+            "1990",
+            self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name))
+
+        element_names = ["1989", "1990"]
+        self.tm1.elements.delete_elements(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            element_names=element_names,
+            use_ti=True
+        )
+        self.assertNotIn(
+            "1989",
+            self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name))
+
+        self.assertNotIn(
+            "1990",
+            self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name))
 
     def test_delete_element_attribute(self):
         element_attribute = ElementAttribute("NewAttribute", "String")

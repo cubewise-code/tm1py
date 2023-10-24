@@ -3,6 +3,8 @@ import json
 from enum import Enum
 from typing import List, Union, Iterable, Optional, Dict, Tuple
 
+from TM1py import Subset, Process
+
 try:
     import pandas as pd
 
@@ -18,7 +20,7 @@ from TM1py.Objects import ElementAttribute, Element
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import CaseAndSpaceInsensitiveDict, format_url, CaseAndSpaceInsensitiveSet, require_admin, \
-    dimension_hierarchy_element_tuple_from_unique_name, require_pandas
+    dimension_hierarchy_element_tuple_from_unique_name, require_pandas, require_version
 from TM1py.Utils import build_element_unique_names, CaseAndSpaceInsensitiveTuplesDict
 
 
@@ -73,6 +75,36 @@ class ElementService(ObjectService):
             element_name)
         return self._rest.DELETE(url, **kwargs)
 
+    @require_version("11.4")
+    def delete_elements(self, dimension_name: str, hierarchy_name: str, element_names: List[str] = None,
+                        use_ti: bool = False, **kwargs):
+        if use_ti:
+            return self.delete_elements_use_ti(dimension_name, hierarchy_name, element_names, **kwargs)
+
+        h_service = self._get_hierarchy_service()
+        h = h_service.get(dimension_name, hierarchy_name, **kwargs)
+        for ele in element_names:
+            h.remove_element(ele)
+        h_service.update(h, **kwargs)
+
+    def delete_elements_use_ti(self, dimension_name: str, hierarchy_name: str, element_names: List[str] = None,
+                               **kwargs):
+        subset_service = self._get_subset_service()
+        unbound_process_name = subset_name = self.suggest_unique_object_name()
+        subset = Subset(subset_name, dimension_name, hierarchy_name, elements=element_names)
+        subset_service.update_or_create(subset, private=False, **kwargs)
+        try:
+            process_service = self._get_process_service()
+            process = Process(
+                name=unbound_process_name,
+                prolog_procedure=f"HierarchyDeleteElements('{dimension_name}', '{hierarchy_name}', '{subset_name}');")
+            success, status, error_log_file = process_service.execute_process_with_return(process, **kwargs)
+            if not success:
+                raise TM1pyException(f"Failed to delete elements through unbound process. Error: '{error_log_file}'")
+
+        finally:
+            subset_service.delete(subset_name, dimension_name, hierarchy_name, private=False, **kwargs)
+
     def get_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[Element]:
         url = format_url(
             "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?select=Name,Type",
@@ -87,7 +119,7 @@ class ElementService(ObjectService):
                                skip_consolidations: bool = True, attributes: Iterable[str] = None,
                                attribute_column_prefix: str = "", skip_parents: bool = False,
                                level_names: List[str] = None, parent_attribute: str = None,
-                               skip_weights: bool = False, use_blob: bool=False, **kwargs) -> 'pd.DataFrame':
+                               skip_weights: bool = False, use_blob: bool = False, **kwargs) -> 'pd.DataFrame':
         """
 
         :param dimension_name: Name of the dimension. Can be derived from elements MDX
@@ -700,6 +732,48 @@ class ElementService(ObjectService):
         return self.get_members_under_consolidation(dimension_name, hierarchy_name, consolidation, max_depth, True,
                                                     **kwargs)
 
+    def get_edges_under_consolidation(self, dimension_name: str, hierarchy_name: str, consolidation: str,
+                                      max_depth: int = None, **kwargs) -> List[str]:
+        """ Get all members under a consolidated element
+
+        :param dimension_name: name of dimension
+        :param hierarchy_name: name of hierarchy
+        :param consolidation: name of consolidated Element
+        :param max_depth: 99 if not passed
+        :return:
+        """
+        depth = max_depth or 99
+
+        # edges to return
+        edges = CaseAndSpaceInsensitiveTuplesDict()
+
+        # build url
+        bare_url = "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements('{}')?"
+        url = format_url(bare_url, dimension_name, hierarchy_name, consolidation)
+        for d in range(depth):
+            if d == 0:
+                url += "$select=Edges&$expand=Edges($expand=Component("
+            else:
+                url += "$select=Edges;$expand=Edges($expand=Component("
+
+        url = url[:-1] + ")" * (depth * 2 - 1)
+
+        response = self._rest.GET(url, **kwargs)
+        consolidation_tree = response.json()
+
+        # recursive function to parse consolidation sub_tree
+        def get_edges(sub_trees):
+            for sub_tree in sub_trees:
+                edges[sub_tree["ParentName"], sub_tree["ComponentName"]] = sub_tree["Weight"]
+
+                if "Edges" not in sub_tree["Component"]:
+                    continue
+
+                get_edges(sub_trees=sub_tree["Component"]["Edges"])
+
+        get_edges(consolidation_tree["Edges"])
+        return edges
+
     def get_members_under_consolidation(self, dimension_name: str, hierarchy_name: str, consolidation: str,
                                         max_depth: int = None, leaves_only: bool = False, **kwargs) -> List[str]:
         """ Get all members under a consolidated element
@@ -850,7 +924,7 @@ class ElementService(ObjectService):
 
         return self._rest.POST(url=url, data=json.dumps(body), **kwargs)
 
-    def add_elements(self, dimension_name: str, hierarchy_name: str, elements: List[Element], **kwargs):
+    def add_elements(self, dimension_name: str, hierarchy_name: str, elements: Iterable[Element], **kwargs):
         """ Add elements to hierarchy. Fails if one element already exists.
 
         :param dimension_name:
@@ -1014,6 +1088,14 @@ class ElementService(ObjectService):
     def _get_hierarchy_service(self):
         from TM1py import HierarchyService
         return HierarchyService(self._rest)
+
+    def _get_subset_service(self):
+        from TM1py import SubsetService
+        return SubsetService(self._rest)
+
+    def _get_process_service(self):
+        from TM1py import ProcessService
+        return ProcessService(self._rest)
 
     def _get_cell_service(self):
         from TM1py import CellService

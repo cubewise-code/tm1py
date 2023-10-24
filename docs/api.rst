@@ -38,6 +38,10 @@ TM1 Services
    :members:
    :undoc-members:
 
+.. autoclass:: TM1py.FileService
+   :members:
+   :undoc-members:
+
 .. autoclass:: TM1py.GitService
    :members:
    :undoc-members:
