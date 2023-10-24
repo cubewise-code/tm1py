@@ -64,10 +64,7 @@ class TM1ProjectTask:
 
     def construct_body(self) -> Dict:
         body = dict()
-
-        if self.dependencies:
-            body["Dependencies"] = self.dependencies
-
+        
         if self.chore:
             if not self.chore.startswith("Chores('"):
                 body = {
@@ -83,6 +80,9 @@ class TM1ProjectTask:
             else:
                 body["Process"] = self.process
             body.update({"Parameters": self.parameters})
+        
+        if self.dependencies:
+            body["Dependencies"] = self.dependencies
 
         return body
 
