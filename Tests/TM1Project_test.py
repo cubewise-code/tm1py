@@ -6,17 +6,58 @@ from TM1py.Objects.GitProject import TM1Project, TM1ProjectTask, TM1ProjectDeplo
 class TestGitProject(unittest.TestCase):
 
     def test_add_task_process(self):
-        project = TM1Project(name="TM1py Tests")
+        project = TM1Project(name='TM1py Tests')
 
         project.add_task(
             TM1ProjectTask(
-                "TaskA",
-                process="bedrock.server.savedataall"))
+                'TaskA',
+                process='bedrock.server.savedataall',
+                parameters=[
+                    {
+                        "param_name": "sPar1",
+                        "param_val": "1"
+                    }
+                ],
+                dependencies=[
+                    "Tasks('TaskB')"
+                ]
+            )
+        )
+
+        project.add_task(
+            TM1ProjectTask(
+                'TaskB',
+                chore="Chores('bedrock.server.savedataall')",
+                dependencies=[
+                    "Tasks('TaskA')"
+                ]
+            )
+        )
 
         expected_body = {
             "Version": 1.0,
             "Name": "TM1py Tests",
-            "Tasks": {"TaskA": {"Process": "Processes('bedrock.server.savedataall')"}}}
+            "Tasks": {
+                "TaskA": {
+                    "Process": "Processes('bedrock.server.savedataall')",
+                    "Parameters": [
+                        {
+                            "param_name": "sPar1",
+                            "param_val": "1"
+                        }
+                    ],
+                    "Dependencies": [
+                        "Tasks('TaskB')"
+                    ]
+                },
+                "TaskB": {
+                    "Chore": "Chores('bedrock.server.savedataall')",
+                    "Dependencies": [
+                        "Tasks('TaskA')"
+                    ]
+                }
+            }
+        }
 
         self.assertEqual(expected_body, project.body_as_dict)
 
