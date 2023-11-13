@@ -150,7 +150,7 @@ class ElementService(ObjectService):
             unique_name = record[0][0]['UniqueName']
             dimension_name, hierarchy_name, _ = dimension_hierarchy_element_tuple_from_unique_name(unique_name)
 
-        if not list(elements):
+        if elements is None or not any(elements):
             elements = f"{{ [{dimension_name}].[{hierarchy_name}].Members }}"
             if skip_consolidations:
                 elements = f"{{ Tm1FilterByLevel({elements}, 0) }}"
@@ -513,7 +513,7 @@ class ElementService(ObjectService):
         :param element_unique_names: Boolean
         :return: Dict {'01':'Jan', '02':'Feb'}
         """
-        if not list(elements):
+        if elements is None or not any(elements):
             elements = self.get_element_names(dimension_name=dimension_name, hierarchy_name=hierarchy_name)
 
         if isinstance(elements, str):
