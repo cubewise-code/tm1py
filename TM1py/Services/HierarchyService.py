@@ -611,6 +611,18 @@ class HierarchyService(ObjectService):
                 else:
                     raise ex
 
+            delete_edges = {
+                (k, v): w
+                for (k, v), w
+                in edges.items()
+                if w != current_edges.get((k, v), w)}
+            if delete_edges:
+                self.elements.delete_edges(
+                    dimension_name=dimension_name,
+                    hierarchy_name=hierarchy_name,
+                    edges=delete_edges.keys(),
+                    use_ti=self.is_admin)
+
             new_edges = {
                 (k, v): w
                 for (k, v), w
