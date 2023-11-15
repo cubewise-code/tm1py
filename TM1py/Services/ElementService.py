@@ -105,6 +105,42 @@ class ElementService(ObjectService):
         finally:
             subset_service.delete(subset_name, dimension_name, hierarchy_name, private=False, **kwargs)
 
+    @require_version("11.4")
+    def delete_edges(self, dimension_name: str, hierarchy_name: str, edges: Iterable[Tuple[str, str]] = None,
+                     use_ti: bool = False, **kwargs):
+        if use_ti:
+            return self.delete_edges_use_ti(dimension_name, hierarchy_name, edges, **kwargs)
+
+        h_service = self._get_hierarchy_service()
+        h = h_service.get(dimension_name, hierarchy_name, **kwargs)
+        for edge in edges:
+            h.remove_edge(parent=edge[0], component=edge[1])
+        h_service.update(h, **kwargs)
+
+    def delete_edges_use_ti(self, dimension_name: str, hierarchy_name: str, edges: List[str] = None, **kwargs):
+        if not edges:
+            return
+
+        def escape_single_quote(text):
+            return text.replace("'", "''")
+
+        statements = [
+            f"HierarchyElementComponentDelete('{dimension_name}', '{hierarchy_name}', "
+            f"'{escape_single_quote(parent)}', '{escape_single_quote(child)}');"
+            for (parent, child)
+            in edges
+        ]
+
+        unbound_process_name = self.suggest_unique_object_name()
+
+        process_service = self._get_process_service()
+        process = Process(
+            name=unbound_process_name,
+            prolog_procedure="\r\n".join(statements))
+        success, status, error_log_file = process_service.execute_process_with_return(process, **kwargs)
+        if not success:
+            raise TM1pyException(f"Failed to delete edges through unbound process. Error: '{error_log_file}'")
+
     def get_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[Element]:
         url = format_url(
             "/api/v1/Dimensions('{}')/Hierarchies('{}')/Elements?select=Name,Type",
@@ -264,16 +300,30 @@ class ElementService(ObjectService):
         # shift levels to right hand side
         if not skip_parents:
             # skip max level (= leaves)
-            level_names = level_names[1:]
+            level_columns = level_names[1:]
+
             # iterative approach
-            for _ in level_names:
-                rows_to_shift = df_data[df_data[level_names[-1]] == ''].index
+            for _ in level_columns:
+                rows_to_shift = df_data[df_data[level_columns[-1]] == ''].index
                 if rows_to_shift.empty:
                     break
-                df_data.iloc[rows_to_shift, -len(level_names):] = df_data.iloc[rows_to_shift, -len(level_names):].shift(
-                    1, axis=1)
+                shifted_cols = df_data.iloc[rows_to_shift, -len(level_columns):].shift(1, axis=1)
+                df_data.iloc[rows_to_shift, -len(level_columns):] = shifted_cols
 
-            df_data.iloc[:, -len(level_names):] = df_data.iloc[:, -len(level_names):].fillna('')
+                # also shift weight columns
+                if not skip_weights:
+                    shifted_cols = df_data.iloc[
+                                  rows_to_shift,
+                                  -len(level_columns) * 2:-len(level_columns)].shift(1, axis=1)
+
+                    df_data.iloc[rows_to_shift, -len(level_columns) * 2:-len(level_columns)] = shifted_cols
+
+            df_data.iloc[:, -len(level_columns):] = df_data.iloc[:, -len(level_columns):].fillna('')
+            if not skip_weights:
+                df_data.iloc[:, -len(level_columns) * 2:-len(level_names)] = df_data.iloc[
+                                                                                   :,
+                                                                                   -len(level_columns) * 2:
+                                                                                   -len(level_names)].fillna(0)
 
         return pd.merge(df, df_data, on=dimension_name).drop_duplicates()
 
