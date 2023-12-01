@@ -5,9 +5,10 @@ import re
 import socket
 import time
 import warnings
-from http.cookies import SimpleCookie
 from base64 import b64encode, b64decode
+from enum import Enum
 from http.client import HTTPResponse
+from http.cookies import SimpleCookie
 from io import BytesIO
 from json import JSONDecodeError
 from typing import Union, Dict, Tuple, Optional
@@ -15,8 +16,8 @@ from typing import Union, Dict, Tuple, Optional
 import requests
 import urllib3
 from requests import Timeout, Response, ConnectionError, Session
-from requests.auth import HTTPBasicAuth
 from requests.adapters import HTTPAdapter
+from requests.auth import HTTPBasicAuth
 from urllib3._collections import HTTPHeaderDict
 
 # SSO not supported for Linux
@@ -114,6 +115,21 @@ def httpmethod(func):
     return wrapper
 
 
+class AuthenticationMode(Enum):
+    BASIC = 1
+    WIA = 2
+    CAM = 3
+    CAM_SSO = 4
+    IBM_CLOUD_API_KEY = 5
+    CP4D = 6
+
+    @property
+    def use_v12_auth(self):
+        if self.value in [self.BASIC, self.WIA, self.CAM, self.CAM_SSO]:
+            return False
+        return True
+
+
 class RestService:
     """ Low level communication with TM1 instance through HTTP.
         Allows to execute HTTP Methods
@@ -130,19 +146,23 @@ class RestService:
         Based on requests module
     """
 
-    HEADERS = {'Connection': 'keep-alive',
-               'User-Agent': 'TM1py',
-               'Content-Type': 'application/json; odata.streaming=true; charset=utf-8',
-               'Accept': 'application/json;odata.metadata=none,text/plain',
-               'TM1-SessionContext': 'TM1py'}
+    HEADERS = {
+        'Connection': 'keep-alive',
+        'User-Agent': 'TM1py',
+        'Content-Type': 'application/json; odata.streaming=true; charset=utf-8',
+        'Accept': 'application/json;odata.metadata=none,text/plain',
+        'TM1-SessionContext': 'TM1py'
+    }
 
     # You can reset the following TCP socket options based on your own use cases when tcp_keepalive is eanbled
     # TCP_KEEPIDLE: Time in seconds until the first keepalive is sent
     # TCP_KEEPINTVL: How often should the keepalive packet be sent
     # TCP_KEEPCNT: The max number of keepalive packets to send
-    TCP_SOCKET_OPTIONS = {'TCP_KEEPIDLE': 30,
-                          'TCP_KEEPINTVL': 15,
-                          'TCP_KEEPCNT': 60}
+    TCP_SOCKET_OPTIONS = {
+        'TCP_KEEPIDLE': 30,
+        'TCP_KEEPINTVL': 15,
+        'TCP_KEEPCNT': 60
+    }
 
     def __init__(self, **kwargs):
         """ Create an instance of RESTService
@@ -161,6 +181,10 @@ class RestService:
         :param session_id: String - TM1SessionId e.g. q7O6e1w49AixeuLVxJ1GZg
         :param application_client_id - planning analytics engine (v12) named application client ID created via manage service
         :param application_client_secret - planning analytics engine (v12) named application secret created via manage service
+        :param api_key: String - planing analytics engine (v12) API Key from https://cloud.ibm.com/iam/apikeys
+        :param iam_url: String - planing analytics engine (v12) IBM Cloud IAM URL. Default: "https://iam.cloud.ibm.com"
+        :param pa_url: String - planing analytics engine (v12) PA URL e.g., "https://us-east-2.aws.planninganalytics.ibm.com"
+        :param tenant: String - planing analytics engine (v12) Tenant e.g., YC4B2M1AG2Y6
         :param session_context: String - Name of the Application. Controls "Context" column in Arc / TM1top.
                 If None, use default: TM1py
         :param verify: path to .cer file or 'True' / True / 'False' / False (if no ssl verification is required)
@@ -189,6 +213,7 @@ class RestService:
         # store kwargs for future use e.g. re_connect on 401 session timeout
         self._kwargs = kwargs
 
+        # core arguments for connection
         self._ssl = self.translate_to_boolean(kwargs.get('ssl', True))
         self._address = kwargs.get('address', None)
         self._port = kwargs.get('port', None)
@@ -196,55 +221,33 @@ class RestService:
         self._auth_url = kwargs.get('auth_url', None)
         self._instance = kwargs.get('instance', None)
         self._database = kwargs.get('database', None)
+        self._api_key = kwargs.get('api_key', None)
+        self._iam_url = kwargs.get('iam_url', None)
+        self._pa_url = kwargs.get('pa_url', None)
+        self._tenant = kwargs.get('tenant', None)
 
-        self._verify = False
+        # other arguments
+        self._auth_mode = self._determine_auth_mode()
         self._timeout = None if kwargs.get('timeout', None) is None else float(kwargs.get('timeout'))
         self._cancel_at_timeout = kwargs.get('cancel_at_timeout', False)
         self._async_requests_mode = self.translate_to_boolean(kwargs.get('async_requests_mode', False))
         # Set tcp_keepalive to False explicitly to turn it off when async_requests_mode is enabled
-        self._tcp_keepalive = self.translate_to_boolean(
-            kwargs.get('tcp_keepalive', False)) \
-            if self._async_requests_mode is not True \
-            else False
+        self._tcp_keepalive = self._determine_tcp_keepalive(kwargs.get('tcp_keepalive', False))
         self._connection_pool_size = kwargs.get('connection_pool_size', None)
         self._re_connect_on_session_timeout = kwargs.get('re_connect_on_session_timeout', True)
+        # is retrieved on demand and then cached
+        self._sandboxing_disabled = None
+        # optional verbose logging to stdout
+        self.handle_logging(kwargs.get('logging', False))
 
-        # Logging
-        if 'logging' in kwargs:
-            if self.translate_to_boolean(value=kwargs['logging']):
-                http_client.HTTPConnection.debuglevel = 1
+        self._proxies = self._handle_proxies(kwargs.get('proxies', None))
 
-        self._proxies = kwargs.get('proxies', None)
-        # handle invalid types and potential string argument
-        if not isinstance(self._proxies, (dict, str, type(None))):
-            raise ValueError("Argument of 'proxies' must be None, dictionary or JSON string")
-        elif isinstance(self._proxies, str):
-            try:
-                self._proxies = json.loads(self._proxies)
-            except JSONDecodeError:
-                raise ValueError("Invalid JSON passed for argument 'proxies': %s", self._proxies)
+        # populated later on the fly for users with the name different from 'Admin'
+        self._is_admin = self._determine_is_admin(kwargs.get('user', None))
 
-        # populated on the fly
-        if kwargs.get('user'):
-            self._is_admin = True if case_and_space_insensitive_equals(kwargs.get('user'), 'ADMIN') else None
-        else:
-            self._is_admin = None
+        self._verify = self._determine_verify(kwargs.get('verify', None))
 
-        if 'verify' in kwargs:
-            if isinstance(kwargs['verify'], str):
-                if kwargs['verify'].upper() == 'FALSE':
-                    self._verify = False
-                elif kwargs['verify'].upper() == 'TRUE':
-                    self._verify = True
-                # path to .cer file
-                else:
-                    self._verify = kwargs.get('verify')
-            elif isinstance(kwargs['verify'], bool):
-                self._verify = kwargs['verify']
-            else:
-                raise ValueError("verify argument must be of type str or bool")
-
-        self._construct_service_and_auth_root()
+        self._base_url, self._auth_url = self._construct_service_and_auth_root()
 
         self._version = None
         self._headers = self.HEADERS.copy()
@@ -257,16 +260,63 @@ class RestService:
         if self._proxies:
             self._s.proxies = self._proxies
 
+        # First contact with TM1
         self.connect()
-
         if not self._version:
             self.set_version()
 
-        # is retrieved on demand and cached
-        self._sandboxing_disabled = None
-
         if self._tcp_keepalive or self._connection_pool_size is not None:
             self._manage_http_adapter()
+
+    def _determine_is_admin(self, user: [None, str]) -> [None, bool]:
+        if user is None:
+            return None
+
+        return True if case_and_space_insensitive_equals(user, 'ADMIN') else None
+
+    def _determine_tcp_keepalive(self, tcp_keepalive: bool):
+        return self.translate_to_boolean(tcp_keepalive) if self._async_requests_mode is not True else False
+
+    def _determine_verify(self, verify: [bool, str] = None) -> [bool, str]:
+        if verify is None:
+            # Default SSL verification in v12 is True
+            if self._auth_mode in [AuthenticationMode.IBM_CLOUD_API_KEY, AuthenticationMode.CP4D]:
+                return True
+            else:
+                return False
+
+        if isinstance(verify, str):
+            if verify.upper() == 'FALSE':
+                return False
+            elif verify.upper() == 'TRUE':
+                return True
+
+            # path to .cer file
+            else:
+                return verify
+
+        elif isinstance(verify, bool):
+            return verify
+
+        raise ValueError("'verify' argument must be of type str or bool")
+
+    def handle_logging(self, logging: Union[str, bool]):
+        if logging:
+            if self.translate_to_boolean(value=logging):
+                http_client.HTTPConnection.debuglevel = 1
+
+    def _handle_proxies(self, proxies: Union[Dict, str]):
+        if proxies is None or isinstance(proxies, dict):
+            return proxies
+
+        elif isinstance(proxies, str):
+            try:
+                return json.loads(proxies)
+            except JSONDecodeError:
+                raise ValueError("Invalid JSON passed for argument 'proxies': %s", proxies)
+
+        # handle invalid type
+        raise ValueError("Argument of 'proxies' must be None, dictionary or JSON string")
 
     def connect(self):
         if "session_id" in self._kwargs:
@@ -288,66 +338,84 @@ class RestService:
                 application_client_id=self._kwargs.get("application_client_id", None),
                 application_client_secret=self._kwargs.get("application_client_secret", None))
 
-    def _construct_v12_service_and_auth_root(self):
-        if self._instance is None or self._database is None:
-            raise ValueError("Instance and Database Name is required for v12 authentication using an Address")
-        else:
-            # URL Format: http{ssl}://{address}:{port}/{instance}/api/v1/Databases('{database}')
-            self._base_url = "http{}://{}{}/{}/api/v1/Databases('{}')".format(
-                's' if self._ssl else '',
-                'localhost' if len(self._address) == 0 else self._address,
-                f':{self._port}' if self._port is not None else '',
-                self._instance,
-                self._database)
+    def _construct_ibm_cloud_service_and_auth_root(self):
+        if not all([self._address, self._tenant, self._database]):
+            raise ValueError("'address', 'tenant' and 'database' must be provided to connect to TM1 > v12 in IBM Cloud")
 
-            self._auth_url = 'http{}://{}{}/{}/auth/v1/session'.format(
-                's' if self._ssl else '',
-                'localhost' if len(self._address) == 0 else self._address,
-                f':{self._port}' if self._port is not None else '',
-                self._instance)
-            self._use_v12_auth = True
+        if not self._ssl:
+            raise ValueError("'ssl' must be True to connect to TM1 > v12 in IBM Cloud")
 
-    def _construct_v11_service_and_auth_root(self):
+        base_url = f"https://{self._address}/api/{self._tenant}/v0/tm1/{self._database}"
+        auth_url = f"{base_url}/Configuration/ProductVersion/$value"
+
+        return base_url, auth_url
+
+    def _construct_cp4d_service_and_auth_root(self) -> Tuple[str, str]:
+        if not all([self._instance, self._database]):
+            raise ValueError("'Instance' and 'Database' arguments are required for v12 authentication with 'address'")
+
+        # URL Format: http{ssl}://{address}:{port}/{instance}/api/v1/Databases('{database}')
+        base_url = "http{}://{}{}/{}/api/v1/Databases('{}')".format(
+            's' if self._ssl else '',
+            'localhost' if len(self._address) == 0 else self._address,
+            f':{self._port}' if self._port is not None else '',
+            self._instance,
+            self._database)
+
+        auth_url = 'http{}://{}{}/{}/auth/v1/session'.format(
+            's' if self._ssl else '',
+            'localhost' if len(self._address) == 0 else self._address,
+            f':{self._port}' if self._port is not None else '',
+            self._instance)
+
+        return base_url, auth_url
+
+    def _construct_v11_service_and_auth_root(self) -> Tuple[str, str]:
         # URL Format: http{ssl}://{address}:{port}/api/v1
-        self._base_url = "http{}://{}{}/api/v1".format(
+        base_url = "http{}://{}{}/api/v1".format(
             's' if self._ssl else '',
             'localhost' if len(self._address) == 0 else self._address,
             f':{self._port}')
-        self._auth_url = f"{self._base_url}/Configuration/ProductVersion/$value"
-        self._use_v12_auth = False
+        auth_url = f"{self._base_url}/Configuration/ProductVersion/$value"
+
+        return base_url, auth_url
 
     def _construct_all_version_service_and_auth_root_from_base_url(self):
         if self._address is not None:
             raise ValueError('Base URL and Address can not be specified at the same time')
+
         # v12 requires an auth URL be provided if a base URL is specified
         elif "api/v1/Databases" in self._base_url:
             if not self._auth_url:
                 raise ValueError("Auth_url missing, when connecting to planning analytics engine and using the "
                                  "base_url"
                                  " you must specify a corresponding auth url")
-            self._use_v12_auth = True
+
         elif self._base_url.endswith("/api/v1"):
             self._auth_url = f"{self._base_url}/Configuration/ProductVersion/$value"
-            self._use_v12_auth = False
+
         else:
             self._base_url += "/api/v1"
             self._auth_url = f"{self._base_url}/Configuration/ProductVersion/$value"
-            self._use_v12_auth = False
 
-    def _construct_service_and_auth_root(self):
+    def _construct_service_and_auth_root(self) -> Tuple[str, str]:
         """  Create the service root URL (base_url) for all versions of TM1
         If a base_url is passed then it is assumed to be the complete service root
         for accessing the API
         """
-        # if the base URL is provided when the REST service is created
-        if self._base_url is not None:
-            self._construct_all_version_service_and_auth_root_from_base_url()
-        # If an address and no instance or database information is provided, we assume this is a v11 connection
-        elif self._address is not None and self._instance is None and self._database is None:
-            self._construct_v11_service_and_auth_root()
-        # If an address and database and instances are specified then we create a v12 connection
-        else:
-            self._construct_v12_service_and_auth_root()
+        if not self._auth_mode.use_v12_auth:
+            if self._base_url is None:
+                return self._construct_v11_service_and_auth_root()
+            else:
+                # if the base URL is provided when the REST service is created
+                return self._construct_all_version_service_and_auth_root_from_base_url()
+
+        if self._auth_mode.IBM_CLOUD_API_KEY:
+            return self._construct_ibm_cloud_service_and_auth_root()
+
+        # If an address and database and instances are specified then we create a CP4D connection
+        elif self._auth_mode.CP4D:
+            return self._construct_cp4d_service_and_auth_root()
 
     def _manage_http_adapter(self):
         if self._tcp_keepalive:
@@ -477,14 +545,12 @@ class RestService:
     def _extract_tm1_session_id_from_set_cookie_header(auth_response_headers: object) -> str:
         if auth_response_headers["set-cookie"]:
             cookie = SimpleCookie()
-            #remove invalid domain from cookie
+            # remove invalid domain from cookie
             cookie.load(auth_response_headers["set-cookie"].split(";")[0])
             tm1_session_id = cookie['TM1SessionId'].value
             return tm1_session_id
         else:
             return None
-
-
 
     def _start_session(self, user: str, password: str, decode_b64: bool = False, namespace: str = None,
                        gateway: str = None, cam_passport: str = None, integrated_login: bool = None,
@@ -495,18 +561,22 @@ class RestService:
         """ perform a simple GET request (Ask for the TM1 Version) to start a session
         """
         # Authorization with integrated_login
-        if integrated_login:
+        if self._auth_mode == AuthenticationMode.WIA:
             self._s.auth = HttpNegotiateAuth(
                 domain=integrated_login_domain,
                 service=integrated_login_service,
                 host=integrated_login_host,
                 delegate=integrated_login_delegate)
 
-        elif application_client_id is not None and application_client_id is not None:
+        elif self._auth_mode == AuthenticationMode.CP4D:
             application_auth = HTTPBasicAuth(application_client_id, application_client_secret)
             self._s.auth = application_auth
 
-        # Authorization [Basic, CAM] through Headers
+        elif self._auth_mode == AuthenticationMode.IBM_CLOUD_API_KEY:
+            access_token = self._generate_ibm_iam_cloud_access_token()
+            self.add_http_header('Authorization', "Bearer " + access_token)
+
+        # v11 authorization (Basic, CAM) through Headers
         else:
             token = self._build_authorization_token(
                 user,
@@ -519,7 +589,7 @@ class RestService:
 
         # process additional headers
         if impersonate:
-            if self._use_v12_auth:
+            if self._auth_mode.use_v12_auth:
                 raise TM1pyVersionDeprecationException('User Impersonation', '12')
             else:
                 self.add_http_header('TM1-Impersonate', impersonate)
@@ -529,30 +599,34 @@ class RestService:
             original_value = self._re_connect_on_session_timeout
             try:
                 self._re_connect_on_session_timeout = False
-                if self._use_v12_auth:
+                if self._auth_mode == AuthenticationMode.CP4D:
                     payload = {"User": user}
-                    response = self._s.post(url=self._auth_url,
-                                            headers=self._headers,
-                                            verify=self._verify,
-                                            timeout=self._timeout,
-                                            json=payload)
+                    response = self._s.post(
+                        url=self._auth_url,
+                        headers=self._headers,
+                        verify=self._verify,
+                        timeout=self._timeout,
+                        json=payload)
                     self.verify_response(response)
                     if 'TM1SessionId' not in self._s.cookies:
                         raise TM1pyException(
-                            f"TM1SessionId has failed to be automaticallyadded to the session cookies, future requests "
+                            f"TM1SessionId has failed to be automatically added to the session cookies, future requests "
                             "using this TM1Service instance will fail due to authentication. "
                             "Check the tm1-gateway domain settings are correct "
                             "in the container orchestrator ")
 
-                        #if session had incorrect domain due to CP4D extract it and add it to cookie jar
-                        self._s.cookies.set("TM1SessionId",
-                                            self._extract_tm1_session_id_from_set_cookie_header(auth_response_headers=response.headers))
+                        # ToDo: fix unreachable code
+                        # if session had incorrect domain due to CP4D extract it and add it to cookie jar
+                        self._s.cookies.set(
+                            "TM1SessionId",
+                            self._extract_tm1_session_id_from_set_cookie_header(auth_response_headers=response.headers))
 
                 else:
-                    response = self._s.get(url=self._auth_url,
-                                           headers=self._headers,
-                                           verify=self._verify,
-                                           timeout=self._timeout)
+                    response = self._s.get(
+                        url=self._auth_url,
+                        headers=self._headers,
+                        verify=self._verify,
+                        timeout=self._timeout)
                     self.verify_response(response)
                     self._version = response.text
 
@@ -616,7 +690,11 @@ class RestService:
 
     @property
     def session_id(self) -> str:
-        return self._s.cookies["TM1SessionId"]
+        try:
+            return self._s.cookies['TM1SessionId']
+        # case v12
+        except KeyError:
+            return self._s.cookies['paSession']
 
     @staticmethod
     def translate_to_boolean(value) -> bool:
@@ -797,6 +875,49 @@ class RestService:
             return False
         else:
             raise ValueError(f"Invalid base_url: '{self._base_url}'")
+
+    def _determine_auth_mode(self) -> AuthenticationMode:
+        if not any([
+            self._auth_url,
+            self._instance,
+            self._database,
+            self._api_key,
+            self._iam_url,
+            self._pa_url,
+            self._tenant
+        ]):
+            # v11
+            if not any([self._kwargs.get('namespace', None), self._kwargs.get('gateway', None)]):
+                return AuthenticationMode.BASIC
+
+            if self._kwargs.get('gateway', None):
+                return AuthenticationMode.CAM_SSO
+
+            if self._kwargs.get("integrated_login", False):
+                return AuthenticationMode.WIA
+
+            return AuthenticationMode.CAM
+
+        # v12
+        if self._iam_url:
+            return AuthenticationMode.IBM_CLOUD_API_KEY
+
+        return AuthenticationMode.CP4D
+
+    def _generate_ibm_iam_cloud_access_token(self) -> str:
+        if not all([self._iam_url, self._api_key]):
+            raise ValueError("'iam_url' and 'api_key' must be provided to generate access token from IBM Cloud")
+
+        url = f"{self._iam_url}/identity/token"
+        payload = f'grant_type=urn%3Aibm%3Aparams%3Aoauth%3Agrant-type%3Aapikey&apikey={self._api_key}'
+        headers = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+        response = requests.request("POST", url, headers=headers, data=payload)
+        if not 'access_token' in response.json():
+            raise RuntimeError(f"Failed to generate access_token from URL: '{url}'")
+        return response.json()["access_token"]
 
 
 class BytesIOSocket:

@@ -29,7 +29,6 @@ class FileService(ObjectService):
 
         return self._rest.GET(url, **kwargs).content
 
-
     def get(self, file_name: str, **kwargs) -> bytes:
 
         url = format_url(
