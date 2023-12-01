@@ -1478,7 +1478,7 @@ class TestCellService(unittest.TestCase):
             self.assertIn("[TM1py_Tests_Cell_Dimension3].", coordinates[2])
 
     @skip_if_deprecated_in_version(version="12")
-    #v12 does not support empty row sets
+    # v12 does not support empty row sets
     def test_execute_mdx_with_empty_rows(self):
         # write cube content
         self.tm1.cubes.cells.write_values(self.cube_name, self.cellset)
