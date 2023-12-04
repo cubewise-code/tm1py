@@ -91,7 +91,9 @@ def httpmethod(func):
                         self.cancel_async_operation(async_id)
                     raise TM1pyTimeout(method=func.__name__, url=url, timeout=kwargs['timeout'])
 
-                response = self.build_response_from_raw_bytes(response.content)
+                # response transformation necessary in TM1 < v11. Not required for v12
+                if response.content.startswith(b"HTTP/"):
+                    response = self.build_response_from_binary_response(response.content)
 
             # verify
             self.verify_response(response=response)
@@ -125,7 +127,7 @@ class AuthenticationMode(Enum):
 
     @property
     def use_v12_auth(self):
-        if self.value in [self.BASIC, self.WIA, self.CAM, self.CAM_SSO]:
+        if self.value < 5:
             return False
         return True
 
@@ -376,7 +378,7 @@ class RestService:
             's' if self._ssl else '',
             'localhost' if len(self._address) == 0 else self._address,
             f':{self._port}')
-        auth_url = f"{self._base_url}/Configuration/ProductVersion/$value"
+        auth_url = f"{base_url}/Configuration/ProductVersion/$value"
 
         return base_url, auth_url
 
@@ -846,7 +848,7 @@ class RestService:
         return urllib3_http_response
 
     @staticmethod
-    def build_response_from_raw_bytes(data: bytes) -> Response:
+    def build_response_from_binary_response(data: bytes) -> Response:
         urllib_response = RestService.urllib3_response_from_bytes(data)
 
         adapter = HTTPAdapter()
@@ -908,15 +910,14 @@ class RestService:
         if not all([self._iam_url, self._api_key]):
             raise ValueError("'iam_url' and 'api_key' must be provided to generate access token from IBM Cloud")
 
-        url = f"{self._iam_url}/identity/token"
         payload = f'grant_type=urn%3Aibm%3Aparams%3Aoauth%3Agrant-type%3Aapikey&apikey={self._api_key}'
         headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/x-www-form-urlencoded'
         }
-        response = requests.request("POST", url, headers=headers, data=payload)
-        if not 'access_token' in response.json():
-            raise RuntimeError(f"Failed to generate access_token from URL: '{url}'")
+        response = requests.request("POST", self._iam_url, headers=headers, data=payload)
+        if 'access_token' not in response.json():
+            raise RuntimeError(f"Failed to generate access_token from URL: '{self._iam_url}'")
         return response.json()["access_token"]
 
 
