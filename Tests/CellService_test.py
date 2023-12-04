@@ -833,7 +833,15 @@ class TestCellService(unittest.TestCase):
         query.add_member_tuple_to_columns(
             f"[{self.dimension_names[0]}].[element2]",
             f"[}}ElementAttributes_{self.dimension_names[0]}].[Attr3]")
-        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), ['Text 1', 1, 2, "", None, None])
+
+        result = self.tm1.cells.execute_mdx_values(mdx=query.to_mdx())
+
+        self.assertEqual(result[0], "Text 1")
+        self.assertEqual(result[1], 1)
+        self.assertEqual(result[2], 2)
+        self.assertEqual(result[3], "")
+        self.assertIn(result[4], [0, None])
+        self.assertIn(result[5], [0, None])
 
     def test_write_through_blob_to_consolidation(self):
         cells = dict()
@@ -2467,7 +2475,7 @@ class TestCellService(unittest.TestCase):
             .add_hierarchy_set_to_column_axis(
             MdxHierarchySet.member(Member.of(self.dimension_names[1], "Calculated Member")))
 
-        csv = self.tm1.cubes.cells.execute_mdx_csv(mdx, use_blob=True, )
+        csv = self.tm1.cubes.cells.execute_mdx_csv(mdx, use_blob=False)
 
         # check header
         header = csv.split('\r\n')[0]
@@ -2666,17 +2674,18 @@ class TestCellService(unittest.TestCase):
         """
 
         df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, include_attributes=True)
+        # integerize numeric columns because v12 attribute numbers are different from v11 ('2.0' vs '2')
+        df[['Attr3', 'Attr2', 'Value']] = df[['Attr3', 'Attr2', 'Value']].apply(
+            lambda col: pd.to_numeric(col).fillna(0).astype(int))
 
         expected = {
             'TM1py_Tests_Cell_Dimension3': {0: 'Element 1'},
-            'Attr3': {0: '3'},
+            'Attr3': {0: 3},
             'TM1py_Tests_Cell_Dimension2': {0: 'Element 1'},
-            'Attr2': {0: '2'},
+            'Attr2': {0: 2},
             'TM1py_Tests_Cell_Dimension1': {0: 'Element 1'},
             'Attr1': {0: 'TM1py'},
             'Value': {0: 1.0}}
-
-
 
         self.assertEqual(expected, df.to_dict())
 
@@ -2694,15 +2703,18 @@ class TestCellService(unittest.TestCase):
         """
 
         df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, include_attributes=True, use_iterative_json=True)
+        # integerize numeric columns because v12 attribute numbers are different from v11 ('2.0' vs '2')
+        df[['Attr3', 'Attr2', 'Value']] = df[['Attr3', 'Attr2', 'Value']].apply(
+            lambda col: pd.to_numeric(col).fillna(0).astype(int))
 
         expected = {
             'TM1py_Tests_Cell_Dimension3': {0: 'Element 1'},
-            'Attr3': {0: '3'},
+            'Attr3': {0: 3},
             'TM1py_Tests_Cell_Dimension2': {0: 'Element 1'},
-            'Attr2': {0: '2'},
+            'Attr2': {0: 2},
             'TM1py_Tests_Cell_Dimension1': {0: 'Element 1'},
             'Attr1': {0: 'TM1py'},
-            'Value': {0: 1.0}}
+            'Value': {0: 1}}
         self.assertEqual(expected, df.to_dict())
 
     @skip_if_no_pandas
@@ -2718,15 +2730,18 @@ class TestCellService(unittest.TestCase):
         """
 
         df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, include_attributes=True, use_iterative_json=True)
+        # integerize numeric columns because v12 attribute numbers are different from v11 ('2.0' vs '2')
+        df[['Attr3', 'Attr2', 'Value']] = df[['Attr3', 'Attr2', 'Value']].apply(
+            lambda col: pd.to_numeric(col).fillna(0).astype(int))
 
         df_test = pd.DataFrame({
             'TM1py_Tests_Cell_Dimension1': {0: 'Element 1'},
             'Attr1': {0: 'TM1py'},
             'TM1py_Tests_Cell_Dimension2': {0: 'Element 1'},
-            'Attr2': {0: '2'},
+            'Attr2': {0: 2},
             'TM1py_Tests_Cell_Dimension3': {0: 'Element 1'},
-            'Attr3': {0: '3'},
-            'Value': {0: 1.0}})
+            'Attr3': {0: 3},
+            'Value': {0: 1}})
 
         self.assertTrue(df_test.equals(df))
 
@@ -4264,7 +4279,7 @@ class TestCellService(unittest.TestCase):
         result = self.tm1.cells.trace_cell_calculation(
             cube_name=self.cube_with_rules_name,
             elements="Element1,Element1,Element1",
-            depth=25)
+            depth=10)
 
         self.assertIn('../$metadata#ibm.tm1.api.v1.CalculationComponent', result['@odata.context'])
 

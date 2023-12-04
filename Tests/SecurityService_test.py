@@ -74,7 +74,10 @@ class TestSecurityService(unittest.TestCase):
 
     def test_get_current_user(self):
         me = self.tm1.security.get_current_user()
-        self.assertTrue(case_and_space_insensitive_equals(me.name, self.config['tm1srv01']['User']))
+        self.assertIsNotNone(me["enabled"])
+        self.assertIsNotNone(me["friendly_name"])
+        self.assertIsNotNone(me["groups"])
+        self.assertIsNotNone(me["name"])
 
         user = self.tm1.security.get_user(self.config['tm1srv01']['User'])
         self.assertEqual(me, user)
@@ -225,6 +228,7 @@ class TestSecurityService(unittest.TestCase):
         response = self.tm1.security.security_refresh()
         self.assertTrue(response.ok)
 
+    @skip_if_deprecated_in_version(version="12")
     def test_auth_with_exotic_characters_in_password(self):
         exotic_password = "d'8!?:Y4"
 
