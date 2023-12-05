@@ -661,7 +661,7 @@ class TestCellService(unittest.TestCase):
             f"[}}ElementAttributes_{self.dimension_names[0]}].[Attr3]")
         values = self.tm1.cells.execute_mdx_values(mdx=query.to_mdx())
 
-        if verify_version(required_version="12",version=self.tm1.version):
+        if verify_version(required_version="12", version=self.tm1.version):
             self.assertEqual(values, ['Text 1', 1, 2, "", 0, 0])
         else:
             self.assertEqual(values, ['Text 1', 1, 2, "", None, None])
@@ -2743,7 +2743,7 @@ class TestCellService(unittest.TestCase):
             'Attr3': {0: 3},
             'Value': {0: 1}})
 
-        self.assertTrue(df_test.equals(df))
+        self.assertEquals(df_test.to_dict(), df.to_dict())
 
     @skip_if_no_pandas
     def test_execute_mdx_dataframe_include_attributes_iter_json_no_attributes(self):
@@ -2832,7 +2832,7 @@ class TestCellService(unittest.TestCase):
 
         df = self.tm1.cubes.cells.execute_mdx_dataframe(query, use_blob=True)
         self.assertEqual(
-          [["Element 1", "NA", 4.0]],
+            [["Element 1", "NA", 4.0]],
             df.values.tolist())
 
     @skip_if_no_pandas
@@ -2887,8 +2887,18 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(expected_df.to_csv(), df.to_csv())
 
     @skip_if_no_pandas
-    def test_execute_mdx_dataframe_async(self):
+    def test_execute_mdx_dataframe_async_max_workers_2(self):
+        self.run_test_execute_mdx_dataframe_async(max_workers=2)
 
+    @skip_if_no_pandas
+    def test_execute_mdx_dataframe_async_max_workers_4(self):
+        self.run_test_execute_mdx_dataframe_async(max_workers=4)
+
+    @skip_if_no_pandas
+    def test_execute_mdx_dataframe_async_max_workers_8(self):
+        self.run_test_execute_mdx_dataframe_async(max_workers=8)
+
+    def run_test_execute_mdx_dataframe_async(self, max_workers):
         # build a reference "single-threaded" df for comparison
         mdx = MdxBuilder.from_cube(self.cube_name) \
             .rows_non_empty() \
@@ -2899,13 +2909,10 @@ class TestCellService(unittest.TestCase):
             .add_hierarchy_set_to_column_axis(
             MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
             .to_mdx()
-
         df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx)
-
         # build 4 non-empty + 1 empty mdx queries to pass to async df
         mdx_list = []
         chunk_size = int(len(self.target_coordinates) / 4)
-
         for chunk in range(5):
             mdx = MdxBuilder.from_cube(self.cube_name) \
                 .rows_non_empty() \
@@ -2918,21 +2925,12 @@ class TestCellService(unittest.TestCase):
                 MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
                 .to_mdx()
             mdx_list.append(mdx)
-
         # check execution with different max_worker parameter
-        df_async1 = self.tm1.cubes.cells.execute_mdx_dataframe_async(mdx_list, max_workers=2)
-        df_async2 = self.tm1.cubes.cells.execute_mdx_dataframe_async(mdx_list, max_workers=5)
-        df_async3 = self.tm1.cubes.cells.execute_mdx_dataframe_async(mdx_list, max_workers=8)
-
+        df_async = self.tm1.cubes.cells.execute_mdx_dataframe_async(mdx_list, max_workers=max_workers)
         # check type
-        self.assertIsInstance(df_async1, pd.DataFrame)
-        self.assertIsInstance(df_async2, pd.DataFrame)
-        self.assertIsInstance(df_async3, pd.DataFrame)
-
+        self.assertIsInstance(df_async, pd.DataFrame)
         # check async df are equal to reference df
-        self.assertTrue(df_async1.equals(df))
-        self.assertTrue(df_async2.equals(df))
-        self.assertTrue(df_async3.equals(df))
+        self.assertTrue(df_async.equals(df))
 
     @skip_if_no_pandas
     def test_execute_mdx_dataframe_async_use_blob(self):
@@ -3683,17 +3681,23 @@ class TestCellService(unittest.TestCase):
             dimension_name=self.dimension_names[0],
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[0],
-                expression=MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0]).head(10).to_mdx()))
+                expression=MdxHierarchySet.all_members(
+                    self.dimension_names[0],
+                    self.dimension_names[0]).head(10).to_mdx()))
         view.add_row(
             dimension_name=self.dimension_names[1],
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[1],
-                expression=MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1]).head(10).to_mdx()))
+                expression=MdxHierarchySet.all_members(
+                    self.dimension_names[1],
+                    self.dimension_names[1]).head(10).to_mdx()))
         view.add_column(
             dimension_name=self.dimension_names[2],
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[2],
-                expression=MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2]).head(10).to_mdx()))
+                expression=MdxHierarchySet.all_members(
+                    self.dimension_names[2],
+                    self.dimension_names[2]).head(10).to_mdx()))
         self.tm1.cubes.views.update_or_create(view, private=False)
 
         pivot = self.tm1.cubes.cells.execute_view_dataframe_pivot(
@@ -3713,17 +3717,23 @@ class TestCellService(unittest.TestCase):
             dimension_name=self.dimension_names[0],
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[0],
-                expression=MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0]).head(10).to_mdx()))
+                expression=MdxHierarchySet.all_members(
+                    self.dimension_names[0],
+                    self.dimension_names[0]).head(10).to_mdx()))
         view.add_column(
             dimension_name=self.dimension_names[1],
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[1],
-                expression=MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1]).head(10).to_mdx()))
+                expression=MdxHierarchySet.all_members(
+                    self.dimension_names[1],
+                    self.dimension_names[1]).head(10).to_mdx()))
         view.add_column(
             dimension_name=self.dimension_names[2],
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[2],
-                expression=MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2]).head(10).to_mdx()))
+                expression=MdxHierarchySet.all_members(
+                    self.dimension_names[2],
+                    self.dimension_names[2]).head(10).to_mdx()))
         self.tm1.cubes.views.update_or_create(
             view=view,
             private=False)
@@ -3746,14 +3756,18 @@ class TestCellService(unittest.TestCase):
             dimension_name=self.dimension_names[0],
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[0],
-                expression=MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0]).head(10).to_mdx()
+                expression=MdxHierarchySet.all_members(
+                    self.dimension_names[0],
+                    self.dimension_names[0]).head(10).to_mdx()
             )
         )
         view.add_column(
             dimension_name=self.dimension_names[1],
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[1],
-                expression=MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1]).head(10).to_mdx()
+                expression=MdxHierarchySet.all_members(
+                    self.dimension_names[1],
+                    self.dimension_names[1]).head(10).to_mdx()
             )
         )
         view.add_title(
@@ -4036,7 +4050,6 @@ class TestCellService(unittest.TestCase):
             FROM [{self.cube_name}]
             """
             self.tm1.cells.clear_with_mdx(cube=self.cube_name, mdx=mdx)
-
 
     def test_clear_with_mdx_unsupported_version(self):
 
@@ -4507,26 +4520,25 @@ class TestCellService(unittest.TestCase):
             MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
             .to_mdx()
 
-        #create cellset
+        # create cellset
         cellset = self.tm1.cells.create_cellset(mdx)
 
-        partition = self.tm1.cells.extract_cellset_partition(cellset_id=cellset,
-                                                            partition_start_ordinal=0,
-                                                            partition_end_ordinal=1)
+        partition = self.tm1.cells.extract_cellset_partition(
+            cellset_id=cellset,
+            partition_start_ordinal=0,
+            partition_end_ordinal=1)
 
         expected_result = [{'Ordinal': 0, 'Value': 1}, {'Ordinal': 1, 'Value': None}]
         self.assertEqual(partition, expected_result)
 
-        partition_skip_zero = self.tm1.cells.extract_cellset_partition(cellset_id=cellset,
-                                                            partition_start_ordinal=0,
-                                                            partition_end_ordinal=1,
-                                                            skip_zeros=True)
+        partition_skip_zero = self.tm1.cells.extract_cellset_partition(
+            cellset_id=cellset,
+            partition_start_ordinal=0,
+            partition_end_ordinal=1,
+            skip_zeros=True)
 
         expected_result_skip_zero = [{'Ordinal': 0, 'Value': 1}]
         self.assertEqual(partition_skip_zero, expected_result_skip_zero)
-
-
-
 
     # Delete Cube and Dimensions
     @classmethod

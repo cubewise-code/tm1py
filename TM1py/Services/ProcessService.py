@@ -290,16 +290,10 @@ class ProcessService(ObjectService):
             cancel_at_timeout=cancel_at_timeout,
             **kwargs)
 
-        execution_summary = response.json()
+        return self._execute_with_return_parse_response(response)
 
-        success = execution_summary["ProcessExecuteStatusCode"] == "CompletedSuccessfully"
-        status = execution_summary["ProcessExecuteStatusCode"]
-        error_log_file = None if execution_summary["ErrorLogFile"] is None else execution_summary["ErrorLogFile"][
-            "Filename"]
-        return success, status, error_log_file
-
-    def execute_with_return(self, process_name: str, timeout: float = None, cancel_at_timeout: bool = False,
-                            **kwargs) -> Tuple[bool, str, str]:
+    def execute_with_return(self, process_name: str = None, timeout: float = None, cancel_at_timeout: bool = False,
+                            return_async_id: bool = False, **kwargs) -> Tuple[bool, str, str]:
         """ Ask TM1 Server to execute a process.
         pass process parameters as keyword arguments to this function. E.g:
 
@@ -310,9 +304,11 @@ class ProcessService(ObjectService):
         :param process_name: name of the TI process
         :param timeout: Number of seconds that the client will wait to receive the first byte.
         :param cancel_at_timeout: Abort operation in TM1 when timeout is reached
+        :param return_async_id: return async_id instead of (success, status, error_log_file)
         :param kwargs: dictionary of process parameters and values
         :return: success (boolean), status (String), error_log_file (String)
         """
+
         url = format_url("/Processes('{}')/tm1.ExecuteWithReturn?$expand=*", process_name)
         parameters = dict()
         if kwargs:
@@ -325,7 +321,27 @@ class ProcessService(ObjectService):
             data=json.dumps(parameters, ensure_ascii=False),
             timeout=timeout,
             cancel_at_timeout=cancel_at_timeout,
+            return_async_id=return_async_id,
             **kwargs)
+
+        if return_async_id:
+            return response
+
+        return self._execute_with_return_parse_response(response)
+
+    def poll_execute_with_return(self, async_id: str):
+
+        response = self._rest.retrieve_async_response(async_id=async_id)
+        if response.status_code not in [200, 201]:
+            return None
+
+        # response transformation necessary in TM1 < v11. Not required for v12
+        if response.content.startswith(b"HTTP/"):
+            response = self._rest.build_response_from_binary_response(response.content)
+
+        return self._execute_with_return_parse_response(response)
+
+    def _execute_with_return_parse_response(self, response):
         execution_summary = response.json()
         success = execution_summary["ProcessExecuteStatusCode"] == "CompletedSuccessfully"
         status = execution_summary["ProcessExecuteStatusCode"]

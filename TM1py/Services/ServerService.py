@@ -4,8 +4,8 @@ import functools
 import json
 from collections.abc import Iterable
 from datetime import datetime
-from typing import Dict, Optional
 from enum import Enum
+from typing import Dict, Optional
 
 import pytz
 from requests import Response
@@ -440,7 +440,6 @@ class ServerService(ObjectService):
             "Administration": {"PerformanceMonitorOn": False}
         }
         self.update_static_configuration(config)
-
 
     @require_admin
     def activate_audit_log(self):
