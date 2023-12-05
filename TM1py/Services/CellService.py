@@ -114,11 +114,11 @@ def manage_changeset(func):
 
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
-        if kwargs.get("use_changeset", False):
+        use_changeset = kwargs.pop("use_changeset", False)
+        if use_changeset:
+            changeset = self.begin_changeset()
             try:
-                changeset = self.begin_changeset()
-                kwargs["changeset"] = changeset
-                return func(self, *args, **kwargs)
+                return func(self, changeset=changeset, *args, **kwargs)
             finally:
                 self.end_changeset(changeset)
         else:
@@ -2964,7 +2964,7 @@ class CellService(ObjectService):
 
             filter_cells = " and ".join(filters)
 
-        url = ("/api/v1/Cellsets('{cellset_id}')/tm1.GetPartition{cell_partition}?$select={cell_properties}{"
+        url = ("Cellsets('{cellset_id}')/tm1.GetPartition{cell_partition}?$select={cell_properties}{"
                "top_cells}{skip_cells}{filter_cells}") \
             .format(cellset_id=cellset_id,
                     cell_partition=f"(Begin={partition_start_ordinal}, End={partition_end_ordinal})",

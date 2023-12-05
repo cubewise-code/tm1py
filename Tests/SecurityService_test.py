@@ -74,10 +74,10 @@ class TestSecurityService(unittest.TestCase):
 
     def test_get_current_user(self):
         me = self.tm1.security.get_current_user()
-        self.assertIsNotNone(me["enabled"])
-        self.assertIsNotNone(me["friendly_name"])
-        self.assertIsNotNone(me["groups"])
-        self.assertIsNotNone(me["name"])
+        self.assertIsNotNone(me.enabled)
+        self.assertIsNotNone(me.friendly_name)
+        self.assertIsNotNone(me.groups)
+        self.assertIsNotNone(me.name)
 
         user = self.tm1.security.get_user(self.config['tm1srv01']['User'])
         self.assertEqual(me, user)
