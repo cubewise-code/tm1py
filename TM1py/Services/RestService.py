@@ -388,7 +388,7 @@ class RestService:
 
         return base_url, auth_url
 
-    def _construct_all_version_service_and_auth_root_from_base_url(self):
+    def _construct_all_version_service_and_auth_root_from_base_url(self) -> Tuple[str, str]:
         if self._address is not None:
             raise ValueError('Base URL and Address can not be specified at the same time')
 
@@ -405,6 +405,8 @@ class RestService:
         else:
             self._base_url += "/api/v1"
             self._auth_url = f"{self._base_url}/Configuration/ProductVersion/$value"
+
+        return self._base_url, self._auth_url
 
     def _construct_service_and_auth_root(self) -> Tuple[str, str]:
         """  Create the service root URL (base_url) for all versions of TM1
