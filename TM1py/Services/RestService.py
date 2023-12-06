@@ -17,14 +17,11 @@ import urllib3
 from requests import Timeout, Response, ConnectionError, Session
 from requests.adapters import HTTPAdapter
 from requests.auth import HTTPBasicAuth
-from urllib3 import Retry
 from urllib3._collections import HTTPHeaderDict
 
 # SSO not supported for Linux
 from TM1py.Exceptions.Exceptions import TM1pyTimeout, TM1pyVersionDeprecationException
 from TM1py.Utils import case_and_space_insensitive_equals, CaseAndSpaceInsensitiveSet, HTTPAdapterWithSocketOptions
-
-
 
 try:
     from requests_negotiate_sspi import HttpNegotiateAuth
