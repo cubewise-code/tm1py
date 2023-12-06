@@ -54,7 +54,7 @@ class FileService(ObjectService):
             name=file_name,
             version_content_path=self.version_content_path)
 
-        return self._rest.PUT(url, file_content, headers=self.BINARY_HTTP_HEADER, **kwargs)
+        return self._rest.PUT(url, file_content, headers=self.binary_http_header, **kwargs)
 
     def update(self, file_name: str, file_content: bytes, **kwargs):
         url = format_url(
@@ -62,7 +62,7 @@ class FileService(ObjectService):
             name=file_name,
             version_content_path=self.version_content_path)
 
-        return self._rest.PUT(url, file_content, headers=self.BINARY_HTTP_HEADER, **kwargs)
+        return self._rest.PUT(url, file_content, headers=self.binary_http_header, **kwargs)
 
     def update_or_create(self, file_name: str, file_content: bytes, **kwargs):
         if self.exists(file_name, **kwargs):

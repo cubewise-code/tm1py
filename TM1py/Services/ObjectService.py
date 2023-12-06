@@ -5,7 +5,7 @@ import threading
 
 from TM1py.Exceptions import TM1pyRestException
 from TM1py.Services import RestService
-from TM1py.Utils import format_url
+from TM1py.Utils import format_url, verify_version
 
 
 class ObjectService:
@@ -16,7 +16,8 @@ class ObjectService:
     ELEMENT_ATTRIBUTES_PREFIX = "}ElementAttributes_"
     SANDBOX_DIMENSION = "Sandboxes"
 
-    BINARY_HTTP_HEADER = {'Content-Type': 'application/octet-stream; odata.streaming=true'}
+    BINARY_HTTP_HEADER_PRE_V12 = {'Content-Type': 'application/octet-stream; odata.streaming=true'}
+    BINARY_HTTP_HEADER = {'Content-Type': 'application/json;charset=UTF-8'}
 
     def __init__(self, rest_service: RestService):
         """ Constructor, Create an instance of ObjectService
@@ -24,6 +25,10 @@ class ObjectService:
         :param rest_service: 
         """
         self._rest = rest_service
+        if verify_version("12", self.version):
+            self.binary_http_header = self.BINARY_HTTP_HEADER
+        else:
+            self.binary_http_header = self.BINARY_HTTP_HEADER_PRE_V12
 
     def suggest_unique_object_name(self, random_seed: float = None) -> str:
         """
