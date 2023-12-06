@@ -110,7 +110,7 @@ class TestCubeService(unittest.TestCase):
         cube = Cube(cube_name, dimension_names)
 
         all_cubes_before = self.tm1.cubes.get_all_names()
-        self.tm1.cubes.create(cube)
+        self.tm1.cubes.update_or_create(cube)
         all_cubes_after = self.tm1.cubes.get_all_names()
         self.assertEqual(
             len(all_cubes_before) + 1,
@@ -137,7 +137,7 @@ class TestCubeService(unittest.TestCase):
         cube_name = self.prefix + "Some_Other_Name"
         dimension_names = self.tm1.dimensions.get_all_names()[1:3]
         cube = Cube(cube_name, dimension_names)
-        self.tm1.cubes.create(cube)
+        self.tm1.cubes.update_or_create(cube)
         self.assertEqual(len(cubes_without_rules) + 1, len(self.tm1.cubes.get_all_names_without_rules()))
         self.assertEqual(len(cubes_with_rules), len(self.tm1.cubes.get_all_names_with_rules()))
 
