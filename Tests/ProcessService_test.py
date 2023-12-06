@@ -325,7 +325,6 @@ class TestProcessService(unittest.TestCase):
         p_none_orig = copy.deepcopy(self.p_none)
         p_view_orig = copy.deepcopy(self.p_view)
         p_subset_orig = copy.deepcopy(self.p_subset)
-        p_odbc_orig = copy.deepcopy(self.p_odbc)
 
         p1 = self.tm1.processes.get(p_ascii_orig.name)
         self.assertEqual(p1.body, p_ascii_orig.body)
@@ -333,12 +332,17 @@ class TestProcessService(unittest.TestCase):
         self.assertEqual(p2.body, p_none_orig.body)
         p3 = self.tm1.processes.get(p_view_orig.name)
         self.assertEqual(p3.body, p_view_orig.body)
-        p4 = self.tm1.processes.get(p_odbc_orig.name)
-        p4.datasource_password = None
+        p4 = self.tm1.processes.get(p_subset_orig.name)
+        self.assertEqual(p4.body, p_subset_orig.body)
+
+    @skip_if_deprecated_in_version("12")
+    def test_get_process_odbc(self):
+        p_odbc_orig = copy.deepcopy(self.p_odbc)
+
+        p = self.tm1.processes.get(p_odbc_orig.name)
+        p.datasource_password = None
         p_odbc_orig.datasource_password = None
-        self.assertEqual(p4.body, p_odbc_orig.body)
-        p5 = self.tm1.processes.get(p_subset_orig.name)
-        self.assertEqual(p5.body, p_subset_orig.body)
+        self.assertEqual(p.body, p_odbc_orig.body)
 
     def test_update_process(self):
         # get

@@ -1283,6 +1283,13 @@ class CellService(ObjectService):
             ENDIF;
             """
 
+        # v12 occasionally produces tiny numbers (e.g. 4.94066e-324) instead of 0
+        data_procedure_pre += f"""
+        IF (ISUNDEFINEDCELLVALUE(NVALUE,'{cube}') = 1);
+          SVALUE ='0'; 
+        ENDIF;
+        """
+
         data_procedure = f"""
         TextOutput('{file_name}',{comma_sep_variables},SVALUE);
         """
@@ -2964,7 +2971,7 @@ class CellService(ObjectService):
 
             filter_cells = " and ".join(filters)
 
-        url = ("Cellsets('{cellset_id}')/tm1.GetPartition{cell_partition}?$select={cell_properties}{"
+        url = ("/Cellsets('{cellset_id}')/tm1.GetPartition{cell_partition}?$select={cell_properties}{"
                "top_cells}{skip_cells}{filter_cells}") \
             .format(cellset_id=cellset_id,
                     cell_partition=f"(Begin={partition_start_ordinal}, End={partition_end_ordinal})",
