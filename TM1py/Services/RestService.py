@@ -302,6 +302,9 @@ class RestService:
                 # response transformation necessary in TM1 < v11. Not required for v12
                 if response.content.startswith(b"HTTP/"):
                     response = self.build_response_from_binary_response(response.content)
+                else:
+                    # In v12 status_code must be set explicitly, as it is 200 by default
+                    response.status_code = int(response.headers['asyncresult'])
 
             # verify
             self.verify_response(response=response)

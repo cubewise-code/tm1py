@@ -219,7 +219,7 @@ class ApplicationService(ObjectService):
                 "/Contents('Applications')" + mid + "/" + contents + "('{name}{suffix}')/Document/Content",
                 name=application.name,
                 suffix='.blob' if not verify_version(required_version='12', version=self.version) else '')
-            response = self._rest.PUT(url, application.content, headers=self.BINARY_HTTP_HEADER, **kwargs)
+            response = self._rest.PUT(url, application.content, headers=self.binary_http_header, **kwargs)
 
         return response
 
@@ -241,7 +241,11 @@ class ApplicationService(ObjectService):
             url = format_url(
                 "/Contents('Applications')" + mid + "/" + contents + "('{name}.blob')/Document/Content",
                 name=application.name)
-            response = self._rest.PATCH(url, application.content, headers=self.BINARY_HTTP_HEADER, **kwargs)
+            response = self._rest.PATCH(
+                url=url,
+                data=application.content,
+                headers=self.binary_http_header,
+                **kwargs)
         else:
             url = "/Contents('Applications')" + mid + "/" + contents
             response = self._rest.POST(url, application.body, **kwargs)
