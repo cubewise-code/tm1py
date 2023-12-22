@@ -13,8 +13,8 @@ from TM1py.Objects.Process import Process
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import format_url
-from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, CaseAndSpaceInsensitiveSet, require_admin, require_version, \
-    decohints
+from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, CaseAndSpaceInsensitiveSet, require_data_admin, \
+     require_ops_admin, require_version, decohints
 
 
 @decohints
@@ -103,7 +103,7 @@ class ServerService(ObjectService):
             "MessageLogEntries/!delta('"):-2]
         return response.json()['value']
 
-    @require_admin
+    @require_ops_admin
     def get_message_log_entries(self, reverse: bool = True, since: datetime = None,
                                 until: datetime = None, top: int = None, logger: str = None,
                                 level: str = None, msg_contains: Iterable = None, msg_contains_operator: str = 'and',
@@ -174,7 +174,7 @@ class ServerService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return response.json()['value']
 
-    @require_admin
+    @require_ops_admin
     def write_to_message_log(self, level: str, message: str, **kwargs) -> None:
         """
         :param level: string, FATAL, ERROR, WARN, INFO, DEBUG
@@ -204,7 +204,7 @@ class ServerService(ObjectService):
         timestamp_utc = timestamp.astimezone(pytz.utc)
         return timestamp_utc
 
-    @require_admin
+    @require_data_admin
     def get_transaction_log_entries(self, reverse: bool = True, user: str = None, cube: str = None,
                                     since: datetime = None, until: datetime = None, top: int = None,
                                     element_tuple_filter: Dict[str, str] = None,
@@ -256,7 +256,7 @@ class ServerService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return response.json()['value']
 
-    @require_admin
+    @require_data_admin
     @require_version(version="11.6")
     def get_audit_log_entries(self, user: str = None, object_type: str = None, object_name: str = None,
                               since: datetime = None, until: datetime = None, top: int = None, **kwargs) -> Dict:
@@ -301,7 +301,7 @@ class ServerService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return response.json()['value']
 
-    @require_admin
+    @require_ops_admin
     def get_last_process_message_from_messagelog(self, process_name: str, **kwargs) -> Optional[str]:
         """ Get the latest message log entry for a process
 
@@ -349,7 +349,7 @@ class ServerService(ObjectService):
         del config["@odata.context"]
         return config
 
-    @require_admin
+    @require_data_admin
     def get_static_configuration(self, **kwargs) -> Dict:
         """ Read TM1 config settings as dictionary from TM1 Server
 
@@ -360,7 +360,7 @@ class ServerService(ObjectService):
         del config["@odata.context"]
         return config
 
-    @require_admin
+    @require_data_admin
     def get_active_configuration(self, **kwargs) -> Dict:
         """ Read effective(!) TM1 config settings as dictionary from TM1 Server
 
@@ -371,7 +371,7 @@ class ServerService(ObjectService):
         del config["@odata.context"]
         return config
 
-    @require_admin
+    @require_data_admin
     def update_static_configuration(self, configuration: Dict) -> Response:
         """ Update the .cfg file and triggers TM1 to re-read the file.
 
@@ -381,40 +381,40 @@ class ServerService(ObjectService):
         url = '/api/v1/StaticConfiguration'
         return self._rest.PATCH(url, json.dumps(configuration))
 
-    @require_admin
+    @require_data_admin
     def save_data(self, **kwargs) -> Response:
         from TM1py.Services import ProcessService
         ti = "SaveDataAll;"
         process_service = ProcessService(self._rest)
         return process_service.execute_ti_code(ti, **kwargs)
 
-    @require_admin
+    @require_data_admin
     def delete_persistent_feeders(self, **kwargs) -> Response:
         from TM1py.Services import ProcessService
         ti = "DeleteAllPersistentFeeders;"
         process_service = ProcessService(self._rest)
         return process_service.execute_ti_code(ti, **kwargs)
 
-    @require_admin
+    @require_ops_admin
     def start_performance_monitor(self):
         config = {
             "Administration": {"PerformanceMonitorOn": True}
         }
         self.update_static_configuration(config)
 
-    @require_admin
+    @require_ops_admin
     def stop_performance_monitor(self):
         config = {
             "Administration": {"PerformanceMonitorOn": False}
         }
         self.update_static_configuration(config)
 
-    @require_admin
+    @require_ops_admin
     def activate_audit_log(self):
         config = {'Administration': {'AuditLog': {'Enable': True}}}
         self.update_static_configuration(config)
 
-    @require_admin
+    @require_ops_admin
     def deactivate_audit_log(self):
         config = {'Administration': {'AuditLog': {'Enable': False}}}
         self.update_static_configuration(config)
