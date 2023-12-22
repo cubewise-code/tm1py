@@ -215,8 +215,14 @@ class RestService:
         # populated on the fly
         if kwargs.get('user'):
             self._is_admin = True if case_and_space_insensitive_equals(kwargs.get('user'), 'ADMIN') else None
+            self._is_data_admin = True if case_and_space_insensitive_equals(kwargs.get('user'), 'ADMIN') else None
+            self._is_security_admin = True if case_and_space_insensitive_equals(kwargs.get('user'), 'ADMIN') else None
+            self._is_ops_admin = True if case_and_space_insensitive_equals(kwargs.get('user'), 'ADMIN') else None
         else:
             self._is_admin = None
+            self._is_data_admin = None
+            self._is_security_admin = None
+            self._is_ops_admin = None
 
         if 'verify' in kwargs:
             if isinstance(kwargs['verify'], str):
@@ -492,6 +498,33 @@ class RestService:
 
         return self._is_admin
 
+    @property
+    def is_data_admin(self) -> bool:
+        if self._is_data_admin is None:
+            response = self.GET("/api/v1/ActiveUser/Groups")
+            self._is_data_admin = any(g in CaseAndSpaceInsensitiveSet(
+                *[group["Name"] for group in response.json()["value"]]) for g in ["Admin", "DataAdmin"])
+
+        return self._is_data_admin
+
+    @property
+    def is_security_admin(self) -> bool:
+        if self._is_security_admin is None:
+            response = self.GET("/api/v1/ActiveUser/Groups")
+            self._is_security_admin = any(g in CaseAndSpaceInsensitiveSet(
+                *[group["Name"] for group in response.json()["value"]]) for g in ["Admin", "SecurityAdmin"])
+
+        return self._is_security_admin
+    
+    @property
+    def is_ops_admin(self) -> bool:
+        if self._is_ops_admin is None:
+            response = self.GET("/api/v1/ActiveUser/Groups")
+            self._is_ops_admin = any(g in CaseAndSpaceInsensitiveSet(
+                *[group["Name"] for group in response.json()["value"]]) for g in ["Admin", "OperationsAdmin"])
+
+        return self._is_ops_admin
+    
     @property
     def sandboxing_disabled(self):
         if self._sandboxing_disabled is None:
