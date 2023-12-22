@@ -10,7 +10,7 @@ from TM1py.Services.CellService import CellService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.ViewService import ViewService
-from TM1py.Utils import format_url, require_version, require_admin, case_and_space_insensitive_equals
+from TM1py.Utils import format_url, require_version, require_data_admin, case_and_space_insensitive_equals
 
 
 class CubeService(ObjectService):
@@ -135,7 +135,7 @@ class CubeService(ObjectService):
         errors = response.json()["value"]
         return errors
 
-    @require_admin
+    @require_data_admin
     def delete(self, cube_name: str, **kwargs) -> Response:
         """ Delete a cube in TM1
 
@@ -289,7 +289,7 @@ class CubeService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return [dimension["Name"] for dimension in response.json()["value"]]
 
-    @require_admin
+    @require_data_admin
     @require_version(version="11.4")
     def update_storage_dimension_order(self, cube_name: str, dimension_names: Iterable[str]) -> float:
         """ Update the storage dimension order of a cube
@@ -306,7 +306,7 @@ class CubeService(ObjectService):
         response = self._rest.POST(url=url, data=json.dumps(payload))
         return response.json()["value"]
 
-    @require_admin
+    @require_data_admin
     @require_version(version="11.6")
     def load(self, cube_name: str, **kwargs) -> Response:
         """ Load the cube into memory on the server
@@ -317,7 +317,7 @@ class CubeService(ObjectService):
         url = format_url("/api/v1/Cubes('{}')/tm1.Load", cube_name)
         return self._rest.POST(url=url, **kwargs)
 
-    @require_admin
+    @require_data_admin
     @require_version(version="11.6")
     def unload(self, cube_name: str, **kwargs) -> Response:
         """ Unload the cube from memory
@@ -346,7 +346,7 @@ class CubeService(ObjectService):
         url = format_url("/api/v1/Cubes('{}')/tm1.Unlock", cube_name)
         return self._rest.POST(url=url, **kwargs)
 
-    @require_admin
+    @require_data_admin
     def cube_save_data(self, cube_name: str, **kwargs) -> Response:
         """ Serializes a cube by saving data updates
 
