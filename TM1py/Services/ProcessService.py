@@ -370,6 +370,23 @@ class ProcessService(ObjectService):
 
         response = self._rest.GET(url=url, **kwargs)
         return [log['Filename'] for log in response.json()['value']]
+    
+    def get_error_log_filenames(self, process_name: str=None, top: int=0, descending: bool=False, **kwargs) -> str:
+        """ Get error log filenames for specified TI process
+
+        :param process_name: valid TI name, leave blank to return all error log filenames
+        :param top: top n filenames
+        :param descending: default sort is ascending, descending=True would have most recent at the top of list
+        :return: list of filenames
+        """
+        if process_name:
+            if not self.exists(name=process_name, **kwargs):
+                raise ValueError(f"'{process_name}' is not a valid process")
+            search_string = '{}.log'.format(process_name)
+        else:
+            search_string=''
+        
+        return self.search_error_log_filenames(search_string=search_string, top=top, descending=descending, **kwargs)
 
     def get_error_log_file_content(self, file_name: str, **kwargs) -> str:
         """ Get content of error log file (e.g. TM1ProcessError_20180926213819_65708356_979b248b-232e622c6.log)
