@@ -47,6 +47,35 @@ def require_admin(func):
 
     return wrapper
 
+@decohints
+def require_data_admin(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if not self.is_data_admin:
+            raise TM1pyNotDataAdminException(func.__name__)
+        return func(self, *args, **kwargs)
+
+    return wrapper
+
+@decohints
+def require_security_admin(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if not self.is_security_admin:
+            raise TM1pyNotSecurityAdminException(func.__name__)
+        return func(self, *args, **kwargs)
+
+    return wrapper
+
+@decohints
+def require_ops_admin(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if not self.is_ops_admin:
+            raise TM1pyNotOpsAdminException(func.__name__)
+        return func(self, *args, **kwargs)
+
+    return wrapper
 
 @decohints
 def require_version(version):
