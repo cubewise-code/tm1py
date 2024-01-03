@@ -461,8 +461,7 @@ def build_csv_from_cellset_dict(
     return csv_content.getvalue().strip()
 
 
-def build_dataframe_from_csv(raw_csv, sep='~', skip_zeros: bool = True, shaped: bool = False,
-                             **kwargs) -> 'pd.DataFrame':
+def build_dataframe_from_csv(raw_csv, sep='~', shaped: bool = False, **kwargs) -> 'pd.DataFrame':
     if not raw_csv:
         return pd.DataFrame()
 
@@ -485,7 +484,7 @@ def build_dataframe_from_csv(raw_csv, sep='~', skip_zeros: bool = True, shaped: 
         aggfunc="sum",
         columns=df.columns[-2],
         values=df.columns[-1],
-        dropna=skip_zeros,
+        dropna=True,
         sort=False).reset_index()
 
     # drop title on index

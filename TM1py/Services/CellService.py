@@ -2088,7 +2088,7 @@ class CellService(ObjectService):
                 use_blob=use_blob,
                 mdx_headers=mdx_headers)
 
-            return build_dataframe_from_csv(raw_csv, sep='~', skip_zeros=skip_zeros, shaped=shaped, **kwargs)
+            return build_dataframe_from_csv(raw_csv, sep='~', shaped=shaped, **kwargs)
 
         cellset_id = self.create_cellset(mdx, sandbox_name=sandbox_name, **kwargs)
         return self.extract_cellset_dataframe(cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
@@ -2384,7 +2384,7 @@ class CellService(ObjectService):
                 arranged_axes=arranged_axes,
                 mdx_headers=mdx_headers,
                 **kwargs)
-            return build_dataframe_from_csv(raw_csv, sep='~', skip_zeros=skip_zeros, shaped=shaped, **kwargs)
+            return build_dataframe_from_csv(raw_csv, sep='~', shaped=shaped, **kwargs)
 
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
                                                    sandbox_name=sandbox_name, **kwargs)
@@ -3435,7 +3435,7 @@ class CellService(ObjectService):
                 value_separator='~', sandbox_name=sandbox_name, include_attributes=include_attributes,
                 use_compact_json=use_compact_json, mdx_headers=mdx_headers, **kwargs)
 
-        return build_dataframe_from_csv(raw_csv, sep="~", skip_zeros=skip_zeros, shaped=shaped, **kwargs)
+        return build_dataframe_from_csv(raw_csv, sep="~", shaped=shaped, **kwargs)
 
     @tidy_cellset
     @require_pandas
