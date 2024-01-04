@@ -528,7 +528,7 @@ class HierarchyService(ObjectService):
         try:
             existing_attributes = self.elements.get_all_element_identifiers(
                 dimension_name='}ElementAttributes_' + dimension_name,
-                hierarchy_name='}ElementAttributes_' + hierarchy_name)
+                hierarchy_name='}ElementAttributes_' + dimension_name)
         except TM1pyRestException as ex:
             if ex.status_code == 404:
                 existing_attributes = set()
@@ -573,6 +573,9 @@ class HierarchyService(ObjectService):
         # write attributes to cube
         if not attributes_df.empty:
             cell_service = self.get_cell_service()
+            # explicitly reference hierarchy if dimension_name != hierarchy_name
+            if not case_and_space_insensitive_equals(dimension_name, hierarchy_name):
+                attributes_df.iloc[:, 0] = hierarchy_name + ":" + attributes_df.iloc[:, 0].astype(str)
             cell_service.write_dataframe(
                 cube_name='}ElementAttributes_' + dimension_name,
                 data=attributes_df,
