@@ -40,6 +40,7 @@ class AuthenticationMode(Enum):
     CAM_SSO = 4
     IBM_CLOUD_API_KEY = 5
     CP4D = 6
+    SERVICE_TO_SERVICE = 7
 
     @property
     def use_v12_auth(self):
@@ -199,7 +200,7 @@ class RestService:
     def _determine_verify(self, verify: [bool, str] = None) -> [bool, str]:
         if verify is None:
             # Default SSL verification in v12 is True
-            if self._auth_mode in [AuthenticationMode.IBM_CLOUD_API_KEY, AuthenticationMode.CP4D]:
+            if self._auth_mode in [AuthenticationMode.IBM_CLOUD_API_KEY, AuthenticationMode.CP4D, AuthenticationMode.SERVICE_TO_SERVICE]:
                 return True
             else:
                 return False
@@ -361,7 +362,7 @@ class RestService:
 
         return base_url, auth_url
 
-    def _construct_cp4d_service_and_auth_root(self) -> Tuple[str, str]:
+    def _construct_s2s_service_and_auth_root(self) -> Tuple[str, str]:
         if not all([self._instance, self._database]):
             raise ValueError("'Instance' and 'Database' arguments are required for v12 authentication with 'address'")
 
@@ -423,12 +424,12 @@ class RestService:
                 # if the base URL is provided when the REST service is created
                 return self._construct_all_version_service_and_auth_root_from_base_url()
 
-        if self._auth_mode.IBM_CLOUD_API_KEY:
+        if self._auth_mode is AuthenticationMode.IBM_CLOUD_API_KEY:
             return self._construct_ibm_cloud_service_and_auth_root()
 
         # If an address and database and instances are specified then we create a CP4D connection
-        elif self._auth_mode.CP4D:
-            return self._construct_cp4d_service_and_auth_root()
+        elif self._auth_mode is AuthenticationMode.SERVICE_TO_SERVICE:
+            return self._construct_s2s_service_and_auth_root()
 
     def _manage_http_adapter(self):
         if self._tcp_keepalive:
@@ -678,7 +679,7 @@ class RestService:
                 host=integrated_login_host,
                 delegate=integrated_login_delegate)
 
-        elif self._auth_mode == AuthenticationMode.CP4D:
+        elif self._auth_mode == AuthenticationMode.SERVICE_TO_SERVICE:
             application_auth = HTTPBasicAuth(application_client_id, application_client_secret)
             self._s.auth = application_auth
 
@@ -709,7 +710,7 @@ class RestService:
             original_value = self._re_connect_on_session_timeout
             try:
                 self._re_connect_on_session_timeout = False
-                if self._auth_mode == AuthenticationMode.CP4D:
+                if self._auth_mode == AuthenticationMode.SERVICE_TO_SERVICE:
                     payload = {"User": user}
                     response = self._s.post(
                         url=self._auth_url,
@@ -719,17 +720,15 @@ class RestService:
                         json=payload)
                     self.verify_response(response)
                     if 'TM1SessionId' not in self._s.cookies:
-                        raise TM1pyException(
-                            f"TM1SessionId has failed to be automatically added to the session cookies, future requests "
-                            "using this TM1Service instance will fail due to authentication. "
-                            "Check the tm1-gateway domain settings are correct "
-                            "in the container orchestrator ")
-
-                        # ToDo: fix unreachable code
                         # if session had incorrect domain due to CP4D extract it and add it to cookie jar
                         self._s.cookies.set(
                             "TM1SessionId",
                             self._extract_tm1_session_id_from_set_cookie_header(auth_response_headers=response.headers))
+                        warnings.warn(
+                            f"TM1SessionId has failed to be automatically added to the session cookies, future requests "
+                            "using this TM1Service will use the session id extracted from the first response "
+                            "Check the tm1-gateway domain settings are correct"
+                            "in the container orchestrator ")
 
                 else:
                     response = self._s.get(
@@ -1012,7 +1011,7 @@ class RestService:
         if self._iam_url:
             return AuthenticationMode.IBM_CLOUD_API_KEY
 
-        return AuthenticationMode.CP4D
+        return AuthenticationMode.SERVICE_TO_SERVICE
 
     def _generate_ibm_iam_cloud_access_token(self) -> str:
         if not all([self._iam_url, self._api_key]):
