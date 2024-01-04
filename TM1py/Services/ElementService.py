@@ -156,7 +156,8 @@ class ElementService(ObjectService):
                                skip_consolidations: bool = True, attributes: Iterable[str] = None,
                                attribute_column_prefix: str = "", skip_parents: bool = False,
                                level_names: List[str] = None, parent_attribute: str = None,
-                               skip_weights: bool = False, use_blob: bool = False, **kwargs) -> 'pd.DataFrame':
+                               skip_weights: bool = False, use_blob: bool = False, allow_empty_alias: bool = True,
+                               **kwargs) -> 'pd.DataFrame':
         """
 
         :param dimension_name: Name of the dimension. Can be derived from elements MDX
@@ -170,6 +171,7 @@ class ElementService(ObjectService):
         :param parent_attribute: Attribute to be displayed in parent columns. If None, parent name is used.
         :param skip_weights: include weight columns
         :param use_blob: Up to 40% better performance and lower memory footprint in any case. Requires admin permissions
+        :param allow_empty_alias: False if empty alias values should be substituted with element names instead
         :return: pandas DataFrame
         """
 
@@ -377,6 +379,13 @@ class ElementService(ObjectService):
                                                                                    :,
                                                                                    -len(level_columns) * 2:
                                                                                    -len(level_names)].fillna(0)
+
+        if not allow_empty_alias:
+            # substitute empty strings with element name if empty alias is not allowed
+            alias_attributes = self.get_alias_element_attributes(dimension_name, hierarchy_name)
+            alias_attributes = list(set(alias_attributes).intersection(df_data.columns))
+            df_data[alias_attributes] = df_data[alias_attributes].apply(
+                lambda col: df[dimension_name] if col.str.strip().eq('').any() else col)
 
         return pd.merge(df, df_data, on=dimension_name).drop_duplicates()
 
