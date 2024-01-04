@@ -550,6 +550,43 @@ class TestHierarchyService(unittest.TestCase):
             hierarchy_name=self.region_dimension_name)
         self._verify_region_dimension(hierarchy)
 
+    def test_update_or_create_hierarchy_from_dataframe_existing_attributes_on_hierarchy(self):
+        columns = [self.region_dimension_name, "ElementType", "Currency:s", "population:n", "level001",
+                   "level000", "level001_weight", "level000_weight"]
+        data = [
+            ['France', "Numeric", "EUR", 60_000_000, "Europe", "World", 1, 1],
+            ['Switzerland', 'Numeric', "CHF", 9_000_000, "Europe", "World", 1, 1],
+            ['Germany', 'Numeric', "EUR", 84_000_000, "Europe", "World", 1, 1],
+        ]
+        df = DataFrame(data=data, columns=columns)
+        self.tm1.hierarchies.update_or_create_hierarchy_from_dataframe(
+            dimension_name=self.alternative_region_dimension_name,
+            hierarchy_name=self.region_dimension_name,
+            df=df,
+            element_type_column="ElementType",
+            unwind=True
+        )
+
+        columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n", "level001",
+                   "level000", "level001_weight", "level000_weight"]
+        data = [
+            ['France', "Numeric", "Frankreich", "EUR", 60_000_000, "Europe", "World", 1, 1],
+            ['Switzerland', 'Numeric', "Schweiz", "CHF", 9_000_000, "Europe", "World", 1, 1],
+            ['Germany', 'Numeric', "Deutschland", "EUR", 84_000_000, "Europe", "World", 1, 1],
+        ]
+        df = DataFrame(data=data, columns=columns)
+        self.tm1.hierarchies.update_or_create_hierarchy_from_dataframe(
+            dimension_name=self.alternative_region_dimension_name,
+            hierarchy_name=self.alternative_region_dimension_name,
+            df=df,
+            element_type_column="ElementType",
+            unwind=True
+        )
+        hierarchy = self.tm1.hierarchies.get(
+            dimension_name=self.alternative_region_dimension_name,
+            hierarchy_name=self.region_dimension_name)
+        self._verify_region_dimension(hierarchy)
+
     def test_update_or_create_hierarchy_from_dataframe_no_attributes(self):
         columns = [self.region_dimension_name, "ElementType", "level001",
                    "level000", "level001_weight", "level000_weight"]

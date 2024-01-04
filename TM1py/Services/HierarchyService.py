@@ -177,8 +177,20 @@ class HierarchyService(ObjectService):
         :param hierarchy_name:
         :return:
         """
-        url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')", dimension_name, hierarchy_name)
-        return self._exists(url, **kwargs)
+        url = format_url("/api/v1/Dimensions('{}')/Hierarchies?$select=Name", dimension_name)
+
+        try:
+            response = self._rest.GET(url, **kwargs)
+        except TM1pyRestException as e:
+            if e.status_code == 404:
+                return False
+            raise e
+
+        existing_hierarchies = CaseAndSpaceInsensitiveSet([
+            hierarchy["Name"]
+            for hierarchy
+            in response.json()["value"]])
+        return hierarchy_name in existing_hierarchies
 
     def delete(self, dimension_name: str, hierarchy_name: str, **kwargs) -> Response:
         url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')", dimension_name, hierarchy_name)
