@@ -174,7 +174,7 @@ class ServerService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return response.json()['value']
 
-    @require_ops_admin
+    @require_data_admin
     def write_to_message_log(self, level: str, message: str, **kwargs) -> None:
         """
         :param level: string, FATAL, ERROR, WARN, INFO, DEBUG
@@ -349,7 +349,7 @@ class ServerService(ObjectService):
         del config["@odata.context"]
         return config
 
-    @require_data_admin
+    @require_ops_admin
     def get_static_configuration(self, **kwargs) -> Dict:
         """ Read TM1 config settings as dictionary from TM1 Server
 
@@ -360,7 +360,7 @@ class ServerService(ObjectService):
         del config["@odata.context"]
         return config
 
-    @require_data_admin
+    @require_ops_admin
     def get_active_configuration(self, **kwargs) -> Dict:
         """ Read effective(!) TM1 config settings as dictionary from TM1 Server
 
@@ -371,7 +371,7 @@ class ServerService(ObjectService):
         del config["@odata.context"]
         return config
 
-    @require_data_admin
+    @require_ops_admin
     def update_static_configuration(self, configuration: Dict) -> Response:
         """ Update the .cfg file and triggers TM1 to re-read the file.
 
