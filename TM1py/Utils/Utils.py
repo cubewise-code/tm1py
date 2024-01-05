@@ -17,7 +17,8 @@ import requests
 from mdxpy import MdxBuilder, Member
 from requests.adapters import HTTPAdapter
 
-from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminException
+from TM1py.Exceptions.Exceptions import (TM1pyVersionException, TM1pyNotAdminException, TM1pyNotDataAdminException, 
+TM1pyNotSecurityAdminException, TM1pyNotOpsAdminException)
 
 try:
     import pandas as pd
