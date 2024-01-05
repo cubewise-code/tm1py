@@ -8,7 +8,7 @@ from requests import Response
 from TM1py.Objects.User import User
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils.Utils import format_url, CaseAndSpaceInsensitiveSet, require_security_admin
+from TM1py.Utils.Utils import format_url, CaseAndSpaceInsensitiveSet, require_security_admin, require_admin
 
 
 class SecurityService(ObjectService):
@@ -205,7 +205,7 @@ class SecurityService(ObjectService):
         groups = [entry['Name'] for entry in response.json()['value']]
         return groups
 
-    @require_security_admin
+    @require_admin
     def security_refresh(self, **kwargs) -> Response:
         from TM1py.Services import ProcessService
         ti = "SecurityRefresh;"
