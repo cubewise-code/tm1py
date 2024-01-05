@@ -32,7 +32,7 @@ from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url, add_url_p
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
     CaseAndSpaceInsensitiveDict, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, \
     abbreviate_mdx, build_csv_from_cellset_dict, require_version, require_pandas, build_cellset_from_pandas_dataframe, \
-    case_and_space_insensitive_equals, get_cube, resembles_mdx, require_data_admin, extract_compact_json_cellset, \
+    case_and_space_insensitive_equals, get_cube, resembles_mdx, require_data_admin, require_ops_admin, extract_compact_json_cellset, \
     cell_is_updateable, build_mdx_from_cellset, build_mdx_and_values_from_cellset, \
     dimension_names_from_element_unique_names, frame_to_significant_digits, build_dataframe_from_csv, \
     drop_dimension_properties, decohints
@@ -526,6 +526,7 @@ class CellService(ObjectService):
                                           sandbox_name=sandbox_name, **kwargs)
 
     @require_data_admin
+    @require_ops_admin
     @require_version(version="11.7")
     def clear(self, cube: str, **kwargs):
         """
@@ -567,6 +568,7 @@ class CellService(ObjectService):
         return self.clear_with_mdx(cube=cube, mdx=mdx_builder.to_mdx(), **kwargs)
 
     @require_data_admin
+    @require_ops_admin
     @require_version(version="11.7")
     def clear_with_mdx(self, cube: str, mdx: str, sandbox_name: str = None, **kwargs):
         """ clear a slice in a cube based on an MDX query.
@@ -955,6 +957,7 @@ class CellService(ObjectService):
         return updateable_cells
 
     @require_data_admin
+    @require_ops_admin
     @manage_transaction_log
     def write_through_unbound_process(self, cube_name: str, cellset_as_dict: Dict, increment: bool = False,
                                       sandbox_name: str = None, precision: int = None,
@@ -1041,6 +1044,7 @@ class CellService(ObjectService):
             raise TM1pyWritePartialFailureException(statuses, log_files, len(successes))
 
     @require_data_admin
+    @require_ops_admin
     @manage_transaction_log
     @require_pandas
     def write_through_blob(self, cube_name: str, cellset_as_dict: dict, increment: bool = False,
@@ -3784,6 +3788,7 @@ class CellService(ObjectService):
         return attributes_by_dimension
 
     @require_data_admin
+    @require_ops_admin
     def _execute_view_csv_use_blob(self, cube_name: str, view_name: str, top: int, skip: int, skip_zeros: bool,
                                    skip_consolidated_cells: bool, skip_rule_derived_cells: bool,
                                    value_separator: str, cube_dimensions: List[str] = None,
@@ -3915,6 +3920,7 @@ class CellService(ObjectService):
                 file_service.delete(file_name)
 
     @require_data_admin
+    @require_ops_admin
     def _execute_mdx_csv_use_blob(self, mdx: Union[str, MdxBuilder], top: int, skip: int, skip_zeros: bool,
                                   skip_consolidated_cells: bool, skip_rule_derived_cells: bool,
                                   value_separator: str, cube_dimensions: List[str] = None,
