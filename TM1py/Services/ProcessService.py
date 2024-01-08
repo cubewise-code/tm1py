@@ -369,25 +369,29 @@ class ProcessService(ObjectService):
         finally:
             self.delete(process_name, **kwargs)
 
-    def search_error_log_filenames(self, search_string: str, top: int=0, descending: bool=False, **kwargs) -> str:
+    def search_error_log_filenames(self, search_string: str, top: int = 0, descending: bool = False,
+                                   **kwargs) -> List[str]:
         """ Search error log filenames for given search string like a datestamp e.g. 20231201
 
-        :param process_name: valid TI name
+        :param search_string: substring to contain in file names
         :param top: top n filenames
         :param descending: default sort is ascending, descending=True would have most recent at the top of list
         :return: list of filenames
         """
 
-        url = format_url("/api/v1/ErrorLogFiles?select=Filename&$filter=contains(tolower(Filename), tolower('{}'))", search_string)
+        url = format_url(
+            "/ErrorLogFiles?select=Filename&$filter=contains(tolower(Filename), tolower('{}'))",
+            search_string)
 
         url += "&$top={}".format(top) if top > 0 else ""
 
-        url += "&$orderby=Filename desc" if descending==True else ""
+        url += "&$orderby=Filename desc" if descending == True else ""
 
         response = self._rest.GET(url=url, **kwargs)
         return [log['Filename'] for log in response.json()['value']]
-    
-    def get_error_log_filenames(self, process_name: str=None, top: int=0, descending: bool=False, **kwargs) -> str:
+
+    def get_error_log_filenames(self, process_name: str = None, top: int = 0, descending: bool = False,
+                                **kwargs) -> List[str]:
         """ Get error log filenames for specified TI process
 
         :param process_name: valid TI name, leave blank to return all error log filenames
@@ -398,10 +402,10 @@ class ProcessService(ObjectService):
         if process_name:
             if not self.exists(name=process_name, **kwargs):
                 raise ValueError(f"'{process_name}' is not a valid process")
-            search_string = '{}.log'.format(process_name)
+            search_string = '{}'.format(process_name)
         else:
-            search_string=''
-        
+            search_string = ''
+
         return self.search_error_log_filenames(search_string=search_string, top=top, descending=descending, **kwargs)
 
     def get_error_log_file_content(self, file_name: str, **kwargs) -> str:
@@ -414,7 +418,6 @@ class ProcessService(ObjectService):
         response = self._rest.GET(url=url, **kwargs)
         return response.text
 
-    @deprecated_in_version(version="12")
     def get_processerrorlogs(self, process_name: str, **kwargs) -> List:
         """ Get all ProcessErrorLog entries for a process
 

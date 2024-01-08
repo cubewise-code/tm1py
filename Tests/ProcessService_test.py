@@ -13,7 +13,6 @@ from .Utils import skip_if_insufficient_version, skip_if_deprecated_in_version
 from TM1py.Utils import verify_version
 
 
-
 class TestProcessService(unittest.TestCase):
     tm1: TM1Service
 
