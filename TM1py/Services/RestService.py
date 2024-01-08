@@ -39,8 +39,7 @@ class AuthenticationMode(Enum):
     CAM = 3
     CAM_SSO = 4
     IBM_CLOUD_API_KEY = 5
-    CP4D = 6
-    SERVICE_TO_SERVICE = 7
+    SERVICE_TO_SERVICE = 6
 
     @property
     def use_v12_auth(self):
@@ -200,7 +199,7 @@ class RestService:
     def _determine_verify(self, verify: [bool, str] = None) -> [bool, str]:
         if verify is None:
             # Default SSL verification in v12 is True
-            if self._auth_mode in [AuthenticationMode.IBM_CLOUD_API_KEY, AuthenticationMode.CP4D, AuthenticationMode.SERVICE_TO_SERVICE]:
+            if self._auth_mode in [AuthenticationMode.IBM_CLOUD_API_KEY, AuthenticationMode.SERVICE_TO_SERVICE]:
                 return True
             else:
                 return False
