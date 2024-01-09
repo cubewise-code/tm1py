@@ -76,6 +76,21 @@ class User(TM1Object):
     @property
     def is_admin(self) -> bool:
         return "ADMIN" in CaseAndSpaceInsensitiveSet(*self.groups)
+    
+    @property
+    def is_data_admin(self) -> bool:
+        return any(g in CaseAndSpaceInsensitiveSet(
+            *self.groups) for g in ["Admin", "DataAdmin"])
+    
+    @property
+    def is_security_admin(self) -> bool:
+        return any(g in CaseAndSpaceInsensitiveSet(
+            *self.groups) for g in ["Admin", "SecurityAdmin"])
+    
+    @property
+    def is_ops_admin(self) -> bool:
+        return any(g in CaseAndSpaceInsensitiveSet(
+            *self.groups) for g in ["Admin", "OperationsAdmin"])
 
     @property
     def groups(self) -> List[str]:
