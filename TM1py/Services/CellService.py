@@ -634,7 +634,7 @@ class CellService(ObjectService):
                         precision: int = None,
                         skip_non_updateable: bool = False, measure_dimension_elements: Dict = None,
                         sum_numeric_duplicates: bool = True, remove_blob: bool = True, allow_spread: bool = False,
-                        **kwargs) -> str:
+                        clear_view: str = None, **kwargs) -> str:
         """
         Function expects same shape as `execute_mdx_dataframe` returns.
         Column order must match dimensions in the target cube with an additional column for the values.
@@ -658,6 +658,7 @@ class CellService(ObjectService):
         :param sum_numeric_duplicates: Aggregate numerical values for duplicated intersections
         :param remove_blob: remove blob file after writing with use_blob=True
         :param allow_spread: allow TI process in use_blob or use_ti to use CellPutProportionalSpread on C elements
+        :param clear_view: name of cube view to clear before writing
         :return: changeset or None
         """
         if not isinstance(data, pd.DataFrame):
@@ -686,6 +687,7 @@ class CellService(ObjectService):
                           skip_non_updateable=skip_non_updateable,
                           measure_dimension_elements=measure_dimension_elements,
                           allow_spread=allow_spread,
+                          clear_view=clear_view,
                           **kwargs)
 
     @manage_transaction_log
