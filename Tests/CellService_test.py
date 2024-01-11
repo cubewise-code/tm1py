@@ -4273,9 +4273,26 @@ class TestCellService(unittest.TestCase):
     def test_get_value_other_hierarchy_in_attribute_cube(self):
         value = self.tm1.cells.get_value(
             cube_name='}ElementAttributes_' + self.dimension_with_hierarchies_name,
-            element_string=f'Hierarchy2::Cons1,ea2')
+            elements=f'Hierarchy2::Cons1,ea2')
 
         self.assertEqual('ABC', value)
+
+    def test_get_values(self):
+        values = self.tm1.cells.get_values(
+            cube_name=self.cube_name,
+            element_sets=["Element1|Element1|Element1", "Element1|Element2|Element3", "Element2|Element2|Element2"],
+            dimnesions=self.dimension_names,
+            element_separator="|")
+
+        self.assertEqual([1, None, 1], values)
+
+    def test_get_values_other_hierarchy_in_attribute_cube(self):
+        values = self.tm1.cells.get_values(
+            cube_name='}ElementAttributes_' + self.dimension_with_hierarchies_name,
+            element_sets=[f'Hierarchy2¦Cons1,ea2'],
+            hierarchy_element_separator='¦')
+
+        self.assertEqual(['ABC'], values)
 
     def test_trace_cell_calculation_no_depth_iterable(self):
         result = self.tm1.cells.trace_cell_calculation(

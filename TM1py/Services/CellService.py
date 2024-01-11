@@ -14,7 +14,7 @@ from io import StringIO
 from typing import List, Union, Dict, Iterable, Tuple, Optional
 
 import ijson
-from mdxpy import MdxHierarchySet, MdxBuilder, Member
+from mdxpy import MdxHierarchySet, MdxBuilder, Member, MdxTuple
 from requests import Response
 
 from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyWritePartialFailureException, TM1pyWriteFailureException, \
@@ -253,73 +253,50 @@ class CellService(ObjectService):
         cellset = dict(self.execute_mdx(mdx=mdx, sandbox_name=sandbox_name, **kwargs))
         return next(iter(cellset.values()))["Value"]
 
-    def get_values(self, cube_name: str, element_list: Union[str, Iterable] = None, dimensions: List[str] = None,
-                  sandbox_name: str = None, element_separator: str = ",", hierarchy_separator: str = "&&",
-                  hierarchy_element_separator: str = "::", **kwargs) -> Union[str, float]:
+    def get_values(self, cube_name: str, element_sets: Iterable[Iterable[str]] = None, dimensions: List[str] = None,
+                   sandbox_name: str = None, element_separator: str = ",", hierarchy_separator: str = "&&",
+                   hierarchy_element_separator: str = "::", **kwargs) -> List:
         """ Returns list of cube values from specified coordinates list.  will be in same order as original list
 
         :param cube_name: Name of the cube
-        :param elements: Iterable of comma or element_separator separated elements to describe data point.
-            - Must be in cube dimension order
-        :param dimensions: List of dimension names in correct order
+        :param element_sets: Set of coordinates where each element is provided in the correct dimension order.
+        [('2024', 'Actual', 'London', 'P02), ('2024', 'Forecast', 'Berlin', 'P03)]
+        :param dimensions: Dimension names in correct order
         :param sandbox_name: str
         :param element_separator: Alternative separator for the element selections
         :param hierarchy_separator: Alternative separator for multiple hierarchies
         :param hierarchy_element_separator: Alternative separator between hierarchy name and element name
         :return:
         """
-        mdx_template = "SELECT {} ON ROWS, {} ON COLUMNS FROM [{}]"
-        mdx_strings_list_list = []
-        mdx_strings_list = []
-
-        # Keep backward compatibility with the earlier used "element_string" parameter
-#        if elements is None and "element_string" in kwargs:
-#            elements = kwargs.pop("element_string")
 
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
 
-        # Create MDXpy Member from the element string and get the unique name
-        # The unique name can be used to build the MDX query directly
-        if isinstance(element_list, Iterable):
-            for elements in element_list:
-                mdx_strings_list = []
-                element_selections = elements.split(element_separator)
-                for dimension_name, element_selection in zip(dimensions, element_selections):
-                    if hierarchy_separator not in element_selection:
-                        if hierarchy_element_separator in element_selection:
-                            hierarchy_name, element_name = element_selection.split(hierarchy_element_separator)
-                        else:
-                            hierarchy_name = dimension_name
-                            element_name = element_selection
+        q = MdxBuilder.from_cube(cube_name)
 
-                        element_definition = Member.of(dimension_name, hierarchy_name, element_name)
-                        mdx_strings_list.append(element_definition.unique_name)
+        for elements in element_sets:
+            members = []
+            element_selections = elements.split(element_separator)
+            for dimension_name, element_selection in zip(dimensions, element_selections):
+                if hierarchy_separator not in element_selection:
+                    if hierarchy_element_separator in element_selection:
+                        hierarchy_name, element_name = element_selection.split(hierarchy_element_separator)
                     else:
-                        for element_selection_part in element_selection.split(hierarchy_separator):
-                            hierarchy_name, element_name = element_selection_part.split(hierarchy_element_separator)
-                            element_definition = Member.of(dimension_name, hierarchy_name, element_name)
-                            mdx_strings_list.append(element_definition.unique_name)
-                mdx_strings_list_list.append(mdx_strings_list)
-#        else:
-#            # Create MDXpy Member from the Iterator entries
-#            for element_definition in elements:
-#                if not isinstance(element_definition, Member):
-#                    element_definition = Member.of(*element_definition)
-#                mdx_strings_list.append("{" + element_definition.unique_name + "}")
+                        hierarchy_name = dimension_name
+                        element_name = element_selection
 
-        # Build the MDX query
-        # Only the last element is used as the MDX ON COLUMN statement
-        mdx_rows_all = ""
-        for mdx_strings_list in mdx_strings_list_list:
-            mdx_rows_all += ("" if mdx_rows_all is "" else ",") + "("+",".join(mdx_strings_list[:-1])+")"
-        mdx_rows = "{"+mdx_rows_all+"}"
-        mdx_columns = "{" + mdx_strings_list[-1] + "}"
-        mdx = mdx_template.format(mdx_rows, mdx_columns, cube_name)
+                    member = Member.of(dimension_name, hierarchy_name, element_name)
+                    members.append(member)
+                else:
+                    for element_selection_part in element_selection.split(hierarchy_separator):
+                        hierarchy_name, element_name = element_selection_part.split(hierarchy_element_separator)
+                        member = Member.of(dimension_name, hierarchy_name, element_name)
+                        members.append(member)
+
+            q.add_member_tuple_to_columns(MdxTuple(members))
 
         # Execute MDX
-        cellset = dict(self.execute_mdx(mdx=mdx, sandbox_name=sandbox_name, **kwargs))
-        return [v["Value"] for v in cellset.values()]
+        return self.execute_mdx_values(mdx=q.to_mdx(), sandbox_name=sandbox_name, **kwargs)
 
     def _compose_odata_tuple_from_string(self, cube_name: str,
                                          element_string: str,
@@ -2338,7 +2315,8 @@ class CellService(ObjectService):
 
     @require_pandas
     def execute_mdx_dataframe_shaped(self, mdx: str, sandbox_name: str = None, display_attribute: bool = False,
-                                     use_iterative_json: bool = False, use_blob: bool = False, mdx_headers: bool=False,
+                                     use_iterative_json: bool = False, use_blob: bool = False,
+                                     mdx_headers: bool = False,
                                      **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cube in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
@@ -3821,7 +3799,7 @@ class CellService(ObjectService):
     @require_pandas
     def extract_cellset_dataframe_shaped(self, cellset_id: str, sandbox_name: str = None,
                                          display_attribute: bool = False, infer_dtype: bool = False,
-                                         mdx_headers: bool=False, **kwargs) -> 'pd.DataFrame':
+                                         mdx_headers: bool = False, **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cellset in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
 
