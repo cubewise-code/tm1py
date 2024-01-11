@@ -114,6 +114,10 @@ class Chore(TM1Object):
     def body_as_dict(self) -> Dict:
         return json.loads(self.body)
 
+    @property
+    def execution_path(self) -> Dict:
+        return {self.name: [task.process_name for task in self.tasks]}
+
     def add_task(self, task: ChoreTask):
         self._tasks.append(task)
 
