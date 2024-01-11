@@ -3,6 +3,8 @@ import json
 from enum import Enum
 from typing import List, Union, Iterable, Optional, Dict, Tuple
 
+import numpy as np
+
 from TM1py import Subset, Process
 
 try:
@@ -368,24 +370,25 @@ class ElementService(ObjectService):
                 # also shift weight columns
                 if not skip_weights:
                     shifted_cols = df_data.iloc[
-                                  rows_to_shift,
-                                  -len(level_columns) * 2:-len(level_columns)].shift(1, axis=1)
+                                   rows_to_shift,
+                                   -len(level_columns) * 2:-len(level_columns)].shift(1, axis=1)
 
                     df_data.iloc[rows_to_shift, -len(level_columns) * 2:-len(level_columns)] = shifted_cols
 
             df_data.iloc[:, -len(level_columns):] = df_data.iloc[:, -len(level_columns):].fillna('')
             if not skip_weights:
                 df_data.iloc[:, -len(level_columns) * 2:-len(level_names)] = df_data.iloc[
-                                                                                   :,
-                                                                                   -len(level_columns) * 2:
-                                                                                   -len(level_names)].fillna(0)
+                                                                             :,
+                                                                             -len(level_columns) * 2:
+                                                                             -len(level_names)].fillna(0)
 
         if not allow_empty_alias:
             # substitute empty strings with element name if empty alias is not allowed
             alias_attributes = self.get_alias_element_attributes(dimension_name, hierarchy_name)
             alias_attributes = list(set(alias_attributes).intersection(df_data.columns))
-            df_data[alias_attributes] = df_data[alias_attributes].apply(
-                lambda col: df[dimension_name] if col.str.strip().eq('').any() else col)
+
+            for col in alias_attributes:
+                df_data[col] = np.where(df_data[col] == '', df_data[dimension_name], df_data[col])
 
         return pd.merge(df, df_data, on=dimension_name).drop_duplicates()
 

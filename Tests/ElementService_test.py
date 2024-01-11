@@ -318,6 +318,45 @@ class TestElementService(unittest.TestCase):
         )
 
     @skip_if_no_pandas
+    def test_get_elements_dataframe_not_allow_empty_alias_mixed_source(self):
+        df = self.tm1.elements.get_elements_dataframe(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            elements=["No Year", "1990"],
+            skip_consolidations=True,
+            attributes=["Financial Year", "Previous Year"],
+            skip_parents=False,
+            level_names=None,
+            parent_attribute=None,
+            skip_weights=False,
+            allow_empty_alias=False)
+
+        expected_columns = (
+            "TM1py_unittest_element_dimension",
+            "Type",
+            "Financial Year",
+            "Previous Year",
+            "level001_Weight",
+            "level000_Weight",
+            "level001",
+            "level000",)
+
+        self.assertEqual((2, 8), df.shape)
+        self.assertEqual(expected_columns, tuple(df.columns))
+
+        row = df.loc[df[self.dimension_name] == "No Year"]
+        self.assertEqual(
+            ('No Year', 'Numeric', 'No Year', '', '1.000000', '1.000000', 'Total Years', 'All Consolidations'),
+            tuple(row.values[0])
+        )
+
+        row = df.loc[df[self.dimension_name] == "1990"]
+        self.assertEqual(
+            ('1990', 'Numeric', '1989/90', '1989', '1.000000', '1.000000', 'Total Years', 'All Consolidations'),
+            tuple(row.values[0])
+        )
+
+    @skip_if_no_pandas
     def test_get_elements_dataframe_alternate_hierarchy(self):
         df = self.tm1.elements.get_elements_dataframe(
             dimension_name=self.dimension_with_hierarchies_name,
