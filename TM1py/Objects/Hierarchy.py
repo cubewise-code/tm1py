@@ -185,7 +185,22 @@ class Hierarchy(TM1Object):
                 descendant_edges.update(self.get_descendant_edges(descendant.name, True))
 
         return descendant_edges
-        
+
+    def get_ancestor_edges(self, element_name: str, recursive: bool = False) -> Dict:
+        ancestor_edges = dict()
+
+        for (parent, component), weight in self._edges.items():
+            if not case_and_space_insensitive_equals(component, element_name):
+                continue
+
+            ancestor_edges[parent, component] = weight
+            ancestor: Element = self.elements[component]
+
+            if recursive:
+                ancestor_edges.update(self.get_ancestor_edges(ancestor.name, True))
+
+        return ancestor_edges
+
     def add_element(self, element_name: str, element_type: Union[str, Element.Types]):
         if element_name in self._elements:
             raise ValueError("Element name must be unique")
@@ -253,6 +268,30 @@ class Hierarchy(TM1Object):
             element_attribute
             for element_attribute
             in self.element_attributes if not case_and_space_insensitive_equals(element_attribute.name, name)]
+
+    def replace_element(self, old_element_name: str, new_element_name: str):
+        """
+        Substitute one element in the hierarchy structure,
+        so that all edges are moved from the old element to the new element.
+        """
+        if old_element_name not in self.elements:
+            raise ValueError(f"Element '{old_element_name}' does not exist in hierarchy")
+
+        if new_element_name in self.elements:
+            raise ValueError(f"Element '{new_element_name}' already exists in hierarchy")
+
+        element = self.get_element(old_element_name)
+        ancestor_edges = self.get_ancestor_edges(old_element_name, recursive=False)
+        descendant_edges = self.get_descendant_edges(element_name=old_element_name, recursive=False)
+
+        self.remove_element(element_name=old_element_name)
+
+        self.add_element(element_name=new_element_name, element_type=element.element_type)
+
+        for (ancestor, _), weight in ancestor_edges.items():
+            self.add_edge(parent=ancestor, component=new_element_name, weight=weight)
+        for (_, descendant), weight in descendant_edges.items():
+            self.add_edge(parent=new_element_name, component=descendant, weight=weight)
 
     def _construct_body(self, element_attributes: Optional[bool] = False) -> Dict:
         """

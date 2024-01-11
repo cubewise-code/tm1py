@@ -7,7 +7,7 @@ from TM1py import Element, Hierarchy, Dimension
 from TM1py.Objects import Cube
 from TM1py.Objects import Rules
 from TM1py.Services import TM1Service
-from .Utils import skip_if_insufficient_version
+from .Utils import skip_if_insufficient_version, skip_if_deprecated_in_version
 
 
 class TestCubeService(unittest.TestCase):
@@ -110,7 +110,7 @@ class TestCubeService(unittest.TestCase):
         cube = Cube(cube_name, dimension_names)
 
         all_cubes_before = self.tm1.cubes.get_all_names()
-        self.tm1.cubes.create(cube)
+        self.tm1.cubes.update_or_create(cube)
         all_cubes_after = self.tm1.cubes.get_all_names()
         self.assertEqual(
             len(all_cubes_before) + 1,
@@ -137,7 +137,7 @@ class TestCubeService(unittest.TestCase):
         cube_name = self.prefix + "Some_Other_Name"
         dimension_names = self.tm1.dimensions.get_all_names()[1:3]
         cube = Cube(cube_name, dimension_names)
-        self.tm1.cubes.create(cube)
+        self.tm1.cubes.update_or_create(cube)
         self.assertEqual(len(cubes_without_rules) + 1, len(self.tm1.cubes.get_all_names_without_rules()))
         self.assertEqual(len(cubes_with_rules), len(self.tm1.cubes.get_all_names_with_rules()))
 
@@ -149,7 +149,7 @@ class TestCubeService(unittest.TestCase):
         self.tm1.cubes.delete(cube_name)
 
         cube = self.tm1.cubes.get(self.control_cube_name)
-        cube.rules = "#find_control_comment"
+        cube.rules = "SKIPCHECK"
         self.tm1.cubes.update(cube)
         self.assertNotEqual(self.tm1.cubes.get_all_names_with_rules(),
                             self.tm1.cubes.get_all_names_with_rules(skip_control_cubes=True))
@@ -203,9 +203,15 @@ class TestCubeService(unittest.TestCase):
         cubes = self.tm1.cubes.search_for_dimension_substring(substring="}cubes", skip_control_cubes=True)
         self.assertEqual({}, cubes)
 
-    def test_search_for_dimension_substring_skip_control_cubes_false(self):
+    @skip_if_deprecated_in_version(version="12")
+    def test_search_for_dimension_substring_skip_control_cubes_false_v11(self):
         cubes = self.tm1.cubes.search_for_dimension_substring(substring="}cubes", skip_control_cubes=False)
         self.assertEqual(cubes['}CubeProperties'], ['}Cubes'])
+
+    @skip_if_insufficient_version(version="12")
+    def test_search_for_dimension_substring_skip_control_cubes_false_v12(self):
+        cubes = self.tm1.cubes.search_for_dimension_substring(substring="}cubes", skip_control_cubes=False)
+        self.assertEqual(cubes['}CubeSecurity'], ['}Cubes'])
 
     def test_get_number_of_cubes(self):
         number_of_cubes = self.tm1.cubes.get_number_of_cubes()
@@ -222,11 +228,13 @@ class TestCubeService(unittest.TestCase):
             self.dimension_names)
 
     @skip_if_insufficient_version(version="11.6")
+    @skip_if_deprecated_in_version(version="12")
     def test_load(self):
         response = self.tm1.cubes.load(cube_name=self.cube_name)
         self.assertTrue(response.ok)
 
     @skip_if_insufficient_version(version="11.6")
+    @skip_if_deprecated_in_version(version="12")
     def test_unload(self):
         response = self.tm1.cubes.unload(cube_name=self.cube_name)
         self.assertTrue(response.ok)

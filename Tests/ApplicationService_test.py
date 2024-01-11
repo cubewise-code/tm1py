@@ -8,7 +8,7 @@ from TM1py import TM1Service, Element, ElementAttribute, Hierarchy, Dimension, C
     Subset, Process, Chore, ChoreStartTime, ChoreFrequency, ChoreTask
 from TM1py.Objects.Application import CubeApplication, ApplicationTypes, ChoreApplication, DimensionApplication, \
     FolderApplication, LinkApplication, ProcessApplication, SubsetApplication, ViewApplication, DocumentApplication
-from .Utils import skip_if_insufficient_version
+from .Utils import skip_if_insufficient_version, verify_version
 
 
 class TestApplicationService(unittest.TestCase):
@@ -103,12 +103,11 @@ class TestApplicationService(unittest.TestCase):
                 False)
         cls.tm1.dimensions.hierarchies.subsets.create(subset, False)
 
+
         # Build process
         p1 = Process(name=cls.process_name)
         p1.add_parameter('pRegion', 'pRegion (String)', value='US')
-        if cls.tm1.processes.exists(p1.name):
-            cls.tm1.processes.delete(p1.name)
-        cls.tm1.processes.create(p1)
+        cls.tm1.processes.update_or_create(p1)
 
         # Build chore
         c1 = Chore(
@@ -124,11 +123,15 @@ class TestApplicationService(unittest.TestCase):
                 minutes=int(random.uniform(0, 59)),
                 seconds=int(random.uniform(0, 59))),
             tasks=[ChoreTask(0, cls.process_name, parameters=[{'Name': 'pRegion', 'Value': 'UK'}])])
-        cls.tm1.chores.create(c1)
+        cls.tm1.chores.update_or_create(c1)
 
         # create Folder
         app = FolderApplication("", cls.tm1py_app_folder)
-        cls.tm1.applications.create(application=app, private=False)
+        if cls.tm1.applications.exists(path=app.path, application_type=app.application_type, name=app.name, private=False):
+            cls.tm1.applications.delete(path=app.path, application_type=app.application_type, application_name=app.name, private=False)
+            cls.tm1.applications.create(application=app, private=False)
+        else:
+            cls.tm1.applications.create(application=app, private=False)
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -250,7 +253,8 @@ class TestApplicationService(unittest.TestCase):
 
         app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=private)
         self.assertEqual(app_retrieved.last_updated[:10], datetime.today().strftime('%Y-%m-%d'))
-        self.assertIsNotNone(app_retrieved.file_id)
+        if not verify_version(required_version="12", version=self.tm1.version):
+            self.assertIsNotNone(app_retrieved.file_id)
         self.assertIsNotNone(app_retrieved.file_name)
 
         self.assertEqual(app, app_retrieved)

@@ -30,7 +30,7 @@ class SubsetService(ObjectService):
         """
         subsets = "PrivateSubsets" if private else "Subsets"
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}",
+            "/Dimensions('{}')/Hierarchies('{}')/{}",
             subset.dimension_name,
             subset.hierarchy_name,
             subsets)
@@ -52,7 +52,7 @@ class SubsetService(ObjectService):
             hierarchy_name = dimension_name
         subsets = "PrivateSubsets" if private else "Subsets"
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')?$expand=Hierarchy($select=Dimension,Name),"
+            "/Dimensions('{}')/Hierarchies('{}')/{}('{}')?$expand=Hierarchy($select=Dimension,Name),"
             "Elements($select=Name)&$select=*,Alias", dimension_name, hierarchy_name, subsets, subset_name)
         response = self._rest.GET(url=url, **kwargs)
         return Subset.from_dict(response.json())
@@ -70,7 +70,7 @@ class SubsetService(ObjectService):
 
         subsets = "PrivateSubsets" if private else "Subsets"
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}?$select=Name",
+            "/Dimensions('{}')/Hierarchies('{}')/{}?$select=Name",
             dimension_name, hierarchy_name, subsets)
         response = self._rest.GET(url=url, **kwargs)
         subsets = response.json()['value']
@@ -92,7 +92,7 @@ class SubsetService(ObjectService):
                 **kwargs)
         subsets = "PrivateSubsets" if private else "Subsets"
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')",
+            "/Dimensions('{}')/Hierarchies('{}')/{}('{}')",
             subset.dimension_name, subset.hierarchy_name, subsets, subset.name)
         return self._rest.PATCH(url=url, data=subset.body, **kwargs)
 
@@ -113,7 +113,7 @@ class SubsetService(ObjectService):
         payload['MakePrivate'] = True if private else False
         payload['MakeStatic'] = True
         subsets = "PrivateSubsets" if private else "Subsets"
-        url = format_url("/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')/tm1.SaveAs", dimension_name,
+        url = format_url("/Dimensions('{}')/Hierarchies('{}')/{}('{}')/tm1.SaveAs", dimension_name,
                          hierarchy_name, subsets, subset_name)
         return self._rest.POST(url=url, data=json.dumps(payload))
 
@@ -147,7 +147,7 @@ class SubsetService(ObjectService):
         hierarchy_name = hierarchy_name if hierarchy_name else dimension_name
         subsets = "PrivateSubsets" if private else "Subsets"
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')",
+            "/Dimensions('{}')/Hierarchies('{}')/{}('{}')",
             dimension_name, hierarchy_name, subsets, subset_name)
         response = self._rest.DELETE(url=url, **kwargs)
         return response
@@ -165,7 +165,7 @@ class SubsetService(ObjectService):
         hierarchy_name = hierarchy_name if hierarchy_name else dimension_name
         subset_type = 'PrivateSubsets' if private else "Subsets"
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')",
+            "/Dimensions('{}')/Hierarchies('{}')/{}('{}')",
             dimension_name, hierarchy_name, subset_type, subset_name)
         return self._exists(url, **kwargs)
 
@@ -173,7 +173,7 @@ class SubsetService(ObjectService):
                                            private: bool, **kwargs) -> Response:
         subsets = "PrivateSubsets" if private else "Subsets"
         url = format_url(
-            "/api/v1/Dimensions('{}')/Hierarchies('{}')/{}('{}')/Elements/$ref",
+            "/Dimensions('{}')/Hierarchies('{}')/{}('{}')/Elements/$ref",
             dimension_name, hierarchy_name, subsets, subset_name)
         return self._rest.DELETE(url=url, **kwargs)
 

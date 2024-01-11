@@ -4,6 +4,7 @@ from pathlib import Path
 
 from TM1py.Services import TM1Service
 from TM1py.Utils import case_and_space_insensitive_equals
+from .Utils import skip_if_deprecated_in_version
 
 
 class TestMonitoringService(unittest.TestCase):
@@ -20,9 +21,12 @@ class TestMonitoringService(unittest.TestCase):
         cls.config.read(Path(__file__).parent.joinpath('config.ini'))
         cls.tm1 = TM1Service(**cls.config['tm1srv01'])
 
+    @skip_if_deprecated_in_version(version="12.0.0")
     def test_get_threads(self):
         threads = self.tm1.monitoring.get_threads()
-        self.assertTrue(any(thread["Function"] == "GET /api/v1/Threads" for thread in threads))
+        self.assertTrue(any(thread["Function"] == "GET /api/v1/Threads" for thread in threads)
+                        or
+                        any(thread["Function"] == "GET /Threads" for thread in threads))
 
     def test_get_active_users(self):
         current_user = self.tm1.security.get_current_user()
@@ -39,6 +43,7 @@ class TestMonitoringService(unittest.TestCase):
     def test_disconnect_all_users(self):
         self.tm1.monitoring.disconnect_all_users()
 
+    @skip_if_deprecated_in_version(version="12.0.0")
     def test_cancel_all_running_threads(self):
         self.tm1.monitoring.cancel_all_running_threads()
 

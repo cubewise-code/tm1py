@@ -6,7 +6,7 @@ class Server:
     """ Abstraction of the TM1 Server
 
         :Notes:
-            contains the information you get from http://localhost:5895/api/v1/Servers
+            contains the information you get from http://localhost:5895/Servers
             no methods so far
     """
     def __init__(self, server_as_dict: Dict):

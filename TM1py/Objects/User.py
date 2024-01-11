@@ -151,7 +151,7 @@ class User(TM1Object):
         """
         return cls(name=user_as_dict['Name'],
                    friendly_name=user_as_dict['FriendlyName'],
-                   enabled=user_as_dict["Enabled"],
+                   enabled=user_as_dict.get('Enabled', None),
                    user_type=user_as_dict["Type"],
                    groups=[group["Name"] for group in user_as_dict['Groups']])
 

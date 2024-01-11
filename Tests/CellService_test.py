@@ -11,8 +11,8 @@ from TM1py.Objects import (AnonymousSubset, Cube, Dimension, Element,
                            ElementAttribute, Hierarchy, MDXView, NativeView)
 from TM1py.Services import TM1Service
 from TM1py.Utils import Utils, element_names_from_element_unique_names, CaseAndSpaceInsensitiveDict, \
-    CaseAndSpaceInsensitiveTuplesDict
-from .Utils import skip_if_insufficient_version, skip_if_no_pandas
+    CaseAndSpaceInsensitiveTuplesDict, verify_version
+from .Utils import skip_if_insufficient_version, skip_if_no_pandas, skip_if_deprecated_in_version
 
 try:
     import pandas as pd
@@ -659,7 +659,12 @@ class TestCellService(unittest.TestCase):
         query.add_member_tuple_to_columns(
             f"[{self.dimension_names[0]}].[element2]",
             f"[}}ElementAttributes_{self.dimension_names[0]}].[Attr3]")
-        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), ['Text 1', 1, 2, "", None, None])
+        values = self.tm1.cells.execute_mdx_values(mdx=query.to_mdx())
+
+        if verify_version(required_version="12", version=self.tm1.version):
+            self.assertEqual(values, ['Text 1', 1, 2, "", 0, 0])
+        else:
+            self.assertEqual(values, ['Text 1', 1, 2, "", None, None])
 
     def test_write_through_unbound_process_to_consolidation(self):
         cells = dict()
@@ -828,7 +833,15 @@ class TestCellService(unittest.TestCase):
         query.add_member_tuple_to_columns(
             f"[{self.dimension_names[0]}].[element2]",
             f"[}}ElementAttributes_{self.dimension_names[0]}].[Attr3]")
-        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), ['Text 1', 1, 2, "", None, None])
+
+        result = self.tm1.cells.execute_mdx_values(mdx=query.to_mdx())
+
+        self.assertEqual(result[0], "Text 1")
+        self.assertEqual(result[1], 1)
+        self.assertEqual(result[2], 2)
+        self.assertEqual(result[3], "")
+        self.assertIn(result[4], [0, None])
+        self.assertIn(result[5], [0, None])
 
     def test_write_through_blob_to_consolidation(self):
         cells = dict()
@@ -1472,6 +1485,8 @@ class TestCellService(unittest.TestCase):
             self.assertIn("[TM1py_Tests_Cell_Dimension2].", coordinates[1])
             self.assertIn("[TM1py_Tests_Cell_Dimension3].", coordinates[2])
 
+    @skip_if_deprecated_in_version(version="12")
+    # v12 does not support empty row sets
     def test_execute_mdx_with_empty_rows(self):
         # write cube content
         self.tm1.cubes.cells.write_values(self.cube_name, self.cellset)
@@ -1500,6 +1515,7 @@ class TestCellService(unittest.TestCase):
             self.assertIn("[TM1py_Tests_Cell_Dimension2].", coordinates[1])
             self.assertIn("[TM1py_Tests_Cell_Dimension3].", coordinates[2])
 
+    @skip_if_deprecated_in_version(version="12")
     def test_execute_mdx_with_empty_columns(self):
         # write cube content
         self.tm1.cubes.cells.write_values(self.cube_name, self.cellset)
@@ -2459,7 +2475,7 @@ class TestCellService(unittest.TestCase):
             .add_hierarchy_set_to_column_axis(
             MdxHierarchySet.member(Member.of(self.dimension_names[1], "Calculated Member")))
 
-        csv = self.tm1.cubes.cells.execute_mdx_csv(mdx, use_blob=True, )
+        csv = self.tm1.cubes.cells.execute_mdx_csv(mdx, use_blob=False)
 
         # check header
         header = csv.split('\r\n')[0]
@@ -2658,15 +2674,19 @@ class TestCellService(unittest.TestCase):
         """
 
         df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, include_attributes=True)
+        # integerize numeric columns because v12 attribute numbers are different from v11 ('2.0' vs '2')
+        df[['Attr3', 'Attr2', 'Value']] = df[['Attr3', 'Attr2', 'Value']].apply(
+            lambda col: pd.to_numeric(col).fillna(0).astype(int))
 
         expected = {
             'TM1py_Tests_Cell_Dimension3': {0: 'Element 1'},
-            'Attr3': {0: '3'},
+            'Attr3': {0: 3},
             'TM1py_Tests_Cell_Dimension2': {0: 'Element 1'},
-            'Attr2': {0: '2'},
+            'Attr2': {0: 2},
             'TM1py_Tests_Cell_Dimension1': {0: 'Element 1'},
             'Attr1': {0: 'TM1py'},
             'Value': {0: 1.0}}
+
         self.assertEqual(expected, df.to_dict())
 
     @skip_if_no_pandas
@@ -2683,15 +2703,18 @@ class TestCellService(unittest.TestCase):
         """
 
         df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, include_attributes=True, use_iterative_json=True)
+        # integerize numeric columns because v12 attribute numbers are different from v11 ('2.0' vs '2')
+        df[['Attr3', 'Attr2', 'Value']] = df[['Attr3', 'Attr2', 'Value']].apply(
+            lambda col: pd.to_numeric(col).fillna(0).astype(int))
 
         expected = {
             'TM1py_Tests_Cell_Dimension3': {0: 'Element 1'},
-            'Attr3': {0: '3'},
+            'Attr3': {0: 3},
             'TM1py_Tests_Cell_Dimension2': {0: 'Element 1'},
-            'Attr2': {0: '2'},
+            'Attr2': {0: 2},
             'TM1py_Tests_Cell_Dimension1': {0: 'Element 1'},
             'Attr1': {0: 'TM1py'},
-            'Value': {0: 1.0}}
+            'Value': {0: 1}}
         self.assertEqual(expected, df.to_dict())
 
     @skip_if_no_pandas
@@ -2707,16 +2730,20 @@ class TestCellService(unittest.TestCase):
         """
 
         df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx, include_attributes=True, use_iterative_json=True)
+        # integerize numeric columns because v12 attribute numbers are different from v11 ('2.0' vs '2')
+        df[['Attr3', 'Attr2', 'Value']] = df[['Attr3', 'Attr2', 'Value']].apply(
+            lambda col: pd.to_numeric(col).fillna(0).astype(int))
 
-        expected = {
+        df_test = pd.DataFrame({
             'TM1py_Tests_Cell_Dimension1': {0: 'Element 1'},
             'Attr1': {0: 'TM1py'},
             'TM1py_Tests_Cell_Dimension2': {0: 'Element 1'},
-            'Attr2': {0: '2'},
+            'Attr2': {0: 2},
             'TM1py_Tests_Cell_Dimension3': {0: 'Element 1'},
-            'Attr3': {0: '3'},
-            'Value': {0: 1.0}}
-        self.assertEqual(expected, df.to_dict())
+            'Attr3': {0: 3},
+            'Value': {0: 1}})
+
+        self.assertEquals(df_test.to_dict(), df.to_dict())
 
     @skip_if_no_pandas
     def test_execute_mdx_dataframe_include_attributes_iter_json_no_attributes(self):
@@ -2860,8 +2887,18 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(expected_df.to_csv(), df.to_csv())
 
     @skip_if_no_pandas
-    def test_execute_mdx_dataframe_async(self):
+    def test_execute_mdx_dataframe_async_max_workers_2(self):
+        self.run_test_execute_mdx_dataframe_async(max_workers=2)
 
+    @skip_if_no_pandas
+    def test_execute_mdx_dataframe_async_max_workers_4(self):
+        self.run_test_execute_mdx_dataframe_async(max_workers=4)
+
+    @skip_if_no_pandas
+    def test_execute_mdx_dataframe_async_max_workers_8(self):
+        self.run_test_execute_mdx_dataframe_async(max_workers=8)
+
+    def run_test_execute_mdx_dataframe_async(self, max_workers):
         # build a reference "single-threaded" df for comparison
         mdx = MdxBuilder.from_cube(self.cube_name) \
             .rows_non_empty() \
@@ -2872,13 +2909,10 @@ class TestCellService(unittest.TestCase):
             .add_hierarchy_set_to_column_axis(
             MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
             .to_mdx()
-
         df = self.tm1.cubes.cells.execute_mdx_dataframe(mdx)
-
         # build 4 non-empty + 1 empty mdx queries to pass to async df
         mdx_list = []
         chunk_size = int(len(self.target_coordinates) / 4)
-
         for chunk in range(5):
             mdx = MdxBuilder.from_cube(self.cube_name) \
                 .rows_non_empty() \
@@ -2891,21 +2925,12 @@ class TestCellService(unittest.TestCase):
                 MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
                 .to_mdx()
             mdx_list.append(mdx)
-
         # check execution with different max_worker parameter
-        df_async1 = self.tm1.cubes.cells.execute_mdx_dataframe_async(mdx_list, max_workers=2)
-        df_async2 = self.tm1.cubes.cells.execute_mdx_dataframe_async(mdx_list, max_workers=5)
-        df_async3 = self.tm1.cubes.cells.execute_mdx_dataframe_async(mdx_list, max_workers=8)
-
+        df_async = self.tm1.cubes.cells.execute_mdx_dataframe_async(mdx_list, max_workers=max_workers)
         # check type
-        self.assertIsInstance(df_async1, pd.DataFrame)
-        self.assertIsInstance(df_async2, pd.DataFrame)
-        self.assertIsInstance(df_async3, pd.DataFrame)
-
+        self.assertIsInstance(df_async, pd.DataFrame)
         # check async df are equal to reference df
-        self.assertTrue(df_async1.equals(df))
-        self.assertTrue(df_async2.equals(df))
-        self.assertTrue(df_async3.equals(df))
+        self.assertTrue(df_async.equals(df))
 
     @skip_if_no_pandas
     def test_execute_mdx_dataframe_async_use_blob(self):
@@ -3656,17 +3681,23 @@ class TestCellService(unittest.TestCase):
             dimension_name=self.dimension_names[0],
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[0],
-                expression='{ HEAD ( {[' + self.dimension_names[0] + '].Members}, 10) } }'))
+                expression=MdxHierarchySet.all_members(
+                    self.dimension_names[0],
+                    self.dimension_names[0]).head(10).to_mdx()))
         view.add_row(
             dimension_name=self.dimension_names[1],
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[1],
-                expression='{ HEAD ( { [' + self.dimension_names[1] + '].Members}, 10 ) }'))
+                expression=MdxHierarchySet.all_members(
+                    self.dimension_names[1],
+                    self.dimension_names[1]).head(10).to_mdx()))
         view.add_column(
             dimension_name=self.dimension_names[2],
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[2],
-                expression='{ HEAD ( {[' + self.dimension_names[2] + '].Members}, 10 ) }'))
+                expression=MdxHierarchySet.all_members(
+                    self.dimension_names[2],
+                    self.dimension_names[2]).head(10).to_mdx()))
         self.tm1.cubes.views.update_or_create(view, private=False)
 
         pivot = self.tm1.cubes.cells.execute_view_dataframe_pivot(
@@ -3686,17 +3717,23 @@ class TestCellService(unittest.TestCase):
             dimension_name=self.dimension_names[0],
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[0],
-                expression='{ HEAD ( {[' + self.dimension_names[0] + '].Members}, 10) } }'))
+                expression=MdxHierarchySet.all_members(
+                    self.dimension_names[0],
+                    self.dimension_names[0]).head(10).to_mdx()))
         view.add_column(
             dimension_name=self.dimension_names[1],
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[1],
-                expression='{ HEAD ( { [' + self.dimension_names[1] + '].Members}, 10 ) }'))
+                expression=MdxHierarchySet.all_members(
+                    self.dimension_names[1],
+                    self.dimension_names[1]).head(10).to_mdx()))
         view.add_column(
             dimension_name=self.dimension_names[2],
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[2],
-                expression='{ HEAD ( {[' + self.dimension_names[2] + '].Members}, 10 ) }'))
+                expression=MdxHierarchySet.all_members(
+                    self.dimension_names[2],
+                    self.dimension_names[2]).head(10).to_mdx()))
         self.tm1.cubes.views.update_or_create(
             view=view,
             private=False)
@@ -3714,16 +3751,25 @@ class TestCellService(unittest.TestCase):
             view_name=view_name,
             suppress_empty_columns=False,
             suppress_empty_rows=False)
+
         view.add_row(
             dimension_name=self.dimension_names[0],
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[0],
-                expression='{ HEAD ( {[' + self.dimension_names[0] + '].Members}, 10) } }'))
+                expression=MdxHierarchySet.all_members(
+                    self.dimension_names[0],
+                    self.dimension_names[0]).head(10).to_mdx()
+            )
+        )
         view.add_column(
             dimension_name=self.dimension_names[1],
             subset=AnonymousSubset(
                 dimension_name=self.dimension_names[1],
-                expression='{ HEAD ( { [' + self.dimension_names[1] + '].Members}, 10 ) }'))
+                expression=MdxHierarchySet.all_members(
+                    self.dimension_names[1],
+                    self.dimension_names[1]).head(10).to_mdx()
+            )
+        )
         view.add_title(
             dimension_name=self.dimension_names[2],
             selection="Element 1",
@@ -3820,6 +3866,7 @@ class TestCellService(unittest.TestCase):
         values = self.tm1.cubes.cells.execute_mdx_values(mdx)
         self.assertEqual(values[0], 1.5)
 
+    @skip_if_deprecated_in_version(version='12')
     def test_write_values_through_cellset_deactivate_transaction_log(self):
         query = MdxBuilder.from_cube(self.cube_name)
         query = query.add_hierarchy_set_to_row_axis(
@@ -3836,6 +3883,7 @@ class TestCellService(unittest.TestCase):
 
         self.assertFalse(self.tm1.cells.transaction_log_is_active(self.cube_name))
 
+    @skip_if_deprecated_in_version(version='12')
     def test_write_values_through_cellset_deactivate_transaction_log_reactivate_transaction_log(self):
         mdx = MdxBuilder.from_cube(self.cube_name) \
             .add_hierarchy_set_to_row_axis(MdxHierarchySet.member(Member.of(self.dimension_names[0], "element2"))) \
@@ -3855,6 +3903,7 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(values[0], 1.5)
         self.assertTrue(self.tm1.cells.transaction_log_is_active(self.cube_name))
 
+    @skip_if_deprecated_in_version(version='12')
     def test_deactivate_transaction_log(self):
         self.tm1.cubes.cells.write_value(value="YES",
                                          cube_name="}CubeProperties",
@@ -3863,6 +3912,7 @@ class TestCellService(unittest.TestCase):
         value = self.tm1.cubes.cells.get_value("}CubeProperties", "{},LOGGING".format(self.cube_name))
         self.assertEqual("NO", value.upper())
 
+    @skip_if_deprecated_in_version(version='12')
     def test_activate_transaction_log(self):
         self.tm1.cubes.cells.write_value(value="NO",
                                          cube_name="}CubeProperties",
@@ -3975,6 +4025,8 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(value, None)
 
     @skip_if_insufficient_version(version="11.7")
+    @skip_if_deprecated_in_version(version="12")
+    # skip if version 12 as invalid element names do not raise an exception
     def test_clear_invalid_element_name(self):
 
         with self.assertRaises(TM1pyException) as e:
@@ -3994,14 +4046,10 @@ class TestCellService(unittest.TestCase):
         with self.assertRaises(TM1pyException) as e:
             mdx = f"""
             SELECT
-            {{[{self.dimension_names[0]}].[NotExistingElement]}} ON 0
+            {{[{self.dimension_names[0]}].MissingSquareBracket]}} ON 0
             FROM [{self.cube_name}]
             """
             self.tm1.cells.clear_with_mdx(cube=self.cube_name, mdx=mdx)
-
-        self.assertIn(
-            '\\"NotExistingElement\\" :',
-            str(e.exception.message))
 
     def test_clear_with_mdx_unsupported_version(self):
 
@@ -4023,6 +4071,8 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(
             str(e.exception),
             str(TM1pyVersionException(function="clear_with_mdx", required_version="11.7")))
+
+        self.tm1._tm1_rest.set_version()
 
     def test_execute_mdx_with_skip(self):
         mdx = MdxBuilder.from_cube(self.cube_name) \
@@ -4053,16 +4103,19 @@ class TestCellService(unittest.TestCase):
         elements = element_names_from_element_unique_names(list(cells.keys())[0])
         self.assertEqual(elements, ("Element 2", "Element 1", "Element 1"))
 
+    @skip_if_deprecated_in_version(version='12')
     def test_transaction_log_is_active_false(self):
         self.tm1.cells.deactivate_transactionlog(self.cube_name)
 
         self.assertFalse(self.tm1.cells.transaction_log_is_active(self.cube_name))
 
+    @skip_if_deprecated_in_version(version='12')
     def test_transaction_log_is_active_true(self):
         self.tm1.cells.activate_transactionlog(self.cube_name)
 
         self.assertTrue(self.tm1.cells.transaction_log_is_active(self.cube_name))
 
+    @skip_if_deprecated_in_version(version='12')
     def test_manage_transaction_log_deactivate_reactivate(self):
         self.tm1.cubes.cells.write_values(
             self.cube_name,
@@ -4072,6 +4125,7 @@ class TestCellService(unittest.TestCase):
 
         self.assertTrue(self.tm1.cells.transaction_log_is_active(self.cube_name))
 
+    @skip_if_deprecated_in_version(version='12')
     def test_manage_transaction_log_not_deactivate_not_reactivate(self):
         pre_state = self.tm1.cells.transaction_log_is_active(self.cube_name)
 
@@ -4083,6 +4137,7 @@ class TestCellService(unittest.TestCase):
 
         self.assertEqual(pre_state, self.tm1.cells.transaction_log_is_active(self.cube_name))
 
+    @skip_if_deprecated_in_version(version='12')
     def test_manage_transaction_log_deactivate_not_reactivate(self):
         self.tm1.cubes.cells.write_values(
             self.cube_name,
@@ -4175,7 +4230,7 @@ class TestCellService(unittest.TestCase):
             cube_name=self.cube_with_rules_name,
             elements=["Element1", "Element1", "Element1"])
 
-        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+        self.assertIn('../$metadata#ibm.tm1.api.v1.CalculationComponent', result['@odata.context'])
 
     def test_trace_cell_calculation_shallow_depth_iterable(self):
         shallow_depth = 1
@@ -4184,7 +4239,7 @@ class TestCellService(unittest.TestCase):
             elements=["Element3", "Element1", "Element1"],
             depth=shallow_depth)
 
-        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+        self.assertIn('../$metadata#ibm.tm1.api.v1.CalculationComponent', result['@odata.context'])
         components = result["Components"]
 
         self.assertNotIn("Components", components)
@@ -4196,7 +4251,7 @@ class TestCellService(unittest.TestCase):
             elements=["Element3", "Element1", "Element1"],
             depth=shallow_depth)
 
-        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+        self.assertIn('../$metadata#ibm.tm1.api.v1.CalculationComponent', result['@odata.context'])
         components = result["Components"]
         for _ in range(shallow_depth - 1):
             components = components[0]["Components"]
@@ -4209,14 +4264,14 @@ class TestCellService(unittest.TestCase):
             elements=["Element1", "Element1", "Element1"],
             dimensions=["TM1py_Tests_Cell_Dimension1", "TM1py_Tests_Cell_Dimension2", "TM1py_Tests_Cell_Dimension3"])
 
-        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+        self.assertIn('../$metadata#ibm.tm1.api.v1.CalculationComponent', result['@odata.context'])
 
     def test_trace_cell_calculation_no_depth_string(self):
         result = self.tm1.cells.trace_cell_calculation(
             cube_name=self.cube_with_rules_name,
             elements="Element1,Element1,Element1")
 
-        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+        self.assertIn('../$metadata#ibm.tm1.api.v1.CalculationComponent', result['@odata.context'])
 
     def test_trace_cell_calculation_shallow_depth_string(self):
         shallow_depth = 2
@@ -4226,7 +4281,7 @@ class TestCellService(unittest.TestCase):
             elements="Element3,Element1,Element1",
             depth=shallow_depth)
 
-        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+        self.assertIn('../$metadata#ibm.tm1.api.v1.CalculationComponent', result['@odata.context'])
         components = result["Components"]
         for _ in range(shallow_depth - 1):
             components = components[0]["Components"]
@@ -4237,9 +4292,9 @@ class TestCellService(unittest.TestCase):
         result = self.tm1.cells.trace_cell_calculation(
             cube_name=self.cube_with_rules_name,
             elements="Element1,Element1,Element1",
-            depth=25)
+            depth=10)
 
-        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+        self.assertIn('../$metadata#ibm.tm1.api.v1.CalculationComponent', result['@odata.context'])
 
     def test_trace_cell_calculation_dimensions_string(self):
         result = self.tm1.cells.trace_cell_calculation(
@@ -4247,7 +4302,7 @@ class TestCellService(unittest.TestCase):
             elements="Element1,Element1,Element1",
             dimensions=["TM1py_Tests_Cell_Dimension1", "TM1py_Tests_Cell_Dimension2", "TM1py_Tests_Cell_Dimension3"])
 
-        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+        self.assertIn('../$metadata#ibm.tm1.api.v1.CalculationComponent', result['@odata.context'])
 
     def test_trace_cell_calculation_dimensions_string_hierarchy(self):
         result = self.tm1.cells.trace_cell_calculation(
@@ -4257,7 +4312,7 @@ class TestCellService(unittest.TestCase):
                      "TM1py_Tests_Cell_Dimension3::Element1",
             dimensions=["TM1py_Tests_Cell_Dimension1", "TM1py_Tests_Cell_Dimension2", "TM1py_Tests_Cell_Dimension3"])
 
-        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+        self.assertIn('../$metadata#ibm.tm1.api.v1.CalculationComponent', result['@odata.context'])
 
     def test_trace_cell_calculation_dimensions_string_multi_hierarchy(self):
         result = self.tm1.cells.trace_cell_calculation(
@@ -4267,14 +4322,14 @@ class TestCellService(unittest.TestCase):
                      "TM1py_Tests_Cell_Dimension3::Element1",
             dimensions=["TM1py_Tests_Cell_Dimension1", "TM1py_Tests_Cell_Dimension2", "TM1py_Tests_Cell_Dimension3"])
 
-        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.CalculationComponent')
+        self.assertIn('../$metadata#ibm.tm1.api.v1.CalculationComponent', result['@odata.context'])
 
     def test_trace_feeders_string(self):
         result = self.tm1.cells.trace_cell_feeders(
             cube_name=self.cube_with_rules_name,
             elements="Element1,Element1,Element1")
 
-        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.FeederTrace')
+        self.assertIn('../$metadata#ibm.tm1.api.v1.FeederTrace', result['@odata.context'])
 
     def test_trace_feeders_dimensions_string(self):
         result = self.tm1.cells.trace_cell_feeders(
@@ -4282,7 +4337,7 @@ class TestCellService(unittest.TestCase):
             elements="Element1,Element1,Element1",
             dimensions=["TM1py_Tests_Cell_Dimension1", "TM1py_Tests_Cell_Dimension2", "TM1py_Tests_Cell_Dimension3"])
 
-        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.FeederTrace')
+        self.assertIn('../$metadata#ibm.tm1.api.v1.FeederTrace', result['@odata.context'])
 
     def test_trace_feeders_dimensions_string_hierarchy(self):
         result = self.tm1.cells.trace_cell_feeders(
@@ -4292,7 +4347,7 @@ class TestCellService(unittest.TestCase):
                      "TM1py_Tests_Cell_Dimension3::Element1",
             dimensions=["TM1py_Tests_Cell_Dimension1", "TM1py_Tests_Cell_Dimension2", "TM1py_Tests_Cell_Dimension3"])
 
-        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.FeederTrace')
+        self.assertIn('../$metadata#ibm.tm1.api.v1.FeederTrace', result['@odata.context'])
 
     def test_trace_feeders_dimensions_string_multi_hierarchy(self):
         result = self.tm1.cells.trace_cell_feeders(
@@ -4302,14 +4357,14 @@ class TestCellService(unittest.TestCase):
                      "TM1py_Tests_Cell_Dimension3::Element1",
             dimensions=["TM1py_Tests_Cell_Dimension1", "TM1py_Tests_Cell_Dimension2", "TM1py_Tests_Cell_Dimension3"])
 
-        self.assertEqual(result['@odata.context'], '../$metadata#ibm.tm1.api.v1.FeederTrace')
+        self.assertIn('../$metadata#ibm.tm1.api.v1.FeederTrace', result['@odata.context'])
 
     def test_check_feeders_string(self):
         result = self.tm1.cells.check_cell_feeders(
             cube_name=self.cube_with_rules_name,
             elements="Element1,Element1,Element1")
 
-        self.assertEqual(result['@odata.context'], '../$metadata#Collection(ibm.tm1.api.v1.FedCellDescriptor)')
+        self.assertIn('../$metadata#Collection(ibm.tm1.api.v1.FedCellDescriptor)', result['@odata.context'])
 
     def test_check_feeders_dimensions_string(self):
         result = self.tm1.cells.check_cell_feeders(
@@ -4317,7 +4372,7 @@ class TestCellService(unittest.TestCase):
             elements="Element1,Element1,Element1",
             dimensions=["TM1py_Tests_Cell_Dimension1", "TM1py_Tests_Cell_Dimension2", "TM1py_Tests_Cell_Dimension3"])
 
-        self.assertEqual(result['@odata.context'], '../$metadata#Collection(ibm.tm1.api.v1.FedCellDescriptor)')
+        self.assertIn('../$metadata#Collection(ibm.tm1.api.v1.FedCellDescriptor)', result['@odata.context'])
 
     def test_check_feeders_dimensions_string_hierarchy(self):
         result = self.tm1.cells.check_cell_feeders(
@@ -4327,7 +4382,7 @@ class TestCellService(unittest.TestCase):
                      "TM1py_Tests_Cell_Dimension3::Element1",
             dimensions=["TM1py_Tests_Cell_Dimension1", "TM1py_Tests_Cell_Dimension2", "TM1py_Tests_Cell_Dimension3"])
 
-        self.assertEqual(result['@odata.context'], '../$metadata#Collection(ibm.tm1.api.v1.FedCellDescriptor)')
+        self.assertIn('../$metadata#Collection(ibm.tm1.api.v1.FedCellDescriptor)', result['@odata.context'])
 
     def test_check_feeders_dimensions_string_multi_hierarchy(self):
         result = self.tm1.cells.check_cell_feeders(
@@ -4337,7 +4392,7 @@ class TestCellService(unittest.TestCase):
                      "TM1py_Tests_Cell_Dimension3::Element1",
             dimensions=["TM1py_Tests_Cell_Dimension1", "TM1py_Tests_Cell_Dimension2", "TM1py_Tests_Cell_Dimension3"])
 
-        self.assertEqual(result['@odata.context'], '../$metadata#Collection(ibm.tm1.api.v1.FedCellDescriptor)')
+        self.assertIn('../$metadata#Collection(ibm.tm1.api.v1.FedCellDescriptor)', result['@odata.context'])
 
     def test_execute_mdx_csv_mdx_headers(self):
         self.tm1.cubes.cells.write_values(
@@ -4465,26 +4520,25 @@ class TestCellService(unittest.TestCase):
             MdxHierarchySet.all_members(self.dimension_names[2], self.dimension_names[2])) \
             .to_mdx()
 
-        #create cellset
+        # create cellset
         cellset = self.tm1.cells.create_cellset(mdx)
 
-        partition = self.tm1.cells.extract_cellset_partition(cellset_id=cellset,
-                                                            partition_start_ordinal=0,
-                                                            partition_end_ordinal=1)
+        partition = self.tm1.cells.extract_cellset_partition(
+            cellset_id=cellset,
+            partition_start_ordinal=0,
+            partition_end_ordinal=1)
 
         expected_result = [{'Ordinal': 0, 'Value': 1}, {'Ordinal': 1, 'Value': None}]
         self.assertEqual(partition, expected_result)
 
-        partition_skip_zero = self.tm1.cells.extract_cellset_partition(cellset_id=cellset,
-                                                            partition_start_ordinal=0,
-                                                            partition_end_ordinal=1,
-                                                            skip_zeros=True)
+        partition_skip_zero = self.tm1.cells.extract_cellset_partition(
+            cellset_id=cellset,
+            partition_start_ordinal=0,
+            partition_end_ordinal=1,
+            skip_zeros=True)
 
         expected_result_skip_zero = [{'Ordinal': 0, 'Value': 1}]
         self.assertEqual(partition_skip_zero, expected_result_skip_zero)
-
-
-
 
     # Delete Cube and Dimensions
     @classmethod

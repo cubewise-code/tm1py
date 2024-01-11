@@ -6,7 +6,7 @@ from TM1py import TM1Service
 from .Utils import skip_if_insufficient_version
 
 
-class TestApplicationService(unittest.TestCase):
+class TestFileService(unittest.TestCase):
     tm1: TM1Service
 
     FILE_NAME1 = "TM1py_unittest_file1"
@@ -27,7 +27,7 @@ class TestApplicationService(unittest.TestCase):
     @skip_if_insufficient_version(version="11.4")
     def test_create_get(self):
         with open(Path(__file__).parent.joinpath('resources', 'file.csv'), "rb") as original_file:
-            self.tm1.files.create(self.FILE_NAME2, original_file.read())
+            self.tm1.files.update_or_create(self.FILE_NAME1, original_file.read())
 
             created_file = self.tm1.files.get(self.FILE_NAME1)
 

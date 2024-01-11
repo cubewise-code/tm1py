@@ -31,7 +31,7 @@ class ViewService(ObjectService):
         :return: Response
         """
         view_type = "PrivateViews" if private else "Views"
-        url = format_url("/api/v1/Cubes('{}')/{}", view.cube, view_type)
+        url = format_url("/Cubes('{}')/{}", view.cube, view_type)
         return self._rest.POST(url, view.body, **kwargs)
 
     def exists(self, cube_name: str, view_name: str, private: bool = None, **kwargs):
@@ -43,7 +43,7 @@ class ViewService(ObjectService):
 
         :return boolean tuple
         """
-        url_template = "/api/v1/Cubes('{}')/{}('{}')"
+        url_template = "/Cubes('{}')/{}('{}')"
         if private is not None:
             url = format_url(url_template, cube_name, "PrivateViews" if private else "Views", view_name)
             return self._exists(url, **kwargs)
@@ -63,7 +63,7 @@ class ViewService(ObjectService):
 
     def get(self, cube_name: str, view_name: str, private: bool = False, **kwargs) -> View:
         view_type = "PrivateViews" if private else "Views"
-        url = format_url("/api/v1/Cubes('{}')/{}('{}')?$expand=*", cube_name, view_type, view_name)
+        url = format_url("/Cubes('{}')/{}('{}')?$expand=*", cube_name, view_type, view_name)
         response = self._rest.GET(url, **kwargs)
         view_as_dict = response.json()
         if "MDX" in view_as_dict:
@@ -82,7 +82,7 @@ class ViewService(ObjectService):
         """
         view_type = "PrivateViews" if private else "Views"
         url = format_url(
-            "/api/v1/Cubes('{}')/{}('{}')?$expand="
+            "/Cubes('{}')/{}('{}')?$expand="
             "tm1.NativeView/Rows/Subset($expand=Hierarchy($select=Name;"
             "$expand=Dimension($select=Name)),Elements($select=Name);"
             "$select=Expression,UniqueName,Name, Alias),  "
@@ -108,7 +108,7 @@ class ViewService(ObjectService):
         :return: instance of TM1py.MDXView
         """
         view_type = 'PrivateViews' if private else 'Views'
-        url = format_url("/api/v1/Cubes('{}')/{}('{}')?$expand=*", cube_name, view_type, view_name)
+        url = format_url("/Cubes('{}')/{}('{}')?$expand=*", cube_name, view_type, view_name)
         response = self._rest.GET(url, **kwargs)
         mdx_view = MDXView.from_json(view_as_json=response.text)
         return mdx_view
@@ -125,7 +125,7 @@ class ViewService(ObjectService):
         private_views, public_views = [], []
         for view_type in ('PrivateViews', 'Views'):
             url = format_url(
-                "/api/v1/Cubes('{}')/{}?$expand="
+                "/Cubes('{}')/{}?$expand="
                 "tm1.NativeView/Rows/Subset($expand=Hierarchy($select=Name;"
                 "$expand=Dimension($select=Name)),Elements($select=Name{});"
                 "$select=Expression,UniqueName,Name, Alias),  "
@@ -158,7 +158,7 @@ class ViewService(ObjectService):
         """
         private_views, public_views = [], []
         for view_type in ('PrivateViews', 'Views'):
-            url = format_url("/api/v1/Cubes('{}')/{}?$select=Name", cube_name, view_type)
+            url = format_url("/Cubes('{}')/{}?$select=Name", cube_name, view_type)
             response = self._rest.GET(url, **kwargs)
             response_as_list = response.json()['value']
 
@@ -178,7 +178,7 @@ class ViewService(ObjectService):
         :return: response
         """
         view_type = 'PrivateViews' if private else 'Views'
-        url = format_url("/api/v1/Cubes('{}')/{}('{}')", view.cube, view_type, view.name)
+        url = format_url("/Cubes('{}')/{}('{}')", view.cube, view_type, view.name)
         response = self._rest.PATCH(url, view.body, **kwargs)
         return response
 
@@ -205,7 +205,7 @@ class ViewService(ObjectService):
         :return: String, the response
         """
         view_type = 'PrivateViews' if private else 'Views'
-        url = format_url("/api/v1/Cubes('{}')/{}('{}')", cube_name, view_type, view_name)
+        url = format_url("/Cubes('{}')/{}('{}')", cube_name, view_type, view_name)
         response = self._rest.DELETE(url, **kwargs)
         return response
 
@@ -226,10 +226,10 @@ class ViewService(ObjectService):
         element_filter = ";$top=0" if not include_elements else ""
         if cube_name:
             base_url = format_url(
-                "/api/v1/Cubes?$select=Name&$filter=replace(tolower(Name),' ', '') eq '{}'",
+                "/Cubes?$select=Name&$filter=replace(tolower(Name),' ', '') eq '{}'",
                 cube_name.lower().replace(' ', ''))
         else:
-            base_url = "/api/v1/Cubes?$select=Name"
+            base_url = "/Cubes?$select=Name"
 
         private_views, public_views = [], []
         for view_type in ('PrivateViews', 'Views'):
@@ -272,7 +272,7 @@ class ViewService(ObjectService):
         return private_views, public_views
 
     def is_mdx_view(self, cube_name: str, view_name: str, private=False, **kwargs):
-        url_template = "/api/v1/Cubes('{}')/{}('{}')?select=Name"
+        url_template = "/Cubes('{}')/{}('{}')?select=Name"
         if private is not None:
             url = format_url(url_template, cube_name, "PrivateViews" if private else "Views", view_name)
 

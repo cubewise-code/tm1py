@@ -31,7 +31,7 @@ class Chore(TM1Object):
     def from_json(cls, chore_as_json: str) -> 'Chore':
         """ Alternative constructor
 
-        :param chore_as_json: string, JSON. Response of /api/v1/Chores('x')/Tasks?$expand=*
+        :param chore_as_json: string, JSON. Response of /Chores('x')/Tasks?$expand=*
         :return: Chore, an instance of this class
         """
         chore_as_dict = json.loads(chore_as_json)

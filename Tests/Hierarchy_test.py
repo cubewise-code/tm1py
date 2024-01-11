@@ -200,7 +200,7 @@ class TestHierarchy(unittest.TestCase):
 
         edges = hierarchy.get_descendant_edges("Europe")
         self.assertEqual(
-            {("Europe", "DACH"):1, ("Europe", "France"):1},
+            {("Europe", "DACH"): 1, ("Europe", "France"): 1},
             edges)
 
     def test_get_descendant_edges_recursive_true(self):
@@ -235,6 +235,71 @@ class TestHierarchy(unittest.TestCase):
                 ("Europe", "France"): 1,
             },
             edges)
+
+    def test_replace_element_consolidation(self):
+        hierarchy = Hierarchy(
+            name="NotRelevant",
+            dimension_name="NotRelevant",
+            elements=[
+                Element("Total", "Consolidated"),
+                Element("Europe", "Consolidated"),
+                Element("DACH", "Consolidated"),
+                Element("Germany", "Numeric"),
+                Element("Switzerland", "Numeric"),
+                Element("Austria", "Numeric"),
+                Element("France", "Numeric"),
+                Element("Other", "Numeric")],
+            edges={
+                ("Total", "Europe"): 1,
+                ("Europe", "DACH"): 1,
+                ("DACH", "Germany"): 1,
+                ("DACH", "Switzerland"): 1,
+                ("DACH", "Austria"): 1,
+                ("Europe", "France"): 1,
+            })
+
+        hierarchy.replace_element(old_element_name="Europe", new_element_name="Europa")
+
+        self.assertIn("Europa", hierarchy)
+        self.assertNotIn("Europe", hierarchy)
+
+        self.assertIn(("Total", "Europa"), hierarchy.edges)
+        self.assertNotIn(("Total", "Europe"), hierarchy.edges)
+        self.assertIn(("Europa", "DACH"), hierarchy.edges)
+        self.assertNotIn(("Europe", "DACH"), hierarchy.edges)
+        self.assertIn(("Europa", "France"), hierarchy.edges)
+        self.assertNotIn(("Europe", "France"), hierarchy.edges)
+
+    def test_replace_element_leaf(self):
+        hierarchy = Hierarchy(
+            name="NotRelevant",
+            dimension_name="NotRelevant",
+            elements=[
+                Element("Total", "Consolidated"),
+                Element("Europe", "Consolidated"),
+                Element("DACH", "Consolidated"),
+                Element("Germany", "Numeric"),
+                Element("Switzerland", "Numeric"),
+                Element("Austria", "Numeric"),
+                Element("France", "Numeric"),
+                Element("Other", "Numeric")],
+            edges={
+                ("Total", "Europe"): 1,
+                ("Europe", "DACH"): 1,
+                ("DACH", "Germany"): 1,
+                ("DACH", "Switzerland"): 1,
+                ("DACH", "Austria"): 1,
+                ("Europe", "France"): 1,
+            })
+
+        hierarchy.replace_element(old_element_name="Switzerland", new_element_name="Schweiz")
+
+        self.assertIn("Schweiz", hierarchy)
+        self.assertNotIn("Switzerland", hierarchy)
+
+        self.assertIn(("DACH", "Schweiz"), hierarchy.edges)
+        self.assertNotIn(("DACH", "Switzerland"), hierarchy.edges)
+
 
 if __name__ == '__main__':
     unittest.main()
