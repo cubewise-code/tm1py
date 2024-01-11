@@ -68,6 +68,12 @@ class ElementService(ObjectService):
             element_name)
         return self._exists(url, **kwargs)
 
+    def update_or_create(self, dimension_name: str, hierarchy_name: str, element: Element, **kwargs) -> Response:
+        if self.exists(dimension_name=dimension_name, hierarchy_name=hierarchy_name, element=element.name, **kwargs):
+            return self.update(dimension_name=dimension_name, hierarchy_name=hierarchy_name, element=element, **kwargs)
+
+        return self.create(dimension_name=dimension_name, hierarchy_name=hierarchy_name, element=element, **kwargs)   
+        
     def delete(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> Response:
         url = format_url(
             "/Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
