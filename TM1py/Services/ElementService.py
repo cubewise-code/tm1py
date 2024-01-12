@@ -68,7 +68,7 @@ class ElementService(ObjectService):
         return self._exists(url, **kwargs)
 
     def update_or_create(self, dimension_name: str, hierarchy_name: str, element: Element, **kwargs) -> Response:
-        if self.exists(dimension_name=dimension_name, hierarchy_name=hierarchy_name, element=element.name, **kwargs):
+        if self.exists(dimension_name=dimension_name, hierarchy_name=hierarchy_name, element_name=element.name, **kwargs):
             return self.update(dimension_name=dimension_name, hierarchy_name=hierarchy_name, element=element, **kwargs)
 
         return self.create(dimension_name=dimension_name, hierarchy_name=hierarchy_name, element=element, **kwargs)   
