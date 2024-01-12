@@ -65,7 +65,7 @@ class ManageService:
                         instance_name,
                         database_name,
                         number_replicas,
-                        product_version="12.0.0-alpha.1",
+                        product_version,
                         cpu_requests="1000m",
                         cpu_limits="2000m",
                         memory_requests="1G",
@@ -95,6 +95,62 @@ class ManageService:
                    }
         response = requests.post(url=url, json=payload, auth=self._auth_header)
 
+        return response
+
+    def update_database_cpu(self,
+                            instance_name,
+                            database_name,
+                            cpu_requests,
+                            cpu_limits,
+                            ):
+        url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')"
+
+        payload = {"Resources": {
+            "Replica": {
+                "CPU": {
+                    "Requests": cpu_requests,
+                    "Limits": cpu_limits
+                },
+            }
+        }
+        }
+        response = requests.patch(url=url, json=payload, auth=self._auth_header)
+        return response
+
+    def update_database_memory(self,
+                               instance_name,
+                               database_name,
+                               memory_requests,
+                               memory_limits,
+                               ):
+        url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')"
+
+        payload = {"Resources": {
+            "Replica": {
+                "Memory": {
+                    "Requests": memory_requests,
+                    "Limits": memory_limits
+                }
+            }
+        }
+        }
+        response = requests.patch(url=url, json=payload, auth=self._auth_header)
+        return response
+
+    def update_database_storage(self,
+                                instance_name,
+                                database_name,
+                                storage_size
+                                ):
+        url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')"
+
+        payload = {"Resources": {
+            "Storage": {
+                "Size": storage_size
+            }
+        }
+        }
+        response = requests.patch(url=url, json=payload, auth=self._auth_header)
         return response
 
     def delete_database(self, instance_name, database_name):
@@ -156,6 +212,3 @@ class ManageService:
         response = requests.post(url=url, json=payload, auth=self._auth_header)
         response_json = json.loads(response.content)
         return response_json['ClientID'], response_json['ClientSecret']
-
-
-
