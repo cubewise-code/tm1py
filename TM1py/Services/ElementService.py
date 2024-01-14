@@ -344,13 +344,13 @@ class ElementService(ObjectService):
             # rename level names to conform sto strandard levels "1" -> "level0001"
             df_data.rename(columns=levels_dict, inplace=True)
 
-        #format weights
-        # Find columns with certain names
+        # format weights
+        # find columns with certain names
         cols_to_format = [col for col in df_data.columns if '_Weight' in col]
 
         # Format the columns
         df_data[cols_to_format] = df_data[cols_to_format].apply(pd.to_numeric)
-        df_data[cols_to_format] = df_data[cols_to_format].applymap(lambda x: '{:.6f}'.format(x))
+        df_data[cols_to_format] = df_data[cols_to_format].map(lambda x: '{:.6f}'.format(x))
 
         # override columns. hierarchy name with dimension and prefix attributes
         column_renaming = dict()
