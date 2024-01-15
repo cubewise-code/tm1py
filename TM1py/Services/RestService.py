@@ -821,7 +821,7 @@ class RestService:
     @property
     def is_ops_admin(self) -> bool:
         if self._is_ops_admin is None:
-            response = self.GET("/api/v1/ActiveUser/Groups")
+            response = self.GET("/ActiveUser/Groups")
             self._is_ops_admin = any(g in CaseAndSpaceInsensitiveSet(
                 *[group["Name"] for group in response.json()["value"]]) for g in ["Admin", "OperationsAdmin"])
 
