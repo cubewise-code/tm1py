@@ -21,7 +21,7 @@ from TM1py.Exceptions import TM1pyRestException, TM1pyException
 from TM1py.Objects import ElementAttribute, Element
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import CaseAndSpaceInsensitiveDict, format_url, CaseAndSpaceInsensitiveSet, require_admin, \
+from TM1py.Utils import CaseAndSpaceInsensitiveDict, format_url, CaseAndSpaceInsensitiveSet, require_data_admin, \
     dimension_hierarchy_element_tuple_from_unique_name, require_pandas, require_version
 from TM1py.Utils import build_element_unique_names, CaseAndSpaceInsensitiveTuplesDict, verify_version
 from itertools import islice
@@ -1207,7 +1207,7 @@ class ElementService(ObjectService):
         hierarchy_service = self._get_hierarchy_service()
         return hierarchy_service.exists(dimension_name, hierarchy_name)
 
-    @require_admin
+    @require_data_admin
     def _element_is_ancestor_ti(self, dimension_name: str, hierarchy_name: str, element_name: str,
                                 ancestor_name: str) -> bool:
         process_service = self.get_process_service()

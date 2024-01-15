@@ -39,6 +39,26 @@ class TM1pyNotAdminException(Exception):
     def __str__(self):
         return f"Function '{self.function}' requires admin permissions"
 
+class TM1pyNotDataAdminException(Exception):
+    def __init__(self, function: str):
+        self.function = function
+
+    def __str__(self):
+        return f"Function '{self.function}' requires DataAdmin permissions"
+    
+class TM1pyNotSecurityAdminException(Exception):
+    def __init__(self, function: str):
+        self.function = function
+
+    def __str__(self):
+        return f"Function '{self.function}' requires SecurityAdmin permissions"
+    
+class TM1pyNotOpsAdminException(Exception):
+    def __init__(self, function: str):
+        self.function = function
+
+    def __str__(self):
+        return f"Function '{self.function}' requires OperationsAdmin permissions"
 
 class TM1pyException(Exception):
     """ The default exception for TM1py

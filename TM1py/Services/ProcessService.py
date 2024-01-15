@@ -13,7 +13,7 @@ from TM1py.Objects.Process import Process
 from TM1py.Objects.ProcessDebugBreakpoint import ProcessDebugBreakpoint
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import format_url, require_admin
+from TM1py.Utils import format_url, require_data_admin
 from TM1py.Utils.Utils import require_version, deprecated_in_version
 
 
@@ -349,7 +349,7 @@ class ProcessService(ObjectService):
             "Filename"]
         return success, status, error_log_file
 
-    @require_admin
+    @require_data_admin
     def execute_ti_code(self, lines_prolog: Iterable[str], lines_epilog: Iterable[str] = None, **kwargs) -> Response:
         """ Execute lines of code on the TM1 Server
 
@@ -628,7 +628,7 @@ class ProcessService(ObjectService):
         response = self._rest.GET(url=url, **kwargs)
         return ProcessDebugBreakpoint.from_dict(response.json()["CurrentBreakpoint"])
 
-    @require_admin
+    @require_data_admin
     def evaluate_boolean_ti_expression(self, formula: str):
         prolog_procedure = f"""
         if (~{formula.strip(";")});
@@ -645,7 +645,7 @@ class ProcessService(ObjectService):
         else:
             raise TM1pyException(f"Unexpected TI return status: '{status}' for expression: '{formula}'")
 
-    @require_admin
+    @require_data_admin
     def evaluate_ti_expression(self, formula: str, **kwargs) -> str:
         """ This function is same functionality as hitting "Evaluate" within variable formula editor in TI
             Function creates temporary TI and then starts a debug session on that TI

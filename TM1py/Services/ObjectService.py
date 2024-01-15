@@ -74,3 +74,15 @@ class ObjectService:
     @property
     def is_admin(self) -> bool:
         return self._rest.is_admin
+    
+    @property
+    def is_data_admin(self) -> bool:
+        return self._rest.is_data_admin
+    
+    @property
+    def is_security_admin(self) -> bool:
+        return self._rest.is_security_admin
+    
+    @property
+    def is_ops_admin(self) -> bool:
+        return self._rest.is_ops_admin
