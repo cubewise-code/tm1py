@@ -3041,7 +3041,7 @@ class CellService(ObjectService):
         return response.json()
 
     def extract_cellset_axes_cardinality(self, cellset_id: str):
-        url = "/api/v1/Cellsets('{cellset_id}')?$expand=Axes($select=Cardinality)".format(cellset_id=cellset_id)
+        url = "/Cellsets('{cellset_id}')?$expand=Axes($select=Cardinality)".format(cellset_id=cellset_id)
         response = self._rest.GET(url=url)
         return response.json()
 
@@ -3094,7 +3094,7 @@ class CellService(ObjectService):
             top = partition_size
             skip = partition * partition_size
             filter_axis = "$filter=Ordinal eq {axis};".format(axis=axis)
-            url = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
+            url = "/Cellsets('{cellset_id}')?$expand=" \
                   "Axes({filter_axis}$expand={hierarchies}Tuples($expand=Members({select_member_properties}" \
                   "{expand_elem_properties}){partition}))" \
                 .format(cellset_id=cellset_id,
@@ -3181,7 +3181,7 @@ class CellService(ObjectService):
             top = partition_size
             skip = partition * partition_size
 
-            url = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
+            url = "/Cellsets('{cellset_id}')?$expand=" \
                   "Cells($select={cell_properties}{top_cells}{skip_cells}{filter_cells})" \
                 .format(cellset_id=cellset_id,
                         cell_properties=",".join(cell_properties),
