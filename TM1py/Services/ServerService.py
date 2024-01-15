@@ -15,7 +15,7 @@ from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import format_url
 from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, CaseAndSpaceInsensitiveSet, require_data_admin, \
-     require_ops_admin, require_version, decohints, deprecated_in_version
+    require_ops_admin, require_version, decohints, deprecated_in_version, require_admin
 
 
 class LogLevel(Enum):
