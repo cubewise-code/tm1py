@@ -11,7 +11,7 @@ from contextlib import suppress
 from enum import Enum, unique
 from io import StringIO
 from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator, Union, Callable
-
+from urllib.parse import unquote
 import requests
 from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminException
 from TM1py.Objects import ElementAttribute, Element, Cube
@@ -21,6 +21,10 @@ from TM1py.Services import TM1Service
 from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict
 from mdxpy import MdxBuilder, Member
 from requests.adapters import HTTPAdapter
+
+
+from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminException, TM1pyNotDataAdminException, \
+    TM1pyNotSecurityAdminException, TM1pyNotOpsAdminException, TM1pyVersionDeprecationException
 
 try:
     import pandas as pd
@@ -50,6 +54,35 @@ def require_admin(func):
 
     return wrapper
 
+@decohints
+def require_data_admin(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if not self.is_data_admin:
+            raise TM1pyNotDataAdminException(func.__name__)
+        return func(self, *args, **kwargs)
+
+    return wrapper
+
+@decohints
+def require_security_admin(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if not self.is_security_admin:
+            raise TM1pyNotSecurityAdminException(func.__name__)
+        return func(self, *args, **kwargs)
+
+    return wrapper
+
+@decohints
+def require_ops_admin(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if not self.is_ops_admin:
+            raise TM1pyNotOpsAdminException(func.__name__)
+        return func(self, *args, **kwargs)
+
+    return wrapper
 
 @decohints
 def require_version(version):
@@ -61,6 +94,22 @@ def require_version(version):
         def wrapper(self, *args, **kwargs):
             if not verify_version(required_version=version, version=self.version):
                 raise TM1pyVersionException(func.__name__, version)
+            return func(self, *args, **kwargs)
+
+        return wrapper
+
+    return wrap
+
+@decohints
+def deprecated_in_version(version):
+    """ Higher order function to check required version for TM1py function
+    """
+
+    def wrap(func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            if verify_version(required_version=version, version=self.version):
+                raise TM1pyVersionDeprecationException(func.__name__, version)
             return func(self, *args, **kwargs)
 
         return wrapper
@@ -79,6 +128,7 @@ def require_pandas(func):
             raise ImportError(f"Function '{func.__name__}' requires pandas")
 
     return wrapper
+
 
 
 def get_all_servers_from_adminhost(adminhost='localhost', port=None, use_ssl=False) -> List:
@@ -130,7 +180,7 @@ def create_server_on_adminhost(adminhost: str = 'localhost', server_as_dict: Dic
     if not adminhost:
         adminhost = 'localhost'
 
-    url = f"http://{adminhost}:5895/api/v1/Servers"
+    url = f"http://{adminhost}:5895/Servers"
     response = requests.post(url, data=json.dumps(server_as_dict), headers={'Content-Type': 'application/json'})
     response.raise_for_status()
 
@@ -144,7 +194,7 @@ def delete_server_on_adminhost(adminhost: str = None, server_name: str = None):
     if not adminhost:
         adminhost = 'localhost'
 
-    url = f"http://{adminhost}:5895/api/v1/Servers('{server_name}')"
+    url = f"http://{adminhost}:5895/Servers('{server_name}')"
     response = requests.delete(url, headers={'Content-Type': 'application/json'})
     response.raise_for_status()
 
@@ -174,7 +224,7 @@ def update_server_on_adminhost(adminhost: str = 'localhost', server_as_dict: Dic
     if not adminhost:
         adminhost = 'localhost'
 
-    url = f"http://{adminhost}:5895/api/v1/Servers"
+    url = f"http://{adminhost}:5895/Servers"
     response = requests.patch(url, body=json.dumps(server_as_dict), headers={'Content-Type': 'application/json'})
     response.raise_for_status()
 
@@ -211,7 +261,7 @@ def abbreviate_mdx(mdx: str, size=100) -> str:
 
 
 def integerize_version(version: str, precision: int = 4) -> int:
-    return int(version[:precision].replace(".", ""))
+    return int(version[:precision].replace(".", "").ljust(precision, "0"))
 
 
 def verify_version(required_version: str, version: str) -> bool:
@@ -331,9 +381,9 @@ def build_content_from_cellset_dict(
 
 
 def _build_headers_for_csv(row_axis: Dict, column_axis: Dict, row_dimensions: List[str], column_dimensions: List[str],
-                           include_attributes: bool):
+                           include_attributes: bool, mdx_headers: bool = False):
     if not include_attributes:
-        return [dimension_name_from_element_unique_name(dimension)
+        return [dimension if mdx_headers else dimension_name_from_element_unique_name(dimension)
                 for dimension
                 in row_dimensions + column_dimensions] + ['Value']
 
@@ -341,15 +391,29 @@ def _build_headers_for_csv(row_axis: Dict, column_axis: Dict, row_dimensions: Li
     if row_axis:
         members = row_axis["Tuples"][0]['Members']
         for dimension, member in zip(row_dimensions, members):
-            headers.append(dimension_name_from_element_unique_name(dimension))
-            for attribute in member['Attributes']:
-                headers.append(attribute)
+            # headers in verbose syntax e.g. [Product].[Product]
+            if mdx_headers:
+                headers.append(dimension)
+                for attribute in member['Attributes']:
+                    headers.append(dimension + ".[" + attribute + "]")
+            # headers in concise syntax e.g. Product
+            else:
+                headers.append(dimension_name_from_element_unique_name(dimension))
+                for attribute in member['Attributes']:
+                    headers.append(attribute)
 
     members = column_axis["Tuples"][0]['Members']
     for dimension, member in zip(column_dimensions, members):
-        headers.append(dimension_name_from_element_unique_name(dimension))
-        for attribute in member['Attributes']:
-            headers.append(attribute)
+        # headers in verbose syntax e.g. [Product].[Product]
+        if mdx_headers:
+            headers.append(dimension)
+            for attribute in member['Attributes']:
+                headers.append(dimension + ".[" + attribute + "]")
+        # headers in concise syntax e.g. Product
+        else:
+            headers.append(dimension_name_from_element_unique_name(dimension))
+            for attribute in member['Attributes']:
+                headers.append(attribute)
 
     return headers + ['Value']
 
@@ -363,7 +427,8 @@ def build_csv_from_cellset_dict(
         line_separator: str = "\r\n",
         value_separator: str = ",",
         include_attributes: bool = False,
-        include_headers: bool = True) -> str:
+        include_headers: bool = True,
+        mdx_headers: bool = False) -> str:
     """ transform raw cellset data into concise dictionary
     :param column_dimensions:
     :param row_dimensions:
@@ -375,6 +440,7 @@ def build_csv_from_cellset_dict(
     :param value_separator:
     :param include_attributes: include attribute columns
     :param include_headers: bool
+    :param mdx_headers: boolean. Fully qualified hierarchy name as header instead of simple dimension name
     :return:
     """
 
@@ -402,7 +468,13 @@ def build_csv_from_cellset_dict(
 
     num_headers = 0
     if include_headers:
-        headers = _build_headers_for_csv(row_axis, column_axis, row_dimensions, column_dimensions, include_attributes)
+        headers = _build_headers_for_csv(
+            row_axis=row_axis,
+            column_axis=column_axis,
+            row_dimensions=row_dimensions,
+            column_dimensions=column_dimensions,
+            include_attributes=include_attributes,
+            mdx_headers=mdx_headers)
         csv_writer.writerow(headers)
         num_headers = len(headers)
 
@@ -865,6 +937,10 @@ def extract_compact_json_cellset(context: str, response: Dict, return_as_dict: b
     if len(props) == 1:
         return [value[0] for value in cells_data]
 
+    if props == ['Ordinal', 'Value']:
+        return [value[1] for value in cells_data]
+
+
     return cells_data
 
 
@@ -1230,6 +1306,14 @@ def drop_dimension_properties(mdx: str):
 
     pattern = re.compile(r"(?i)\s+PROPERTIES\s+.*?\s+ON")
     return pattern.sub(" ON", mdx)
+
+
+def read_object_name_from_url(url: str, pattern: str) -> str:
+    match = re.match(pattern, url)
+    if not match:
+        return None
+
+    return unquote(match.group(1))
 
 
 class HTTPAdapterWithSocketOptions(HTTPAdapter):

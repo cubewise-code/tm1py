@@ -76,7 +76,7 @@ class ChoreService(ObjectService):
         :return: instance of TM1py.Chore
         """
         url = format_url(
-            "/api/v1/Chores('{}')?$expand=Tasks($expand=*,Process($select=Name),Chore($select=Name))",
+            "/Chores('{}')?$expand=Tasks($expand=*,Process($select=Name),Chore($select=Name))",
             chore_name)
         response = self._rest.GET(url, **kwargs)
         return Chore.from_dict(response.json())
@@ -85,7 +85,7 @@ class ChoreService(ObjectService):
         """ get a List of all Chores
         :return: List of TM1py.Chore
         """
-        url = "/api/v1/Chores?$expand=Tasks($expand=*,Process($select=Name),Chore($select=Name))"
+        url = "/Chores?$expand=Tasks($expand=*,Process($select=Name),Chore($select=Name))"
         response = self._rest.GET(url, **kwargs)
         return [Chore.from_dict(chore_as_dict) for chore_as_dict in response.json()['value']]
 
@@ -93,7 +93,7 @@ class ChoreService(ObjectService):
         """ get a List of all Chores
         :return: List of TM1py.Chore
         """
-        url = "/api/v1/Chores?$select=Name"
+        url = "/Chores?$select=Name"
         response = self._rest.GET(url, **kwargs)
         return [chore['Name'] for chore in response.json()['value']]
 
@@ -102,7 +102,7 @@ class ChoreService(ObjectService):
         :param chore: instance of TM1py.Chore
         :return:
         """
-        url = "/api/v1/Chores"
+        url = "/Chores"
         response = self._rest.POST(url=url, data=chore.body, **kwargs)
 
         if chore.dst_sensitivity:
@@ -117,7 +117,7 @@ class ChoreService(ObjectService):
         :param chore_name:
         :return: response
         """
-        url = format_url("/api/v1/Chores('{}')", chore_name)
+        url = format_url("/Chores('{}')", chore_name)
         response = self._rest.DELETE(url, **kwargs)
         return response
 
@@ -127,7 +127,7 @@ class ChoreService(ObjectService):
         :param chore_name:
         :return:
         """
-        url = format_url("/api/v1/Chores('{}')", chore_name)
+        url = format_url("/Chores('{}')", chore_name)
         return self._exists(url, **kwargs)
 
     def search_for_process_name(self, process_name: str, **kwargs) -> List[Chore]:
@@ -136,7 +136,7 @@ class ChoreService(ObjectService):
         :param process_name: string, a valid ti process name; spaces will be elimniated
         """
         url = format_url(
-            "/api/v1/Chores?$filter=Tasks/any(t: replace(tolower(t/Process/Name), ' ', '') eq '{}')"
+            "/Chores?$filter=Tasks/any(t: replace(tolower(t/Process/Name), ' ', '') eq '{}')"
             "&$expand=Tasks($expand=*,Chore($select=Name),Process($select=Name))",
             process_name.lower().replace(' ', '')
         )
@@ -150,7 +150,7 @@ class ChoreService(ObjectService):
         :param parameter_value: string, will search wildcard for string in parameter value using Contains(string)
         """
         url = format_url(
-            "/api/v1/Chores?"
+            "/Chores?"
             "$filter=Tasks/any(t: t/Parameters/any(p: isof(p/Value, Edm.String) and contains(tolower(p/Value), '{}')))"
             "&$expand=Tasks($expand=*,Process($select=Name),Chore($select=Name))",
             parameter_value.lower()
@@ -166,7 +166,7 @@ class ChoreService(ObjectService):
         :return:
         """
         # Update StartTime, ExecutionMode, Frequency
-        url = format_url("/api/v1/Chores('{}')", chore.name)
+        url = format_url("/Chores('{}')", chore.name)
         # Remove Tasks from Body. Tasks to be managed individually
         chore_dict_without_tasks = chore.body_as_dict
         chore_dict_without_tasks.pop("Tasks")
@@ -198,7 +198,7 @@ class ChoreService(ObjectService):
         :param chore_name:
         :return: response
         """
-        url = format_url("/api/v1/Chores('{}')/tm1.Activate", chore_name)
+        url = format_url("/Chores('{}')/tm1.Activate", chore_name)
         return self._rest.POST(url, '', **kwargs)
 
     def deactivate(self, chore_name: str, **kwargs) -> Response:
@@ -206,7 +206,7 @@ class ChoreService(ObjectService):
         :param chore_name:
         :return: response
         """
-        url = format_url("/api/v1/Chores('{}')/tm1.Deactivate", chore_name)
+        url = format_url("/Chores('{}')/tm1.Deactivate", chore_name)
         return self._rest.POST(url, '', **kwargs)
 
     @deactivate_activate
@@ -216,7 +216,7 @@ class ChoreService(ObjectService):
         :param date_time:
         :return:
         """
-        url = format_url("/api/v1/Chores('{}')/tm1.SetServerLocalStartTime", chore_name)
+        url = format_url("/Chores('{}')/tm1.SetServerLocalStartTime", chore_name)
         data = {
             "StartDate": "{}-{}-{}".format(
                 date_time.year, date_time.month, date_time.day),
@@ -230,14 +230,14 @@ class ChoreService(ObjectService):
             :param chore_name: String, name of the chore to be executed
             :return: the response
         """
-        return self._rest.POST(format_url("/api/v1/Chores('{}')/tm1.Execute", chore_name), '', **kwargs)
+        return self._rest.POST(format_url("/Chores('{}')/tm1.Execute", chore_name), '', **kwargs)
 
     def _get_tasks_count(self, chore_name: str, **kwargs) -> int:
         """ Query Chore tasks count on TM1 Server
         :param chore_name: name of Chore to count tasks
         :return: int
         """
-        url = format_url("/api/v1/Chores('{}')/Tasks/$count", chore_name)
+        url = format_url("/Chores('{}')/Tasks/$count", chore_name)
         response = self._rest.GET(url, **kwargs)
         return int(response.text)
 
@@ -248,7 +248,7 @@ class ChoreService(ObjectService):
         :return: instance of TM1py.ChoreTask
         """
         url = format_url(
-            "/api/v1/Chores('{}')/Tasks({})?$expand=*,Process($select=Name),Chore($select=Name)", chore_name, str(step))
+            "/Chores('{}')/Tasks({})?$expand=*,Process($select=Name),Chore($select=Name)", chore_name, str(step))
         response = self._rest.GET(url, **kwargs)
         return ChoreTask.from_dict(response.json())
 
@@ -258,7 +258,7 @@ class ChoreService(ObjectService):
         :param step: integer
         :return: response
         """
-        url = format_url("/api/v1/Chores('{}')/Tasks({})", chore_name, str(step))
+        url = format_url("/Chores('{}')/Tasks({})", chore_name, str(step))
         response = self._rest.DELETE(url, **kwargs)
         return response
 
@@ -272,7 +272,7 @@ class ChoreService(ObjectService):
         if chore.active:
             self.deactivate(chore_name, **kwargs)
         try:
-            url = format_url("/api/v1/Chores('{}')/Tasks", chore_name)
+            url = format_url("/Chores('{}')/Tasks", chore_name)
             response = self._rest.POST(url, chore_task.body, **kwargs)
         except Exception as e:
             raise e
@@ -287,7 +287,7 @@ class ChoreService(ObjectService):
         :param chore_task: instance TM1py.ChoreTask
         :return: response
         """
-        url = format_url("/api/v1/Chores('{}')/Tasks({})", chore_name, str(chore_task.step))
+        url = format_url("/Chores('{}')/Tasks({})", chore_name, str(chore_task.step))
         return self._rest.PATCH(url, chore_task.body, **kwargs)
 
     @staticmethod

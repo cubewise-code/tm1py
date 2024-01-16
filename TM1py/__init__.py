@@ -47,6 +47,7 @@ from TM1py.Services.ChoreService import ChoreService
 from TM1py.Services.CubeService import CubeService
 from TM1py.Services.DimensionService import DimensionService
 from TM1py.Services.ElementService import ElementService
+from TM1py.Services.FileService import FileService
 from TM1py.Services.GitService import GitService
 from TM1py.Services.HierarchyService import HierarchyService
 from TM1py.Services.MonitoringService import MonitoringService
@@ -60,6 +61,7 @@ from TM1py.Services.ServerService import ServerService
 from TM1py.Services.SubsetService import SubsetService
 from TM1py.Services.TM1Service import TM1Service
 from TM1py.Services.ViewService import ViewService
+from TM1py.Services.ManageService import ManageService
 from TM1py.Utils import Utils
 
 __version__ = "1.11.2"

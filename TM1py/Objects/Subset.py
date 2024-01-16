@@ -5,7 +5,7 @@ import json
 from typing import List, Dict, Optional, Iterable
 
 from TM1py.Objects.TM1Object import TM1Object
-from TM1py.Utils import format_url
+from TM1py.Utils import format_url, read_object_name_from_url
 
 
 class Subset(TM1Object):
@@ -204,12 +204,51 @@ class AnonymousSubset(Subset):
         :param subset_as_dict: dictionary, representation of Subset as specified in CSDL
         :return: an instance of this class
         """
-        return cls(dimension_name=subset_as_dict["Hierarchy"]["Dimension"]["Name"],
-                   hierarchy_name=subset_as_dict["Hierarchy"]["Name"],
-                   expression=subset_as_dict['Expression'],
-                   alias=subset_as_dict['Alias'],
-                   elements=[element['Name'] for element in subset_as_dict['Elements']]
-                   if not subset_as_dict['Expression'] else None)
+        if "Hierarchy" in subset_as_dict:
+            dimension_name = subset_as_dict["Hierarchy"]["Dimension"]["Name"]
+            hierarchy_name = subset_as_dict["Hierarchy"]["Name"]
+
+        elif "Hierarchy@odata.bind" in subset_as_dict:
+            hierarchy_odata = subset_as_dict["Hierarchy@odata.bind"]
+
+            dimension_name = read_object_name_from_url(
+                url=hierarchy_odata,
+                pattern=r"Dimensions\('(.*?)'\)/Hierarchies\('(.+?)'\)")
+
+            hierarchy_name = read_object_name_from_url(
+                url=hierarchy_odata,
+                pattern=r"Dimensions\('(.+?)'\)/Hierarchies\('(.*?)'\)")
+
+            if not all([dimension_name, hierarchy_name]):
+                raise ValueError(
+                    f"Unexpected value for 'Hierarchy@odata.bind' property in subset dict: '{hierarchy_odata}'")
+
+        else:
+            raise ValueError("Subset dict must contain 'Hierarchy' or 'Hierarchy@odata.bind' as key")
+
+        if "Elements" in subset_as_dict:
+            elements = [element['Name'] for element in subset_as_dict['Elements']]
+        elif "Elements@odata.bind" in subset_as_dict:
+            elements = list()
+
+            elements_odata = subset_as_dict["Elements@odata.bind"]
+            pattern = r"Dimensions\('.*?'\)/Hierarchies\('.*?'\)/Elements\('(.+?)'\)"
+            for element_odata in elements_odata:
+                element = read_object_name_from_url(element_odata, pattern)
+                if not element:
+                    raise ValueError(
+                        f"Unexpected entry '{element_odata}' for 'Elements@odata.bind' property in subset dict")
+
+                elements.append(element)
+        else:
+            elements = None
+
+        return cls(
+            dimension_name=dimension_name,
+            hierarchy_name=hierarchy_name,
+            expression=subset_as_dict.get('Expression', None),
+            alias=subset_as_dict.get('Alias', None),
+            elements=elements if not subset_as_dict.get('Expression', None) else None)
 
     def _construct_body_dynamic(self) -> Dict:
         body_as_dict = collections.OrderedDict()

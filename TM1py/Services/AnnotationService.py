@@ -24,7 +24,7 @@ class AnnotationService(ObjectService):
 
         :param cube_name:
         """
-        url = format_url("/api/v1/Cubes('{}')/Annotations?$expand=DimensionalContext($select=Name)", cube_name)
+        url = format_url("/Cubes('{}')/Annotations?$expand=DimensionalContext($select=Name)", cube_name)
         response = self._rest.GET(url, **kwargs)
 
         annotations_as_dict = response.json()['value']
@@ -36,7 +36,7 @@ class AnnotationService(ObjectService):
 
         :param annotation: instance of TM1py.Annotation
         """
-        url = "/api/v1/Annotations"
+        url = "/Annotations"
 
         from TM1py import CubeService
         cube_dimensions = CubeService(self._rest).get_dimension_names(
@@ -65,7 +65,7 @@ class AnnotationService(ObjectService):
                 cube_dimensions[annotation.object_name] = dimension_names
             payload.append(annotation.construct_body_for_post(dimension_names))
 
-        response = self._rest.POST("/api/v1/Annotations", json.dumps(payload), **kwargs)
+        response = self._rest.POST("/Annotations", json.dumps(payload), **kwargs)
 
         return response
 
@@ -74,7 +74,7 @@ class AnnotationService(ObjectService):
 
         :param annotation_id: String, the id of the annotation
         """
-        request = format_url("/api/v1/Annotations('{}')?$expand=DimensionalContext($select=Name)", annotation_id)
+        request = format_url("/Annotations('{}')?$expand=DimensionalContext($select=Name)", annotation_id)
         response = self._rest.GET(url=request, **kwargs)
         return Annotation.from_json(response.text)
 
@@ -84,7 +84,7 @@ class AnnotationService(ObjectService):
 
         :param annotation: instance of TM1py.Annotation
         """
-        url = format_url("/api/v1/Annotations('{}')", annotation.id)
+        url = format_url("/Annotations('{}')", annotation.id)
         return self._rest.PATCH(url=url, data=annotation.body, **kwargs)
 
     def delete(self, annotation_id: str, **kwargs) -> Response:
@@ -92,5 +92,5 @@ class AnnotationService(ObjectService):
     
         :param annotation_id: string, the id of the annotation
         """
-        url = format_url("/api/v1/Annotations('{}')", annotation_id)
+        url = format_url("/Annotations('{}')", annotation_id)
         return self._rest.DELETE(url=url, **kwargs)

@@ -30,7 +30,27 @@ def skip_if_insufficient_version(version):
         def wrapper(self, *args, **kwargs):
             if not verify_version(required_version=version, version=self.tm1.version):
                 return self.skipTest(
-                    f"Function '{ func.__name__, }' requires TM1 server version >= '{ version }'"
+                    f"Function '{func.__name__,}' requires TM1 server version >= '{version}'"
+                )
+            else:
+                return func(self, *args, **kwargs)
+
+        return wrapper
+
+    return wrap
+
+
+def skip_if_deprecated_in_version(version):
+    """
+    Checks whether TM1 Function Has Been Deprecated
+    """
+
+    def wrap(func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            if verify_version(required_version=version, version=self.tm1.version):
+                return self.skipTest(
+                    f"Function '{func.__name__,}' requires TM1 server version < '{version}'"
                 )
             else:
                 return func(self, *args, **kwargs)

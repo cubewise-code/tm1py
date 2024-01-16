@@ -4,6 +4,7 @@ import csv
 import functools
 import itertools
 import json
+import math
 import uuid
 import warnings
 from collections import OrderedDict
@@ -32,10 +33,10 @@ from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url, add_url_p
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
     CaseAndSpaceInsensitiveDict, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, \
     abbreviate_mdx, build_csv_from_cellset_dict, require_version, require_pandas, build_cellset_from_pandas_dataframe, \
-    case_and_space_insensitive_equals, get_cube, resembles_mdx, require_admin, extract_compact_json_cellset, \
+    case_and_space_insensitive_equals, get_cube, resembles_mdx, require_data_admin, require_ops_admin, extract_compact_json_cellset, \
     cell_is_updateable, build_mdx_from_cellset, build_mdx_and_values_from_cellset, \
     dimension_names_from_element_unique_names, frame_to_significant_digits, build_dataframe_from_csv, \
-    drop_dimension_properties, decohints
+    drop_dimension_properties, decohints, verify_version
 
 try:
     import pandas as pd
@@ -114,11 +115,11 @@ def manage_changeset(func):
 
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
-        if kwargs.get("use_changeset", False):
+        use_changeset = kwargs.pop("use_changeset", False)
+        if use_changeset:
+            changeset = self.begin_changeset()
             try:
-                changeset = self.begin_changeset()
-                kwargs["changeset"] = changeset
-                return func(self, *args, **kwargs)
+                return func(self, changeset=changeset, *args, **kwargs)
             finally:
                 self.end_changeset(changeset)
         else:
@@ -343,7 +344,7 @@ class CellService(ObjectService):
                 component_fields = f'{component_depth}/Type, {component_depth}/Value, {component_depth}/Statements'
                 select_query = ','.join([select_query, component_fields])
 
-        url = format_url("/api/v1/Cubes('{}')/tm1.TraceCellCalculation?$select=Type,Value,Statements"
+        url = format_url("/Cubes('{}')/tm1.TraceCellCalculation?$select=Type,Value,Statements"
                          "{}&$expand=Tuple($select=Name, UniqueName, Type) {}", cube_name, select_query, expand_query)
 
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
@@ -388,7 +389,7 @@ class CellService(ObjectService):
         :return: feeder trace
         """
 
-        url = format_url("/api/v1/Cubes('{}')/tm1.TraceFeeders?$select=Statements,FedCells"
+        url = format_url("/Cubes('{}')/tm1.TraceFeeders?$select=Statements,FedCells"
                          "&$expand=FedCells/Tuple($select=Name,UniqueName,Type), "
                          "FedCells/Cube($select=Name)", cube_name)
 
@@ -434,7 +435,7 @@ class CellService(ObjectService):
         :return: fed cell descriptor
         """
 
-        url = format_url("/api/v1/Cubes('{}')/tm1.CheckFeeders"
+        url = format_url("/Cubes('{}')/tm1.CheckFeeders"
                          "?$select=Fed"
                          "&$expand=Tuple($select=Name,UniqueName,Type),Cube($select=Name)", cube_name)
 
@@ -525,7 +526,8 @@ class CellService(ObjectService):
         return self._post_against_cellset(cellset_id=cellset_id, payload=payload, delete_cellset=True,
                                           sandbox_name=sandbox_name, **kwargs)
 
-    @require_admin
+    @require_data_admin
+    @require_ops_admin
     @require_version(version="11.7")
     def clear(self, cube: str, **kwargs):
         """
@@ -566,7 +568,8 @@ class CellService(ObjectService):
 
         return self.clear_with_mdx(cube=cube, mdx=mdx_builder.to_mdx(), **kwargs)
 
-    @require_admin
+    @require_data_admin
+    @require_ops_admin
     @require_version(version="11.7")
     def clear_with_mdx(self, cube: str, mdx: str, sandbox_name: str = None, **kwargs):
         """ clear a slice in a cube based on an MDX query.
@@ -608,7 +611,7 @@ class CellService(ObjectService):
         :param kwargs:
         :return:
         """
-        url = format_url("/api/v1/Cellsets('{}')/tm1.Update", cellset_id)
+        url = format_url("/Cellsets('{}')/tm1.Update", cellset_id)
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         return self._rest.POST(url=url, data=json.dumps(payload), **kwargs)
 
@@ -632,7 +635,7 @@ class CellService(ObjectService):
                         precision: int = None,
                         skip_non_updateable: bool = False, measure_dimension_elements: Dict = None,
                         sum_numeric_duplicates: bool = True, remove_blob: bool = True, allow_spread: bool = False,
-                        **kwargs) -> str:
+                        clear_view: str = None, **kwargs) -> str:
         """
         Function expects same shape as `execute_mdx_dataframe` returns.
         Column order must match dimensions in the target cube with an additional column for the values.
@@ -656,6 +659,7 @@ class CellService(ObjectService):
         :param sum_numeric_duplicates: Aggregate numerical values for duplicated intersections
         :param remove_blob: remove blob file after writing with use_blob=True
         :param allow_spread: allow TI process in use_blob or use_ti to use CellPutProportionalSpread on C elements
+        :param clear_view: name of cube view to clear before writing
         :return: changeset or None
         """
         if not isinstance(data, pd.DataFrame):
@@ -684,6 +688,7 @@ class CellService(ObjectService):
                           skip_non_updateable=skip_non_updateable,
                           measure_dimension_elements=measure_dimension_elements,
                           allow_spread=allow_spread,
+                          clear_view=clear_view,
                           **kwargs)
 
     @manage_transaction_log
@@ -829,7 +834,7 @@ class CellService(ObjectService):
         """
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
-        url = format_url("/api/v1/Cubes('{}')/tm1.Update", cube_name)
+        url = format_url("/Cubes('{}')/tm1.Update", cube_name)
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         body_as_dict = OrderedDict()
         body_as_dict["Cells"] = [{}]
@@ -843,7 +848,7 @@ class CellService(ObjectService):
               deactivate_transaction_log: bool = False, reactivate_transaction_log: bool = False,
               sandbox_name: str = None, use_ti: bool = False, use_blob: bool = False, use_changeset: bool = False,
               precision: int = None, skip_non_updateable: bool = False, measure_dimension_elements: Dict = None,
-              remove_blob: bool = True, allow_spread: bool=False, **kwargs) -> Optional[str]:
+              remove_blob: bool = True, allow_spread: bool = False, clear_view: str = None, **kwargs) -> Optional[str]:
         """ Write values to a cube
 
         Same signature as `write_values` method, but faster since it uses `write_values_through_cellset`
@@ -870,8 +875,12 @@ class CellService(ObjectService):
         When all written values are numeric you can pass a default dict with default key 'Numeric'
         :param remove_blob: remove blob file after writing with use_blob=True
         :param allow_spread: allow TI process in use_blob or use_ti to use CellPutProportionalSpread on C elements
+        :param clear_view: name of cube view to clear before writing
         :return: changeset or None
         """
+
+        if clear_view and not use_blob:
+            raise ValueError("'clear_view' can only be used in conjunction with 'use_blob'")
 
         if use_ti:
             return self.write_through_unbound_process(
@@ -900,6 +909,7 @@ class CellService(ObjectService):
                 dimensions=dimensions,
                 remove_blob=remove_blob,
                 allow_spread=allow_spread,
+                clear_view=clear_view,
                 **kwargs)
 
         return self.write_through_cellset(cube_name, cellset_as_dict, dimensions, increment, deactivate_transaction_log,
@@ -916,16 +926,17 @@ class CellService(ObjectService):
         if skip_non_updateable:
             cellset_as_dict = self.drop_non_updateable_cells(cellset_as_dict, cube_name, dimensions)
 
-        mdx, values = build_mdx_and_values_from_cellset(cellset_as_dict, cube_name, dimensions)
-        return self.write_values_through_cellset(
-            mdx=mdx,
-            values=values,
-            increment=increment,
-            deactivate_transaction_log=deactivate_transaction_log,
-            reactivate_transaction_log=reactivate_transaction_log,
-            sandbox_name=sandbox_name,
-            use_changeset=use_changeset,
-            **kwargs)
+        if cellset_as_dict:
+            mdx, values = build_mdx_and_values_from_cellset(cellset_as_dict, cube_name, dimensions)
+            return self.write_values_through_cellset(
+                mdx=mdx,
+                values=values,
+                increment=increment,
+                deactivate_transaction_log=deactivate_transaction_log,
+                reactivate_transaction_log=reactivate_transaction_log,
+                sandbox_name=sandbox_name,
+                use_changeset=use_changeset,
+                **kwargs)
 
     def drop_non_updateable_cells(self, cells: Dict, cube_name: str, dimensions: List[str]):
         mdx = build_mdx_from_cellset(cells, cube_name, dimensions)
@@ -948,7 +959,8 @@ class CellService(ObjectService):
                 updateable_cells[elements] = cells[elements]
         return updateable_cells
 
-    @require_admin
+    @require_data_admin
+    @require_ops_admin
     @manage_transaction_log
     def write_through_unbound_process(self, cube_name: str, cellset_as_dict: Dict, increment: bool = False,
                                       sandbox_name: str = None, precision: int = None,
@@ -1034,12 +1046,14 @@ class CellService(ObjectService):
         if not all(successes):
             raise TM1pyWritePartialFailureException(statuses, log_files, len(successes))
 
-    @require_admin
+    @require_data_admin
+    @require_ops_admin
     @manage_transaction_log
     @require_pandas
     def write_through_blob(self, cube_name: str, cellset_as_dict: dict, increment: bool = False,
                            sandbox_name: str = None, skip_non_updateable: bool = False,
-                           remove_blob=True, dimensions: str = None, allow_spread: bool=False, **kwargs):
+                           remove_blob=True, dimensions: str = None, allow_spread: bool = False,
+                           clear_view: str = None, **kwargs):
         """
         Writes data back to TM1 via an unbound TI process having an uploaded CSV as data source
         :param cube_name: str
@@ -1050,6 +1064,7 @@ class CellService(ObjectService):
         :param remove_blob: choose False to persist blob after write. Can be helpful for troubleshooting.
         :param dimensions: optional. Dimension names in their natural order. Will speed up the execution!
         :param allow_spread: allow TI process in use_blob or use_ti to use CellPutProportionalSpread on C elements.
+        :param clear_view: name of cube view to clear before writing
         :param kwargs:
         :return: Success: bool, Messages: list, ChangeSet: None
         """
@@ -1087,7 +1102,8 @@ class CellService(ObjectService):
                 increment=increment,
                 skip_non_updateable=skip_non_updateable,
                 sandbox_name=sandbox_name,
-                allow_spread=allow_spread)
+                allow_spread=allow_spread,
+                clear_view=clear_view)
 
             success, status, log_file = process_service.execute_process_with_return(process=process, **kwargs)
             if not success:
@@ -1102,13 +1118,17 @@ class CellService(ObjectService):
 
     def _build_blob_to_cube_process(self, cube_name: str, process_name: str, blob_filename: str, dimensions: List[str],
                                     increment: bool, skip_non_updateable: bool, sandbox_name: str,
-                                    allow_spread: bool) -> Process:
+                                    allow_spread: bool, clear_view: str) -> Process:
+
+        # v11 automatically adds blb file extensions to documents created via the contents api
+        if not verify_version(required_version="12", version=self.version):
+            blob_filename += ".blb"
         dataload_process = Process(
             name=process_name,
             datasource_type='ASCII',
             datasource_ascii_header_records=0,
-            datasource_data_source_name_for_server=f"{blob_filename}.blb",
-            datasource_data_source_name_for_client=f"{blob_filename}.blb",
+            datasource_data_source_name_for_server=f"{blob_filename}",
+            datasource_data_source_name_for_client=f"{blob_filename}",
             datasource_ascii_delimiter_char=',',
             datasource_ascii_decimal_separator='.',
             datasource_ascii_thousand_separator='',
@@ -1120,6 +1140,9 @@ class CellService(ObjectService):
         SetInputCharacterSet('TM1CS_UTF8');
         {self.generate_enable_sandbox_ti(sandbox_name)}
         """
+
+        if clear_view:
+            dataload_process.prolog_procedure = dataload_process.prolog_procedure + f"\rViewZeroOut('{cube_name}', '{clear_view}');\r"
 
         # Create variables as all String
         dimension_variables = [f"v{n}" for n in range(1, len(dimensions) + 1)]
@@ -1217,6 +1240,10 @@ class CellService(ObjectService):
             datasource_ascii_decimal_separator='.',
             datasource_ascii_thousand_separator='')
 
+        # v11 automatically adds blb file extensions to documents created via the contents api
+        if not verify_version(required_version="12", version=self.version):
+            file_name += ".blb"
+
         # Create variables in process data source as all String
         for variable in variables:
             process.add_variable(name=variable, variable_type='String')
@@ -1236,14 +1263,14 @@ class CellService(ObjectService):
         comma_sep_variables = ",".join(sorted(set(variables) - set(skip_variables), key=lambda v: int(v[1:])))
         data_procedure_pre = f"""
         IF (nRecord = 0);
-          SetOutputCharacterSet('{file_name}.blb','TM1CS_UTF8');
+          SetOutputCharacterSet('{file_name}','TM1CS_UTF8');
         ENDIF;
         nRecord = nRecord + 1;
         """
         if header_line:
             data_procedure_pre += f"""
             IF (nRecord = 1);
-              TextOutput('{file_name}.blb',{header_line});
+              TextOutput('{file_name}',{header_line});
             ENDIF;
             """
         if top:
@@ -1261,8 +1288,15 @@ class CellService(ObjectService):
             ENDIF;
             """
 
+        # v12 occasionally produces tiny numbers (e.g. 4.94066e-324) instead of 0
+        data_procedure_pre += f"""
+        IF (ISUNDEFINEDCELLVALUE(NVALUE,'{cube}') = 1);
+          SVALUE ='0';
+        ENDIF;
+        """
+
         data_procedure = f"""
-        TextOutput('{file_name}.blb',{comma_sep_variables},SVALUE);
+        TextOutput('{file_name}',{comma_sep_variables},SVALUE);
         """
         process.data_procedure = data_procedure_pre + data_procedure
 
@@ -1498,7 +1532,7 @@ class CellService(ObjectService):
         """
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name, **kwargs)
-        url = format_url("/api/v1/Cubes('{}')/tm1.Update", cube_name)
+        url = format_url("/Cubes('{}')/tm1.Update", cube_name)
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         url = add_url_parameters(url, **{"!ChangeSet": changeset})
 
@@ -1577,7 +1611,7 @@ class CellService(ObjectService):
         :return:
         """
 
-        url = format_url("/api/v1/Cellsets('{}')/Cells", cellset_id)
+        url = format_url("/Cellsets('{}')/Cells", cellset_id)
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         url = add_url_parameters(url, **{"!ChangeSet": changeset})
         data = []
@@ -1858,7 +1892,8 @@ class CellService(ObjectService):
                         skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
                         csv_dialect: 'csv.Dialect' = None, line_separator: str = "\r\n", value_separator: str = ",",
                         sandbox_name: str = None, include_attributes: bool = False, use_iterative_json: bool = False,
-                        use_compact_json: bool = False, use_blob: bool = False, **kwargs) -> str:
+                        use_compact_json: bool = False, use_blob: bool = False, mdx_headers: bool = False,
+                        **kwargs) -> str:
         """ Optimized for performance. Get csv string of coordinates and values.
 
         :param mdx: Valid MDX Query
@@ -1877,6 +1912,7 @@ class CellService(ObjectService):
         Comes at a cost of 3-5% performance.
         :param use_compact_json: bool
         :param use_blob: Has better performance on datasets > 1M cells and lower memory footprint in any case.
+        :param mdx_headers: boolean, fully qualified hierarchy name as header instead of simple dimension name
         :return: String
         """
         if use_blob:
@@ -1900,6 +1936,7 @@ class CellService(ObjectService):
                 skip_rule_derived_cells=skip_rule_derived_cells,
                 value_separator=value_separator,
                 sandbox_name=sandbox_name,
+                mdx_headers=mdx_headers,
                 **kwargs)
 
         cellset_id = self.create_cellset(mdx, sandbox_name=sandbox_name, **kwargs)
@@ -1909,21 +1946,21 @@ class CellService(ObjectService):
                 cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                 skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
                 csv_dialect=csv_dialect, line_separator=line_separator, value_separator=value_separator,
-                sandbox_name=sandbox_name, include_attributes=include_attributes, **kwargs)
+                sandbox_name=sandbox_name, include_attributes=include_attributes, mdx_headers=mdx_headers, **kwargs)
 
         return self.extract_cellset_csv(
             cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
             skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
             csv_dialect=csv_dialect, line_separator=line_separator, value_separator=value_separator,
             sandbox_name=sandbox_name, include_attributes=include_attributes,
-            use_compact_json=use_compact_json, **kwargs)
+            use_compact_json=use_compact_json, mdx_headers=mdx_headers, **kwargs)
 
     def execute_view_csv(self, cube_name: str, view_name: str, private: bool = False, top: int = None, skip: int = None,
                          skip_zeros: bool = True, skip_consolidated_cells: bool = False,
                          skip_rule_derived_cells: bool = False, csv_dialect: 'csv.Dialect' = None,
                          line_separator: str = "\r\n", value_separator: str = ",", sandbox_name: str = None,
                          use_iterative_json: bool = False, use_compact_json: bool = False, use_blob: bool = False,
-                         **kwargs) -> str:
+                         arranged_axes: Tuple[List, List, List] = None, mdx_headers: bool = False, **kwargs) -> str:
         """ Optimized for performance. Get csv string of coordinates and values.
 
         :param cube_name: String, name of the cube
@@ -1943,6 +1980,10 @@ class CellService(ObjectService):
         Comes at a cost of 3-5% performance.
         :param use_compact_json: bool
         :param use_blob: Has 40% better performance and lower memory footprint in any case. Requires admin permissions.
+        :param arranged_axes: Tuple of dimension names on all axes as 3 lists: Titles, Rows, Columns.
+         Allows function to skip retrieval of cellset composition.
+         E.g.: arranged_axes=(["Year"], ["Region","Product"], ["Period", "Version"])
+        :param mdx_headers: boolean, fully qualified hierarchy name as header instead of simple dimension name
         :return: String
         """
         if use_blob:
@@ -1967,6 +2008,8 @@ class CellService(ObjectService):
                 skip_rule_derived_cells=skip_rule_derived_cells,
                 value_separator=value_separator,
                 sandbox_name=sandbox_name,
+                arranged_axes=arranged_axes,
+                mdx_headers=mdx_headers,
                 **kwargs)
 
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
@@ -1977,14 +2020,14 @@ class CellService(ObjectService):
                 skip_consolidated_cells=skip_consolidated_cells,
                 skip_rule_derived_cells=skip_rule_derived_cells, csv_dialect=csv_dialect,
                 line_separator=line_separator, value_separator=value_separator,
-                sandbox_name=sandbox_name, **kwargs)
+                sandbox_name=sandbox_name, mdx_headers=mdx_headers, **kwargs)
 
         return self.extract_cellset_csv(
             cellset_id=cellset_id, skip_zeros=skip_zeros, top=top, skip=skip,
             skip_consolidated_cells=skip_consolidated_cells,
             skip_rule_derived_cells=skip_rule_derived_cells, csv_dialect=csv_dialect,
             line_separator=line_separator, value_separator=value_separator, sandbox_name=sandbox_name,
-            use_compact_json=use_compact_json, **kwargs)
+            use_compact_json=use_compact_json, mdx_headers=mdx_headers, **kwargs)
 
     def execute_mdx_elements_value_dict(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
                                         skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
@@ -2022,7 +2065,8 @@ class CellService(ObjectService):
                               skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
                               sandbox_name: str = None, include_attributes: bool = False,
                               use_iterative_json: bool = False, use_compact_json: bool = False,
-                              use_blob: bool = False, shaped: bool = False, **kwargs) -> 'pd.DataFrame':
+                              use_blob: bool = False, shaped: bool = False, mdx_headers: bool = False,
+                              **kwargs) -> 'pd.DataFrame':
         """ Optimized for performance. Get Pandas DataFrame from MDX Query.
 
         Takes all arguments from the pandas.read_csv method:
@@ -2044,6 +2088,7 @@ class CellService(ObjectService):
         :param use_compact_json: bool
         :param use_blob: Has better performance on datasets > 1M cells and lower memory footprint in any case.
         :param shaped: preserve shape of view/mdx in data frame
+        :param mdx_headers: boolean, fully qualified hierarchy name as header instead of simple dimension name
         :return: Pandas Dataframe
         """
         # necessary to assure column order in line with cube view
@@ -2062,7 +2107,8 @@ class CellService(ObjectService):
                 include_attributes=include_attributes,
                 line_separator="\r\n",
                 value_separator="~",
-                use_blob=use_blob)
+                use_blob=use_blob,
+                mdx_headers=mdx_headers)
 
             return build_dataframe_from_csv(raw_csv, sep='~', skip_zeros=skip_zeros, shaped=shaped, **kwargs)
 
@@ -2072,8 +2118,7 @@ class CellService(ObjectService):
                                               skip_rule_derived_cells=skip_rule_derived_cells,
                                               sandbox_name=sandbox_name, include_attributes=include_attributes,
                                               use_iterative_json=use_iterative_json, use_compact_json=use_compact_json,
-                                              shaped=shaped,
-                                              **kwargs)
+                                              shaped=shaped, mdx_headers=mdx_headers, **kwargs)
 
     @require_pandas
     def execute_mdx_dataframe_async(self, mdx_list: List[Union[str, MdxBuilder]], max_workers: int = 8,
@@ -2082,7 +2127,8 @@ class CellService(ObjectService):
                                     skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
                                     sandbox_name: str = None, include_attributes: bool = False,
                                     use_iterative_json: bool = False, use_compact_json: bool = False,
-                                    use_blob: bool = False, shaped: bool = False, **kwargs) -> 'pd.DataFrame':
+                                    use_blob: bool = False, shaped: bool = False, mdx_headers: bool = False,
+                                    **kwargs) -> 'pd.DataFrame':
 
         def _execute_mdx_dataframe(mdx: Union[str, MdxBuilder]):
             return self.execute_mdx_dataframe(mdx=mdx, top=top, skip=skip, skip_zeros=skip_zeros,
@@ -2090,7 +2136,7 @@ class CellService(ObjectService):
                                               skip_rule_derived_cells=skip_rule_derived_cells,
                                               sandbox_name=sandbox_name, include_attributes=include_attributes,
                                               use_iterative_json=use_iterative_json, use_compact_json=use_compact_json,
-                                              use_blob=use_blob, shaped=shaped, **kwargs)
+                                              use_blob=use_blob, shaped=shaped, mdx_headers=mdx_headers, **kwargs)
 
         async def _exec_mdx_dataframe_async():
             loop = asyncio.get_event_loop()
@@ -2108,7 +2154,7 @@ class CellService(ObjectService):
 
     @require_pandas
     def execute_mdx_dataframe_shaped(self, mdx: str, sandbox_name: str = None, display_attribute: bool = False,
-                                     use_iterative_json: bool = False, use_blob: bool = False,
+                                     use_iterative_json: bool = False, use_blob: bool = False, mdx_headers: bool=False,
                                      **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cube in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
@@ -2134,6 +2180,7 @@ class CellService(ObjectService):
                 delete_cellset=True,
                 sandbox_name=sandbox_name,
                 display_attribute=display_attribute,
+                mdx_headers=mdx_headers,
                 **kwargs)
 
         if all([use_blob, use_iterative_json]):
@@ -2147,6 +2194,7 @@ class CellService(ObjectService):
                 sandbox_name=sandbox_name,
                 use_iterative_json=use_iterative_json,
                 use_blob=False,
+                mdx_headers=mdx_headers,
                 **kwargs)
 
         # blob approach
@@ -2155,12 +2203,13 @@ class CellService(ObjectService):
             shaped=True,
             sandbox_name=sandbox_name,
             use_blob=True,
+            mdx_headers=mdx_headers,
             **kwargs)
 
     @require_pandas
     def execute_view_dataframe_shaped(self, cube_name: str, view_name: str, private: bool = False,
                                       sandbox_name: str = None, use_iterative_json: bool = False,
-                                      use_blob: bool = False, **kwargs) -> 'pd.DataFrame':
+                                      use_blob: bool = False, mdx_headers: bool = False, **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cube in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
 
@@ -2185,6 +2234,7 @@ class CellService(ObjectService):
                 cellset_id=cellset_id,
                 delete_cellset=True,
                 sandbox_name=sandbox_name,
+                mdx_headers=mdx_headers,
                 **kwargs)
 
         if all([use_blob, use_iterative_json]):
@@ -2199,6 +2249,7 @@ class CellService(ObjectService):
                 shaped=True,
                 sandbox_name=sandbox_name,
                 use_iterative_json=use_iterative_json,
+                mdx_headers=mdx_headers,
                 use_blob=False,
                 **kwargs)
 
@@ -2212,6 +2263,7 @@ class CellService(ObjectService):
             private=private,
             shaped=True,
             sandbox_name=sandbox_name,
+            mdx_headers=mdx_headers,
             use_blob=True,
             **kwargs)
 
@@ -2302,7 +2354,8 @@ class CellService(ObjectService):
                                skip: int = None, skip_zeros: bool = True, skip_consolidated_cells: bool = False,
                                skip_rule_derived_cells: bool = False, sandbox_name: str = None,
                                use_iterative_json: bool = False, use_blob: bool = False, shaped: bool = False,
-                               **kwargs) -> 'pd.DataFrame':
+                               arranged_axes: Tuple[List, List, List] = None,
+                               mdx_headers: bool = False, **kwargs) -> 'pd.DataFrame':
         """ Optimized for performance. Get Pandas DataFrame from an existing Cube View
         Context dimensions are omitted in the resulting Dataframe !
         Cells with Zero/null are omitted !
@@ -2325,6 +2378,11 @@ class CellService(ObjectService):
         :param use_iterative_json: use iterative json parsing to reduce memory consumption significantly.
         Comes at a cost of 3-5% performance.
         :param use_blob: Has 40% better performance and lower memory footprint in any case. Requires admin permissions.
+        :param shaped: Shape rows and columns of data frame as specified in cube view / MDX
+        :param arranged_axes: Tuple of dimension names on all axes as 3 lists: Titles, Rows, Columns.
+         Allows function to skip retrieval of cellset composition in use_blob mode.
+         E.g.: axes=(["Year"], ["Region","Product"], ["Period", "Version"])
+         :param mdx_headers: boolean, fully qualified hierarchy name as header instead of simple dimension name
         :return: Pandas Dataframe
         """
         # necessary to assure column order in line with cube view
@@ -2345,6 +2403,8 @@ class CellService(ObjectService):
                 line_separator="\r\n",
                 value_separator="~",
                 use_blob=True,
+                arranged_axes=arranged_axes,
+                mdx_headers=mdx_headers,
                 **kwargs)
             return build_dataframe_from_csv(raw_csv, sep='~', skip_zeros=skip_zeros, shaped=shaped, **kwargs)
 
@@ -2354,7 +2414,7 @@ class CellService(ObjectService):
                                               skip_consolidated_cells=skip_consolidated_cells,
                                               skip_rule_derived_cells=skip_rule_derived_cells,
                                               sandbox_name=sandbox_name, use_iterative_json=use_iterative_json,
-                                              shaped=shaped, **kwargs)
+                                              shaped=shaped, mdx_headers=mdx_headers, **kwargs)
 
     def execute_view_cellcount(self, cube_name: str, view_name: str, private: bool = False, sandbox_name: str = None,
                                **kwargs) -> int:
@@ -2724,7 +2784,7 @@ class CellService(ObjectService):
         # if top_cells is set to N => it will be sufficient to get only the first N tuples in Axes, top_tuples does this
         # if skip_cells is used => trick not applicable, all tuples must be extracted
 
-        url = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
+        url = "/Cellsets('{cellset_id}')?$expand=" \
               "Cube($select=Name;$expand=Dimensions($select=Name))," \
               "Axes({filter_axis}$expand={hierarchies}Tuples($expand=Members({select_member_properties}" \
               "{expand_elem_properties}){top_tuples}))," \
@@ -2852,7 +2912,7 @@ class CellService(ObjectService):
         # if top_cells is set to N => it will be sufficient to get only the first N tuples in Axes, top_tuples does this
         # if skip_cells is used => trick not applicable, all tuples must be extracted
 
-        url = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
+        url = "/Cellsets('{cellset_id}')?$expand=" \
               "Cube($select=Name;$expand=Dimensions($select=Name))," \
               "Axes({filter_axis}$expand={hierarchies}Tuples($expand=Members({select_member_properties}" \
               "{expand_elem_properties}){top_tuples}))" \
@@ -2866,6 +2926,68 @@ class CellService(ObjectService):
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url=url, **kwargs)
         return response.json()
+
+    def extract_cellset_partition(self, cellset_id: str,
+                                  partition_start_ordinal: int,
+                                  partition_end_ordinal: int,
+                                  cell_properties: Iterable[str] = None,
+                                  top: int = None,
+                                  skip: int = None,
+                                  skip_zeros: bool = False,
+                                  skip_consolidated_cells: bool = False,
+                                  skip_rule_derived_cells: bool = False,
+                                  sandbox_name: str = None) -> Dict:
+        """
+        Method to extract a cellset partition. Cellset partitions are a collection of cellset cells where they have
+        a defined top left boundary, and bottom right boundary.
+        Read More: https://www.ibm.com/docs/en/planning-analytics/2.0.0?topic=data-cellsets#dg_tm1_odata_get_cells__title__1
+        :param partition_start_ordinal: top left cell boundary
+        :param partition_end_ordinal: bottom right cell boundary
+        :param cell_properties: cell properties to include, default: Orginal, Value
+        :param top: Integer limiting the number of cells and the number or rows returned
+        :param skip: Integer limiting the number of cells and the number or rows returned
+        :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
+        :param skip_consolidated_cells: skip consolidated cells in cellset
+        :param skip_rule_derived_cells: skip rule derived cells in cellset
+        :param sandbox_name: str
+        :return: CellSet Dictionary
+        """
+
+        if not cell_properties:
+            cell_properties = ['Value', 'Ordinal']
+
+        if skip_rule_derived_cells:
+            cell_properties.append("RuleDerived")
+            # necessary due to bug in TM1 11.8: If only RuleDerived is retrieved it occasionally produces wrong results
+            cell_properties.append("Updateable")
+
+        if skip_consolidated_cells:
+            cell_properties.append("Consolidated")
+
+        filter_cells = ""
+        if skip_zeros or skip_consolidated_cells or skip_rule_derived_cells:
+            filters = []
+            if skip_zeros:
+                filters.append("Value ne 0 and Value ne null and Value ne ''")
+            if skip_consolidated_cells:
+                filters.append("Consolidated eq false")
+            if skip_rule_derived_cells:
+                filters.append("RuleDerived eq false")
+
+            filter_cells = " and ".join(filters)
+
+        url = ("/Cellsets('{cellset_id}')/tm1.GetPartition{cell_partition}?$select={cell_properties}{"
+               "top_cells}{skip_cells}{filter_cells}") \
+            .format(cellset_id=cellset_id,
+                    cell_partition=f"(Begin={partition_start_ordinal}, End={partition_end_ordinal})",
+                    cell_properties=",".join(cell_properties),
+                    top_cells=f"&$top={top}" if top else "",
+                    skip_cells=f"&$skip={skip}" if skip else "",
+                    filter_cells=f"&$filter={filter_cells}" if filter_cells else "")
+
+        url = add_url_parameters(url, **{"!sandbox": sandbox_name})
+        response = self._rest.GET(url=url)
+        return response.json()['value']
 
     @odata_compact_json(return_as_dict=True)
     def extract_cellset_cells_raw(
@@ -2906,7 +3028,7 @@ class CellService(ObjectService):
 
             filter_cells = " and ".join(filters)
 
-        url = "/api/v1/Cellsets('{cellset_id}')?$expand=" \
+        url = "/Cellsets('{cellset_id}')?$expand=" \
               "Cells($select={cell_properties}{top_cells}{skip_cells}{filter_cells})" \
             .format(cellset_id=cellset_id,
                     cell_properties=",".join(cell_properties),
@@ -2917,6 +3039,179 @@ class CellService(ObjectService):
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url=url, **kwargs)
         return response.json()
+
+    def extract_cellset_axes_cardinality(self, cellset_id: str):
+        url = "/Cellsets('{cellset_id}')?$expand=Axes($select=Cardinality)".format(cellset_id=cellset_id)
+        response = self._rest.GET(url=url)
+        return response.json()
+
+    def extract_cellset_axes_raw_async(
+            self,
+            cellset_id: str,
+            async_axis: int = 1,
+            max_workers: int = 8,
+            elem_properties: Iterable[str] = None,
+            member_properties: Iterable[str] = None,
+            skip_contexts: bool = False,
+            include_hierarchies: bool = False,
+            sandbox_name: str = None,
+            **kwargs):
+        """ Extract cellset axes asynchronously
+
+        :param cellset_id: String; ID of existing cellset
+        :param async_axis: determines which axis will be extracted asynchronously
+        :param max_workers: Max number of threads, e.g. 14
+        :param elem_properties: List of properties to be queried from elements. E.g. ['UniqueName','Attributes', ...]
+        :param member_properties: List properties to be queried from the member. E.g. ['Name', 'UniqueName']
+        :param skip_contexts: skip elements from titles / contexts in response
+        :param sandbox_name: str
+        :param include_hierarchies: retrieve Hierarchies property on Axes
+        :return: Raw format from TM1.
+        """
+
+        axes_cardinality = self.extract_cellset_axes_cardinality(cellset_id=cellset_id)
+
+        if async_axis >= len(axes_cardinality['Axes']):
+            raise ValueError("Argument 'async_axis' must be less than axes cardinality")
+
+        # select Name property if member_properties is None or empty.
+        # Necessary, as tm1 default behaviour is to return all properties if no $select is specified in the request.
+        if member_properties is None or len(list(member_properties)) == 0:
+            member_properties = ["Name"]
+        select_member_properties = "$select={}".format(",".join(member_properties))
+
+        expand_elem_properties = ";$expand=Element($select={elem_properties})".format(
+            elem_properties=",".join(elem_properties)) \
+            if elem_properties is not None and len(list(elem_properties)) > 0 \
+            else ""
+
+        if include_hierarchies:
+            expand_hierarchies = "Hierarchies($select=Name;$expand=Dimension($select=Name)),"
+        else:
+            expand_hierarchies = ""
+
+        def _extract_cellset_axis_raw(axis: int = async_axis, partition: int = 0, partition_size: int = 0):
+            top = partition_size
+            skip = partition * partition_size
+            filter_axis = "$filter=Ordinal eq {axis};".format(axis=axis)
+            url = "/Cellsets('{cellset_id}')?$expand=" \
+                  "Axes({filter_axis}$expand={hierarchies}Tuples($expand=Members({select_member_properties}" \
+                  "{expand_elem_properties}){partition}))" \
+                .format(cellset_id=cellset_id,
+                        axis=axis,
+                        partition=f";$top={top};$skip={skip}" if partition_size > 0 else "",
+                        filter_axis=filter_axis,
+                        hierarchies=expand_hierarchies,
+                        select_member_properties=select_member_properties,
+                        expand_elem_properties=expand_elem_properties)
+            url = add_url_parameters(url, **{"!sandbox": sandbox_name})
+            response = self._rest.GET(url=url, **kwargs)
+
+            return response.json()
+
+        async def _extract_cellset_axes_raw_async():
+            partition_size = math.ceil(axes_cardinality['Axes'][async_axis]['Cardinality'] / max_workers)
+            loop = asyncio.get_event_loop()
+            result_list = []
+            with ThreadPoolExecutor(max_workers) as executor:
+                futures = [
+                    loop.run_in_executor(executor, _extract_cellset_axis_raw, async_axis, partition, partition_size)
+                    for partition in range(max_workers)]
+
+                for future in futures:
+                    result = await future
+                    result_list = result_list + result['Axes'][0]['Tuples']
+            return result_list
+
+        # Extract non-asynchronous axis
+        axes = _extract_cellset_axis_raw(axis=1-async_axis)
+        # Extract tuples for asynchronous axis
+        async_axis_tuples = asyncio.run(_extract_cellset_axes_raw_async())
+        # Combine results
+        axes['Axes'].insert(async_axis,
+                            {'Ordinal': async_axis, 'Cardinality': axes_cardinality['Axes'][async_axis]['Cardinality'],
+                             'Tuples': async_axis_tuples})
+
+        if not skip_contexts:
+            context = _extract_cellset_axis_raw(axis=2)
+            if len(context['Axes']) > 0:
+                axes['Axes'].append(context['Axes'][0])
+
+        return axes
+
+    def extract_cellset_cells_raw_async(
+            self,
+            cellset_id: str,
+            max_workers: int = 8,
+            cell_properties: Iterable[str] = None,
+            skip_zeros: bool = False,
+            skip_consolidated_cells: bool = False,
+            skip_rule_derived_cells: bool = False,
+            sandbox_name: str = None,
+            **kwargs):
+
+        if not cell_properties:
+            cell_properties = ['Value']
+
+        if skip_rule_derived_cells:
+            cell_properties.append("RuleDerived")
+            # necessary due to bug in TM1 11.8: If only RuleDerived is retrieved it occasionally produces wrong results
+            cell_properties.append("Updateable")
+
+        if skip_consolidated_cells:
+            cell_properties.append("Consolidated")
+
+        if skip_zeros or skip_rule_derived_cells or skip_consolidated_cells:
+            if 'Ordinal' not in cell_properties:
+                cell_properties.append('Ordinal')
+
+        filter_cells = ""
+        if skip_zeros or skip_consolidated_cells or skip_rule_derived_cells:
+            filters = []
+            if skip_zeros:
+                filters.append("Value ne 0 and Value ne null and Value ne ''")
+            if skip_consolidated_cells:
+                filters.append("Consolidated eq false")
+            if skip_rule_derived_cells:
+                filters.append("RuleDerived eq false")
+
+            filter_cells = " and ".join(filters)
+
+        def _extract_cellset_cells_raw(partition: int = 0, partition_size: int = 0):
+            top = partition_size
+            skip = partition * partition_size
+
+            url = "/Cellsets('{cellset_id}')?$expand=" \
+                  "Cells($select={cell_properties}{top_cells}{skip_cells}{filter_cells})" \
+                .format(cellset_id=cellset_id,
+                        cell_properties=",".join(cell_properties),
+                        top_cells=f";$top={top}" if top else "",
+                        skip_cells=f";$skip={skip}" if skip else "",
+                        filter_cells=f";$filter={filter_cells}" if filter_cells else "")
+
+            url = add_url_parameters(url, **{"!sandbox": sandbox_name})
+            response = self._rest.GET(url=url, **kwargs)
+
+            return response.json()
+
+        async def _extract_cellset_cells_raw_async():
+            cellcount = self.extract_cellset_cellcount(cellset_id=cellset_id, sandbox_name=sandbox_name,
+                                                            delete_cellset=False)
+            partition_size = math.ceil(cellcount / max_workers)
+            loop = asyncio.get_event_loop()
+            result_list = []
+            with ThreadPoolExecutor(max_workers) as executor:
+                futures = [loop.run_in_executor(executor, _extract_cellset_cells_raw, partition, partition_size)
+                           for partition in range(max_workers)]
+                for future in futures:
+                    result = await future
+                    result_list = result_list + result['Cells']
+                cells = {'@odata.context': result['@odata.context'], 'ID': result['ID'], 'Cells': result_list}
+            return cells
+
+        cells = asyncio.run(_extract_cellset_cells_raw_async())
+
+        return cells
 
     @tidy_cellset
     @odata_compact_json(return_as_dict=False)
@@ -2947,10 +3242,11 @@ class CellService(ObjectService):
             filter_cells = " and ".join(filters)
 
         url = format_url(
-            "/api/v1/Cellsets('{}')?$expand=Cells($select=Value{})",
+            "/Cellsets('{}')?$expand=Cells($select=Value{})",
             cellset_id,
             f";$filter={filter_cells}" if filter_cells else "")
-        url = add_url_parameters(url, **{"!sandbox": sandbox_name})
+        if sandbox_name:
+            url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url=url, **kwargs)
 
         if not use_compact_json:
@@ -2970,7 +3266,7 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return:
         """
-        url = "/api/v1/Cellsets('{}')?$expand=" \
+        url = "/Cellsets('{}')?$expand=" \
               "Axes($filter=Ordinal eq 1;$expand=Tuples(" \
               "$expand=Members($select=Element;$expand=Element($select={}))))," \
               "Cells($select=Value)".format(cellset_id, "UniqueName" if element_unique_names else "Name")
@@ -3014,7 +3310,7 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return:
         """
-        url = "/api/v1/Cellsets('{}')?$expand=" \
+        url = "/Cellsets('{}')?$expand=" \
               "Cube($select=Name)," \
               "Axes($expand=Hierarchies($select=UniqueName))".format(cellset_id)
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
@@ -3044,7 +3340,7 @@ class CellService(ObjectService):
         :param kwargs:
         :return:
         """
-        url = "/api/v1/Cellsets('{}')/Cells/$count".format(cellset_id)
+        url = "/Cellsets('{}')/Cells/$count".format(cellset_id)
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url, **kwargs)
         return int(response.content)
@@ -3064,6 +3360,7 @@ class CellService(ObjectService):
             include_attributes: bool = False,
             use_compact_json: bool = False,
             include_headers: bool = True,
+            mdx_headers: bool = False,
             **kwargs) -> str:
         """ Execute cellset and return only the 'Content', in csv format
 
@@ -3079,8 +3376,9 @@ class CellService(ObjectService):
         :param value_separator
         :param sandbox_name: str
         :param include_attributes: include attribute columns
-        :param use_compact_json: bool
-        :param include_headers: bool
+        :param use_compact_json: boolean
+        :param include_headers: boolean
+        :param mdx_headers: boolean. Fully qualified hierarchy name as header instead of simple dimension name
         :return: Raw format from TM1.
         """
         if 'delete_cellset' in kwargs:
@@ -3118,7 +3416,8 @@ class CellService(ObjectService):
             value_separator=value_separator,
             top=top,
             include_attributes=include_attributes,
-            include_headers=include_headers)
+            include_headers=include_headers,
+            mdx_headers=mdx_headers)
 
     def extract_cellset_csv_iter_json(
             self,
@@ -3133,6 +3432,7 @@ class CellService(ObjectService):
             value_separator: str = ",",
             sandbox_name: str = None,
             include_attributes: bool = False,
+            mdx_headers: bool = False,
             **kwargs) -> str:
         """ Execute cellset and return only the 'Content', in csv format
 
@@ -3148,6 +3448,7 @@ class CellService(ObjectService):
         :param value_separator
         :param sandbox_name: str
         :param include_attributes: boolean
+        :param mdx_headers: boolean. Fully qualified hierarchy name as header instead of simple dimension name
         :return: Raw format from TM1.
         """
         cube, _, rows, columns = self.extract_cellset_composition(
@@ -3166,8 +3467,12 @@ class CellService(ObjectService):
             member_properties=['Name', 'Attributes'] if include_attributes else ['Name'],
             **kwargs)
 
-        row_headers = list(dimension_names_from_element_unique_names(rows))
-        column_headers = list(dimension_names_from_element_unique_names(columns))
+        if not mdx_headers:
+            row_headers = list(dimension_names_from_element_unique_names(rows))
+            column_headers = list(dimension_names_from_element_unique_names(columns))
+        else:
+            row_headers = rows
+            column_headers = columns
 
         if csv_dialect is None:
             csv.register_dialect(
@@ -3292,6 +3597,7 @@ class CellService(ObjectService):
             use_iterative_json: bool = False,
             use_compact_json: bool = False,
             shaped: bool = False,
+            mdx_headers: bool = False,
             **kwargs) -> 'pd.DataFrame':
         """ Build pandas data frame from cellset_id
 
@@ -3316,13 +3622,14 @@ class CellService(ObjectService):
             raw_csv = self.extract_cellset_csv_iter_json(
                 cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                 skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
-                value_separator='~', sandbox_name=sandbox_name, include_attributes=include_attributes, **kwargs)
+                value_separator='~', sandbox_name=sandbox_name, include_attributes=include_attributes,
+                mdx_headers=mdx_headers, **kwargs)
         else:
             raw_csv = self.extract_cellset_csv(
                 cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                 skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
                 value_separator='~', sandbox_name=sandbox_name, include_attributes=include_attributes,
-                use_compact_json=use_compact_json, **kwargs)
+                use_compact_json=use_compact_json, mdx_headers=mdx_headers, **kwargs)
 
         return build_dataframe_from_csv(raw_csv, sep="~", skip_zeros=skip_zeros, shaped=shaped, **kwargs)
 
@@ -3330,7 +3637,7 @@ class CellService(ObjectService):
     @require_pandas
     def extract_cellset_dataframe_shaped(self, cellset_id: str, sandbox_name: str = None,
                                          display_attribute: bool = False, infer_dtype: bool = False,
-                                         **kwargs) -> 'pd.DataFrame':
+                                         mdx_headers: bool=False, **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cellset in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
 
@@ -3340,9 +3647,9 @@ class CellService(ObjectService):
         :param infer_dtype: bool, if True, lets pandas infer dtypes, otherwise all columns will be of type str.
 
         """
-        url = "/api/v1/Cellsets('{}')?$expand=" \
+        url = "/Cellsets('{}')?$expand=" \
               "Axes($filter=Ordinal eq 0 or Ordinal eq 1;$expand=Tuples(" \
-              "$expand=Members($select=Name{})),Hierarchies($select=Name))," \
+              "$expand=Members($select=Name{})),Hierarchies($select=Name,Dimension;$expand=Dimension($select=Name)))," \
               "Cells($select=Value)".format(cellset_id, ',Attributes' if display_attribute else '')
 
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
@@ -3359,7 +3666,16 @@ class CellService(ObjectService):
                 column_headers.append(member['Name'])
 
         rows = response_json['Axes'][1]['Tuples']
-        row_headers = [hierarchy['Name'] for hierarchy in response_json['Axes'][1]['Hierarchies']]
+        if mdx_headers:
+            row_headers = [
+                f"[{hierarchy['Dimension']['Name']}].[{hierarchy['Name']}]"
+                for hierarchy
+                in response_json['Axes'][1]['Hierarchies']]
+        else:
+            row_headers = [
+                hierarchy['Dimension']['Name']
+                for hierarchy
+                in response_json['Axes'][1]['Hierarchies']]
         cell_values = [cell['Value'] for cell in response_json['Cells']]
 
         headers = row_headers + column_headers
@@ -3507,7 +3823,7 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return:
         """
-        url = '/api/v1/ExecuteMDX'
+        url = '/ExecuteMDX'
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         data = {
             'MDX': mdx.to_mdx() if isinstance(mdx, MdxBuilder) else mdx
@@ -3527,7 +3843,7 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return:
         """
-        url = format_url("/api/v1/Cubes('{cube_name}')/{views}('{view_name}')/tm1.Execute",
+        url = format_url("/Cubes('{cube_name}')/{views}('{view_name}')/tm1.Execute",
                          cube_name=cube_name,
                          views='PrivateViews' if private else 'Views',
                          view_name=view_name)
@@ -3568,7 +3884,7 @@ class CellService(ObjectService):
         :return: Change set ID
         """
 
-        url = "/api/v1/BeginChangeSet"
+        url = "/BeginChangeSet"
         return self._rest.POST(url).json()['value']
 
     def end_changeset(self, change_set: str) -> Response:
@@ -3577,7 +3893,7 @@ class CellService(ObjectService):
         :return: Change set ID
         """
 
-        url = "/api/v1/EndChangeSet"
+        url = "/EndChangeSet"
         data = {"ChangeSetID": change_set}
         return self._rest.POST(url, data=json.dumps(data, ensure_ascii=False))
 
@@ -3587,7 +3903,7 @@ class CellService(ObjectService):
         :return: Change set ID
         """
 
-        url = "/api/v1/UndoChangeSet"
+        url = "/UndoChangeSet"
         data = {"ChangeSetID": changeset}
         return self._rest.POST(url, data=json.dumps(data, ensure_ascii=False))
 
@@ -3598,7 +3914,7 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :return:
         """
-        url = "/api/v1/Cellsets('{}')".format(cellset_id)
+        url = "/Cellsets('{}')".format(cellset_id)
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         return self._rest.DELETE(url, **kwargs)
 
@@ -3663,12 +3979,13 @@ class CellService(ObjectService):
 
         return attributes_by_dimension
 
-    @require_admin
+    @require_data_admin
+    @require_ops_admin
     def _execute_view_csv_use_blob(self, cube_name: str, view_name: str, top: int, skip: int, skip_zeros: bool,
                                    skip_consolidated_cells: bool, skip_rule_derived_cells: bool,
                                    value_separator: str, cube_dimensions: List[str] = None,
                                    include_headers: bool = True, sandbox_name: str = None, quote_character: str = '"',
-                                   **kwargs):
+                                   arranged_axes: Tuple[List, List, List] = None, mdx_headers=False, **kwargs):
         """ Execute existing view and retrieve result as csv, using blobs.
         Function has up to 40% better performance than default execute_view_csv on datasets > 1M cells
         and significantly lower memory footprint in all cases.
@@ -3683,7 +4000,12 @@ class CellService(ObjectService):
         :param quote_character:
         :param cube_dimensions: pass dimensions in cube, to allow TM1py to skip retrieval and speed up the execution
         :param sandbox_name: str
-        :include_headers: include header line in csv result
+        :param include_headers: include header line in csv result
+        :param quote_character: Quote character
+        :param arranged_axes: Tuple of dimension names on all axes as 3 lists: Titles, Rows, Columns.
+         Allows function to skip retrieval of cellset composition.
+         E.g.: axes=(["Year"], ["Region","Product"], ["Period", "Version"])
+        :param mdx_headers: boolean, fully qualified hierarchy name as header instead of simple dimension name
 
         """
         file_service, process_service, view_service = self._prepare_blob_services()
@@ -3694,12 +4016,16 @@ class CellService(ObjectService):
                 mdx=mdx, top=top, skip=skip, skip_zeros=skip_zeros,
                 skip_consolidated_cells=skip_consolidated_cells, skip_rule_derived_cells=skip_rule_derived_cells,
                 value_separator=value_separator, cube_dimensions=cube_dimensions, sandbox_name=sandbox_name,
-                include_headers=include_headers, quote_character=quote_character)
+                include_headers=include_headers, quote_character=quote_character,
+                arranged_axes=arranged_axes, mdx_headers=mdx_headers)
 
-        cube, titles, rows, columns = self._derive_cellset_composition_from_native_view(cube_name, view_name, False)
+        if arranged_axes:
+            titles, rows, columns = arranged_axes
+        else:
+            _, titles, rows, columns = self._derive_cellset_composition_from_native_view(cube_name, view_name, False)
 
         if not cube_dimensions:
-            cube_dimensions = self.get_dimension_names_for_writing(cube)
+            cube_dimensions = self.get_dimension_names_for_writing(cube_name)
 
         # ordinal is desired position in csv output
         # desired column position in CSV is: rows, columns and no title sections (as in legacy '/content' API call)
@@ -3754,7 +4080,7 @@ class CellService(ObjectService):
                 if f"[{dimension}].[{dimension}]" in CaseAndSpaceInsensitiveSet(titles)]
 
             process = self._build_cube_to_blob_process(
-                cube=cube,
+                cube=cube_name,
                 variables=variables,
                 # exclude title variables in blob
                 skip_variables=skip_variables,
@@ -3781,16 +4107,18 @@ class CellService(ObjectService):
 
         finally:
             with suppress(Exception):
-                view_service.delete(view_name)
+                view_service.delete(cube_name=cube_name, view_name=view_name, private=False)
             with suppress(Exception):
                 file_service.delete(file_name)
 
-    @require_admin
+    @require_data_admin
+    @require_ops_admin
     def _execute_mdx_csv_use_blob(self, mdx: Union[str, MdxBuilder], top: int, skip: int, skip_zeros: bool,
                                   skip_consolidated_cells: bool, skip_rule_derived_cells: bool,
                                   value_separator: str, cube_dimensions: List[str] = None,
                                   sandbox_name: str = None, include_headers: bool = True,
-                                  quote_character='"', **kwargs):
+                                  quote_character='"', arranged_axes: Tuple[List, List, List] = None,
+                                  mdx_headers: bool = False, **kwargs):
         """ Execute MDX and retrieve result as csv, using blobs.
         Function has up to 40% better performance than default execute_mdx_csv on datasets > 1M cells
         and significantly lower memory footprint in all cases.
@@ -3805,14 +4133,21 @@ class CellService(ObjectService):
         :param quote_character:
         :param cube_dimensions: pass dimensions in cube, to allow TM1py to skip retrieval and speed up the execution
         :param sandbox_name: str
+        :param arranged_axes: Tuple
+        :param mdx_headers: boolean, fully qualified hierarchy name as header instead of simple dimension name
         :include_headers: include header line in csv result
 
         """
         file_service, process_service, view_service = self._prepare_blob_services()
 
         try:
-            # attempt to derive axes setup from MdxBuilder (fast)
-            cube, _, rows, columns = self._attempt_derive_cellset_composition_from_mdx(mdx)
+            if arranged_axes:
+                _, rows, columns = arranged_axes
+                cube = Utils.get_cube(mdx)
+            else:
+                # attempt to derive axes setup from MdxBuilder (fast)
+                cube, _, rows, columns = self._attempt_derive_cellset_composition_from_mdx(mdx)
+
         except:
             # fallback: execute MDX and extract axes setup (slow)
             cellset_id = self.create_cellset(mdx)
@@ -3823,15 +4158,15 @@ class CellService(ObjectService):
 
         # ordinal is desired position in csv output
         # desired column position in CSV is: rows, columns and no title sections (as in legacy '/content' API call)
-        dimensions_with_ordinal = CaseAndSpaceInsensitiveDict({
-            dimension_name_from_element_unique_name(dimension): i
+        hierarchy_with_ordinal = CaseAndSpaceInsensitiveDict({
+            dimension: i
             for i, dimension
             in enumerate(rows + columns, start=1)})
 
         # Assign 'v1' to 'vN' names according to desired column position in CSV. E.g. [v4, v2, v3, v1]
         variables = [
-            f'v{dimensions_with_ordinal[dimension_name_from_element_unique_name(dimension)]}'
-            for dimension
+            f'v{hierarchy_with_ordinal[hierarchy]}'
+            for hierarchy
             in columns + rows]
 
         unique_name = self.suggest_unique_object_name()
@@ -3849,19 +4184,24 @@ class CellService(ObjectService):
             MDX=mdx)
 
         file_name = f"{unique_name}.csv"
+        header_line = ""
         if include_headers:
-            case_insensitive_dimensions = CaseAndSpaceInsensitiveDict(
-                {dimension: dimension
-                 for dimension
-                 in cube_dimensions})
+            if mdx_headers:
 
-            # headers must correspond with element order in blob
-            header_line = ",".join(
-                [f"'{case_insensitive_dimensions[dimension_name_from_element_unique_name(header)]}'"
-                 for header
-                 in rows + columns] + ["'Value'"])
-        else:
-            header_line = ""
+                # headers must correspond with element order in blob
+                header_line = ",".join([f"'{header}'" for header in rows + columns] + ["'Value'"])
+
+            else:
+                case_insensitive_dimensions = CaseAndSpaceInsensitiveDict(
+                    {dimension: dimension
+                     for dimension
+                     in cube_dimensions})
+
+                # headers must correspond with element order in blob
+                header_line = ",".join(
+                    [f"'{case_insensitive_dimensions[dimension_name_from_element_unique_name(header)]}'"
+                     for header
+                     in rows + columns] + ["'Value'"])
 
         try:
             file_service.create(
