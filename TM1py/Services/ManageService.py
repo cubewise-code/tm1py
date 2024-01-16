@@ -172,13 +172,14 @@ class ManageService:
         response = requests.post(url=url, json=payload, auth=self._auth_header)
         return response
 
-    def create_database_backup(self, instance_name: str, database_name: str, backup_url: str):
+    def create_database_backup(self, instance_name: str, database_name: str, backup_set_name: str):
         url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')/tm1s.Backup"
-        payload = {"URL": backup_url}
+        payload = {"URL": f"{backup_set_name}.tgz"}
         response = requests.post(url=url, json=payload, auth=self._auth_header)
         return response
 
     def create_and_upload_database_backup_set_file(self, instance_name: str, database_name: str, backup_set_name: str):
+
         create_url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')" \
                      f"/Contents('Files')/Contents('.backupsets')/Contents"
         payload = {"@odata.type": "#ibm.tm1.api.v1.Document", "Name": f"{backup_set_name}.tgz"}
@@ -206,9 +207,21 @@ class ManageService:
         response = requests.get(url=url, auth=self._auth_header)
         return json.loads(response.content)
 
+    def get_application(self, instance_name, application_name):
+        url = f"{self._root_url}/Instances('{instance_name}')/Applications('{application_name}')"
+        response = requests.get(url=url, auth=self._auth_header)
+        return json.loads(response.content)
+
     def create_application(self, instance_name, application_name):
         url = f"{self._root_url}/Instances('{instance_name}')/Applications"
         payload = {"Name": application_name}
         response = requests.post(url=url, json=payload, auth=self._auth_header)
         response_json = json.loads(response.content)
         return response_json['ClientID'], response_json['ClientSecret']
+
+    def get_metadata(self):
+        url = f"{self._root_url}/$metadata?$format=json"
+        response = requests.get(url=url, auth=self._auth_header)
+        return json.loads(response.content)
+
+
