@@ -483,9 +483,8 @@ class ServerService(ObjectService):
 
     @require_ops_admin
     def logger_get_all_names(self, **kwargs) -> List[str]:
-        url = f"/Loggers"
-        loggers = self._rest.GET(url, **kwargs).json()
-        return [logger['Name'] for logger in loggers['value']]
+        loggers = self.logger_get_all(**kwargs)
+        return [logger['Name'] for logger in loggers]
 
     @require_ops_admin
     def logger_get(self, logger: str, **kwargs) -> Dict:
