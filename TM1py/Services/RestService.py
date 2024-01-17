@@ -803,7 +803,7 @@ class RestService:
     @property
     def is_data_admin(self) -> bool:
         if self._is_data_admin is None:
-            response = self.GET("ActiveUser/Groups")
+            response = self.GET("/ActiveUser/Groups")
             self._is_data_admin = any(g in CaseAndSpaceInsensitiveSet(
                 *[group["Name"] for group in response.json()["value"]]) for g in ["Admin", "DataAdmin"])
 
