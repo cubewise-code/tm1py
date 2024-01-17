@@ -5,7 +5,7 @@ import json
 from collections.abc import Iterable
 from datetime import datetime
 from enum import Enum
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 import pytz
 from requests import Response
@@ -477,58 +477,78 @@ class ServerService(ObjectService):
 
     @require_ops_admin
     def logger_get_all(self, **kwargs) -> Dict:
-        url = '/api/v1/Loggers'
+        url = f"/Loggers"
         loggers = self._rest.GET(url, **kwargs).json()
         return loggers['value']
-    
+
     @require_ops_admin
     def logger_get_all_names(self, **kwargs) -> List[str]:
-        url = '/api/v1/Loggers'
+        url = f"/Loggers"
         loggers = self._rest.GET(url, **kwargs).json()
         return [logger['Name'] for logger in loggers['value']]
-    
+
     @require_ops_admin
     def logger_get(self, logger: str, **kwargs) -> Dict:
-        url = format_url("/api/v1/Loggers('{}')", logger)
+        """ Get level for specified logger
+
+        :param logger: string name of logger
+        :return: Dict of logger and level
+        """
+        url = format_url("/Loggers('{}')", logger)
         logger = self._rest.GET(url, **kwargs).json()
         del logger["@odata.context"]
         return logger
-    
+
     @require_ops_admin
     def logger_search(self, wildcard: str='', level: str='', **kwargs) -> Dict:
-        url = "/api/v1/Loggers"
-    
+        """ Searches logger names by wildcard or by level. Combining wildcard and level will filter via AND and not OR
+
+        :param wildcard: string to match in logger name
+        :param level: string e.g. FATAL, ERROR, WARNING, INFO, DEBUG, UNKOWN, OFF
+        :return: Dict of matching loggers and levels
+        """
+        url = f"/Loggers"
+
         logger_filters = []
-    
+
         if level:
-            level_dict = CaseAndSpaeInsensitiveDict(
+            level_dict = CaseAndSpaceInsensitiveDict(
                 {'FATAL': 0, 'ERROR': 1, 'WARNING': 2, 'INFO': 3, 'DEBUG': 4, 'UNKNOWN': 5, 'OFF': 6}
             )
             level_index = level_dict.get(level)
             if level_index:
                 logger_filters.append("Level eq {}".format(level_index))
-    
+
         if wildcard:
             logger_filters.append("contains(tolower(Name), tolower('{}'))".format(wildcard))
-    
+
         url += "?$filter={}".format(" and ".join(logger_filters))
-    
+
         loggers = self._rest.GET(url, **kwargs).json()
         return loggers['value']
-    
+
     @require_ops_admin
     def logger_exists(self, logger: str, **kwargs) -> bool:
-        url = format_url("/api/v1/Loggers('{}')", logger)
+        """ Test if logger exists
+        :param logger: string name of logger
+        :return: bool
+        """
+        url = format_url("/Loggers('{}')", logger)
         return self._exists(url, **kwargs)
-    
+
     @require_ops_admin
     def logger_set_level(self, logger: str, level: str, **kwargs):
-        url = format_url("/api/v1/Loggers('{}')", logger)
-    
+        """ Set logger level
+        :param logger: string name of logger
+        :param level: string e.g. FATAL, ERROR, WARNING, INFO, DEBUG, UNKOWN, OFF
+        :return: response
+        """
+        url = format_url("/Loggers('{}')", logger)
+
         if not self.logger_exists(logger=logger, **kwargs):
             raise ValueError('{} is not a valid logger'.format(logger))
         
-        level_dict = CaseAndSpaeInsensitiveDict(
+        level_dict = CaseAndSpaceInsensitiveDict(
             {'FATAL': 0, 'ERROR': 1, 'WARNING': 2, 'INFO': 3, 'DEBUG': 4, 'UNKNOWN': 5, 'OFF': 6}
         )
         level_index = level_dict.get(level)
@@ -538,5 +558,4 @@ class ServerService(ObjectService):
             raise ValueError('{} is not a valid level'.format(level))
         
         return self._rest.PATCH(url, json.dumps(logger))
-    
 
