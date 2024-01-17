@@ -476,18 +476,18 @@ class ServerService(ObjectService):
         return self._rest.GET(url).content
 
     @require_ops_admin
-    def logger_get_all(self, **kwargs) -> Dict:
+    def get_all_loggers(self, **kwargs) -> Dict:
         url = f"/Loggers"
         loggers = self._rest.GET(url, **kwargs).json()
         return loggers['value']
 
     @require_ops_admin
-    def logger_get_all_names(self, **kwargs) -> List[str]:
-        loggers = self.logger_get_all(**kwargs)
+    def get_all_logger_names(self, **kwargs) -> List[str]:
+        loggers = self.get_all_loggers(**kwargs)
         return [logger['Name'] for logger in loggers]
 
     @require_ops_admin
-    def logger_get(self, logger: str, **kwargs) -> Dict:
+    def get_logger(self, logger: str, **kwargs) -> Dict:
         """ Get level for specified logger
 
         :param logger: string name of logger
@@ -499,7 +499,7 @@ class ServerService(ObjectService):
         return logger
 
     @require_ops_admin
-    def logger_search(self, wildcard: str='', level: str='', **kwargs) -> Dict:
+    def search_loggers(self, wildcard: str='', level: str='', **kwargs) -> Dict:
         """ Searches logger names by wildcard or by level. Combining wildcard and level will filter via AND and not OR
 
         :param wildcard: string to match in logger name
@@ -536,7 +536,7 @@ class ServerService(ObjectService):
         return self._exists(url, **kwargs)
 
     @require_ops_admin
-    def logger_set_level(self, logger: str, level: str, **kwargs):
+    def set_logger_level(self, logger: str, level: str, **kwargs):
         """ Set logger level
         :param logger: string name of logger
         :param level: string e.g. FATAL, ERROR, WARNING, INFO, DEBUG, UNKOWN, OFF
