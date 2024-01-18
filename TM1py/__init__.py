@@ -73,5 +73,6 @@ from TM1py.Services.PowerBiService import PowerBiService
 from TM1py.Services.MonitoringService import MonitoringService
 
 from TM1py.Utils import Utils
+from TM1py.Services.JobService import JobService
 
 __version__ = "2.0.1"
