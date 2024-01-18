@@ -571,6 +571,55 @@ class CellService(ObjectService):
     @require_data_admin
     @require_ops_admin
     @require_version(version="11.7")
+    def clear_from_df(self, cube_name: str, df: pd.DataFrame, dimension_mapping: Dict = None, **kwargs):
+        if not dimension_mapping:
+            dimension_mapping = {}
+
+        cube_service = self.get_cube_service()
+        dimension_names = CaseAndSpaceInsensitiveSet(*cube_service.get_dimension_names(cube_name=cube))
+
+        df = df.astype(str)
+
+        unique_entries = [{col_name: df[col_name].unique()} for col_name in df.columns]
+
+        new_dict = {}
+        unmatched_dimension_names = []
+        for entry in unique_entries:
+            new_list = []
+            for key, value in entry.items():
+                if key not in dimension_names:
+                    unmatched_dimension_names.append(key)
+                for i in value:
+                    if key in dimension_mapping:
+                        new_list.append(f"[{key}].[{dimension_mapping[key]}].[{i}]")
+                    else:
+                        new_list.append(f"[{key}].[{key}].[{i}]")
+                new_dict[key] = "{" + ",".join(new_list) + "}"
+        if dimension_mapping:
+            for key, value in dimension_mapping.items():
+                if key not in dimension_names:
+                    unmatched_dimension_names.append(key)
+                new_dict[key] = f"{{TM1FILTERBYLEVEL({{TM1SUBSETALL([{key}].[{value}])}}, 0)}}"
+
+        if unmatched_dimension_names:
+            raise ValueError(f"Dimension(s) {unmatched_dimension_names} does not exist in cube {cube_name}."
+                             f"\nCheck the source of the dataframe to fix the problem")
+
+        for dimension_name in dimension_names:
+            if dimension_name not in new_dict:
+                expression = MdxHierarchySet.tm1_subset_all(dimension_name).filter_by_level(0).to_mdx()
+                new_dict[dimension_name] = expression
+
+        mdx_builder = MdxBuilder.from_cube(cube_name).columns_non_empty()
+        for dimension, expression in new_dict.items():
+            hierarchy_set = MdxHierarchySet.from_str(dimension=dimension, hierarchy=dimension, mdx=expression)
+            mdx_builder.add_hierarchy_set_to_column_axis(hierarchy_set)
+
+        return self.clear_with_mdx(cube=cube_name, mdx=mdx_builder.to_mdx(), **kwargs)
+
+    @require_data_admin
+    @require_ops_admin
+    @require_version(version="11.7")
     def clear_with_mdx(self, cube: str, mdx: str, sandbox_name: str = None, **kwargs):
         """ clear a slice in a cube based on an MDX query.
         Function requires admin permissions, since TM1py uses an unbound TI with a `ViewZeroOut` statement.
