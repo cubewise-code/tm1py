@@ -14,6 +14,9 @@ from io import StringIO
 from typing import List, Union, Dict, Iterable, Tuple, Optional
 
 import ijson
+from mdxpy import MdxHierarchySet, MdxBuilder, Member
+from requests import Response
+
 from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyWritePartialFailureException, TM1pyWriteFailureException, \
     TM1pyRestException
 from TM1py.Objects.MDXView import MDXView
@@ -30,13 +33,10 @@ from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url, add_url_p
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
     CaseAndSpaceInsensitiveDict, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, \
     abbreviate_mdx, build_csv_from_cellset_dict, require_version, require_pandas, build_cellset_from_pandas_dataframe, \
-    case_and_space_insensitive_equals, get_cube, resembles_mdx, require_data_admin, require_ops_admin, \
-    extract_compact_json_cellset, \
+    case_and_space_insensitive_equals, get_cube, resembles_mdx, require_data_admin, require_ops_admin, extract_compact_json_cellset, \
     cell_is_updateable, build_mdx_from_cellset, build_mdx_and_values_from_cellset, \
     dimension_names_from_element_unique_names, frame_to_significant_digits, build_dataframe_from_csv, \
     drop_dimension_properties, decohints, verify_version
-from mdxpy import MdxHierarchySet, MdxBuilder, Member
-from requests import Response
 
 try:
     import pandas as pd
@@ -2200,7 +2200,7 @@ class CellService(ObjectService):
                 use_blob=use_blob,
                 mdx_headers=mdx_headers)
 
-            return build_dataframe_from_csv(raw_csv, sep='~', skip_zeros=skip_zeros, shaped=shaped, **kwargs)
+            return build_dataframe_from_csv(raw_csv, sep='~', shaped=shaped, **kwargs)
 
         cellset_id = self.create_cellset(mdx, sandbox_name=sandbox_name, **kwargs)
         return self.extract_cellset_dataframe(cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
@@ -2244,8 +2244,7 @@ class CellService(ObjectService):
 
     @require_pandas
     def execute_mdx_dataframe_shaped(self, mdx: str, sandbox_name: str = None, display_attribute: bool = False,
-                                     use_iterative_json: bool = False, use_blob: bool = False,
-                                     mdx_headers: bool = False,
+                                     use_iterative_json: bool = False, use_blob: bool = False, mdx_headers: bool=False,
                                      **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cube in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
@@ -2497,7 +2496,7 @@ class CellService(ObjectService):
                 arranged_axes=arranged_axes,
                 mdx_headers=mdx_headers,
                 **kwargs)
-            return build_dataframe_from_csv(raw_csv, sep='~', skip_zeros=skip_zeros, shaped=shaped, **kwargs)
+            return build_dataframe_from_csv(raw_csv, sep='~', shaped=shaped, **kwargs)
 
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
                                                    sandbox_name=sandbox_name, **kwargs)
@@ -3215,7 +3214,7 @@ class CellService(ObjectService):
             return result_list
 
         # Extract non-asynchronous axis
-        axes = _extract_cellset_axis_raw(axis=1 - async_axis)
+        axes = _extract_cellset_axis_raw(axis=1-async_axis)
         # Extract tuples for asynchronous axis
         async_axis_tuples = asyncio.run(_extract_cellset_axes_raw_async())
         # Combine results
@@ -3287,7 +3286,7 @@ class CellService(ObjectService):
 
         async def _extract_cellset_cells_raw_async():
             cellcount = self.extract_cellset_cellcount(cellset_id=cellset_id, sandbox_name=sandbox_name,
-                                                       delete_cellset=False)
+                                                            delete_cellset=False)
             partition_size = math.ceil(cellcount / max_workers)
             loop = asyncio.get_event_loop()
             result_list = []
@@ -3722,13 +3721,13 @@ class CellService(ObjectService):
                 value_separator='~', sandbox_name=sandbox_name, include_attributes=include_attributes,
                 use_compact_json=use_compact_json, mdx_headers=mdx_headers, **kwargs)
 
-        return build_dataframe_from_csv(raw_csv, sep="~", skip_zeros=skip_zeros, shaped=shaped, **kwargs)
+        return build_dataframe_from_csv(raw_csv, sep="~", shaped=shaped, **kwargs)
 
     @tidy_cellset
     @require_pandas
     def extract_cellset_dataframe_shaped(self, cellset_id: str, sandbox_name: str = None,
                                          display_attribute: bool = False, infer_dtype: bool = False,
-                                         mdx_headers: bool = False, **kwargs) -> 'pd.DataFrame':
+                                         mdx_headers: bool=False, **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cellset in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
 
