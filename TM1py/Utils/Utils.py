@@ -13,15 +13,8 @@ from io import StringIO
 from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator, Union, Callable
 from urllib.parse import unquote
 import requests
-from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminException
-from TM1py.Objects import ElementAttribute, Element, Cube
-from TM1py.Objects.Dimension import Dimension
-from TM1py.Objects.Hierarchy import Hierarchy
-from TM1py.Services import TM1Service
-from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict
 from mdxpy import MdxBuilder, Member
 from requests.adapters import HTTPAdapter
-
 
 from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminException, TM1pyNotDataAdminException, \
     TM1pyNotSecurityAdminException, TM1pyNotOpsAdminException, TM1pyVersionDeprecationException
@@ -54,6 +47,7 @@ def require_admin(func):
 
     return wrapper
 
+
 @decohints
 def require_data_admin(func):
     @functools.wraps(func)
@@ -63,6 +57,7 @@ def require_data_admin(func):
         return func(self, *args, **kwargs)
 
     return wrapper
+
 
 @decohints
 def require_security_admin(func):
@@ -74,6 +69,7 @@ def require_security_admin(func):
 
     return wrapper
 
+
 @decohints
 def require_ops_admin(func):
     @functools.wraps(func)
@@ -83,6 +79,7 @@ def require_ops_admin(func):
         return func(self, *args, **kwargs)
 
     return wrapper
+
 
 @decohints
 def require_version(version):
@@ -99,6 +96,7 @@ def require_version(version):
         return wrapper
 
     return wrap
+
 
 @decohints
 def deprecated_in_version(version):
@@ -128,7 +126,6 @@ def require_pandas(func):
             raise ImportError(f"Function '{func.__name__}' requires pandas")
 
     return wrapper
-
 
 
 def get_all_servers_from_adminhost(adminhost='localhost', port=None, use_ssl=False) -> List:
@@ -514,8 +511,7 @@ def build_csv_from_cellset_dict(
     return csv_content.getvalue().strip()
 
 
-def build_dataframe_from_csv(raw_csv, sep='~', skip_zeros: bool = True, shaped: bool = False,
-                             **kwargs) -> 'pd.DataFrame':
+def build_dataframe_from_csv(raw_csv, sep='~', shaped: bool = False, **kwargs) -> 'pd.DataFrame':
     if not raw_csv:
         return pd.DataFrame()
 
@@ -538,7 +534,7 @@ def build_dataframe_from_csv(raw_csv, sep='~', skip_zeros: bool = True, shaped: 
         aggfunc="sum",
         columns=df.columns[-2],
         values=df.columns[-1],
-        dropna=skip_zeros,
+        dropna=True,
         sort=False).reset_index()
 
     # drop title on index
@@ -940,7 +936,6 @@ def extract_compact_json_cellset(context: str, response: Dict, return_as_dict: b
     if props == ['Ordinal', 'Value']:
         return [value[1] for value in cells_data]
 
-
     return cells_data
 
 
@@ -963,14 +958,14 @@ def map_cell_properties_to_compact_json_response(properties: List, compact_cells
     properties = [Ordinal, Value, RuleDerived]
     compact_cells_response = [[0, 258, 100], [1, 258, 500]]
     result: {Cells: [
-        { Ordinal: 0, Value: 100, RuleDerived: 258}, 
+        { Ordinal: 0, Value: 100, RuleDerived: 258},
         { Ordinal: 1, Value: 500, RuleDerived: 258}
     ]}
-    
+
 
     :param properties: list of `Cell` properties e.g [Ordinal, Value, Updateable, ...]
     :param compact_cells_response: list of cells returned in compact json format
-    :return: dict with properties mapped to compact json response    
+    :return: dict with properties mapped to compact json response
     """
     cells_dict = dict()
     cells = []
@@ -1325,126 +1320,3 @@ class HTTPAdapterWithSocketOptions(HTTPAdapter):
         if self.socket_options is not None:
             kwargs["socket_options"] = self.socket_options
         super(HTTPAdapterWithSocketOptions, self).init_poolmanager(*args, **kwargs)
-
-
-def create_blank_dimension(tm1: TM1Service, dimension_name: str, elem_attr_dict: Dict, drop_dimension: bool = False,
-                           dummy_element: str = "Dummy", dummy_element_type: str = "Numeric"):
-    """ Function creates a blank dimension with a dummy element
-
-        :param tm1: TM1Service
-        :param dimension_name: str The name of the dimension that needs to be created
-        :param elem_attr_dict: Dict  Dictionary of the elemet attributes of the dimension
-        :param drop_dimension: bool Drop dimension of already exists
-        :param dummy_element: str Dummy element name otherwise the dimension can't be created without at least one element
-        :param dummy_element_type: str Type of the dummy element
-
-        Sample of an elem_attr_dict parameter entry:
-
-        elem_attr_dict = {"identifier": "String",
-                          "name": "String",
-                          "length": "Numeric",
-                          "long_name_identifier": "Alias"}
-    """
-
-    elements = [Element(dummy_element, dummy_element_type)]
-    element_attributes = [ElementAttribute(attribute, at_type) for attribute, at_type in elem_attr_dict.items()]
-
-    new_hierarchy = Hierarchy(name=dimension_name,
-                              dimension_name=dimension_name,
-                              element_attributes=element_attributes,
-                              elements=elements
-                              )
-
-    new_dimension = Dimension(name=dimension_name, hierarchies=[new_hierarchy])
-    if not tm1.dimensions.exists(dimension_name=dimension_name):
-        tm1.dimensions.create(dimension=new_dimension)
-    # print(f"Created dimension: {dimension_name}!")
-    else:
-        if drop_dimension:
-            if tm1.dimensions.exists(dimension_name=dimension_name):
-                tm1.dimensions.delete(dimension_name=dimension_name)
-                tm1.dimensions.create(dimension=new_dimension)
-                # print(f"Dropped and recreated dimension: {dimension_name}!")
-        else:
-            pass
-            # print(f"Nothing to do. Dimension {dimension_name} already exists!")
-
-    elem_attr = tm1.elements.get_element_attributes(dimension_name=dimension_name,
-                                                    hierarchy_name=dimension_name)
-    list_element_attr = []
-    for attr in elem_attr:
-        list_element_attr.append(attr.body)
-    # print(f"Element Attributes: {list_element_attr}")
-
-
-def create_blank_cube_and_dimensions(tm1: TM1Service, cube_name: str, dimensions_config: List[Dict],
-                                     overwrite: bool = False):
-    """ Function creates a blank cube and blank dimensions
-
-        :param tm1: TM1Service
-        :param cube_name: str The name of the cube that needs to be created
-        :param dimensions_config: List[Dict] Dictionary configuration parameters to create the blank dimensions
-        :param overwrite: bool Overwrite cube if necessary
-
-        Sample of a dimensions_config parameter entry:
-
-        dimensions_config =[
-                            {
-                              "dimension_name": "year",
-                              "elem_attr_dict": {
-                                "Alias_Text": "Alias",
-                                "Name_short": "String",
-                                "Name_long": "String"
-                              },
-                              "drop_dimension": true
-                            },
-                            {
-                              "dimension_name": "month",
-                              "elem_attr_dict": {
-                                "Alias_Text": "Alias",
-                                "Name_short": "String",
-                                "Name_long": "String"
-                              },
-                              "drop_dimension": false
-                            }
-                          ]
-    """
-
-    cube_dimensions = []
-    for dimension in dimensions_config:
-        dimension_name = dimension["dimension_name"]
-        elem_attr_dict = dimension["elem_attr_dict"]
-        drop_dimension = False
-        dummy_element = "Dummy"
-        dummy_element_type = "Numeric"
-        if "drop_dimension" in dimension:
-            drop_dimension = dimension["drop_dimension"]
-        if "dummy_element" in dimension:
-            dummy_element = dimension["dummy_element"]
-        if "dummy_element_type" in dimension:
-            dummy_element_type = dimension["dummy_element_type"]
-        create_blank_dimension(tm1=tm1,
-                               dimension_name=dimension_name,
-                               elem_attr_dict=elem_attr_dict,
-                               drop_dimension=drop_dimension,
-                               dummy_element=dummy_element,
-                               dummy_element_type=dummy_element_type)
-        cube_dimensions.append(dimension_name)
-
-    rules = (f"SKIPCHECK; \r\n"
-             f"#Das ist ein Platzhalter \r\n"
-             f"FEEDERS; \r\n"
-             f"#Das ist ein Platzhalter \r\n")
-
-    cube = Cube(name=cube_name, dimensions=cube_dimensions, rules=rules)
-
-    exists = tm1.cubes.exists(cube_name=cube_name)
-
-    if not exists:
-        tm1.cubes.create(cube)
-        # print(f"Created Cube: {cube_name} with dimensions: {cube_dimensions}!")
-    if exists and overwrite:
-        tm1.cubes.update(cube)
-        # print(f"Updated Cube: {cube_name} with dimensions: {cube_dimensions}!")
-    # elif exists and not overwrite:
-    # print(f"Nothing to do. Cube {cube_name} already exists!")

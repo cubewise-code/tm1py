@@ -14,9 +14,6 @@ from io import StringIO
 from typing import List, Union, Dict, Iterable, Tuple, Optional
 
 import ijson
-from mdxpy import MdxHierarchySet, MdxBuilder, Member
-from requests import Response
-
 from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyWritePartialFailureException, TM1pyWriteFailureException, \
     TM1pyRestException
 from TM1py.Objects.MDXView import MDXView
@@ -33,10 +30,13 @@ from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url, add_url_p
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
     CaseAndSpaceInsensitiveDict, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, \
     abbreviate_mdx, build_csv_from_cellset_dict, require_version, require_pandas, build_cellset_from_pandas_dataframe, \
-    case_and_space_insensitive_equals, get_cube, resembles_mdx, require_data_admin, require_ops_admin, extract_compact_json_cellset, \
+    case_and_space_insensitive_equals, get_cube, resembles_mdx, require_data_admin, require_ops_admin, \
+    extract_compact_json_cellset, \
     cell_is_updateable, build_mdx_from_cellset, build_mdx_and_values_from_cellset, \
     dimension_names_from_element_unique_names, frame_to_significant_digits, build_dataframe_from_csv, \
     drop_dimension_properties, decohints, verify_version
+from mdxpy import MdxHierarchySet, MdxBuilder, Member
+from requests import Response
 
 try:
     import pandas as pd
@@ -571,7 +571,48 @@ class CellService(ObjectService):
     @require_data_admin
     @require_ops_admin
     @require_version(version="11.7")
-    def clear_from_df(self, cube_name: str, df: pd.DataFrame, dimension_mapping: Dict = None, **kwargs):
+    def clear_from_df(self, cube: str, df: pd.DataFrame, dimension_mapping: Dict = None, **kwargs):
+        """Clears data from a TM1 cube based on the distinct values in a DataFrame over cube dimensions.
+            Note:
+                This function is similar to `tm1.cells.clear`, but it is designed specifically for clearing data
+                 based on distinct values in a DataFrame over cube dimensions. The key difference is that this
+                 function interprets the DataFrame columns as dimensions and supports a mapping (`dimension_mapping`)
+                 for specifying hierarchies within those dimensions.
+
+          :param cube: str
+              The name of the TM1 cube.
+          :param df: pd.DataFrame
+              The DataFrame containing distinct values over cube dimensions.
+              Columns in the DataFrame should correspond to cube dimensions.
+          :param dimension_mapping: Dict, optional
+              A dictionary mapping DataFrame columns to specific hierarchies within TM1 dimensions.
+              If not provided, assumes that the dimensions have just one hierarchy.
+
+          :return: None
+              The function clears data in the specified TM1 cube.
+
+          :raises DxdException:
+              If there are unmatched dimensions in the DataFrame or if specified dimensions
+              do not exist in the TM1 cube.
+
+          :example:
+              ```python
+
+              # Sample DataFrame with distinct values over cube dimensions
+              data = {
+                  "Year": ["2021", "2022"],
+                  "Organisation": ["some_company", "some_company"],
+                  "Location": ["Germany", "Albania"]
+              }
+
+              # Sample dimension mapping
+              dimensions_mapping = {
+                  "Organisation": "hierarchy_1",
+                  "Location": ["hierarchy_2", "hierarchy_3", "hierarchy_4"]
+              }
+              ```
+        """
+
         if not dimension_mapping:
             dimension_mapping = {}
 
@@ -582,40 +623,40 @@ class CellService(ObjectService):
 
         unique_entries = [{col_name: df[col_name].unique()} for col_name in df.columns]
 
-        new_dict = {}
+        cell_coordinates = {}
         unmatched_dimension_names = []
         for entry in unique_entries:
-            new_list = []
+            coordinates_list = []
             for key, value in entry.items():
                 if key not in dimension_names:
                     unmatched_dimension_names.append(key)
                 for i in value:
                     if key in dimension_mapping:
-                        new_list.append(f"[{key}].[{dimension_mapping[key]}].[{i}]")
+                        coordinates_list.append(f"[{key}].[{dimension_mapping[key]}].[{i}]")
                     else:
-                        new_list.append(f"[{key}].[{key}].[{i}]")
-                new_dict[key] = "{" + ",".join(new_list) + "}"
+                        coordinates_list.append(f"[{key}].[{key}].[{i}]")
+                cell_coordinates[key] = "{" + ",".join(coordinates_list) + "}"
         if dimension_mapping:
             for key, value in dimension_mapping.items():
                 if key not in dimension_names:
                     unmatched_dimension_names.append(key)
-                new_dict[key] = f"{{TM1FILTERBYLEVEL({{TM1SUBSETALL([{key}].[{value}])}}, 0)}}"
+                cell_coordinates[key] = f"{{TM1FILTERBYLEVEL({{TM1SUBSETALL([{key}].[{value}])}}, 0)}}"
 
         if unmatched_dimension_names:
-            raise ValueError(f"Dimension(s) {unmatched_dimension_names} does not exist in cube {cube_name}."
+            raise ValueError(f"Dimension(s) {unmatched_dimension_names} does not exist in cube {cube}."
                              f"\nCheck the source of the dataframe to fix the problem")
 
         for dimension_name in dimension_names:
-            if dimension_name not in new_dict:
+            if dimension_name not in cell_coordinates:
                 expression = MdxHierarchySet.tm1_subset_all(dimension_name).filter_by_level(0).to_mdx()
-                new_dict[dimension_name] = expression
+                cell_coordinates[dimension_name] = expression
 
-        mdx_builder = MdxBuilder.from_cube(cube_name).columns_non_empty()
-        for dimension, expression in new_dict.items():
+        mdx_builder = MdxBuilder.from_cube(cube).columns_non_empty()
+        for dimension, expression in cell_coordinates.items():
             hierarchy_set = MdxHierarchySet.from_str(dimension=dimension, hierarchy=dimension, mdx=expression)
             mdx_builder.add_hierarchy_set_to_column_axis(hierarchy_set)
 
-        return self.clear_with_mdx(cube=cube_name, mdx=mdx_builder.to_mdx(), **kwargs)
+        return self.clear_with_mdx(cube=cube, mdx=mdx_builder.to_mdx(), **kwargs)
 
     @require_data_admin
     @require_ops_admin
@@ -2203,7 +2244,8 @@ class CellService(ObjectService):
 
     @require_pandas
     def execute_mdx_dataframe_shaped(self, mdx: str, sandbox_name: str = None, display_attribute: bool = False,
-                                     use_iterative_json: bool = False, use_blob: bool = False, mdx_headers: bool=False,
+                                     use_iterative_json: bool = False, use_blob: bool = False,
+                                     mdx_headers: bool = False,
                                      **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cube in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
@@ -3173,7 +3215,7 @@ class CellService(ObjectService):
             return result_list
 
         # Extract non-asynchronous axis
-        axes = _extract_cellset_axis_raw(axis=1-async_axis)
+        axes = _extract_cellset_axis_raw(axis=1 - async_axis)
         # Extract tuples for asynchronous axis
         async_axis_tuples = asyncio.run(_extract_cellset_axes_raw_async())
         # Combine results
@@ -3245,7 +3287,7 @@ class CellService(ObjectService):
 
         async def _extract_cellset_cells_raw_async():
             cellcount = self.extract_cellset_cellcount(cellset_id=cellset_id, sandbox_name=sandbox_name,
-                                                            delete_cellset=False)
+                                                       delete_cellset=False)
             partition_size = math.ceil(cellcount / max_workers)
             loop = asyncio.get_event_loop()
             result_list = []
@@ -3686,7 +3728,7 @@ class CellService(ObjectService):
     @require_pandas
     def extract_cellset_dataframe_shaped(self, cellset_id: str, sandbox_name: str = None,
                                          display_attribute: bool = False, infer_dtype: bool = False,
-                                         mdx_headers: bool=False, **kwargs) -> 'pd.DataFrame':
+                                         mdx_headers: bool = False, **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cellset in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
 
