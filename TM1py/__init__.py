@@ -63,5 +63,6 @@ from TM1py.Services.TM1Service import TM1Service
 from TM1py.Services.ViewService import ViewService
 from TM1py.Services.ManageService import ManageService
 from TM1py.Utils import Utils
+from TM1py.Services.JobService import JobService
 
 __version__ = "2.0"
