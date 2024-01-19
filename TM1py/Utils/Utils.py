@@ -39,6 +39,27 @@ def decohints(decorator: Callable) -> Callable:
 
 
 @decohints
+def odata_track_changes_header(func):
+    """ Higher Order function to handle addition and removal of odata.track-changes HTTP Header
+
+    :param func:
+    :return:
+    """
+
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        # Add header
+        self._rest.add_http_header("Prefer", "odata.track-changes")
+        # Do stuff
+        response = func(self, *args, **kwargs)
+        # Remove Header
+        self._rest.remove_http_header("Prefer")
+        return response
+
+    return wrapper
+
+
+@decohints
 def require_admin(func):
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
