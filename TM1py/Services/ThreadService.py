@@ -3,7 +3,6 @@ from warnings import warn
 
 from typing import List
 
-from TM1py.Exceptions.Exceptions import TM1pyVersionDeprecationException
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils.Utils import format_url, verify_version, deprecated_in_version

@@ -3,12 +3,11 @@ from typing import List
 from warnings import warn
 from requests import Response
 
-from TM1py import ThreadService
+from TM1py import ThreadService, SessionService, UserService
 from TM1py.Objects.User import User
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Services.UserService import UserService
-from TM1py.Utils import format_url, case_and_space_insensitive_equals, require_admin, deprecated_in_version
+from TM1py.Utils import require_admin
 
 
 class MonitoringService(ObjectService):
@@ -21,6 +20,7 @@ class MonitoringService(ObjectService):
         warn("Monitoring Service will be moved to a new location in a future version", DeprecationWarning, 2)
         self.users = UserService(rest)
         self.threads = ThreadService(rest)
+        self.session = SessionService(rest)
 
     def get_threads(self, **kwargs) -> List:
         """ Return a dict of the currently running threads from the TM1 Server
@@ -28,7 +28,7 @@ class MonitoringService(ObjectService):
             :return:
                 dict: the response
         """
-        return self.threads.get()
+        return self.threads.get(**kwargs)
 
     def get_active_threads(self, **kwargs):
         """Return a list of non-idle threads from the TM1 Server
@@ -36,7 +36,7 @@ class MonitoringService(ObjectService):
             :return:
                 list: TM1 threads as dict
         """
-        return self.threads.get_active()
+        return self.threads.get_active(**kwargs)
 
     def cancel_thread(self, thread_id: int, **kwargs) -> Response:
         """ Kill a running thread
@@ -44,17 +44,17 @@ class MonitoringService(ObjectService):
         :param thread_id: 
         :return: 
         """
-        return self.threads.cancel(thread_id)
+        return self.threads.cancel(thread_id, **kwargs)
 
     def cancel_all_running_threads(self, **kwargs) -> list:
-        return self.threads.cancel_all_running()
+        return self.threads.cancel_all_running(**kwargs)
 
     def get_active_users(self, **kwargs) -> List[User]:
         """ Get the activate users in TM1
 
         :return: List of TM1py.User instances
         """
-        return self.users.get_active()
+        return self.users.get_active(**kwargs)
 
     def user_is_active(self, user_name: str, **kwargs) -> bool:
         """ Check if user is currently active in TM1
@@ -62,7 +62,7 @@ class MonitoringService(ObjectService):
         :param user_name:
         :return: Boolean
         """
-        return self.users.is_active(user_name)
+        return self.users.is_active(user_name,**kwargs)
 
     def disconnect_user(self, user_name: str, **kwargs) -> Response:
         """ Disconnect User
@@ -70,54 +70,24 @@ class MonitoringService(ObjectService):
         :param user_name: 
         :return: 
         """
-        return self.users.is_active(user_name)
+        return self.users.is_active(user_name, **kwargs)
 
     def get_active_session_threads(self, exclude_idle: bool = True, **kwargs):
-        url = "/ActiveSession/Threads?$filter=Function ne 'GET /ActiveSession/Threads'"
-        if exclude_idle:
-            url += " and State ne 'Idle'"
-
-        response = self._rest.GET(url, **kwargs)
-        return response.json()['value']
+        return self.session.get_threads_for_current(exclude_idle, **kwargs)
 
     def get_sessions(self, include_user: bool = True, include_threads: bool = True, **kwargs) -> List:
-        url = "/Sessions"
-        if include_user or include_threads:
-            expands = list()
-            if include_user:
-                expands.append("User")
-            if include_threads:
-                expands.append("Threads")
-            url += "?$expand=" + ",".join(expands)
-
-        response = self._rest.GET(url, **kwargs)
-        return response.json()["value"]
+        return self.session.get(include_user, include_threads, **kwargs)
 
     @require_admin
     def disconnect_all_users(self, **kwargs) -> list:
-        return self.users.disconnect_all
+        return self.users.disconnect_all(**kwargs)
 
     def close_session(self, session_id, **kwargs) -> Response:
-        url = format_url(f"/Sessions('{session_id}')/tm1.Close")
-        return self._rest.POST(url, **kwargs)
+        return self.session.close(session_id,**kwargs)
 
     @require_admin
     def close_all_sessions(self, **kwargs) -> list:
-        current_user = self.get_current_user(**kwargs)
-        sessions = self.get_sessions(**kwargs)
-        closed_sessions = list()
-        for session in sessions:
-            if "User" not in session:
-                continue
-            if session["User"] is None:
-                continue
-            if "Name" not in session["User"]:
-                continue
-            if case_and_space_insensitive_equals(current_user.name, session["User"]["Name"]):
-                continue
-            self.close_session(session['ID'], **kwargs)
-            closed_sessions.append(session)
-        return closed_sessions
+        return self.session.close_all(**kwargs)
 
     def get_current_user(self, **kwargs):
-        return self.users.get_current()
+        return self.users.get_current(**kwargs)
