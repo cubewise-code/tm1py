@@ -591,7 +591,7 @@ class CellService(ObjectService):
           :return: None
               The function clears data in the specified TM1 cube.
 
-          :raises DxdException:
+          :raises ValueError:
               If there are unmatched dimensions in the DataFrame or if specified dimensions
               do not exist in the TM1 cube.
 
@@ -632,15 +632,18 @@ class CellService(ObjectService):
                     unmatched_dimension_names.append(key)
                 for i in value:
                     if key in dimension_mapping:
-                        coordinates_list.append(f"[{key}].[{dimension_mapping[key]}].[{i}]")
+                        element_definition = Member.of(key, dimension_mapping[key], i)
+                        coordinates_list.append(element_definition.unique_name)
                     else:
-                        coordinates_list.append(f"[{key}].[{key}].[{i}]")
+                        element_definition = Member.of(key, key, i)
+                        coordinates_list.append(element_definition.unique_name)
                 cell_coordinates[key] = "{" + ",".join(coordinates_list) + "}"
         if dimension_mapping:
             for key, value in dimension_mapping.items():
                 if key not in dimension_names:
                     unmatched_dimension_names.append(key)
-                cell_coordinates[key] = f"{{TM1FILTERBYLEVEL({{TM1SUBSETALL([{key}].[{value}])}}, 0)}}"
+                cell_coordinates[key] = MdxHierarchySet.tm1_subset_all(dimension=key,
+                                                                       hierarchy=value).filter_by_level(0).to_mdx()
 
         if unmatched_dimension_names:
             raise ValueError(f"Dimension(s) {unmatched_dimension_names} does not exist in cube {cube}."
