@@ -23,3 +23,4 @@ from TM1py.Services.JobService import JobService
 from TM1py.Services.UserService import UserService
 from TM1py.Services.ThreadService import ThreadService
 from TM1py.Services.SessionService import SessionService
+from TM1py.Services.TransactionLogService import TransactionLogService
