@@ -7,6 +7,7 @@ from TM1py.Services.FileService import FileService
 from TM1py.Services.JobService import JobService
 from TM1py.Services.UserService import UserService
 from TM1py.Services.ThreadService import ThreadService
+from TM1py.Services.SessionService import SessionService
 
 
 class TM1Service:
@@ -75,6 +76,7 @@ class TM1Service:
         self.jobs = JobService(self._tm1_rest)
         self.users = UserService(self._tm1_rest)
         self.threads = ThreadService(self._tm1_rest)
+        self.sessions = SessionService(self._tm1_rest)
 
     def logout(self, **kwargs):
         self._tm1_rest.logout(**kwargs)
