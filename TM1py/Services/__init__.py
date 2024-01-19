@@ -21,3 +21,4 @@ from TM1py.Services.TM1Service import TM1Service
 from TM1py.Services.ManageService import ManageService
 from TM1py.Services.JobService import JobService
 from TM1py.Services.UserService import UserService
+from TM1py.Services.ThreadService import ThreadService

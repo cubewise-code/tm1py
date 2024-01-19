@@ -65,5 +65,6 @@ from TM1py.Services.ManageService import ManageService
 from TM1py.Utils import Utils
 from TM1py.Services.JobService import JobService
 from TM1py.Services.UserService import UserService
+from TM1py.Services.ThreadService import ThreadService
 
 __version__ = "1.11.2"
