@@ -3,6 +3,7 @@ from typing import List
 from warnings import warn
 from requests import Response
 
+from TM1py import ThreadService
 from TM1py.Objects.User import User
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
@@ -19,56 +20,34 @@ class MonitoringService(ObjectService):
         super().__init__(rest)
         warn("Monitoring Service will be moved to a new location in a future version", DeprecationWarning, 2)
         self.users = UserService(rest)
+        self.threads = ThreadService(rest)
 
-    @deprecated_in_version(version="12.0.0")
     def get_threads(self, **kwargs) -> List:
         """ Return a dict of the currently running threads from the TM1 Server
 
             :return:
                 dict: the response
         """
-        url = '/Threads'
-        response = self._rest.GET(url, **kwargs)
-        return response.json()['value']
+        return self.threads.get()
 
-    @deprecated_in_version(version="12.0.0")
     def get_active_threads(self, **kwargs):
         """Return a list of non-idle threads from the TM1 Server
 
             :return:
                 list: TM1 threads as dict
         """
-        url = "/Threads?$filter=Function ne 'GET /Threads' and State ne 'Idle'"
-        response = self._rest.GET(url, **kwargs)
-        return response.json()['value']
+        return self.threads.get_active()
 
-    @deprecated_in_version(version="12.0.0")
     def cancel_thread(self, thread_id: int, **kwargs) -> Response:
         """ Kill a running thread
         
         :param thread_id: 
         :return: 
         """
-        url = format_url("/Threads('{}')/tm1.CancelOperation", str(thread_id))
-        response = self._rest.POST(url, **kwargs)
-        return response
+        return self.threads.cancel(thread_id)
 
-    @deprecated_in_version(version="12.0.0")
     def cancel_all_running_threads(self, **kwargs) -> list:
-        running_threads = self.get_threads(**kwargs)
-        canceled_threads = list()
-        for thread in running_threads:
-            if thread["State"] == "Idle":
-                continue
-            if thread["Type"] == "System":
-                continue
-            if thread["Name"] == "Pseudo":
-                continue
-            if thread["Function"] == "GET /Threads":
-                continue
-            self.cancel_thread(thread["ID"], **kwargs)
-            canceled_threads.append(thread)
-        return canceled_threads
+        return self.threads.cancel_all_running()
 
     def get_active_users(self, **kwargs) -> List[User]:
         """ Get the activate users in TM1
