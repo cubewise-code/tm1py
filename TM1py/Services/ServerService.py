@@ -14,9 +14,10 @@ from requests import Response
 from TM1py.Objects.Process import Process
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import format_url
+from TM1py.Utils import format_url, odata_track_changes_header
 from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, CaseAndSpaceInsensitiveSet, require_admin, require_version, \
     decohints, deprecated_in_version
+from TM1py.Services.TransactionLogService import TransactionLogService
 
 
 class LogLevel(Enum):
@@ -28,27 +29,6 @@ class LogLevel(Enum):
     OFF = "off"
 
 
-@decohints
-def odata_track_changes_header(func):
-    """ Higher Order function to handle addition and removal of odata.track-changes HTTP Header
-
-    :param func: 
-    :return: 
-    """
-
-    @functools.wraps(func)
-    def wrapper(self, *args, **kwargs):
-        # Add header
-        self._rest.add_http_header("Prefer", "odata.track-changes")
-        # Do stuff
-        response = func(self, *args, **kwargs)
-        # Remove Header
-        self._rest.remove_http_header("Prefer")
-        return response
-
-    return wrapper
-
-
 class ServerService(ObjectService):
     """ Service to query common information from the TM1 Server
 
@@ -57,29 +37,15 @@ class ServerService(ObjectService):
     def __init__(self, rest: RestService):
         super().__init__(rest)
         warn("Server Service will be moved to a new location in a future version", DeprecationWarning, 2)
-        self.tlog_last_delta_request = None
+        self.transaction_logs = TransactionLogService(rest)
         self.mlog_last_delta_request = None
         self.alog_last_delta_request = None
 
-    @deprecated_in_version(version="12.0.0")
-    @odata_track_changes_header
     def initialize_transaction_log_delta_requests(self, filter=None, **kwargs):
-        url = "/TailTransactionLog()"
-        if filter:
-            url += "?$filter={}".format(filter)
-        response = self._rest.GET(url=url, **kwargs)
-        # Read the next delta-request-url from the response
-        self.tlog_last_delta_request = response.text[response.text.rfind(
-            "TransactionLogEntries/!delta('"):-2]
+        self.transaction_logs.initialize_log_delta_requests(filter, **kwargs)
 
-    @deprecated_in_version(version="12.0.0")
-    @odata_track_changes_header
     def execute_transaction_log_delta_request(self, **kwargs) -> Dict:
-        response = self._rest.GET(
-            url="/" + self.tlog_last_delta_request, **kwargs)
-        self.tlog_last_delta_request = response.text[response.text.rfind(
-            "TransactionLogEntries/!delta('"):-2]
-        return response.json()['value']
+        self.transaction_logs.execute_log_delta_request(**kwargs)
 
     @deprecated_in_version(version="12.0.0")
     @odata_track_changes_header
@@ -217,14 +183,6 @@ class ServerService(ObjectService):
             raise RuntimeError(
                 f"Failed to write to TM1 Message Log through unbound process. Status: '{status}'")
 
-    @staticmethod
-    def utc_localize_time(timestamp):
-        timestamp = pytz.utc.localize(timestamp)
-        timestamp_utc = timestamp.astimezone(pytz.utc)
-        return timestamp_utc
-
-    @deprecated_in_version(version="12.0.0")
-    @require_admin
     def get_transaction_log_entries(self, reverse: bool = True, user: str = None, cube: str = None,
                                     since: datetime = None, until: datetime = None, top: int = None,
                                     element_tuple_filter: Dict[str, str] = None,
@@ -241,40 +199,15 @@ class ServerService(ObjectService):
         tuple={'Actual':'eq','2020': 'ge'}
         :return:
         """
-        if element_position_filter:
-            raise NotImplementedError("Feature expected in upcoming releases of TM1, TM1py")
-
-        reverse = 'desc' if reverse else 'asc'
-        url = '/TransactionLogEntries?$orderby=TimeStamp {} '.format(reverse)
-
-        # filter on user, cube, time and elements
-        if any([user, cube, since, until, element_tuple_filter, element_position_filter]):
-            log_filters = []
-            if user:
-                log_filters.append(format_url("User eq '{}'", user))
-            if cube:
-                log_filters.append(format_url("Cube eq '{}'", cube))
-            if element_tuple_filter:
-                log_filters.append(format_url(
-                    "Tuple/any(e: {})".format(" or ".join([f"e {v} '{k}'" for k, v in element_tuple_filter.items()]))))
-            if since:
-                # If since doesn't have tz information, UTC is assumed
-                if not since.tzinfo:
-                    since = self.utc_localize_time(since)
-                log_filters.append(format_url(
-                    "TimeStamp ge {}", since.strftime("%Y-%m-%dT%H:%M:%SZ")))
-            if until:
-                # If until doesn't have tz information, UTC is assumed
-                if not until.tzinfo:
-                    until = self.utc_localize_time(until)
-                log_filters.append(format_url(
-                    "TimeStamp le {}", until.strftime("%Y-%m-%dT%H:%M:%SZ")))
-            url += "&$filter={}".format(" and ".join(log_filters))
-        # top limit
-        if top:
-            url += '&$top={}'.format(top)
-        response = self._rest.GET(url, **kwargs)
-        return response.json()['value']
+        return self.transaction_logs.get_entries(reverse=reverse,
+                                                 user=user,
+                                                 cube=cube,
+                                                 since=since,
+                                                 until=until,
+                                                 top=top,
+                                                 element_tuple_filter=element_tuple_filter,
+                                                 element_position_filter=element_position_filter,
+                                                 **kwargs)
 
     @require_admin
     @deprecated_in_version(version="12.0.0")

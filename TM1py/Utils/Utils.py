@@ -37,6 +37,27 @@ def decohints(decorator: Callable) -> Callable:
 
 
 @decohints
+def odata_track_changes_header(func):
+    """ Higher Order function to handle addition and removal of odata.track-changes HTTP Header
+
+    :param func:
+    :return:
+    """
+
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        # Add header
+        self._rest.add_http_header("Prefer", "odata.track-changes")
+        # Do stuff
+        response = func(self, *args, **kwargs)
+        # Remove Header
+        self._rest.remove_http_header("Prefer")
+        return response
+
+    return wrapper
+
+
+@decohints
 def require_admin(func):
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
@@ -62,6 +83,7 @@ def require_version(version):
         return wrapper
 
     return wrap
+
 
 @decohints
 def deprecated_in_version(version):
@@ -91,7 +113,6 @@ def require_pandas(func):
             raise ImportError(f"Function '{func.__name__}' requires pandas")
 
     return wrapper
-
 
 
 def get_all_servers_from_adminhost(adminhost='localhost', port=None, use_ssl=False) -> List:
@@ -902,7 +923,6 @@ def extract_compact_json_cellset(context: str, response: Dict, return_as_dict: b
 
     if props == ['Ordinal', 'Value']:
         return [value[1] for value in cells_data]
-
 
     return cells_data
 
