@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from warnings import warn
 
 import functools
 import json
@@ -55,6 +56,7 @@ class ServerService(ObjectService):
 
     def __init__(self, rest: RestService):
         super().__init__(rest)
+        warn("Server Service will be moved to a new location in a future version", DeprecationWarning, 2)
         self.tlog_last_delta_request = None
         self.mlog_last_delta_request = None
         self.alog_last_delta_request = None
