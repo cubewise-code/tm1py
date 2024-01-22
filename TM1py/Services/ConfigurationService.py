@@ -11,11 +11,6 @@ from TM1py.Utils import verify_version, deprecated_in_version, odata_track_chang
 class ConfigurationService(ObjectService):
 
     def __init__(self, rest: RestService):
-        if verify_version(required_version="12.0.0", version=self.version):
-            # warn only due to use in Monitoring Service
-            warn("Transaction Logs are not available in this version of TM1, removed as of 12.0.0", DeprecationWarning,
-                 2)
-
         super().__init__(rest)
 
     def get_server_name(self, **kwargs) -> str:
