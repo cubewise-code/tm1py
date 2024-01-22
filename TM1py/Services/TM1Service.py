@@ -12,6 +12,8 @@ from TM1py.Services.SessionService import SessionService
 from TM1py.Services.TransactionLogService import TransactionLogService
 from TM1py.Services.MessageLogService import MessageLogService
 from TM1py.Services.ConfigurationService import ConfigurationService
+from TM1py.Services.AuditLogService import AuditLogService
+
 class TM1Service:
     """ All features of TM1py are exposed through this service
     
@@ -82,6 +84,7 @@ class TM1Service:
         self.transaction_logs = TransactionLogService(self._tm1_rest)
         self.message_logs = MessageLogService(self._tm1_rest)
         self.configuration = ConfigurationService(self._tm1_rest)
+        self.audit_logs = AuditLogService(self._tm1_rest)
 
     def logout(self, **kwargs):
         self._tm1_rest.logout(**kwargs)
