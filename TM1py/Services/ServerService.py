@@ -11,6 +11,7 @@ from typing import Dict, Optional
 import pytz
 from requests import Response
 
+from TM1py import AuditLogService
 from TM1py.Objects.Process import Process
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
@@ -42,8 +43,8 @@ class ServerService(ObjectService):
         self.transaction_logs = TransactionLogService(rest)
         self.message_logs = MessageLogService(rest)
         self.configuration = ConfigurationService(rest)
-        self.mlog_last_delta_request = None
-        self.alog_last_delta_request = None
+        self.audit_logs = AuditLogService(rest)
+
 
     def initialize_transaction_log_delta_requests(self, filter=None, **kwargs):
         self.transaction_logs.initialize_delta_requests(filter, **kwargs)
@@ -51,25 +52,11 @@ class ServerService(ObjectService):
     def execute_transaction_log_delta_request(self, **kwargs) -> Dict:
         self.transaction_logs.execute_delta_request(**kwargs)
 
-    @deprecated_in_version(version="12.0.0")
-    @odata_track_changes_header
     def initialize_audit_log_delta_requests(self, filter=None, **kwargs):
-        url = "/TailAuditLog()"
-        if filter:
-            url += "?$filter={}".format(filter)
-        response = self._rest.GET(url=url, **kwargs)
-        # Read the next delta-request-url from the response
-        self.alog_last_delta_request = response.text[response.text.rfind(
-            "AuditLogEntries/!delta('"):-2]
+        return self.audit_logs.initialize_audit_log_delta_requests(filter, **kwargs)
 
-    @deprecated_in_version(version="12.0.0")
-    @odata_track_changes_header
     def execute_audit_log_delta_request(self, **kwargs) -> Dict:
-        response = self._rest.GET(
-            url="/" + self.alog_last_delta_request, **kwargs)
-        self.alog_last_delta_request = response.text[response.text.rfind(
-            "AuditLogEntries/!delta('"):-2]
-        return response.json()['value']
+        return self.audit_logs.execute_delta_request(**kwargs)
 
     def initialize_message_log_delta_requests(self, filter=None, **kwargs):
         return self.message_logs.initialize_delta_requests(filter, **kwargs)
@@ -144,9 +131,6 @@ class ServerService(ObjectService):
                                                  element_position_filter=element_position_filter,
                                                  **kwargs)
 
-    @require_admin
-    @deprecated_in_version(version="12.0.0")
-    @require_version(version="11.6")
     def get_audit_log_entries(self, user: str = None, object_type: str = None, object_name: str = None,
                               since: datetime = None, until: datetime = None, top: int = None, **kwargs) -> Dict:
         """
@@ -158,37 +142,13 @@ class ServerService(ObjectService):
         :param top: int
         :return:
         """
-
-        url = '/AuditLogEntries?$expand=AuditDetails'
-        # filter on user, object_type, object_name  and time
-        if any([user, object_type, object_name, since, until]):
-            log_filters = []
-            if user:
-                log_filters.append(format_url("UserName eq '{}'", user))
-            if object_type:
-                log_filters.append(format_url(
-                    "ObjectType eq '{}'", object_type))
-            if object_name:
-                log_filters.append(format_url(
-                    "ObjectName eq '{}'", object_name))
-            if since:
-                # If since doesn't have tz information, UTC is assumed
-                if not since.tzinfo:
-                    since = self.utc_localize_time(since)
-                log_filters.append(format_url(
-                    "TimeStamp ge {}", since.strftime("%Y-%m-%dT%H:%M:%SZ")))
-            if until:
-                # If until doesn't have tz information, UTC is assumed
-                if not until.tzinfo:
-                    until = self.utc_localize_time(until)
-                log_filters.append(format_url(
-                    "TimeStamp le {}", until.strftime("%Y-%m-%dT%H:%M:%SZ")))
-            url += "&$filter={}".format(" and ".join(log_filters))
-        # top limit
-        if top:
-            url += '&$top={}'.format(top)
-        response = self._rest.GET(url, **kwargs)
-        return response.json()['value']
+        return self.audit_logs.get_entries(user=user,
+                                           object_type=object_type,
+                                           object_name=object_name,
+                                           since=since,
+                                           until=until,
+                                           top=top,
+                                           **kwargs)
 
     def get_last_process_message_from_message_log(self, process_name: str, **kwargs) -> Optional[str]:
         """ Get the latest message log entry for a process
@@ -214,11 +174,9 @@ class ServerService(ObjectService):
         """
         return self.configuration.get_product_version()
 
-    @deprecated_in_version(version="12.0.0")
     def get_admin_host(self, **kwargs) -> str:
         return self.configuration.get_admin_host
 
-    @deprecated_in_version(version="12.0.0")
     def get_data_directory(self, **kwargs) -> str:
         return self.configuration.get_data_directory
 
@@ -253,8 +211,7 @@ class ServerService(ObjectService):
         :param configuration:
         :return: Response
         """
-        url = '/StaticConfiguration'
-        return self._rest.PATCH(url, json.dumps(configuration))
+        return self.configuration.update_static_configuration(configuration)
 
     @deprecated_in_version(version="12.0.0")
     @require_admin

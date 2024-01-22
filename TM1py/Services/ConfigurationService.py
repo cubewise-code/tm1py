@@ -1,4 +1,7 @@
+import json
+
 import pytz
+from requests import Response
 from warnings import warn
 
 from datetime import datetime
@@ -68,3 +71,13 @@ class ConfigurationService(ObjectService):
         config = self._rest.GET(url, **kwargs).json()
         del config["@odata.context"]
         return config
+
+    @require_admin
+    def update_static_configuration(self, configuration: Dict) -> Response:
+        """ Update the .cfg file and triggers TM1 to re-read the file.
+
+        :param configuration:
+        :return: Response
+        """
+        url = '/StaticConfiguration'
+        return self._rest.PATCH(url, json.dumps(configuration))
