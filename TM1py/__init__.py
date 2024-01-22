@@ -70,5 +70,6 @@ from TM1py.Services.SessionService import SessionService
 from TM1py.Services.TransactionLogService import TransactionLogService
 from TM1py.Services.MessageLogService import MessageLogService
 from TM1py.Services.ConfigurationService import ConfigurationService
+from TM1py.Services.AuditLogService import AuditLogService
 
 __version__ = "1.11.2"
