@@ -10,7 +10,7 @@ from TM1py.Services.UserService import UserService
 from TM1py.Services.ThreadService import ThreadService
 from TM1py.Services.SessionService import SessionService
 from TM1py.Services.TransactionLogService import TransactionLogService
-
+from TM1py.Services.MessageLogService import MessageLogService
 class TM1Service:
     """ All features of TM1py are exposed through this service
     
@@ -79,6 +79,7 @@ class TM1Service:
         self.threads = ThreadService(self._tm1_rest)
         self.sessions = SessionService(self._tm1_rest)
         self.transaction_logs = TransactionLogService(self._tm1_rest)
+        self.message_logs = MessageLogService(self._tm1_rest)
 
     def logout(self, **kwargs):
         self._tm1_rest.logout(**kwargs)
