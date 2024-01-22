@@ -25,3 +25,4 @@ from TM1py.Services.ThreadService import ThreadService
 from TM1py.Services.SessionService import SessionService
 from TM1py.Services.TransactionLogService import TransactionLogService
 from TM1py.Services.MessageLogService import MessageLogService
+from TM1py.Services.ConfigurationService import ConfigurationService
