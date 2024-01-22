@@ -27,7 +27,7 @@ class TransactionLogService(ObjectService):
 
     @deprecated_in_version(version="12.0.0")
     @odata_track_changes_header
-    def initialize_log_delta_requests(self, filter=None, **kwargs):
+    def initialize_delta_requests(self, filter=None, **kwargs):
         url = "/TailTransactionLog()"
         if filter:
             url += "?$filter={}".format(filter)
@@ -38,7 +38,7 @@ class TransactionLogService(ObjectService):
 
     @deprecated_in_version(version="12.0.0")
     @odata_track_changes_header
-    def execute_log_delta_request(self, **kwargs) -> Dict:
+    def execute_delta_request(self, **kwargs) -> Dict:
         response = self._rest.GET(
             url="/" + self.last_delta_request, **kwargs)
         self.last_delta_request = response.text[response.text.rfind(
