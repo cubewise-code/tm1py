@@ -19,6 +19,7 @@ from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, CaseAndSpaceInsensiti
     decohints, deprecated_in_version
 from TM1py.Services.TransactionLogService import TransactionLogService
 from TM1py.Services.MessageLogService import MessageLogService
+from TM1py.Services.ConfigurationService import ConfigurationService
 
 
 class LogLevel(Enum):
@@ -40,6 +41,7 @@ class ServerService(ObjectService):
         warn("Server Service will be moved to a new location in a future version", DeprecationWarning, 2)
         self.transaction_logs = TransactionLogService(rest)
         self.message_logs = MessageLogService(rest)
+        self.configuration = ConfigurationService(rest)
         self.mlog_last_delta_request = None
         self.alog_last_delta_request = None
 
@@ -188,7 +190,7 @@ class ServerService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return response.json()['value']
 
-    def get_last_process_message_from_messagelog(self, process_name: str, **kwargs) -> Optional[str]:
+    def get_last_process_message_from_message_log(self, process_name: str, **kwargs) -> Optional[str]:
         """ Get the latest message log entry for a process
 
             :param process_name: name of the process
@@ -202,8 +204,7 @@ class ServerService(ObjectService):
         :Returns:
             String, the server name
         """
-        url = '/Configuration/ServerName/$value'
-        return self._rest.GET(url, **kwargs).text
+        return self.configuration.get_server_name()
 
     def get_product_version(self, **kwargs) -> str:
         """ Ask TM1 Server for its version
@@ -211,35 +212,22 @@ class ServerService(ObjectService):
         :Returns:
             String, the version
         """
-        url = '/Configuration/ProductVersion/$value'
-        return self._rest.GET(url, **kwargs).text
+        return self.configuration.get_product_version()
 
     @deprecated_in_version(version="12.0.0")
     def get_admin_host(self, **kwargs) -> str:
-        url = '/Configuration/AdminHost/$value'
-        return self._rest.GET(url, **kwargs).text
+        return self.configuration.get_admin_host
 
     @deprecated_in_version(version="12.0.0")
     def get_data_directory(self, **kwargs) -> str:
-        url = '/Configuration/DataBaseDirectory/$value'
-        return self._rest.GET(url, **kwargs).text
+        return self.configuration.get_data_directory
 
     def get_configuration(self, **kwargs) -> Dict:
-        url = '/Configuration'
-        config = self._rest.GET(url, **kwargs).json()
-        del config["@odata.context"]
-        return config
+        return self.configuration.get()
 
     @require_admin
     def get_static_configuration(self, **kwargs) -> Dict:
-        """ Read TM1 config settings as dictionary from TM1 Server
-
-        :return: config as dictionary
-        """
-        url = '/StaticConfiguration'
-        config = self._rest.GET(url, **kwargs).json()
-        del config["@odata.context"]
-        return config
+        return self.configuration.get_static()
 
     @require_admin
     def get_active_configuration(self, **kwargs) -> Dict:
@@ -247,10 +235,7 @@ class ServerService(ObjectService):
 
         :return: config as dictionary
         """
-        url = '/ActiveConfiguration'
-        config = self._rest.GET(url, **kwargs).json()
-        del config["@odata.context"]
-        return config
+        return self.configuration.get_active()
 
     def get_api_metadata(self, **kwargs):
         """ Read effective(!) TM1 config settings as dictionary from TM1 Server
