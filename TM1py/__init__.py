@@ -68,5 +68,6 @@ from TM1py.Services.UserService import UserService
 from TM1py.Services.ThreadService import ThreadService
 from TM1py.Services.SessionService import SessionService
 from TM1py.Services.TransactionLogService import TransactionLogService
+from TM1py.Services.MessageLogService import MessageLogService
 
 __version__ = "1.11.2"
