@@ -1721,7 +1721,7 @@ class CellService(ObjectService):
                     skip: int = None, skip_zeros: bool = False, skip_consolidated_cells: bool = False,
                     skip_rule_derived_cells: bool = False, sandbox_name: str = None, element_unique_names: bool = True,
                     skip_cell_properties: bool = False, use_compact_json: bool = False,
-                    skip_sandbox_dimension: bool = False,
+                    skip_sandbox_dimension: bool = False, max_workers: int = 1, async_axis: int = 0,
                     **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
         """ Execute MDX and return the cells with their properties
 
@@ -1740,6 +1740,24 @@ class CellService(ObjectService):
         :skip_sandbox_dimension: bool = False
         :return: content in sweet concise structure.
         """
+        if max_workers > 1:
+            return self.execute_mdx_async(
+                mdx=mdx,
+                cell_properties=cell_properties,
+                top=top,
+                skip=skip,
+                skip_contexts=skip_contexts,
+                skip_zeros=skip_zeros,
+                skip_consolidated_cells=skip_consolidated_cells,
+                skip_rule_derived_cells=skip_rule_derived_cells,
+                sandbox_name=sandbox_name,
+                element_unique_names=element_unique_names,
+                skip_cell_properties=skip_cell_properties,
+                use_compact_json=use_compact_json,
+                skip_sandbox_dimension=skip_sandbox_dimension,
+                max_workers=max_workers,
+                async_axis=async_axis)
+
         cellset_id = self.create_cellset(mdx=mdx, sandbox_name=sandbox_name, **kwargs)
         return self.extract_cellset(
             cellset_id=cellset_id,
@@ -1809,7 +1827,8 @@ class CellService(ObjectService):
                      top: int = None, skip_contexts: bool = False, skip: int = None, skip_zeros: bool = False,
                      skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
                      sandbox_name: str = None, element_unique_names: bool = True, skip_cell_properties: bool = False,
-                     use_compact_json: bool = False, **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
+                     use_compact_json: bool = False, max_workers: int = 1, async_axis: int = 0,
+                     **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
         """ get view content as dictionary with sweet and concise structure.
             Works on NativeView and MDXView !
 
@@ -1830,6 +1849,22 @@ class CellService(ObjectService):
         :param use_compact_json: bool
         :return: Dictionary : {([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }
         """
+        if max_workers > 1:
+            return self.execute_view_async(
+                cube_name=cube_name,
+                view_name=view_name,
+                private=private,
+                top=top,
+                skip=skip,
+                skip_contexts=skip_contexts,
+                skip_zeros=skip_zeros,
+                skip_consolidated_cells=skip_consolidated_cells,
+                skip_rule_derived_cells=skip_rule_derived_cells,
+                sandbox_name=sandbox_name,
+                element_unique_names=element_unique_names,
+                skip_cell_properties=skip_cell_properties,
+                max_workers=max_workers,
+                async_axis=async_axis)
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
                                                    sandbox_name=sandbox_name, **kwargs)
         return self.extract_cellset(
@@ -1853,8 +1888,7 @@ class CellService(ObjectService):
                            skip: int = None, skip_zeros: bool = False, skip_consolidated_cells: bool = False,
                            skip_rule_derived_cells: bool = False, sandbox_name: str = None,
                            element_unique_names: bool = True, skip_cell_properties: bool = False,
-                           use_compact_json: bool = False, max_workers: int = 8, async_axis: int = 0,
-                           **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
+                           max_workers: int = 8, async_axis: int = 0, **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
         """ get view content as dictionary with sweet and concise structure.
             Works on NativeView and MDXView !
 
@@ -1872,7 +1906,6 @@ class CellService(ObjectService):
         :param element_unique_names: '[d1].[h1].[e1]' or 'e1'
         :param sandbox_name: str
         :param skip_cell_properties: cell values in result dictionary, instead of cell_properties dictionary
-        :param use_compact_json: bool
         :param max_workers: Int, number of threads to use in parallel
         :param async_axis: 0 (columns) or 1 (rows). On which axis to parallelize retrieval
         :return: Dictionary : {([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }
@@ -1892,7 +1925,6 @@ class CellService(ObjectService):
             sandbox_name=sandbox_name,
             element_unique_names=element_unique_names,
             skip_cell_properties=skip_cell_properties,
-            use_compact_json=use_compact_json,
             max_workers=max_workers,
             async_axis=async_axis,
             **kwargs)
@@ -4052,6 +4084,8 @@ class CellService(ObjectService):
         :param skip_cell_properties: cell values in result dictionary, instead of cell_properties dictionary
         :param use_compact_json: bool
         :param skip_sandbox_dimension: skip sandbox dimension
+        :param max_workers: Int, number of threads to use in parallel
+        :param async_axis: 0 (columns) or 1 (rows). On which axis to parallelize retrieval
         :return: Content in sweet concise structure.
         """
         if not cell_properties:
@@ -4062,6 +4096,7 @@ class CellService(ObjectService):
             async_axis=async_axis,
             max_workers=max_workers,
             elem_properties=["UniqueName"],
+            member_properties=["UniqueName"],
             top=top,
             skip=skip,
             skip_contexts=skip_contexts,
