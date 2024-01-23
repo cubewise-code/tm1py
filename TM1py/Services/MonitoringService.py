@@ -3,11 +3,13 @@ from typing import List
 from warnings import warn
 from requests import Response
 
-from TM1py import ThreadService, SessionService, UserService
 from TM1py.Objects.User import User
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import require_admin
+from TM1py.Services.ThreadService import ThreadService
+from TM1py.Services.SessionService import SessionService
+from TM1py.Services.UserService import UserService
 
 
 class MonitoringService(ObjectService):
@@ -62,7 +64,7 @@ class MonitoringService(ObjectService):
         :param user_name:
         :return: Boolean
         """
-        return self.users.is_active(user_name,**kwargs)
+        return self.users.is_active(user_name, **kwargs)
 
     def disconnect_user(self, user_name: str, **kwargs) -> Response:
         """ Disconnect User
@@ -83,7 +85,7 @@ class MonitoringService(ObjectService):
         return self.users.disconnect_all(**kwargs)
 
     def close_session(self, session_id, **kwargs) -> Response:
-        return self.session.close(session_id,**kwargs)
+        return self.session.close(session_id, **kwargs)
 
     @require_admin
     def close_all_sessions(self, **kwargs) -> list:

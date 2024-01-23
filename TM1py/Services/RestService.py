@@ -28,7 +28,7 @@ try:
 except ImportError:
     warnings.warn("requests_negotiate_sspi failed to import. SSO will not work", ImportWarning)
 
-from TM1py.Exceptions import TM1pyRestException, TM1pyException
+from TM1py.Exceptions import TM1pyRestException
 
 import http.client as http_client
 
@@ -788,6 +788,15 @@ class RestService:
         url = '/Configuration/ProductVersion/$value'
         response = self.GET(url=url)
         self._version = response.text
+
+    def get_api_metadata(self) -> dict:
+        """ Get API Metadata
+
+        :return: Dictionary
+        """
+        url = '/$metadata'
+        metadata = self.GET(url=url).content.decode("utf-8")
+        return json.loads(metadata)
 
     @property
     def version(self) -> str:

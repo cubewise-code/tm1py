@@ -1,29 +1,23 @@
 # -*- coding: utf-8 -*-
-from warnings import warn
-
-import functools
 import json
 from collections.abc import Iterable
 from datetime import datetime
 from enum import Enum
 from typing import Dict, Optional
+from warnings import warn
 
-import pytz
 from requests import Response
 
-from TM1py import AuditLogService
-from TM1py.Objects.Process import Process
+from TM1py.Services.AuditLogService import AuditLogService
+from TM1py.Services.ConfigurationService import ConfigurationService
+from TM1py.Services.MessageLogService import MessageLogService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import format_url
-from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, CaseAndSpaceInsensitiveSet, require_data_admin, \
-    require_ops_admin, require_version, decohints, deprecated_in_version, require_admin
-from TM1py.Utils import format_url, odata_track_changes_header
-from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, CaseAndSpaceInsensitiveSet, require_admin, require_version, \
-    decohints, deprecated_in_version
 from TM1py.Services.TransactionLogService import TransactionLogService
-from TM1py.Services.MessageLogService import MessageLogService
-from TM1py.Services.ConfigurationService import ConfigurationService
+from TM1py.Utils.Utils import require_admin, require_version, \
+    deprecated_in_version
+from TM1py.Utils.Utils import require_data_admin, \
+    require_ops_admin
 
 
 class LogLevel(Enum):
@@ -47,7 +41,6 @@ class ServerService(ObjectService):
         self.message_logs = MessageLogService(rest)
         self.configuration = ConfigurationService(rest)
         self.audit_logs = AuditLogService(rest)
-
 
     def initialize_transaction_log_delta_requests(self, filter=None, **kwargs):
         self.transaction_logs.initialize_delta_requests(filter, **kwargs)
@@ -192,10 +185,10 @@ class ServerService(ObjectService):
         return self.configuration.get_product_version()
 
     def get_admin_host(self, **kwargs) -> str:
-        return self.configuration.get_admin_host
+        return self.configuration.get_admin_host()
 
     def get_data_directory(self, **kwargs) -> str:
-        return self.configuration.get_data_directory
+        return self.configuration.get_data_directory()
 
     def get_configuration(self, **kwargs) -> Dict:
         return self.configuration.get()
@@ -212,14 +205,12 @@ class ServerService(ObjectService):
         """
         return self.configuration.get_active()
 
-    def get_api_metadata(self, **kwargs):
+    def get_api_metadata(self):
         """ Read effective(!) TM1 config settings as dictionary from TM1 Server
 
         :return: config as dictionary
         """
-        url = '/$metadata'
-        metadata = self._rest.GET(url, **kwargs).content.decode("utf-8")
-        return json.loads(metadata)
+        return self._rest.get_api_metadata()
 
     @require_ops_admin
     def update_static_configuration(self, configuration: Dict) -> Response:

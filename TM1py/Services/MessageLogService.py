@@ -5,7 +5,8 @@ from datetime import datetime
 from typing import Dict, Iterable, Optional
 
 from TM1py.Objects.Process import Process
-from TM1py import ObjectService, RestService
+from TM1py.Services.ObjectService import ObjectService
+from TM1py.Services.RestService import RestService
 from TM1py.Utils import verify_version, deprecated_in_version, odata_track_changes_header, require_admin, format_url, \
     CaseAndSpaceInsensitiveDict, CaseAndSpaceInsensitiveSet
 
@@ -13,12 +14,11 @@ from TM1py.Utils import verify_version, deprecated_in_version, odata_track_chang
 class MessageLogService(ObjectService):
 
     def __init__(self, rest: RestService):
-        if verify_version(required_version="12.0.0", version=self.version):
+        super().__init__(rest)
+        if verify_version(required_version="12.0.0", version=rest.version):
             # warn only due to use in Monitoring Service
             warn("Message Logs are not available in this version of TM1, removed as of 12.0.0", DeprecationWarning,
                  2)
-
-        super().__init__(rest)
         self.last_delta_request = None
 
     @deprecated_in_version(version="12.0.0")
