@@ -267,8 +267,10 @@ class RestService:
             encoding=encoding)
 
         try:
+            if return_async_id:
+                async_requests_mode = True
             # determine async_requests_mode
-            if async_requests_mode is None:
+            elif async_requests_mode is None:
                 async_requests_mode = self._async_requests_mode
 
             if not async_requests_mode:
