@@ -19,3 +19,4 @@ from TM1py.Services.ViewService import ViewService
 from TM1py.Services.GitService import GitService
 from TM1py.Services.TM1Service import TM1Service
 from TM1py.Services.ManageService import ManageService
+from TM1py.Services.LoggerService import LoggerService
