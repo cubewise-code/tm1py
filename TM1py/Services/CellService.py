@@ -571,7 +571,7 @@ class CellService(ObjectService):
     @require_data_admin
     @require_ops_admin
     @require_version(version="11.7")
-    def clear_from_df(self, cube: str, df: pd.DataFrame, dimension_mapping: Dict = None, **kwargs):
+    def clear_with_dataframe(self, cube: str, df: 'pd.DataFrame', dimension_mapping: Dict = None, **kwargs):
         """Clears data from a TM1 cube based on the distinct values in a DataFrame over cube dimensions.
             Note:
                 This function is similar to `tm1.cells.clear`, but it is designed specifically for clearing data
@@ -585,7 +585,7 @@ class CellService(ObjectService):
               The DataFrame containing distinct values over cube dimensions.
               Columns in the DataFrame should correspond to cube dimensions.
           :param dimension_mapping: Dict, optional
-              A dictionary mapping DataFrame columns to specific hierarchies within TM1 dimensions.
+              A dictionary mapping the DataFrame columns to one or many hierarchies within the given dimension.
               If not provided, assumes that the dimensions have just one hierarchy.
 
           :return: None
@@ -610,6 +610,12 @@ class CellService(ObjectService):
                   "Organisation": "hierarchy_1",
                   "Location": ["hierarchy_2", "hierarchy_3", "hierarchy_4"]
               }
+
+              dataframe = pd.DataFrame(data)
+
+              with TM1Service(**tm1params) as tm1:
+                tm1.cells.clear_with_dataframe(cube="Sales", df=dataframe)
+
               ```
         """
 
@@ -621,43 +627,58 @@ class CellService(ObjectService):
 
         df = df.astype(str)
 
-        unique_entries = [{col_name: df[col_name].unique()} for col_name in df.columns]
+        elements_by_column = {col_name: df[col_name].unique() for col_name in df.columns}
 
-        cell_coordinates = {}
+        mdx_selections = {}
         unmatched_dimension_names = []
-        for entry in unique_entries:
-            coordinates_list = []
-            for key, value in entry.items():
-                if key not in dimension_names:
-                    unmatched_dimension_names.append(key)
-                for i in value:
-                    if key in dimension_mapping:
-                        element_definition = Member.of(key, dimension_mapping[key], i)
-                        coordinates_list.append(element_definition.unique_name)
-                    else:
-                        element_definition = Member.of(key, key, i)
-                        coordinates_list.append(element_definition.unique_name)
-                cell_coordinates[key] = "{" + ",".join(coordinates_list) + "}"
+        for column, elements in elements_by_column.items():
+            members = []
+
+            if column not in dimension_names:
+                unmatched_dimension_names.append(column)
+
+            for element in elements:
+                if column in dimension_mapping:
+                    hierarchy = dimension_mapping.get(column)
+                    if not isinstance(hierarchy, str):
+                        raise ValueError(f"Value for key '{dimension}' in dimension_mapping must be of type str")
+                    members.append(Member.of(column, hierarchy, element))
+
+                else:
+                    members.append(Member.of(column, column, element))
+            mdx_selections[column] = MdxHierarchySet.members(members)
+
         if dimension_mapping:
-            for key, value in dimension_mapping.items():
-                if key not in dimension_names:
-                    unmatched_dimension_names.append(key)
-                cell_coordinates[key] = MdxHierarchySet.tm1_subset_all(dimension=key,
-                                                                       hierarchy=value).filter_by_level(0).to_mdx()
+            for dimension, hierarchies in dimension_mapping.items():
+                if dimension not in dimension_names:
+                    unmatched_dimension_names.append(dimension)
+
+                elif isinstance(hierarchies, str):
+                    hierarchy = hierarchies
+                    mdx_selections[dimension] = MdxHierarchySet.tm1_subset_all(
+                        dimension=dimension,
+                        hierarchy=hierarchy).filter_by_level(0)
+
+                elif isinstance(hierarchies, Iterable):
+                    for hierarchy in hierarchies:
+                        mdx_selections[dimension] = MdxHierarchySet.tm1_subset_all(
+                            dimension=dimension,
+                            hierarchy=hierarchy).filter_by_level(0)
+
+                else:
+                    raise ValueError(f"Unexpected value type for key '{dimension}' in dimension_mapping")
 
         if unmatched_dimension_names:
             raise ValueError(f"Dimension(s) {unmatched_dimension_names} does not exist in cube {cube}."
                              f"\nCheck the source of the dataframe to fix the problem")
 
         for dimension_name in dimension_names:
-            if dimension_name not in cell_coordinates:
-                expression = MdxHierarchySet.tm1_subset_all(dimension_name).filter_by_level(0).to_mdx()
-                cell_coordinates[dimension_name] = expression
+            if dimension_name not in mdx_selections:
+                mdx_selections[dimension_name] = MdxHierarchySet.tm1_subset_all(dimension_name).filter_by_level(0)
 
         mdx_builder = MdxBuilder.from_cube(cube).columns_non_empty()
-        for dimension, expression in cell_coordinates.items():
-            hierarchy_set = MdxHierarchySet.from_str(dimension=dimension, hierarchy=dimension, mdx=expression)
-            mdx_builder.add_hierarchy_set_to_column_axis(hierarchy_set)
+        for dimension, expression in mdx_selections.items():
+            mdx_builder.add_hierarchy_set_to_column_axis(expression)
 
         return self.clear_with_mdx(cube=cube, mdx=mdx_builder.to_mdx(), **kwargs)
 
