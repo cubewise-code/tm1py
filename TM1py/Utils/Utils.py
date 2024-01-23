@@ -47,6 +47,7 @@ def require_admin(func):
 
     return wrapper
 
+
 @decohints
 def require_data_admin(func):
     @functools.wraps(func)
@@ -56,6 +57,7 @@ def require_data_admin(func):
         return func(self, *args, **kwargs)
 
     return wrapper
+
 
 @decohints
 def require_security_admin(func):
@@ -67,6 +69,7 @@ def require_security_admin(func):
 
     return wrapper
 
+
 @decohints
 def require_ops_admin(func):
     @functools.wraps(func)
@@ -76,6 +79,7 @@ def require_ops_admin(func):
         return func(self, *args, **kwargs)
 
     return wrapper
+
 
 @decohints
 def require_version(version):
@@ -92,6 +96,7 @@ def require_version(version):
         return wrapper
 
     return wrap
+
 
 @decohints
 def deprecated_in_version(version):
@@ -121,7 +126,6 @@ def require_pandas(func):
             raise ImportError(f"Function '{func.__name__}' requires pandas")
 
     return wrapper
-
 
 
 def get_all_servers_from_adminhost(adminhost='localhost', port=None, use_ssl=False) -> List:
@@ -932,7 +936,6 @@ def extract_compact_json_cellset(context: str, response: Dict, return_as_dict: b
     if props == ['Ordinal', 'Value']:
         return [value[1] for value in cells_data]
 
-
     return cells_data
 
 
@@ -955,14 +958,14 @@ def map_cell_properties_to_compact_json_response(properties: List, compact_cells
     properties = [Ordinal, Value, RuleDerived]
     compact_cells_response = [[0, 258, 100], [1, 258, 500]]
     result: {Cells: [
-        { Ordinal: 0, Value: 100, RuleDerived: 258}, 
+        { Ordinal: 0, Value: 100, RuleDerived: 258},
         { Ordinal: 1, Value: 500, RuleDerived: 258}
     ]}
-    
+
 
     :param properties: list of `Cell` properties e.g [Ordinal, Value, Updateable, ...]
     :param compact_cells_response: list of cells returned in compact json format
-    :return: dict with properties mapped to compact json response    
+    :return: dict with properties mapped to compact json response
     """
     cells_dict = dict()
     cells = []

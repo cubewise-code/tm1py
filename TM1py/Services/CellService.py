@@ -571,6 +571,99 @@ class CellService(ObjectService):
     @require_data_admin
     @require_ops_admin
     @require_version(version="11.7")
+    def clear_from_df(self, cube: str, df: pd.DataFrame, dimension_mapping: Dict = None, **kwargs):
+        """Clears data from a TM1 cube based on the distinct values in a DataFrame over cube dimensions.
+            Note:
+                This function is similar to `tm1.cells.clear`, but it is designed specifically for clearing data
+                 based on distinct values in a DataFrame over cube dimensions. The key difference is that this
+                 function interprets the DataFrame columns as dimensions and supports a mapping (`dimension_mapping`)
+                 for specifying hierarchies within those dimensions.
+
+          :param cube: str
+              The name of the TM1 cube.
+          :param df: pd.DataFrame
+              The DataFrame containing distinct values over cube dimensions.
+              Columns in the DataFrame should correspond to cube dimensions.
+          :param dimension_mapping: Dict, optional
+              A dictionary mapping DataFrame columns to specific hierarchies within TM1 dimensions.
+              If not provided, assumes that the dimensions have just one hierarchy.
+
+          :return: None
+              The function clears data in the specified TM1 cube.
+
+          :raises ValueError:
+              If there are unmatched dimensions in the DataFrame or if specified dimensions
+              do not exist in the TM1 cube.
+
+          :example:
+              ```python
+
+              # Sample DataFrame with distinct values over cube dimensions
+              data = {
+                  "Year": ["2021", "2022"],
+                  "Organisation": ["some_company", "some_company"],
+                  "Location": ["Germany", "Albania"]
+              }
+
+              # Sample dimension mapping
+              dimensions_mapping = {
+                  "Organisation": "hierarchy_1",
+                  "Location": ["hierarchy_2", "hierarchy_3", "hierarchy_4"]
+              }
+              ```
+        """
+
+        if not dimension_mapping:
+            dimension_mapping = {}
+
+        cube_service = self.get_cube_service()
+        dimension_names = CaseAndSpaceInsensitiveSet(*cube_service.get_dimension_names(cube_name=cube))
+
+        df = df.astype(str)
+
+        unique_entries = [{col_name: df[col_name].unique()} for col_name in df.columns]
+
+        cell_coordinates = {}
+        unmatched_dimension_names = []
+        for entry in unique_entries:
+            coordinates_list = []
+            for key, value in entry.items():
+                if key not in dimension_names:
+                    unmatched_dimension_names.append(key)
+                for i in value:
+                    if key in dimension_mapping:
+                        element_definition = Member.of(key, dimension_mapping[key], i)
+                        coordinates_list.append(element_definition.unique_name)
+                    else:
+                        element_definition = Member.of(key, key, i)
+                        coordinates_list.append(element_definition.unique_name)
+                cell_coordinates[key] = "{" + ",".join(coordinates_list) + "}"
+        if dimension_mapping:
+            for key, value in dimension_mapping.items():
+                if key not in dimension_names:
+                    unmatched_dimension_names.append(key)
+                cell_coordinates[key] = MdxHierarchySet.tm1_subset_all(dimension=key,
+                                                                       hierarchy=value).filter_by_level(0).to_mdx()
+
+        if unmatched_dimension_names:
+            raise ValueError(f"Dimension(s) {unmatched_dimension_names} does not exist in cube {cube}."
+                             f"\nCheck the source of the dataframe to fix the problem")
+
+        for dimension_name in dimension_names:
+            if dimension_name not in cell_coordinates:
+                expression = MdxHierarchySet.tm1_subset_all(dimension_name).filter_by_level(0).to_mdx()
+                cell_coordinates[dimension_name] = expression
+
+        mdx_builder = MdxBuilder.from_cube(cube).columns_non_empty()
+        for dimension, expression in cell_coordinates.items():
+            hierarchy_set = MdxHierarchySet.from_str(dimension=dimension, hierarchy=dimension, mdx=expression)
+            mdx_builder.add_hierarchy_set_to_column_axis(hierarchy_set)
+
+        return self.clear_with_mdx(cube=cube, mdx=mdx_builder.to_mdx(), **kwargs)
+
+    @require_data_admin
+    @require_ops_admin
+    @require_version(version="11.7")
     def clear_with_mdx(self, cube: str, mdx: str, sandbox_name: str = None, **kwargs):
         """ clear a slice in a cube based on an MDX query.
         Function requires admin permissions, since TM1py uses an unbound TI with a `ViewZeroOut` statement.
