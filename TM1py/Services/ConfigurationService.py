@@ -4,10 +4,10 @@ import pytz
 from requests import Response
 from warnings import warn
 
-from datetime import datetime
 from typing import Dict
 
-from TM1py import ObjectService, RestService
+from TM1py.Services.ObjectService import ObjectService
+from TM1py.Services.RestService import RestService
 from TM1py.Utils import verify_version, deprecated_in_version, odata_track_changes_header, require_admin, format_url
 
 
