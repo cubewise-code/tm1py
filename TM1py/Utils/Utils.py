@@ -12,6 +12,7 @@ from enum import Enum, unique
 from io import StringIO
 from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator, Union, Callable
 from urllib.parse import unquote
+
 import requests
 from mdxpy import MdxBuilder, Member
 from requests.adapters import HTTPAdapter
