@@ -89,6 +89,24 @@ with TM1Service(
 ```
 
 
+> TM1 12 on-premise & Cloud Pak For Data
+
+``` python
+with TM1Service(
+        address="tm1-ibm-operands-services.apps.cluster.your-cluster.company.com",
+        instance="your instance name",
+        database="your database name",
+        application_client_id="client id",
+        application_client_secret="client secret",
+        user="admin",
+        ssl=True) as tm1:
+
+    print(tm1.server.get_product_Version())
+```
+
+
+
+
 Documentation
 =======================
 
