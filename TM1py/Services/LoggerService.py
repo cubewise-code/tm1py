@@ -13,7 +13,7 @@ class LoggerService(ObjectService):
     """
 
     def __init__(self, rest: RestService):
-    super().__init__(rest)
+        super().__init__(rest)
 
 
     @require_ops_admin
