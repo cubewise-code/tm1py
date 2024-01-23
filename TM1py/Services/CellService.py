@@ -618,9 +618,11 @@ class CellService(ObjectService):
 
               ```
         """
-
         if not dimension_mapping:
             dimension_mapping = {}
+
+        if len(CaseAndSpaceInsensitiveSet(df.columns)) != len(df.columns):
+            raise ValueError(f"Column names in DataFrame are not unique identifiers for TM1: {list(df.columns)}")
 
         cube_service = self.get_cube_service()
         dimension_names = CaseAndSpaceInsensitiveSet(*cube_service.get_dimension_names(cube_name=cube))
