@@ -1,3 +1,5 @@
+from warnings import warn
+
 try:
     import pandas as pd
     _has_pandas = True
@@ -17,9 +19,8 @@ class JobService(ObjectService):
 
     def __init__(self, rest: RestService):
         super().__init__(rest)
-        if not verify_version(required_version="12.0.0", version=self.version):
-            raise TM1pyVersionException("init Jobs Service", "12.0.0")
 
+    @verify_version(version="12.0.0")
     def get(self, **kwargs):
         """ Return a dict of the currently running jobs from the TM1 Server
 
@@ -30,6 +31,7 @@ class JobService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return response.json()['value']
 
+    @verify_version(version="12.0.0")
     def cancel(self, job_id, **kwargs):
         """ Cancels a running Job
 
@@ -40,6 +42,7 @@ class JobService(ObjectService):
         response = self._rest.POST(url, **kwargs)
         return response
 
+    @verify_version(version="12.0.0")
     def cancel_all(self, **kwargs):
         jobs = self.get()
         canceled_jobs = list()
@@ -49,6 +52,7 @@ class JobService(ObjectService):
         return canceled_jobs
 
     @require_pandas
+    @verify_version(version="12.0.0")
     def get_as_dataframe(self):
         """ Gets jobs and returns them as a dataframe
 

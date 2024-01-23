@@ -8,19 +8,15 @@ from datetime import datetime
 from enum import Enum
 from typing import Dict, Optional
 
-import pytz
 from requests import Response
 
-from TM1py import AuditLogService
-from TM1py.Objects.Process import Process
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import format_url, odata_track_changes_header
-from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, CaseAndSpaceInsensitiveSet, require_admin, require_version, \
-    decohints, deprecated_in_version
+from TM1py.Utils.Utils import require_admin, deprecated_in_version
 from TM1py.Services.TransactionLogService import TransactionLogService
 from TM1py.Services.MessageLogService import MessageLogService
 from TM1py.Services.ConfigurationService import ConfigurationService
+from TM1py.Services.AuditLogService import AuditLogService
 
 
 class LogLevel(Enum):
@@ -195,14 +191,12 @@ class ServerService(ObjectService):
         """
         return self.configuration.get_active()
 
-    def get_api_metadata(self, **kwargs):
+    def get_api_metadata(self):
         """ Read effective(!) TM1 config settings as dictionary from TM1 Server
 
         :return: config as dictionary
         """
-        url = '/$metadata'
-        metadata = self._rest.GET(url, **kwargs).content.decode("utf-8")
-        return json.loads(metadata)
+        return self._rest.get_api_metadata()
 
     @require_admin
     def update_static_configuration(self, configuration: Dict) -> Response:
