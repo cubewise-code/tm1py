@@ -1,20 +1,24 @@
 import json
 
-import pytz
 from requests import Response
-from warnings import warn
 
 from typing import Dict
 
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import verify_version, deprecated_in_version, odata_track_changes_header, require_ops_admin, format_url
+from TM1py.Utils import deprecated_in_version, require_ops_admin
 
 
 class ConfigurationService(ObjectService):
 
     def __init__(self, rest: RestService):
         super().__init__(rest)
+
+    def get_all(self, **kwargs) -> Dict:
+        url = '/Configuration'
+        config = self._rest.GET(url, **kwargs).json()
+        del config["@odata.context"]
+        return config
 
     def get_server_name(self, **kwargs) -> str:
         """ Ask TM1 Server for its name
@@ -44,12 +48,6 @@ class ConfigurationService(ObjectService):
         url = '/Configuration/DataBaseDirectory/$value'
         return self._rest.GET(url, **kwargs).text
 
-    def get(self, **kwargs) -> Dict:
-        url = '/Configuration'
-        config = self._rest.GET(url, **kwargs).json()
-        del config["@odata.context"]
-        return config
-
     @require_ops_admin
     def get_static(self, **kwargs) -> Dict:
         """ Read TM1 config settings as dictionary from TM1 Server
@@ -73,7 +71,7 @@ class ConfigurationService(ObjectService):
         return config
 
     @require_ops_admin
-    def update_static_configuration(self, configuration: Dict) -> Response:
+    def update_static(self, configuration: Dict) -> Response:
         """ Update the .cfg file and triggers TM1 to re-read the file.
 
         :param configuration:
