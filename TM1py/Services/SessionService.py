@@ -16,7 +16,7 @@ class SessionService(ObjectService):
         super().__init__(rest)
         self.users = UserService(rest)
 
-    def get(self, include_user: bool = True, include_threads: bool = True, **kwargs) -> List:
+    def get_all(self, include_user: bool = True, include_threads: bool = True, **kwargs) -> List:
         url = "/Sessions"
         if include_user or include_threads:
             expands = list()
@@ -50,7 +50,7 @@ class SessionService(ObjectService):
     @require_admin
     def close_all(self, **kwargs) -> list:
         current_user = self.users.get_current(**kwargs)
-        sessions = self.get(**kwargs)
+        sessions = self.get_all(**kwargs)
         closed_sessions = list()
         for session in sessions:
             if "User" not in session:
