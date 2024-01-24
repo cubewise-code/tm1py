@@ -7,8 +7,8 @@ from typing import Dict, Iterable, Optional
 from TM1py.Objects.Process import Process
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import verify_version, deprecated_in_version, odata_track_changes_header, require_admin, format_url, \
-    CaseAndSpaceInsensitiveDict, CaseAndSpaceInsensitiveSet
+from TM1py.Utils import verify_version, deprecated_in_version, odata_track_changes_header, require_ops_admin, require_data_admin, \
+    format_url, CaseAndSpaceInsensitiveDict, CaseAndSpaceInsensitiveSet
 
 
 class MessageLogService(ObjectService):
@@ -42,7 +42,7 @@ class MessageLogService(ObjectService):
         return response.json()['value']
 
     @deprecated_in_version(version="12.0.0")
-    @require_admin
+    @require_ops_admin
     def get_entries(self, reverse: bool = True, since: datetime = None,
                                 until: datetime = None, top: int = None, logger: str = None,
                                 level: str = None, msg_contains: Iterable = None, msg_contains_operator: str = 'and',
@@ -113,7 +113,7 @@ class MessageLogService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return response.json()['value']
 
-    @require_admin
+    @require_data_admin
     def create_entry(self, level: str, message: str, **kwargs) -> None:
         """
         :param level: string, FATAL, ERROR, WARN, INFO, DEBUG
@@ -137,7 +137,7 @@ class MessageLogService(ObjectService):
             raise RuntimeError(
                 f"Failed to write to TM1 Message Log through unbound process. Status: '{status}'")
 
-    @require_admin
+    @require_ops_admin
     @deprecated_in_version(version="12.0.0")
     def get_last_process_message(self, process_name: str, **kwargs) -> Optional[str]:
         """ Get the latest message log entry for a process
