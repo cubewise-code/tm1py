@@ -14,11 +14,12 @@ from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator, Union,
 from urllib.parse import unquote
 
 import requests
-from mdxpy import MdxBuilder, Member
+from mdxpy import MdxBuilder, MdxHierarchySet,Member
 from requests.adapters import HTTPAdapter
 
 from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminException, TM1pyNotDataAdminException, \
     TM1pyNotSecurityAdminException, TM1pyNotOpsAdminException, TM1pyVersionDeprecationException
+from TM1py.Services import TM1Service
 
 try:
     import pandas as pd
@@ -1321,3 +1322,59 @@ class HTTPAdapterWithSocketOptions(HTTPAdapter):
         if self.socket_options is not None:
             kwargs["socket_options"] = self.socket_options
         super(HTTPAdapterWithSocketOptions, self).init_poolmanager(*args, **kwargs)
+
+def sync_two_dimensional_cube(tm1_s: TM1Service, tm1_t: TM1Service, cube_name: str,
+                                  skip_non_existing_elements=False, sync_rules=False):
+    """
+    Function looks at 2-dimensional cube at source TM1 service and synchronizes it at target TM1 service. For example for security cube, }Clients cube, }DimensionAttribute Cube.
+    :tm1_s: TM1Service of Source
+    :tm1_t: TM1Service of Target
+    :cube_name: str, name of cube to be synchronized
+    :skip_non_existing_elements: bool, if True only the leaves Element of the Source Cube get synchronized. If False all elements, for example Security Groups
+    :sync_rules: bool, if True rules of Source cube get synchronized to the Target Cube
+    """
+
+    query = MdxBuilder.from_cube(cube_name)
+    query = query.non_empty(axis=0)
+    for dimension_name in tm1_s.cubes.get_dimension_names(cube_name):
+        query = query.add_hierarchy_set_to_column_axis(MdxHierarchySet.tm1_subset_all(dimension_name))
+
+    if not tm1_t.cubes.exists(cube_name):
+        cube_s = tm1_s.cubes.get(cube_name)
+        tm1_t.cubes.update_or_create(cube_s)
+
+    elif sync_rules:
+        # copy element attributes rule from source to target if necessary
+        cube_s = tm1_s.cubes.get(cube_name)
+        cube_t = tm1_t.cubes.get(cube_name)
+        if not cube_s == cube_t:
+            tm1_t.cubes.update(cube_s)
+
+    cells = tm1_s.cells.execute_mdx(
+        mdx=query.to_mdx(),
+        element_unique_names=False,
+        skip_cell_properties=True,
+        skip_rule_derived_cells=True)
+
+    # drop cells that can't be written to target (e.g., security groups)
+    if skip_non_existing_elements:
+        second_dimension = tm1_s.cubes.get_dimension_names(cube_name=cube_name)[-1]
+
+        existing_elements = CaseAndSpaceInsensitiveSet(tm1_t.elements.get_leaf_element_names(
+            dimension_name=second_dimension,
+            hierarchy_name=second_dimension))
+
+        cells = {
+            elements: value
+            for elements, value
+            in cells.items()
+            if elements[1] in existing_elements
+        }
+
+    tm1_t.cells.write(
+        cube_name=cube_name,
+        cellset_as_dict=cells,
+        use_ti=True,
+        skip_non_updateable=True,
+        deactivate_transaction_log=True,
+        reactivate_transaction_log=True)
