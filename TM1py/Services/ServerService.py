@@ -1,33 +1,21 @@
 # -*- coding: utf-8 -*-
-from warnings import warn
 
-import functools
-import json
 from collections.abc import Iterable
 from datetime import datetime
 from enum import Enum
-from typing import Dict, Optional, List
 from typing import Dict, Optional
 from warnings import warn
-import pytz
+
 import pytz
 from requests import Response
-from typing import Dict, Optional, List
-from typing import Dict, Optional
-from warnings import warn
-import pytz
 
 from TM1py.Services.AuditLogService import AuditLogService
 from TM1py.Services.ConfigurationService import ConfigurationService
+from TM1py.Services.LoggerService import LoggerService
 from TM1py.Services.MessageLogService import MessageLogService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils.Utils import require_admin, require_ops_admin, require_data_admin, deprecated_in_version
 from TM1py.Services.TransactionLogService import TransactionLogService
-from TM1py.Utils.Utils import require_admin, require_version, \
-    deprecated_in_version
-from TM1py.Utils.Utils import require_data_admin, \
-    require_ops_admin
 from TM1py.Utils.Utils import require_admin, require_version, \
     deprecated_in_version
 from TM1py.Utils.Utils import require_data_admin, \
@@ -56,6 +44,7 @@ class ServerService(ObjectService):
         self.configuration = ConfigurationService(rest)
         self.audit_logs = AuditLogService(rest)
         self.loggers = LoggerService(rest)
+
     def initialize_transaction_log_delta_requests(self, filter=None, **kwargs):
         return self.transaction_logs.initialize_delta_requests(filter, **kwargs)
 
