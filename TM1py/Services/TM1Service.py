@@ -13,6 +13,7 @@ from TM1py.Services.TransactionLogService import TransactionLogService
 from TM1py.Services.MessageLogService import MessageLogService
 from TM1py.Services.ConfigurationService import ConfigurationService
 from TM1py.Services.AuditLogService import AuditLogService
+from TM1py.Services.LoggerService import LoggerService
 
 from TM1py.Services.PowerBiService import PowerBiService
 from TM1py.Services.ServerService import ServerService
@@ -91,6 +92,7 @@ class TM1Service:
         self.server = ServerService(self._tm1_rest)
         self.monitoring = MonitoringService(self._tm1_rest)
         self.power_bi = PowerBiService(self._tm1_rest)
+        self.loggers = LoggerService(self._tm1_rest)
 
     def logout(self, **kwargs):
         self._tm1_rest.logout(**kwargs)
