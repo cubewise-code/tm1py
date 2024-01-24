@@ -3,6 +3,8 @@ import json
 from enum import Enum
 from typing import List, Union, Iterable, Optional, Dict, Tuple
 
+import numpy as np
+
 from TM1py import Subset, Process
 
 try:
@@ -19,7 +21,7 @@ from TM1py.Exceptions import TM1pyRestException, TM1pyException
 from TM1py.Objects import ElementAttribute, Element
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import CaseAndSpaceInsensitiveDict, format_url, CaseAndSpaceInsensitiveSet, require_admin, \
+from TM1py.Utils import CaseAndSpaceInsensitiveDict, format_url, CaseAndSpaceInsensitiveSet, require_data_admin, \
     dimension_hierarchy_element_tuple_from_unique_name, require_pandas, require_version
 from TM1py.Utils import build_element_unique_names, CaseAndSpaceInsensitiveTuplesDict, verify_version
 from itertools import islice
@@ -68,6 +70,12 @@ class ElementService(ObjectService):
             element_name)
         return self._exists(url, **kwargs)
 
+    def update_or_create(self, dimension_name: str, hierarchy_name: str, element: Element, **kwargs) -> Response:
+        if self.exists(dimension_name=dimension_name, hierarchy_name=hierarchy_name, element_name=element.name, **kwargs):
+            return self.update(dimension_name=dimension_name, hierarchy_name=hierarchy_name, element=element, **kwargs)
+
+        return self.create(dimension_name=dimension_name, hierarchy_name=hierarchy_name, element=element, **kwargs)   
+        
     def delete(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> Response:
         url = format_url(
             "/Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
@@ -156,7 +164,8 @@ class ElementService(ObjectService):
                                skip_consolidations: bool = True, attributes: Iterable[str] = None,
                                attribute_column_prefix: str = "", skip_parents: bool = False,
                                level_names: List[str] = None, parent_attribute: str = None,
-                               skip_weights: bool = False, use_blob: bool = False, **kwargs) -> 'pd.DataFrame':
+                               skip_weights: bool = False, use_blob: bool = False, allow_empty_alias: bool = True,
+                               **kwargs) -> 'pd.DataFrame':
         """
 
         :param dimension_name: Name of the dimension. Can be derived from elements MDX
@@ -170,6 +179,7 @@ class ElementService(ObjectService):
         :param parent_attribute: Attribute to be displayed in parent columns. If None, parent name is used.
         :param skip_weights: include weight columns
         :param use_blob: Up to 40% better performance and lower memory footprint in any case. Requires admin permissions
+        :param allow_empty_alias: False if empty alias values should be substituted with element names instead
         :return: pandas DataFrame
         """
 
@@ -366,17 +376,25 @@ class ElementService(ObjectService):
                 # also shift weight columns
                 if not skip_weights:
                     shifted_cols = df_data.iloc[
-                                  rows_to_shift,
-                                  -len(level_columns) * 2:-len(level_columns)].shift(1, axis=1)
+                                   rows_to_shift,
+                                   -len(level_columns) * 2:-len(level_columns)].shift(1, axis=1)
 
                     df_data.iloc[rows_to_shift, -len(level_columns) * 2:-len(level_columns)] = shifted_cols
 
             df_data.iloc[:, -len(level_columns):] = df_data.iloc[:, -len(level_columns):].fillna('')
             if not skip_weights:
                 df_data.iloc[:, -len(level_columns) * 2:-len(level_names)] = df_data.iloc[
-                                                                                   :,
-                                                                                   -len(level_columns) * 2:
-                                                                                   -len(level_names)].fillna(0)
+                                                                             :,
+                                                                             -len(level_columns) * 2:
+                                                                             -len(level_names)].fillna(0)
+
+        if not allow_empty_alias:
+            # substitute empty strings with element name if empty alias is not allowed
+            alias_attributes = self.get_alias_element_attributes(dimension_name, hierarchy_name)
+            alias_attributes = list(set(alias_attributes).intersection(df_data.columns))
+
+            for col in alias_attributes:
+                df_data[col] = np.where(df_data[col] == '', df_data[dimension_name], df_data[col])
 
         return pd.merge(df, df_data, on=dimension_name).drop_duplicates()
 
@@ -1189,7 +1207,7 @@ class ElementService(ObjectService):
         hierarchy_service = self._get_hierarchy_service()
         return hierarchy_service.exists(dimension_name, hierarchy_name)
 
-    @require_admin
+    @require_data_admin
     def _element_is_ancestor_ti(self, dimension_name: str, hierarchy_name: str, element_name: str,
                                 ancestor_name: str) -> bool:
         process_service = self.get_process_service()

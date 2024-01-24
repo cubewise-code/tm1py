@@ -6,7 +6,7 @@ from typing import Dict
 
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import verify_version, deprecated_in_version, odata_track_changes_header, require_admin, format_url, \
+from TM1py.Utils import verify_version, deprecated_in_version, odata_track_changes_header, require_data_admin, format_url, \
     require_version
 
 
@@ -40,7 +40,7 @@ class AuditLogService(ObjectService):
             "AuditLogEntries/!delta('"):-2]
         return response.json()['value']
 
-    @require_admin
+    @require_data_admin
     @deprecated_in_version(version="12.0.0")
     @require_version(version="11.6")
     def get_entries(self, user: str = None, object_type: str = None, object_name: str = None,

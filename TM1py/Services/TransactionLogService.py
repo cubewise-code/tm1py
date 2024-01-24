@@ -6,7 +6,7 @@ from typing import Dict
 
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import verify_version, deprecated_in_version, odata_track_changes_header, require_admin, format_url
+from TM1py.Utils import verify_version, deprecated_in_version, odata_track_changes_header, require_data_admin, format_url
 
 
 class TransactionLogService(ObjectService):
@@ -46,7 +46,7 @@ class TransactionLogService(ObjectService):
         return response.json()['value']
 
     @deprecated_in_version(version="12.0.0")
-    @require_admin
+    @require_data_admin
     def get_entries(self, reverse: bool = True, user: str = None, cube: str = None,
                     since: datetime = None, until: datetime = None, top: int = None,
                     element_tuple_filter: Dict[str, str] = None,

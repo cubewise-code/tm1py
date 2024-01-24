@@ -6,13 +6,13 @@ import json
 from collections.abc import Iterable
 from datetime import datetime
 from enum import Enum
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 from requests import Response
 
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils.Utils import require_admin, deprecated_in_version
+from TM1py.Utils.Utils import require_admin, require_ops_admin, require_data_admin, deprecated_in_version
 from TM1py.Services.TransactionLogService import TransactionLogService
 from TM1py.Services.MessageLogService import MessageLogService
 from TM1py.Services.ConfigurationService import ConfigurationService
@@ -89,7 +89,7 @@ class ServerService(ObjectService):
                                              msg_contains_operator=msg_contains_operator,
                                              **kwargs)
 
-    @require_admin
+    @require_data_admin
     def write_to_message_log(self, level: str, message: str, **kwargs) -> None:
         """
         :param level: string, FATAL, ERROR, WARN, INFO, DEBUG
@@ -179,11 +179,11 @@ class ServerService(ObjectService):
     def get_configuration(self, **kwargs) -> Dict:
         return self.configuration.get()
 
-    @require_admin
+    @require_ops_admin
     def get_static_configuration(self, **kwargs) -> Dict:
         return self.configuration.get_static()
 
-    @require_admin
+    @require_ops_admin
     def get_active_configuration(self, **kwargs) -> Dict:
         """ Read effective(!) TM1 config settings as dictionary from TM1 Server
 
@@ -198,7 +198,7 @@ class ServerService(ObjectService):
         """
         return self._rest.get_api_metadata()
 
-    @require_admin
+    @require_ops_admin
     def update_static_configuration(self, configuration: Dict) -> Response:
         """ Update the .cfg file and triggers TM1 to re-read the file.
 
@@ -208,40 +208,40 @@ class ServerService(ObjectService):
         return self.configuration.update_static_configuration(configuration)
 
     @deprecated_in_version(version="12.0.0")
-    @require_admin
+    @require_data_admin
     def save_data(self, **kwargs) -> Response:
         from TM1py.Services import ProcessService
         ti = "SaveDataAll;"
         process_service = ProcessService(self._rest)
         return process_service.execute_ti_code(ti, **kwargs)
 
-    @require_admin
+    @require_data_admin
     def delete_persistent_feeders(self, **kwargs) -> Response:
         from TM1py.Services import ProcessService
         ti = "DeleteAllPersistentFeeders;"
         process_service = ProcessService(self._rest)
         return process_service.execute_ti_code(ti, **kwargs)
 
-    @require_admin
+    @require_ops_admin
     def start_performance_monitor(self):
         config = {
             "Administration": {"PerformanceMonitorOn": True}
         }
         self.update_static_configuration(config)
 
-    @require_admin
+    @require_ops_admin
     def stop_performance_monitor(self):
         config = {
             "Administration": {"PerformanceMonitorOn": False}
         }
         self.update_static_configuration(config)
 
-    @require_admin
+    @require_ops_admin
     def activate_audit_log(self):
         config = {'Administration': {'AuditLog': {'Enable': True}}}
         self.update_static_configuration(config)
 
-    @require_admin
+    @require_ops_admin
     def deactivate_audit_log(self):
         config = {'Administration': {'AuditLog': {'Enable': False}}}
         self.update_static_configuration(config)
@@ -269,3 +269,4 @@ class ServerService(ObjectService):
         '''
         url = f"/Loggers"
         return self._rest.GET(url).content
+

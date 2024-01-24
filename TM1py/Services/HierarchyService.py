@@ -21,7 +21,8 @@ from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.SubsetService import SubsetService
 from TM1py.Utils.Utils import case_and_space_insensitive_equals, format_url, CaseAndSpaceInsensitiveDict, \
-    CaseAndSpaceInsensitiveSet, CaseAndSpaceInsensitiveTuplesDict, require_pandas, require_admin, verify_version
+    CaseAndSpaceInsensitiveSet, CaseAndSpaceInsensitiveTuplesDict, require_pandas, require_data_admin, \
+    require_ops_admin, verify_version
 
 
 class HierarchyService(ObjectService):
@@ -415,7 +416,8 @@ class HierarchyService(ObjectService):
             raise RuntimeError(f"Unexpected return value from TM1 API request: {str(structure)}")
 
     @require_pandas
-    @require_admin
+    @require_data_admin
+    @require_ops_admin
     def update_or_create_hierarchy_from_dataframe(
             self,
             dimension_name: str,

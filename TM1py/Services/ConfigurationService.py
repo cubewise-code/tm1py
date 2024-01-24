@@ -8,7 +8,7 @@ from typing import Dict
 
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import verify_version, deprecated_in_version, odata_track_changes_header, require_admin, format_url
+from TM1py.Utils import verify_version, deprecated_in_version, odata_track_changes_header, require_ops_admin, format_url
 
 
 class ConfigurationService(ObjectService):
@@ -50,7 +50,7 @@ class ConfigurationService(ObjectService):
         del config["@odata.context"]
         return config
 
-    @require_admin
+    @require_ops_admin
     def get_static(self, **kwargs) -> Dict:
         """ Read TM1 config settings as dictionary from TM1 Server
 
@@ -61,7 +61,7 @@ class ConfigurationService(ObjectService):
         del config["@odata.context"]
         return config
 
-    @require_admin
+    @require_ops_admin
     def get_active(self, **kwargs) -> Dict:
         """ Read effective(!) TM1 config settings as dictionary from TM1 Server
 
@@ -72,7 +72,7 @@ class ConfigurationService(ObjectService):
         del config["@odata.context"]
         return config
 
-    @require_admin
+    @require_ops_admin
     def update_static_configuration(self, configuration: Dict) -> Response:
         """ Update the .cfg file and triggers TM1 to re-read the file.
 
