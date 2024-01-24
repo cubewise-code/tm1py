@@ -20,7 +20,7 @@ class ThreadService(ObjectService):
             warn("Threads not available in this version of TM1, removed as of 12.0.0", DeprecationWarning, 2)
 
     @deprecated_in_version(version="12.0.0")
-    def get(self, **kwargs) -> List:
+    def get_all(self, **kwargs) -> List:
         """ Return a list of the currently running threads from the TM1 Server
 
             :return:
@@ -54,7 +54,7 @@ class ThreadService(ObjectService):
 
     @deprecated_in_version(version="12.0.0")
     def cancel_all_running(self, **kwargs) -> list:
-        running_threads = self.get(**kwargs)
+        running_threads = self.get_all(**kwargs)
         canceled_threads = list()
         for thread in running_threads:
             if thread["State"] == "Idle":

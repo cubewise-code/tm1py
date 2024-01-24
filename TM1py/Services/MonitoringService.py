@@ -30,7 +30,7 @@ class MonitoringService(ObjectService):
             :return:
                 dict: the response
         """
-        return self.threads.get(**kwargs)
+        return self.threads.get_all(**kwargs)
 
     def get_active_threads(self, **kwargs):
         """Return a list of non-idle threads from the TM1 Server
@@ -72,13 +72,13 @@ class MonitoringService(ObjectService):
         :param user_name: 
         :return: 
         """
-        return self.users.is_active(user_name, **kwargs)
+        return self.users.disconnect(user_name, **kwargs)
 
     def get_active_session_threads(self, exclude_idle: bool = True, **kwargs):
         return self.session.get_threads_for_current(exclude_idle, **kwargs)
 
     def get_sessions(self, include_user: bool = True, include_threads: bool = True, **kwargs) -> List:
-        return self.session.get(include_user, include_threads, **kwargs)
+        return self.session.get_all(include_user, include_threads, **kwargs)
 
     @require_admin
     def disconnect_all_users(self, **kwargs) -> list:
