@@ -1824,7 +1824,8 @@ class CellService(ObjectService):
                 use_compact_json=use_compact_json,
                 skip_sandbox_dimension=skip_sandbox_dimension,
                 max_workers=max_workers,
-                async_axis=async_axis)
+                async_axis=async_axis,
+                **kwargs)
 
         cellset_id = self.create_cellset(mdx=mdx, sandbox_name=sandbox_name, **kwargs)
         return self.extract_cellset(
@@ -1887,6 +1888,7 @@ class CellService(ObjectService):
             element_unique_names=element_unique_names,
             skip_cell_properties=skip_cell_properties,
             use_compact_json=use_compact_json,
+            skip_sandbox_dimension=skip_sandbox_dimension,
             max_workers=max_workers,
             async_axis=async_axis,
             **kwargs)
@@ -1914,6 +1916,8 @@ class CellService(ObjectService):
         :param element_unique_names: '[d1].[h1].[e1]' or 'e1'
         :param sandbox_name: str
         :param skip_cell_properties: cell values in result dictionary, instead of cell_properties dictionary
+        :param max_workers: Int, number of threads to use in parallel
+        :param async_axis: 0 (columns) or 1 (rows). On which axis to parallelize retrieval
         :param use_compact_json: bool
         :return: Dictionary : {([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }
         """
@@ -4168,8 +4172,8 @@ class CellService(ObjectService):
             top=top,
             skip=skip,
             skip_contexts=skip_contexts,
-            sandbox_name=sandbox_name
-        )
+            sandbox_name=sandbox_name,
+            **kwargs)
 
         cells = self.extract_cellset_cells_raw_async(
             cellset_id=cellset_id,
@@ -4178,7 +4182,8 @@ class CellService(ObjectService):
             skip_zeros=skip_zeros,
             skip_consolidated_cells=skip_consolidated_cells,
             skip_rule_derived_cells=skip_rule_derived_cells,
-            sandbox_name=sandbox_name)
+            sandbox_name=sandbox_name,
+            **kwargs)
 
         # cube with dimension names is required from transformation later on
         cube_dimensions = self.extract_cellset_cube_with_dimensions(
