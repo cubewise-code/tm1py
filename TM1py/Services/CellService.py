@@ -4,6 +4,7 @@ import csv
 import functools
 import itertools
 import json
+import math
 import uuid
 import warnings
 from collections import OrderedDict
@@ -13,7 +14,7 @@ from io import StringIO
 from typing import List, Union, Dict, Iterable, Tuple, Optional
 
 import ijson
-from mdxpy import MdxHierarchySet, MdxBuilder, Member
+from mdxpy import MdxHierarchySet, MdxBuilder, Member, MdxTuple
 from requests import Response
 
 from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyWritePartialFailureException, TM1pyWriteFailureException, \
@@ -32,7 +33,7 @@ from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url, add_url_p
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
     CaseAndSpaceInsensitiveDict, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, \
     abbreviate_mdx, build_csv_from_cellset_dict, require_version, require_pandas, build_cellset_from_pandas_dataframe, \
-    case_and_space_insensitive_equals, get_cube, resembles_mdx, require_admin, extract_compact_json_cellset, \
+    case_and_space_insensitive_equals, get_cube, resembles_mdx, require_data_admin, require_ops_admin, extract_compact_json_cellset, \
     cell_is_updateable, build_mdx_from_cellset, build_mdx_and_values_from_cellset, \
     dimension_names_from_element_unique_names, frame_to_significant_digits, build_dataframe_from_csv, \
     drop_dimension_properties, decohints, verify_version
@@ -251,6 +252,51 @@ class CellService(ObjectService):
         # Execute MDX
         cellset = dict(self.execute_mdx(mdx=mdx, sandbox_name=sandbox_name, **kwargs))
         return next(iter(cellset.values()))["Value"]
+
+    def get_values(self, cube_name: str, element_sets: Iterable[Iterable[str]] = None, dimensions: List[str] = None,
+                   sandbox_name: str = None, element_separator: str = ",", hierarchy_separator: str = "&&",
+                   hierarchy_element_separator: str = "::", **kwargs) -> List:
+        """ Returns list of cube values from specified coordinates list.  will be in same order as original list
+
+        :param cube_name: Name of the cube
+        :param element_sets: Set of coordinates where each element is provided in the correct dimension order.
+        [('2024', 'Actual', 'London', 'P02), ('2024', 'Forecast', 'Berlin', 'P03)]
+        :param dimensions: Dimension names in correct order
+        :param sandbox_name: str
+        :param element_separator: Alternative separator for the element selections
+        :param hierarchy_separator: Alternative separator for multiple hierarchies
+        :param hierarchy_element_separator: Alternative separator between hierarchy name and element name
+        :return:
+        """
+
+        if not dimensions:
+            dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
+
+        q = MdxBuilder.from_cube(cube_name)
+
+        for elements in element_sets:
+            members = []
+            element_selections = elements.split(element_separator)
+            for dimension_name, element_selection in zip(dimensions, element_selections):
+                if hierarchy_separator not in element_selection:
+                    if hierarchy_element_separator in element_selection:
+                        hierarchy_name, element_name = element_selection.split(hierarchy_element_separator)
+                    else:
+                        hierarchy_name = dimension_name
+                        element_name = element_selection
+
+                    member = Member.of(dimension_name, hierarchy_name, element_name)
+                    members.append(member)
+                else:
+                    for element_selection_part in element_selection.split(hierarchy_separator):
+                        hierarchy_name, element_name = element_selection_part.split(hierarchy_element_separator)
+                        member = Member.of(dimension_name, hierarchy_name, element_name)
+                        members.append(member)
+
+            q.add_member_tuple_to_columns(MdxTuple(members))
+
+        # Execute MDX
+        return self.execute_mdx_values(mdx=q.to_mdx(), sandbox_name=sandbox_name, **kwargs)
 
     def _compose_odata_tuple_from_string(self, cube_name: str,
                                          element_string: str,
@@ -525,7 +571,8 @@ class CellService(ObjectService):
         return self._post_against_cellset(cellset_id=cellset_id, payload=payload, delete_cellset=True,
                                           sandbox_name=sandbox_name, **kwargs)
 
-    @require_admin
+    @require_data_admin
+    @require_ops_admin
     @require_version(version="11.7")
     def clear(self, cube: str, **kwargs):
         """
@@ -566,7 +613,124 @@ class CellService(ObjectService):
 
         return self.clear_with_mdx(cube=cube, mdx=mdx_builder.to_mdx(), **kwargs)
 
-    @require_admin
+    @require_data_admin
+    @require_ops_admin
+    @require_version(version="11.7")
+    def clear_with_dataframe(self, cube: str, df: 'pd.DataFrame', dimension_mapping: Dict = None, **kwargs):
+        """Clears data from a TM1 cube based on the distinct values in a DataFrame over cube dimensions.
+            Note:
+                This function is similar to `tm1.cells.clear`, but it is designed specifically for clearing data
+                 based on distinct values in a DataFrame over cube dimensions. The key difference is that this
+                 function interprets the DataFrame columns as dimensions and supports a mapping (`dimension_mapping`)
+                 for specifying hierarchies within those dimensions.
+
+          :param cube: str
+              The name of the TM1 cube.
+          :param df: pd.DataFrame
+              The DataFrame containing distinct values over cube dimensions.
+              Columns in the DataFrame should correspond to cube dimensions.
+          :param dimension_mapping: Dict, optional
+              A dictionary mapping the DataFrame columns to one or many hierarchies within the given dimension.
+              If not provided, assumes that the dimensions have just one hierarchy.
+
+          :return: None
+              The function clears data in the specified TM1 cube.
+
+          :raises ValueError:
+              If there are unmatched dimensions in the DataFrame or if specified dimensions
+              do not exist in the TM1 cube.
+
+          :example:
+              ```python
+
+              # Sample DataFrame with distinct values over cube dimensions
+              data = {
+                  "Year": ["2021", "2022"],
+                  "Organisation": ["some_company", "some_company"],
+                  "Location": ["Germany", "Albania"]
+              }
+
+              # Sample dimension mapping
+              dimensions_mapping = {
+                  "Organisation": "hierarchy_1",
+                  "Location": ["hierarchy_2", "hierarchy_3", "hierarchy_4"]
+              }
+
+              dataframe = pd.DataFrame(data)
+
+              with TM1Service(**tm1params) as tm1:
+                tm1.cells.clear_with_dataframe(cube="Sales", df=dataframe)
+
+              ```
+        """
+        if not dimension_mapping:
+            dimension_mapping = {}
+
+        if len(CaseAndSpaceInsensitiveSet(df.columns)) != len(df.columns):
+            raise ValueError(f"Column names in DataFrame are not unique identifiers for TM1: {list(df.columns)}")
+
+        cube_service = self.get_cube_service()
+        dimension_names = CaseAndSpaceInsensitiveSet(*cube_service.get_dimension_names(cube_name=cube))
+
+        df = df.astype(str)
+
+        elements_by_column = {col_name: df[col_name].unique() for col_name in df.columns}
+
+        mdx_selections = {}
+        unmatched_dimension_names = []
+        for column, elements in elements_by_column.items():
+            members = []
+
+            if column not in dimension_names:
+                unmatched_dimension_names.append(column)
+
+            for element in elements:
+                if column in dimension_mapping:
+                    hierarchy = dimension_mapping.get(column)
+                    if not isinstance(hierarchy, str):
+                        raise ValueError(f"Value for key '{dimension}' in dimension_mapping must be of type str")
+                    members.append(Member.of(column, hierarchy, element))
+
+                else:
+                    members.append(Member.of(column, column, element))
+            mdx_selections[column] = MdxHierarchySet.members(members)
+
+        if dimension_mapping:
+            for dimension, hierarchies in dimension_mapping.items():
+                if dimension not in dimension_names:
+                    unmatched_dimension_names.append(dimension)
+
+                elif isinstance(hierarchies, str):
+                    hierarchy = hierarchies
+                    mdx_selections[dimension] = MdxHierarchySet.tm1_subset_all(
+                        dimension=dimension,
+                        hierarchy=hierarchy).filter_by_level(0)
+
+                elif isinstance(hierarchies, Iterable):
+                    for hierarchy in hierarchies:
+                        mdx_selections[dimension] = MdxHierarchySet.tm1_subset_all(
+                            dimension=dimension,
+                            hierarchy=hierarchy).filter_by_level(0)
+
+                else:
+                    raise ValueError(f"Unexpected value type for key '{dimension}' in dimension_mapping")
+
+        if unmatched_dimension_names:
+            raise ValueError(f"Dimension(s) {unmatched_dimension_names} does not exist in cube {cube}."
+                             f"\nCheck the source of the dataframe to fix the problem")
+
+        for dimension_name in dimension_names:
+            if dimension_name not in mdx_selections:
+                mdx_selections[dimension_name] = MdxHierarchySet.tm1_subset_all(dimension_name).filter_by_level(0)
+
+        mdx_builder = MdxBuilder.from_cube(cube).columns_non_empty()
+        for dimension, expression in mdx_selections.items():
+            mdx_builder.add_hierarchy_set_to_column_axis(expression)
+
+        return self.clear_with_mdx(cube=cube, mdx=mdx_builder.to_mdx(), **kwargs)
+
+    @require_data_admin
+    @require_ops_admin
     @require_version(version="11.7")
     def clear_with_mdx(self, cube: str, mdx: str, sandbox_name: str = None, **kwargs):
         """ clear a slice in a cube based on an MDX query.
@@ -956,7 +1120,8 @@ class CellService(ObjectService):
                 updateable_cells[elements] = cells[elements]
         return updateable_cells
 
-    @require_admin
+    @require_data_admin
+    @require_ops_admin
     @manage_transaction_log
     def write_through_unbound_process(self, cube_name: str, cellset_as_dict: Dict, increment: bool = False,
                                       sandbox_name: str = None, precision: int = None,
@@ -1042,7 +1207,8 @@ class CellService(ObjectService):
         if not all(successes):
             raise TM1pyWritePartialFailureException(statuses, log_files, len(successes))
 
-    @require_admin
+    @require_data_admin
+    @require_ops_admin
     @manage_transaction_log
     @require_pandas
     def write_through_blob(self, cube_name: str, cellset_as_dict: dict, increment: bool = False,
@@ -2105,7 +2271,7 @@ class CellService(ObjectService):
                 use_blob=use_blob,
                 mdx_headers=mdx_headers)
 
-            return build_dataframe_from_csv(raw_csv, sep='~', skip_zeros=skip_zeros, shaped=shaped, **kwargs)
+            return build_dataframe_from_csv(raw_csv, sep='~', shaped=shaped, **kwargs)
 
         cellset_id = self.create_cellset(mdx, sandbox_name=sandbox_name, **kwargs)
         return self.extract_cellset_dataframe(cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
@@ -2149,7 +2315,8 @@ class CellService(ObjectService):
 
     @require_pandas
     def execute_mdx_dataframe_shaped(self, mdx: str, sandbox_name: str = None, display_attribute: bool = False,
-                                     use_iterative_json: bool = False, use_blob: bool = False, mdx_headers: bool=False,
+                                     use_iterative_json: bool = False, use_blob: bool = False,
+                                     mdx_headers: bool = False,
                                      **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cube in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
@@ -2401,7 +2568,7 @@ class CellService(ObjectService):
                 arranged_axes=arranged_axes,
                 mdx_headers=mdx_headers,
                 **kwargs)
-            return build_dataframe_from_csv(raw_csv, sep='~', skip_zeros=skip_zeros, shaped=shaped, **kwargs)
+            return build_dataframe_from_csv(raw_csv, sep='~', shaped=shaped, **kwargs)
 
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
                                                    sandbox_name=sandbox_name, **kwargs)
@@ -3035,6 +3202,179 @@ class CellService(ObjectService):
         response = self._rest.GET(url=url, **kwargs)
         return response.json()
 
+    def extract_cellset_axes_cardinality(self, cellset_id: str):
+        url = "/Cellsets('{cellset_id}')?$expand=Axes($select=Cardinality)".format(cellset_id=cellset_id)
+        response = self._rest.GET(url=url)
+        return response.json()
+
+    def extract_cellset_axes_raw_async(
+            self,
+            cellset_id: str,
+            async_axis: int = 1,
+            max_workers: int = 8,
+            elem_properties: Iterable[str] = None,
+            member_properties: Iterable[str] = None,
+            skip_contexts: bool = False,
+            include_hierarchies: bool = False,
+            sandbox_name: str = None,
+            **kwargs):
+        """ Extract cellset axes asynchronously
+
+        :param cellset_id: String; ID of existing cellset
+        :param async_axis: determines which axis will be extracted asynchronously
+        :param max_workers: Max number of threads, e.g. 14
+        :param elem_properties: List of properties to be queried from elements. E.g. ['UniqueName','Attributes', ...]
+        :param member_properties: List properties to be queried from the member. E.g. ['Name', 'UniqueName']
+        :param skip_contexts: skip elements from titles / contexts in response
+        :param sandbox_name: str
+        :param include_hierarchies: retrieve Hierarchies property on Axes
+        :return: Raw format from TM1.
+        """
+
+        axes_cardinality = self.extract_cellset_axes_cardinality(cellset_id=cellset_id)
+
+        if async_axis >= len(axes_cardinality['Axes']):
+            raise ValueError("Argument 'async_axis' must be less than axes cardinality")
+
+        # select Name property if member_properties is None or empty.
+        # Necessary, as tm1 default behaviour is to return all properties if no $select is specified in the request.
+        if member_properties is None or len(list(member_properties)) == 0:
+            member_properties = ["Name"]
+        select_member_properties = "$select={}".format(",".join(member_properties))
+
+        expand_elem_properties = ";$expand=Element($select={elem_properties})".format(
+            elem_properties=",".join(elem_properties)) \
+            if elem_properties is not None and len(list(elem_properties)) > 0 \
+            else ""
+
+        if include_hierarchies:
+            expand_hierarchies = "Hierarchies($select=Name;$expand=Dimension($select=Name)),"
+        else:
+            expand_hierarchies = ""
+
+        def _extract_cellset_axis_raw(axis: int = async_axis, partition: int = 0, partition_size: int = 0):
+            top = partition_size
+            skip = partition * partition_size
+            filter_axis = "$filter=Ordinal eq {axis};".format(axis=axis)
+            url = "/Cellsets('{cellset_id}')?$expand=" \
+                  "Axes({filter_axis}$expand={hierarchies}Tuples($expand=Members({select_member_properties}" \
+                  "{expand_elem_properties}){partition}))" \
+                .format(cellset_id=cellset_id,
+                        axis=axis,
+                        partition=f";$top={top};$skip={skip}" if partition_size > 0 else "",
+                        filter_axis=filter_axis,
+                        hierarchies=expand_hierarchies,
+                        select_member_properties=select_member_properties,
+                        expand_elem_properties=expand_elem_properties)
+            url = add_url_parameters(url, **{"!sandbox": sandbox_name})
+            response = self._rest.GET(url=url, **kwargs)
+
+            return response.json()
+
+        async def _extract_cellset_axes_raw_async():
+            partition_size = math.ceil(axes_cardinality['Axes'][async_axis]['Cardinality'] / max_workers)
+            loop = asyncio.get_event_loop()
+            result_list = []
+            with ThreadPoolExecutor(max_workers) as executor:
+                futures = [
+                    loop.run_in_executor(executor, _extract_cellset_axis_raw, async_axis, partition, partition_size)
+                    for partition in range(max_workers)]
+
+                for future in futures:
+                    result = await future
+                    result_list = result_list + result['Axes'][0]['Tuples']
+            return result_list
+
+        # Extract non-asynchronous axis
+        axes = _extract_cellset_axis_raw(axis=1-async_axis)
+        # Extract tuples for asynchronous axis
+        async_axis_tuples = asyncio.run(_extract_cellset_axes_raw_async())
+        # Combine results
+        axes['Axes'].insert(async_axis,
+                            {'Ordinal': async_axis, 'Cardinality': axes_cardinality['Axes'][async_axis]['Cardinality'],
+                             'Tuples': async_axis_tuples})
+
+        if not skip_contexts:
+            context = _extract_cellset_axis_raw(axis=2)
+            if len(context['Axes']) > 0:
+                axes['Axes'].append(context['Axes'][0])
+
+        return axes
+
+    def extract_cellset_cells_raw_async(
+            self,
+            cellset_id: str,
+            max_workers: int = 8,
+            cell_properties: Iterable[str] = None,
+            skip_zeros: bool = False,
+            skip_consolidated_cells: bool = False,
+            skip_rule_derived_cells: bool = False,
+            sandbox_name: str = None,
+            **kwargs):
+
+        if not cell_properties:
+            cell_properties = ['Value']
+
+        if skip_rule_derived_cells:
+            cell_properties.append("RuleDerived")
+            # necessary due to bug in TM1 11.8: If only RuleDerived is retrieved it occasionally produces wrong results
+            cell_properties.append("Updateable")
+
+        if skip_consolidated_cells:
+            cell_properties.append("Consolidated")
+
+        if skip_zeros or skip_rule_derived_cells or skip_consolidated_cells:
+            if 'Ordinal' not in cell_properties:
+                cell_properties.append('Ordinal')
+
+        filter_cells = ""
+        if skip_zeros or skip_consolidated_cells or skip_rule_derived_cells:
+            filters = []
+            if skip_zeros:
+                filters.append("Value ne 0 and Value ne null and Value ne ''")
+            if skip_consolidated_cells:
+                filters.append("Consolidated eq false")
+            if skip_rule_derived_cells:
+                filters.append("RuleDerived eq false")
+
+            filter_cells = " and ".join(filters)
+
+        def _extract_cellset_cells_raw(partition: int = 0, partition_size: int = 0):
+            top = partition_size
+            skip = partition * partition_size
+
+            url = "/Cellsets('{cellset_id}')?$expand=" \
+                  "Cells($select={cell_properties}{top_cells}{skip_cells}{filter_cells})" \
+                .format(cellset_id=cellset_id,
+                        cell_properties=",".join(cell_properties),
+                        top_cells=f";$top={top}" if top else "",
+                        skip_cells=f";$skip={skip}" if skip else "",
+                        filter_cells=f";$filter={filter_cells}" if filter_cells else "")
+
+            url = add_url_parameters(url, **{"!sandbox": sandbox_name})
+            response = self._rest.GET(url=url, **kwargs)
+
+            return response.json()
+
+        async def _extract_cellset_cells_raw_async():
+            cellcount = self.extract_cellset_cellcount(cellset_id=cellset_id, sandbox_name=sandbox_name,
+                                                            delete_cellset=False)
+            partition_size = math.ceil(cellcount / max_workers)
+            loop = asyncio.get_event_loop()
+            result_list = []
+            with ThreadPoolExecutor(max_workers) as executor:
+                futures = [loop.run_in_executor(executor, _extract_cellset_cells_raw, partition, partition_size)
+                           for partition in range(max_workers)]
+                for future in futures:
+                    result = await future
+                    result_list = result_list + result['Cells']
+                cells = {'@odata.context': result['@odata.context'], 'ID': result['ID'], 'Cells': result_list}
+            return cells
+
+        cells = asyncio.run(_extract_cellset_cells_raw_async())
+
+        return cells
+
     @tidy_cellset
     @odata_compact_json(return_as_dict=False)
     def extract_cellset_values(self, cellset_id: str, sandbox_name: str = None, use_compact_json: bool = False,
@@ -3453,13 +3793,13 @@ class CellService(ObjectService):
                 value_separator='~', sandbox_name=sandbox_name, include_attributes=include_attributes,
                 use_compact_json=use_compact_json, mdx_headers=mdx_headers, **kwargs)
 
-        return build_dataframe_from_csv(raw_csv, sep="~", skip_zeros=skip_zeros, shaped=shaped, **kwargs)
+        return build_dataframe_from_csv(raw_csv, sep="~", shaped=shaped, **kwargs)
 
     @tidy_cellset
     @require_pandas
     def extract_cellset_dataframe_shaped(self, cellset_id: str, sandbox_name: str = None,
                                          display_attribute: bool = False, infer_dtype: bool = False,
-                                         mdx_headers: bool=False, **kwargs) -> 'pd.DataFrame':
+                                         mdx_headers: bool = False, **kwargs) -> 'pd.DataFrame':
         """ Retrieves data from cellset in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
 
@@ -3801,7 +4141,8 @@ class CellService(ObjectService):
 
         return attributes_by_dimension
 
-    @require_admin
+    @require_data_admin
+    @require_ops_admin
     def _execute_view_csv_use_blob(self, cube_name: str, view_name: str, top: int, skip: int, skip_zeros: bool,
                                    skip_consolidated_cells: bool, skip_rule_derived_cells: bool,
                                    value_separator: str, cube_dimensions: List[str] = None,
@@ -3932,7 +4273,8 @@ class CellService(ObjectService):
             with suppress(Exception):
                 file_service.delete(file_name)
 
-    @require_admin
+    @require_data_admin
+    @require_ops_admin
     def _execute_mdx_csv_use_blob(self, mdx: Union[str, MdxBuilder], top: int, skip: int, skip_zeros: bool,
                                   skip_consolidated_cells: bool, skip_rule_derived_cells: bool,
                                   value_separator: str, cube_dimensions: List[str] = None,

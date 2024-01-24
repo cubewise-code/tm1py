@@ -12,11 +12,13 @@ from enum import Enum, unique
 from io import StringIO
 from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator, Union, Callable
 from urllib.parse import unquote
+
 import requests
 from mdxpy import MdxBuilder, Member
 from requests.adapters import HTTPAdapter
 
-from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminException, TM1pyVersionDeprecationException
+from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminException, TM1pyNotDataAdminException, \
+    TM1pyNotSecurityAdminException, TM1pyNotOpsAdminException, TM1pyVersionDeprecationException
 
 try:
     import pandas as pd
@@ -48,6 +50,39 @@ def require_admin(func):
 
 
 @decohints
+def require_data_admin(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if not self.is_data_admin:
+            raise TM1pyNotDataAdminException(func.__name__)
+        return func(self, *args, **kwargs)
+
+    return wrapper
+
+
+@decohints
+def require_security_admin(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if not self.is_security_admin:
+            raise TM1pyNotSecurityAdminException(func.__name__)
+        return func(self, *args, **kwargs)
+
+    return wrapper
+
+
+@decohints
+def require_ops_admin(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if not self.is_ops_admin:
+            raise TM1pyNotOpsAdminException(func.__name__)
+        return func(self, *args, **kwargs)
+
+    return wrapper
+
+
+@decohints
 def require_version(version):
     """ Higher order function to check required version for TM1py function
     """
@@ -62,6 +97,7 @@ def require_version(version):
         return wrapper
 
     return wrap
+
 
 @decohints
 def deprecated_in_version(version):
@@ -91,7 +127,6 @@ def require_pandas(func):
             raise ImportError(f"Function '{func.__name__}' requires pandas")
 
     return wrapper
-
 
 
 def get_all_servers_from_adminhost(adminhost='localhost', port=None, use_ssl=False) -> List:
@@ -477,8 +512,7 @@ def build_csv_from_cellset_dict(
     return csv_content.getvalue().strip()
 
 
-def build_dataframe_from_csv(raw_csv, sep='~', skip_zeros: bool = True, shaped: bool = False,
-                             **kwargs) -> 'pd.DataFrame':
+def build_dataframe_from_csv(raw_csv, sep='~', shaped: bool = False, **kwargs) -> 'pd.DataFrame':
     if not raw_csv:
         return pd.DataFrame()
 
@@ -501,7 +535,7 @@ def build_dataframe_from_csv(raw_csv, sep='~', skip_zeros: bool = True, shaped: 
         aggfunc="sum",
         columns=df.columns[-2],
         values=df.columns[-1],
-        dropna=skip_zeros,
+        dropna=True,
         sort=False).reset_index()
 
     # drop title on index
@@ -903,7 +937,6 @@ def extract_compact_json_cellset(context: str, response: Dict, return_as_dict: b
     if props == ['Ordinal', 'Value']:
         return [value[1] for value in cells_data]
 
-
     return cells_data
 
 
@@ -926,14 +959,14 @@ def map_cell_properties_to_compact_json_response(properties: List, compact_cells
     properties = [Ordinal, Value, RuleDerived]
     compact_cells_response = [[0, 258, 100], [1, 258, 500]]
     result: {Cells: [
-        { Ordinal: 0, Value: 100, RuleDerived: 258}, 
+        { Ordinal: 0, Value: 100, RuleDerived: 258},
         { Ordinal: 1, Value: 500, RuleDerived: 258}
     ]}
-    
+
 
     :param properties: list of `Cell` properties e.g [Ordinal, Value, Updateable, ...]
     :param compact_cells_response: list of cells returned in compact json format
-    :return: dict with properties mapped to compact json response    
+    :return: dict with properties mapped to compact json response
     """
     cells_dict = dict()
     cells = []

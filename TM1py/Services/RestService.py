@@ -165,6 +165,18 @@ class RestService:
         # populated later on the fly for users with the name different from 'Admin'
         self._is_admin = self._determine_is_admin(kwargs.get('user', None))
 
+        # populated on the fly
+        if kwargs.get('user'):
+            self._is_admin = True if case_and_space_insensitive_equals(kwargs.get('user'), 'ADMIN') else None
+            self._is_data_admin = True if case_and_space_insensitive_equals(kwargs.get('user'), 'ADMIN') else None
+            self._is_security_admin = True if case_and_space_insensitive_equals(kwargs.get('user'), 'ADMIN') else None
+            self._is_ops_admin = True if case_and_space_insensitive_equals(kwargs.get('user'), 'ADMIN') else None
+        else:
+            self._is_admin = None
+            self._is_data_admin = None
+            self._is_security_admin = None
+            self._is_ops_admin = None
+
         self._verify = self._determine_verify(kwargs.get('verify', None))
 
         self._base_url, self._auth_url = self._construct_service_and_auth_root()
@@ -255,8 +267,10 @@ class RestService:
             encoding=encoding)
 
         try:
+            if return_async_id:
+                async_requests_mode = True
             # determine async_requests_mode
-            if async_requests_mode is None:
+            elif async_requests_mode is None:
                 async_requests_mode = self._async_requests_mode
 
             if not async_requests_mode:
@@ -788,6 +802,33 @@ class RestService:
 
         return self._is_admin
 
+    @property
+    def is_data_admin(self) -> bool:
+        if self._is_data_admin is None:
+            response = self.GET("/ActiveUser/Groups")
+            self._is_data_admin = any(g in CaseAndSpaceInsensitiveSet(
+                *[group["Name"] for group in response.json()["value"]]) for g in ["Admin", "DataAdmin"])
+
+        return self._is_data_admin
+
+    @property
+    def is_security_admin(self) -> bool:
+        if self._is_security_admin is None:
+            response = self.GET("/ActiveUser/Groups")
+            self._is_security_admin = any(g in CaseAndSpaceInsensitiveSet(
+                *[group["Name"] for group in response.json()["value"]]) for g in ["Admin", "SecurityAdmin"])
+
+        return self._is_security_admin
+    
+    @property
+    def is_ops_admin(self) -> bool:
+        if self._is_ops_admin is None:
+            response = self.GET("/ActiveUser/Groups")
+            self._is_ops_admin = any(g in CaseAndSpaceInsensitiveSet(
+                *[group["Name"] for group in response.json()["value"]]) for g in ["Admin", "OperationsAdmin"])
+
+        return self._is_ops_admin
+    
     @property
     def sandboxing_disabled(self):
         if self._sandboxing_disabled is None:
