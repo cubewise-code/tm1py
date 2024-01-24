@@ -224,4 +224,19 @@ class ManageService:
         response = requests.get(url=url, auth=self._auth_header)
         return json.loads(response.content)
 
+    def subscribe_to_data_changes(self, instance_name, database_name, target_url, additional_properties: dict = {}):
+        url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')/tm1.Subscribe"
+        payload = {
+            "URL": target_url,
+            "AdditionalProperties": additional_properties
+        }
+        response = requests.post(url=url, json=payload, auth=self._auth_header)
+        return response
+
+    def unsubscribe_from_data_changes(self, instance_name, database_name, target_url):
+        url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')/tm1.Unsubscribe"
+        response = requests.post(url=url, auth=self._auth_header)
+        return response
+
+
 
