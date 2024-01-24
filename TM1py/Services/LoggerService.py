@@ -15,7 +15,6 @@ class LoggerService(ObjectService):
     def __init__(self, rest: RestService):
         super().__init__(rest)
 
-
     @require_ops_admin
     def get_all(self, **kwargs) -> Dict:
         url = f"/Loggers"
@@ -23,7 +22,7 @@ class LoggerService(ObjectService):
         return loggers['value']
 
     @require_ops_admin
-    def get_all(self, **kwargs) -> List[str]:
+    def get_all_names(self, **kwargs) -> List[str]:
         loggers = self.get_all(**kwargs)
         return [logger['Name'] for logger in loggers]
 
@@ -40,7 +39,7 @@ class LoggerService(ObjectService):
         return logger
 
     @require_ops_admin
-    def search(self, wildcard: str='', level: str='', **kwargs) -> Dict:
+    def search(self, wildcard: str = '', level: str = '', **kwargs) -> Dict:
         """ Searches logger names by wildcard or by level. Combining wildcard and level will filter via AND and not OR
 
         :param wildcard: string to match in logger name
@@ -87,7 +86,7 @@ class LoggerService(ObjectService):
 
         if not self.exists(logger=logger, **kwargs):
             raise ValueError('{} is not a valid logger'.format(logger))
-        
+
         level_dict = CaseAndSpaceInsensitiveDict(
             {'FATAL': 0, 'ERROR': 1, 'WARNING': 2, 'INFO': 3, 'DEBUG': 4, 'UNKNOWN': 5, 'OFF': 6}
         )
@@ -96,5 +95,5 @@ class LoggerService(ObjectService):
             logger = {'Level': level_index}
         else:
             raise ValueError('{} is not a valid level'.format(level))
-        
+
         return self._rest.PATCH(url, json.dumps(logger))

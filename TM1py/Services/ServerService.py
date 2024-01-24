@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 from warnings import warn
 
-import functools
-import json
 from collections.abc import Iterable
 from datetime import datetime
 from enum import Enum
-from typing import Dict, Optional, List
+from typing import Dict, Optional
 
 from requests import Response
 
@@ -17,6 +15,7 @@ from TM1py.Services.TransactionLogService import TransactionLogService
 from TM1py.Services.MessageLogService import MessageLogService
 from TM1py.Services.ConfigurationService import ConfigurationService
 from TM1py.Services.AuditLogService import AuditLogService
+from TM1py.Services.LoggerService import LoggerService
 
 
 class LogLevel(Enum):
@@ -40,16 +39,16 @@ class ServerService(ObjectService):
         self.message_logs = MessageLogService(rest)
         self.configuration = ConfigurationService(rest)
         self.audit_logs = AuditLogService(rest)
-
+        self.loggers = LoggerService(rest)
 
     def initialize_transaction_log_delta_requests(self, filter=None, **kwargs):
-        self.transaction_logs.initialize_delta_requests(filter, **kwargs)
+        return self.transaction_logs.initialize_delta_requests(filter, **kwargs)
 
     def execute_transaction_log_delta_request(self, **kwargs) -> Dict:
-        self.transaction_logs.execute_delta_request(**kwargs)
+        return self.transaction_logs.execute_delta_request(**kwargs)
 
     def initialize_audit_log_delta_requests(self, filter=None, **kwargs):
-        return self.audit_logs.initialize_audit_log_delta_requests(filter, **kwargs)
+        return self.audit_logs.initialize_delta_requests(filter, **kwargs)
 
     def execute_audit_log_delta_request(self, **kwargs) -> Dict:
         return self.audit_logs.execute_delta_request(**kwargs)
@@ -59,7 +58,6 @@ class ServerService(ObjectService):
 
     def execute_message_log_delta_request(self, **kwargs) -> Dict:
         return self.message_logs.execute_delta_request(**kwargs)
-
 
     def get_message_log_entries(self, reverse: bool = True, since: datetime = None,
                                 until: datetime = None, top: int = None, logger: str = None,
@@ -171,19 +169,17 @@ class ServerService(ObjectService):
         return self.configuration.get_product_version()
 
     def get_admin_host(self, **kwargs) -> str:
-        return self.configuration.get_admin_host
+        return self.configuration.get_admin_host()
 
     def get_data_directory(self, **kwargs) -> str:
-        return self.configuration.get_data_directory
+        return self.configuration.get_data_directory()
 
     def get_configuration(self, **kwargs) -> Dict:
-        return self.configuration.get()
+        return self.configuration.get_all()
 
-    @require_ops_admin
     def get_static_configuration(self, **kwargs) -> Dict:
         return self.configuration.get_static()
 
-    @require_ops_admin
     def get_active_configuration(self, **kwargs) -> Dict:
         """ Read effective(!) TM1 config settings as dictionary from TM1 Server
 
@@ -198,14 +194,13 @@ class ServerService(ObjectService):
         """
         return self._rest.get_api_metadata()
 
-    @require_ops_admin
     def update_static_configuration(self, configuration: Dict) -> Response:
         """ Update the .cfg file and triggers TM1 to re-read the file.
 
         :param configuration:
         :return: Response
         """
-        return self.configuration.update_static_configuration(configuration)
+        return self.configuration.update_static(configuration)
 
     @deprecated_in_version(version="12.0.0")
     @require_data_admin
@@ -222,24 +217,20 @@ class ServerService(ObjectService):
         process_service = ProcessService(self._rest)
         return process_service.execute_ti_code(ti, **kwargs)
 
-    @require_ops_admin
     def start_performance_monitor(self):
         config = {
             "Administration": {"PerformanceMonitorOn": True}
         }
-        self.update_static_configuration(config)
+        self.configuration.update_static(config)
 
-    @require_ops_admin
     def stop_performance_monitor(self):
         config = {
             "Administration": {"PerformanceMonitorOn": False}
         }
-        self.update_static_configuration(config)
+        self.configuration.update_static(config)
 
-    @require_ops_admin
     def activate_audit_log(self):
-        config = {'Administration': {'AuditLog': {'Enable': True}}}
-        self.update_static_configuration(config)
+        self.audit_logs.activate()
 
     @require_ops_admin
     def deactivate_audit_log(self):
@@ -255,9 +246,7 @@ class ServerService(ObjectService):
         :return:
         '''
 
-        payload = {"Level": level}
-        url = f"/Loggers('{logger}')"
-        return self._rest.PATCH(url, json.dumps(payload))
+        return self.loggers.set_level(logger, level)
 
     @require_admin
     def get_all_message_logger_level(self):
@@ -267,6 +256,5 @@ class ServerService(ObjectService):
         :param level:
         :return:
         '''
-        url = f"/Loggers"
-        return self._rest.GET(url).content
 
+        return self.loggers.get_all()

@@ -1,13 +1,15 @@
-import pytz
 from warnings import warn
 
 from datetime import datetime
 from typing import Dict
 
+
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import verify_version, deprecated_in_version, odata_track_changes_header, require_data_admin, format_url, \
-    require_version
+from TM1py.Utils import verify_version, deprecated_in_version, odata_track_changes_header, require_data_admin, \
+    format_url, \
+    require_version, require_ops_admin
+from TM1py.Services.ConfigurationService import ConfigurationService
 
 
 class AuditLogService(ObjectService):
@@ -19,6 +21,8 @@ class AuditLogService(ObjectService):
             warn("Audit Logs are not available in this version of TM1, removed as of 12.0.0", DeprecationWarning,
                  2)
         self.last_delta_request = None
+        self.configuration = ConfigurationService(rest)
+
 
     @deprecated_in_version(version="12.0.0")
     @odata_track_changes_header
@@ -85,3 +89,8 @@ class AuditLogService(ObjectService):
             url += '&$top={}'.format(top)
         response = self._rest.GET(url, **kwargs)
         return response.json()['value']
+
+    @require_ops_admin
+    def activate(self):
+        config = {'Administration': {'AuditLog': {'Enable': True}}}
+        self.configuration.update_static(config)

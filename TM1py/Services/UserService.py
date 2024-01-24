@@ -12,7 +12,7 @@ class UserService(ObjectService):
     def __init__(self, rest: RestService):
         super().__init__(rest)
 
-    def get(self, **kwargs) ->List[User]:
+    def get_all(self, **kwargs) ->List[User]:
         """ Get all users
 
         :return: List of TM1py.User instances
