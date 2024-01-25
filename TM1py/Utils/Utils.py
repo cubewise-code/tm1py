@@ -1318,6 +1318,7 @@ class HTTPAdapterWithSocketOptions(HTTPAdapter):
         super(HTTPAdapterWithSocketOptions, self).__init__(*args, **kwargs)
 
     def init_poolmanager(self, *args, **kwargs):
-        if self.socket_options is not None:
+        # must use hasattr here, as socket_options may be not-set in case TM1Service was created with restore_from_file
+        if hasattr(self, "socket_options"):
             kwargs["socket_options"] = self.socket_options
         super(HTTPAdapterWithSocketOptions, self).init_poolmanager(*args, **kwargs)
