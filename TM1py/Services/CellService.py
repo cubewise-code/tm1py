@@ -1450,11 +1450,12 @@ class CellService(ObjectService):
             """
 
         # v12 occasionally produces tiny numbers (e.g. 4.94066e-324) instead of 0
-        data_procedure_pre += f"""
-        IF (ISUNDEFINEDCELLVALUE(NVALUE,'{cube}') = 1);
-          SVALUE ='0';
-        ENDIF;
-        """
+        if verify_version(required_version="12", version=self.version):
+            data_procedure_pre += f"""
+            IF (ISUNDEFINEDCELLVALUE(NVALUE,'{cube}') = 1);
+              SVALUE ='0';
+            ENDIF;
+            """
 
         data_procedure = f"""
         TextOutput('{file_name}',{comma_sep_variables},SVALUE);
