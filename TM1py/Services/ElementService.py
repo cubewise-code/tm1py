@@ -1207,29 +1207,10 @@ class ElementService(ObjectService):
         hierarchy_service = self._get_hierarchy_service()
         return hierarchy_service.exists(dimension_name, hierarchy_name)
 
-    def get_direct_parents_of_element(self, dimension_name: str, element_name: str) -> list:
-        """ Get all direct element parents of an element in a dimension
-        :param dimension_name: Name of the dimension
-        :param element_name: Element of which the parents are to retrieve
-        :return: List of element names
-        """
-        mdx = f"""{{TM1ROLLUP(\{{TM1FILTERBYPATTERN({{TM1SUBSETALL([{dimension_name}])\}}, "{element_name}")}}, {{[{dimension_name}].[{element_name}]\}})\}}"""
-        parents_list = self.execute_set_mdx(mdx)
-        lst = []
-        if parents_list:
-            for parent in parents_list:
-                for parent_info in parent:
-                    if parent_info['Name'] == element_name:
-                        pass
-                    else:
-                        lst.append(parent_info['Name'])
-        else:
-            pass
-        return lst if lst is not [] else False
-
-    def get_parents_tree_of_element(self, dimension_name: str, element_list: list) -> list:
+    def get_parents_tree_of_element(self, dimension_name: str, hierarchy_name: str, element_list: list) -> list:
         """ Get a list of the tree of all parents of an element along the dimension until the top level
         :param dimension_name: Name of the dimension
+        :param hierarchy_name: Name of the hierarchy
         :param element_list: Element of which the parents are to be retrieved (can either be a list of elements or a single elements)
         :return: Nested list of element names. First list is bottom level, next is the level above and so on. The last list is empty to show the end of the level.
         """
@@ -1238,10 +1219,10 @@ class ElementService(ObjectService):
         for element in parents:
             if isinstance(element, list):
                 for sub_element in element:
-                    parents.append(self.get_parents_tree_of_element(dimension_name, sub_element) if True else False)
+                    parents.append(self.get_parents_tree_of_element(dimension_name, hierarchy_name, sub_element) if True else False)
                 return parents
             else:
-                parents.append(self.get_direct_parents_of_element(dimension_name, element) if True else False)
+                parents.append(self.get_parents(dimension_name, hierarchy_name, element) if True else False)
         return parents
 
     @require_data_admin
