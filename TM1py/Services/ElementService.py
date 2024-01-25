@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 from enum import Enum
+from io import StringIO
 from typing import List, Union, Iterable, Optional, Dict, Tuple
 
 import numpy as np
@@ -237,25 +238,25 @@ class ElementService(ObjectService):
         if not skip_parents:
             levels = self.get_levels_count(dimension_name, hierarchy_name)
 
-            #Generic Level names can't be used directly as a Calculated Member name as they conflict with an internal name
-            #Therefore, we create a map that relates the level name to the calculated member name L000 = level000
+            # Generic Level names can't be used directly as a Calculated Member name as they conflict with an internal name
+            # Therefore, we create a map that relates the level name to the calculated member name L000 = level000
             if not level_names:
                 level_names = self.get_level_names(dimension_name, hierarchy_name, descending=True)
                 level_calculated_member_names = []
 
-                #Create a map of MDX Calculated Member Names and Desired Pandas Names
+                # Create a map of MDX Calculated Member Names and Desired Pandas Names
                 for level in reversed(range(levels)):
                     level_calculated_member_names.append(f"L{str(level).zfill(3)}")
                 all_level_dict = OrderedDict(zip(level_calculated_member_names, level_names))
 
-            #if a specific parent names are provided the calculated member name is = to the data frame column name
+            # if a specific parent names are provided the calculated member name is = to the data frame column name
             else:
                 all_level_dict = OrderedDict(zip(level_names, level_names))
 
             # Remove the highest level (leafs) to create proper MDX calculated members
             levels_dict = {k: all_level_dict[k] for k in list(all_level_dict)[1:]}
 
-            #iterate the map of levels to create an MDX calculation and a related column axis definition
+            # iterate the map of levels to create an MDX calculation and a related column axis definition
             parent_members = list()
             weight_members = list()
             depth = 0
@@ -334,9 +335,36 @@ class ElementService(ObjectService):
 
         cell_service = self._get_cell_service()
 
-        # responses are similar but not equivalent. Therefor only use execute_mdx_dataframe when use_blob=True
+        # responses are similar but not equivalent.
+        # Therefor only use execute_mdx_dataframe when use_blob is True
         if use_blob:
-            df_data = cell_service.execute_mdx_dataframe(mdx, shaped=True, use_blob=True, **kwargs)
+            raw_csv = cell_service.execute_mdx_csv(
+                mdx=mdx,
+                skip_zeros=False,
+                skip_consolidated_cells=False,
+                skip_rule_derived_cells=False,
+                line_separator="\r\n",
+                value_separator="~",
+                use_blob=True,
+                **kwargs)
+            df_data = pd.read_csv(StringIO(raw_csv), sep='~')
+
+            # Use _group to avoid aggregation of multiple members into one df record
+            # example: element A is part of multiple consolidations resulting df must have multiple records for A
+            unique_values_count = df_data['}ElementAttributes_' + dimension_name].nunique()
+            df_data['_group'] = (df_data.index // unique_values_count) + 1
+
+            # pivot the dataframe
+            df_data = df_data.pivot_table(
+                index=[dimension_name, '_group'],
+                columns='}ElementAttributes_' + dimension_name,
+                values='Value',
+                aggfunc='first',
+                sort=False).reset_index()
+
+            # Drop the group key
+            df_data = df_data.fillna("").drop(columns='_group')
+
         else:
             df_data = cell_service.execute_mdx_dataframe_shaped(mdx, **kwargs)
 
@@ -344,11 +372,11 @@ class ElementService(ObjectService):
             # rename level names to conform sto strandard levels "1" -> "level0001"
             df_data.rename(columns=levels_dict, inplace=True)
 
-        #format weights
+        # format weights
         # Find columns with certain names
         cols_to_format = [col for col in df_data.columns if '_Weight' in col]
 
-        # Format the columns
+        # format the columns
         df_data[cols_to_format] = df_data[cols_to_format].apply(pd.to_numeric)
         df_data[cols_to_format] = df_data[cols_to_format].applymap(lambda x: '{:.6f}'.format(x))
 
