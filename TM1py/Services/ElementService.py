@@ -150,6 +150,17 @@ class ElementService(ObjectService):
         if not success:
             raise TM1pyException(f"Failed to delete edges through unbound process. Error: '{error_log_file}'")
 
+    def update_edges(self, dimension_name: str, hierarchy_name: str, edges: Iterable[Tuple[str, str]] = None, **kwargs):
+        _edges = self.get_edges(dimension_name=dimension_name, hierarchy_name=hierarchy_name)
+        if _edges: 
+            self.delete_edges(dimension_name=dimension_name, hierarchy_name=hierarchy_name, edges=_edges, **kwargs)
+
+        # drop non-updatable edges
+        element_list = self.get_element_names(dimension_name=dimension_name, hierarchy_name=hierarchy_name, **kwargs)   
+        edges_update = {key: value for key, value in edges.items() if key[0] in element_list and key[1] in element_list}
+
+        return self.add_edges(dimension_name=dimension_name, hierarchy_name=hierarchy_name, edges=edges_update)
+    
     def get_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[Element]:
         url = format_url(
             "/Dimensions('{}')/Hierarchies('{}')/Elements?select=Name,Type",
