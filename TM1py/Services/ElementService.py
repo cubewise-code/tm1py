@@ -1219,10 +1219,10 @@ class ElementService(ObjectService):
         for element in parents:
             if isinstance(element, list):
                 for sub_element in element:
-                    parents.append(self.get_parents_tree_of_element(dimension_name, hierarchy_name, sub_element) if True else False)
+                    parents.append(self.get_parents_tree_of_element(dimension_name, hierarchy_name, sub_element))
                 return parents
             else:
-                parents.append(self.get_parents(dimension_name, hierarchy_name, element) if True else False)
+                parents.append(self.get_parents(dimension_name, hierarchy_name, element))
         return parents
 
     @require_data_admin
