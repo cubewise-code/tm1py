@@ -17,7 +17,8 @@ import requests
 from mdxpy import MdxBuilder, Member
 from requests.adapters import HTTPAdapter
 
-from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminException
+from TM1py.Exceptions.Exceptions import TM1pyVersionException, TM1pyNotAdminException, TM1pyNotDataAdminException, \
+    TM1pyNotSecurityAdminException, TM1pyNotOpsAdminException, TM1pyVersionDeprecationException
 
 try:
     import pandas as pd
@@ -49,6 +50,39 @@ def require_admin(func):
 
 
 @decohints
+def require_data_admin(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if not self.is_data_admin:
+            raise TM1pyNotDataAdminException(func.__name__)
+        return func(self, *args, **kwargs)
+
+    return wrapper
+
+
+@decohints
+def require_security_admin(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if not self.is_security_admin:
+            raise TM1pyNotSecurityAdminException(func.__name__)
+        return func(self, *args, **kwargs)
+
+    return wrapper
+
+
+@decohints
+def require_ops_admin(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if not self.is_ops_admin:
+            raise TM1pyNotOpsAdminException(func.__name__)
+        return func(self, *args, **kwargs)
+
+    return wrapper
+
+
+@decohints
 def require_version(version):
     """ Higher order function to check required version for TM1py function
     """
@@ -58,6 +92,23 @@ def require_version(version):
         def wrapper(self, *args, **kwargs):
             if not verify_version(required_version=version, version=self.version):
                 raise TM1pyVersionException(func.__name__, version)
+            return func(self, *args, **kwargs)
+
+        return wrapper
+
+    return wrap
+
+
+@decohints
+def deprecated_in_version(version):
+    """ Higher order function to check required version for TM1py function
+    """
+
+    def wrap(func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            if verify_version(required_version=version, version=self.version):
+                raise TM1pyVersionDeprecationException(func.__name__, version)
             return func(self, *args, **kwargs)
 
         return wrapper
@@ -127,7 +178,7 @@ def create_server_on_adminhost(adminhost: str = 'localhost', server_as_dict: Dic
     if not adminhost:
         adminhost = 'localhost'
 
-    url = f"http://{adminhost}:5895/api/v1/Servers"
+    url = f"http://{adminhost}:5895/Servers"
     response = requests.post(url, data=json.dumps(server_as_dict), headers={'Content-Type': 'application/json'})
     response.raise_for_status()
 
@@ -141,7 +192,7 @@ def delete_server_on_adminhost(adminhost: str = None, server_name: str = None):
     if not adminhost:
         adminhost = 'localhost'
 
-    url = f"http://{adminhost}:5895/api/v1/Servers('{server_name}')"
+    url = f"http://{adminhost}:5895/Servers('{server_name}')"
     response = requests.delete(url, headers={'Content-Type': 'application/json'})
     response.raise_for_status()
 
@@ -171,7 +222,7 @@ def update_server_on_adminhost(adminhost: str = 'localhost', server_as_dict: Dic
     if not adminhost:
         adminhost = 'localhost'
 
-    url = f"http://{adminhost}:5895/api/v1/Servers"
+    url = f"http://{adminhost}:5895/Servers"
     response = requests.patch(url, body=json.dumps(server_as_dict), headers={'Content-Type': 'application/json'})
     response.raise_for_status()
 
@@ -208,7 +259,7 @@ def abbreviate_mdx(mdx: str, size=100) -> str:
 
 
 def integerize_version(version: str, precision: int = 4) -> int:
-    return int(version[:precision].replace(".", ""))
+    return int(version[:precision].replace(".", "").ljust(precision, "0"))
 
 
 def verify_version(required_version: str, version: str) -> bool:
@@ -461,8 +512,7 @@ def build_csv_from_cellset_dict(
     return csv_content.getvalue().strip()
 
 
-def build_dataframe_from_csv(raw_csv, sep='~', skip_zeros: bool = True, shaped: bool = False,
-                             **kwargs) -> 'pd.DataFrame':
+def build_dataframe_from_csv(raw_csv, sep='~', shaped: bool = False, **kwargs) -> 'pd.DataFrame':
     if not raw_csv:
         return pd.DataFrame()
 
@@ -485,7 +535,7 @@ def build_dataframe_from_csv(raw_csv, sep='~', skip_zeros: bool = True, shaped: 
         aggfunc="sum",
         columns=df.columns[-2],
         values=df.columns[-1],
-        dropna=skip_zeros,
+        dropna=True,
         sort=False).reset_index()
 
     # drop title on index
@@ -884,6 +934,9 @@ def extract_compact_json_cellset(context: str, response: Dict, return_as_dict: b
     if len(props) == 1:
         return [value[0] for value in cells_data]
 
+    if props == ['Ordinal', 'Value']:
+        return [value[1] for value in cells_data]
+
     return cells_data
 
 
@@ -906,14 +959,14 @@ def map_cell_properties_to_compact_json_response(properties: List, compact_cells
     properties = [Ordinal, Value, RuleDerived]
     compact_cells_response = [[0, 258, 100], [1, 258, 500]]
     result: {Cells: [
-        { Ordinal: 0, Value: 100, RuleDerived: 258}, 
+        { Ordinal: 0, Value: 100, RuleDerived: 258},
         { Ordinal: 1, Value: 500, RuleDerived: 258}
     ]}
-    
+
 
     :param properties: list of `Cell` properties e.g [Ordinal, Value, Updateable, ...]
     :param compact_cells_response: list of cells returned in compact json format
-    :return: dict with properties mapped to compact json response    
+    :return: dict with properties mapped to compact json response
     """
     cells_dict = dict()
     cells = []
@@ -1265,6 +1318,7 @@ class HTTPAdapterWithSocketOptions(HTTPAdapter):
         super(HTTPAdapterWithSocketOptions, self).__init__(*args, **kwargs)
 
     def init_poolmanager(self, *args, **kwargs):
-        if self.socket_options is not None:
+        # must use hasattr here, as socket_options may be not-set in case TM1Service was created with restore_from_file
+        if hasattr(self, "socket_options"):
             kwargs["socket_options"] = self.socket_options
         super(HTTPAdapterWithSocketOptions, self).init_poolmanager(*args, **kwargs)

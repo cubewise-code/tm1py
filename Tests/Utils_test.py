@@ -12,6 +12,7 @@ from TM1py.Utils import (
     map_cell_properties_to_compact_json_response, frame_to_significant_digits, drop_dimension_properties
 )
 
+from .Utils import skip_if_deprecated_in_version
 
 class TestUtilsMethods(unittest.TestCase):
     tm1: TM1Service
@@ -27,6 +28,7 @@ class TestUtilsMethods(unittest.TestCase):
         cls.config.read(Path(__file__).parent.joinpath("config.ini"))
         cls.tm1 = TM1Service(**cls.config["tm1srv01"])
 
+    @skip_if_deprecated_in_version(version="12")
     def test_get_instances_from_adminhost(self):
         servers = Utils.get_all_servers_from_adminhost(
             self.config["tm1srv01"]["address"]
@@ -36,35 +38,35 @@ class TestUtilsMethods(unittest.TestCase):
     def test_integerize_version(self):
         version = "11.0.00000.918"
         integerized_version = integerize_version(version)
-        self.assertEqual(110, integerized_version)
+        self.assertEqual(1100, integerized_version)
 
         version = "11.0.00100.927-0"
         integerized_version = integerize_version(version)
-        self.assertEqual(110, integerized_version)
+        self.assertEqual(1100, integerized_version)
 
         version = "11.1.00004.2"
         integerized_version = integerize_version(version)
-        self.assertEqual(111, integerized_version)
+        self.assertEqual(1110, integerized_version)
 
         version = "11.2.00000.27"
         integerized_version = integerize_version(version)
-        self.assertEqual(112, integerized_version)
+        self.assertEqual(1120, integerized_version)
 
         version = "11.3.00003.1"
         integerized_version = integerize_version(version)
-        self.assertEqual(113, integerized_version)
+        self.assertEqual(1130, integerized_version)
 
         version = "11.4.00003.8"
         integerized_version = integerize_version(version)
-        self.assertEqual(114, integerized_version)
+        self.assertEqual(1140, integerized_version)
 
         version = "11.7.00002.1"
         integerized_version = integerize_version(version)
-        self.assertEqual(117, integerized_version)
+        self.assertEqual(1170, integerized_version)
 
         version = "11.8.00000.33"
         integerized_version = integerize_version(version)
-        self.assertEqual(118, integerized_version)
+        self.assertEqual(1180, integerized_version)
 
     def test_verify_version_true(self):
         required_version = "11.7.00002.1"
@@ -229,71 +231,71 @@ class TestUtilsMethods(unittest.TestCase):
         self.assertTrue(resembles_mdx(mdx))
 
     def test_format_url_args_no_single_quote(self):
-        url = "/api/v1/Processes('{}')/tm1.ExecuteWithReturn?$expand=*"
+        url = "/Processes('{}')/tm1.ExecuteWithReturn?$expand=*"
         process_name = "process"
         escaped_url = format_url(url, process_name)
         self.assertEqual(
-            "/api/v1/Processes('process')/tm1.ExecuteWithReturn?$expand=*", escaped_url
+            "/Processes('process')/tm1.ExecuteWithReturn?$expand=*", escaped_url
         )
 
     def test_format_url_args_one_single_quote(self):
-        url = "/api/v1/Processes('{}')/tm1.ExecuteWithReturn?$expand=*"
+        url = "/Processes('{}')/tm1.ExecuteWithReturn?$expand=*"
         process_name = "pro'cess"
         escaped_url = format_url(url, process_name)
         self.assertEqual(
-            "/api/v1/Processes('pro''cess')/tm1.ExecuteWithReturn?$expand=*",
+            "/Processes('pro''cess')/tm1.ExecuteWithReturn?$expand=*",
             escaped_url,
         )
 
     def test_format_url_args_multi_single_quote(self):
-        url = "/api/v1/Processes('{}')/tm1.ExecuteWithReturn?$expand=*"
+        url = "/Processes('{}')/tm1.ExecuteWithReturn?$expand=*"
         process_name = "pro'ces's"
         escaped_url = format_url(url, process_name)
         self.assertEqual(
-            "/api/v1/Processes('pro''ces''s')/tm1.ExecuteWithReturn?$expand=*",
+            "/Processes('pro''ces''s')/tm1.ExecuteWithReturn?$expand=*",
             escaped_url,
         )
 
     def test_format_url_kwargs_no_single_quote(self):
-        url = "/api/v1/Processes('{process_name}')/tm1.ExecuteWithReturn?$expand=*"
+        url = "/Processes('{process_name}')/tm1.ExecuteWithReturn?$expand=*"
         process_name = "process"
         escaped_url = format_url(url, process_name=process_name)
         self.assertEqual(
-            "/api/v1/Processes('process')/tm1.ExecuteWithReturn?$expand=*", escaped_url
+            "/Processes('process')/tm1.ExecuteWithReturn?$expand=*", escaped_url
         )
 
     def test_format_url_kwargs_one_single_quote(self):
-        url = "/api/v1/Processes('{process_name}')/tm1.ExecuteWithReturn?$expand=*"
+        url = "/Processes('{process_name}')/tm1.ExecuteWithReturn?$expand=*"
         process_name = "pro'cess"
         escaped_url = format_url(url, process_name=process_name)
         self.assertEqual(
-            "/api/v1/Processes('pro''cess')/tm1.ExecuteWithReturn?$expand=*",
+            "/Processes('pro''cess')/tm1.ExecuteWithReturn?$expand=*",
             escaped_url,
         )
 
     def test_format_url_kwargs_multi_single_quote(self):
-        url = "/api/v1/Processes('{process_name}')/tm1.ExecuteWithReturn?$expand=*"
+        url = "/Processes('{process_name}')/tm1.ExecuteWithReturn?$expand=*"
         process_name = "pro'ces's"
         escaped_url = format_url(url, process_name=process_name)
         self.assertEqual(
-            "/api/v1/Processes('pro''ces''s')/tm1.ExecuteWithReturn?$expand=*",
+            "/Processes('pro''ces''s')/tm1.ExecuteWithReturn?$expand=*",
             escaped_url,
         )
 
     def test_url_parameters_add(self):
-        url = "/api/v1/Cubes('cube')/tm1.Update"
+        url = "/Cubes('cube')/tm1.Update"
         url = add_url_parameters(url, **{"!sandbox": "sandbox1"})
 
         self.assertEqual(
-            "/api/v1/Cubes('cube')/tm1.Update?!sandbox=sandbox1",
+            "/Cubes('cube')/tm1.Update?!sandbox=sandbox1",
             url)
 
     def test_url_parameters_add_with_query_options(self):
-        url = "/api/v1/Cellsets('abcd')?$expand=Cells($select=Value)"
+        url = "/Cellsets('abcd')?$expand=Cells($select=Value)"
         url = add_url_parameters(url, **{"!sandbox": "sandbox1"})
 
         self.assertEqual(
-            "/api/v1/Cellsets('abcd')?$expand=Cells($select=Value)&!sandbox=sandbox1",
+            "/Cellsets('abcd')?$expand=Cells($select=Value)&!sandbox=sandbox1",
             url)
 
     def test_get_seconds_from_duration(self):

@@ -31,7 +31,7 @@ class Chore(TM1Object):
     def from_json(cls, chore_as_json: str) -> 'Chore':
         """ Alternative constructor
 
-        :param chore_as_json: string, JSON. Response of /api/v1/Chores('x')/Tasks?$expand=*
+        :param chore_as_json: string, JSON. Response of /Chores('x')/Tasks?$expand=*
         :return: Chore, an instance of this class
         """
         chore_as_dict = json.loads(chore_as_json)
@@ -113,6 +113,15 @@ class Chore(TM1Object):
     @property
     def body_as_dict(self) -> Dict:
         return json.loads(self.body)
+ 
+    @property
+    def execution_path(self) -> Dict:
+        """
+        1 chore together with its executed processes
+        Use case: building out a tree of chores and their processes (and again the processes that are called by the latter (if any)).
+        :return: dictionary containing chore name as the key and a list of process names as the value
+        """
+        return {self.name: [task.process_name for task in self.tasks]}
 
     def add_task(self, task: ChoreTask):
         self._tasks.append(task)

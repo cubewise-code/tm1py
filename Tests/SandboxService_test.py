@@ -194,8 +194,8 @@ class TestSandboxService(unittest.TestCase):
         self.tm1.sandboxes.create(sandbox3)
         time.sleep(1)
         self.tm1.sandboxes.unload(sandbox3.name)
-
-        loaded = (self.tm1.sandboxes.get(self.sandbox_name3)).loaded
+        sandbox = self.tm1.sandboxes.get(self.sandbox_name3)
+        loaded = sandbox.loaded
         self.assertFalse(loaded)
 
     def test_load_sandbox(self):
