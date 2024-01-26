@@ -4067,7 +4067,6 @@ class CellService(ObjectService):
             sandbox_name: str = None,
             element_unique_names: bool = True,
             skip_cell_properties: bool = False,
-            use_compact_json: bool = False,
             skip_sandbox_dimension: bool = False,
             max_workers: int = 8,
             async_axis: int = 1,
@@ -4086,7 +4085,6 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :param element_unique_names: '[d1].[h1].[e1]' or 'e1'
         :param skip_cell_properties: cell values in result dictionary, instead of cell_properties dictionary
-        :param use_compact_json: bool
         :param skip_sandbox_dimension: skip sandbox dimension
         :param max_workers: Int, number of threads to use in parallel
         :param async_axis: 0 (columns) or 1 (rows). On which axis to parallelize retrieval
