@@ -9,7 +9,8 @@ from TM1py.Utils.Utils import format_url, verify_version, deprecated_in_version
 
 
 class ThreadService(ObjectService):
-    """ Service to handle TM1 Job objects introduced in v12
+    """ Service to work with Threads in TM1
+    Deprecated as of TM1 Server v12
 
     """
 
