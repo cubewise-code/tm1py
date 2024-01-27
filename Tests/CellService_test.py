@@ -2,7 +2,7 @@ import configparser
 import unittest
 from pathlib import Path
 
-from mdxpy import CalculatedMember, MdxBuilder, MdxHierarchySet, Member
+from mdxpy import CalculatedMember, MdxBuilder, MdxHierarchySet, Member, DimensionProperty
 
 from TM1py import Sandbox
 from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyVersionException, TM1pyWritePartialFailureException, \
@@ -107,7 +107,7 @@ class TestCellService(unittest.TestCase):
             attribute_cube = "}ElementAttributes_" + dimension_name
             attribute_values = {}
             for element in elements:
-                attribute_values[(element.name, "Attr1")] = "TM1py"
+                attribute_values[(element.name, "Attr1")] = "TM1py" if element.name != 'Element 2' else ''
                 attribute_values[(element.name, "Attr2")] = "2"
                 attribute_values[(element.name, "Attr3")] = "3"
                 attribute_values[(element.name, "NA")] = "4"
@@ -4841,6 +4841,42 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(
             data['Cells'], data_async['Cells'])
 
+
+    def test_empty_dimension_attribute_as_string(self):
+
+        mdx = MdxBuilder.from_cube(self.cube_name).rows_non_empty()
+
+        for dim in self.dimension_names[:-1]:
+            mdx.add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.all_members(dim,dim))
+            mdx.add_properties_to_row_axis(DimensionProperty(dim, dim, 'Attr1'))
+            mdx.add_properties_to_row_axis(DimensionProperty(dim, dim, 'Attr2'))
+            mdx.add_properties_to_row_axis(DimensionProperty(dim, dim, 'Attr3'))
+            mdx.add_properties_to_row_axis(DimensionProperty(dim, dim, 'NA'))
+
+
+        mdx.add_hierarchy_set_to_column_axis(MdxHierarchySet.all_members(self.dimension_names[-1],
+                                                                         self.dimension_names[-1]))
+        mdx.add_properties_to_column_axis(DimensionProperty(self.dimension_names[-1], self.dimension_names[-1], 'Attr1'))
+        mdx.add_properties_to_column_axis(DimensionProperty(self.dimension_names[-1], self.dimension_names[-1], 'Attr2'))
+        mdx.add_properties_to_column_axis(DimensionProperty(self.dimension_names[-1], self.dimension_names[-1], 'Attr3'))
+        mdx.add_properties_to_column_axis(DimensionProperty(self.dimension_names[-1], self.dimension_names[-1], 'NA'))
+
+        self.tm1.cells.write(cube_name='}ElementAttributes_' + self.dimension_names[0],
+                             cellset_as_dict={('Element 2', 'Attr1'): ''})
+
+        df = self.tm1.cells.execute_mdx_dataframe(
+            mdx=mdx.to_mdx(),
+            empty_string_attribute_as_string=True,
+            include_attributes=True)
+
+        self.tm1.cells.write(cube_name='}ElementAttributes_' + self.dimension_names[0],
+                             cellset_as_dict={('Element 2', 'Attr1'): 'TM1py'})
+
+        assert df.loc[1, 'Attr1'] == '' and df.loc[2, 'Attr1'] == 'TM1py'
+
+
+
     # Delete Cube and Dimensions
     @classmethod
     def tearDownClass(cls):
@@ -4859,6 +4895,9 @@ class TestCellService(unittest.TestCase):
         cls.tm1.dimensions.delete(cls.dimension_with_hierarchies_name)
 
         cls.tm1.logout()
+
+
+
 
 
 if __name__ == '__main__':
