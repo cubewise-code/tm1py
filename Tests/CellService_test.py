@@ -104,15 +104,8 @@ class TestCellService(unittest.TestCase):
                 cls.tm1.dimensions.update(dimension)
             else:
                 cls.tm1.dimensions.update_or_create(dimension)
-            attribute_cube = "}ElementAttributes_" + dimension_name
-            attribute_values = {}
-            for element in elements:
-                attribute_values[(element.name, "Attr1")] = "TM1py" if element.name != 'Element 2' else ''
-                attribute_values[(element.name, "Attr2")] = "2"
-                attribute_values[(element.name, "Attr3")] = "3"
-                attribute_values[(element.name, "NA")] = "4"
 
-            cls.tm1.cells.write_values(attribute_cube, attribute_values)
+        cls._write_attribute_values()
 
         # Build Cube
         cube = Cube(cls.cube_name, cls.dimension_names)
@@ -182,6 +175,22 @@ class TestCellService(unittest.TestCase):
         cls.create_cube_with_five_dimensions()
 
     @classmethod
+    def _write_attribute_values(cls):
+        for dimension_name in cls.dimension_names:
+            elements = [
+                Element('Element {}'.format(str(j)), 'Numeric')
+                for j
+                in range(1, 1001)]
+            attribute_cube = "}ElementAttributes_" + dimension_name
+            attribute_values = {}
+            for element in elements:
+                attribute_values[(element.name, "Attr1")] = "TM1py" if element.name != 'Element 2' else ''
+                attribute_values[(element.name, "Attr2")] = "2"
+                attribute_values[(element.name, "Attr3")] = "3"
+                attribute_values[(element.name, "NA")] = "4"
+            cls.tm1.cells.write(attribute_cube, attribute_values, use_blob=True)
+
+    @classmethod
     def setUp(cls):
         """
         Reset data before each test run
@@ -207,6 +216,9 @@ class TestCellService(unittest.TestCase):
 
         if not cls.tm1.sandboxes.exists(cls.sandbox_name):
             cls.tm1.sandboxes.create(Sandbox(cls.sandbox_name, True))
+
+        cls._write_attribute_values()
+
 
     @classmethod
     def tearDown(cls):
@@ -399,8 +411,9 @@ class TestCellService(unittest.TestCase):
         original_value = self.tm1.cells.get_value(self.cube_name, 'Element1,EleMent2,ELEMENT  3')
         response = self.tm1.cells.write_value(4, self.cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
         self.assertTrue(response.ok)
-        value = self.tm1.cells.get_value(self.cube_name,
-                                               f'{self.dimension_names[0]}::Element1,EleMent2,{self.dimension_names[2]}::ELEMENT  3')
+        value = self.tm1.cells.get_value(
+            self.cube_name,
+            f'{self.dimension_names[0]}::Element1,EleMent2,{self.dimension_names[2]}::ELEMENT  3')
         self.assertEqual(value, 4)
         self.tm1.cells.write_value(original_value, self.cube_name, ('element1', 'ELEMENT 2', 'EleMent  3'))
 
@@ -1965,7 +1978,11 @@ class TestCellService(unittest.TestCase):
                     self.assertIn("Attr1", element["Attributes"])
                     self.assertIn("Attr2", element["Attributes"])
                     self.assertNotIn("Attr3", element["Attributes"])
-                    self.assertEqual(element["Attributes"]["Attr1"], "TM1py")
+                    # Element 2 is special (see setUp function)
+                    if element["Name"] == "Element 2":
+                        self.assertEqual(element["Attributes"]["Attr1"], None)
+                    else:
+                        self.assertEqual(element["Attributes"]["Attr1"], "TM1py")
                     self.assertEqual(element["Attributes"]["Attr2"], 2)
 
     def test_execute_mdx_raw_with_member_properties_without_elem_properties(self):
@@ -2759,7 +2776,7 @@ class TestCellService(unittest.TestCase):
             'Attr2': {0: 2},
             'TM1py_Tests_Cell_Dimension1': {0: 'Element 1'},
             'Attr1': {0: 'TM1py'},
-            'Value': {0: 1.0}}
+            'Value': {0: 1}}
 
         self.assertEqual(expected, df.to_dict())
 
@@ -3414,7 +3431,10 @@ class TestCellService(unittest.TestCase):
                     self.assertIn("Attr1", member["Attributes"])
                     self.assertIn("Attr2", member["Attributes"])
                     self.assertNotIn("Attr3", member["Attributes"])
-                    self.assertEqual(member["Attributes"]["Attr1"], "TM1py")
+                    if member["Name"] == "Element 2":
+                        self.assertEqual(member["Attributes"]["Attr1"], None)
+                    else:
+                        self.assertEqual(member["Attributes"]["Attr1"], "TM1py")
                     self.assertEqual(member["Attributes"]["Attr2"], 2)
 
     def test_execute_view_raw_with_elem_properties_without_member_properties(self):
@@ -3447,7 +3467,10 @@ class TestCellService(unittest.TestCase):
                     self.assertIn("Attr1", element["Attributes"])
                     self.assertIn("Attr2", element["Attributes"])
                     self.assertNotIn("Attr3", element["Attributes"])
-                    self.assertEqual(element["Attributes"]["Attr1"], "TM1py")
+                    if element["Name"] == "Element 2":
+                        self.assertEqual(element["Attributes"]["Attr1"], None)
+                    else:
+                        self.assertEqual(element["Attributes"]["Attr1"], "TM1py")
                     self.assertEqual(element["Attributes"]["Attr2"], 2)
                     self.assertNotIn("Type", member)
                     self.assertNotIn("UniqueName", member)
@@ -3483,7 +3506,10 @@ class TestCellService(unittest.TestCase):
                     self.assertIn("Attr1", member["Attributes"])
                     self.assertIn("Attr2", member["Attributes"])
                     self.assertNotIn("Attr3", member["Attributes"])
-                    self.assertEqual(member["Attributes"]["Attr1"], "TM1py")
+                    if member["Name"] == "Element 2":
+                        self.assertEqual(member["Attributes"]["Attr1"], None)
+                    else:
+                        self.assertEqual(member["Attributes"]["Attr1"], "TM1py")
                     self.assertEqual(member["Attributes"]["Attr2"], 2)
                     element = member["Element"]
                     self.assertIn("Name", element)
@@ -3491,7 +3517,10 @@ class TestCellService(unittest.TestCase):
                     self.assertIn("Attr1", element["Attributes"])
                     self.assertIn("Attr2", element["Attributes"])
                     self.assertNotIn("Attr3", element["Attributes"])
-                    self.assertEqual(element["Attributes"]["Attr1"], "TM1py")
+                    if element["Name"] == "Element 2":
+                        self.assertEqual(element["Attributes"]["Attr1"], None)
+                    else:
+                        self.assertEqual(element["Attributes"]["Attr1"], "TM1py")
                     self.assertEqual(element["Attributes"]["Attr2"], 2)
 
     def test_execute_view_raw_with_top(self):
@@ -3507,7 +3536,7 @@ class TestCellService(unittest.TestCase):
 
     def test_execute_view_values(self):
         cell_values = self.tm1.cells.execute_view_values(cube_name=self.cube_name, view_name=self.view_name,
-                                                               private=False)
+                                                         private=False)
 
         # check type
         self.assertIsInstance(cell_values, list)
@@ -3992,8 +4021,8 @@ class TestCellService(unittest.TestCase):
     @skip_if_deprecated_in_version(version='12')
     def test_deactivate_transaction_log(self):
         self.tm1.cells.write_value(value="YES",
-                                         cube_name="}CubeProperties",
-                                         element_tuple=(self.cube_name, "Logging"))
+                                   cube_name="}CubeProperties",
+                                   element_tuple=(self.cube_name, "Logging"))
         self.tm1.cells.deactivate_transactionlog(self.cube_name)
         value = self.tm1.cells.get_value("}CubeProperties", "{},LOGGING".format(self.cube_name))
         self.assertEqual("NO", value.upper())
@@ -4001,8 +4030,8 @@ class TestCellService(unittest.TestCase):
     @skip_if_deprecated_in_version(version='12')
     def test_activate_transaction_log(self):
         self.tm1.cells.write_value(value="NO",
-                                         cube_name="}CubeProperties",
-                                         element_tuple=(self.cube_name, "Logging"))
+                                   cube_name="}CubeProperties",
+                                   element_tuple=(self.cube_name, "Logging"))
         self.tm1.cells.activate_transactionlog(self.cube_name)
         value = self.tm1.cells.get_value("}CubeProperties", "{},LOGGING".format(self.cube_name))
         self.assertEqual("YES", value.upper())
@@ -4010,7 +4039,7 @@ class TestCellService(unittest.TestCase):
     def test_read_write_with_custom_encoding(self):
         coordinates = ("d1e1", "d2e2", "d3e3")
         self.tm1.cells.write_values(self.string_cube_name, {coordinates: self.latin_1_encoded_text},
-                                          encoding="latin-1")
+                                    encoding="latin-1")
 
         mdx = MdxBuilder.from_cube(self.string_cube_name) \
             .add_hierarchy_set_to_column_axis(
@@ -4027,7 +4056,7 @@ class TestCellService(unittest.TestCase):
     def test_read_write_with_custom_encoding_fail_response_encoding(self):
         coordinates = ("d1e1", "d2e2", "d3e3")
         self.tm1.cells.write_values(self.string_cube_name, {coordinates: self.latin_1_encoded_text},
-                                          encoding="latin-1")
+                                    encoding="latin-1")
 
         mdx = MdxBuilder.from_cube(self.string_cube_name) \
             .add_hierarchy_set_to_column_axis(
@@ -4728,9 +4757,9 @@ class TestCellService(unittest.TestCase):
 
         cellset_id = self.tm1.cells.create_cellset(mdx=mdx)
         data_async0 = self.tm1.cells.extract_cellset_axes_raw_async(cellset_id=cellset_id, async_axis=0)
-        data = self.tm1.cells.extract_cellset_metadata_raw(cellset_id=cellset_id)
-        self.assertEqual(
-            data['Axes'], data_async0['Axes'])
+        data = self.tm1.cells.extract_cellset_metadata_raw(cellset_id=cellset_id, delete_cellset=False)
+        self.assertEqual(data['Axes'], data_async0['Axes'])
+
         print('axes empty row', len(data['Axes']))
         with self.assertRaises(ValueError) as _:
             self.tm1.cells.extract_cellset_axes_raw_async(cellset_id=cellset_id)
@@ -4770,14 +4799,14 @@ class TestCellService(unittest.TestCase):
         elem_properties = ["Name", "UniqueName", "Attributes/Attr1", "Attributes/Attr2"]
         member_properties = ["Name", "Ordinal", "Weight"]
         data_async0 = self.tm1.cells.extract_cellset_axes_raw_async(cellset_id=cellset_id, async_axis=0,
-                                                                          elem_properties=elem_properties,
-                                                                          member_properties=member_properties)
+                                                                    elem_properties=elem_properties,
+                                                                    member_properties=member_properties)
         data_async1 = self.tm1.cells.extract_cellset_axes_raw_async(cellset_id=cellset_id,
-                                                                          elem_properties=elem_properties,
-                                                                          member_properties=member_properties)
+                                                                    elem_properties=elem_properties,
+                                                                    member_properties=member_properties)
         data = self.tm1.cells.extract_cellset_metadata_raw(cellset_id=cellset_id,
-                                                                 elem_properties=elem_properties,
-                                                                 member_properties=member_properties)
+                                                           elem_properties=elem_properties,
+                                                           member_properties=member_properties)
         self.assertEqual(
             data['Axes'], data_async0['Axes'])
         self.assertEqual(
@@ -4814,9 +4843,9 @@ class TestCellService(unittest.TestCase):
         cellset_id = self.tm1.cells.create_cellset(mdx=mdx)
         cell_properties = ['Value', 'Updateable', 'Consolidated', 'RuleDerived']
         data_async = self.tm1.cells.extract_cellset_cells_raw_async(cellset_id=cellset_id,
-                                                                          cell_properties=cell_properties)
+                                                                    cell_properties=cell_properties)
         data = self.tm1.cells.extract_cellset_cells_raw(cellset_id=cellset_id,
-                                                              cell_properties=cell_properties)
+                                                        cell_properties=cell_properties)
         self.assertEqual(
             data['Cells'], data_async['Cells'])
 
@@ -4841,31 +4870,41 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(
             data['Cells'], data_async['Cells'])
 
-
     def test_empty_dimension_attribute_as_string(self):
 
         mdx = MdxBuilder.from_cube(self.cube_name).rows_non_empty()
 
         for dim in self.dimension_names[:-1]:
             mdx.add_hierarchy_set_to_row_axis(
-            MdxHierarchySet.all_members(dim,dim))
+                MdxHierarchySet.members([Member.of(dim, dim, "Element 8"), Member.of(dim, dim, "Element 9")]))
             mdx.add_properties_to_row_axis(DimensionProperty(dim, dim, 'Attr1'))
             mdx.add_properties_to_row_axis(DimensionProperty(dim, dim, 'Attr2'))
             mdx.add_properties_to_row_axis(DimensionProperty(dim, dim, 'Attr3'))
             mdx.add_properties_to_row_axis(DimensionProperty(dim, dim, 'NA'))
 
-
-        mdx.add_hierarchy_set_to_column_axis(MdxHierarchySet.all_members(self.dimension_names[-1],
-                                                                         self.dimension_names[-1]))
-        mdx.add_properties_to_column_axis(DimensionProperty(self.dimension_names[-1], self.dimension_names[-1], 'Attr1'))
-        mdx.add_properties_to_column_axis(DimensionProperty(self.dimension_names[-1], self.dimension_names[-1], 'Attr2'))
-        mdx.add_properties_to_column_axis(DimensionProperty(self.dimension_names[-1], self.dimension_names[-1], 'Attr3'))
+        mdx.add_hierarchy_set_to_column_axis(MdxHierarchySet.all_members(
+            self.dimension_names[-1],
+            self.dimension_names[-1]))
+        mdx.add_properties_to_column_axis(
+            DimensionProperty(self.dimension_names[-1], self.dimension_names[-1], 'Attr1'))
+        mdx.add_properties_to_column_axis(
+            DimensionProperty(self.dimension_names[-1], self.dimension_names[-1], 'Attr2'))
+        mdx.add_properties_to_column_axis(
+            DimensionProperty(self.dimension_names[-1], self.dimension_names[-1], 'Attr3'))
         mdx.add_properties_to_column_axis(DimensionProperty(self.dimension_names[-1], self.dimension_names[-1], 'NA'))
 
-        self.tm1.cells.write(cube_name='}ElementAttributes_' + self.dimension_names[0],
-                             cellset_as_dict={('Element 2', 'Attr1'): ''})
-        self.tm1.cells.write(cube_name='}ElementAttributes_' + self.dimension_names[0],
-                             cellset_as_dict={('Element 2', 'Attr2'): 0})
+        self.tm1.cells.write(
+            cube_name='}ElementAttributes_' + self.dimension_names[0],
+            cellset_as_dict={('Element 8', 'Attr1'): ''})
+        self.tm1.cells.write(
+            cube_name='}ElementAttributes_' + self.dimension_names[0],
+            cellset_as_dict={('Element 8', 'Attr2'): 0})
+        self.tm1.cells.write(
+            cube_name='}ElementAttributes_' + self.dimension_names[0],
+            cellset_as_dict={('Element 9', 'Attr1'): 'TM1py'})
+        self.tm1.cells.write(
+            cube_name='}ElementAttributes_' + self.dimension_names[0],
+            cellset_as_dict={('Element 9', 'Attr2'): 123})
 
         df = self.tm1.cells.execute_mdx_dataframe(
             mdx=mdx.to_mdx(),
@@ -4873,14 +4912,13 @@ class TestCellService(unittest.TestCase):
             fillna_numeric_attributes_value=888,
             fillna_string_attributes=True,
             fillna_string_attributes_value='Nothing',
-            include_attributes=False)
+            include_attributes=True)
 
-        self.tm1.cells.write(cube_name='}ElementAttributes_' + self.dimension_names[0],
-                             cellset_as_dict={('Element 2', 'Attr1'): 'TM1py'})
+        self.assertEqual('Nothing', df.loc[0, 'Attr1'])
+        self.assertEqual('TM1py', df.loc[1, 'Attr1'])
 
-        assert df.loc[1, 'Attr1'] == '' and df.loc[2, 'Attr1'] == 'TM1py'
-
-
+        self.assertEqual(888, df.loc[0, 'Attr2'])
+        self.assertEqual('123', df.loc[1, 'Attr2'])
 
     # Delete Cube and Dimensions
     @classmethod
@@ -4900,9 +4938,6 @@ class TestCellService(unittest.TestCase):
         cls.tm1.dimensions.delete(cls.dimension_with_hierarchies_name)
 
         cls.tm1.logout()
-
-
-
 
 
 if __name__ == '__main__':

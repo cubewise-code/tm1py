@@ -2188,7 +2188,7 @@ class CellService(ObjectService):
                         csv_dialect: 'csv.Dialect' = None, line_separator: str = "\r\n", value_separator: str = ",",
                         sandbox_name: str = None, include_attributes: bool = False, use_iterative_json: bool = False,
                         use_compact_json: bool = False, use_blob: bool = False, mdx_headers: bool = False,
-                        **kwargs) -> (Dict, str):
+                        **kwargs) -> str:
         """ Optimized for performance. Get csv string of coordinates and values.
 
         :param mdx: Valid MDX Query
@@ -2208,8 +2208,6 @@ class CellService(ObjectService):
         :param use_compact_json: bool
         :param use_blob: Has better performance on datasets > 1M cells and lower memory footprint in any case.
         :param mdx_headers: boolean, fully qualified hierarchy name as header instead of simple dimension name
-        :param empty_string_attribute_as_string: boolean, indicate whether you want to have empty strings (True) when
-            attributes are empty, or nan (False) when attributes are empty.
         :return: String
         """
         if use_blob:
@@ -2260,7 +2258,7 @@ class CellService(ObjectService):
                          line_separator: str = "\r\n", value_separator: str = ",", sandbox_name: str = None,
                          use_iterative_json: bool = False, use_compact_json: bool = False, use_blob: bool = False,
                          arranged_axes: Tuple[List, List, List] = None, mdx_headers: bool = False,
-                         empty_string_attribute_as_string: bool = False, **kwargs) -> (Dict, str):
+                         **kwargs) -> str:
         """ Optimized for performance. Get csv string of coordinates and values.
 
         :param cube_name: String, name of the cube
@@ -2284,8 +2282,6 @@ class CellService(ObjectService):
          Allows function to skip retrieval of cellset composition.
          E.g.: arranged_axes=(["Year"], ["Region","Product"], ["Period", "Version"])
         :param mdx_headers: boolean, fully qualified hierarchy name as header instead of simple dimension name
-        :param empty_string_attribute_as_string: boolean, indicate whether you want to have empty strings (True) when
-            attributes are empty or nan (False) when attributes are empty.
         :return: dict, String
         """
         if use_blob:
@@ -2322,16 +2318,14 @@ class CellService(ObjectService):
                 skip_consolidated_cells=skip_consolidated_cells,
                 skip_rule_derived_cells=skip_rule_derived_cells, csv_dialect=csv_dialect,
                 line_separator=line_separator, value_separator=value_separator,
-                sandbox_name=sandbox_name, mdx_headers=mdx_headers,
-                empty_string_attribute_as_string=empty_string_attribute_as_string, **kwargs)
+                sandbox_name=sandbox_name, mdx_headers=mdx_headers, **kwargs)
 
         return self.extract_cellset_csv(
             cellset_id=cellset_id, skip_zeros=skip_zeros, top=top, skip=skip,
             skip_consolidated_cells=skip_consolidated_cells,
             skip_rule_derived_cells=skip_rule_derived_cells, csv_dialect=csv_dialect,
             line_separator=line_separator, value_separator=value_separator, sandbox_name=sandbox_name,
-            use_compact_json=use_compact_json, mdx_headers=mdx_headers,
-            empty_string_attribute_as_string=empty_string_attribute_as_string, **kwargs)
+            use_compact_json=use_compact_json, mdx_headers=mdx_headers, **kwargs)
 
     def execute_mdx_elements_value_dict(self, mdx: str, top: int = None, skip: int = None, skip_zeros: bool = True,
                                         skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
@@ -2403,15 +2397,22 @@ class CellService(ObjectService):
         :param fillna_string_attributes_value: Any, value with which to replace na if fillna_string_attributes is True
         :return: Pandas Dataframe
         """
-        # necessary to assure column order in line with cube view
-
         if (fillna_numeric_attributes or fillna_string_attributes) and not include_attributes:
             raise ValueError('Include attributes must be True if fillna_numeric or fillna_string is True.')
 
+        # necessary to assure column order in line with cube view
         if shaped:
             skip_zeros = False
 
         if use_blob:
+            if any([
+                fillna_numeric_attributes,
+                fillna_numeric_attributes_value,
+                fillna_string_attributes,
+                fillna_string_attributes_value]
+            ):
+                raise ValueError("fillna attributes' feature must not be used with use_blob as True")
+
             raw_csv = self.execute_mdx_csv(
                 mdx=mdx,
                 top=top,
@@ -2435,10 +2436,10 @@ class CellService(ObjectService):
                                               sandbox_name=sandbox_name, include_attributes=include_attributes,
                                               use_iterative_json=use_iterative_json, use_compact_json=use_compact_json,
                                               shaped=shaped, mdx_headers=mdx_headers,
-                                              fillna_numeric=fillna_numeric_attributes,
-                                              fillna_numeric_value=fillna_numeric_attributes_value,
-                                              fillna_string=fillna_string_attributes,
-                                              fillna_string_value=fillna_string_attributes_value,
+                                              fillna_numeric_attributes=fillna_numeric_attributes,
+                                              fillna_numeric_attributes_value=fillna_numeric_attributes_value,
+                                              fillna_string_attributes=fillna_string_attributes,
+                                              fillna_string_attributes_value=fillna_string_attributes_value,
                                               **kwargs)
 
     @require_pandas
@@ -2677,8 +2678,7 @@ class CellService(ObjectService):
                                skip_rule_derived_cells: bool = False, sandbox_name: str = None,
                                use_iterative_json: bool = False, use_blob: bool = False, shaped: bool = False,
                                arranged_axes: Tuple[List, List, List] = None,
-                               mdx_headers: bool = False, fillna_numeric:bool=False, fillna_string:bool = False,
-                               fillna_numeric_value: Any = None, fillna_string_value:Any = None, **kwargs) -> 'pd.DataFrame':
+                               mdx_headers: bool = False, **kwargs) -> 'pd.DataFrame':
         """ Optimized for performance. Get Pandas DataFrame from an existing Cube View
         Context dimensions are omitted in the resulting Dataframe !
         Cells with Zero/null are omitted !
@@ -2737,9 +2737,7 @@ class CellService(ObjectService):
                                               skip_consolidated_cells=skip_consolidated_cells,
                                               skip_rule_derived_cells=skip_rule_derived_cells,
                                               sandbox_name=sandbox_name, use_iterative_json=use_iterative_json,
-                                              shaped=shaped, mdx_headers=mdx_headers,
-                                              fillna_numeric=fillna_numeric, fillna_string=fillna_string,
-                                              **kwargs)
+                                              shaped=shaped, mdx_headers=mdx_headers, **kwargs)
 
     def execute_view_cellcount(self, cube_name: str, view_name: str, private: bool = False, sandbox_name: str = None,
                                **kwargs) -> int:
@@ -3188,7 +3186,7 @@ class CellService(ObjectService):
                                                      skip_contexts=skip_contexts,
                                                      include_hierarchies=include_hierarchies,
                                                      sandbox_name=sandbox_name,
-                                                     **kwargs)
+                                                     **{**kwargs, 'delete_cellset': False})
         cells = self.extract_cellset_cells_raw(cellset_id=cellset_id,
                                                cell_properties=cell_properties,
                                                top=top,
@@ -3699,8 +3697,6 @@ class CellService(ObjectService):
             use_compact_json: bool = False,
             include_headers: bool = True,
             mdx_headers: bool = False,
-            fillna_numeric: bool = False,
-            fillna_string: bool = False,
             **kwargs) -> str:
         """ Execute cellset and return only the 'Content', in csv format
 
@@ -3719,16 +3715,15 @@ class CellService(ObjectService):
         :param use_compact_json: boolean
         :param include_headers: boolean
         :param mdx_headers: boolean. Fully qualified hierarchy name as header instead of simple dimension name
-        :return: attributes: dict of attributes by dimension, and: Raw format from TM1.
+        :return: Raw format from TM1.
         """
         delete_cellset = kwargs.pop('delete_cellset', True)
-        postpone_delete_cellset = fillna_numeric or fillna_string
-        delete_cellset = False if postpone_delete_cellset else delete_cellset
 
         cube, _, rows, columns = self.extract_cellset_composition(
             cellset_id,
             delete_cellset=False,
-            sandbox_name=sandbox_name, **kwargs)
+            sandbox_name=sandbox_name,
+            **kwargs)
 
         cellset_dict = self.extract_cellset_raw(
             cellset_id,
@@ -3772,7 +3767,7 @@ class CellService(ObjectService):
             sandbox_name: str = None,
             include_attributes: bool = False,
             mdx_headers: bool = False,
-            **kwargs) -> tuple[dict[str, list[str]], str]:
+            **kwargs) -> str:
         """ Execute cellset and return only the 'Content', in csv format
 
         :param cellset_id: String; ID of existing cellset
@@ -3908,7 +3903,7 @@ class CellService(ObjectService):
 
         # comply with prior implementations: return empty string when cellset is empty
         if csv_body.getvalue() == "":
-            return attributes_by_dimension, ""
+            return ""
 
         # prepare header
         if include_attributes:
@@ -3921,7 +3916,7 @@ class CellService(ObjectService):
         csv_header_writer.writerow(row_headers + column_headers + ['Value'])
 
         cellset_response.close()
-        return attributes_by_dimension, csv_header.getvalue() + csv_body.getvalue().strip()
+        return csv_header.getvalue() + csv_body.getvalue().strip()
 
     @require_pandas
     def extract_cellset_dataframe(
@@ -3938,10 +3933,10 @@ class CellService(ObjectService):
             use_compact_json: bool = False,
             shaped: bool = False,
             mdx_headers: bool = False,
-            fillna_numeric: bool = False,
-            fillna_numeric_value: Any = 0,
-            fillna_string: bool = False,
-            fillna_string_value: Any = '',
+            fillna_numeric_attributes: bool = False,
+            fillna_numeric_attributes_value: Any = 0,
+            fillna_string_attributes: bool = False,
+            fillna_string_attributes_value: Any = '',
             **kwargs) -> 'pd.DataFrame':
         """ Build pandas data frame from cellset_id
 
@@ -3967,60 +3962,67 @@ class CellService(ObjectService):
                 cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                 skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
                 value_separator='~', sandbox_name=sandbox_name, include_attributes=include_attributes,
-                mdx_headers=mdx_headers, fillna_numeric=fillna_numeric, fillna_string=fillna_string,
-                fillna_numeric_value=fillna_numeric_value, fillna_string_value=fillna_string_value, **kwargs)
+                mdx_headers=mdx_headers, **kwargs)
         else:
             raw_csv = self.extract_cellset_csv(
                 cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                 skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
                 value_separator='~', sandbox_name=sandbox_name, include_attributes=include_attributes,
-                use_compact_json=use_compact_json, mdx_headers=mdx_headers, fillna_numeric=fillna_numeric,
-                fillna_string=fillna_string, fillna_numeric_value=fillna_numeric_value,
-                fillna_string_value=fillna_string_value, **kwargs)
+                use_compact_json=use_compact_json, mdx_headers=mdx_headers,
+                # dont delete cellset if attribute types must be retrieved later
+                delete_cellset=not any([fillna_string_attributes, fillna_string_attributes]), **kwargs)
 
-        attribute_types_by_dimension = {}
-
-        if fillna_numeric or fillna_string:
-            _, _, rows, columns = self.extract_cellset_composition(
-                cellset_id,
-                delete_cellset=False,
-                sandbox_name=sandbox_name, **kwargs)
-
-            metadata = self.extract_cellset_metadata_raw(cellset_id=cellset_id,
-                                                     elem_properties=['Name'],
-                                                     member_properties=['Name', 'Attributes'] if include_attributes else None,
-                                                     top=1,
-                                                     skip=0,
-                                                     skip_contexts=True,
-                                                     include_hierarchies=False,
-                                                     sandbox_name=sandbox_name,
-                                                     delete_cellset=True,
-                                                     **kwargs)
-
-            # gets the attribute names from the first member from the first tuple of each axis.
-            attributes_by_dimension = dict(zip(
-                rows + columns,
-                [list(member['Attributes'].keys()) for axes in metadata['Axes'][::-1] for member in
-                 axes['Tuples'][0]['Members']]))
-
-            element_service = self.get_element_service()
-
-            for dimension in rows + columns:
-                attribute_types_by_dimension[dimension] = element_service.get_element_types(
-                    '}ElementAttributes_' + dimension.split('].[')[0][1:],
-                    '}ElementAttributes_' + dimension.split('].[')[0][1:])
-
-                attribute_types_by_dimension[dimension] = {
-                    attribute_name: attribute_type for attribute_name, attribute_type in
-                    attribute_types_by_dimension[dimension].items()
-                    if attribute_name in attributes_by_dimension[dimension]}
+        attribute_types_by_dimension = None
+        if fillna_string_attributes or fillna_string_attributes:
+            attribute_types_by_dimension = self._extract_attribute_types_by_dimension(
+                cellset_id=cellset_id,
+                sandbox_name=sandbox_name,
+                delete_cellset=True,
+                **kwargs)
 
         return build_dataframe_from_csv(raw_csv, sep="~", shaped=shaped,
-                                        fillna_numeric=fillna_numeric,
-                                        fillna_string=fillna_string,
-                                        fillna_numeric_value=fillna_numeric_value,
-                                        fillna_string_value=fillna_string_value,
+                                        fillna_numeric_attributes=fillna_numeric_attributes,
+                                        fillna_string_attributes=fillna_string_attributes,
+                                        fillna_numeric_attributes_value=fillna_numeric_attributes_value,
+                                        fillna_string_attributes_value=fillna_string_attributes_value,
                                         attribute_types_by_dimension=attribute_types_by_dimension, **kwargs)
+
+    def _extract_attribute_types_by_dimension(self, cellset_id: str, sandbox_name: str, delete_cellset: bool, **kwargs):
+        attribute_types_by_dimension = {}
+
+        _, _, rows, columns = self.extract_cellset_composition(
+            cellset_id,
+            delete_cellset=False,
+            sandbox_name=sandbox_name, **kwargs)
+
+        metadata = self.extract_cellset_metadata_raw(
+            cellset_id=cellset_id,
+            elem_properties=['Name'],
+            member_properties=['Name', 'Attributes'],
+            top=1,
+            skip=0,
+            skip_contexts=True,
+            include_hierarchies=False,
+            sandbox_name=sandbox_name,
+            delete_cellset=delete_cellset,
+            **kwargs)
+        # gets the attribute names from the first member from the first tuple of each axis.
+        attributes_by_dimension = dict(zip(
+            rows + columns,
+            [list(member['Attributes'].keys()) for axes in metadata['Axes'][::-1] for member in
+             axes['Tuples'][0]['Members']]))
+        element_service = self.get_element_service()
+        for dimension in rows + columns:
+            attribute_types_by_dimension[dimension] = element_service.get_element_types(
+                '}ElementAttributes_' + dimension.split('].[')[0][1:],
+                '}ElementAttributes_' + dimension.split('].[')[0][1:])
+
+            attribute_types_by_dimension[dimension] = {
+                attribute_name: attribute_type for attribute_name, attribute_type in
+                attribute_types_by_dimension[dimension].items()
+                if attribute_name in attributes_by_dimension[dimension]}
+
+        return attribute_types_by_dimension
 
     @tidy_cellset
     @require_pandas
