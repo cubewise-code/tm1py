@@ -533,8 +533,13 @@ def build_csv_from_cellset_dict(
     return csv_content.getvalue().strip()
 
 
-def build_dataframe_from_csv(raw_csv, sep='~', shaped: bool = False, empty_string_attribute_as_string:bool = False,
-                             attribute_types_by_dimension:Dict[str, str] = None, **kwargs) -> 'pd.DataFrame':
+def build_dataframe_from_csv(raw_csv, sep='~', shaped: bool = False,
+                             fillna_numeric: bool = False,
+                             fillna_numeric_value: Any = 0,
+                             fillna_string: bool = False,
+                             fillna_string_value: Any = '',
+                             attribute_types_by_dimension: Dict[str, Dict[str, str]] | None = None,
+                             **kwargs) -> 'pd.DataFrame':
     if not raw_csv:
         return pd.DataFrame()
 
@@ -549,14 +554,25 @@ def build_dataframe_from_csv(raw_csv, sep='~', shaped: bool = False, empty_strin
         kwargs['dtype'] = {'Value': str, **{col: str for col in range(999)}}
         df = pd.read_csv(StringIO(raw_csv), sep=sep, na_values=["", None], keep_default_na=False, **kwargs)
 
-    if attribute_types_by_dimension and empty_string_attribute_as_string:
-        # fillna if the attribute type is string:
-        fillna_with_empty_string = [True if item == 'String' else False
-                                    for subdict in [[k] + list(v.values())
-                                                    for k, v in attribute_types_by_dimension.items()]
-                                    for item in subdict] + [False]
-        df = df.apply(lambda col: col.fillna('') if fillna_with_empty_string[list(df.columns.values).index(col.name)]
-            else col, axis=0)
+    if fillna_numeric:
+        fill_numeric_bool_list = [attr_type.lower() == 'numeric' for dimension, attributes in
+                                 attribute_types_by_dimension.items()
+                                 for attr_type in [dimension] + list(attributes.values())]
+        fill_numeric_bool_list += [False]  # for the value column
+        df = df.apply(
+            lambda col:
+            col.fillna(fillna_numeric_value) if fill_numeric_bool_list[list(df.columns.values).index(col.name)] else col,
+            axis=0)
+
+    if fillna_string:
+        fill_string_bool_list = [attr_type.lower() == 'string' for dimension, attributes in
+                                 attribute_types_by_dimension.items()
+                                 for attr_type in [dimension] + list(attributes.values())]
+        fill_string_bool_list += [False]  # for the value column
+        df = df.apply(
+            lambda col:
+            col.fillna(fillna_string_value) if fill_string_bool_list[list(df.columns.values).index(col.name)] else col,
+            axis=0)
 
     if not shaped:
         return df
