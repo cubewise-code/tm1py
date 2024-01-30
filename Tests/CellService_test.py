@@ -4864,11 +4864,16 @@ class TestCellService(unittest.TestCase):
 
         self.tm1.cells.write(cube_name='}ElementAttributes_' + self.dimension_names[0],
                              cellset_as_dict={('Element 2', 'Attr1'): ''})
+        self.tm1.cells.write(cube_name='}ElementAttributes_' + self.dimension_names[0],
+                             cellset_as_dict={('Element 2', 'Attr2'): 0})
 
         df = self.tm1.cells.execute_mdx_dataframe(
             mdx=mdx.to_mdx(),
-            empty_string_attribute_as_string=True,
-            include_attributes=True)
+            fillna_numeric_attributes=True,
+            fillna_numeric_attributes_value=888,
+            fillna_string_attributes=True,
+            fillna_string_attributes_value='Nothing',
+            include_attributes=False)
 
         self.tm1.cells.write(cube_name='}ElementAttributes_' + self.dimension_names[0],
                              cellset_as_dict={('Element 2', 'Attr1'): 'TM1py'})
