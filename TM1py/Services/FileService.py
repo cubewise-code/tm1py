@@ -21,13 +21,15 @@ class FileService(ObjectService):
         else:
             self.version_content_path = 'Blobs'
 
-    def get_names(self, **kwargs) -> bytes:
+    def get_names(self, return_list: bool=False, **kwargs) -> bytes:
 
         url = format_url(
             "/Contents('{version_content_path}')/Contents?$select=Name",
             version_content_path=self.version_content_path)
 
-        return self._rest.GET(url, **kwargs).content
+        response = self._rest.GET(url, **kwargs).content
+
+        return response if not return_list else [file['Name'] for file in json.loads(response)['value']]
 
     def get(self, file_name: str, **kwargs) -> bytes:
 
