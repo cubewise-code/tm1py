@@ -23,6 +23,10 @@ class FileService(ObjectService):
             self.version_content_path = 'Blobs'
 
     def get_names(self, return_list: bool=False, **kwargs) -> bytes:
+        """ return list of blob file names
+
+        :param return_list: True to return list, otherwise will return bytes        
+        """
 
         url = format_url(
             "/Contents('{version_content_path}')/Contents?$select=Name",
@@ -91,6 +95,12 @@ class FileService(ObjectService):
     
     def search_string_in_name(self, name_startswith: str = None, name_contains: Iterable = None, 
                               name_contains_operator: str = 'and', **kwargs) -> List[str]:
+        """ Return list of blob files that match search critera
+
+        :param name_startswith: str, file name begins with (case insensitive)
+        :param name_contains: iterable, found anywhere in name (case insensitive)
+        :param name_contains_operator: 'and' or 'or'
+        """
         
         url = format_url(
             "/Contents('{version_content_path}')/Contents?$select=Name",
