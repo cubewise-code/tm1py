@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import warnings
 from typing import List, Iterable
 
 from TM1py.Services import RestService
@@ -22,10 +23,21 @@ class FileService(ObjectService):
         else:
             self.version_content_path = 'Blobs'
 
-    def get_names(self, return_list: bool=False, **kwargs) -> bytes:
+    def get_names(self, **kwargs) -> bytes:
+        warnings.warn(
+            f"Function get_names will be deprecated. Use get_all_names instead",
+            DeprecationWarning,
+            stacklevel=2)
+
+        url = format_url(
+            "/Contents('{version_content_path}')/Contents?$select=Name",
+            version_content_path=self.version_content_path)
+
+        return self._rest.GET(url, **kwargs).content
+
+    def get_all_names(self, **kwargs) -> List[str]:
         """ return list of blob file names
 
-        :param return_list: True to return list, otherwise will return bytes        
         """
 
         url = format_url(
@@ -34,7 +46,7 @@ class FileService(ObjectService):
 
         response = self._rest.GET(url, **kwargs).content
 
-        return response if not return_list else [file['Name'] for file in json.loads(response)['value']]
+        return [file['Name'] for file in json.loads(response)['value']]
 
     def get(self, file_name: str, **kwargs) -> bytes:
 
@@ -92,8 +104,8 @@ class FileService(ObjectService):
             version_content_path=self.version_content_path)
 
         return self._rest.DELETE(url, **kwargs)
-    
-    def search_string_in_name(self, name_startswith: str = None, name_contains: Iterable = None, 
+
+    def search_string_in_name(self, name_startswith: str = None, name_contains: Iterable = None,
                               name_contains_operator: str = 'and', **kwargs) -> List[str]:
         """ Return list of blob files that match search critera
 
@@ -101,15 +113,15 @@ class FileService(ObjectService):
         :param name_contains: iterable, found anywhere in name (case insensitive)
         :param name_contains_operator: 'and' or 'or'
         """
-        
+
         url = format_url(
             "/Contents('{version_content_path}')/Contents?$select=Name",
             version_content_path=self.version_content_path)
-        
+
         name_contains_operator = name_contains_operator.strip().lower()
         if name_contains_operator not in ("and", "or"):
             raise ValueError("'name_contains_operator' must be either 'AND' or 'OR'")
-        
+
         name_filters = []
 
         if name_startswith:
