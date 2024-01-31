@@ -6,7 +6,7 @@ from mdxpy import CalculatedMember, MdxBuilder, MdxHierarchySet, Member, Dimensi
 
 from TM1py import Sandbox
 from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyVersionException, TM1pyWritePartialFailureException, \
-    TM1pyWriteFailureException
+    TM1pyWriteFailureException, TM1pyRestException
 from TM1py.Objects import (AnonymousSubset, Cube, Dimension, Element,
                            ElementAttribute, Hierarchy, MDXView, NativeView)
 from TM1py.Services import TM1Service
@@ -4784,6 +4784,10 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(
             data['Axes'], data_async1['Axes'])
 
+        # verify cellset deletion
+        with self.assertRaises(TM1pyRestException):
+            self.tm1.cells.extract_cellset_cellcount(cellset_id)
+
     def test_extract_cellset_axes_raw_async_with_member_properties_with_elem_properties(self):
         mdx = MdxBuilder.from_cube(self.cube_name) \
             .rows_non_empty() \
@@ -4811,6 +4815,10 @@ class TestCellService(unittest.TestCase):
             data['Axes'], data_async0['Axes'])
         self.assertEqual(
             data['Axes'], data_async1['Axes'])
+
+        # verify cellset deletion
+        with self.assertRaises(TM1pyRestException):
+            self.tm1.cells.extract_cellset_cellcount(cellset_id)
 
     def test_extract_cellset_cells_raw_async(self):
         mdx = MdxBuilder.from_cube(self.cube_name) \
