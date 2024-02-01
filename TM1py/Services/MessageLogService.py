@@ -153,3 +153,9 @@ class MessageLogService(ObjectService):
         if len(response_as_list) > 0:
             message_log_entry = response_as_list[0]
             return message_log_entry['Message']
+        
+    @staticmethod
+    def utc_localize_time(timestamp):
+        timestamp = pytz.utc.localize(timestamp)
+        timestamp_utc = timestamp.astimezone(pytz.utc)
+        return timestamp_utc

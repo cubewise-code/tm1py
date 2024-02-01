@@ -105,12 +105,6 @@ class ServerService(ObjectService):
                                               message=message,
                                               **kwargs)
 
-    @staticmethod
-    def utc_localize_time(timestamp):
-        timestamp = pytz.utc.localize(timestamp)
-        timestamp_utc = timestamp.astimezone(pytz.utc)
-        return timestamp_utc
-
     @deprecated_in_version(version="12.0.0")
     @require_admin
     def get_transaction_log_entries(self, reverse: bool = True, user: str = None, cube: str = None,
