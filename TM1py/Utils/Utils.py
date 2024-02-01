@@ -538,7 +538,7 @@ def build_dataframe_from_csv(raw_csv, sep='~', shaped: bool = False,
                              fillna_numeric_attributes_value: Any = 0,
                              fillna_string_attributes: bool = False,
                              fillna_string_attributes_value: Any = '',
-                             attribute_types_by_dimension: Dict[str, Dict[str, str]] | None = None,
+                             attribute_types_by_dimension: Dict[str, Dict[str, str]] = None,
                              **kwargs) -> 'pd.DataFrame':
     if not raw_csv:
         return pd.DataFrame()
