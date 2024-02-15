@@ -767,7 +767,8 @@ class RestService:
     def _url_and_body(self, url: str, data: str, encoding: str = 'utf-8') -> Tuple[str, bytes]:
         """ create proper url and payload
         """
-        url = self._base_url + url
+        # drop leading '/api/v1' from URL for backwards compatibility
+        url = self._base_url + (url[len("/api/v1"):] if url.startswith("/api/v1") else url)
         url = url.replace(' ', '%20')
         if isinstance(data, str):
             data = data.encode(encoding)
