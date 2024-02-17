@@ -44,6 +44,31 @@ class Rules(TM1Object):
             return self.rules_analytics[:self._rules_analytics.index('FEEDERS')]
         return self.rules_analytics
 
+    def add_rule_statements(self, statements:Union[str, List[str]]):
+        if isinstance(statements, list):
+            statements = '\n'.join(statements)
+        if self.has_feeders:
+            text_split = self._text.split('FEEDERS;')
+            self._text = f"{text_split[0]}\n{statements}\nFEEDERS;\n{text_split[1]}"
+        else:
+            self._text += f"\n{statements}"
+        self.init_analytics()
+
+    # This function is a little more complicated, because it avoids calling init_analytics() to optimize processing time
+    def add_rule_statements(self, statements: Union[str, List[str]]):
+        if isinstance(statements, str):
+            statements = [statements]
+        modified_statements = list(map(lambda x: x[:-1] if ';' in x else x, statements))
+        if self.has_feeders:
+            text_split = self._text.split('FEEDERS;')
+            statements_string = "\n".join(statements)
+            self._text = f"{text_split[0]}{statements_string}\nFEEDERS;{text_split[1]}"
+            feeders_index = self._rules_analytics.index('FEEDERS')
+            self._rules_analytics = self._rules_analytics[:feeders_index] + modified_statements + self._rules_analytics[feeders_index:]
+        else:
+            self._text += "\n"+"\n".join(statements)
+            self._rules_analytics += modified_statements
+
     @property
     def feeder_statements(self) -> List[str]:
         if self.has_feeders:
