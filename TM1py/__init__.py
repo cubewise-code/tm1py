@@ -74,4 +74,4 @@ from TM1py.Services.MonitoringService import MonitoringService
 
 from TM1py.Utils import Utils
 
-__version__ = "2.0.1"
+__version__ = "2.0.2"
