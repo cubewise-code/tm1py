@@ -2960,7 +2960,7 @@ class CellService(ObjectService):
                                         sandbox_name=sandbox_name,
                                         use_compact_json=use_compact_json,
                                         **kwargs)
-        return Utils.build_ui_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
+        return Utils.build_ui_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision, top=top)
 
     def execute_view_ui_array(
             self,
