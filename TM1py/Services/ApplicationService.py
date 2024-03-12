@@ -38,7 +38,24 @@ class ApplicationService(ObjectService):
         applications = list(application['Name'] for application in response.json()['value'])
         return applications
 
+    def get_names(self, path: str, private: bool = False, **kwargs):
+        """ Retrieve Planning Analytics Application names in given path
 
+        :param path: path with forward slashes
+        :param private: boolean
+        :return: list of application names
+        """
+        contents = 'PrivateContents' if private else 'Contents'
+        mid = ""
+        if path.strip() != '':
+            mid = "".join([format_url("/Contents('{}')", element) for element in path.split('/')])
+        base_url = "/api/v1/Contents('Applications')" + mid + "/" + contents
+
+        response = self._rest.GET(url=base_url, **kwargs)
+        applications = list(application['Name'] for application in response.json()['value'])
+        
+        return applications
+    
     def get(self, path: str, application_type: Union[str, ApplicationTypes], name: str, private: bool = False,
             **kwargs) -> Application:
         """ Retrieve Planning Analytics Application
@@ -252,6 +269,19 @@ class ApplicationService(ObjectService):
 
         return response
 
+    def update_or_create(self, application: Union[Application, DocumentApplication], private: bool = False, **kwargs) -> Response:
+        """ Update or create Planning Analytics application
+
+        :param application: instance of Application
+        :param private: boolean
+        :return: Response
+        """
+        if self.exists(path=application.path, application_type=application.application_type, name=application.name, private=private,**kwargs):
+            response = self.update(application=application, private=private, **kwargs)
+        else:
+            response = self.create(application=application, private=private, **kwargs)
+        return response
+    
     def update_or_create_document_from_file(self, path: str, name: str,
                                             path_to_file: str, private: bool = False, **kwargs) -> Response:
         """Update or create application from file
