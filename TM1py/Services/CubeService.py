@@ -378,3 +378,31 @@ class CubeService(ObjectService):
                 element = '[{}].[{}]'.format(dimension, element)
             elements.append(element)
         return elements
+
+    @require_data_admin
+    @require_version(version="11.8.20")
+    def get_vmm(self, cube_name: str):
+        url = format_url("/Cubes('{}')?$select=ViewStorageMaxMemory", cube_name)
+        response = self._rest.GET(url)
+        return response.json()["ViewStorageMaxMemory"]
+
+    @require_data_admin
+    @require_version(version="11.8.20")
+    def set_vmm(self, cube_name: str, vmm: int):
+        url = format_url("/Cubes('{}')", cube_name)
+        payload = {"ViewStorageMaxMemory": vmm}
+        response = self._rest.PATCH(url=url, data=json.dumps(payload))
+
+    @require_data_admin
+    @require_version(version="11.8.20")
+    def get_vmt(self, cube_name: str):
+        url = format_url("/Cubes('{}')?$select=ViewStorageMinTime", cube_name)
+        response = self._rest.GET(url)
+        return response.json()["ViewStorageMinTime"]
+
+    @require_data_admin
+    @require_version(version="11.8.20")
+    def set_vmt(self, cube_name: str, vmt: int):
+        url = format_url("/Cubes('{}')", cube_name)
+        payload = {"ViewStorageMinTime": vmt}
+        response = self._rest.PATCH(url=url, data=json.dumps(payload))
