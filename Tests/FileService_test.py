@@ -45,6 +45,38 @@ class TestFileService(unittest.TestCase):
             self.assertEqual(original_file.read(), created_file)
 
     @skip_if_insufficient_version(version="11.4")
+    def test_get_all_names(self):
+        result = self.tm1.files.get_all_names()
+        self.assertIn(self.FILE_NAME1, result)
+
+    @skip_if_insufficient_version(version="11.4")
+    def test_search_string_in_name__name_startswith(self):
+        result = self.tm1.files.search_string_in_name(name_startswith=self.FILE_NAME1)
+        self.assertEqual([self.FILE_NAME1], result)
+
+    @skip_if_insufficient_version(version="11.4")
+    def test_search_string_in_name__name_startswith_not_existing(self):
+        result = self.tm1.files.search_string_in_name(name_startswith='not_the_file_im_looking_for')
+        self.assertEqual([], result)
+
+    @skip_if_insufficient_version(version="11.4")
+    def test_search_string_in_name__name_contains_both_existing(self):
+        result = self.tm1.files.search_string_in_name(name_contains=[self.FILE_NAME1[:5], self.FILE_NAME1[-5:]])
+        self.assertEqual([self.FILE_NAME1], result)
+
+    @skip_if_insufficient_version(version="11.4")
+    def test_search_string_in_name__name_contains_mixed_existing_and(self):
+        result = self.tm1.files.search_string_in_name(name_contains=[self.FILE_NAME1[:5], 'NotFound'])
+        self.assertEqual([], result)
+
+    @skip_if_insufficient_version(version="11.4")
+    def test_search_string_in_name__name_contains_mixed_existing_or(self):
+        result = self.tm1.files.search_string_in_name(
+            name_contains=[self.FILE_NAME1, 'NotFound'],
+            name_contains_operator='OR')
+        self.assertEqual([self.FILE_NAME1], result)
+
+    @skip_if_insufficient_version(version="11.4")
     def test_delete_exists(self):
         self.assertTrue(self.tm1.files.exists(self.FILE_NAME1))
 

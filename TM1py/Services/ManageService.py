@@ -65,7 +65,7 @@ class ManageService:
                         instance_name,
                         database_name,
                         number_replicas,
-                        product_version="12.0.0-alpha.1",
+                        product_version,
                         cpu_requests="1000m",
                         cpu_limits="2000m",
                         memory_requests="1G",
@@ -97,6 +97,62 @@ class ManageService:
 
         return response
 
+    def update_database_cpu(self,
+                            instance_name,
+                            database_name,
+                            cpu_requests,
+                            cpu_limits,
+                            ):
+        url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')"
+
+        payload = {"Resources": {
+            "Replica": {
+                "CPU": {
+                    "Requests": cpu_requests,
+                    "Limits": cpu_limits
+                },
+            }
+        }
+        }
+        response = requests.patch(url=url, json=payload, auth=self._auth_header)
+        return response
+
+    def update_database_memory(self,
+                               instance_name,
+                               database_name,
+                               memory_requests,
+                               memory_limits,
+                               ):
+        url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')"
+
+        payload = {"Resources": {
+            "Replica": {
+                "Memory": {
+                    "Requests": memory_requests,
+                    "Limits": memory_limits
+                }
+            }
+        }
+        }
+        response = requests.patch(url=url, json=payload, auth=self._auth_header)
+        return response
+
+    def update_database_storage(self,
+                                instance_name,
+                                database_name,
+                                storage_size
+                                ):
+        url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')"
+
+        payload = {"Resources": {
+            "Storage": {
+                "Size": storage_size
+            }
+        }
+        }
+        response = requests.patch(url=url, json=payload, auth=self._auth_header)
+        return response
+
     def delete_database(self, instance_name, database_name):
         url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')"
         response = requests.delete(url=url, auth=self._auth_header)
@@ -116,13 +172,14 @@ class ManageService:
         response = requests.post(url=url, json=payload, auth=self._auth_header)
         return response
 
-    def create_database_backup(self, instance_name: str, database_name: str, backup_url: str):
+    def create_database_backup(self, instance_name: str, database_name: str, backup_set_name: str):
         url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')/tm1s.Backup"
-        payload = {"URL": backup_url}
+        payload = {"URL": f"{backup_set_name}.tgz"}
         response = requests.post(url=url, json=payload, auth=self._auth_header)
         return response
 
     def create_and_upload_database_backup_set_file(self, instance_name: str, database_name: str, backup_set_name: str):
+
         create_url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')" \
                      f"/Contents('Files')/Contents('.backupsets')/Contents"
         payload = {"@odata.type": "#ibm.tm1.api.v1.Document", "Name": f"{backup_set_name}.tgz"}
@@ -150,12 +207,36 @@ class ManageService:
         response = requests.get(url=url, auth=self._auth_header)
         return json.loads(response.content)
 
+    def get_application(self, instance_name, application_name):
+        url = f"{self._root_url}/Instances('{instance_name}')/Applications('{application_name}')"
+        response = requests.get(url=url, auth=self._auth_header)
+        return json.loads(response.content)
+
     def create_application(self, instance_name, application_name):
         url = f"{self._root_url}/Instances('{instance_name}')/Applications"
         payload = {"Name": application_name}
         response = requests.post(url=url, json=payload, auth=self._auth_header)
         response_json = json.loads(response.content)
         return response_json['ClientID'], response_json['ClientSecret']
+
+    def get_metadata(self):
+        url = f"{self._root_url}/$metadata?$format=json"
+        response = requests.get(url=url, auth=self._auth_header)
+        return json.loads(response.content)
+
+    def subscribe_to_data_changes(self, instance_name, database_name, target_url, additional_properties: dict = {}):
+        url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')/tm1.Subscribe"
+        payload = {
+            "URL": target_url,
+            "AdditionalProperties": additional_properties
+        }
+        response = requests.post(url=url, json=payload, auth=self._auth_header)
+        return response
+
+    def unsubscribe_from_data_changes(self, instance_name, database_name, target_url):
+        url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')/tm1.Unsubscribe"
+        response = requests.post(url=url, auth=self._auth_header)
+        return response
 
 
 

@@ -11,7 +11,7 @@ from collections import OrderedDict
 from concurrent.futures.thread import ThreadPoolExecutor
 from contextlib import suppress
 from io import StringIO
-from typing import List, Union, Dict, Iterable, Tuple, Optional
+from typing import List, Union, Dict, Iterable, Tuple, Optional, Any
 
 import ijson
 from mdxpy import MdxHierarchySet, MdxBuilder, Member, MdxTuple
@@ -33,7 +33,8 @@ from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url, add_url_p
 from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_name_from_element_unique_name, \
     CaseAndSpaceInsensitiveDict, wrap_in_curly_braces, CaseAndSpaceInsensitiveTuplesDict, \
     abbreviate_mdx, build_csv_from_cellset_dict, require_version, require_pandas, build_cellset_from_pandas_dataframe, \
-    case_and_space_insensitive_equals, get_cube, resembles_mdx, require_data_admin, require_ops_admin, extract_compact_json_cellset, \
+    case_and_space_insensitive_equals, get_cube, resembles_mdx, require_data_admin, require_ops_admin, \
+    extract_compact_json_cellset, \
     cell_is_updateable, build_mdx_from_cellset, build_mdx_and_values_from_cellset, \
     dimension_names_from_element_unique_names, frame_to_significant_digits, build_dataframe_from_csv, \
     drop_dimension_properties, decohints, verify_version
@@ -1450,11 +1451,12 @@ class CellService(ObjectService):
             """
 
         # v12 occasionally produces tiny numbers (e.g. 4.94066e-324) instead of 0
-        data_procedure_pre += f"""
-        IF (ISUNDEFINEDCELLVALUE(NVALUE,'{cube}') = 1);
-          SVALUE ='0';
-        ENDIF;
-        """
+        if verify_version(required_version="12", version=self.version):
+            data_procedure_pre += f"""
+            IF (ISUNDEFINEDCELLVALUE(NVALUE,'{cube}') = 1);
+              SVALUE ='0';
+            ENDIF;
+            """
 
         data_procedure = f"""
         TextOutput('{file_name}',{comma_sep_variables},SVALUE);
@@ -1788,7 +1790,7 @@ class CellService(ObjectService):
                     skip: int = None, skip_zeros: bool = False, skip_consolidated_cells: bool = False,
                     skip_rule_derived_cells: bool = False, sandbox_name: str = None, element_unique_names: bool = True,
                     skip_cell_properties: bool = False, use_compact_json: bool = False,
-                    skip_sandbox_dimension: bool = False,
+                    skip_sandbox_dimension: bool = False, max_workers: int = 1, async_axis: int = 0,
                     **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
         """ Execute MDX and return the cells with their properties
 
@@ -1807,6 +1809,25 @@ class CellService(ObjectService):
         :skip_sandbox_dimension: bool = False
         :return: content in sweet concise structure.
         """
+        if max_workers > 1:
+            return self.execute_mdx_async(
+                mdx=mdx,
+                cell_properties=cell_properties,
+                top=top,
+                skip=skip,
+                skip_contexts=skip_contexts,
+                skip_zeros=skip_zeros,
+                skip_consolidated_cells=skip_consolidated_cells,
+                skip_rule_derived_cells=skip_rule_derived_cells,
+                sandbox_name=sandbox_name,
+                element_unique_names=element_unique_names,
+                skip_cell_properties=skip_cell_properties,
+                use_compact_json=use_compact_json,
+                skip_sandbox_dimension=skip_sandbox_dimension,
+                max_workers=max_workers,
+                async_axis=async_axis,
+                **kwargs)
+
         cellset_id = self.create_cellset(mdx=mdx, sandbox_name=sandbox_name, **kwargs)
         return self.extract_cellset(
             cellset_id=cellset_id,
@@ -1825,11 +1846,60 @@ class CellService(ObjectService):
             skip_sandbox_dimension=skip_sandbox_dimension,
             **kwargs)
 
+    def execute_mdx_async(self, mdx: str, cell_properties: List[str] = None, top: int = None,
+                          skip_contexts: bool = False,
+                          skip: int = None, skip_zeros: bool = False, skip_consolidated_cells: bool = False,
+                          skip_rule_derived_cells: bool = False, sandbox_name: str = None,
+                          element_unique_names: bool = True,
+                          skip_cell_properties: bool = False, use_compact_json: bool = False,
+                          skip_sandbox_dimension: bool = False, max_workers: int = 8, async_axis: int = 0,
+                          **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
+        """ Execute MDX and return the cells with their properties
+
+        :param mdx: MDX Query, as string
+        :param cell_properties: properties to be queried from the cell. E.g. Value, Ordinal, RuleDerived, ...
+        :param top: Int, number of cells to return (counting from top)
+        :param skip: Int, number of cells to skip (counting from top)
+        :param skip_contexts: skip elements from titles / contexts in response
+        :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
+        :param skip_consolidated_cells: skip consolidated cells in cellset
+        :param skip_rule_derived_cells: skip rule derived cells in cellset
+        :param sandbox_name: str
+        :param element_unique_names: '[d1].[h1].[e1]' or 'e1'
+        :param skip_cell_properties: cell values in result dictionary, instead of cell_properties dictionary
+        :param use_compact_json: bool
+        :param skip_sandbox_dimension: bool = False
+        :param max_workers: Int, number of threads to use in parallel
+        :param async_axis: 0 (columns) or 1 (rows). On which axis to parallelize retrieval
+        :return: content in sweet concise structure.
+        """
+        cellset_id = self.create_cellset(mdx=mdx, sandbox_name=sandbox_name, **kwargs)
+
+        return self.extract_cellset_async(
+            cellset_id=cellset_id,
+            cell_properties=cell_properties,
+            top=top,
+            skip=skip,
+            skip_contexts=skip_contexts,
+            skip_zeros=skip_zeros,
+            skip_consolidated_cells=skip_consolidated_cells,
+            skip_rule_derived_cells=skip_rule_derived_cells,
+            delete_cellset=True,
+            sandbox_name=sandbox_name,
+            element_unique_names=element_unique_names,
+            skip_cell_properties=skip_cell_properties,
+            use_compact_json=use_compact_json,
+            skip_sandbox_dimension=skip_sandbox_dimension,
+            max_workers=max_workers,
+            async_axis=async_axis,
+            **kwargs)
+
     def execute_view(self, cube_name: str, view_name: str, private: bool = False, cell_properties: Iterable[str] = None,
                      top: int = None, skip_contexts: bool = False, skip: int = None, skip_zeros: bool = False,
                      skip_consolidated_cells: bool = False, skip_rule_derived_cells: bool = False,
                      sandbox_name: str = None, element_unique_names: bool = True, skip_cell_properties: bool = False,
-                     use_compact_json: bool = False, **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
+                     use_compact_json: bool = False, max_workers: int = 1, async_axis: int = 0,
+                     **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
         """ get view content as dictionary with sweet and concise structure.
             Works on NativeView and MDXView !
 
@@ -1847,9 +1917,27 @@ class CellService(ObjectService):
         :param element_unique_names: '[d1].[h1].[e1]' or 'e1'
         :param sandbox_name: str
         :param skip_cell_properties: cell values in result dictionary, instead of cell_properties dictionary
+        :param max_workers: Int, number of threads to use in parallel
+        :param async_axis: 0 (columns) or 1 (rows). On which axis to parallelize retrieval
         :param use_compact_json: bool
         :return: Dictionary : {([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }
         """
+        if max_workers > 1:
+            return self.execute_view_async(
+                cube_name=cube_name,
+                view_name=view_name,
+                private=private,
+                top=top,
+                skip=skip,
+                skip_contexts=skip_contexts,
+                skip_zeros=skip_zeros,
+                skip_consolidated_cells=skip_consolidated_cells,
+                skip_rule_derived_cells=skip_rule_derived_cells,
+                sandbox_name=sandbox_name,
+                element_unique_names=element_unique_names,
+                skip_cell_properties=skip_cell_properties,
+                max_workers=max_workers,
+                async_axis=async_axis)
         cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
                                                    sandbox_name=sandbox_name, **kwargs)
         return self.extract_cellset(
@@ -1866,6 +1954,52 @@ class CellService(ObjectService):
             element_unique_names=element_unique_names,
             skip_cell_properties=skip_cell_properties,
             use_compact_json=use_compact_json,
+            **kwargs)
+
+    def execute_view_async(self, cube_name: str, view_name: str, private: bool = False,
+                           cell_properties: Iterable[str] = None, top: int = None, skip_contexts: bool = False,
+                           skip: int = None, skip_zeros: bool = False, skip_consolidated_cells: bool = False,
+                           skip_rule_derived_cells: bool = False, sandbox_name: str = None,
+                           element_unique_names: bool = True, skip_cell_properties: bool = False,
+                           max_workers: int = 8, async_axis: int = 0, **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
+        """ get view content as dictionary with sweet and concise structure.
+            Works on NativeView and MDXView !
+
+        :param cube_name: String, name of the cube
+        :param view_name: String, name of the view
+        :param private: True (private) or False (public)
+        :param cell_properties: List, cell properties: [Values, Status, HasPicklist, etc.]
+        :param private: Boolean
+        :param top: Int, number of cells to return (counting from top)
+        :param skip: Int, number of cells to skip (counting from top)
+        :param skip_contexts: skip elements from titles / contexts in response
+        :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
+        :param skip_consolidated_cells: skip consolidated cells in cellset
+        :param skip_rule_derived_cells: skip rule derived cells in cellset
+        :param element_unique_names: '[d1].[h1].[e1]' or 'e1'
+        :param sandbox_name: str
+        :param skip_cell_properties: cell values in result dictionary, instead of cell_properties dictionary
+        :param max_workers: Int, number of threads to use in parallel
+        :param async_axis: 0 (columns) or 1 (rows). On which axis to parallelize retrieval
+        :return: Dictionary : {([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }
+        """
+        cellset_id = self.create_cellset_from_view(cube_name=cube_name, view_name=view_name, private=private,
+                                                   sandbox_name=sandbox_name, **kwargs)
+        return self.extract_cellset_async(
+            cellset_id=cellset_id,
+            cell_properties=cell_properties,
+            top=top,
+            skip=skip,
+            skip_contexts=skip_contexts,
+            skip_zeros=skip_zeros,
+            skip_consolidated_cells=skip_consolidated_cells,
+            skip_rule_derived_cells=skip_rule_derived_cells,
+            delete_cellset=True,
+            sandbox_name=sandbox_name,
+            element_unique_names=element_unique_names,
+            skip_cell_properties=skip_cell_properties,
+            max_workers=max_workers,
+            async_axis=async_axis,
             **kwargs)
 
     def execute_mdx_raw(
@@ -2107,21 +2241,24 @@ class CellService(ObjectService):
                 cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                 skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
                 csv_dialect=csv_dialect, line_separator=line_separator, value_separator=value_separator,
-                sandbox_name=sandbox_name, include_attributes=include_attributes, mdx_headers=mdx_headers, **kwargs)
+                sandbox_name=sandbox_name, include_attributes=include_attributes, mdx_headers=mdx_headers,
+                **kwargs)
 
         return self.extract_cellset_csv(
             cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
             skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
             csv_dialect=csv_dialect, line_separator=line_separator, value_separator=value_separator,
             sandbox_name=sandbox_name, include_attributes=include_attributes,
-            use_compact_json=use_compact_json, mdx_headers=mdx_headers, **kwargs)
+            use_compact_json=use_compact_json, mdx_headers=mdx_headers,
+            **kwargs)
 
     def execute_view_csv(self, cube_name: str, view_name: str, private: bool = False, top: int = None, skip: int = None,
                          skip_zeros: bool = True, skip_consolidated_cells: bool = False,
                          skip_rule_derived_cells: bool = False, csv_dialect: 'csv.Dialect' = None,
                          line_separator: str = "\r\n", value_separator: str = ",", sandbox_name: str = None,
                          use_iterative_json: bool = False, use_compact_json: bool = False, use_blob: bool = False,
-                         arranged_axes: Tuple[List, List, List] = None, mdx_headers: bool = False, **kwargs) -> str:
+                         arranged_axes: Tuple[List, List, List] = None, mdx_headers: bool = False,
+                         **kwargs) -> str:
         """ Optimized for performance. Get csv string of coordinates and values.
 
         :param cube_name: String, name of the cube
@@ -2145,7 +2282,7 @@ class CellService(ObjectService):
          Allows function to skip retrieval of cellset composition.
          E.g.: arranged_axes=(["Year"], ["Region","Product"], ["Period", "Version"])
         :param mdx_headers: boolean, fully qualified hierarchy name as header instead of simple dimension name
-        :return: String
+        :return: dict, String
         """
         if use_blob:
             if use_iterative_json:
@@ -2227,6 +2364,10 @@ class CellService(ObjectService):
                               sandbox_name: str = None, include_attributes: bool = False,
                               use_iterative_json: bool = False, use_compact_json: bool = False,
                               use_blob: bool = False, shaped: bool = False, mdx_headers: bool = False,
+                              fillna_numeric_attributes: bool = False,
+                              fillna_numeric_attributes_value: Any = 0,
+                              fillna_string_attributes: bool = False,
+                              fillna_string_attributes_value: Any = '',
                               **kwargs) -> 'pd.DataFrame':
         """ Optimized for performance. Get Pandas DataFrame from MDX Query.
 
@@ -2250,13 +2391,28 @@ class CellService(ObjectService):
         :param use_blob: Has better performance on datasets > 1M cells and lower memory footprint in any case.
         :param shaped: preserve shape of view/mdx in data frame
         :param mdx_headers: boolean, fully qualified hierarchy name as header instead of simple dimension name
+        :param fillna_numeric_attributes: boolean, fills empty numerical attributes with fillna_numeric_attributes_value
+        :param fillna_string_attributes: boolean, fills empty string attributes with fillna_string_attributes_value
+        :param fillna_numeric_attributes_value: Any, value with which to replace na if fillna_numeric_attributes is True
+        :param fillna_string_attributes_value: Any, value with which to replace na if fillna_string_attributes is True
         :return: Pandas Dataframe
         """
+        if (fillna_numeric_attributes or fillna_string_attributes) and not include_attributes:
+            raise ValueError('Include attributes must be True if fillna_numeric or fillna_string is True.')
+
         # necessary to assure column order in line with cube view
         if shaped:
             skip_zeros = False
 
         if use_blob:
+            if any([
+                fillna_numeric_attributes,
+                fillna_numeric_attributes_value,
+                fillna_string_attributes,
+                fillna_string_attributes_value]
+            ):
+                raise ValueError("fillna attributes' feature must not be used with use_blob as True")
+
             raw_csv = self.execute_mdx_csv(
                 mdx=mdx,
                 top=top,
@@ -2279,7 +2435,12 @@ class CellService(ObjectService):
                                               skip_rule_derived_cells=skip_rule_derived_cells,
                                               sandbox_name=sandbox_name, include_attributes=include_attributes,
                                               use_iterative_json=use_iterative_json, use_compact_json=use_compact_json,
-                                              shaped=shaped, mdx_headers=mdx_headers, **kwargs)
+                                              shaped=shaped, mdx_headers=mdx_headers,
+                                              fillna_numeric_attributes=fillna_numeric_attributes,
+                                              fillna_numeric_attributes_value=fillna_numeric_attributes_value,
+                                              fillna_string_attributes=fillna_string_attributes,
+                                              fillna_string_attributes_value=fillna_string_attributes_value,
+                                              **kwargs)
 
     @require_pandas
     def execute_mdx_dataframe_async(self, mdx_list: List[Union[str, MdxBuilder]], max_workers: int = 8,
@@ -2799,7 +2960,7 @@ class CellService(ObjectService):
                                         sandbox_name=sandbox_name,
                                         use_compact_json=use_compact_json,
                                         **kwargs)
-        return Utils.build_ui_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision)
+        return Utils.build_ui_arrays_from_cellset(raw_cellset_as_dict=data, value_precision=value_precision, top=top)
 
     def execute_view_ui_array(
             self,
@@ -3025,7 +3186,7 @@ class CellService(ObjectService):
                                                      skip_contexts=skip_contexts,
                                                      include_hierarchies=include_hierarchies,
                                                      sandbox_name=sandbox_name,
-                                                     **kwargs)
+                                                     **{**kwargs, 'delete_cellset': False})
         cells = self.extract_cellset_cells_raw(cellset_id=cellset_id,
                                                cell_properties=cell_properties,
                                                top=top,
@@ -3040,6 +3201,7 @@ class CellService(ObjectService):
         # Combine metadata and cells back into a single object
         return {**metadata, **cells}
 
+    @tidy_cellset
     def extract_cellset_metadata_raw(
             self,
             cellset_id: str,
@@ -3050,6 +3212,7 @@ class CellService(ObjectService):
             skip_contexts: bool = False,
             include_hierarchies: bool = False,
             sandbox_name: str = None,
+            delete_cellset: bool = False,
             **kwargs):
 
         # select Name property if member_properties is None or empty.
@@ -3286,7 +3449,7 @@ class CellService(ObjectService):
             return result_list
 
         # Extract non-asynchronous axis
-        axes = _extract_cellset_axis_raw(axis=1-async_axis)
+        axes = _extract_cellset_axis_raw(axis=1 - async_axis)
         # Extract tuples for asynchronous axis
         async_axis_tuples = asyncio.run(_extract_cellset_axes_raw_async())
         # Combine results
@@ -3358,7 +3521,7 @@ class CellService(ObjectService):
 
         async def _extract_cellset_cells_raw_async():
             cellcount = self.extract_cellset_cellcount(cellset_id=cellset_id, sandbox_name=sandbox_name,
-                                                            delete_cellset=False)
+                                                       delete_cellset=False)
             partition_size = math.ceil(cellcount / max_workers)
             loop = asyncio.get_event_loop()
             result_list = []
@@ -3374,6 +3537,16 @@ class CellService(ObjectService):
         cells = asyncio.run(_extract_cellset_cells_raw_async())
 
         return cells
+
+    @tidy_cellset
+    def extract_cellset_cube_with_dimensions(self, cellset_id: str, **kwargs):
+        url = format_url(
+            "/Cellsets('{}')?$expand=Cube($select=Dimensions;$expand=Dimensions($select=Name))",
+            cellset_id)
+
+        response = self._rest.GET(url=url, **kwargs)
+
+        return response.json()
 
     @tidy_cellset
     @odata_compact_json(return_as_dict=False)
@@ -3475,6 +3648,7 @@ class CellService(ObjectService):
         url = "/Cellsets('{}')?$expand=" \
               "Cube($select=Name)," \
               "Axes($expand=Hierarchies($select=UniqueName))".format(cellset_id)
+
         url = add_url_parameters(url, **{"!sandbox": sandbox_name})
         response = self._rest.GET(url=url, **kwargs)
         response_json = response.json()
@@ -3543,15 +3717,13 @@ class CellService(ObjectService):
         :param mdx_headers: boolean. Fully qualified hierarchy name as header instead of simple dimension name
         :return: Raw format from TM1.
         """
-        if 'delete_cellset' in kwargs:
-            delete_cellset = kwargs.pop('delete_cellset')
-        else:
-            delete_cellset = True
+        delete_cellset = kwargs.pop('delete_cellset', True)
 
-        _, _, rows, columns = self.extract_cellset_composition(
+        cube, _, rows, columns = self.extract_cellset_composition(
             cellset_id,
             delete_cellset=False,
-            sandbox_name=sandbox_name, **kwargs)
+            sandbox_name=sandbox_name,
+            **kwargs)
 
         cellset_dict = self.extract_cellset_raw(
             cellset_id,
@@ -3661,6 +3833,7 @@ class CellService(ObjectService):
                                 'Axes.item.Ordinal']
 
         attributes_prefixes = set()
+        attributes_by_dimension = None
         if include_attributes:
             attributes_by_dimension = self._get_attributes_by_dimension(cube)
             for _, attributes in attributes_by_dimension.items():
@@ -3760,6 +3933,10 @@ class CellService(ObjectService):
             use_compact_json: bool = False,
             shaped: bool = False,
             mdx_headers: bool = False,
+            fillna_numeric_attributes: bool = False,
+            fillna_numeric_attributes_value: Any = 0,
+            fillna_string_attributes: bool = False,
+            fillna_string_attributes_value: Any = '',
             **kwargs) -> 'pd.DataFrame':
         """ Build pandas data frame from cellset_id
 
@@ -3791,9 +3968,61 @@ class CellService(ObjectService):
                 cellset_id=cellset_id, top=top, skip=skip, skip_zeros=skip_zeros,
                 skip_rule_derived_cells=skip_rule_derived_cells, skip_consolidated_cells=skip_consolidated_cells,
                 value_separator='~', sandbox_name=sandbox_name, include_attributes=include_attributes,
-                use_compact_json=use_compact_json, mdx_headers=mdx_headers, **kwargs)
+                use_compact_json=use_compact_json, mdx_headers=mdx_headers,
+                # dont delete cellset if attribute types must be retrieved later
+                delete_cellset=not any([fillna_string_attributes, fillna_string_attributes]), **kwargs)
 
-        return build_dataframe_from_csv(raw_csv, sep="~", shaped=shaped, **kwargs)
+        attribute_types_by_dimension = None
+        if fillna_string_attributes or fillna_string_attributes:
+            attribute_types_by_dimension = self._extract_attribute_types_by_dimension(
+                cellset_id=cellset_id,
+                sandbox_name=sandbox_name,
+                delete_cellset=True,
+                **kwargs)
+
+        return build_dataframe_from_csv(raw_csv, sep="~", shaped=shaped,
+                                        fillna_numeric_attributes=fillna_numeric_attributes,
+                                        fillna_string_attributes=fillna_string_attributes,
+                                        fillna_numeric_attributes_value=fillna_numeric_attributes_value,
+                                        fillna_string_attributes_value=fillna_string_attributes_value,
+                                        attribute_types_by_dimension=attribute_types_by_dimension, **kwargs)
+
+    def _extract_attribute_types_by_dimension(self, cellset_id: str, sandbox_name: str, delete_cellset: bool, **kwargs):
+        attribute_types_by_dimension = {}
+
+        _, _, rows, columns = self.extract_cellset_composition(
+            cellset_id,
+            delete_cellset=False,
+            sandbox_name=sandbox_name, **kwargs)
+
+        metadata = self.extract_cellset_metadata_raw(
+            cellset_id=cellset_id,
+            elem_properties=['Name'],
+            member_properties=['Name', 'Attributes'],
+            top=1,
+            skip=0,
+            skip_contexts=True,
+            include_hierarchies=False,
+            sandbox_name=sandbox_name,
+            delete_cellset=delete_cellset,
+            **kwargs)
+        # gets the attribute names from the first member from the first tuple of each axis.
+        attributes_by_dimension = dict(zip(
+            rows + columns,
+            [list(member['Attributes'].keys()) for axes in metadata['Axes'][::-1] for member in
+             axes['Tuples'][0]['Members']]))
+        element_service = self.get_element_service()
+        for dimension in rows + columns:
+            attribute_types_by_dimension[dimension] = element_service.get_element_types(
+                '}ElementAttributes_' + dimension.split('].[')[0][1:],
+                '}ElementAttributes_' + dimension.split('].[')[0][1:])
+
+            attribute_types_by_dimension[dimension] = {
+                attribute_name: attribute_type for attribute_name, attribute_type in
+                attribute_types_by_dimension[dimension].items()
+                if attribute_name in attributes_by_dimension[dimension]}
+
+        return attribute_types_by_dimension
 
     @tidy_cellset
     @require_pandas
@@ -3970,6 +4199,82 @@ class CellService(ObjectService):
             include_hierarchies=False,
             use_compact_json=use_compact_json,
             **kwargs)
+
+        return Utils.build_content_from_cellset_dict(
+            raw_cellset_as_dict=raw_cellset,
+            top=top,
+            element_unique_names=element_unique_names,
+            skip_cell_properties=skip_cell_properties,
+            skip_sandbox_dimension=skip_sandbox_dimension)
+
+    def extract_cellset_async(
+            self,
+            cellset_id: str,
+            cell_properties: Iterable[str] = None,
+            top: int = None,
+            skip: int = None,
+            delete_cellset: bool = True,
+            skip_contexts: bool = False,
+            skip_zeros: bool = False,
+            skip_consolidated_cells: bool = False,
+            skip_rule_derived_cells: bool = False,
+            sandbox_name: str = None,
+            element_unique_names: bool = True,
+            skip_cell_properties: bool = False,
+            skip_sandbox_dimension: bool = False,
+            max_workers: int = 8,
+            async_axis: int = 1,
+            **kwargs) -> CaseAndSpaceInsensitiveTuplesDict:
+        """ Execute cellset and return the cells with their properties
+
+        :param skip_contexts:
+        :param delete_cellset:
+        :param cellset_id:
+        :param cell_properties: properties to be queried from the cell. E.g. Value, Ordinal, RuleDerived, ...
+        :param top: Int, number of cells to return (counting from top)
+        :param skip: Int, number of cells to skip (counting from top)
+        :param skip_zeros: skip zeros in cellset (irrespective of zero suppression in MDX / view)
+        :param skip_consolidated_cells: skip consolidated cells in cellset
+        :param skip_rule_derived_cells: skip rule derived cells in cellset
+        :param sandbox_name: str
+        :param element_unique_names: '[d1].[h1].[e1]' or 'e1'
+        :param skip_cell_properties: cell values in result dictionary, instead of cell_properties dictionary
+        :param skip_sandbox_dimension: skip sandbox dimension
+        :param max_workers: Int, number of threads to use in parallel
+        :param async_axis: 0 (columns) or 1 (rows). On which axis to parallelize retrieval
+        :return: Content in sweet concise structure.
+        """
+        if not cell_properties:
+            cell_properties = ['Value']
+
+        axes = self.extract_cellset_axes_raw_async(
+            cellset_id=cellset_id,
+            async_axis=async_axis,
+            max_workers=max_workers,
+            elem_properties=["UniqueName"],
+            member_properties=["UniqueName"],
+            top=top,
+            skip=skip,
+            skip_contexts=skip_contexts,
+            sandbox_name=sandbox_name,
+            **kwargs)
+
+        cells = self.extract_cellset_cells_raw_async(
+            cellset_id=cellset_id,
+            max_workers=max_workers,
+            cell_properties=cell_properties,
+            skip_zeros=skip_zeros,
+            skip_consolidated_cells=skip_consolidated_cells,
+            skip_rule_derived_cells=skip_rule_derived_cells,
+            sandbox_name=sandbox_name,
+            **kwargs)
+
+        # cube with dimension names is required from transformation later on
+        cube_dimensions = self.extract_cellset_cube_with_dimensions(
+            cellset_id=cellset_id,
+            delete_cellset=delete_cellset)
+
+        raw_cellset = {**cube_dimensions, **axes, **cells}
 
         return Utils.build_content_from_cellset_dict(
             raw_cellset_as_dict=raw_cellset,

@@ -1,10 +1,23 @@
 import pickle
 
-from TM1py.Services import HierarchyService, SecurityService, ApplicationService, SubsetService, ServerService, \
-    MonitoringService, ProcessService, PowerBiService, AnnotationService, ViewService, RestService, CellService, \
-    ChoreService, DimensionService, CubeService, ElementService, SandboxService, GitService
-from TM1py.Services.FileService import FileService
 
+from TM1py.Services import HierarchyService, SecurityService, ApplicationService, SubsetService, \
+     ProcessService, AnnotationService, ViewService, RestService, CellService, \
+     ChoreService, DimensionService, CubeService, ElementService, SandboxService, GitService
+from TM1py.Services.FileService import FileService
+from TM1py.Services.JobService import JobService
+from TM1py.Services.UserService import UserService
+from TM1py.Services.ThreadService import ThreadService
+from TM1py.Services.SessionService import SessionService
+from TM1py.Services.TransactionLogService import TransactionLogService
+from TM1py.Services.MessageLogService import MessageLogService
+from TM1py.Services.ConfigurationService import ConfigurationService
+from TM1py.Services.AuditLogService import AuditLogService
+from TM1py.Services.LoggerService import LoggerService
+
+from TM1py.Services.PowerBiService import PowerBiService
+from TM1py.Services.ServerService import ServerService
+from TM1py.Services.MonitoringService import MonitoringService
 
 class TM1Service:
     """ All features of TM1py are exposed through this service
@@ -59,16 +72,27 @@ class TM1Service:
         self.elements = ElementService(self._tm1_rest)
         self.git = GitService(self._tm1_rest)
         self.hierarchies = HierarchyService(self._tm1_rest)
-        self.monitoring = MonitoringService(self._tm1_rest)
-        self.power_bi = PowerBiService(self._tm1_rest)
         self.processes = ProcessService(self._tm1_rest)
         self.security = SecurityService(self._tm1_rest)
-        self.server = ServerService(self._tm1_rest)
         self.subsets = SubsetService(self._tm1_rest)
         self.applications = ApplicationService(self._tm1_rest)
         self.views = ViewService(self._tm1_rest)
         self.sandboxes = SandboxService(self._tm1_rest)
         self.files = FileService(self._tm1_rest)
+        self.jobs = JobService(self._tm1_rest)
+        self.users = UserService(self._tm1_rest)
+        self.threads = ThreadService(self._tm1_rest)
+        self.sessions = SessionService(self._tm1_rest)
+        self.transaction_logs = TransactionLogService(self._tm1_rest)
+        self.message_logs = MessageLogService(self._tm1_rest)
+        self.configuration = ConfigurationService(self._tm1_rest)
+        self.audit_logs = AuditLogService(self._tm1_rest)
+
+        #higher level modules
+        self.server = ServerService(self._tm1_rest)
+        self.monitoring = MonitoringService(self._tm1_rest)
+        self.power_bi = PowerBiService(self._tm1_rest)
+        self.loggers = LoggerService(self._tm1_rest)
 
     def logout(self, **kwargs):
         self._tm1_rest.logout(**kwargs)
@@ -82,6 +106,10 @@ class TM1Service:
     @property
     def whoami(self):
         return self.security.get_current_user()
+
+    @property
+    def metadata(self):
+        return self._tm1_rest.get_api_metadata()
 
     @property
     def version(self):

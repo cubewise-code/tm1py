@@ -15,6 +15,7 @@ class TestCubeService(unittest.TestCase):
     prefix = "TM1py_Tests_Cube_"
 
     cube_name = prefix + "some_name"
+    cube_name_to_delete = prefix + "Some_Other_Name"
     control_cube_name = '}' + prefix + 'some_control_cube_name'
     dimension_names = [
         prefix + "dimension1",
@@ -104,7 +105,7 @@ class TestCubeService(unittest.TestCase):
         self.assertFalse(self.tm1.cubes.exists(uuid.uuid4()))
 
     def test_create_delete_cube(self):
-        cube_name = self.prefix + "Some_Other_Name"
+        cube_name = self.cube_name_to_delete
         # element with index 0 is Sandboxes
         dimension_names = self.tm1.dimensions.get_all_names()[1:3]
         cube = Cube(cube_name, dimension_names)
@@ -304,6 +305,8 @@ class TestCubeService(unittest.TestCase):
     @classmethod
     def tearDown(cls):
         cls.tm1.cubes.delete(cls.cube_name)
+        if cls.tm1.cubes.exists(cls.cube_name_to_delete):
+            cls.tm1.cubes.delete(cls.cube_name_to_delete)
         for dimension in cls.dimension_names:
             cls.tm1.dimensions.delete(dimension)
         cls.tm1.logout()

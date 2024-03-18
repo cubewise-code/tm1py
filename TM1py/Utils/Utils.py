@@ -40,6 +40,27 @@ def decohints(decorator: Callable) -> Callable:
 
 
 @decohints
+def odata_track_changes_header(func):
+    """ Higher Order function to handle addition and removal of odata.track-changes HTTP Header
+
+    :param func:
+    :return:
+    """
+
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        # Add header
+        self._rest.add_http_header("Prefer", "odata.track-changes")
+        # Do stuff
+        response = func(self, *args, **kwargs)
+        # Remove Header
+        self._rest.remove_http_header("Prefer")
+        return response
+
+    return wrapper
+
+
+@decohints
 def require_admin(func):
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
@@ -513,7 +534,13 @@ def build_csv_from_cellset_dict(
     return csv_content.getvalue().strip()
 
 
-def build_dataframe_from_csv(raw_csv, sep='~', shaped: bool = False, **kwargs) -> 'pd.DataFrame':
+def build_dataframe_from_csv(raw_csv, sep='~', shaped: bool = False,
+                             fillna_numeric_attributes: bool = False,
+                             fillna_numeric_attributes_value: Any = 0,
+                             fillna_string_attributes: bool = False,
+                             fillna_string_attributes_value: Any = '',
+                             attribute_types_by_dimension: Dict[str, Dict[str, str]] = None,
+                             **kwargs) -> 'pd.DataFrame':
     if not raw_csv:
         return pd.DataFrame()
 
@@ -522,10 +549,33 @@ def build_dataframe_from_csv(raw_csv, sep='~', shaped: bool = False, **kwargs) -
         kwargs['dtype'] = {'Value': None, **{col: str for col in range(999)}}
     try:
         df = pd.read_csv(StringIO(raw_csv), sep=sep, na_values=["", None], keep_default_na=False, **kwargs)
+
     except ValueError:
         # retry with dtype 'str' for results with a mixed value column
         kwargs['dtype'] = {'Value': str, **{col: str for col in range(999)}}
         df = pd.read_csv(StringIO(raw_csv), sep=sep, na_values=["", None], keep_default_na=False, **kwargs)
+
+    if fillna_numeric_attributes:
+        fill_numeric_bool_list = [attr_type.lower() == 'numeric' for dimension, attributes in
+                                  attribute_types_by_dimension.items()
+                                  for attr_type in [dimension] + list(attributes.values())]
+        fill_numeric_bool_list += [False]  # for the value column
+        df = df.apply(
+            lambda col:
+            col.fillna(fillna_numeric_attributes_value) if fill_numeric_bool_list[
+                list(df.columns.values).index(col.name)] else col,
+            axis=0)
+
+    if fillna_string_attributes:
+        fill_string_bool_list = [attr_type.lower() == 'string' for dimension, attributes in
+                                 attribute_types_by_dimension.items()
+                                 for attr_type in [dimension] + list(attributes.values())]
+        fill_string_bool_list += [False]  # for the value column
+        df = df.apply(
+            lambda col:
+            col.fillna(fillna_string_attributes_value) if fill_string_bool_list[
+                list(df.columns.values).index(col.name)] else col,
+            axis=0)
 
     if not shaped:
         return df
@@ -561,7 +611,7 @@ def _build_csv_line_items_from_axis_tuple(members: Dict, include_attributes: boo
         return line_items
 
 
-def build_ui_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precision: int):
+def build_ui_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precision: int, top: int = None):
     """ Transform raw 1,2 or 3-dimension cellset data into concise dictionary
     * Useful for grids or charting libraries that want an array of cell values per row
     * Returns 3-dimensional cell structure for tabbed grids or multiple charts
@@ -589,6 +639,7 @@ def build_ui_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precision: int
         },
     :param raw_cellset_as_dict: raw data from TM1
     :param value_precision: Integer (optional) specifying number of decimal places to return
+    :param top: Int, number of cells to return (counting from top)
     :return: dict : { titles: [], headers: [axis][], cells: { Page0: { Row0: { [row values], Row1: [], ...}, ...}, ...} }
     """
     header_map = build_headers_from_cellset(raw_cellset_as_dict, force_header_dimensionality=3)
@@ -609,6 +660,8 @@ def build_ui_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precision: int
             y_header = headers[1][y]['name']
             row = []
             for x in range(cardinality[0]):
+                if top and top <= ordinal_cells:
+                    break
                 raw_value = raw_cellset_as_dict['Cells'][ordinal_cells]['Value'] or 0
                 if value_precision:
                     row.append(float(value_format_string.format(raw_value)))
@@ -1319,7 +1372,8 @@ class HTTPAdapterWithSocketOptions(HTTPAdapter):
         super(HTTPAdapterWithSocketOptions, self).__init__(*args, **kwargs)
 
     def init_poolmanager(self, *args, **kwargs):
-        if self.socket_options is not None:
+        # must use hasattr here, as socket_options may be not-set in case TM1Service was created with restore_from_file
+        if hasattr(self, "socket_options"):
             kwargs["socket_options"] = self.socket_options
         super(HTTPAdapterWithSocketOptions, self).init_poolmanager(*args, **kwargs)
 
