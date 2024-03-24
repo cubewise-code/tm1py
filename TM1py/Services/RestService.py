@@ -74,16 +74,6 @@ class RestService:
 
     DEFAULT_CONNECTION_POOL_SIZE = 10
 
-    # You can reset the following TCP socket options based on your own use cases when tcp_keepalive is enabled
-    # TCP_KEEPIDLE: Time in seconds until the first keepalive is sent
-    # TCP_KEEPINTVL: How often should the keepalive packet be sent
-    # TCP_KEEPCNT: The max number of keepalive packets to send
-    TCP_SOCKET_OPTIONS = {
-        'TCP_KEEPIDLE': 30,
-        'TCP_KEEPINTVL': 15,
-        'TCP_KEEPCNT': 60
-    }
-
     def __init__(self, **kwargs):
         """ Create an instance of RESTService
         :param address: String - address of the TM1 instance
@@ -112,8 +102,6 @@ class RestService:
         :param timeout: Float - Number of seconds that the client will wait to receive the first byte.
         :param cancel_at_timeout: Abort operation in TM1 when timeout is reached
         :param async_requests_mode: changes internal REST execution mode to avoid 60s timeout on IBM cloud
-        :param tcp_keepalive: maintain the TCP connection all the time, users should choose either async_requests_mode or tcp_keepalive to run a long-run request
-                If both are True, use async_requests_mode by default
         :param connection_pool_size - In a multi threaded environment, you should set this value to a
                 higher number, such as the number of threads
         :param integrated_login: True for IntegratedSecurityMode3
@@ -151,8 +139,6 @@ class RestService:
         self._timeout = None if kwargs.get('timeout', None) is None else float(kwargs.get('timeout'))
         self._cancel_at_timeout = kwargs.get('cancel_at_timeout', False)
         self._async_requests_mode = self.translate_to_boolean(kwargs.get('async_requests_mode', False))
-        # Set tcp_keepalive to False explicitly to turn it off when async_requests_mode is enabled
-        self._tcp_keepalive = self._determine_tcp_keepalive(kwargs.get('tcp_keepalive', False))
         self._connection_pool_size = kwargs.get('connection_pool_size', self.DEFAULT_CONNECTION_POOL_SIZE)
         self._re_connect_on_session_timeout = kwargs.get('re_connect_on_session_timeout', True)
         # is retrieved on demand and then cached
@@ -204,9 +190,6 @@ class RestService:
             return None
 
         return True if case_and_space_insensitive_equals(user, 'ADMIN') else None
-
-    def _determine_tcp_keepalive(self, tcp_keepalive: bool):
-        return self.translate_to_boolean(tcp_keepalive) if self._async_requests_mode is not True else False
 
     def _determine_verify(self, verify: [bool, str] = None) -> [bool, str]:
         if verify is None:
@@ -445,26 +428,9 @@ class RestService:
             return self._construct_s2s_service_and_auth_root()
 
     def _manage_http_adapter(self):
-        if self._tcp_keepalive:
-            # SO_KEEPALIVE: set 1 to enable TCP keepalive
-            socket_options = urllib3.connection.HTTPConnection.default_socket_options + [
-                (socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
-                (socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, self.TCP_SOCKET_OPTIONS['TCP_KEEPIDLE']),
-                (socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, self.TCP_SOCKET_OPTIONS['TCP_KEEPINTVL']),
-                (socket.IPPROTO_TCP, socket.TCP_KEEPCNT, self.TCP_SOCKET_OPTIONS['TCP_KEEPCNT'])]
-
-            if self._connection_pool_size is not None:
-                adapter = HTTPAdapterWithSocketOptions(
-                    pool_connections=int(self._connection_pool_size),
-                    pool_maxsize=int(self._connection_pool_size),
-                    socket_options=socket_options)
-            else:
-                adapter = HTTPAdapterWithSocketOptions(socket_options=socket_options)
-
-        else:
-            adapter = HTTPAdapterWithSocketOptions(
-                pool_connections=int(self._connection_pool_size or self.DEFAULT_CONNECTION_POOL_SIZE),
-                pool_maxsize=int(self._connection_pool_size))
+        adapter = HTTPAdapterWithSocketOptions(
+            pool_connections=int(self._connection_pool_size or self.DEFAULT_CONNECTION_POOL_SIZE),
+            pool_maxsize=int(self._connection_pool_size))
 
         self._s.mount(self._base_url, adapter)
 
