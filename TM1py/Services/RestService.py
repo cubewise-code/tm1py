@@ -11,6 +11,7 @@ from http.cookies import SimpleCookie
 from io import BytesIO
 from json import JSONDecodeError
 from typing import Union, Dict, Tuple, Optional
+from ast import literal_eval
 
 import requests
 import urllib3
@@ -40,6 +41,7 @@ class AuthenticationMode(Enum):
     CAM_SSO = 4
     IBM_CLOUD_API_KEY = 5
     SERVICE_TO_SERVICE = 6
+    PA_PROXY = 7
 
     @property
     def use_v12_auth(self):
@@ -94,6 +96,7 @@ class RestService:
         :param api_key: String - planing analytics engine (v12) API Key from https://cloud.ibm.com/iam/apikeys
         :param iam_url: String - planing analytics engine (v12) IBM Cloud IAM URL. Default: "https://iam.cloud.ibm.com"
         :param pa_url: String - planing analytics engine (v12) PA URL e.g., "https://us-east-2.aws.planninganalytics.ibm.com"
+        :param cpd_url: String - cloud pack for data url (aka ZEN) CPD URL e.g., "https://cpd-zen.apps.cp4dpa-test11.cp.fyre.ibm.com"
         :param tenant: String - planing analytics engine (v12) Tenant e.g., YC4B2M1AG2Y6
         :param session_context: String - Name of the Application. Controls "Context" column in Arc / TM1top.
                 If None, use default: TM1py
@@ -132,7 +135,9 @@ class RestService:
         self._api_key = kwargs.get('api_key', None)
         self._iam_url = kwargs.get('iam_url', None)
         self._pa_url = kwargs.get('pa_url', None)
+        self._cpd_url = kwargs.get('cpd_url', None)
         self._tenant = kwargs.get('tenant', None)
+        self._user = kwargs.get('user', None)
 
         # other arguments
         self._auth_mode = self._determine_auth_mode()
@@ -265,12 +270,13 @@ class RestService:
                                                **kwargs)
 
             else:
-                additional_header = {'Prefer': 'respond-async'}
+                additional_header = {'Prefer': f'respond-async'}
                 http_headers = kwargs.get('headers', dict())
                 http_headers.update(additional_header)
                 kwargs['headers'] = http_headers
                 response = self._s.request(method=method, url=url, data=data, verify=self._verify, timeout=timeout,
                                            **kwargs)
+
                 # reconnect in case of session timeout
                 if self._re_connect_on_session_timeout and response.status_code == 401:
                     self.connect()
@@ -358,6 +364,21 @@ class RestService:
 
         return base_url, auth_url
 
+    def _construct_pa_proxy_service_and_auth_root(self) -> Tuple[str, str]:
+        if not all([self._address, self._database]):
+            raise ValueError("'address' and 'database' must be provided to connect to TM1 > v12 using PA Proxy")
+
+        base_url = "http{}://{}/tm1/{}/api/v1".format(
+            's' if self._ssl else '',
+            self._address,
+            self._database)
+
+        auth_url = "http{}://{}/login".format(
+            's' if self._ssl else '',
+            self._address)
+
+        return base_url, auth_url
+
     def _construct_s2s_service_and_auth_root(self) -> Tuple[str, str]:
         if not all([self._instance, self._database]):
             raise ValueError("'Instance' and 'Database' arguments are required for v12 authentication with 'address'")
@@ -422,6 +443,9 @@ class RestService:
 
         if self._auth_mode is AuthenticationMode.IBM_CLOUD_API_KEY:
             return self._construct_ibm_cloud_service_and_auth_root()
+
+        if self._auth_mode is AuthenticationMode.PA_PROXY:
+            return self._construct_pa_proxy_service_and_auth_root()
 
         # If an address and database and instances are specified then we create a CP4D connection
         elif self._auth_mode is AuthenticationMode.SERVICE_TO_SERVICE:
@@ -620,7 +644,7 @@ class RestService:
     def logout(self, timeout: float = None, **kwargs):
         """ End TM1 Session and HTTP session
         """
-        # Easier to ask for forgiveness than permission
+
         try:
             # ProductVersion >= TM1 10.2.2 FP 6
             self.POST('/ActiveSession/tm1.Close', '', headers={"Connection": "close"}, timeout=timeout,
@@ -628,6 +652,9 @@ class RestService:
         except TM1pyRestException:
             # ProductVersion < TM1 10.2.2 FP 6
             self.POST('/api/logout', '', headers={"Connection": "close"}, timeout=timeout, **kwargs)
+
+        except requests.exceptions.ConnectionError as ce:
+            print(f"Logout Failed {ce}")
         finally:
             self._s.close()
 
@@ -661,6 +688,11 @@ class RestService:
         elif self._auth_mode == AuthenticationMode.SERVICE_TO_SERVICE:
             application_auth = HTTPBasicAuth(application_client_id, application_client_secret)
             self._s.auth = application_auth
+
+        #Get the JWT token from the CPD URL
+        elif self._auth_mode == AuthenticationMode.PA_PROXY:
+            credentials = {"username": user, "password": password}
+            jwt = self._generate_cpd_access_token(credentials)
 
         elif self._auth_mode == AuthenticationMode.IBM_CLOUD_API_KEY:
             access_token = self._generate_ibm_iam_cloud_access_token()
@@ -708,7 +740,18 @@ class RestService:
                             "using this TM1Service will use the session id extracted from the first response "
                             "Check the tm1-gateway domain settings are correct"
                             "in the container orchestrator ")
-
+                elif self._auth_mode == AuthenticationMode.PA_PROXY:
+                    header = {'Content-Type': 'application/x-www-form-urlencoded'}
+                    payload = f"jwt={jwt}"
+                    response = self._s.post(
+                                        url=self._auth_url,
+                                        headers=header,
+                                        verify=self._verify,
+                                        timeout=self._timeout,
+                                        data=payload)
+                    self.verify_response(response)
+                    csrf_cookie = response.cookies.get_dict(self._address, '/')['ba-sso-csrf']
+                    self.add_http_header('ba-sso-authenticity', csrf_cookie)
                 else:
                     response = self._s.get(
                         url=self._auth_url,
@@ -1027,7 +1070,19 @@ class RestService:
         if self._iam_url:
             return AuthenticationMode.IBM_CLOUD_API_KEY
 
+        if self._address and self._user and not self._instance:
+            return AuthenticationMode.PA_PROXY
+
         return AuthenticationMode.SERVICE_TO_SERVICE
+
+    def _generate_cpd_access_token(self, credentials) -> str:
+        if not all([self._cpd_url]):
+            raise ValueError('cpd_url must be provided to authenticate via PA Proxy')
+        url = f"{self._cpd_url}/v1/preauth/signin"
+        headers = {'Content-Type': 'application/json;charset=UTF-8'}
+        response = requests.request("POST", url, headers=headers, json=credentials, verify=self._verify)
+        jwt = literal_eval(response.content.decode('utf8'))
+        return jwt['token']
 
     def _generate_ibm_iam_cloud_access_token(self) -> str:
         if not all([self._iam_url, self._api_key]):
