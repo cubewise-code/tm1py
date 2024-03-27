@@ -462,7 +462,10 @@ class RestService:
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
-        self.logout()
+        try:
+            self.logout()
+        except Exception as e:
+            warnings.warn(f"Logout Failed due to Exception: {e}")
 
     def GET(
             self,
@@ -646,15 +649,8 @@ class RestService:
         """
 
         try:
-            # ProductVersion >= TM1 10.2.2 FP 6
             self.POST('/ActiveSession/tm1.Close', '', headers={"Connection": "close"}, timeout=timeout,
                       async_requests_mode=False, **kwargs)
-        except TM1pyRestException:
-            # ProductVersion < TM1 10.2.2 FP 6
-            self.POST('/api/logout', '', headers={"Connection": "close"}, timeout=timeout, **kwargs)
-
-        except requests.exceptions.ConnectionError as ce:
-            print(f"Logout Failed {ce}")
         finally:
             self._s.close()
 
