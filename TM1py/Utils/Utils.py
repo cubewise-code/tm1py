@@ -610,7 +610,7 @@ def _build_csv_line_items_from_axis_tuple(members: Dict, include_attributes: boo
         return line_items
 
 
-def build_ui_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precision: int):
+def build_ui_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precision: int, top: int = None):
     """ Transform raw 1,2 or 3-dimension cellset data into concise dictionary
     * Useful for grids or charting libraries that want an array of cell values per row
     * Returns 3-dimensional cell structure for tabbed grids or multiple charts
@@ -638,6 +638,7 @@ def build_ui_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precision: int
         },
     :param raw_cellset_as_dict: raw data from TM1
     :param value_precision: Integer (optional) specifying number of decimal places to return
+    :param top: Int, number of cells to return (counting from top)
     :return: dict : { titles: [], headers: [axis][], cells: { Page0: { Row0: { [row values], Row1: [], ...}, ...}, ...} }
     """
     header_map = build_headers_from_cellset(raw_cellset_as_dict, force_header_dimensionality=3)
@@ -658,6 +659,8 @@ def build_ui_arrays_from_cellset(raw_cellset_as_dict: Dict, value_precision: int
             y_header = headers[1][y]['name']
             row = []
             for x in range(cardinality[0]):
+                if top and top <= ordinal_cells:
+                    break
                 raw_value = raw_cellset_as_dict['Cells'][ordinal_cells]['Value'] or 0
                 if value_precision:
                     row.append(float(value_format_string.format(raw_value)))

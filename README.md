@@ -58,7 +58,7 @@ Usage
 from TM1py.Services import TM1Service
 
 with TM1Service(address='localhost', port=8001, user='admin', password='apple', ssl=True) as tm1:
-    print(tm1.server.get_product_Version())
+    print(tm1.server.get_product_version())
 ```
 
 > TM1 11 on IBM cloud
@@ -72,7 +72,7 @@ with TM1Service(
         ssl=True,
         verify=True,
         async_requests_mode=True) as tm1:
-    print(tm1.server.get_product_Version())
+    print(tm1.server.get_product_version())
 ```
 
 
@@ -85,7 +85,7 @@ with TM1Service(
         iam_url="https://iam.cloud.ibm.com/identity/token",
         tenant="YA9A2T8BS2ZU",
         database="Database") as tm1:
-    print(tm1.server.get_product_Version())
+    print(tm1.server.get_product_version())
 ```
 
 
@@ -101,7 +101,7 @@ with TM1Service(
         user="admin",
         ssl=True) as tm1:
 
-    print(tm1.server.get_product_Version())
+    print(tm1.server.get_product_version())
 ```
 
 
