@@ -1,5 +1,5 @@
 import pickle
-
+import warnings
 
 from TM1py.Services import HierarchyService, SecurityService, ApplicationService, SubsetService, \
      ProcessService, AnnotationService, ViewService, RestService, CellService, \
@@ -99,7 +99,10 @@ class TM1Service:
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
-        self.logout()
+        try:
+            self.logout()
+        except Exception as e:
+            warnings.warn(f"Logout Failed due to Exception: {e}")
 
     @property
     def whoami(self):
