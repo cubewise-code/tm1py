@@ -347,7 +347,8 @@ class ElementService(ObjectService):
                 value_separator="~",
                 use_blob=True,
                 **kwargs)
-            df_data = pd.read_csv(StringIO(raw_csv), sep='~', dtype={0: str})
+
+            df_data = pd.read_csv(StringIO(raw_csv), sep='~', na_filter=False, dtype={0: str})
 
             # Use _group to avoid aggregation of multiple members into one df record
             # example: element A is part of multiple consolidations resulting df must have multiple records for A
