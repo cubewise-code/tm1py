@@ -4,12 +4,12 @@ from enum import Enum
 from io import StringIO
 from typing import List, Union, Iterable, Optional, Dict, Tuple
 
-import numpy as np
 
 from TM1py import Subset, Process
 
 try:
     import pandas as pd
+    import numpy as np
 
     _has_pandas = True
 except ImportError:
