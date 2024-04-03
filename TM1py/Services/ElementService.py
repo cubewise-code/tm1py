@@ -166,6 +166,7 @@ class ElementService(ObjectService):
                                attribute_column_prefix: str = "", skip_parents: bool = False,
                                level_names: List[str] = None, parent_attribute: str = None,
                                skip_weights: bool = False, use_blob: bool = False, allow_empty_alias: bool = True,
+                               attribute_suffix: bool = False, element_type_column: str = 'Type',
                                **kwargs) -> 'pd.DataFrame':
         """
 
@@ -181,6 +182,8 @@ class ElementService(ObjectService):
         :param skip_weights: include weight columns
         :param use_blob: Up to 40% better performance and lower memory footprint in any case. Requires admin permissions
         :param allow_empty_alias: False if empty alias values should be substituted with element names instead
+        :param attribute_suffix: True if attribute columns should have ':a', ':s' or ':n' suffix
+        :param element_type_column: The column name in the df which specifies which element is which type.
         :return: pandas DataFrame
         """
 
@@ -230,7 +233,7 @@ class ElementService(ObjectService):
                   in members
                   if member["Name"] in element_types],
             dtype=str,
-            columns=[dimension_name, 'Type'])
+            columns=[dimension_name, element_type_column])
 
         calculated_members_definition = list()
         calculated_members_selection = list()
@@ -370,7 +373,7 @@ class ElementService(ObjectService):
             df_data = cell_service.execute_mdx_dataframe_shaped(mdx, **kwargs)
 
         if levels_dict:
-            # rename level names to conform sto strandard levels "1" -> "level0001"
+            # rename level names to conform sto standard levels "1" -> "level001"
             df_data.rename(columns=levels_dict, inplace=True)
 
         # format weights
@@ -383,9 +386,17 @@ class ElementService(ObjectService):
 
         # override columns. hierarchy name with dimension and prefix attributes
         column_renaming = dict()
-        if attributes and attribute_column_prefix:
-            column_renaming = {attribute: str(attribute_column_prefix) + attribute for attribute in attributes}
+        if attribute_column_prefix or attribute_suffix:
+            column_renaming = {
+                ea.name: f"{attribute_column_prefix}{ea.name}" + (
+                    f":{ea.attribute_type.lower()[0]}"
+                    if attribute_suffix
+                    else "")
+                for ea
+                in self.get_element_attributes(dimension_name, hierarchy_name)}
+
         column_renaming[hierarchy_name] = dimension_name
+
         df_data.rename(columns=column_renaming, inplace=True)
 
         # shift levels to right hand side
