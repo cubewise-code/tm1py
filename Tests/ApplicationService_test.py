@@ -103,7 +103,6 @@ class TestApplicationService(unittest.TestCase):
                 False)
         cls.tm1.dimensions.hierarchies.subsets.create(subset, False)
 
-
         # Build process
         p1 = Process(name=cls.process_name)
         p1.add_parameter('pRegion', 'pRegion (String)', value='US')
@@ -127,8 +126,10 @@ class TestApplicationService(unittest.TestCase):
 
         # create Folder
         app = FolderApplication("", cls.tm1py_app_folder)
-        if cls.tm1.applications.exists(path=app.path, application_type=app.application_type, name=app.name, private=False):
-            cls.tm1.applications.delete(path=app.path, application_type=app.application_type, application_name=app.name, private=False)
+        if cls.tm1.applications.exists(path=app.path, application_type=app.application_type, name=app.name,
+                                       private=False):
+            cls.tm1.applications.delete(path=app.path, application_type=app.application_type, application_name=app.name,
+                                        private=False)
             cls.tm1.applications.create(application=app, private=False)
         else:
             cls.tm1.applications.create(application=app, private=False)
@@ -251,6 +252,8 @@ class TestApplicationService(unittest.TestCase):
             app = DocumentApplication(path=self.tm1py_app_folder, name=self.document_name, content=file.read())
             self.tm1.applications.create(application=app, private=private)
 
+        self.tm1.applications.update_or_create(application=app, private=private)
+
         app_retrieved = self.tm1.applications.get(app.path, app.application_type, app.name, private=private)
         self.assertEqual(app_retrieved.last_updated[:10], datetime.today().strftime('%Y-%m-%d'))
         if not verify_version(required_version="12", version=self.tm1.version):
@@ -261,6 +264,9 @@ class TestApplicationService(unittest.TestCase):
         exists = self.tm1.applications.exists(
             app.path, name=app.name, application_type=ApplicationTypes.DOCUMENT, private=private)
         self.assertTrue(exists)
+
+        names = self.tm1.applications.get_names(path=self.tm1py_app_folder, private=private)
+        self.assertIn(app.name, names)
 
         self.tm1.applications.rename(app.path, application_type=ApplicationTypes.DOCUMENT,
                                      application_name=app.name, new_application_name=app.name + self.rename_suffix,
@@ -424,7 +430,7 @@ class TestApplicationService(unittest.TestCase):
         exists = self.tm1.applications.exists(
             app.path, name=app.name + self.rename_suffix, application_type=ApplicationTypes.VIEW, private=private)
         self.assertTrue(exists)
-        
+
         self.tm1.applications.delete(app.path, app.application_type, app.name + self.rename_suffix, private=private)
         exists = self.tm1.applications.exists(
             app.path, name=app.name + self.rename_suffix, application_type=ApplicationTypes.VIEW, private=private)
