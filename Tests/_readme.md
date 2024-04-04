@@ -4,6 +4,8 @@
 
 - Use a TM1 development environment
 
+- In `Tests` folder: Copy the file `config.ini.template` with the new name `config.ini`
+
 - Specify your instance coordinates in the config.ini file as `tm1srv01`
 
 - `EnableSandboxDimension` config parameter must be set to `F` for the target TM1 instance
