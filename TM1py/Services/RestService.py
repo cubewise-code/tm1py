@@ -1051,7 +1051,11 @@ class RestService:
             self._tenant
         ]):
             # v11
-            if not any([self._kwargs.get('namespace', None), self._kwargs.get('gateway', None)]):
+            if not any([
+                self._kwargs.get('namespace', None),
+                self._kwargs.get('gateway', None),
+                self._kwargs.get('integrated_login', None)
+            ]):
                 return AuthenticationMode.BASIC
 
             if self._kwargs.get('gateway', None):
