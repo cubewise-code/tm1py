@@ -10,9 +10,33 @@
 
 # Run TM1py Tests
 
-## To run all tests with PyCharm:
+## Run tests via commandline 
+
+### To run all tests
+
+On Windows:
+
+`pytest .\Tests\`
+
+On Linux and macOS:
+
+`pytest ./Tests/`
+
+### To run a specific test file from the `Tests` folder
+
+On Windows:
+
+`pytest .\Tests\ChoreService_test.py`
+
+On Linux and macOS:
+
+`pytest ./Tests/ChoreService_test.py`
+
+## Run tests via PyCharm
+
+### To run all tests
 
 rightclick `Tests` folder -> run 'pytest in Tests'
 
-## To run tests in a given file in the `Tests` folder:
+## To run a specific test file from the `Tests` folder:
 rightclick file (e.g., `ChoreService_test.py`) -> run 'pytest in ChoreService_test.py'
