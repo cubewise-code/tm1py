@@ -39,8 +39,7 @@ class TestAnnotationService(unittest.TestCase):
         cube = Cube(cls.cube_name, cls.dimension_names)
         cls.tm1.cubes.update_or_create(cube)
 
-    @classmethod
-    def setUp(cls):
+    def setUp(self):
         """
         Run before each test to create a test annotation
         """
@@ -48,18 +47,17 @@ class TestAnnotationService(unittest.TestCase):
         random_text = "".join([random.choice(string.printable) for _ in range(100)])
 
         annotation = Annotation(comment_value=random_text,
-                                object_name=cls.cube_name,
+                                object_name=self.cube_name,
                                 dimensional_context=random_intersection)
 
-        cls.annotation_id = cls.tm1.cubes.annotations.create(annotation).json().get("ID")
+        self.annotation_id = self.tm1.cubes.annotations.create(annotation).json().get("ID")
 
-    @classmethod
-    def tearDown(cls):
+    def tearDown(self):
         """
         Run at the end of each test to delete all test annotations
         """
-        for a in cls.tm1.cubes.annotations.get_all(cls.cube_name):
-            cls.tm1.annotations.delete(a.id)
+        for a in self.tm1.cubes.annotations.get_all(self.cube_name):
+            self.tm1.annotations.delete(a.id)
 
     def test_get_all(self):
         """

@@ -26,13 +26,11 @@ class TestDimensionService(unittest.TestCase):
         cls.config.read(Path(__file__).parent.joinpath('config.ini'))
         cls.tm1 = TM1Service(**cls.config['tm1srv01'])
 
-    @classmethod
-    def setUp(cls):
-        cls.create_dimensions()
+    def setUp(self):
+        self.create_dimensions()
 
-    @classmethod
-    def tearDown(cls):
-        cls.delete_dimensions()
+    def tearDown(self):
+        self.delete_dimensions()
 
     @classmethod
     def create_dimensions(cls):

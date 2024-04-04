@@ -190,45 +190,42 @@ class TestCellService(unittest.TestCase):
                 attribute_values[(element.name, "NA")] = "4"
             cls.tm1.cells.write(attribute_cube, attribute_values, use_blob=True)
 
-    @classmethod
-    def setUp(cls):
+    def setUp(self):
         """
         Reset data before each test run
         """
         # set correct version before test, as it is overwritten in a test case
-        cls.tm1._tm1_rest.set_version()
+        self.tm1._tm1_rest.set_version()
 
         # populate data in cube
 
         # cellset of data that shall be written
-        cls.cellset = Utils.CaseAndSpaceInsensitiveTuplesDict()
+        self.cellset = Utils.CaseAndSpaceInsensitiveTuplesDict()
         value = 1
-        for element1, element2, element3 in cls.target_coordinates:
-            cls.cellset[(element1, element2, element3)] = value
+        for element1, element2, element3 in self.target_coordinates:
+            self.cellset[(element1, element2, element3)] = value
 
         # Sum of all the values that we write in the cube. serves as a checksum.
-        cls.total_value = sum(cls.cellset.values())
+        self.total_value = sum(self.cellset.values())
 
         # Fill cube with values
-        cls.tm1.cells.write_values(cls.cube_name, cls.cellset)
+        self.tm1.cells.write_values(self.cube_name, self.cellset)
 
-        cls.tm1.cells.write_values(cls.string_cube_name, cls.cells_in_string_cube)
+        self.tm1.cells.write_values(self.string_cube_name, self.cells_in_string_cube)
 
-        if not cls.tm1.sandboxes.exists(cls.sandbox_name):
-            cls.tm1.sandboxes.create(Sandbox(cls.sandbox_name, True))
+        if not self.tm1.sandboxes.exists(self.sandbox_name):
+            self.tm1.sandboxes.create(Sandbox(self.sandbox_name, True))
 
-        cls._write_attribute_values()
+        self._write_attribute_values()
 
-
-    @classmethod
-    def tearDown(cls):
+    def tearDown(self):
         """
         Clear data from cubes after each test run
         """
-        cls.tm1.processes.execute_ti_code("CubeClearData('" + cls.cube_name + "');")
-        cls.tm1.processes.execute_ti_code("CubeClearData('" + cls.string_cube_name + "');")
-        cls.tm1.processes.execute_ti_code("CubeClearData('" + cls.cube_rps1_name + "');")
-        cls.tm1.processes.execute_ti_code("CubeClearData('" + cls.cube_rps2_name + "');")
+        self.tm1.processes.execute_ti_code("CubeClearData('" + self.cube_name + "');")
+        self.tm1.processes.execute_ti_code("CubeClearData('" + self.string_cube_name + "');")
+        self.tm1.processes.execute_ti_code("CubeClearData('" + self.cube_rps1_name + "');")
+        self.tm1.processes.execute_ti_code("CubeClearData('" + self.cube_rps2_name + "');")
 
     @classmethod
     def build_string_cube(cls):

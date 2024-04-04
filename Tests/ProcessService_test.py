@@ -96,25 +96,23 @@ class TestProcessService(unittest.TestCase):
         with open(Path(__file__).parent.joinpath('resources', 'Bedrock.Server.Wait.json'), 'r') as file:
             cls.p_bedrock_server_wait = Process.from_json(file.read())
 
-    @classmethod
-    def setUp(cls):
-        cls.tm1.processes.update_or_create(cls.p_none)
-        cls.tm1.processes.update_or_create(cls.p_ascii)
-        cls.tm1.processes.update_or_create(cls.p_view)
-        cls.tm1.processes.update_or_create(cls.p_odbc)
-        cls.tm1.processes.update_or_create(cls.p_subset)
-        cls.tm1.processes.update_or_create(cls.p_debug)
-        cls.tm1.processes.update_or_create(cls.p_error)
+    def setUp(self):
+        self.tm1.processes.update_or_create(self.p_none)
+        self.tm1.processes.update_or_create(self.p_ascii)
+        self.tm1.processes.update_or_create(self.p_view)
+        self.tm1.processes.update_or_create(self.p_odbc)
+        self.tm1.processes.update_or_create(self.p_subset)
+        self.tm1.processes.update_or_create(self.p_debug)
+        self.tm1.processes.update_or_create(self.p_error)
 
-    @classmethod
-    def tearDown(cls):
-        cls.tm1.processes.delete(cls.p_none.name)
-        cls.tm1.processes.delete(cls.p_ascii.name)
-        cls.tm1.processes.delete(cls.p_view.name)
-        cls.tm1.processes.delete(cls.p_odbc.name)
-        cls.tm1.processes.delete(cls.p_subset.name)
-        cls.tm1.processes.delete(cls.p_debug.name)
-        cls.tm1.processes.delete(cls.p_error.name)
+    def tearDown(self):
+        self.tm1.processes.delete(self.p_none.name)
+        self.tm1.processes.delete(self.p_ascii.name)
+        self.tm1.processes.delete(self.p_view.name)
+        self.tm1.processes.delete(self.p_odbc.name)
+        self.tm1.processes.delete(self.p_subset.name)
+        self.tm1.processes.delete(self.p_debug.name)
+        self.tm1.processes.delete(self.p_error.name)
 
     def test_update_or_create(self):
         if self.tm1.processes.exists(self.p_bedrock_server_wait.name):

@@ -22,40 +22,39 @@ class TestCubeService(unittest.TestCase):
         prefix + "dimension2",
         prefix + "dimension3"]
 
-    @classmethod
-    def setUp(cls):
+    def setUp(self):
 
         # Connection to TM1
-        cls.config = configparser.ConfigParser()
-        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
-        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        self.config = configparser.ConfigParser()
+        self.config.read(Path(__file__).parent.joinpath('config.ini'))
+        self.tm1 = TM1Service(**self.config['tm1srv01'])
 
-        for dimension_name in cls.dimension_names:
+        for dimension_name in self.dimension_names:
             elements = [Element('Element {}'.format(str(j)), 'Numeric') for j in range(1, 1001)]
             hierarchy = Hierarchy(dimension_name=dimension_name,
                                   name=dimension_name,
                                   elements=elements)
             dimension = Dimension(dimension_name, [hierarchy])
-            if not cls.tm1.dimensions.exists(dimension.name):
-                cls.tm1.dimensions.create(dimension)
+            if not self.tm1.dimensions.exists(dimension.name):
+                self.tm1.dimensions.create(dimension)
 
         # Build Cube
-        cube = Cube(cls.cube_name, cls.dimension_names)
-        if not cls.tm1.cubes.exists(cls.cube_name):
-            cls.tm1.cubes.create(cube)
-        c = Cube(cls.cube_name, dimensions=cls.dimension_names, rules=Rules(''))
-        if cls.tm1.cubes.exists(c.name):
-            cls.tm1.cubes.delete(c.name)
-        cls.tm1.cubes.create(c)
+        cube = Cube(self.cube_name, self.dimension_names)
+        if not self.tm1.cubes.exists(self.cube_name):
+            self.tm1.cubes.create(cube)
+        c = Cube(self.cube_name, dimensions=self.dimension_names, rules=Rules(''))
+        if self.tm1.cubes.exists(c.name):
+            self.tm1.cubes.delete(c.name)
+        self.tm1.cubes.create(c)
 
         # Build Control Cube
-        control_cube = Cube(cls.control_cube_name, cls.dimension_names)
-        if not cls.tm1.cubes.exists(cls.control_cube_name):
-            cls.tm1.cubes.create(control_cube)
-        c = Cube(cls.control_cube_name, dimensions=cls.dimension_names, rules=Rules(''))
-        if cls.tm1.cubes.exists(c.name):
-            cls.tm1.cubes.delete(c.name)
-        cls.tm1.cubes.create(c)
+        control_cube = Cube(self.control_cube_name, self.dimension_names)
+        if not self.tm1.cubes.exists(self.control_cube_name):
+            self.tm1.cubes.create(control_cube)
+        c = Cube(self.control_cube_name, dimensions=self.dimension_names, rules=Rules(''))
+        if self.tm1.cubes.exists(c.name):
+            self.tm1.cubes.delete(c.name)
+        self.tm1.cubes.create(c)
 
     def test_get_cube(self):
         c = self.tm1.cubes.get(self.cube_name)
@@ -302,14 +301,13 @@ class TestCubeService(unittest.TestCase):
 
         self.assertEqual(self.dimension_names[-1], measure_dimension)
 
-    @classmethod
-    def tearDown(cls):
-        cls.tm1.cubes.delete(cls.cube_name)
-        if cls.tm1.cubes.exists(cls.cube_name_to_delete):
-            cls.tm1.cubes.delete(cls.cube_name_to_delete)
-        for dimension in cls.dimension_names:
-            cls.tm1.dimensions.delete(dimension)
-        cls.tm1.logout()
+    def tearDown(self):
+        self.tm1.cubes.delete(self.cube_name)
+        if self.tm1.cubes.exists(self.cube_name_to_delete):
+            self.tm1.cubes.delete(self.cube_name_to_delete)
+        for dimension in self.dimension_names:
+            self.tm1.dimensions.delete(dimension)
+        self.tm1.logout()
 
 
 if __name__ == '__main__':

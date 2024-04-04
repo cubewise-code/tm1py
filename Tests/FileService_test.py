@@ -12,17 +12,16 @@ class TestFileService(unittest.TestCase):
     FILE_NAME1 = "TM1py_unittest_file1"
     FILE_NAME2 = "TM1py_unittest_file2"
 
-    @classmethod
-    def setUp(cls) -> None:
-        cls.config = configparser.ConfigParser()
-        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
-        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+    def setUp(self) -> None:
+        self.config = configparser.ConfigParser()
+        self.config.read(Path(__file__).parent.joinpath('config.ini'))
+        self.tm1 = TM1Service(**self.config['tm1srv01'])
 
         with open(Path(__file__).parent.joinpath('resources', 'file.csv'), "rb") as file:
-            cls.tm1.files.update_or_create(cls.FILE_NAME1, file.read())
+            self.tm1.files.update_or_create(self.FILE_NAME1, file.read())
 
-        if cls.tm1.files.exists(cls.FILE_NAME2):
-            cls.tm1.files.delete(cls.FILE_NAME2)
+        if self.tm1.files.exists(self.FILE_NAME2):
+            self.tm1.files.delete(self.FILE_NAME2)
 
     @skip_if_insufficient_version(version="11.4")
     def test_create_get(self):

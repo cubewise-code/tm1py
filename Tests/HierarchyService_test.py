@@ -37,15 +37,13 @@ class TestHierarchyService(unittest.TestCase):
     def teardown_class(cls):
         cls.tm1.logout()
 
-    @classmethod
-    def setUp(cls):
-        cls.delete_dimensions()
-        cls.create_dimension()
-        cls.create_subset()
+    def setUp(self):
+        self.delete_dimensions()
+        self.create_dimension()
+        self.create_subset()
 
-    @classmethod
-    def tearDown(cls):
-        cls.delete_dimensions()
+    def tearDown(self):
+        self.delete_dimensions()
 
     @classmethod
     def create_dimension(cls):
