@@ -384,7 +384,26 @@ class ElementService(ObjectService):
         df_data[cols_to_format] = df_data[cols_to_format].apply(pd.to_numeric)
         df_data[cols_to_format] = df_data[cols_to_format].applymap(lambda x: '{:.6f}'.format(x))
 
-        # override columns. hierarchy name with dimension and prefix attributes
+        # override colum types
+        element_attributes = self.get_element_attributes(dimension_name, hierarchy_name)
+        attribute_column_types = {
+            ea.name: 'float' if ea.attribute_type == 'Numeric' else 'str'
+            for ea
+            in element_attributes
+            if ea.name in df_data.columns}
+        df_data = df_data.astype(attribute_column_types)
+
+        # substitute empty strings with element name if empty alias is not allowed
+        if not allow_empty_alias:
+            alias_attributes = [
+                ea.name
+                for ea in element_attributes
+                if ea.attribute_type == 'Alias' and ea.name in df_data.columns]
+
+            for col in alias_attributes:
+                df_data[col] = np.where(df_data[col] == '', df_data[dimension_name], df_data[col])
+
+        # override column names. hierarchy name with dimension and prefix attributes
         column_renaming = dict()
         if attribute_column_prefix or attribute_suffix:
             column_renaming = {
@@ -393,7 +412,7 @@ class ElementService(ObjectService):
                     if attribute_suffix
                     else "")
                 for ea
-                in self.get_element_attributes(dimension_name, hierarchy_name)}
+                in element_attributes}
 
         column_renaming[hierarchy_name] = dimension_name
 
@@ -427,14 +446,6 @@ class ElementService(ObjectService):
                                                                              :,
                                                                              -len(level_columns) * 2:
                                                                              -len(level_names)].fillna(0)
-
-        if not allow_empty_alias:
-            # substitute empty strings with element name if empty alias is not allowed
-            alias_attributes = self.get_alias_element_attributes(dimension_name, hierarchy_name)
-            alias_attributes = list(set(alias_attributes).intersection(df_data.columns))
-
-            for col in alias_attributes:
-                df_data[col] = np.where(df_data[col] == '', df_data[dimension_name], df_data[col])
 
         return pd.merge(df, df_data, on=dimension_name).drop_duplicates()
 
