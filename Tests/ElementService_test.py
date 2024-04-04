@@ -31,53 +31,51 @@ class TestElementService(unittest.TestCase):
         cls.config.read(Path(__file__).parent.joinpath('config.ini'))
         cls.tm1 = TM1Service(**cls.config['tm1srv01'])
 
-    @classmethod
-    def setUp(cls):
+    def setUp(self):
         # create dimension with a default hierarchy
-        d = Dimension(cls.dimension_name)
-        h = Hierarchy(cls.dimension_name, cls.hierarchy_name)
+        d = Dimension(self.dimension_name)
+        h = Hierarchy(self.dimension_name, self.hierarchy_name)
 
         # add elements
-        cls.years = ("No Year", "1989", "1990", "1991", "1992")
-        cls.extra_year = "4321"
+        self.years = ("No Year", "1989", "1990", "1991", "1992")
+        self.extra_year = "4321"
 
         h.add_element('Total Years', 'Consolidated')
         h.add_element('All Consolidations', 'Consolidated')
         h.add_edge("All Consolidations", "Total Years", 1)
-        for year in cls.years:
+        for year in self.years:
             h.add_element(year, 'Numeric')
             h.add_edge('Total Years', year, 1)
 
         # add attributes
-        cls.attributes = ('Previous Year', 'Next Year')
-        cls.alias_attributes = ("Financial Year",)
+        self.attributes = ('Previous Year', 'Next Year')
+        self.alias_attributes = ("Financial Year",)
 
-        for attribute in cls.attributes:
+        for attribute in self.attributes:
             h.add_element_attribute(attribute, "String")
-        for attribute in cls.alias_attributes:
+        for attribute in self.alias_attributes:
             h.add_element_attribute(attribute, "Alias")
         d.add_hierarchy(h)
-        cls.tm1.dimensions.update_or_create(d)
+        self.tm1.dimensions.update_or_create(d)
 
-        cls.added_attribute_name = "NewAttribute"
+        self.added_attribute_name = "NewAttribute"
 
         # write attribute values
-        cls.tm1.cubes.cells.write_value('1988', cls.attribute_cube_name, ('1989', 'Previous Year'))
-        cls.tm1.cubes.cells.write_value('1989', cls.attribute_cube_name, ('1990', 'Previous Year'))
-        cls.tm1.cubes.cells.write_value('1990', cls.attribute_cube_name, ('1991', 'Previous Year'))
-        cls.tm1.cubes.cells.write_value('1991', cls.attribute_cube_name, ('1992', 'Previous Year'))
+        self.tm1.cubes.cells.write_value('1988', self.attribute_cube_name, ('1989', 'Previous Year'))
+        self.tm1.cubes.cells.write_value('1989', self.attribute_cube_name, ('1990', 'Previous Year'))
+        self.tm1.cubes.cells.write_value('1990', self.attribute_cube_name, ('1991', 'Previous Year'))
+        self.tm1.cubes.cells.write_value('1991', self.attribute_cube_name, ('1992', 'Previous Year'))
 
-        cls.tm1.cubes.cells.write_value('1988/89', cls.attribute_cube_name, ('1989', 'Financial Year'))
-        cls.tm1.cubes.cells.write_value('1989/90', cls.attribute_cube_name, ('1990', 'Financial Year'))
-        cls.tm1.cubes.cells.write_value('1990/91', cls.attribute_cube_name, ('1991', 'Financial Year'))
-        cls.tm1.cubes.cells.write_value('1991/92', cls.attribute_cube_name, ('1992', 'Financial Year'))
+        self.tm1.cubes.cells.write_value('1988/89', self.attribute_cube_name, ('1989', 'Financial Year'))
+        self.tm1.cubes.cells.write_value('1989/90', self.attribute_cube_name, ('1990', 'Financial Year'))
+        self.tm1.cubes.cells.write_value('1990/91', self.attribute_cube_name, ('1991', 'Financial Year'))
+        self.tm1.cubes.cells.write_value('1991/92', self.attribute_cube_name, ('1992', 'Financial Year'))
 
-        cls.create_or_update_dimension_with_hierarchies()
+        self.create_or_update_dimension_with_hierarchies()
 
-    @classmethod
-    def tearDown(cls):
-        cls.tm1.dimensions.delete(cls.dimension_name)
-        cls.tm1.dimensions.delete(cls.dimension_with_hierarchies_name)
+    def tearDown(self):
+        self.tm1.dimensions.delete(self.dimension_name)
+        self.tm1.dimensions.delete(self.dimension_with_hierarchies_name)
 
     @classmethod
     def create_or_update_dimension_with_hierarchies(cls):

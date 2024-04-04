@@ -21,17 +21,15 @@ class TestCaseAndSpaceInsensitiveDict(unittest.TestCase):
         cls.config.read(Path(__file__).parent.joinpath('config.ini'))
         cls.tm1 = TM1Service(**cls.config['tm1srv01'])
         
-    @classmethod
-    def setUp(cls):
+    def setUp(self):
 
-        cls.map = CaseAndSpaceInsensitiveDict()
-        cls.map["key1"] = "value1"
-        cls.map["key2"] = "value2"
-        cls.map["key3"] = "value3"
+        self.map = CaseAndSpaceInsensitiveDict()
+        self.map["key1"] = "value1"
+        self.map["key2"] = "value2"
+        self.map["key3"] = "value3"
 
-    @classmethod
-    def tearDown(cls):
-        del cls.map
+    def tearDown(self):
+        del self.map
 
     def test_set(self):
         self.map["key4"] = "value4"
@@ -98,17 +96,15 @@ class TestCaseAndSpaceInsensitiveDict(unittest.TestCase):
 class TestCaseAndSpaceInsensitiveSet(unittest.TestCase):
     set: CaseAndSpaceInsensitiveSet
 
-    @classmethod
-    def setUp(cls):
-        cls.original_values = ("Value1", "Value 2", "V A L U E 3")
-        cls.set = CaseAndSpaceInsensitiveSet()
-        cls.set.add(cls.original_values[0])
-        cls.set.add(cls.original_values[1])
-        cls.set.add(cls.original_values[2])
+    def setUp(self):
+        self.original_values = ("Value1", "Value 2", "V A L U E 3")
+        self.set = CaseAndSpaceInsensitiveSet()
+        self.set.add(self.original_values[0])
+        self.set.add(self.original_values[1])
+        self.set.add(self.original_values[2])
 
-    @classmethod
-    def tearDown(cls):
-        del cls.set
+    def tearDown(self):
+        del self.set
 
     def test_get(self):
         self.assertIn("Value1", self.set)

@@ -22,34 +22,33 @@ class TestSandboxService(unittest.TestCase):
     sandbox_name2 = prefix + "sandbox2"
     sandbox_name3 = prefix + "sandbox3"
 
-    @classmethod
-    def setUp(cls):
+    def setUp(self):
 
         # Connection to TM1
-        cls.config = configparser.ConfigParser()
-        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
-        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        self.config = configparser.ConfigParser()
+        self.config.read(Path(__file__).parent.joinpath('config.ini'))
+        self.tm1 = TM1Service(**self.config['tm1srv01'])
 
-        for dimension_name in cls.dimension_names:
+        for dimension_name in self.dimension_names:
             elements = [Element('Element {}'.format(str(j)), 'Numeric') for j in range(1, 1001)]
             hierarchy = Hierarchy(dimension_name=dimension_name,
                                   name=dimension_name,
                                   elements=elements)
             dimension = Dimension(dimension_name, [hierarchy])
-            if not cls.tm1.dimensions.exists(dimension.name):
-                cls.tm1.dimensions.create(dimension)
+            if not self.tm1.dimensions.exists(dimension.name):
+                self.tm1.dimensions.create(dimension)
 
         # Build Cube
-        cube = Cube(cls.cube_name, cls.dimension_names)
-        if not cls.tm1.cubes.exists(cls.cube_name):
-            cls.tm1.cubes.create(cube)
-        c = Cube(cls.cube_name, dimensions=cls.dimension_names, rules=Rules(''))
-        if cls.tm1.cubes.exists(c.name):
-            cls.tm1.cubes.delete(c.name)
-        cls.tm1.cubes.create(c)
+        cube = Cube(self.cube_name, self.dimension_names)
+        if not self.tm1.cubes.exists(self.cube_name):
+            self.tm1.cubes.create(cube)
+        c = Cube(self.cube_name, dimensions=self.dimension_names, rules=Rules(''))
+        if self.tm1.cubes.exists(c.name):
+            self.tm1.cubes.delete(c.name)
+        self.tm1.cubes.create(c)
 
-        if not cls.tm1.sandboxes.exists(cls.sandbox_name1):
-            cls.tm1.sandboxes.create(Sandbox(name=cls.sandbox_name1, include_in_sandbox_dimension=True))
+        if not self.tm1.sandboxes.exists(self.sandbox_name1):
+            self.tm1.sandboxes.create(Sandbox(name=self.sandbox_name1, include_in_sandbox_dimension=True))
 
     def test_get_sandbox(self):
         sandbox = self.tm1.sandboxes.get(self.sandbox_name1)
@@ -216,16 +215,15 @@ class TestSandboxService(unittest.TestCase):
         queued = (self.tm1.sandboxes.get(self.sandbox_name3)).queued
         self.assertFalse(queued)
 
-    @classmethod
-    def tearDown(cls):
-        for sandbox_name in [cls.sandbox_name1, cls.sandbox_name2, cls.sandbox_name3]:
-            if cls.tm1.sandboxes.exists(sandbox_name):
-                cls.tm1.sandboxes.delete(sandbox_name)
+    def tearDown(self):
+        for sandbox_name in [self.sandbox_name1, self.sandbox_name2, self.sandbox_name3]:
+            if self.tm1.sandboxes.exists(sandbox_name):
+                self.tm1.sandboxes.delete(sandbox_name)
 
-        cls.tm1.cubes.delete(cls.cube_name)
-        for dimension in cls.dimension_names:
-            cls.tm1.dimensions.delete(dimension)
-        cls.tm1.logout()
+        self.tm1.cubes.delete(self.cube_name)
+        for dimension in self.dimension_names:
+            self.tm1.dimensions.delete(dimension)
+        self.tm1.logout()
 
 
 if __name__ == '__main__':
