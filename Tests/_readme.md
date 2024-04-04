@@ -40,5 +40,5 @@ On Linux and macOS:
 
 rightclick `Tests` folder -> run 'pytest in Tests'
 
-## To run a specific test file from the `Tests` folder:
+### To run a specific test file from the `Tests` folder:
 rightclick file (e.g., `ChoreService_test.py`) -> run 'pytest in ChoreService_test.py'
