@@ -10,6 +10,8 @@
 
 - `EnableSandboxDimension` config parameter must be set to `F` for the target TM1 instance
 
+- `EnableTIDebugging` config parameter must be set to `T` for the target TM1 instance
+
 # Run TM1py Tests
 
 ## Run tests via commandline 
