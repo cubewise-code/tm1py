@@ -29,7 +29,7 @@ Requirements
 - python (3.7 or higher)
 - requests
 - requests_negotiate_sspi
-- TM1 11 
+- TM1 11, TM1 12
 
 
 Optional Requirements
@@ -72,6 +72,25 @@ with TM1Service(
         ssl=True,
         verify=True,
         async_requests_mode=True) as tm1:
+    print(tm1.server.get_product_version())
+```
+
+
+> TM1 12 MCSP
+
+``` python
+from TM1py import TM1Service
+
+params = {
+    "base_url": "https://us-east-1.planninganalytics.saas.ibm.com/api/<TenantId>/v0/tm1/<DatabaseName>/",
+    "user": "apikey",
+    "password": "<TheActualApiKey>",
+    "async_requests_mode": True,
+    "ssl": True,
+    "verify": True
+}
+
+with TM1Service(**params) as tm1:
     print(tm1.server.get_product_version())
 ```
 
