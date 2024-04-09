@@ -43,7 +43,7 @@ class TestAnnotationService(unittest.TestCase):
         """
         Run before each test to create a test annotation
         """
-        random_intersection = cls.tm1.cubes.get_random_intersection(cls.cube_name, False)
+        random_intersection = self.tm1.cubes.get_random_intersection(self.cube_name, False)
         random_text = "".join([random.choice(string.printable) for _ in range(100)])
 
         annotation = Annotation(comment_value=random_text,
