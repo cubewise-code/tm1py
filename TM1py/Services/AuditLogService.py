@@ -8,7 +8,7 @@ from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import verify_version, deprecated_in_version, odata_track_changes_header, require_data_admin, \
     format_url, \
-    require_version, require_ops_admin
+    require_version, require_ops_admin, utc_localize_time
 from TM1py.Services.ConfigurationService import ConfigurationService
 
 
@@ -74,13 +74,13 @@ class AuditLogService(ObjectService):
             if since:
                 # If since doesn't have tz information, UTC is assumed
                 if not since.tzinfo:
-                    since = self.utc_localize_time(since)
+                    since = utc_localize_time(since)
                 log_filters.append(format_url(
                     "TimeStamp ge {}", since.strftime("%Y-%m-%dT%H:%M:%SZ")))
             if until:
                 # If until doesn't have tz information, UTC is assumed
                 if not until.tzinfo:
-                    until = self.utc_localize_time(until)
+                    until = utc_localize_time(until)
                 log_filters.append(format_url(
                     "TimeStamp le {}", until.strftime("%Y-%m-%dT%H:%M:%SZ")))
             url += "&$filter={}".format(" and ".join(log_filters))
