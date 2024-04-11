@@ -66,6 +66,8 @@ class ThreadService(ObjectService):
                 continue
             if thread["Function"] == "GET /Threads":
                 continue
+            if thread["Function"] == "GET /api/v1/Threads":
+                continue
             self.cancel(thread["ID"], **kwargs)
             canceled_threads.append(thread)
         return canceled_threads
