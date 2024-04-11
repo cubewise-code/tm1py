@@ -434,12 +434,17 @@ class TestServerService(unittest.TestCase):
         with TM1Service(**self.config['tm1srv01'], session_context=app_name) as tm1:
             threads = tm1.monitoring.get_threads()
             self._test_session_context(threads, app_name)
-    
+
     def _test_session_context(self, threads: list, app_name: str) -> None:
         for thread in threads:
-                if "GET /Threads" in thread["Function"] and lower_and_drop_spaces(thread["Name"]) == lower_and_drop_spaces(self.config['tm1srv01']['user']):
-                    self.assertTrue(thread["Context"] == app_name)
-                    return
+            if (
+                "GET /Threads" in thread["Function"]
+                or "GET /api/v1/Threads" in thread["Function"]
+            ) and lower_and_drop_spaces(thread["Name"]) == lower_and_drop_spaces(
+                self.config["tm1srv01"]["user"]
+            ):
+                self.assertTrue(thread["Context"] == app_name)
+                return
         raise Exception("Did not find my own Thread")
 
     @classmethod
