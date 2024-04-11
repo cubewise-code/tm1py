@@ -4,6 +4,7 @@ import functools
 import http.client as http_client
 import json
 import math
+import pytz
 import re
 import ssl
 import urllib.parse as urlparse
@@ -1364,6 +1365,10 @@ def read_object_name_from_url(url: str, pattern: str) -> str:
 
     return unquote(match.group(1))
 
+def utc_localize_time(timestamp):
+    timestamp = pytz.utc.localize(timestamp)
+    timestamp_utc = timestamp.astimezone(pytz.utc)
+    return timestamp_utc
 
 class HTTPAdapterWithSocketOptions(HTTPAdapter):
     def __init__(self, *args, **kwargs):

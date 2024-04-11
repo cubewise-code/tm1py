@@ -1,4 +1,3 @@
-import pytz
 from warnings import warn
 
 from datetime import datetime
@@ -6,7 +5,7 @@ from typing import Dict
 
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import verify_version, deprecated_in_version, odata_track_changes_header, require_data_admin, format_url
+from TM1py.Utils import verify_version, deprecated_in_version, odata_track_changes_header, require_data_admin, format_url, utc_localize_time
 
 
 class TransactionLogService(ObjectService):
@@ -18,12 +17,6 @@ class TransactionLogService(ObjectService):
             warn("Transaction Logs are not available in this version of TM1, removed as of 12.0.0", DeprecationWarning,
                  2)
         self.last_delta_request = None
-
-    @staticmethod
-    def utc_localize_time(timestamp):
-        timestamp = pytz.utc.localize(timestamp)
-        timestamp_utc = timestamp.astimezone(pytz.utc)
-        return timestamp_utc
 
     @deprecated_in_version(version="12.0.0")
     @odata_track_changes_header
@@ -82,13 +75,13 @@ class TransactionLogService(ObjectService):
             if since:
                 # If since doesn't have tz information, UTC is assumed
                 if not since.tzinfo:
-                    since = self.utc_localize_time(since)
+                    since = utc_localize_time(since)
                 log_filters.append(format_url(
                     "TimeStamp ge {}", since.strftime("%Y-%m-%dT%H:%M:%SZ")))
             if until:
                 # If until doesn't have tz information, UTC is assumed
                 if not until.tzinfo:
-                    until = self.utc_localize_time(until)
+                    until = utc_localize_time(until)
                 log_filters.append(format_url(
                     "TimeStamp le {}", until.strftime("%Y-%m-%dT%H:%M:%SZ")))
             url += "&$filter={}".format(" and ".join(log_filters))
