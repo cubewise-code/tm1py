@@ -231,7 +231,7 @@ class CubeService(ObjectService):
 
     def search_for_dimension_substring(self, substring: str, skip_control_cubes: bool = False,
                                        **kwargs) -> Dict[str, List[str]]:
-        """ Ask TM1 Server for a dictinary of cube names with the dimension whose name contains the substring
+        """ Ask TM1 Server for a dictionary of cube names with the dimension whose name contains the substring
 
         :param substring: string to search for in dim name
         :param skip_control_cubes: bool, True will exclude control cubes from result
@@ -248,6 +248,30 @@ class CubeService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         cube_dict = {entry['Name']: [dim['Name'] for dim in entry['Dimensions']] for entry in response.json()['value']}
         return cube_dict
+
+    def toggle_cube_rule(self, cube: Cube, enabled: bool):
+        """ Enable or disable a cube rule (entirely)
+
+        :param cube: an instance of a Cube
+        :param enabled: True to enable the rule, False to disable it
+        """
+        if not cube.rules.text:
+            # If there is no rule, there is nothing to do
+            return
+        else:
+            rule_lines = cube.rules.text.split('\n')
+            if enabled:
+                # If enabling the rule, remove the first '#' from the beginning of each line if present
+                modified_lines = [line[1:] if line.startswith('#') else line for line in rule_lines]
+            else:
+                # If disabling the rule, add '#' to the beginning of each line
+                modified_lines = ['#' + line for line in rule_lines]
+
+            # Join the modified lines back into a single string
+            cube.rules = '\n'.join(modified_lines)
+
+            self.update(cube)
+
 
     def search_for_rule_substring(self, substring: str, skip_control_cubes: bool = False, case_insensitive=True,
                                   space_insensitive=True, **kwargs) -> List[Cube]:

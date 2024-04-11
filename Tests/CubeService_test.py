@@ -27,7 +27,7 @@ class TestCubeService(unittest.TestCase):
         # Connection to TM1
         self.config = configparser.ConfigParser()
         self.config.read(Path(__file__).parent.joinpath('config.ini'))
-        self.tm1 = TM1Service(**self.config['tm1srv01'])
+        self.tm1 = TM1Service(**self.config['tm1srv04'])
 
         for dimension_name in self.dimension_names:
             elements = [Element('Element {}'.format(str(j)), 'Numeric') for j in range(1, 1001)]
@@ -300,6 +300,22 @@ class TestCubeService(unittest.TestCase):
         measure_dimension = self.tm1.cubes.get_measure_dimension(self.cube_name)
 
         self.assertEqual(self.dimension_names[-1], measure_dimension)
+
+    def test_toggle_cube_rule(self):
+        uncommented = "SKIPCHECK;\n[]=N:2;\n#find_me_comment\nFEEDERS;\n"
+        commented = "#SKIPCHECK;\n#[]=N:2;\n##find_me_comment\n#FEEDERS;\n#"
+        c = self.tm1.cubes.get(self.cube_name)
+        c.rules = uncommented
+        self.tm1.cubes.update(c)
+
+        # test disabling
+        self.tm1.cubes.toggle_cube_rule(c, enabled=False)
+        self.assertEqual(c.rules.text, commented)
+
+        # test re-enable
+        self.tm1.cubes.toggle_cube_rule(c, enabled=True)
+        self.assertEqual(c.rules.text, uncommented)
+
 
     def tearDown(self):
         self.tm1.cubes.delete(self.cube_name)
