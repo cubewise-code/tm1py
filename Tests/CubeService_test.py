@@ -1,3 +1,4 @@
+import base64
 import configparser
 import unittest
 import uuid
@@ -303,17 +304,17 @@ class TestCubeService(unittest.TestCase):
 
     def test_toggle_cube_rule(self):
         uncommented = "SKIPCHECK;\n[]=N:2;\n#find_me_comment\nFEEDERS;\n"
-        commented = "#SKIPCHECK;\n#[]=N:2;\n##find_me_comment\n#FEEDERS;\n#"
         c = self.tm1.cubes.get(self.cube_name)
         c.rules = uncommented
         self.tm1.cubes.update(c)
 
         # test disabling
-        self.tm1.cubes.toggle_cube_rule(c, enabled=False)
-        self.assertEqual(c.rules.text, commented)
+        self.tm1.cubes.disable_cube_rule(c)
+        self.assertEqual(c.has_rules, False)
+        self.assertEqual(c.rules.text.startswith('#'), True)
 
         # test re-enable
-        self.tm1.cubes.toggle_cube_rule(c, enabled=True)
+        self.tm1.cubes.enable_cube_rule(c)
         self.assertEqual(c.rules.text, uncommented)
 
 

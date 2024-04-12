@@ -4,6 +4,7 @@ import random
 from typing import List, Iterable, Dict
 
 from requests import Response
+import base64
 
 from TM1py.Objects.Cube import Cube
 from TM1py.Services.CellService import CellService
@@ -249,29 +250,38 @@ class CubeService(ObjectService):
         cube_dict = {entry['Name']: [dim['Name'] for dim in entry['Dimensions']] for entry in response.json()['value']}
         return cube_dict
 
-    def toggle_cube_rule(self, cube: Cube, enabled: bool):
-        """ Enable or disable a cube rule (entirely)
-
-        :param cube: an instance of a Cube
-        :param enabled: True to enable the rule, False to disable it
+    def enable_cube_rule(self, cube: Cube) -> None:
         """
-        if not cube.rules.text:
-            # If there is no rule, there is nothing to do
+        Enable a cube rule from its base64-encoded hash if it exists.
+
+        :param cube: An instance of a Cube.
+        """
+        current_rule = cube.rules.text
+        if not current_rule:
+            # If there is no rule, there is nothing to do.
             return
-        else:
-            rule_lines = cube.rules.text.split('\n')
-            if enabled:
-                # If enabling the rule, remove the first '#' from the beginning of each line if present
-                modified_lines = [line[1:] if line.startswith('#') else line for line in rule_lines]
-            else:
-                # If disabling the rule, add '#' to the beginning of each line
-                modified_lines = ['#' + line for line in rule_lines]
+        try:
+            current_rule = current_rule[1:] if current_rule.startswith('#') else current_rule
+            cube.rules = base64.b64decode(current_rule).decode('utf-8')
+        except Exception:
+            raise ValueError(f"Current rule is not decodable by b64decode standards")
 
-            # Join the modified lines back into a single string
-            cube.rules = '\n'.join(modified_lines)
+        self.update(cube)
 
-            self.update(cube)
+    def disable_cube_rule(self, cube: Cube) -> None:
+        """
+        Disable a cube rule by saving its base64-encoded hash and commenting each line.
 
+        :param cube: An instance of a Cube.
+        """
+        current_rule = cube.rules.text
+        if not current_rule:
+            # If there is no rule, there is nothing to do.
+            return
+
+        # Save the current rule as a base64-encoded hash
+        cube.rules = f"#{base64.b64encode(current_rule.encode('utf-8')).decode('utf-8')}"
+        self.update(cube)
 
     def search_for_rule_substring(self, substring: str, skip_control_cubes: bool = False, case_insensitive=True,
                                   space_insensitive=True, **kwargs) -> List[Cube]:
