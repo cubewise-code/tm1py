@@ -152,21 +152,17 @@ class RestService:
         self.handle_logging(kwargs.get('logging', False))
 
         self._proxies = self._handle_proxies(kwargs.get('proxies', None))
+        self._is_admin = None
+        self._is_data_admin = None
+        self._is_security_admin = None
+        self._is_ops_admin = None
 
         # populated later on the fly for users with the name different from 'Admin'
-        self._is_admin = self._determine_is_admin(kwargs.get('user', None))
-
-        # populated on the fly
-        if kwargs.get('user'):
-            self._is_admin = True if case_and_space_insensitive_equals(kwargs.get('user'), 'ADMIN') else None
-            self._is_data_admin = True if case_and_space_insensitive_equals(kwargs.get('user'), 'ADMIN') else None
-            self._is_security_admin = True if case_and_space_insensitive_equals(kwargs.get('user'), 'ADMIN') else None
-            self._is_ops_admin = True if case_and_space_insensitive_equals(kwargs.get('user'), 'ADMIN') else None
-        else:
-            self._is_admin = None
-            self._is_data_admin = None
-            self._is_security_admin = None
-            self._is_ops_admin = None
+        if self._user and case_and_space_insensitive_equals(self._user, 'ADMIN'):
+            self._is_admin = True
+            self._is_data_admin = True
+            self._is_security_admin = True
+            self._is_ops_admin = True
 
         self._verify = self._determine_verify(kwargs.get('verify', None))
 
@@ -189,12 +185,6 @@ class RestService:
             self.set_version()
 
         self._manage_http_adapter()
-
-    def _determine_is_admin(self, user: [None, str]) -> [None, bool]:
-        if user is None:
-            return None
-
-        return True if case_and_space_insensitive_equals(user, 'ADMIN') else None
 
     def _determine_verify(self, verify: [bool, str] = None) -> [bool, str]:
         if verify is None:
