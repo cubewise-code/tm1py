@@ -261,10 +261,11 @@ class CubeService(ObjectService):
             # If there is no rule, there is nothing to do.
             return
         try:
-            current_rule = current_rule[1:] if current_rule.startswith('#') else current_rule
+            prefix = "# b64 encoded rule="
+            current_rule = current_rule[len(prefix):] if current_rule.startswith(prefix) else current_rule
             cube.rules = base64.b64decode(current_rule).decode('utf-8')
         except Exception:
-            raise ValueError(f"Current rule is not decodable by b64decode standards")
+            raise RuntimeError(f"Current rule is not decodable by b64decode standards")
 
         self.update(cube)
 
@@ -280,7 +281,9 @@ class CubeService(ObjectService):
             return
 
         # Save the current rule as a base64-encoded hash
-        cube.rules = f"#{base64.b64encode(current_rule.encode('utf-8')).decode('utf-8')}"
+        prefix = "# b64 encoded rule="
+        cube.rules = f"{prefix}{base64.b64encode(current_rule.encode('utf-8')).decode('utf-8')}"
+
         self.update(cube)
 
     def search_for_rule_substring(self, substring: str, skip_control_cubes: bool = False, case_insensitive=True,

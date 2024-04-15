@@ -311,7 +311,7 @@ class TestCubeService(unittest.TestCase):
         # test disabling
         self.tm1.cubes.disable_cube_rule(c)
         self.assertEqual(c.has_rules, False)
-        self.assertEqual(c.rules.text.startswith('#'), True)
+        self.assertEqual(c.rules.text.startswith('# b64 encoded rule='), True)
 
         # test re-enable
         self.tm1.cubes.enable_cube_rule(c)
