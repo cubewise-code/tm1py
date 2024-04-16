@@ -77,9 +77,8 @@ class TestElementService(unittest.TestCase):
         self.tm1.dimensions.delete(self.dimension_name)
         self.tm1.dimensions.delete(self.dimension_with_hierarchies_name)
 
-    @classmethod
-    def create_or_update_dimension_with_hierarchies(cls):
-        dimension = Dimension(cls.dimension_with_hierarchies_name)
+    def create_or_update_dimension_with_hierarchies(self):
+        dimension = Dimension(self.dimension_with_hierarchies_name)
         dimension.add_hierarchy(
             Hierarchy(
                 name="Hierarchy1",
@@ -100,7 +99,7 @@ class TestElementService(unittest.TestCase):
                           Element("Cons3", "Consolidated")],
                 edges={("Cons3", "Elem5"): 1}),
         )
-        cls.tm1.dimensions.update_or_create(dimension)
+        self.tm1.dimensions.update_or_create(dimension)
 
     def test_create_and_delete_element(self):
         element = Element(self.extra_year, "String")
