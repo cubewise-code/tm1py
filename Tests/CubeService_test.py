@@ -28,7 +28,7 @@ class TestCubeService(unittest.TestCase):
         # Connection to TM1
         self.config = configparser.ConfigParser()
         self.config.read(Path(__file__).parent.joinpath('config.ini'))
-        self.tm1 = TM1Service(**self.config['tm1srv01'])
+        self.tm1 = TM1Service(**self.config['tm1srv04'])
 
         for dimension_name in self.dimension_names:
             elements = [Element('Element {}'.format(str(j)), 'Numeric') for j in range(1, 1001)]
