@@ -43,7 +43,11 @@ setup(
         'mdxpy>=1.3.1',
         'networkx'],
     extras_require={
-        "pandas": ["pandas"]
+        "pandas": ["pandas"],
+        "dev": [
+            "pytest",
+            "pytest-xdist"
+        ]
     },
     python_requires='>=3.6',
 )
