@@ -1,6 +1,6 @@
 # Setup TM1py Tests
 
-- `pip install pytest`
+- `pip install "tm1py[dev]"`
 
 - Use a TM1 development environment
 
