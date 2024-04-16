@@ -3,6 +3,7 @@ from typing import List
 
 from TM1py.Objects.TM1Object import TM1Object
 
+KEYWORDS = ['SKIPCHECK', 'FEEDSTRINGS', 'UNDEFVALS', 'FEEDERS']
 
 class Rules(TM1Object):
     """
@@ -13,7 +14,6 @@ class Rules(TM1Object):
             comments are not included.
 
     """
-    KEYWORDS = ['SKIPCHECK', 'FEEDSTRINGS', 'UNDEFVALS', 'FEEDERS']
 
     def __init__(self, rules: str):
         self._text = rules
