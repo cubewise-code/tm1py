@@ -12,14 +12,6 @@ from Tests.Utils import skip_if_insufficient_version, skip_if_no_pandas
 class TestElementService(unittest.TestCase):
     tm1: TM1Service
 
-    prefix = 'TM1py_unittest_element'
-    dimension_name = f"{prefix}_dimension"
-    dimension_with_hierarchies_name = f"{prefix}_dimension_with_hierarchies"
-    hierarchy_name = dimension_name
-    attribute_cube_name = '}ElementAttributes_' + dimension_name
-    dimension_does_not_exist_name = f"{prefix}_dimension_does_not_exist"
-    hierarchy_does_not_exist_name = dimension_does_not_exist_name
-
     @classmethod
     def setUpClass(cls):
         """
@@ -32,6 +24,15 @@ class TestElementService(unittest.TestCase):
         cls.tm1 = TM1Service(**cls.config['tm1srv01'])
 
     def setUp(self):
+        prefix = 'TM1py_unittest_element'
+        pure_dimension_name = f"{prefix}_dimension"
+        self.dimension_name = pure_dimension_name
+        self.dimension_with_hierarchies_name = pure_dimension_name + '_with_hierarchies'
+        self.hierarchy_name = pure_dimension_name
+        self.attribute_cube_name = '}ElementAttributes_' + pure_dimension_name
+        self.dimension_does_not_exist_name = pure_dimension_name + "_does_not_exist"
+        self.hierarchy_does_not_exist_name = self.dimension_does_not_exist_name
+
         # create dimension with a default hierarchy
         d = Dimension(self.dimension_name)
         h = Hierarchy(self.dimension_name, self.hierarchy_name)
