@@ -28,7 +28,7 @@ class TestCubeService(unittest.TestCase):
         # Connection to TM1
         self.config = configparser.ConfigParser()
         self.config.read(Path(__file__).parent.joinpath('config.ini'))
-        self.tm1 = TM1Service(**self.config['tm1srv04'])
+        self.tm1 = TM1Service(**self.config['tm1srv01'])
 
         for dimension_name in self.dimension_names:
             elements = [Element('Element {}'.format(str(j)), 'Numeric') for j in range(1, 1001)]
@@ -303,20 +303,35 @@ class TestCubeService(unittest.TestCase):
         self.assertEqual(self.dimension_names[-1], measure_dimension)
 
     def test_toggle_cube_rule(self):
-        uncommented = "SKIPCHECK;\n[]=N:2;\n#find_me_comment\nFEEDERS;\n"
+        uncommented = Rules("#comment1\nFEEDSTRINGS;\nUNDEFVALS;\n#comment2\nSKIPCHECK;\n#comment3\n#comment4\n[" \
+                            "]=N:2;\n#find_me_comment\nFEEDERS;\n#comment5\n[]=>DB(some_cube);\n#comment6")
         c = self.tm1.cubes.get(self.cube_name)
         c.rules = uncommented
         self.tm1.cubes.update(c)
 
+        self.assertEqual(self.tm1.cubes.get(c.name).has_rules, True)
+
         # test disabling
+        self.tm1.cubes.disable_cube_rule(c, sections=['FEEDSTRINGS'])
+        self.tm1.cubes.enable_cube_rule(c, sections=['FEEDSTRINGS'])
+        self.assertEqual(c.rules.text, uncommented.text)
+
+        self.tm1.cubes.disable_cube_rule(c, sections=['UNDEFVALS'])
+        self.tm1.cubes.enable_cube_rule(c, sections=['UNDEFVALS'])
+        self.assertEqual(c.rules.text, uncommented.text)
+
+        self.tm1.cubes.disable_cube_rule(c, sections=['SKIPCHECK', 'FEEDERS'])
+        self.tm1.cubes.enable_cube_rule(c, sections=['SKIPCHECK', 'FEEDERS'])
+        self.assertEqual(c.rules.text, uncommented.text)
+
         self.tm1.cubes.disable_cube_rule(c)
-        self.assertEqual(c.has_rules, False)
-        self.assertEqual(c.rules.text.startswith('# b64 encoded rule='), True)
+        self.assertEqual(c.rules.text.startswith('# B64 ENCODED RULE='), True)
 
-        # test re-enable
+        cells = {('Element 1', 'Element 1', 'Element 1'): 1}
+        self.tm1.cells.write_values(self.cube_name, cells)
+
         self.tm1.cubes.enable_cube_rule(c)
-        self.assertEqual(c.rules.text, uncommented)
-
+        self.assertEqual(c.rules.text, uncommented.text)
 
     def tearDown(self):
         self.tm1.cubes.delete(self.cube_name)
