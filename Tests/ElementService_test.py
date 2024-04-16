@@ -2,6 +2,7 @@ import configparser
 import copy
 import unittest
 from pathlib import Path
+from uuid import uuid1
 
 from TM1py.Exceptions import TM1pyRestException, TM1pyException
 from TM1py.Objects import Dimension, Hierarchy, Element, ElementAttribute
@@ -24,8 +25,10 @@ class TestElementService(unittest.TestCase):
         cls.tm1 = TM1Service(**cls.config['tm1srv01'])
 
     def setUp(self):
+        dimension_uuid = str(uuid1()).replace('-', "_")
         prefix = 'TM1py_unittest_element'
-        pure_dimension_name = f"{prefix}_dimension"
+        pure_dimension_name = f"{prefix}_dimension_{dimension_uuid}"
+
         self.dimension_name = pure_dimension_name
         self.dimension_with_hierarchies_name = pure_dimension_name + '_with_hierarchies'
         self.hierarchy_name = pure_dimension_name
@@ -232,7 +235,7 @@ class TestElementService(unittest.TestCase):
             use_blob=use_blob)
 
         expected_columns = (
-            "TM1py_unittest_element_dimension",
+            self.dimension_name,
             "Type",
             "Attribute Next Year",
             "Attribute Previous Year",
@@ -272,7 +275,7 @@ class TestElementService(unittest.TestCase):
             use_blob=use_blob)
 
         expected_columns = (
-            "TM1py_unittest_element_dimension",
+            self.dimension_name,
             "Type",
             "Financial Year",
             "Previous Year",
@@ -313,7 +316,7 @@ class TestElementService(unittest.TestCase):
             use_blob=use_blob)
 
         expected_columns = (
-            "TM1py_unittest_element_dimension",
+            self.dimension_name,
             "Type",
             "Financial Year",
             "Previous Year",
@@ -354,7 +357,7 @@ class TestElementService(unittest.TestCase):
             use_blob=use_blob)
 
         expected_columns = (
-            "TM1py_unittest_element_dimension",
+            self.dimension_name,
             "Type",
             "Financial Year",
             "Previous Year",
@@ -436,7 +439,7 @@ class TestElementService(unittest.TestCase):
             use_blob=use_blob)
 
         expected_columns = (
-            "TM1py_unittest_element_dimension",
+            self.dimension_name,
             "Type",
             "Next Year:s",
             "Previous Year:s",
@@ -477,7 +480,7 @@ class TestElementService(unittest.TestCase):
             use_blob=use_blob)
 
         expected_columns = (
-            "TM1py_unittest_element_dimension",
+            self.dimension_name,
             "Type",
             "A_Next Year:s",
             "A_Previous Year:s",
@@ -517,7 +520,7 @@ class TestElementService(unittest.TestCase):
             use_blob=use_blob)
 
         expected_columns = (
-            "TM1py_unittest_element_dimension",
+            self.dimension_name,
             "ElementType",
             "Next Year",
             "Previous Year",
