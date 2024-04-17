@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
+import base64
 import json
 import random
 from typing import List, Iterable, Dict
 
 from requests import Response
-import base64
 
 from TM1py.Objects.Cube import Cube
-from TM1py.Objects.Rules import KEYWORDS
 from TM1py.Services.CellService import CellService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.ViewService import ViewService
 from TM1py.Utils import format_url, require_version, require_data_admin, case_and_space_insensitive_equals
+
+
 
 
 class CubeService(ObjectService):
@@ -251,83 +252,42 @@ class CubeService(ObjectService):
         cube_dict = {entry['Name']: [dim['Name'] for dim in entry['Dimensions']] for entry in response.json()['value']}
         return cube_dict
 
-    def enable_cube_rule(self, cube: Cube, sections: List[str] = None) -> None:
+    def disable_rules(self, cube_name: str) -> None:
         """
-        Enable a cube rule from its base64-encoded hash if it exists.
+        Disable the entire cube rule by substituting it with its base64-encoded hash
 
-        :param cube: An instance of a Cube.
-        :param sections: a list of valid Rule sections (KEYWORDS)
+        :param cube_name: name of the cube
         """
-        current_rule = cube.rules.text
-        if not current_rule:
-            # If there is no rule, there is nothing to do.
-            return
-
-        prefix = "# B64 ENCODED "
-
-        if not sections:
-            # Decode the entire rule
-            rule_prefix = f"{prefix}RULE="
-            encoded_rule = current_rule[len(rule_prefix):] if current_rule.startswith(rule_prefix) else current_rule
-            cube.rules = base64.b64decode(encoded_rule).decode('utf-8')
-        else:
-            for section in [section.upper() for section in sections]:
-                if section not in KEYWORDS:
-                    raise ValueError(f"{section} is not a valid value, only {KEYWORDS} are accepted.")
-                else:
-                    new_rule = cube.rules.text.splitlines()
-                    for i, line in enumerate(new_rule):
-                        section_prefix = f"{prefix}{section}=".upper()
-                        if line.upper().startswith(section_prefix):
-                            encoded_section = line[len(section_prefix):]
-                            new_rule[i] = base64.b64decode(encoded_section).decode('utf-8')
-
-                    cube.rules = "\n".join(new_rule)
-
+        cube = self.get(cube_name)
+        cube.disable_rules()
         self.update(cube)
 
-    def disable_cube_rule(self, cube: Cube, sections: List[str] = None) -> None:
+    def disable_feeders(self, cube_name: str) -> None:
         """
-        Disable a cube rule by saving its base64-encoded hash and commenting each line.
-        :param cube: An instance of a Cube.
-        :param sections: a list of valid Rule sections (KEYWORDS)
+        Disable the feeders by substituting it with its base64-encoded hash
+
+        :param cube_name: name of the cube
         """
-        current_rule = cube.rules.text
-        if not current_rule:
-            # If there is no rule, there is nothing to do.
-            return
+        cube = self.get(cube_name)
+        cube.disable_feeders()
+        self.update(cube)
 
-        prefix = "# B64 ENCODED "
-        if not sections:
-            # Encode the entire rule
-            cube.rules = f"{prefix}RULE={base64.b64encode(current_rule.encode('utf-8')).decode('utf-8')}"
+    def enable_rules(self, cube_name: str) -> None:
+        """ Enable the disabled cube rules by decoding the base64-encoded hash
 
-        else:
-            for section in [section.upper() for section in sections]:
+        :param cube_name: name of the cube
+        """
+        cube = self.get(cube_name)
+        cube.enable_rules()
+        self.update(cube)
 
-                if section not in KEYWORDS:
-                    raise ValueError(f"{section} is not a valid value, only {KEYWORDS} are accepted.")
+    def enable_feeders(self, cube_name: str) -> None:
+        """ Enable the disabled cube rules by decoding the base64-encoded hash
 
-                else:
-
-                    if section in ['FEEDSTRINGS', 'UNDEFVALS']:
-                        rule = cube.rules.text.splitlines()
-                        for i, line in enumerate(rule):
-                            section_prefix = f"{prefix}{section}="
-                            if line.upper().startswith(section):
-                                rule[i] = f"{section_prefix}{base64.b64encode(line.encode('utf-8')).decode('utf-8')}"
-                        cube.rules = "\n".join(rule)
-
-                    else:
-                        section_str = 'SKIPCHECK;' if section == 'SKIPCHECK' else 'FEEDERS;'
-                        rule = cube.rules.text.splitlines()
-                        section_starts = rule.index(section_str)
-                        section_ends = rule.index('FEEDERS;') if 'FEEDERS;' in rule and section == 'SKIPCHECK' else len(rule)
-                        section_body = "\n".join(rule[section_starts:section_ends])
-                        encoded_section = f"{prefix}{section}={base64.b64encode(section_body.encode('utf-8')).decode('utf-8')}"
-                        rule[section_starts:section_ends] = [encoded_section]
-                        cube.rules = "\n".join(rule)
-
+        :param cube_name: name of the cube
+        """
+        cube = self.get(cube_name)
+        cube.enable_feeders()
         self.update(cube)
 
     def search_for_rule_substring(self, substring: str, skip_control_cubes: bool = False, case_insensitive=True,

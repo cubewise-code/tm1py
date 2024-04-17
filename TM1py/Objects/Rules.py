@@ -3,7 +3,10 @@ from typing import List
 
 from TM1py.Objects.TM1Object import TM1Object
 
-KEYWORDS = ['SKIPCHECK', 'FEEDSTRINGS', 'UNDEFVALS', 'FEEDERS']
+
+RULES_ENCODING_PREFIX = "# B64 ENCODED RULES="
+FEEDERS_ENCODING_PREFIX = "# B64 ENCODED FEEDERS="
+
 
 class Rules(TM1Object):
     """
