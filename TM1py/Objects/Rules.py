@@ -92,3 +92,8 @@ class Rules(TM1Object):
 
     def __str__(self):
         return self.text
+
+    def __bool__(self):
+        if len(self.text):
+            return True
+        return False

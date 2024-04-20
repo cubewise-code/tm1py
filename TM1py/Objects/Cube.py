@@ -112,7 +112,7 @@ class Cube(TM1Object):
         body_as_dict['Dimensions@odata.bind'] = [format_url("Dimensions('{}')", dimension)
                                                  for dimension
                                                  in self.dimensions]
-        if str(self.rules):
+        if self.has_rules:
             body_as_dict['Rules'] = str(self.rules)
         return json.dumps(body_as_dict, ensure_ascii=False)
 
