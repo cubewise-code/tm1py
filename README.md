@@ -30,6 +30,7 @@ Requirements
 - requests
 - requests_negotiate_sspi
 - TM1 11, TM1 12
+- keyring
 
 
 Optional Requirements
@@ -48,7 +49,10 @@ Install
 
     pip install "tm1py[pandas]"
     
-    
+> keyring
+
+    pip install keyring
+
 Usage
 =======================
 
