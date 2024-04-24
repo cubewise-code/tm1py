@@ -1755,7 +1755,7 @@ class CellService(ObjectService):
         if increment:
             current_values = self.extract_cellset_values(cellset_id, use_compact_json=True, delete_cellset=False,
                                                          **kwargs)
-            values = (x + (y or None) for x, y in zip(values, current_values))
+            values = (float(x) + float(y or 0) for x, y in zip(values, current_values))
 
         self.update_cellset(cellset_id=cellset_id, values=values, sandbox_name=sandbox_name, **kwargs)
         return changeset
