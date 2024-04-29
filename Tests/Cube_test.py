@@ -1,4 +1,3 @@
-import base64
 import unittest
 
 from TM1py import Cube, Rules
@@ -50,22 +49,6 @@ class TestCube(unittest.TestCase):
             self.cube.rules.text
         )
 
-    def test_disable_feeders(self):
-        self.cube.rules = Rules(
-            "SKIPCHECK;\n"
-            "['d1':'e1'] = N: ['d1':'e2'] * 2;\n"
-            "['d1':'e3'] = N: ['d1':'e4'] * 2;\n"
-            "FEEDERS;\n"
-            "['d1':'e2'] => ['d1':'e1'];\n"
-            "['d1':'e4'] => ['d1':'e3'];\n"
-        )
-        self.cube.disable_feeders()
-
-        self.assertEqual(
-            "# B64 ENCODED FEEDERS=WydkMSc6J2UyJ10gPT4gWydkMSc6J2UxJ107ClsnZDEnOidlNCddID0+IFsnZDEnOidlMyddOw==",
-            self.cube.rules.text.splitlines()[-1]
-        )
-
     def test_disable_feeders_enable_feeders(self):
         self.cube.rules = Rules(
             "SKIPCHECK;\n"
@@ -76,17 +59,96 @@ class TestCube(unittest.TestCase):
             "['d1':'e4'] => ['d1':'e3'];"
         )
 
-        original_rules = self.cube.rules.text
-
         self.cube.disable_feeders()
-        self.cube.enable_feeders()
-
         self.assertEqual(
-            original_rules,
+            "# B64 ENCODED FEEDERS=WydkMSc6J2UyJ10gPT4gWydkMSc6J2UxJ107ClsnZDEnOidlNCddID0+IFsnZDEnOidlMyddOw==",
+            self.cube.rules.text.splitlines()[-1]
+        )
+
+        self.cube.enable_feeders()
+        self.assertEqual(
+            "SKIPCHECK;\n"
+            "['d1':'e1'] = N: ['d1':'e2'] * 2;\n"
+            "['d1':'e3'] = N: ['d1':'e4'] * 2;\n"
+            "FEEDERS;\n"
+            "['d1':'e2'] => ['d1':'e1'];\n"
+            "['d1':'e4'] => ['d1':'e3'];",
             self.cube.rules.text
         )
 
-    def test_enable_rules_disable_rules_with_comments(self):
+    def test_disable_feeders_twice_enable_feeders(self):
+        self.cube.rules = Rules(
+            "SKIPCHECK;\n"
+            "['d1':'e1'] = N: ['d1':'e2'] * 2;\n"
+            "['d1':'e3'] = N: ['d1':'e4'] * 2;\n"
+            "FEEDERS;\n"
+            "['d1':'e2'] => ['d1':'e1'];\n"
+            "['d1':'e4'] => ['d1':'e3'];"
+        )
+
+        self.cube.disable_feeders()
+        self.cube.disable_feeders()
+        self.assertEqual(
+            "# B64 ENCODED FEEDERS=WydkMSc6J2UyJ10gPT4gWydkMSc6J2UxJ107ClsnZDEnOidlNCddID0+IFsnZDEnOidlMyddOw==",
+            self.cube.rules.text.splitlines()[-1]
+        )
+
+        self.cube.enable_feeders()
+        self.assertEqual(
+            "SKIPCHECK;\n"
+            "['d1':'e1'] = N: ['d1':'e2'] * 2;\n"
+            "['d1':'e3'] = N: ['d1':'e4'] * 2;\n"
+            "FEEDERS;\n"
+            "['d1':'e2'] => ['d1':'e1'];\n"
+            "['d1':'e4'] => ['d1':'e3'];",
+            self.cube.rules.text
+        )
+
+    def test_disable_feeders_enable_feeders_no_feeders(self):
+        self.cube.rules = Rules(
+            "SKIPCHECK;\n"
+            "['d1':'e1'] = N: ['d1':'e2'] * 2;\n"
+            "['d1':'e3'] = N: ['d1':'e4'] * 2;\n"
+            "FEEDERS;\n"
+        )
+
+        self.cube.disable_feeders()
+        self.assertEqual(
+            "# B64 ENCODED FEEDERS=",
+            self.cube.rules.text.splitlines()[-1]
+        )
+
+        self.cube.enable_feeders()
+        self.assertEqual(
+            "SKIPCHECK;\n"
+            "['d1':'e1'] = N: ['d1':'e2'] * 2;\n"
+            "['d1':'e3'] = N: ['d1':'e4'] * 2;\n"
+            "FEEDERS;\n",
+            self.cube.rules.text
+        )
+
+    def test_disable_enable_feeders_no_feeders_statement(self):
+        self.cube.rules = Rules(
+            "['d1':'e1'] = N: ['d1':'e2'] * 2;\n"
+            "['d1':'e3'] = N: ['d1':'e4'] * 2;\n"
+        )
+
+        self.cube.disable_feeders()
+        self.assertEqual(
+            "['d1':'e1'] = N: ['d1':'e2'] * 2;\n"
+            "['d1':'e3'] = N: ['d1':'e4'] * 2;\n",
+            self.cube.rules.text
+        )
+
+        self.cube.enable_feeders()
+        self.assertEqual(
+            "['d1':'e1'] = N: ['d1':'e2'] * 2;\n"
+            "['d1':'e3'] = N: ['d1':'e4'] * 2;\n",
+            self.cube.rules.text
+        )
+
+
+    def test_disable_rules_enable_rules_with_comments(self):
         self.cube.rules = Rules(
             # Not Relevant
             "SKIPCHECK;\n"
@@ -114,7 +176,7 @@ class TestCube(unittest.TestCase):
             self.cube.rules.text
         )
 
-    def test_enable_feeders_disable_feeders_with_comments(self):
+    def test_disable_feeders_enable_feeders_with_comments(self):
         self.cube.rules = Rules(
             # Not Relevant
             "SKIPCHECK;\n"
@@ -142,7 +204,7 @@ class TestCube(unittest.TestCase):
             self.cube.rules.text
         )
 
-    def test_enable_rules_disable_rules_with_keywords(self):
+    def test_disable_rules_enable_rules_with_keywords(self):
         self.cube.rules = Rules(
             "FEEDSTRINGS;\n"
             "UNDEVFALS;\n"
@@ -166,7 +228,7 @@ class TestCube(unittest.TestCase):
             self.cube.rules.text
         )
 
-    def test_enable_feeders_disable_feeders_with_keywords(self):
+    def test_disable_feeders_enable_feeders_with_keywords(self):
         self.cube.rules = Rules(
             "FEEDSTRINGS;\n"
             "UNDEVFALS;\n"
@@ -189,6 +251,34 @@ class TestCube(unittest.TestCase):
             original_rules,
             self.cube.rules.text
         )
+
+    def test_disable_feeders_twice_raise_error(self):
+        self.cube.rules = Rules(
+            "SKIPCHECK;\n"
+            "['d1':'e1'] = N: ['d1':'e2'] * 2;\n"
+            "['d1':'e3'] = N: ['d1':'e4'] * 2;\n"
+            "FEEDERS;\n"
+            "['d1':'e2'] => ['d1':'e1'];\n"
+            "['d1':'e4'] => ['d1':'e3'];"
+        )
+
+        self.cube.disable_feeders()
+        with self.assertRaises(RuntimeError):
+            self.cube.disable_feeders(error_if_disabled=True)
+
+    def test_disable_rules_twice_raise_error(self):
+        self.cube.rules = Rules(
+            "SKIPCHECK;\n"
+            "['d1':'e1'] = N: ['d1':'e2'] * 2;\n"
+            "['d1':'e3'] = N: ['d1':'e4'] * 2;\n"
+            "FEEDERS;\n"
+            "['d1':'e2'] => ['d1':'e1'];\n"
+            "['d1':'e4'] => ['d1':'e3'];"
+        )
+
+        self.cube.disable_rules()
+        with self.assertRaises(RuntimeError):
+            self.cube.disable_rules(error_if_disabled=True)
 
 
 if __name__ == '__main__':
