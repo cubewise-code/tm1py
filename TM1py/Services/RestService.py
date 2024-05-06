@@ -476,7 +476,7 @@ class RestService:
     def GET(
             self,
             url: str,
-            data: Union[str, bytes] = '',
+            data: Union[str, bytes, BytesIO] = '',
             headers: Dict = None,
             async_requests_mode: bool = None,
             return_async_id: bool = False,
@@ -511,7 +511,7 @@ class RestService:
     def POST(
             self,
             url: str,
-            data: Union[str, bytes] = '',
+            data: Union[str, bytes, BytesIO] = '',
             headers: Dict = None,
             async_requests_mode: bool = None,
             return_async_id: bool = False,
@@ -548,7 +548,7 @@ class RestService:
     def PATCH(
             self,
             url: str,
-            data: Union[str, bytes] = '',
+            data: Union[str, bytes, BytesIO] = '',
             headers: Dict = None,
             async_requests_mode: bool = None,
             return_async_id: bool = False,
@@ -583,7 +583,7 @@ class RestService:
     def PUT(
             self,
             url: str,
-            data: Union[str, bytes] = '',
+            data: Union[str, bytes, BytesIO] = '',
             headers: Dict = None,
             async_requests_mode: bool = None,
             return_async_id: bool = False,
@@ -618,7 +618,7 @@ class RestService:
     def DELETE(
             self,
             url: str,
-            data: Union[str, bytes] = '',
+            data: Union[str, bytes, BytesIO] = '',
             headers: Dict = None,
             async_requests_mode: bool = None,
             return_async_id: bool = False,
