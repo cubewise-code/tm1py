@@ -1419,10 +1419,12 @@ class CellService(ObjectService):
         DatasourceAsciiQuoteCharacter='{quote_character}';
         nRecord=0;
         """
+
         process.prolog_procedure = prolog_procedure
 
         # ignore some variable in file and output variables ordered by their ordinal e.g. v2,v4,v5,v11
-        comma_sep_variables = ",".join(sorted(set(variables) - set(skip_variables), key=lambda v: int(v[1:])))
+        output_variables = sorted(set(variables) - set(skip_variables), key=lambda v: int(v[1:]))
+        comma_sep_variables = ",".join(output_variables)
         data_procedure_pre = f"""
         IF (nRecord = 0);
           SetOutputCharacterSet('{file_name}','TM1CS_UTF8');
@@ -1455,6 +1457,23 @@ class CellService(ObjectService):
             data_procedure_pre += f"""
             IF (ISUNDEFINEDCELLVALUE(NVALUE,'{cube}') = 1);
               SVALUE ='0';
+            ENDIF;
+            """
+
+        for variable in output_variables + ["SVALUE"]:
+            data_procedure_pre += f"""
+            sTextToEscape = {variable};
+            sEscapeChar = '"';
+            IF (SCAN(sEscapeChar, sTextToEscape) > 0);
+                nPos = LONG ( sTextToEscape );
+                WHILE ( nPos > 0);
+                    sChar = Subst(sTextToEscape, nPos, 1);
+                    IF ( sChar @= sEscapeChar );
+                      sTextToEscape = INSRT(sEscapeChar, sTextToEscape, nPos);
+                    ENDIF;  
+                    nPos = nPos - 1;
+                END;
+                {variable} = sTextToEscape;
             ENDIF;
             """
 
