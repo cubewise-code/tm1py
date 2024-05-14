@@ -22,10 +22,17 @@ class TestFileService(unittest.TestCase):
 
         with open(Path(__file__).parent.joinpath('resources', 'file.csv'), "rb") as file:
             self.tm1.files.update_or_create(self.FILE_NAME1, file.read())
-            self.tm1.files.update_or_create(self.FILE_NAME1_IN_FOLDER, file.read())
 
         if self.tm1.files.exists(self.FILE_NAME2):
             self.tm1.files.delete(self.FILE_NAME2)
+
+        self.setUpV12()
+
+    @skip_if_insufficient_version(version="12")
+    def setUpV12(self):
+        with open(Path(__file__).parent.joinpath('resources', 'file.csv'), "rb") as file:
+            self.tm1.files.update_or_create(self.FILE_NAME1_IN_FOLDER, file.read())
+
         if self.tm1.files.exists(self.FILE_NAME2_IN_FOLDER):
             self.tm1.files.delete(self.FILE_NAME2_IN_FOLDER)
 
