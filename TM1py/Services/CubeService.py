@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 import json
 import random
-from typing import List, Iterable, Dict
+from typing import List, Iterable, Dict, Union
 
 from requests import Response
 
 from TM1py.Objects.Cube import Cube
+from TM1py.Objects.Rules import Rules
 from TM1py.Services.CellService import CellService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
@@ -135,17 +136,20 @@ class CubeService(ObjectService):
         errors = response.json()["value"]
         return errors
 
-    def update_or_create_rule(self, cube_name: str, rule: str, **kwargs) -> Response:
-        """ update if exists else create a rule off a cube from TM1 Server
+    def update_or_create_rules(self, cube_name: str, rules: Union[str, Rules], **kwargs) -> Response:
+        """ Update if exists, else create rules from a TM1 Server cube
 
         :param cube_name: name of a cube
-        :param rule: rule content
+        :param rules: rules content
         :return: response
         """
-        url = format_url("/Cubes('{}')", cube_name)
-        rule_body = {"Rules": rule}
-        response = self._rest.PATCH(url=url, data=json.dumps(rule_body), **kwargs)
+        if isinstance(rules, str):
+            rules = Rules(rules=rules)
+        else:
+            raise ValueError('rules must be type str or Rules')
 
+        url = format_url("/Cubes('{}')", cube_name)
+        response = self._rest.PATCH(url=url, data=json.dumps(rules.to_json), **kwargs)
         return response
 
     @require_data_admin

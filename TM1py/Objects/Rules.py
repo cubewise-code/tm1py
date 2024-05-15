@@ -79,6 +79,10 @@ class Rules(TM1Object):
             # has at least one actual feeder statements
             return len(feeders) > 1
         return False
+    
+    @property
+    def to_json(self):
+        return { 'Rules': self.text }
 
     def __len__(self):
         return len(self.rules_analytics)
