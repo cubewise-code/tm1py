@@ -259,7 +259,16 @@ class TestCubeService(unittest.TestCase):
 
         errors = self.tm1.cubes.check_rules(cube_name=self.cube_name)
         self.assertEqual(1, len(errors))
-
+        
+    def test_update_or_create_rules_happy_case(self):
+        rules = "#test_rules_update_without_errors"
+        self.tm1.cubes.update_or_create_rules(cube_name=self.cube_name, rules=rules)
+        self.assertEqual(rules, self.tm1.cubes.get(cube_name=self.cube_name).rules.text)
+        
+    def test_update_or_create_rules_typing_error(self):
+        rules = ["#test_rules_update_with_errors"]
+        self.assertRaises(ValueError, lambda: self.tm1.cubes.update_or_create_rules(cube_name=self.cube_name, rules=rules))
+        
     def test_search_for_rule_substring_no_match(self):
         cubes = self.tm1.cubes.search_for_rule_substring(substring="find_nothing")
         self.assertEqual(0, len(cubes))
