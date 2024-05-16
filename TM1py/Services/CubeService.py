@@ -145,6 +145,8 @@ class CubeService(ObjectService):
         """
         if isinstance(rules, str):
             rules = Rules(rules=rules)
+        if isinstance(rules, Rules):
+            pass
         else:
             raise ValueError('rules must be type str or Rules')
 
