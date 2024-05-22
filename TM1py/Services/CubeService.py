@@ -151,7 +151,7 @@ class CubeService(ObjectService):
             raise ValueError('rules must be type str or Rules')
 
         url = format_url("/Cubes('{}')", cube_name)
-        response = self._rest.PATCH(url=url, data=json.dumps(rules.to_json), **kwargs)
+        response = self._rest.PATCH(url=url, data=rules.body, **kwargs)
         return response
 
     @require_data_admin
