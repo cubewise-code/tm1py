@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from typing import List
+import json
+from typing import List, Dict
 
 from TM1py.Objects.TM1Object import TM1Object
 
@@ -79,10 +80,14 @@ class Rules(TM1Object):
             # has at least one actual feeder statements
             return len(feeders) > 1
         return False
-    
+
     @property
-    def to_json(self):
-        return { 'Rules': self.text }
+    def body(self) -> str:
+        return json.dumps(self.body_as_dict)
+
+    @property
+    def body_as_dict(self) -> Dict:
+        return {'Rules': self.text}
 
     def __len__(self):
         return len(self.rules_analytics)

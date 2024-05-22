@@ -8,7 +8,7 @@ from TM1py.Exceptions.Exceptions import TM1pyRestException
 from TM1py.Objects import Cube
 from TM1py.Objects import Rules
 from TM1py.Services import TM1Service
-from Utils import skip_if_insufficient_version, skip_if_deprecated_in_version
+from .Utils import skip_if_insufficient_version, skip_if_deprecated_in_version
 
 
 class TestCubeService(unittest.TestCase):
@@ -260,7 +260,7 @@ class TestCubeService(unittest.TestCase):
 
         errors = self.tm1.cubes.check_rules(cube_name=self.cube_name)
         self.assertEqual(1, len(errors))
-        
+
     def test_update_or_create_rules_str_happy_case(self):
         """
         Check if the rules: str will be updated or created on cube
@@ -268,7 +268,7 @@ class TestCubeService(unittest.TestCase):
         rules = "#test_rules"
         self.tm1.cubes.update_or_create_rules(cube_name=self.cube_name, rules=rules)
         self.assertEqual(rules, self.tm1.cubes.get(cube_name=self.cube_name).rules.text)
-        
+
     def test_update_or_create_rules_happy_case(self):
         """
         Check if the rules: Rules will be updated or created on cube
@@ -276,27 +276,30 @@ class TestCubeService(unittest.TestCase):
         rules = Rules("#test_rules_update")
         self.tm1.cubes.update_or_create_rules(cube_name=self.cube_name, rules=rules)
         self.assertEqual(rules.text, self.tm1.cubes.get(cube_name=self.cube_name).rules.text)
-        
+
     def test_update_or_create_rules_for_nonexistent_cube(self):
         """
         Check if the function will raise TM1pyRestException for an update on a nonexistent cube
         """
         nonexist_cube_name = 'nonexist_cube'
         rules = "#test_rules"
-        self.assertRaises(TM1pyRestException, lambda: self.tm1.cubes.update_or_create_rules(cube_name=nonexist_cube_name, rules=rules))
-        
+        self.assertRaises(TM1pyRestException,
+                          lambda: self.tm1.cubes.update_or_create_rules(cube_name=nonexist_cube_name, rules=rules))
+
     def test_update_or_create_rules_list_typing_error(self):
         """
         Check if the function will raise a ValueError for rules in list type
         """
-        self.assertRaises(ValueError, lambda: self.tm1.cubes.update_or_create_rules(cube_name=self.cube_name, rules=["#list_rules"]))
-        
+        self.assertRaises(ValueError, lambda: self.tm1.cubes.update_or_create_rules(cube_name=self.cube_name,
+                                                                                    rules=["#list_rules"]))
+
     def test_update_or_create_rules_dict_typing_error(self):
         """
         Check if the function will raise a ValueError for rules in dict type
         """
-        self.assertRaises(ValueError, lambda: self.tm1.cubes.update_or_create_rules(cube_name=self.cube_name, rules={"#dict_rules"}))
-        
+        self.assertRaises(ValueError, lambda: self.tm1.cubes.update_or_create_rules(cube_name=self.cube_name,
+                                                                                    rules={"#dict_rules"}))
+
     def test_search_for_rule_substring_no_match(self):
         cubes = self.tm1.cubes.search_for_rule_substring(substring="find_nothing")
         self.assertEqual(0, len(cubes))
