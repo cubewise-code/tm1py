@@ -707,6 +707,36 @@ class ElementService(ObjectService):
         rows_and_values = self._retrieve_mdx_rows_and_values(mdx, element_unique_names=element_unique_names)
         return self._extract_dict_from_rows_and_values(rows_and_values, exclude_empty_cells=exclude_empty_cells)
 
+    @require_version("11.8.023")
+    def element_lock(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> Response:
+        """ Lock element
+        :param dimension_name: Name of dimension.
+        :param hierarchy_name: Name of hierarchy.
+        :param element_name: Name of element to lock.
+        :return: response
+        """
+        url = format_url(
+            "/Dimensions('{}')/Hierarchies('{}')/Elements('{}')/tm1.Lock",
+            dimension_name,
+            hierarchy_name,
+            element_name)
+        return self._rest.POST(url, '', **kwargs)
+    
+    @require_version("11.8.023")
+    def element_unlock(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> Response:
+        """ Unlock element
+        :param dimension_name: Name of dimension.
+        :param hierarchy_name: Name of hierarchy.
+        :param element_name: Name of element to unlock.
+        :return: response
+        """
+        url = format_url(
+            "/Dimensions('{}')/Hierarchies('{}')/Elements('{}')/tm1.Unlock",
+            dimension_name,
+            hierarchy_name,
+            element_name)
+        return self._rest.POST(url, '', **kwargs)
+    
     @staticmethod
     def _extract_dict_from_rows_and_values(
             rows_and_values: CaseAndSpaceInsensitiveTuplesDict,
