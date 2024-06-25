@@ -244,6 +244,8 @@ class RestService:
             data=data,
             encoding=encoding)
 
+        timeout = timeout if timeout else self._timeout
+
         try:
             if return_async_id:
                 async_requests_mode = True
@@ -280,7 +282,7 @@ class RestService:
                 if return_async_id:
                     return async_id
 
-                for wait in RestService.wait_time_generator(kwargs.get('timeout', self._timeout)):
+                for wait in RestService.wait_time_generator(timeout):
                     response = self.retrieve_async_response(async_id)
                     if response.status_code in [200, 201]:
                         break
@@ -310,14 +312,14 @@ class RestService:
         except Timeout:
             if cancel_at_timeout or (cancel_at_timeout is None and self._cancel_at_timeout):
                 self.cancel_running_operation()
-            raise TM1pyTimeout(method=method, url=url, timeout=kwargs.get('timeout', self._timeout))
+            raise TM1pyTimeout(method=method, url=url, timeout=timeout)
 
         except ConnectionError as e:
             # cater for issue in requests library: https://github.com/psf/requests/issues/5430
             if re.search('Read timed out', str(e), re.IGNORECASE):
                 if cancel_at_timeout or (cancel_at_timeout is None and self._cancel_at_timeout):
                     self.cancel_running_operation()
-                raise TM1pyTimeout(method=method, url=url, timeout=kwargs.get('timeout', self._timeout))
+                raise TM1pyTimeout(method=method, url=url, timeout=timeout)
 
             # A connection error that requires attention (e.g. SSL)
             raise e
