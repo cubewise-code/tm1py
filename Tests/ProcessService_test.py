@@ -6,7 +6,7 @@ import unittest
 import uuid
 from pathlib import Path
 
-from TM1py.Exceptions import TM1pyException
+from TM1py.Exceptions import TM1pyException, TM1pyTimeout
 from TM1py.Objects import Process, Subset, ProcessDebugBreakpoint, BreakPointType, HitMode
 from TM1py.Services import TM1Service
 from .Utils import skip_if_insufficient_version, skip_if_deprecated_in_version
@@ -173,6 +173,26 @@ class TestProcessService(unittest.TestCase):
         if not verify_version(required_version="12", version=self.tm1.version):
             self.assertIsNone(error_log_file)
 
+    def test_execute_with_return_return_async_id(self):
+        process = self.p_bedrock_server_wait
+        self.tm1.processes.update_or_create(process)
+        # with parameters
+        async_id = self.tm1.processes.execute_with_return(
+            return_async_id=True,
+            process_name=process.name,
+            pWaitSec=2)
+        self.assertGreater(len(async_id), 5)
+
+    def test_execute_with_return_timeout(self):
+        process = self.p_bedrock_server_wait
+        self.tm1.processes.update_or_create(process)
+
+        with self.assertRaises(TM1pyTimeout):
+            self.tm1.processes.execute_with_return(
+                timeout=1,
+                process_name=process.name,
+                pWaitSec='5')
+
     def test_execute_with_return_compile_error(self):
         process = Process(name=str(uuid.uuid4()))
         process.prolog_procedure = "sText = 'text';sText = 2;"
@@ -263,6 +283,21 @@ class TestProcessService(unittest.TestCase):
         # v12 returns a log file for every process execution
         if not verify_version(required_version="12", version=self.tm1.version):
             self.assertIsNone(error_log_file)
+
+    @skip_if_insufficient_version(version="11.3")
+    def test_execute_process_with_return_returns_async_id(self):
+        process = Process(name=str(uuid.uuid4()))
+        process.prolog_procedure = "Sleep(100);"
+
+        async_id = self.tm1.processes.execute_process_with_return(process,return_async_id=True)
+        self.assertGreater(len(async_id), 5)
+
+    @skip_if_insufficient_version(version="11.3")
+    def test_execute_process_with_return_returns_timeout(self):
+        process = Process(name=str(uuid.uuid4()))
+        process.prolog_procedure = "Sleep(3000);"
+        with self.assertRaises(TM1pyTimeout):
+            self.tm1.processes.execute_process_with_return(process, timeout=1)
 
     def test_execute_process_with_return_compile_error(self):
         process = Process(name=str(uuid.uuid4()))
