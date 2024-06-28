@@ -484,7 +484,7 @@ class RestService:
 
         return self.request(
             method='get',
-            headers={**self._headers, **headers} if headers else self._headers,
+            headers={**self._headers, **headers} if headers else dict(self._headers),
             url=url,
             data=data,
             async_requests_mode=async_requests_mode,
@@ -519,7 +519,7 @@ class RestService:
 
         response = self.request(
             method='post',
-            headers={**self._headers, **headers} if headers else self._headers,
+            headers={**self._headers, **headers} if headers else dict(self._headers),
             url=url,
             data=data,
             async_requests_mode=async_requests_mode,
@@ -556,7 +556,7 @@ class RestService:
 
         return self.request(
             method='patch',
-            headers={**self._headers, **headers} if headers else self._headers,
+            headers={**self._headers, **headers} if headers else dict(self._headers),
             url=url,
             data=data,
             async_requests_mode=async_requests_mode,
@@ -591,7 +591,7 @@ class RestService:
 
         return self.request(
             method='put',
-            headers={**self._headers, **headers} if headers else self._headers,
+            headers={**self._headers, **headers} if headers else dict(self._headers),
             url=url,
             data=data,
             async_requests_mode=async_requests_mode,
@@ -626,7 +626,7 @@ class RestService:
 
         return self.request(
             method='delete',
-            headers={**self._headers, **headers} if headers else self._headers,
+            headers={**self._headers, **headers} if headers else dict(self._headers),
             url=url,
             data=data,
             async_requests_mode=async_requests_mode,
