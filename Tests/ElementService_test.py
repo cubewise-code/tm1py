@@ -995,6 +995,28 @@ class TestElementService(unittest.TestCase):
                 self.dimension_name,
                 [element_attribute])
 
+    @skip_if_insufficient_version(version="11.8.023")
+    def test_element_lock_and_unlock(self):
+        self.tm1.elements.element_lock(dimension_name=self.dimension_name, 
+                                       hierarchy_name=self.hierarchy_name, 
+                                       element_name='1991')
+        
+        query = MdxBuilder.from_cube(self.attribute_cube_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_name}].[1991]",
+            f"[{self.attribute_cube_name}].[Previous Year]")
+        
+        with self.assertRaises(TM1pyException):
+            self.tm1.cubes.cells.write_value('3000', self.attribute_cube_name, ('1991', 'Previous Year'))
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), ['1990'])
+
+
+        self.tm1.elements.element_unlock(dimension_name=self.dimension_name, 
+                                       hierarchy_name=self.hierarchy_name, 
+                                       element_name='1991')
+        self.tm1.cubes.cells.write_value('4000', self.attribute_cube_name, ('1991', 'Previous Year'))
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), ['4000'])
+        
     def test_execute_set_mdx(self):
         mdx = f"{{[{self.dimension_name}].[1990]}}"
         members = self.tm1.elements.execute_set_mdx(
@@ -1289,29 +1311,7 @@ class TestElementService(unittest.TestCase):
                                                   hierarchy_name=self.hierarchy_does_not_exist_name,
                                                   ancestor_name='All Consolidations',
                                                   element_name='1992',
-                                                  method='TI')
-            
-    @skip_if_insufficient_version(version="11.8.023")
-    def test_element_lock_and_unlock(self):
-        self.tm1.elements.element_lock(dimension_name=self.dimension_name, 
-                                       hierarchy_name=self.hierarchy_name, 
-                                       element_name='1991')
-        
-        query = MdxBuilder.from_cube(self.attribute_cube_name)
-        query.add_member_tuple_to_columns(
-            f"[{self.dimension_name}].[1991]",
-            f"[{self.attribute_cube_name}].[Previous Year]")
-        
-        with self.assertRaises(TM1pyException):
-            self.tm1.cubes.cells.write_value('3000', self.attribute_cube_name, ('1991', 'Previous Year'))
-        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), ['1990'])
-
-
-        self.tm1.elements.element_unlock(dimension_name=self.dimension_name, 
-                                       hierarchy_name=self.hierarchy_name, 
-                                       element_name='1991')
-        self.tm1.cubes.cells.write_value('4000', self.attribute_cube_name, ('1991', 'Previous Year'))
-        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), ['4000'])
+                                                  method='TI')           
 
     @classmethod
     def tearDownClass(cls):
