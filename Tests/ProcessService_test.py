@@ -9,8 +9,8 @@ from pathlib import Path
 from TM1py.Exceptions import TM1pyException, TM1pyTimeout
 from TM1py.Objects import Process, Subset, ProcessDebugBreakpoint, BreakPointType, HitMode
 from TM1py.Services import TM1Service
-from .Utils import skip_if_insufficient_version, skip_if_deprecated_in_version
 from TM1py.Utils import verify_version
+from .Utils import skip_if_insufficient_version, skip_if_deprecated_in_version
 
 
 class TestProcessService(unittest.TestCase):
@@ -289,7 +289,7 @@ class TestProcessService(unittest.TestCase):
         process = Process(name=str(uuid.uuid4()))
         process.prolog_procedure = "Sleep(100);"
 
-        async_id = self.tm1.processes.execute_process_with_return(process,return_async_id=True)
+        async_id = self.tm1.processes.execute_process_with_return(process, return_async_id=True)
         self.assertGreater(len(async_id), 5)
 
     @skip_if_insufficient_version(version="11.3")
