@@ -4,6 +4,8 @@ import unittest
 from pathlib import Path
 from uuid import uuid1
 
+from mdxpy import MdxBuilder
+
 from TM1py.Exceptions import TM1pyRestException, TM1pyException
 from TM1py.Objects import Dimension, Hierarchy, Element, ElementAttribute
 from TM1py.Services import TM1Service
@@ -1025,6 +1027,28 @@ class TestElementService(unittest.TestCase):
             "All Consolidations": "Consolidated"
         }
         self.assertEqual(expected, element_types)
+
+    @skip_if_insufficient_version(version="11.8.023")
+    def test_element_lock_and_unlock(self):
+        self.tm1.elements.element_lock(dimension_name=self.dimension_name, 
+                                       hierarchy_name=self.hierarchy_name, 
+                                       element_name='1991')
+
+        query = MdxBuilder.from_cube(self.attribute_cube_name)
+        query.add_member_tuple_to_columns(
+            f"[{self.dimension_name}].[1991]",
+            f"[{self.attribute_cube_name}].[Previous Year]")
+
+        with self.assertRaises(TM1pyException):
+            self.tm1.cubes.cells.write_value('3000', self.attribute_cube_name, ('1991', 'Previous Year'))
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), ['1990'])
+
+
+        self.tm1.elements.element_unlock(dimension_name=self.dimension_name, 
+                                       hierarchy_name=self.hierarchy_name, 
+                                       element_name='1991')
+        self.tm1.cubes.cells.write_value('4000', self.attribute_cube_name, ('1991', 'Previous Year'))
+        self.assertEqual(self.tm1.cells.execute_mdx_values(mdx=query.to_mdx()), ['4000'])
 
     def test_get_element_types_from_all_hierarchies_with_single_hierarchy(self):
         expected = {
