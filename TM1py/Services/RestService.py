@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import json
 import re
-import socket
 import time
 import warnings
+from ast import literal_eval
 from base64 import b64encode, b64decode
 from enum import Enum
 from http.client import HTTPResponse
@@ -11,7 +11,6 @@ from http.cookies import SimpleCookie
 from io import BytesIO
 from json import JSONDecodeError
 from typing import Union, Dict, Tuple, Optional
-from ast import literal_eval
 
 import requests
 import urllib3
@@ -39,9 +38,11 @@ class AuthenticationMode(Enum):
     WIA = 2
     CAM = 3
     CAM_SSO = 4
+    # 5 is legacy early-release of v12. Deprecate with next major release
     IBM_CLOUD_API_KEY = 5
     SERVICE_TO_SERVICE = 6
     PA_PROXY = 7
+    BASIC_API_KEY = 8
 
     @property
     def use_v12_auth(self):
@@ -189,7 +190,11 @@ class RestService:
     def _determine_verify(self, verify: [bool, str] = None) -> [bool, str]:
         if verify is None:
             # Default SSL verification in v12 is True
-            if self._auth_mode in [AuthenticationMode.IBM_CLOUD_API_KEY, AuthenticationMode.SERVICE_TO_SERVICE]:
+            if self._auth_mode in [
+                AuthenticationMode.IBM_CLOUD_API_KEY,
+                AuthenticationMode.SERVICE_TO_SERVICE,
+                AuthenticationMode.BASIC_API_KEY
+            ]:
                 return True
             else:
                 return False
@@ -326,7 +331,7 @@ class RestService:
 
     def connect(self):
         if "session_id" in self._kwargs:
-            self._s.cookies.set("TM1SessionId", self._kwargs["session_id"])
+            self._set_session_id_cookie()
         else:
             self._start_session(
                 user=self._kwargs.get("user", None),
@@ -343,6 +348,12 @@ class RestService:
                 impersonate=self._kwargs.get("impersonate", None),
                 application_client_id=self._kwargs.get("application_client_id", None),
                 application_client_secret=self._kwargs.get("application_client_secret", None))
+
+    def _set_session_id_cookie(self):
+        if self._auth_mode.use_v12_auth:
+            self._s.cookies.set("paSession", self._kwargs["session_id"])
+        else:
+            self._s.cookies.set("TM1SessionId", self._kwargs["session_id"])
 
     def _construct_ibm_cloud_service_and_auth_root(self):
         if not all([self._address, self._tenant, self._database]):
@@ -442,6 +453,9 @@ class RestService:
         # If an address and database and instances are specified then we create a CP4D connection
         elif self._auth_mode is AuthenticationMode.SERVICE_TO_SERVICE:
             return self._construct_s2s_service_and_auth_root()
+
+        if self._auth_mode is AuthenticationMode.BASIC_API_KEY:
+            return self._construct_all_version_service_and_auth_root_from_base_url()
 
     def _manage_http_adapter(self):
         adapter = HTTPAdapterWithSocketOptions(
@@ -677,7 +691,7 @@ class RestService:
             application_auth = HTTPBasicAuth(application_client_id, application_client_secret)
             self._s.auth = application_auth
 
-        #Get the JWT token from the CPD URL
+        # Get the JWT token from the CPD URL
         elif self._auth_mode == AuthenticationMode.PA_PROXY:
             credentials = {"username": user, "password": password}
             jwt = self._generate_cpd_access_token(credentials)
@@ -732,11 +746,11 @@ class RestService:
                     header = {'Content-Type': 'application/x-www-form-urlencoded'}
                     payload = f"jwt={jwt}"
                     response = self._s.post(
-                                        url=self._auth_url,
-                                        headers=header,
-                                        verify=self._verify,
-                                        timeout=self._timeout,
-                                        data=payload)
+                        url=self._auth_url,
+                        headers=header,
+                        verify=self._verify,
+                        timeout=self._timeout,
+                        data=payload)
                     self.verify_response(response)
                     csrf_cookie = response.cookies.get_dict(self._address, '/')['ba-sso-csrf']
                     self.add_http_header('ba-sso-authenticity', csrf_cookie)
@@ -826,7 +840,7 @@ class RestService:
                 *[group["Name"] for group in response.json()["value"]]) for g in ["Admin", "SecurityAdmin"])
 
         return self._is_security_admin
-    
+
     @property
     def is_ops_admin(self) -> bool:
         if self._is_ops_admin is None:
@@ -835,7 +849,7 @@ class RestService:
                 *[group["Name"] for group in response.json()["value"]]) for g in ["Admin", "OperationsAdmin"])
 
         return self._is_ops_admin
-    
+
     @property
     def sandboxing_disabled(self):
         if self._sandboxing_disabled is None:
@@ -1042,12 +1056,13 @@ class RestService:
             self._pa_url,
             self._tenant
         ]):
-            # v11
             if not any([
                 self._kwargs.get('namespace', None),
                 self._kwargs.get('gateway', None),
                 self._kwargs.get('integrated_login', None)
             ]):
+                if self._kwargs.get('user', None) == 'apikey' and 'planninganalytics.saas.ibm.com' in self._base_url:
+                    return AuthenticationMode.BASIC_API_KEY
                 return AuthenticationMode.BASIC
 
             if self._kwargs.get('gateway', None):
