@@ -505,7 +505,7 @@ class HierarchyService(ObjectService):
         hierarchy_exists = self.exists(dimension_name, hierarchy_name)
 
         if not hierarchy_exists:
-            existing_element_identifiers = set()
+            existing_element_identifiers = CaseAndSpaceInsensitiveSet()
         else:
             existing_element_identifiers = self.elements.get_all_element_identifiers(
                 dimension_name=dimension_name,
