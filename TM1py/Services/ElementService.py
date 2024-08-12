@@ -319,11 +319,6 @@ class ElementService(ObjectService):
             else:
                 column_selection = column_selection + " + {" + ",".join(calculated_members_selection) + "}"
 
-        elements = ",".join(
-            member["UniqueName"]
-            for member
-            in members)
-
         mdx_with_block = ""
         if calculated_members_definition:
             mdx_with_block = "WITH " + " ".join(calculated_members_definition)
