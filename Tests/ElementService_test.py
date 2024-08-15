@@ -547,6 +547,83 @@ class TestElementService(unittest.TestCase):
     def test_get_elements_dataframe_element_type_column_use_blob(self):
         self.run_test_get_elements_dataframe_element_type_column(True)
 
+    def run_test_get_elements_dataframe_not_elements(self, use_blob: bool):
+        df = self.tm1.elements.get_elements_dataframe(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            skip_consolidations=True,
+            attributes=["Next Year", "Previous Year"],
+            attribute_column_prefix="Attribute ",
+            skip_parents=False,
+            level_names=None,
+            parent_attribute=None,
+            skip_weights=False,
+            use_blob=use_blob)
+
+        reference_df = self.tm1.elements.get_elements_dataframe(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            elements=f"{{ [{self.dimension_name}].[{self.hierarchy_name}].Members }}",
+            skip_consolidations=True,
+            attributes=["Next Year", "Previous Year"],
+            attribute_column_prefix="Attribute ",
+            skip_parents=False,
+            level_names=None,
+            parent_attribute=None,
+            skip_weights=False,
+            use_blob=use_blob)
+
+        self.assertTrue(df.equals(reference_df))
+
+    @skip_if_no_pandas
+    def test_get_elements_dataframe_not_elements(self):
+        self.run_test_get_elements_dataframe_not_elements(use_blob=False)
+
+    @skip_if_no_pandas
+    def test_get_elements_dataframe_use_blob_not_elements(self):
+        self.run_test_get_elements_dataframe_not_elements(use_blob=True)
+
+    def run_test_get_elements_dataframe_elements_via_mdx(self, use_blob: bool):
+        element_names = self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name)
+        df = self.tm1.elements.get_elements_dataframe(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            elements=element_names,
+            skip_consolidations=True,
+            attributes=["Next Year", "Previous Year"],
+            attribute_column_prefix="Attribute ",
+            skip_parents=False,
+            level_names=None,
+            parent_attribute=None,
+            skip_weights=False,
+            use_blob=use_blob)
+
+        elements = "{" + ",".join(
+            f"[{self.dimension_name}].[{self.hierarchy_name}].[{member}]" for member in element_names) + "}"
+        reference_df = self.tm1.elements.get_elements_dataframe(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            elements=elements,
+            skip_consolidations=True,
+            attributes=["Next Year", "Previous Year"],
+            attribute_column_prefix="Attribute ",
+            skip_parents=False,
+            level_names=None,
+            parent_attribute=None,
+            skip_weights=False,
+            use_blob=use_blob)
+
+        self.assertTrue(df.equals(reference_df))
+
+    @skip_if_no_pandas
+    def test_get_elements_dataframe_not_elements(self):
+        self.run_test_get_elements_dataframe_not_elements(use_blob=False)
+
+    @skip_if_no_pandas
+    def test_get_elements_dataframe_use_blob_not_elements(self):
+        self.run_test_get_elements_dataframe_not_elements(use_blob=True)
+
+
     def test_get_element_names(self):
         element_names = self.tm1.dimensions.hierarchies.elements.get_element_names(
             self.dimension_name,
