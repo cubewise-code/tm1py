@@ -830,6 +830,18 @@ class CellService(ObjectService):
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
 
+        # reorder columns in df to align with dimensions; CaseAndSpaceInsensitiveDict is a OrderedDict
+        dimension_to_column_map = CaseAndSpaceInsensitiveDict(dict(zip(dimensions, data.columns)))
+        column_to_dimension_map = CaseAndSpaceInsensitiveDict(dict(zip(data.columns,dimensions)))
+
+        if dimension_to_column_map != column_to_dimension_map:
+            # identify the name(s) of the value columns:
+            columns_not_in_dimensions = [col for col in data.columns if col not in CaseAndSpaceInsensitiveSet(dimensions)]
+            # get the columns in the cube dimension order with the original column names (CaseAndSpaceInSensitive):
+            ordered_columns = [dimension_to_column_map[dim] for dim in data.columns if dim in  dimension_to_column_map]
+            # reorder the dataframe:
+            data = data.loc[:, ordered_columns + columns_not_in_dimensions]
+
         if not len(data.columns) == len(dimensions) + 1:
             raise ValueError("Number of columns in 'data' DataFrame must be number of dimensions in cube + 1")
 
