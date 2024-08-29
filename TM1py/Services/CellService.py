@@ -791,7 +791,7 @@ class CellService(ObjectService):
 
     @require_pandas
     def write_dataframe(self, cube_name: str, data: 'pd.DataFrame', dimensions: Iterable[str] = None,
-                        increment: bool = False, deactivate_transaction_log: bool = False,
+                        increment: bool = False,change_the_order:bool=False, deactivate_transaction_log: bool = False,
                         reactivate_transaction_log: bool = False, sandbox_name: str = None,
                         use_ti: bool = False, use_blob: bool = False, use_changeset: bool = False,
                         precision: int = None,
@@ -822,6 +822,7 @@ class CellService(ObjectService):
         :param remove_blob: remove blob file after writing with use_blob=True
         :param allow_spread: allow TI process in use_blob or use_ti to use CellPutProportionalSpread on C elements
         :param clear_view: name of cube view to clear before writing
+        :param change_the_order: change the order of dataframe columsn according cube dimension order
         :return: changeset or None
         """
         if not isinstance(data, pd.DataFrame):
@@ -832,7 +833,10 @@ class CellService(ObjectService):
 
         if not len(data.columns) == len(dimensions) + 1:
             raise ValueError("Number of columns in 'data' DataFrame must be number of dimensions in cube + 1")
-
+        if change_the_order:
+            dimension_order=dimensions.copy()
+            dimension_order.insert(len(dimension_order),"Value")
+            data=data[list(dimension_order)].copy()
         cells = build_cellset_from_pandas_dataframe(data, sum_numeric_duplicates=sum_numeric_duplicates)
 
         return self.write(cube_name=cube_name,
