@@ -797,7 +797,7 @@ class CellService(ObjectService):
                         precision: int = None,
                         skip_non_updateable: bool = False, measure_dimension_elements: Dict = None,
                         sum_numeric_duplicates: bool = True, remove_blob: bool = True, allow_spread: bool = False,
-                        clear_view: str = None, **kwargs) -> str:
+                        clear_view: str = None, fixed_dimension_elements:Dict =None, **kwargs) -> str:
         """
         Function expects same shape as `execute_mdx_dataframe` returns.
         Column order must match dimensions in the target cube with an additional column for the values.
@@ -822,6 +822,7 @@ class CellService(ObjectService):
         :param remove_blob: remove blob file after writing with use_blob=True
         :param allow_spread: allow TI process in use_blob or use_ti to use CellPutProportionalSpread on C elements
         :param clear_view: name of cube view to clear before writing
+        :param fixed_dimension_elements: Dict of fixed dimension element pairs. Column is created for you.
         :return: changeset or None
         """
         if not isinstance(data, pd.DataFrame):
@@ -830,15 +831,28 @@ class CellService(ObjectService):
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
 
-        # reorder columns in df to align with dimensions; CaseAndSpaceInsensitiveDict is a OrderedDict
-        dimension_to_column_map = CaseAndSpaceInsensitiveDict(dict(zip(dimensions, data.columns)))
-        column_to_dimension_map = CaseAndSpaceInsensitiveDict(dict(zip(data.columns,dimensions)))
+        dimension_to_column_map = {dim: col for dim in CaseAndSpaceInsensitiveSet(dimensions) for col in data.columns if
+                                   col.lower().replace(' ', '') == dim.lower().replace(' ', '')}
+        column_to_dimension_map = {v: k for k, v in dimension_to_column_map.items()}
 
-        if dimension_to_column_map != column_to_dimension_map:
+        # reorder columns in df to align with dimensions; CaseAndSpaceInsensitiveDict is a OrderedDict
+        if fixed_dimension_elements:
+            for dimension, element in fixed_dimension_elements.items():
+                if dimension in CaseAndSpaceInsensitiveSet(data.columns):
+                    raise ValueError("one or more of the fixed_dimension_elements are passed as a dataframe column. "
+                                     f"{dimension}: {element} is passed in fixed_dimension_elements. "
+                                     "Either remove the key value pair from the fixed_dimension_elements dict or "
+                                     f"avoid passing the {dimension} column in the dataframe.")
+                data[dimension] = element
+            # recreate the maps:
+            dimension_to_column_map = {dim:col for dim in CaseAndSpaceInsensitiveSet(dimensions) for col in data.columns if col.lower().replace(' ', '') == dim.lower().replace(' ', '') }
+            column_to_dimension_map = {col:dim for col in CaseAndSpaceInsensitiveSet(data.columns) for dim in dimensions if dim.lower().replace(' ', '') == col.lower().replace(' ', '') }
+
+        if list(dimension_to_column_map.keys()) != list(column_to_dimension_map.keys()):
             # identify the name(s) of the value columns:
             columns_not_in_dimensions = [col for col in data.columns if col not in CaseAndSpaceInsensitiveSet(dimensions)]
             # get the columns in the cube dimension order with the original column names (CaseAndSpaceInSensitive):
-            ordered_columns = [dimension_to_column_map[dim] for dim in data.columns if dim in  dimension_to_column_map]
+            ordered_columns = [dimension_to_column_map[dim] for dim in dimensions if dim in dimension_to_column_map]
             # reorder the dataframe:
             data = data.loc[:, ordered_columns + columns_not_in_dimensions]
 
