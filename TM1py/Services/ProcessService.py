@@ -51,7 +51,7 @@ class ProcessService(ObjectService):
         return Process.from_dict(response.json())
 
     def get_all(self, skip_control_processes: bool = False, **kwargs) -> List[Process]:
-        """ Get a processes from TM1 Server
+        """ Get all processes from TM1 Server
     
         :param skip_control_processes: bool, True to exclude processes that begin with "}" or "{"
         :return: List, instances of the TM1py.Process
