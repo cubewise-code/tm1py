@@ -1127,8 +1127,8 @@ class TestCellService(unittest.TestCase):
         self.tm1.cells.write_dataframe(
             self.cube_name,
             df,
-            fixed_dimension_elements={self.dimension_names[0].replace('1', ' 1 ').lower(): "element 1",
-                                      self.dimension_names[2]: "element 5"})
+            static_dimension_elements={self.dimension_names[0].replace('1', ' 1 ').lower(): "element 1",
+                                       self.dimension_names[2]: "element 5"})
 
         query = MdxBuilder.from_cube(self.cube_name)
         query = query.add_hierarchy_set_to_column_axis(
@@ -1151,7 +1151,7 @@ class TestCellService(unittest.TestCase):
         self.tm1.cells.write_dataframe(
             self.cube_name,
             df,
-            fixed_dimension_elements={
+            static_dimension_elements={
                 self.dimension_names[1].replace('2', ' 2 ').lower(): "element 2",
                 self.dimension_names[0].replace('1', ' 1 ').lower(): "element 1",
                 self.dimension_names[2]: "element 5"})
