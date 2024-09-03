@@ -1103,7 +1103,7 @@ class TestCellService(unittest.TestCase):
             self.dimension_names[2].replace('3', ' 3').lower(): ["element 5", "element 5", "element 5"],
             "Value": [1.0, 2.0, 3.0]})
 
-        self.tm1.cells.write_dataframe(self.cube_name, df)
+        self.tm1.cells.write_dataframe(self.cube_name, df, infer_column_order=True)
 
         query = MdxBuilder.from_cube(self.cube_name)
         query = query.add_hierarchy_set_to_column_axis(
@@ -1119,7 +1119,7 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(list(df["Value"]), values)
 
     @skip_if_no_pandas
-    def test_write_dataframe_fixed_dimension_elements(self):
+    def test_write_dataframe_static_dimension_elements(self):
         df = pd.DataFrame({
             self.dimension_names[1]: ["element 1", "element 2", "element 3"],
             "Value": [1.0, 2.0, 3.0]})
@@ -1144,13 +1144,14 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(list(df["Value"]), values)
 
     @skip_if_no_pandas
-    def test_write_dataframe_fixed_dimension_elements_all_fixed(self):
+    def test_write_dataframe_static_dimension_elements_all_static(self):
         df = pd.DataFrame({
             "Value": [1.0]})
 
         self.tm1.cells.write_dataframe(
             self.cube_name,
             df,
+            infer_column_order=True,
             static_dimension_elements={
                 self.dimension_names[1].replace('2', ' 2 ').lower(): "element 2",
                 self.dimension_names[0].replace('1', ' 1 ').lower(): "element 1",

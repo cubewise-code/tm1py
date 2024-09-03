@@ -835,6 +835,8 @@ class CellService(ObjectService):
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
 
+        infer_column_order = True if static_dimension_elements else infer_column_order
+
         if infer_column_order:
             dimension_to_column_map = {dim: col for dim in CaseAndSpaceInsensitiveSet(dimensions) for col in data.columns if
                                        col.lower().replace(' ', '') == dim.lower().replace(' ', '')}
