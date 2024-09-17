@@ -3,6 +3,7 @@ import random
 import string
 import unittest
 from pathlib import Path
+from uuid import uuid1
 
 from TM1py.Objects import Annotation, Cube, Dimension, Element, Hierarchy
 from TM1py.Services import TM1Service
@@ -10,15 +11,11 @@ from TM1py.Services import TM1Service
 
 class TestAnnotationService(unittest.TestCase):
     tm1: TM1Service
-    cube_name = "TM1py_tests_annotations"
-    dimension_names = ("TM1py_tests_annotations_dimension1",
-                       "TM1py_tests_annotations_dimension2",
-                       "TM1py_tests_annotations_dimension3")
 
     @classmethod
     def setUpClass(cls):
         """
-        Establishes a connection to TM1 and creates a dimensions and a cube to use across all tests
+        Establishes a connection to TM1
         """
 
         # Connection to TM1
@@ -26,23 +23,38 @@ class TestAnnotationService(unittest.TestCase):
         cls.config.read(Path(__file__).parent.joinpath('config.ini'))
         cls.tm1 = TM1Service(**cls.config['tm1srv01'])
 
+    @classmethod
+    def tearDownClass(cls):
+        """
+        Close the connection once all tests have run.
+        """
+        cls.tm1.logout()
+
+    def setUp(self):
+        """
+        Run before each test to create a cube with test annotations
+        """
         # Build Dimensions
-        for dimension_name in cls.dimension_names:
+        test_uuid = str(uuid1()).replace('-', "_")
+        self.dimension_names = (
+            "TM1py_tests_annotations_dimension1_" + test_uuid,
+            "TM1py_tests_annotations_dimension2_" + test_uuid,
+            "TM1py_tests_annotations_dimension3_" + test_uuid,
+        )
+
+        for dimension_name in self.dimension_names:
             elements = [Element('Element {}'.format(str(j)), 'Numeric') for j in range(1, 1001)]
             hierarchy = Hierarchy(dimension_name=dimension_name,
                                   name=dimension_name,
                                   elements=elements)
             dimension = Dimension(dimension_name, [hierarchy])
-            cls.tm1.dimensions.update_or_create(dimension)
+            self.tm1.dimensions.update_or_create(dimension)
 
         # Build Cube
-        cube = Cube(cls.cube_name, cls.dimension_names)
-        cls.tm1.cubes.update_or_create(cube)
+        self.cube_name = "TM1py_tests_annotations_" + test_uuid
+        cube = Cube(self.cube_name, self.dimension_names)
+        self.tm1.cubes.update_or_create(cube)
 
-    def setUp(self):
-        """
-        Run before each test to create a test annotation
-        """
         random_intersection = self.tm1.cubes.get_random_intersection(self.cube_name, False)
         random_text = "".join([random.choice(string.printable) for _ in range(100)])
 
@@ -54,10 +66,13 @@ class TestAnnotationService(unittest.TestCase):
 
     def tearDown(self):
         """
-        Run at the end of each test to delete all test annotations
+        Run at the end of each test to remove unique test cube and dimensions.
+        Created annotations will be deleted implicitly by removing the cube.
         """
-        for a in self.tm1.cubes.annotations.get_all(self.cube_name):
-            self.tm1.annotations.delete(a.id)
+        self.tm1.cubes.delete(cube_name=self.cube_name)
+
+        for dimension_name in self.dimension_names:
+            self.tm1.dimensions.delete(dimension_name=dimension_name)
 
     def test_get_all(self):
         """
@@ -145,16 +160,6 @@ class TestAnnotationService(unittest.TestCase):
         annotation_count = len(self.tm1.cubes.annotations.get_all(self.cube_name))
         self.tm1.annotations.delete(annotation_id)
         self.assertLess(len(self.tm1.cubes.annotations.get_all(self.cube_name)), annotation_count)
-
-    @classmethod
-    def tearDownClass(cls):
-        """
-        Remove test cube and dimensions and close the connection once all tests have run.
-        """
-        cls.tm1.cubes.delete(cube_name=cls.cube_name)
-        for dimension_name in cls.dimension_names:
-            cls.tm1.dimensions.delete(dimension_name=dimension_name)
-        cls.tm1.logout()
 
 
 if __name__ == '__main__':
