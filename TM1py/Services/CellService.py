@@ -980,7 +980,7 @@ class CellService(ObjectService):
         raise TM1pyWritePartialFailureException(
             statuses=list(itertools.chain(*[exception.statuses for exception in exceptions])),
             error_log_files=list(itertools.chain(*[exception.error_log_files for exception in exceptions])),
-            attempts=sum([exception.attempts for exception in exceptions]))
+            attempts=sum([exception.attempts if hasattr(exception, 'attempts') else 1 for exception in exceptions]))
 
     @manage_changeset
     def write_value(self, value: Union[str, float], cube_name: str, element_tuple: Iterable,
