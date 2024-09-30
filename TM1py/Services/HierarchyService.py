@@ -427,7 +427,8 @@ class HierarchyService(ObjectService):
             verify_unique_elements: bool = False,
             verify_edges: bool = True,
             element_type_column: str = 'ElementType',
-            unwind: bool = False):
+            unwind: bool = False,
+            update_attribute_types: bool = False):
         """ Update or Create a hierarchy based on a dataframe, while never deleting existing elements.
 
         :param dimension_name:
@@ -453,9 +454,13 @@ class HierarchyService(ObjectService):
         :param verify_unique_elements:
             Abort early if element names are not unique
         :param verify_edges:
-            Abort early if edges have circular reference
+            Abort early if edges contain a circular reference
         :param unwind: bool
             Unwind hierarch before creating new edges
+        :param update_attribute_types: bool
+            If True, function will delete and recreate attributes when a type change is requested.
+            By default, function will not delete attributes.
+
         :return:
 
         """
@@ -560,9 +565,12 @@ class HierarchyService(ObjectService):
 
         # new attributes are created as strings if no type is provided
         try:
-            existing_attributes = self.elements.get_all_element_identifiers(
-                dimension_name='}ElementAttributes_' + dimension_name,
-                hierarchy_name='}ElementAttributes_' + dimension_name)
+            existing_attributes = CaseAndSpaceInsensitiveDict({
+                ea.name: ElementAttribute.Types(ea.attribute_type)
+                for ea
+                in self.elements.get_element_attributes(dimension_name, hierarchy_name)
+            })
+
         except TM1pyRestException as ex:
             if ex.status_code == 404:
                 existing_attributes = set()
@@ -581,6 +589,11 @@ class HierarchyService(ObjectService):
 
             if attribute_name not in existing_attributes:
                 new_attributes.append(ElementAttribute(attribute_name, attribute_type))
+
+            if attribute_name in existing_attributes and update_attribute_types:
+                if attribute_type != existing_attributes[attribute_name]:
+                    self.elements.delete_element_attribute(dimension_name, dimension_name, attribute_name)
+                    new_attributes.append(ElementAttribute(attribute_name, attribute_type))
 
         if new_attributes:
             self.elements.add_element_attributes(
