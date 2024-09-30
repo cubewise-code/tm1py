@@ -1,0 +1,67 @@
+name: TM1Py Integration Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      environments:
+        description: 'Comma-separated list of environments to test'
+        required: true
+        default: 'tm1-11-onprem,tm1-11-cloud,tm1-12-mcsp'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: ${{ fromJson('["' + github.event.inputs.environments + '"]') }}
+    environment: ${{ matrix.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          pip install -e .
+          pip install pytest
+
+      - name: Retrieve TM1 Connection Details
+        id: get-connection
+        run: echo "Retrieving TM1 connection details"
+        env:
+          TM1_CONNECTION: ${{ vars.TM1_CONNECTION }}
+          TM1_CONNECTION_SECRET: ${{ secrets.TM1_CONNECTION_SECRET }}
+
+      - name: Generate config.ini
+        run: |
+          python Tests/resources/generate_config.py
+        env:
+          TM1_CONNECTION: ${{ vars.TM1_CONNECTION }}
+          TM1_CONNECTION_SECRET: ${{ secrets.TM1_CONNECTION_SECRET }}
+
+      - name: Run tests
+        run: pytest Tests/
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results-${{ matrix.environment }}
+          path: Tests/test-reports/
+
+      # Optional: Post results to PR
+      - name: Post comment to PR
+        if: always() && github.event_name == 'workflow_dispatch' && github.event.pull_request
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: 'Tests completed for environment: ${{ matrix.environment }}. Check artifacts for details.'
+            })
