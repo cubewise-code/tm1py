@@ -47,6 +47,12 @@ setup(
         "dev": [
             "pytest",
             "pytest-xdist"
+        ],
+        "unit_test": [
+            "pandas",
+            "pytest",
+            "pytest-xdist",
+            "python-dateutil"
         ]
     },
     python_requires='>=3.6',
