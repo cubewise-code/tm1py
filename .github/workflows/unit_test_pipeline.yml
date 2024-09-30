@@ -4,16 +4,16 @@ on:
   workflow_dispatch:
     inputs:
       environments:
-        description: 'Comma-separated list of environments to test'
+        description: 'JSON array of environments to test (e.g., ["tm1-11-onprem", "tm1-11-cloud"])'
         required: true
-        default: 'tm1-11-onprem,tm1-11-cloud,tm1-12-mcsp'
+        default: '["tm1-11-onprem","tm1-11-cloud","tm1-12-mcsp"]'
 
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        environment: ${{ fromJson('["' + github.event.inputs.environments + '"]') }}
+        environment: ${{ fromJson(github.event.inputs.environments) }}
     environment: ${{ matrix.environment }}
     steps:
       - name: Checkout code
