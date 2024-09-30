@@ -459,6 +459,8 @@ class HierarchyService(ObjectService):
         :return:
 
         """
+        df = df.copy()
+
         # element ID is in first column if not specified.
         element_column = df.columns[0] if not element_column else element_column
         df[element_column] = df[element_column].astype(str)
