@@ -37,7 +37,7 @@ from TM1py.Utils.Utils import build_pandas_dataframe_from_cellset, dimension_nam
     extract_compact_json_cellset, \
     cell_is_updateable, build_mdx_from_cellset, build_mdx_and_values_from_cellset, \
     dimension_names_from_element_unique_names, frame_to_significant_digits, build_dataframe_from_csv, \
-    drop_dimension_properties, decohints, verify_version
+    drop_dimension_properties, decohints, verify_version, lower_and_drop_spaces
 
 try:
     import pandas as pd
@@ -797,7 +797,7 @@ class CellService(ObjectService):
                         precision: int = None,
                         skip_non_updateable: bool = False, measure_dimension_elements: Dict = None,
                         sum_numeric_duplicates: bool = True, remove_blob: bool = True, allow_spread: bool = False,
-                        clear_view: str = None, static_dimension_elements:Dict = None,
+                        clear_view: str = None, static_dimension_elements: Dict = None,
                         infer_column_order: bool = False,
                         **kwargs) -> str:
         """
@@ -832,15 +832,13 @@ class CellService(ObjectService):
         if not isinstance(data, pd.DataFrame):
             raise ValueError("argument 'data' must of type DataFrame")
 
+        # don't mutate passed data frame. Work on a copy instead
+        data = data.copy()
+
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
 
         infer_column_order = True if static_dimension_elements else infer_column_order
-
-        if infer_column_order:
-            dimension_to_column_map = {dim: col for dim in CaseAndSpaceInsensitiveSet(dimensions) for col in data.columns if
-                                       col.lower().replace(' ', '') == dim.lower().replace(' ', '')}
-            column_to_dimension_map = {v: k for k, v in dimension_to_column_map.items()}
 
         # reorder columns in df to align with dimensions; CaseAndSpaceInsensitiveDict is a OrderedDict
         if static_dimension_elements:
@@ -851,19 +849,15 @@ class CellService(ObjectService):
                                      "Either remove the key value pair from the fixed_dimension_elements dict or "
                                      f"avoid passing the {dimension} column in the dataframe.")
                 data[dimension] = element
-            # recreate the maps for infer_column_order if infer_column_order:
-            if infer_column_order:
-                dimension_to_column_map = {dim:col for dim in CaseAndSpaceInsensitiveSet(dimensions) for col in data.columns if col.lower().replace(' ', '') == dim.lower().replace(' ', '') }
-                column_to_dimension_map = {col:dim for col in CaseAndSpaceInsensitiveSet(data.columns) for dim in dimensions if dim.lower().replace(' ', '') == col.lower().replace(' ', '') }
 
         if infer_column_order:
-            if list(dimension_to_column_map.keys()) != list(column_to_dimension_map.keys()):
-                # identify the name(s) of the value columns:
-                columns_not_in_dimensions = [col for col in data.columns if col not in CaseAndSpaceInsensitiveSet(dimensions)]
-                # get the columns in the cube dimension order with the original column names (CaseAndSpaceInSensitive):
-                ordered_columns = [dimension_to_column_map[dim] for dim in dimensions if dim in dimension_to_column_map]
-                # reorder the dataframe:
-                data = data.loc[:, ordered_columns + columns_not_in_dimensions]
+            data.columns = data.columns.map(lower_and_drop_spaces)
+
+            ordered_columns = list(map(lower_and_drop_spaces, dimensions))
+
+            columns_not_in_dimensions = data.columns.difference(ordered_columns).tolist()
+
+            data = data[ordered_columns + columns_not_in_dimensions]
 
         if not len(data.columns) == len(dimensions) + 1:
             raise ValueError("Number of columns in 'data' DataFrame must be number of dimensions in cube + 1")
