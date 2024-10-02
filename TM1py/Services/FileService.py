@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import gzip
-import io
 import json
 import warnings
 from pathlib import Path
@@ -132,8 +130,8 @@ class FileService(ObjectService):
         url = self._construct_content_url(path, exclude_path_end=False, extension="Content")
         return self._rest.PUT(
             url=url,
-            data=io.BytesIO(gzip.compress(file_content)),
-            headers={**self.binary_http_header, 'Content-Encoding': 'gzip'},
+            data=file_content,
+            headers=self.binary_http_header,
             **kwargs)
 
     def update(self, file_name: Union[str, Path], file_content: bytes, **kwargs):
@@ -149,8 +147,8 @@ class FileService(ObjectService):
 
         return self._rest.PUT(
             url=url,
-            data=io.BytesIO(gzip.compress(file_content)),
-            headers={**self.binary_http_header, 'Content-Encoding': 'gzip'},
+            data=file_content,
+            headers=self.binary_http_header,
             **kwargs)
 
     def update_or_create(self, file_name: Union[str, Path], file_content: bytes, **kwargs):
