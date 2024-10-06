@@ -5,6 +5,10 @@ from typing import List, Dict
 from TM1py.Objects.TM1Object import TM1Object
 
 
+RULES_ENCODING_PREFIX = "# B64 ENCODED RULES="
+FEEDERS_ENCODING_PREFIX = "# B64 ENCODED FEEDERS="
+
+
 class Rules(TM1Object):
     """
         Abstraction of Rules on a cube.
@@ -14,7 +18,6 @@ class Rules(TM1Object):
             comments are not included.
 
     """
-    KEYWORDS = ['SKIPCHECK', 'FEEDSTRINGS', 'UNDEFVALS', 'FEEDERS']
 
     def __init__(self, rules: str):
         self._text = rules
@@ -98,3 +101,8 @@ class Rules(TM1Object):
 
     def __str__(self):
         return self.text
+
+    def __bool__(self):
+        if len(self.text):
+            return True
+        return False
