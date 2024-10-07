@@ -547,12 +547,12 @@ def build_dataframe_from_csv(raw_csv, sep='~', shaped: bool = False,
     if 'dtype' not in kwargs:
         kwargs['dtype'] = {'Value': None, **{col: str for col in range(999)}}
     try:
-        df = pd.read_csv(StringIO(raw_csv), sep=sep, na_values=["", None], keep_default_na=False, **kwargs)
+        df = pd.read_csv(StringIO(raw_csv), sep=sep, na_values={'Value': ['None']}, keep_default_na=False, **kwargs)
 
     except ValueError:
         # retry with dtype 'str' for results with a mixed value column
         kwargs['dtype'] = {'Value': str, **{col: str for col in range(999)}}
-        df = pd.read_csv(StringIO(raw_csv), sep=sep, na_values=["", None], keep_default_na=False, **kwargs)
+        df = pd.read_csv(StringIO(raw_csv), sep=sep, na_values={'Value': ['None']}, keep_default_na=False, **kwargs)
 
     if fillna_numeric_attributes:
         fill_numeric_bool_list = [attr_type.lower() == 'numeric' for dimension, attributes in
@@ -561,7 +561,7 @@ def build_dataframe_from_csv(raw_csv, sep='~', shaped: bool = False,
         fill_numeric_bool_list += [False]  # for the value column
         df = df.apply(
             lambda col:
-            col.fillna(fillna_numeric_attributes_value) if fill_numeric_bool_list[
+            col.replace(['', 'None'], np.nan).fillna(fillna_numeric_attributes_value) if fill_numeric_bool_list[
                 list(df.columns.values).index(col.name)] else col,
             axis=0)
 
@@ -572,7 +572,7 @@ def build_dataframe_from_csv(raw_csv, sep='~', shaped: bool = False,
         fill_string_bool_list += [False]  # for the value column
         df = df.apply(
             lambda col:
-            col.fillna(fillna_string_attributes_value) if fill_string_bool_list[
+            col.replace(['', 'None'], np.nan).fillna(fillna_string_attributes_value) if fill_string_bool_list[
                 list(df.columns.values).index(col.name)] else col,
             axis=0)
 

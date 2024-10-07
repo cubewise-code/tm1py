@@ -2,6 +2,12 @@ import configparser
 import unittest
 from pathlib import Path
 
+try:
+    import numpy as np
+    import pandas as pd
+except ImportError:
+    pass
+
 from TM1py.Services import TM1Service
 from TM1py.Utils import (
     Utils,
@@ -9,9 +15,9 @@ from TM1py.Utils import (
     integerize_version,
     verify_version, get_cube, resembles_mdx, format_url, add_url_parameters, extract_cell_updateable_property,
     CellUpdateableProperty, cell_is_updateable, extract_cell_properties_from_odata_context,
-    map_cell_properties_to_compact_json_response, frame_to_significant_digits, drop_dimension_properties
+    map_cell_properties_to_compact_json_response, frame_to_significant_digits, drop_dimension_properties,
+    build_dataframe_from_csv
 )
-
 from .Utils import skip_if_version_higher_or_equal_than, skip_if_paoc
 
 
@@ -104,6 +110,61 @@ class TestUtilsMethods(unittest.TestCase):
         """
         dimensions = get_dimensions_from_where_clause(mdx)
         self.assertEqual(["DIM2", "DIM1"], dimensions)
+
+    def test_build_dataframe_from_csv(self):
+        raw_csv = (
+            "d1~d2~Value\r\n"
+            "e1~e1~1.0\r\n"
+            "e1~e2~2.0\r\n"
+            "e2~e1~3.0\r\n"
+            "e2~e2~4.0"
+        )
+        df = build_dataframe_from_csv(raw_csv)
+
+        expected_df = pd.DataFrame({
+            'd1': ["e1", "e1", "e2", "e2"],
+            'd2': ["e1", "e2", "e1", "e2"],
+            'Value': [1.0, 2.0, 3.0, 4.0],
+        })
+
+        pd._testing.assert_frame_equal(expected_df, df, check_column_type=False)
+
+    def test_build_dataframe_from_csv_with_none_element_and_none_value(self):
+        raw_csv = (
+            "d1~d2~Value\r\n"
+            "e1~e1~None\r\n"
+            "e1~e2~2.0\r\n"
+            "None~e1~3.0\r\n"
+            "None~e2~4.0"
+        )
+        df = build_dataframe_from_csv(raw_csv)
+
+        expected_df = pd.DataFrame({
+            'd1': ["e1", "e1", "None", "None"],
+            'd2': ["e1", "e2", "e1", "e2"],
+            'Value': [np.nan, 2.0, 3.0, 4.0],
+        }).astype(object)
+
+        pd._testing.assert_frame_equal(expected_df, df, check_column_type=False, check_dtype=False, check_exact=False)
+
+    def test_build_dataframe_from_csv_with_none_and_empty_string_value(self):
+        raw_csv = (
+            "d1~d2~Value\r\n"
+            "e1~e1~None\r\n"
+            "e1~e2~\"\"\r\n"
+            "None~e1~3.0\r\n"
+            "None~e2~4.0"
+        )
+        df = build_dataframe_from_csv(raw_csv)
+
+        expected_df = pd.DataFrame({
+            'd1': ["e1", "e1", "None", "None"],
+            'd2': ["e1", "e2", "e1", "e2"],
+            'Value': [np.nan, "", "3.0", "4.0"],
+        }).astype(object)
+
+        pd._testing.assert_frame_equal(expected_df, df, check_column_type=False, check_dtype=False, check_exact=False)
+
 
     def test_get_dimensions_from_where_clause_no_where(self):
         mdx = """
