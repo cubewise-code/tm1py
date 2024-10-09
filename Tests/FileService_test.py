@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 from TM1py import TM1Service
-from .Utils import skip_if_insufficient_version
+from .Utils import skip_if_insufficient_version, verify_version
 
 
 class TestFileService(unittest.TestCase):
@@ -26,7 +26,8 @@ class TestFileService(unittest.TestCase):
         if self.tm1.files.exists(self.FILE_NAME2):
             self.tm1.files.delete(self.FILE_NAME2)
 
-        self.setUpV12()
+        if verify_version(required_version="12", version=self.tm1.version):
+            self.setUpV12()
 
     @skip_if_insufficient_version(version="12")
     def setUpV12(self):
