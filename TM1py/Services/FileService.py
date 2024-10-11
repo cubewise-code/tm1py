@@ -26,7 +26,7 @@ class FileService(ObjectService):
 
     def get_names(self, **kwargs) -> bytes:
         warnings.warn(
-            f"Function get_names will be deprecated. Use get_all_names instead",
+            "Function get_names will be deprecated. Use get_all_names instead",
             DeprecationWarning,
             stacklevel=2)
 
@@ -221,7 +221,7 @@ class FileService(ObjectService):
         url = self._construct_content_url(
             path=Path(path),
             exclude_path_end=False,
-            extension="Contents?$select=Name&$filter={}".format(f" and ".join(name_filters)))
+            extension="Contents?$select=Name&$filter={}".format(" and ".join(name_filters)))
         response = self._rest.GET(url, **kwargs).content
 
         return list(file['Name'] for file in json.loads(response)['value'])
