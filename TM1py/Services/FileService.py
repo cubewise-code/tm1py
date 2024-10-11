@@ -7,7 +7,7 @@ from typing import List, Iterable, Union
 from TM1py.Services import RestService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Utils import format_url
-from TM1py.Utils.Utils import verify_version
+from TM1py.Utils.Utils import verify_version, require_version
 
 
 class FileService(ObjectService):
@@ -24,6 +24,7 @@ class FileService(ObjectService):
         else:
             self.version_content_path = 'Blobs'
 
+    @require_version(version="11.4")
     def get_names(self, **kwargs) -> bytes:
         warnings.warn(
             "Function get_names will be deprecated. Use get_all_names instead",
@@ -35,7 +36,8 @@ class FileService(ObjectService):
             version_content_path=self.version_content_path)
 
         return self._rest.GET(url, **kwargs).content
-
+    
+    @require_version(version="11.4")
     def get_all_names(self, path: Union[str, Path] = "", **kwargs) -> List[str]:
         """ return list of blob file names
 
@@ -46,7 +48,8 @@ class FileService(ObjectService):
 
         response = self._rest.GET(url, **kwargs).content
         return [file['Name'] for file in json.loads(response)['value']]
-
+    
+    @require_version(version="11.4")
     def get(self, file_name: str, **kwargs) -> bytes:
         """ Get file
 
@@ -101,7 +104,8 @@ class FileService(ObjectService):
             **parent_folders)
 
         return url.rstrip("/")
-
+    
+    @require_version(version="11.4")
     def create(self, file_name: Union[str, Path], file_content: bytes, **kwargs):
         """ Create file
 
@@ -133,7 +137,8 @@ class FileService(ObjectService):
             data=file_content,
             headers=self.binary_http_header,
             **kwargs)
-
+    
+    @require_version(version="11.4")
     def update(self, file_name: Union[str, Path], file_content: bytes, **kwargs):
         """ Update existing file
 
@@ -150,7 +155,8 @@ class FileService(ObjectService):
             data=file_content,
             headers=self.binary_http_header,
             **kwargs)
-
+    
+    @require_version(version="11.4")
     def update_or_create(self, file_name: Union[str, Path], file_content: bytes, **kwargs):
         """ Create file or update file if it already exists
 
@@ -161,7 +167,8 @@ class FileService(ObjectService):
             return self.update(file_name, file_content, **kwargs)
 
         return self.create(file_name, file_content, **kwargs)
-
+    
+    @require_version(version="11.4")
     def exists(self, file_name: Union[str, Path], **kwargs):
         """ Check if file exists
 
@@ -173,7 +180,8 @@ class FileService(ObjectService):
             extension="")
 
         return self._exists(url, **kwargs)
-
+    
+    @require_version(version="11.4")
     def delete(self, file_name: Union[str, Path], **kwargs):
         """ Delete file
 
@@ -185,7 +193,8 @@ class FileService(ObjectService):
             extension="")
 
         return self._rest.DELETE(url, **kwargs)
-
+    
+    @require_version(version="11.4")
     def search_string_in_name(self, name_startswith: str = None, name_contains: Iterable = None,
                               name_contains_operator: str = 'and', path: Union[Path, str] = "",
                               **kwargs) -> List[str]:
