@@ -485,15 +485,20 @@ class HierarchyService(ObjectService):
         if len(alias_columns) > 0:
             self._validate_alias_uniqueness(df=df[[element_column, *alias_columns]])
 
-        # identify level columns
+        # identify and sort level columns
         level_columns = []
         level_weight_columns = []
-        # sort to assure right order of levels
-        for column in sorted(df.columns, reverse=True):
+        # sort to assure right order of levels (e.g. Level003 -> level002 -> LEVEL001)
+        sorted_level_columns = sorted(
+            [col for col in df.columns if any(char.isdigit() for char in col)],  # Filter columns with digits
+            key=lambda x: int(''.join(filter(str.isdigit, x))),  # Sort based on numeric part
+            reverse=True  # Descending order
+        )
+        for column in sorted_level_columns:
             if column.lower().startswith('level') and column[5:8].isdigit():
-                if len(column) == 8:
+                if len(column) == 8:  # "LevelXXX"
                     level_columns.append(column)
-                elif len(column) == 15 and column.lower().endswith('_weight'):
+                elif len(column) == 15 and column.lower().endswith('_weight'):  # "LevelXXX_weight"
                     level_weight_columns.append(column)
 
         # case: no level weight columns. All weights are 1

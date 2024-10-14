@@ -3,6 +3,7 @@ import unittest
 from contextlib import suppress
 from pathlib import Path
 
+import pandas as pd
 from mdxpy import MdxBuilder, MdxHierarchySet
 from pandas import DataFrame
 
@@ -499,6 +500,33 @@ class TestHierarchyService(unittest.TestCase):
         ]
         df = DataFrame(data=data, columns=columns)
 
+        self.tm1.hierarchies.update_or_create_hierarchy_from_dataframe(
+            dimension_name=self.region_dimension_name,
+            hierarchy_name=self.region_dimension_name,
+            df=df,
+            element_column=self.region_dimension_name,
+            element_type_column="ElementType",
+            unwind=True
+        )
+
+        hierarchy = self.tm1.hierarchies.get(
+            dimension_name=self.region_dimension_name,
+            hierarchy_name=self.region_dimension_name)
+        self._verify_region_dimension(hierarchy)
+
+    def test_update_or_create_hierarchy_from_dataframe_non_standard_level_order(self):
+        columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n", "Level001",
+                   "level000", "level001_weight", "level000_weight"]
+        data = [
+            ['France', "Numeric", "Frankreich", "EUR", 60_000_000, "Europe", "World", 1, 1],
+            ['Switzerland', 'Numeric', "Schweiz", "CHF", 9_000_000, "Europe", "World", 1, 1],
+            ['Germany', 'Numeric', "Deutschland", "EUR", 84_000_000, "Europe", "World", 1, 1],
+        ]
+        df = DataFrame(data=data, columns=columns)
+
+        df = pd.DataFrame(df[[self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n", "level000",
+                 "Level001", "level000_weight", "level001_weight"]])
+        print(df.to_markdown())
         self.tm1.hierarchies.update_or_create_hierarchy_from_dataframe(
             dimension_name=self.region_dimension_name,
             hierarchy_name=self.region_dimension_name,
