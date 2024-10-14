@@ -3,7 +3,9 @@ import unittest
 from pathlib import Path
 
 from TM1py import TM1Service
+from TM1py.Exceptions import TM1pyVersionException
 from .Utils import skip_if_insufficient_version, verify_version
+from .Utils import skip_if_deprecated_in_version as skip_if_version_is_at_least
 
 
 class TestFileService(unittest.TestCase):
@@ -58,6 +60,14 @@ class TestFileService(unittest.TestCase):
             self.assertEqual(original_file.read(), created_file)
 
     @skip_if_insufficient_version(version="11.4")
+    @skip_if_version_is_at_least(version="12")
+    def test_create_in_folder_exception(self):
+        with open(Path(__file__).parent.joinpath('resources', 'file.csv'), "rb") as original_file:
+            with self.assertRaises(TM1pyVersionException) as e:
+                self.tm1.files.update_or_create(self.FILE_NAME1_IN_FOLDER, original_file.read())
+            self.assertEqual(str(e.exception), "'Subfolder' feature of function 'FileService.create' requires TM1 server version >= '12'")
+
+    @skip_if_insufficient_version(version="11.4")
     def test_update_get(self):
         with open(Path(__file__).parent.joinpath('resources', 'file.csv'), "rb") as original_file:
             self.tm1.files.update(self.FILE_NAME1, original_file.read())
@@ -76,6 +86,14 @@ class TestFileService(unittest.TestCase):
 
         with open(Path(__file__).parent.joinpath('resources', 'file.csv'), "rb") as original_file:
             self.assertEqual(original_file.read(), created_file)
+    
+    @skip_if_insufficient_version(version="11.4")
+    @skip_if_version_is_at_least(version="12")
+    def test_update_in_folder_exception(self):
+        with open(Path(__file__).parent.joinpath('resources', 'file.csv'), "rb") as original_file:
+            with self.assertRaises(TM1pyVersionException) as e:
+                self.tm1.files.update(self.FILE_NAME1_IN_FOLDER, original_file.read())
+            self.assertEqual(str(e.exception), "'Subfolder' feature of function 'FileService.update' requires TM1 server version >= '12'")
 
     @skip_if_insufficient_version(version="11.4")
     def test_get_all_names(self):
@@ -98,6 +116,15 @@ class TestFileService(unittest.TestCase):
             name_startswith=self.FILE_NAME1,
             path=self.FILE_NAME1_IN_FOLDER.parent)
         self.assertEqual([self.FILE_NAME1], result)
+
+    @skip_if_insufficient_version(version="11.4")
+    @skip_if_version_is_at_least(version="12")
+    def test_search_string_in_name__name_startswith_in_folder_exception(self):
+        with self.assertRaises(TM1pyVersionException) as e:
+            self.tm1.files.search_string_in_name(
+                name_startswith=self.FILE_NAME1, path=self.FILE_NAME1_IN_FOLDER.parent
+            )
+            self.assertEqual(str(e.exception), "'Subfolder' feature of function 'FileService.search_string_in_name' requires TM1 server version >= '12'")
 
     @skip_if_insufficient_version(version="11.4")
     def test_search_string_in_name__name_startswith_not_existing(self):
@@ -136,6 +163,13 @@ class TestFileService(unittest.TestCase):
         self.tm1.files.delete(self.FILE_NAME1_IN_FOLDER)
 
         self.assertFalse(self.tm1.files.exists(self.FILE_NAME1_IN_FOLDER))
+
+    @skip_if_insufficient_version(version="11.4")
+    @skip_if_version_is_at_least(version="12")
+    def test_delete_in_folder_exception(self):
+        with self.assertRaises(TM1pyVersionException) as e:
+            self.tm1.files.delete(self.FILE_NAME1_IN_FOLDER)
+            self.assertEqual(str(e.exception), "'Subfolder' feature of function 'FileService.delete' requires TM1 server version >= '12'")
 
     def tearDown(self) -> None:
         if self.tm1.files.exists(self.FILE_NAME1):
