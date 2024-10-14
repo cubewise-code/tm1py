@@ -15,12 +15,17 @@ class TM1pyTimeout(Exception):
 
 
 class TM1pyVersionException(Exception):
-    def __init__(self, function: str, required_version):
+    def __init__(self, function: str, required_version, feature: str = None):
         self.function = function
         self.required_version = required_version
+        self.feature = feature
 
     def __str__(self):
-        return f"Function '{self.function}' requires TM1 server version >= '{self.required_version}'"
+        require_string = f"requires TM1 server version >= '{self.required_version}'"
+        if self.feature:
+            return f"'{self.feature}' feature of function '{self.function}' {require_string}"
+        else:
+            return f"Function '{self.function}' {require_string}"
 
 
 class TM1pyVersionDeprecationException(Exception):
