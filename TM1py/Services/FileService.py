@@ -8,6 +8,7 @@ from TM1py.Services import RestService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Utils import format_url
 from TM1py.Utils.Utils import verify_version, require_version
+from TM1py.Exceptions import TM1pyVersionException
 
 
 class FileService(ObjectService):
@@ -55,8 +56,11 @@ class FileService(ObjectService):
 
         :param file_name: file name in root or path to file
         """
+        path = Path(file_name)
+        self._check_subfolder_support(path = path, function="FileService.get")
+        
         url = self._construct_content_url(
-            path=Path(file_name),
+            path=path,
             exclude_path_end=False,
             extension="Content")
 
@@ -105,6 +109,11 @@ class FileService(ObjectService):
 
         return url.rstrip("/")
     
+    def _check_subfolder_support(self, path: Path, function: str) -> None:
+        REQUIRED_VERSION = "12"
+        if len(path.parts) > 1 and not verify_version(required_version=REQUIRED_VERSION, version=self.version):
+            raise TM1pyVersionException(function=function, required_version=REQUIRED_VERSION , feature='Subfolder')
+    
     @require_version(version="11.4")
     def create(self, file_name: Union[str, Path], file_content: bytes, **kwargs):
         """ Create file
@@ -115,6 +124,7 @@ class FileService(ObjectService):
         :param file_content: file_content as bytes or BytesIO
         """
         path = Path(file_name)
+        self._check_subfolder_support(path = path, function = "FileService.create")
 
         # Create folder structure iteratively
         if path.parents:
@@ -145,8 +155,11 @@ class FileService(ObjectService):
         :param file_name: file name in root or path to file
         :param file_content: file_content as bytes or BytesIO
         """
+        path = Path(file_name)
+        self._check_subfolder_support(path = path, function = "FileService.update")
+
         url = self._construct_content_url(
-            path=Path(file_name),
+            path=path,
             exclude_path_end=False,
             extension="Content")
 
@@ -187,8 +200,11 @@ class FileService(ObjectService):
 
         :param file_name: file name in root or path to file
         """
+        path = Path(file_name)
+        self._check_subfolder_support(path = path, function = "FileService.delete")
+
         url = self._construct_content_url(
-            path=Path(file_name),
+            path=path,
             exclude_path_end=False,
             extension="")
 
@@ -226,6 +242,9 @@ class FileService(ObjectService):
 
             else:
                 raise ValueError("'name_contains' must be str or iterable")
+            
+        path = Path(path)
+        self._check_subfolder_support(path = path, function = "FileService.search_string_in_name")
 
         url = self._construct_content_url(
             path=Path(path),
