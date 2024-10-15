@@ -87,10 +87,11 @@ class TM1Service:
         self.audit_logs = AuditLogService(self._tm1_rest)
 
         #higher level modules
-        self.server = ServerService(self._tm1_rest)
-        self.monitoring = MonitoringService(self._tm1_rest)
         self.power_bi = PowerBiService(self._tm1_rest)
         self.loggers = LoggerService(self._tm1_rest)
+
+        self._server = None
+        self._monitoring = None
 
     def logout(self, **kwargs):
         self._tm1_rest.logout(**kwargs)
@@ -103,6 +104,18 @@ class TM1Service:
             self.logout()
         except Exception as e:
             warnings.warn(f"Logout Failed due to Exception: {e}")
+    
+    @property
+    def server(self):
+        if not self._server:
+             self._server = ServerService(self._tm1_rest)
+        return self._server
+    
+    @property
+    def monitoring(self):
+        if not self._monitoring:
+            self._monitoring = MonitoringService(self._tm1_rest)
+        return self._monitoring
 
     @property
     def whoami(self):
