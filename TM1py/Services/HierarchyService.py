@@ -458,7 +458,7 @@ class HierarchyService(ObjectService):
             Abort early if edges contain a circular reference
         :param unwind: bool
             Unwind hierarch before creating new edges
-	:param unwind_consol: bool
+	:param unwind_consol: str
             Unwind specific consolidation in hierarch before creating new edges, if unwind == True then this override is ignored and entire hierarch is unwinded
         :param update_attribute_types: bool
             If True, function will delete and recreate attributes when a type change is requested.
