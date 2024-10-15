@@ -9,7 +9,7 @@ from mdxpy import MdxBuilder
 from TM1py.Exceptions import TM1pyRestException, TM1pyException
 from TM1py.Objects import Dimension, Hierarchy, Element, ElementAttribute
 from TM1py.Services import TM1Service
-from Tests.Utils import skip_if_insufficient_version, skip_if_no_pandas
+from Tests.Utils import skip_if_version_lower_than, skip_if_no_pandas
 
 
 class TestElementService(unittest.TestCase):
@@ -1105,7 +1105,7 @@ class TestElementService(unittest.TestCase):
         }
         self.assertEqual(expected, element_types)
 
-    @skip_if_insufficient_version(version="11.8.023")
+    @skip_if_version_lower_than(version="11.8.023")
     def test_element_lock_and_unlock(self):
         self.tm1.elements.element_lock(dimension_name=self.dimension_name, 
                                        hierarchy_name=self.hierarchy_name, 
@@ -1184,7 +1184,7 @@ class TestElementService(unittest.TestCase):
         edges = self.tm1.elements.get_edges(self.dimension_name, self.dimension_name)
         self.assertNotIn(("Total Years", "1989"), edges)
     
-    @skip_if_insufficient_version(version="11.4")
+    @skip_if_version_lower_than(version="11.4")
     def test_delete_edges(self):
         self.tm1.elements.delete_edges(
             dimension_name=self.dimension_name,

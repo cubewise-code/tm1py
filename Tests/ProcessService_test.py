@@ -10,7 +10,7 @@ from TM1py.Exceptions import TM1pyException, TM1pyTimeout
 from TM1py.Objects import Process, Subset, ProcessDebugBreakpoint, BreakPointType, HitMode
 from TM1py.Services import TM1Service
 from TM1py.Utils import verify_version
-from .Utils import skip_if_insufficient_version, skip_if_deprecated_in_version
+from .Utils import skip_if_version_lower_than, skip_if_version_higher_or_equal_than
 
 
 class TestProcessService(unittest.TestCase):
@@ -151,7 +151,7 @@ class TestProcessService(unittest.TestCase):
         # without arguments
         self.tm1.processes.execute(self.p_bedrock_server_wait.name)
 
-    @skip_if_insufficient_version(version="11.4")
+    @skip_if_version_lower_than(version="11.4")
     def test_execute_with_return_success(self):
         process = self.p_bedrock_server_wait
         self.tm1.processes.update_or_create(process)
@@ -219,7 +219,7 @@ class TestProcessService(unittest.TestCase):
 
         self.tm1.processes.delete(process.name)
 
-    @skip_if_insufficient_version(version="11.4")
+    @skip_if_version_lower_than(version="11.4")
     def test_execute_with_return_with_process_break(self):
         process = Process(name=str(uuid.uuid4()))
         process.prolog_procedure = "sText = 'Something'; ProcessBreak;"
@@ -236,7 +236,7 @@ class TestProcessService(unittest.TestCase):
 
         self.tm1.processes.delete(process.name)
 
-    @skip_if_insufficient_version(version="11.4")
+    @skip_if_version_lower_than(version="11.4")
     def test_execute_with_return_with_process_quit(self):
         process = Process(name=str(uuid.uuid4()))
         process.prolog_procedure = "sText = 'Something'; ProcessQuit;"
@@ -272,7 +272,7 @@ class TestProcessService(unittest.TestCase):
         self.assertIn("\"dimsize\"", errors[0]["Message"])
         self.tm1.processes.delete(p_bad.name)
 
-    @skip_if_insufficient_version(version="11.4")
+    @skip_if_version_lower_than(version="11.4")
     def test_execute_process_with_return_success(self):
         process = Process(name=str(uuid.uuid4()))
         process.prolog_procedure = "Sleep(100);"
@@ -284,7 +284,7 @@ class TestProcessService(unittest.TestCase):
         if not verify_version(required_version="12", version=self.tm1.version):
             self.assertIsNone(error_log_file)
 
-    @skip_if_insufficient_version(version="11.3")
+    @skip_if_version_lower_than(version="11.3")
     def test_execute_process_with_return_returns_async_id(self):
         process = Process(name=str(uuid.uuid4()))
         process.prolog_procedure = "Sleep(100);"
@@ -292,7 +292,7 @@ class TestProcessService(unittest.TestCase):
         async_id = self.tm1.processes.execute_process_with_return(process, return_async_id=True)
         self.assertGreater(len(async_id), 5)
 
-    @skip_if_insufficient_version(version="11.3")
+    @skip_if_version_lower_than(version="11.3")
     def test_execute_process_with_return_returns_timeout(self):
         process = Process(name=str(uuid.uuid4()))
         process.prolog_procedure = "Sleep(3000);"
@@ -317,7 +317,7 @@ class TestProcessService(unittest.TestCase):
         self.assertEqual(status, "CompletedWithMessages")
         self.assertIsNotNone(error_log_file)
 
-    @skip_if_insufficient_version(version="11.4")
+    @skip_if_version_lower_than(version="11.4")
     def test_execute_process_with_return_with_process_break(self):
         process = Process(name=str(uuid.uuid4()))
         process.prolog_procedure = "sText = 'Something'; ProcessBreak;"
@@ -329,7 +329,7 @@ class TestProcessService(unittest.TestCase):
         if not verify_version(required_version="12", version=self.tm1.version):
             self.assertIsNone(error_log_file)
 
-    @skip_if_insufficient_version(version="11.4")
+    @skip_if_version_lower_than(version="11.4")
     def test_execute_process_with_return_with_process_quit(self):
         process = Process(name=str(uuid.uuid4()))
         process.prolog_procedure = "sText = 'Something'; ProcessQuit;"
@@ -380,7 +380,7 @@ class TestProcessService(unittest.TestCase):
         p4._ui_data = p_subset_orig._ui_data = None
         self.assertEqual(p_subset_orig.body, p4.body)
 
-    @skip_if_deprecated_in_version("12")
+    @skip_if_version_higher_or_equal_than("12")
     def test_get_process_odbc(self):
         p_odbc_orig = copy.deepcopy(self.p_odbc)
 
@@ -420,7 +420,7 @@ class TestProcessService(unittest.TestCase):
 
         self.tm1.processes.delete(process.name)
 
-    @skip_if_deprecated_in_version(version='12')
+    @skip_if_version_higher_or_equal_than(version='12')
     def test_get_last_message_from_processerrorlog(self):
         process = Process(name=str(uuid.uuid4()))
         process.epilog_procedure = "ItemReject('Not Relevant');"

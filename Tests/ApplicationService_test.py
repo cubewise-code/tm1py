@@ -8,7 +8,7 @@ from TM1py import TM1Service, Element, ElementAttribute, Hierarchy, Dimension, C
     Subset, Process, Chore, ChoreStartTime, ChoreFrequency, ChoreTask
 from TM1py.Objects.Application import CubeApplication, ApplicationTypes, ChoreApplication, DimensionApplication, \
     FolderApplication, LinkApplication, ProcessApplication, SubsetApplication, ViewApplication, DocumentApplication
-from .Utils import skip_if_insufficient_version, verify_version
+from .Utils import skip_if_version_lower_than, verify_version
 
 
 class TestApplicationService(unittest.TestCase):
@@ -242,11 +242,11 @@ class TestApplicationService(unittest.TestCase):
     def test_dimension_application_private(self):
         self.run_dimension_application(private=True)
 
-    @skip_if_insufficient_version(version="11.4")
+    @skip_if_version_lower_than(version="11.4")
     def test_dimension_application_public(self):
         self.run_dimension_application(private=False)
 
-    @skip_if_insufficient_version(version="11.4")
+    @skip_if_version_lower_than(version="11.4")
     def run_document_application(self, private):
         with open(Path(__file__).parent.joinpath('resources', 'document.xlsx'), "rb") as file:
             app = DocumentApplication(path=self.tm1py_app_folder, name=self.document_name, content=file.read())

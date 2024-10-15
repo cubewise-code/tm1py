@@ -8,7 +8,7 @@ from TM1py.Objects import User
 from TM1py.Objects.User import UserType
 from TM1py.Services import TM1Service
 from TM1py.Utils.Utils import CaseAndSpaceInsensitiveSet, case_and_space_insensitive_equals, verify_version
-from .Utils import skip_if_deprecated_in_version, skip_if_insufficient_version
+from .Utils import skip_if_version_higher_or_equal_than, skip_if_version_lower_than
 
 
 class TestSecurityService(unittest.TestCase):
@@ -127,7 +127,7 @@ class TestSecurityService(unittest.TestCase):
         user = User("not_relevant", groups=["OperationsAdmin"], user_type=None)
         self.assertEqual(user.user_type, UserType.OperationsAdmin)
 
-    @skip_if_deprecated_in_version(version='12')
+    @skip_if_version_higher_or_equal_than(version='12')
     def test_update_user_properties(self):
         # get user
         u = self.tm1.security.get_user(self.user_name)
@@ -148,7 +148,7 @@ class TestSecurityService(unittest.TestCase):
         self.assertEqual(u.user_type, UserType.DataAdmin)
         self.assertIn("DataAdmin", u.groups)
 
-    @skip_if_deprecated_in_version(version='12')
+    @skip_if_version_higher_or_equal_than(version='12')
     def test_update_user_properties_with_type_as_str(self):
         # get user
         u = self.tm1.security.get_user(self.user_name)
@@ -229,7 +229,7 @@ class TestSecurityService(unittest.TestCase):
         response = self.tm1.security.security_refresh()
         self.assertTrue(response.ok)
 
-    @skip_if_deprecated_in_version(version="12")
+    @skip_if_version_higher_or_equal_than(version="12")
     def test_auth_with_exotic_characters_in_password(self):
         exotic_password = "d'8!?:Y4"
 
@@ -272,7 +272,7 @@ class TestSecurityService(unittest.TestCase):
         self.assertIn(group, groups_before_delete)
         self.assertNotIn(group, groups_after_delete)
 
-    @skip_if_deprecated_in_version(version='12')
+    @skip_if_version_higher_or_equal_than(version='12')
     def test_tm1service_with_encrypted_password_decode_b64_as_string(self):
         user_name = "TM1py user name"
         user = User(name=user_name, groups=["ADMIN"], password="apple")
@@ -291,7 +291,7 @@ class TestSecurityService(unittest.TestCase):
 
         self.tm1.security.delete_user(user.name)
 
-    @skip_if_deprecated_in_version(version='12')
+    @skip_if_version_higher_or_equal_than(version='12')
     def test_tm1service_without_encrypted_password(self):
         user_name = "TM1py user name"
         user = User(name=user_name, groups=["ADMIN"], password="apple")
@@ -310,7 +310,7 @@ class TestSecurityService(unittest.TestCase):
 
         self.tm1.security.delete_user(user.name)
 
-    @skip_if_deprecated_in_version(version='12')
+    @skip_if_version_higher_or_equal_than(version='12')
     def test_tm1service_with_encrypted_password(self):
         user_name = "TM1py user name"
         user = User(name=user_name, groups=["ADMIN"], password="apple")
@@ -329,7 +329,7 @@ class TestSecurityService(unittest.TestCase):
 
         self.tm1.security.delete_user(user.name)
 
-    @skip_if_deprecated_in_version(version='12')
+    @skip_if_version_higher_or_equal_than(version='12')
     def test_tm1service_with_encrypted_password_fail(self):
         user_name = "TM1py user name"
         user = User(name=user_name, groups=["ADMIN"], password="apple")
@@ -346,7 +346,7 @@ class TestSecurityService(unittest.TestCase):
 
         self.tm1.security.delete_user(user.name)
 
-    @skip_if_deprecated_in_version(version='12')
+    @skip_if_version_higher_or_equal_than(version='12')
     def test_tm1service_with_plain_password(self):
         user_name = "TM1py user name"
         user = User(name=user_name, groups=["ADMIN"], password="apple")
@@ -363,7 +363,7 @@ class TestSecurityService(unittest.TestCase):
             pass
         self.tm1.security.delete_user(user.name)
 
-    @skip_if_deprecated_in_version(version='12')
+    @skip_if_version_higher_or_equal_than(version='12')
     def test_tm1service_with_plain_password_fail(self):
         user_name = "TM1py user name"
         user = User(name=user_name, groups=["ADMIN"], password="apple")
@@ -391,7 +391,7 @@ class TestSecurityService(unittest.TestCase):
     def test_group_exists_false(self):
         self.assertFalse(self.tm1.security.group_exists(group_name="NotAValidName"))
 
-    @skip_if_deprecated_in_version(version='12')
+    @skip_if_version_higher_or_equal_than(version='12')
     def test_impersonate(self):
         tm1 = TM1Service(**self.config['tm1srv01'])
         self.assertNotEqual(self.user_name, tm1.whoami.name)
@@ -413,14 +413,14 @@ class TestSecurityService(unittest.TestCase):
 
         self.assertNotIn("NotExistingGroup", CaseAndSpaceInsensitiveSet(*custom_groups))
 
-    @skip_if_deprecated_in_version(version='12')
+    @skip_if_version_higher_or_equal_than(version='12')
     def test_get_read_only_users(self):
         read_only_users = self.tm1.security.get_read_only_users()
 
         self.assertEqual(1, len(read_only_users))
         self.assertEqual(self.read_only_user_name, read_only_users[0])
 
-    @skip_if_deprecated_in_version(version='12')
+    @skip_if_version_higher_or_equal_than(version='12')
     def test_update_user_password(self):
         self.tm1.security.update_user_password(user_name=self.user.name, password="new_password123")
 

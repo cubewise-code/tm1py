@@ -8,7 +8,7 @@ from pathlib import Path
 
 from TM1py.Objects import Chore, ChoreStartTime, ChoreFrequency, ChoreTask, Process
 from TM1py.Services import TM1Service
-from .Utils import skip_if_insufficient_version
+from .Utils import skip_if_version_lower_than
 
 
 class TestChoreService(unittest.TestCase):
@@ -93,7 +93,7 @@ class TestChoreService(unittest.TestCase):
         if self.tm1.chores.exists(self.chore_name4):
             self.tm1.chores.delete(self.chore_name4)
 
-    @skip_if_insufficient_version(version="11.7.00002.1")
+    @skip_if_version_lower_than(version="11.7.00002.1")
     def test_create_chore_with_dst_multi_commit(self):
         # create chores
         c4 = Chore(name=self.chore_name4,
