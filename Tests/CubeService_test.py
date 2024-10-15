@@ -341,6 +341,32 @@ class TestCubeService(unittest.TestCase):
 
         self.assertEqual(self.dimension_names[-1], measure_dimension)
 
+    def test_disable_rules_enable_rules(self):
+        original = Rules(
+            "#comment1\n"
+            "FEEDSTRINGS;\n"
+            "UNDEFVALS;\n"
+            "#comment2\n"
+            "SKIPCHECK;\n"
+            "#comment3\n"
+            "#comment4\n"
+            "[]=N:2;\n"
+            "#find_me_comment\n"
+            "FEEDERS;\n"
+            "#comment5\n"
+            "#comment6"
+        )
+        c = self.tm1.cubes.get(self.cube_name)
+        c.rules = original
+        self.tm1.cubes.update(c)
+
+        self.assertEqual(self.tm1.cubes.get(c.name).has_rules, True)
+
+        self.tm1.cubes.disable_rules(c.name)
+        self.tm1.cubes.enable_rules(c.name)
+
+        self.assertEqual(c.rules.text, original.text)
+
     def tearDown(self):
         self.tm1.cubes.delete(self.cube_name)
         if self.tm1.cubes.exists(self.cube_name_to_delete):

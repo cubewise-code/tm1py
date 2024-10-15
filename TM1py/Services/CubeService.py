@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import base64
 import json
 import random
 from typing import List, Iterable, Dict, Union
@@ -12,6 +13,8 @@ from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.ViewService import ViewService
 from TM1py.Utils import format_url, require_version, require_data_admin, case_and_space_insensitive_equals
+
+
 
 
 class CubeService(ObjectService):
@@ -250,7 +253,7 @@ class CubeService(ObjectService):
 
     def search_for_dimension_substring(self, substring: str, skip_control_cubes: bool = False,
                                        **kwargs) -> Dict[str, List[str]]:
-        """ Ask TM1 Server for a dictinary of cube names with the dimension whose name contains the substring
+        """ Ask TM1 Server for a dictionary of cube names with the dimension whose name contains the substring
 
         :param substring: string to search for in dim name
         :param skip_control_cubes: bool, True will exclude control cubes from result
@@ -267,6 +270,44 @@ class CubeService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         cube_dict = {entry['Name']: [dim['Name'] for dim in entry['Dimensions']] for entry in response.json()['value']}
         return cube_dict
+
+    def disable_rules(self, cube_name: str) -> None:
+        """
+        Disable the entire cube rule by substituting it with its base64-encoded hash
+
+        :param cube_name: name of the cube
+        """
+        cube = self.get(cube_name)
+        cube.disable_rules()
+        self.update(cube)
+
+    def disable_feeders(self, cube_name: str) -> None:
+        """
+        Disable the feeders by substituting it with its base64-encoded hash
+
+        :param cube_name: name of the cube
+        """
+        cube = self.get(cube_name)
+        cube.disable_feeders()
+        self.update(cube)
+
+    def enable_rules(self, cube_name: str) -> None:
+        """ Enable the disabled cube rules by decoding the base64-encoded hash
+
+        :param cube_name: name of the cube
+        """
+        cube = self.get(cube_name)
+        cube.enable_rules()
+        self.update(cube)
+
+    def enable_feeders(self, cube_name: str) -> None:
+        """ Enable the disabled cube rules by decoding the base64-encoded hash
+
+        :param cube_name: name of the cube
+        """
+        cube = self.get(cube_name)
+        cube.enable_feeders()
+        self.update(cube)
 
     def search_for_rule_substring(self, substring: str, skip_control_cubes: bool = False, case_insensitive=True,
                                   space_insensitive=True, **kwargs) -> List[Cube]:

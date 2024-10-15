@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-
+import base64
 import collections
 import json
 from typing import Iterable, List, Dict, Optional, Union
 
-from TM1py.Objects.Rules import Rules
+from TM1py.Objects.Rules import Rules, RULES_ENCODING_PREFIX, FEEDERS_ENCODING_PREFIX
 from TM1py.Objects.TM1Object import TM1Object
 from TM1py.Utils import format_url
 
@@ -115,3 +115,104 @@ class Cube(TM1Object):
         if self.has_rules:
             body_as_dict['Rules'] = str(self.rules)
         return json.dumps(body_as_dict, ensure_ascii=False)
+
+    def enable_rules(self, error_if_not_disabled: bool = False):
+        if not self.rules.text:
+            # If there is no rule, there is nothing to do.
+            return
+
+        if not self.rules.text.startswith(RULES_ENCODING_PREFIX):
+            if error_if_not_disabled:
+                raise RuntimeError(
+                    f"The cube rules are already enabled. "
+                    f"First line in Rules section must start with prefix: '{RULES_ENCODING_PREFIX}'")
+            return
+
+        rules_statements = self.rules.text.splitlines()
+        if not len(rules_statements) == 1:
+            raise RuntimeError(
+                "The cube rules are not disabled correctly. "
+                "Must be 1 line of base64-encoded hash.")
+
+        encoded_rules_statement = rules_statements[0]
+        if not encoded_rules_statement.startswith(RULES_ENCODING_PREFIX):
+            raise RuntimeError(
+                f"The cube rules are not disabled correctly. "
+                f"Must start with prefix: '{RULES_ENCODING_PREFIX}'")
+
+        encoded_rule = encoded_rules_statement[len(RULES_ENCODING_PREFIX):]
+        self._rules = Rules(base64.b64decode(encoded_rule).decode('utf-8'))
+
+    def enable_feeders(self, error_if_not_disabled: bool = False):
+        # case no rule
+        if not self.rules:
+            return
+
+        rule_statements = self.rules.text.splitlines()
+        # sanitize statements to simplify identification of 'feeders;' line
+        sanitized_rule_statements = [
+            rule.strip().lower()
+            for rule
+            in rule_statements]
+
+        # case no feeders
+        if 'feeders;' not in sanitized_rule_statements:
+            return
+
+        encoded_feeders_statement = rule_statements[-1]
+        if not encoded_feeders_statement.startswith(FEEDERS_ENCODING_PREFIX):
+            if error_if_not_disabled:
+                raise RuntimeError(
+                    f"The cube feeders are not disabled correctly. "
+                    f"First line in Feeders section must start with prefix: '{FEEDERS_ENCODING_PREFIX}'")
+            return
+
+        encoded_feeders = encoded_feeders_statement[len(FEEDERS_ENCODING_PREFIX):]
+        self._rules = Rules(
+            self.rules.text[:-len(encoded_feeders_statement)] + base64.b64decode(encoded_feeders).decode('utf-8'))
+
+    def disable_feeders(self, error_if_disabled: bool = False):
+        # case no rule
+        if not self.rules:
+            return
+
+        rule_statements = self.rules.text.splitlines()
+
+        # sanitize statements to simplify identification of 'feeders;' line
+        sanitized_rule_statements = [
+            rule.strip().lower()
+            for rule
+            in rule_statements]
+
+        # case no feeders
+        if 'feeders;' not in sanitized_rule_statements:
+            return
+
+        feeders_start_index = sanitized_rule_statements.index('feeders;') + 1
+        feeders_statements = rule_statements[feeders_start_index:]
+
+        # don't disable twice
+        if len(feeders_statements) == 1 and feeders_statements[0].startswith(FEEDERS_ENCODING_PREFIX):
+            if error_if_disabled:
+                raise RuntimeError("The cube feeders are already disabled")
+            return
+
+        hashed_feeders = base64.b64encode('\n'.join(feeders_statements).encode('utf-8')).decode('utf-8')
+
+        rule_statements[feeders_start_index:] = [f"{FEEDERS_ENCODING_PREFIX}{hashed_feeders}"]
+        self._rules = Rules("\n".join(rule_statements))
+
+    def disable_rules(self, error_if_disabled: bool = False):
+        if not self.rules:
+            # If there is no rule, there is nothing to do.
+            return
+
+        # don't disable twice
+        if self.rules.text.startswith(RULES_ENCODING_PREFIX):
+            if error_if_disabled:
+                raise RuntimeError("The cube rules are already disabled")
+            return
+
+        # Encode the entire rule
+        self._rules = Rules(
+            f"{RULES_ENCODING_PREFIX}{base64.b64encode(self.rules.text.encode('utf-8')).decode('utf-8')}")
