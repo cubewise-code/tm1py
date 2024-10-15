@@ -201,12 +201,7 @@ class TestDimensionService(unittest.TestCase):
 
     def test_remove_leaves_hierarchy(self):
         dimension = self.tm1.dimensions.get(dimension_name=self.dimension_name_with_multi_hierarchy)
-
-        try:
-            dimension.remove_hierarchy("LEAVES")
-            raise Exception("Did not throw expected Exception")
-        except ValueError:
-            pass
+        self.assertRaises(ValueError, dimension.remove_hierarchy, "LEAVES")
 
     def test_remove_hierarchy(self):
         dimension = self.tm1.dimensions.get(dimension_name=self.dimension_name_with_multi_hierarchy)
