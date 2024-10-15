@@ -428,6 +428,7 @@ class HierarchyService(ObjectService):
             verify_edges: bool = True,
             element_type_column: str = 'ElementType',
             unwind: bool = False,
+            unwind_consol: str = '',
             update_attribute_types: bool = False):
         """ Update or Create a hierarchy based on a dataframe, while never deleting existing elements.
 
@@ -457,6 +458,8 @@ class HierarchyService(ObjectService):
             Abort early if edges contain a circular reference
         :param unwind: bool
             Unwind hierarch before creating new edges
+		:param unwind_consol: bool
+            Unwind specific consolidation in hierarch before creating new edges, if unwind == True then this override is ignored and entire hierarch is unwinded
         :param update_attribute_types: bool
             If True, function will delete and recreate attributes when a type change is requested.
             By default, function will not delete attributes.
@@ -636,7 +639,10 @@ class HierarchyService(ObjectService):
 
         if unwind:
             self.remove_all_edges(dimension_name, hierarchy_name)
-
+            
+        if unwind_consol.strip() != '' and unwind == False:
+            self.remove_edges_under_consolidation(dimension_name, hierarchy_name, unwind_consol)
+            
         edges = CaseAndSpaceInsensitiveTuplesDict()
         for element_name, *record in df[[element_column, *level_columns, *level_weight_columns]].itertuples(
                 index=False):
