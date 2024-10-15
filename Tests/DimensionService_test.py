@@ -1,5 +1,6 @@
 import configparser
 import unittest
+import warnings
 from pathlib import Path
 
 from TM1py.Objects import Dimension, Hierarchy, Element
@@ -179,12 +180,17 @@ class TestDimensionService(unittest.TestCase):
 
     def test_execute_mdx(self):
         mdx = "{TM1SubsetAll(" + self.dimension_name + ")}"
-        elements = self.tm1.dimensions.execute_mdx(self.dimension_name, mdx)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            elements = self.tm1.dimensions.execute_mdx(self.dimension_name, mdx)
         self.assertEqual(len(elements), 1001)
 
         mdx = "{ Tm1FilterByLevel ( {TM1SubsetAll(" + self.dimension_name + ")}, 0) }"
-        elements = self.tm1.dimensions.execute_mdx(self.dimension_name, mdx)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            elements = self.tm1.dimensions.execute_mdx(self.dimension_name, mdx)
         self.assertEqual(len(elements), 1000)
+        
         for element in elements:
             self.assertTrue(element.startswith("Element"))
 

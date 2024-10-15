@@ -1,5 +1,6 @@
 import configparser
 import unittest
+import warnings
 from pathlib import Path
 
 from TM1py.Services import TM1Service
@@ -20,6 +21,9 @@ class TestMonitoringService(unittest.TestCase):
         cls.config = configparser.ConfigParser()
         cls.config.read(Path(__file__).parent.joinpath('config.ini'))
         cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            cls.tm1.monitoring
 
     @skip_if_version_higher_or_equal_than(version="12.0.0")
     def test_get_threads(self):
