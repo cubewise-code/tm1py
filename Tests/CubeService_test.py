@@ -8,7 +8,7 @@ from TM1py.Exceptions.Exceptions import TM1pyRestException
 from TM1py.Objects import Cube
 from TM1py.Objects import Rules
 from TM1py.Services import TM1Service
-from .Utils import skip_if_insufficient_version, skip_if_deprecated_in_version
+from .Utils import skip_if_version_lower_than, skip_if_version_higher_or_equal_than
 
 
 class TestCubeService(unittest.TestCase):
@@ -157,7 +157,7 @@ class TestCubeService(unittest.TestCase):
         self.assertNotEqual(self.tm1.cubes.get_all_names_without_rules(),
                             self.tm1.cubes.get_all_names_without_rules(skip_control_cubes=True))
 
-    @skip_if_insufficient_version(version="11.4")
+    @skip_if_version_lower_than(version="11.4")
     def test_get_storage_dimension_order(self):
         dimensions = self.tm1.cubes.get_storage_dimension_order(cube_name=self.cube_name)
         self.assertEqual(dimensions, self.dimension_names)
@@ -204,12 +204,12 @@ class TestCubeService(unittest.TestCase):
         cubes = self.tm1.cubes.search_for_dimension_substring(substring="}cubes", skip_control_cubes=True)
         self.assertEqual({}, cubes)
 
-    @skip_if_deprecated_in_version(version="12")
+    @skip_if_version_higher_or_equal_than(version="12")
     def test_search_for_dimension_substring_skip_control_cubes_false_v11(self):
         cubes = self.tm1.cubes.search_for_dimension_substring(substring="}cubes", skip_control_cubes=False)
         self.assertEqual(cubes['}CubeProperties'], ['}Cubes'])
 
-    @skip_if_insufficient_version(version="12")
+    @skip_if_version_lower_than(version="12")
     def test_search_for_dimension_substring_skip_control_cubes_false_v12(self):
         cubes = self.tm1.cubes.search_for_dimension_substring(substring="}cubes", skip_control_cubes=False)
         self.assertEqual(cubes['}CubeSecurity'], ['}Cubes'])
@@ -218,7 +218,7 @@ class TestCubeService(unittest.TestCase):
         number_of_cubes = self.tm1.cubes.get_number_of_cubes()
         self.assertIsInstance(number_of_cubes, int)
 
-    @skip_if_insufficient_version(version="11.4")
+    @skip_if_version_lower_than(version="11.4")
     def test_update_storage_dimension_order(self):
         self.tm1.cubes.update_storage_dimension_order(
             cube_name=self.cube_name,
@@ -228,14 +228,14 @@ class TestCubeService(unittest.TestCase):
             list(reversed(dimensions)),
             self.dimension_names)
 
-    @skip_if_insufficient_version(version="11.6")
-    @skip_if_deprecated_in_version(version="12")
+    @skip_if_version_lower_than(version="11.6")
+    @skip_if_version_higher_or_equal_than(version="12")
     def test_load(self):
         response = self.tm1.cubes.load(cube_name=self.cube_name)
         self.assertTrue(response.ok)
 
-    @skip_if_insufficient_version(version="11.6")
-    @skip_if_deprecated_in_version(version="12")
+    @skip_if_version_lower_than(version="11.6")
+    @skip_if_version_higher_or_equal_than(version="12")
     def test_unload(self):
         response = self.tm1.cubes.unload(cube_name=self.cube_name)
         self.assertTrue(response.ok)

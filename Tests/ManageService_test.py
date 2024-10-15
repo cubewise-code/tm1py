@@ -7,7 +7,7 @@ from pathlib import Path
 import time
 
 from TM1py.Services import ManageService, TM1Service
-from .Utils import skip_if_insufficient_version
+from .Utils import skip_if_version_lower_than
 from .Utils import verify_version
 
 
