@@ -3,6 +3,9 @@ name: TM1Py Integration Tests
 on:
   workflow_dispatch:
     inputs:
+      pr_number:
+        description: 'Pull request number to test'
+        required: true
       environments:
         description: 'JSON array of environments to test (e.g., ["tm1-11-onprem", "tm1-11-cloud"])'
         required: true
@@ -13,11 +16,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        environment: ${{ fromJson(github.event.inputs.environments) }}
+        environment: ${{ fromJson(inputs.environments) }}
     environment: ${{ matrix.environment }}
     steps:
-      - name: Checkout code
+      - name: Checkout PR code
         uses: actions/checkout@v3
+        with:
+          repository: ${{ github.repository }}
+          ref: refs/pull/${{ inputs.pr_number }}/merge
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -26,10 +32,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -e .[unit_test]
-
+          pip install -e .[pandas,dev] 
       - name: Retrieve TM1 Connection Details
-        id: get-connection
         run: echo "Retrieving TM1 connection details"
         env:
           TM1_CONNECTION: ${{ vars.TM1_CONNECTION }}
@@ -52,15 +56,14 @@ jobs:
           name: test-results-${{ matrix.environment }}
           path: Tests/test-reports/
 
-      # Optional: Post results to PR
       - name: Post comment to PR
-        if: always() && github.event_name == 'workflow_dispatch' && github.event.pull_request
+        if: always()
         uses: actions/github-script@v6
         with:
           script: |
             github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
+              issue_number: ${{ inputs.pr_number }},
               body: 'Tests completed for environment: ${{ matrix.environment }}. Check artifacts for details.'
             })
