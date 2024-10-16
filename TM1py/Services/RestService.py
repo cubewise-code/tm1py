@@ -43,6 +43,7 @@ class AuthenticationMode(Enum):
     SERVICE_TO_SERVICE = 6
     PA_PROXY = 7
     BASIC_API_KEY = 8
+    ACCESS_TOKEN = 9
 
     @property
     def use_v12_auth(self):
@@ -193,7 +194,8 @@ class RestService:
             if self._auth_mode in [
                 AuthenticationMode.IBM_CLOUD_API_KEY,
                 AuthenticationMode.SERVICE_TO_SERVICE,
-                AuthenticationMode.BASIC_API_KEY
+                AuthenticationMode.BASIC_API_KEY,
+                AuthenticationMode.ACCESS_TOKEN
             ]:
                 return True
             else:
@@ -454,7 +456,7 @@ class RestService:
         elif self._auth_mode is AuthenticationMode.SERVICE_TO_SERVICE:
             return self._construct_s2s_service_and_auth_root()
 
-        if self._auth_mode is AuthenticationMode.BASIC_API_KEY:
+        if self._auth_mode in [AuthenticationMode.BASIC_API_KEY, AuthenticationMode.ACCESS_TOKEN]:
             return self._construct_all_version_service_and_auth_root_from_base_url()
 
     def _manage_http_adapter(self):
@@ -699,6 +701,9 @@ class RestService:
         elif self._auth_mode == AuthenticationMode.IBM_CLOUD_API_KEY:
             access_token = self._generate_ibm_iam_cloud_access_token()
             self.add_http_header('Authorization', "Bearer " + access_token)
+
+        elif self._auth_mode == AuthenticationMode.ACCESS_TOKEN:
+            self.add_http_header('Authorization', "Bearer " + self._kwargs.get('access_token'))
 
         # v11 authorization (Basic, CAM) through Headers
         else:
@@ -1063,6 +1068,8 @@ class RestService:
             ]):
                 if self._kwargs.get('user', None) == 'apikey' and 'planninganalytics.saas.ibm.com' in self._base_url:
                     return AuthenticationMode.BASIC_API_KEY
+                elif self._kwargs.get('access_token'):
+                    return AuthenticationMode.ACCESS_TOKEN
                 return AuthenticationMode.BASIC
 
             if self._kwargs.get('gateway', None):
