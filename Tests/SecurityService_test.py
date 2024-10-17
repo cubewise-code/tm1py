@@ -197,7 +197,7 @@ class TestSecurityService(unittest.TestCase):
     def test_get_users_from_group(self):
         users = [user.name for user in self.tm1.security.get_users_from_group("AdMiN")]
         mdx = "{ FILTER ( { [}Clients].Members } , [}ClientGroups].([}Groups].[ADMIN]) = 'ADMIN' ) }"
-        clients = self.tm1.dimensions.execute_mdx("}Clients", mdx)
+        clients = self.tm1.elements.execute_set_mdx_element_names(mdx)
         self.assertGreater(len(users), 0)
         self.assertGreater(len(clients), 0)
         self.assertEqual(sorted(users), sorted(clients))
@@ -206,7 +206,7 @@ class TestSecurityService(unittest.TestCase):
         users = self.tm1.security.get_user_names_from_group(self.group_name1)
         mdx = "{ FILTER ( { [}Clients].Members } , [}ClientGroups].([}Groups].[" + self.group_name1 + "]) = '" + \
               self.group_name1.replace("'", "''") + "' ) }"
-        clients = self.tm1.dimensions.execute_mdx("}Clients", mdx)
+        clients = self.tm1.elements.execute_set_mdx_element_names(mdx)
         self.assertGreater(len(users), 0)
         self.assertGreater(len(clients), 0)
         self.assertEqual(sorted(users), sorted(clients))
