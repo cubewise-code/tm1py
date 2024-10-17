@@ -22,7 +22,7 @@ from TM1py.Services.RestService import RestService
 from TM1py.Services.SubsetService import SubsetService
 from TM1py.Utils.Utils import case_and_space_insensitive_equals, format_url, CaseAndSpaceInsensitiveDict, \
     CaseAndSpaceInsensitiveSet, CaseAndSpaceInsensitiveTuplesDict, require_pandas, require_data_admin, \
-    require_ops_admin, verify_version
+    lower_and_drop_spaces, require_ops_admin, verify_version
 
 
 class HierarchyService(ObjectService):
@@ -356,9 +356,10 @@ class HierarchyService(ObjectService):
         elements_under_consolidations = element_service.get_members_under_consolidation(dimension_name, hierarchy_name,
                                                                                         consolidation_element)
         elements_under_consolidations.append(consolidation_element)
+        elements_under_consolidations = [lower_and_drop_spaces(member) for member in elements_under_consolidations]
         remove_edges = []
         for (parent, component) in hierarchy.edges:
-            if parent in elements_under_consolidations and component in elements_under_consolidations:
+            if lower_and_drop_spaces(parent) in elements_under_consolidations and lower_and_drop_spaces(component) in elements_under_consolidations:
                 remove_edges.append((parent, component))
         hierarchy.remove_edges(remove_edges)
         return self.update(hierarchy, **kwargs)
