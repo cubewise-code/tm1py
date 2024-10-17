@@ -427,8 +427,10 @@ class HierarchyService(ObjectService):
             verify_unique_elements: bool = False,
             verify_edges: bool = True,
             element_type_column: str = 'ElementType',
-            unwind: bool = False,
-            update_attribute_types: bool = False):
+            unwind_all: bool = False,
+            unwind_consolidation: list = None,
+            update_attribute_types: bool = False,
+            **kwargs):
         """ Update or Create a hierarchy based on a dataframe, while never deleting existing elements.
 
         :param dimension_name:
@@ -455,8 +457,10 @@ class HierarchyService(ObjectService):
             Abort early if element names are not unique
         :param verify_edges:
             Abort early if edges contain a circular reference
-        :param unwind: bool
+        :param unwind_all: bool
             Unwind hierarch before creating new edges
+        :param unwind_consolidation: list
+            Unwind a list specific consolidations in hierarch before creating new edges, if unwind_all is true, this list is ignored
         :param update_attribute_types: bool
             If True, function will delete and recreate attributes when a type change is requested.
             By default, function will not delete attributes.
@@ -484,6 +488,15 @@ class HierarchyService(ObjectService):
         alias_columns = tuple([col for col in df.columns if col.lower().endswith((":a", ":alias"))])
         if len(alias_columns) > 0:
             self._validate_alias_uniqueness(df=df[[element_column, *alias_columns]])
+            
+        # backward compatibility for unwind, the value for unwind would be assinged to unwind_all. expected type is bool
+        if "unwind" in kwargs:
+            unwind_all = kwargs["unwind"]
+        
+        # verify unwind_consolidation is a list
+        if unwind_consolidation is not None:
+            if not isinstance(unwind_consolidation, list):
+                raise ValueError(f"Inconsistent Type for 'unwind_consolidation': expected type-> list, current type-> '{type(unwind_consolidation)}'")
 
         # identify and sort level columns
         level_columns = []
@@ -634,8 +647,13 @@ class HierarchyService(ObjectService):
                 sum_numeric_duplicates=False,
                 use_blob=True)
 
-        if unwind:
+        if unwind_all:
             self.remove_all_edges(dimension_name, hierarchy_name)
+        else:
+            if unwind_consolidation is not None:
+                for elem in unwind_consolidation:
+                    if self.elements.exists(dimension_name, hierarchy_name, elem):
+                        self.remove_edges_under_consolidation(dimension_name, hierarchy_name, elem)
 
         edges = CaseAndSpaceInsensitiveTuplesDict()
         for element_name, *record in df[[element_column, *level_columns, *level_weight_columns]].itertuples(
