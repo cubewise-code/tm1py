@@ -356,9 +356,10 @@ class HierarchyService(ObjectService):
         elements_under_consolidations = element_service.get_members_under_consolidation(dimension_name, hierarchy_name,
                                                                                         consolidation_element)
         elements_under_consolidations.append(consolidation_element)
+        elements_under_consolidations = [member.lower().replace(' ','') for member in elements_under_consolidations]
         remove_edges = []
         for (parent, component) in hierarchy.edges:
-            if parent in elements_under_consolidations and component in elements_under_consolidations:
+            if parent.lower().replace(' ','') in elements_under_consolidations and component.lower().replace(' ','') in elements_under_consolidations:
                 remove_edges.append((parent, component))
         hierarchy.remove_edges(remove_edges)
         return self.update(hierarchy, **kwargs)
@@ -428,7 +429,7 @@ class HierarchyService(ObjectService):
             verify_edges: bool = True,
             element_type_column: str = 'ElementType',
             unwind: bool = False,
-            unwind_consol: str = '',
+            unwind_consol: list = [],
             update_attribute_types: bool = False):
         """ Update or Create a hierarchy based on a dataframe, while never deleting existing elements.
 
@@ -460,6 +461,8 @@ class HierarchyService(ObjectService):
             Unwind hierarch before creating new edges
 	:param unwind_consol: str
             Unwind specific consolidation in hierarch before creating new edges, if unwind == True then this override is ignored and entire hierarch is unwinded
+        :param unwind_consol: list
+            Unwind specific consolidations in hierarch before creating new edges, if this argument is blank, and unwind is true, Unwind entire hiera
         :param update_attribute_types: bool
             If True, function will delete and recreate attributes when a type change is requested.
             By default, function will not delete attributes.
@@ -638,10 +641,12 @@ class HierarchyService(ObjectService):
                 use_blob=True)
 
         if unwind:
-            self.remove_all_edges(dimension_name, hierarchy_name)
-            
-        if unwind_consol.strip() != '' and unwind == False:
-            self.remove_edges_under_consolidation(dimension_name, hierarchy_name, unwind_consol)
+            if len(unwind_consol) == 0:
+                self.remove_all_edges(dimension_name, hierarchy_name)
+            else:
+                for elem in unwind_consol:
+                    if self.elements.exists(dimension_name, hierarchy_name, elem):
+                        self.remove_edges_under_consolidation(dimension_name, hierarchy_name, elem)        
             
         edges = CaseAndSpaceInsensitiveTuplesDict()
         for element_name, *record in df[[element_column, *level_columns, *level_weight_columns]].itertuples(
