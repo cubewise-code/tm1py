@@ -1072,6 +1072,11 @@ class TestElementService(unittest.TestCase):
                 self.dimension_name,
                 [element_attribute])
 
+    def test_execute_set_mdx_element_names(self):
+        mdx = f"{{[{self.dimension_name}].[1990]}}"
+        members = self.tm1.elements.execute_set_mdx_element_names(mdx=mdx)
+        self.assertEqual(members, ['1990'])
+
     def test_execute_set_mdx(self):
         mdx = f"{{[{self.dimension_name}].[1990]}}"
         members = self.tm1.elements.execute_set_mdx(
