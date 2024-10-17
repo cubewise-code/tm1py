@@ -168,7 +168,7 @@ class DimensionService(ObjectService):
         :return: List of Element names
         """
 
-        warnings.warn("execute_mdx() will be deprecated; use ElementService execute_set_mdx.", DeprecationWarning,
+        warnings.warn("execute_mdx() will be deprecated; use ElementService execute_set_mdx_element_names().", DeprecationWarning,
                       stacklevel=2)
 
         mdx_skeleton = "SELECT " \
