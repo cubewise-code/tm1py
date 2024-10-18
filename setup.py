@@ -46,11 +46,6 @@ setup(
         "pandas": ["pandas"],
         "dev": [
             "pytest",
-            "pytest-xdist"
-        ],
-        "unit_test": [
-            "pandas",
-            "pytest",
             "pytest-xdist",
             "python-dateutil"
         ]
