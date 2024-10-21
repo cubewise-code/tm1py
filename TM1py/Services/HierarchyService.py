@@ -353,13 +353,12 @@ class HierarchyService(ObjectService):
         hierarchy = self.get(dimension_name, hierarchy_name)
         from TM1py.Services import ElementService
         element_service = ElementService(self._rest)
-        elements_under_consolidations = element_service.get_members_under_consolidation(dimension_name, hierarchy_name,
-                                                                                        consolidation_element)
-        elements_under_consolidations.append(consolidation_element)
-        elements_under_consolidations = [lower_and_drop_spaces(member) for member in elements_under_consolidations]
+        elements_under_consolidations = CaseAndSpaceInsensitiveSet(element_service.get_members_under_consolidation(dimension_name, hierarchy_name,
+                                                                                        consolidation_element))
+        elements_under_consolidations.add(consolidation_element)
         remove_edges = []
         for (parent, component) in hierarchy.edges:
-            if lower_and_drop_spaces(parent) in elements_under_consolidations and lower_and_drop_spaces(component) in elements_under_consolidations:
+            if parent in elements_under_consolidations and component in elements_under_consolidations:
                 remove_edges.append((parent, component))
         hierarchy.remove_edges(remove_edges)
         return self.update(hierarchy, **kwargs)
