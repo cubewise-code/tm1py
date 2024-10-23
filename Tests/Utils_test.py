@@ -2,6 +2,7 @@ import configparser
 import unittest
 from pathlib import Path
 
+import numpy as np
 from TM1py.Services import TM1Service
 from TM1py.Utils import (
     Utils,
@@ -9,7 +10,7 @@ from TM1py.Utils import (
     integerize_version,
     verify_version, get_cube, resembles_mdx, format_url, add_url_parameters, extract_cell_updateable_property,
     CellUpdateableProperty, cell_is_updateable, extract_cell_properties_from_odata_context,
-    map_cell_properties_to_compact_json_response, frame_to_significant_digits, drop_dimension_properties
+    map_cell_properties_to_compact_json_response, frame_to_significant_digits, drop_dimension_properties, build_dataframe_from_csv
 )
 
 from .Utils import skip_if_version_higher_or_equal_than
@@ -102,6 +103,12 @@ class TestUtilsMethods(unittest.TestCase):
         """
         dimensions = get_dimensions_from_where_clause(mdx)
         self.assertEqual(["DIM2", "DIM1"], dimensions)
+
+    def test_build_dataframe_from_csv(self):
+        raw_csv = """Dim A~Dim B~Dim C~Dim D~Dim E~Dim F~Value\r\nN5~N5~N1~N5~N5~N1~1\r\nN5~N5~N1~N5~N5~N2~1\r\nN5~N5~N1~N5~N5~N5~1\r\nN5~N5~N1~N5~N5~S1~1\r\nN5~N5~N1~N5~N5~C1~1\r\nNone~N5~N1~N5~N5~N1~1\r\nNone~N5~N1~N5~N5~N2~1\r\nNone~N5~N1~N5~N5~N5~None\r\nNone~N5~N1~N5~N5~S1~1\r\nNone~N5~N1~N5~N5~C1~1"""
+        test_result = build_dataframe_from_csv(raw_csv)
+        result = {'Dim A': {0: 'N5', 1: 'N5', 2: 'N5', 3: 'N5', 4: 'N5', 5: 'None', 6: 'None', 7: 'None', 8: 'None', 9: 'None'}, 'Dim B': {0: 'N5', 1: 'N5', 2: 'N5', 3: 'N5', 4: 'N5', 5: 'N5', 6: 'N5', 7: 'N5', 8: 'N5', 9: 'N5'}, 'Dim C': {0: 'N1', 1: 'N1', 2: 'N1', 3: 'N1', 4: 'N1', 5: 'N1', 6: 'N1', 7: 'N1', 8: 'N1', 9: 'N1'}, 'Dim D': {0: 'N5', 1: 'N5', 2: 'N5', 3: 'N5', 4: 'N5', 5: 'N5', 6: 'N5', 7: 'N5', 8: 'N5', 9: 'N5'}, 'Dim E': {0: 'N5', 1: 'N5', 2: 'N5', 3: 'N5', 4: 'N5', 5: 'N5', 6: 'N5', 7: 'N5', 8: 'N5', 9: 'N5'}, 'Dim F': {0: 'N1', 1: 'N2', 2: 'N5', 3: 'S1', 4: 'C1', 5: 'N1', 6: 'N2', 7: 'N5', 8: 'S1', 9: 'C1'}, 'Value': {0: '1', 1: '1', 2: '1', 3: '1', 4: '1', 5: '1', 6: '1', 7: np.nan, 8: '1', 9: '1'}}
+        self.assertEqual(result, test_result.to_dict())
 
     def test_get_dimensions_from_where_clause_no_where(self):
         mdx = """
