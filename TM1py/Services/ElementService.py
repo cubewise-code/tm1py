@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import csv
 import json
 from enum import Enum
 from io import StringIO
@@ -18,12 +19,15 @@ except ImportError:
 from mdxpy import MdxHierarchySet, Member, MdxLevelExpression
 from requests import Response
 
-from TM1py.Exceptions import TM1pyRestException, TM1pyException
+from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyWritePartialFailureException, TM1pyWriteFailureException, \
+    TM1pyRestException
 from TM1py.Objects import ElementAttribute, Element
+from TM1py.Services.FileService import FileService
 from TM1py.Services.ObjectService import ObjectService
+from TM1py.Services.ProcessService import ProcessService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import CaseAndSpaceInsensitiveDict, format_url, CaseAndSpaceInsensitiveSet, require_data_admin, \
-    dimension_hierarchy_element_tuple_from_unique_name, require_pandas, require_version
+     require_ops_admin, dimension_hierarchy_element_tuple_from_unique_name, require_pandas, require_version
 from TM1py.Utils import build_element_unique_names, CaseAndSpaceInsensitiveTuplesDict, verify_version
 from itertools import islice
 from collections import OrderedDict
@@ -117,10 +121,13 @@ class ElementService(ObjectService):
 
     @require_version("11.4")
     def delete_edges(self, dimension_name: str, hierarchy_name: str, edges: Iterable[Tuple[str, str]] = None,
-                     use_ti: bool = False, **kwargs):
+                     use_ti: bool = False, use_blob: bool = False, remove_blob: bool = True, **kwargs):
         if use_ti:
             return self.delete_edges_use_ti(dimension_name, hierarchy_name, edges, **kwargs)
-
+            
+        if use_blob:
+            return self.delete_edges_use_blob(dimension_name, hierarchy_name, edges, remove_blob, **kwargs)
+            
         h_service = self._get_hierarchy_service()
         h = h_service.get(dimension_name, hierarchy_name, **kwargs)
         for edge in edges:
@@ -151,6 +158,97 @@ class ElementService(ObjectService):
         if not success:
             raise TM1pyException(f"Failed to delete edges through unbound process. Error: '{error_log_file}'")
 
+    @require_data_admin
+    @require_ops_admin
+    def delete_edges_use_blob(self, dimension_name: str, hierarchy_name: str, edges: List[str] = None, remove_blob: bool = True, **kwargs):
+        """
+        Remove edges in TM1 via an unbound TI process having an uploaded CSV as data source
+        :param dimension_name as str: dimension name
+        :param hierarchy_name as str: hierarchy name
+        :param edges as list: 
+        :remove_blob as bool: remove the parent child file after use, default True
+        :param kwargs:
+        :return: Success: bool, Messages: list, ChangeSet: None
+        """
+        if not edges:
+            return
+            
+        process_service = ProcessService(self._rest)
+        file_service = FileService(self._rest)
+
+        unique_name = self.suggest_unique_object_name()
+
+        # Transform cells to format that's consumable for TI
+        csv_content = StringIO()
+        csv_writer = csv.writer(
+            csv_content,
+            delimiter=",",
+            quoting=csv.QUOTE_ALL)
+        csv_writer.writerows(
+            list(edge)
+            for edge 
+            in edges)
+
+        file_name = f'{unique_name}.csv'
+        file_service.create(
+            file_name=file_name,
+            file_content=csv_content.getvalue().encode('utf-8'),
+            **kwargs)
+
+        try:
+            # Create and execute unbound TI process to delete edges using blob file
+            process = self._build_unwind_hierarchy_edges_from_blob_process(
+                dimension_name=dimension_name,
+                hierarchy_name=hierarchy_name,
+                process_name=unique_name,
+                blob_filename=file_name)
+
+            success, status, log_file = process_service.execute_process_with_return(process=process, **kwargs)
+            if not success:
+                if status in ['HasMinorErrors']:
+                    raise TM1pyWritePartialFailureException([status], [log_file], 1)
+                else:
+                    raise TM1pyWriteFailureException([status], [log_file])
+
+        finally:
+            if remove_blob:
+                file_service.delete(file_name=file_name)
+
+    def _build_unwind_hierarchy_edges_from_blob_process(self, dimension_name: str, hierarchy_name: str, process_name: str, blob_filename: str) -> Process:
+
+        # v11 automatically adds blb file extensions to documents created via the contents api
+        if not verify_version(required_version="12", version=self.version):
+            blob_filename += ".blb"
+        hierarchyupdate_process = Process(
+            name=process_name,
+            datasource_type='ASCII',
+            datasource_ascii_header_records=0,
+            datasource_data_source_name_for_server=f"{blob_filename}",
+            datasource_data_source_name_for_client=f"{blob_filename}",
+            datasource_ascii_delimiter_char=',',
+            datasource_ascii_decimal_separator='.',
+            datasource_ascii_thousand_separator='',
+            datasource_ascii_quote_character='"')
+
+        # Define encoding in Prolog section
+        hierarchyupdate_process.prolog_procedure = f"""
+        SetInputCharacterSet('TM1CS_UTF8');
+         """
+        parent_variable="vParent"
+        child_variable="vChild"
+        hierarchyupdate_process.add_variable(name=parent_variable, variable_type='String')
+        hierarchyupdate_process.add_variable(name=child_variable, variable_type='String')
+
+        # Write the statement for delete component in hierarchy
+        hierarch_check = f"If( HierarchyExists('{dimension_name}', '{hierarchy_name}') = 1);"
+        delete_component = f"\rHierarchyElementComponentDelete('{dimension_name}', '{hierarchy_name}', {parent_variable}, {child_variable});"
+        close_if = '\rEndIf;\r'
+ 
+        # Define Metadata section
+        metadata_statement = hierarch_check + delete_component + close_if
+        hierarchyupdate_process.metadata_procedure = metadata_statement
+        return hierarchyupdate_process
+    
     def get_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[Element]:
         url = format_url(
             "/Dimensions('{}')/Hierarchies('{}')/Elements?select=Name,Type",
