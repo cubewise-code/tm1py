@@ -240,12 +240,10 @@ class ElementService(ObjectService):
         hierarchyupdate_process.add_variable(name=child_variable, variable_type='String')
 
         # Write the statement for delete component in hierarchy
-        hierarch_check = f"If( HierarchyExists('{dimension_name}', '{hierarchy_name}') = 1);"
         delete_component = f"\rHierarchyElementComponentDelete('{dimension_name}', '{hierarchy_name}', {parent_variable}, {child_variable});"
-        close_if = '\rEndIf;\r'
  
         # Define Metadata section
-        metadata_statement = hierarch_check + delete_component + close_if
+        metadata_statement = delete_component
         hierarchyupdate_process.metadata_procedure = metadata_statement
         return hierarchyupdate_process
     
