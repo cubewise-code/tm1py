@@ -676,7 +676,7 @@ class HierarchyService(ObjectService):
                     dimension_name=dimension_name,
                     hierarchy_name=hierarchy_name,
                     edges=delete_edges.keys(),
-                    use_ti=self.is_admin)
+                    use_blob=self.is_admin)
 
             new_edges = {
                 (k, v): w
