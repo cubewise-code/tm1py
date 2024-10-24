@@ -1175,6 +1175,14 @@ class CaseAndSpaceInsensitiveTuplesDict(collections.abc.MutableMapping):
     def copy(self):
         return CaseAndSpaceInsensitiveTuplesDict(self._store.values())
 
+    # Join two dictionaries together
+    def join(self, other):
+        if isinstance(other, CaseAndSpaceInsensitiveTuplesDict):
+            for key,value in other.items():
+                self._store[tuple([lower_and_drop_spaces(item) for item in key])] = (key, value)
+        else:
+             raise ValueError("Other object is not of type CaseAndSpaceInsensitiveTuplesDict")
+
     def __repr__(self):
         return str(dict(self.items()))
 
