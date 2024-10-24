@@ -418,7 +418,7 @@ class HierarchyService(ObjectService):
     @require_pandas
     @require_data_admin
     @require_ops_admin
-    def update_or_create_hierarchy_from_dataframe(
+     def update_or_create_hierarchy_from_dataframe(
             self,
             dimension_name: str,
             hierarchy_name: str,
@@ -488,11 +488,11 @@ class HierarchyService(ObjectService):
         alias_columns = tuple([col for col in df.columns if col.lower().endswith((":a", ":alias"))])
         if len(alias_columns) > 0:
             self._validate_alias_uniqueness(df=df[[element_column, *alias_columns]])
-            
+
         # backward compatibility for unwind, the value for unwind would be assinged to unwind_all. expected type is bool
         if "unwind" in kwargs:
             unwind_all = kwargs["unwind"]
-        
+
         # verify unwind_consolidation is a list
         if unwind_consolidation is not None:
             if not isinstance(unwind_consolidation, list):
@@ -648,12 +648,22 @@ class HierarchyService(ObjectService):
                 use_blob=True)
 
         if unwind_all:
-            self.remove_all_edges(dimension_name, hierarchy_name)
+            self.remove_all_edges(dimension_name=dimension_name, hierarchy_name=hierarchy_name)
         else:
             if unwind_consolidation is not None:
+                edges = CaseAndSpaceInsensitiveTuplesDict()
                 for elem in unwind_consolidation:
-                    if self.elements.exists(dimension_name, hierarchy_name, elem):
-                        self.remove_edges_under_consolidation(dimension_name, hierarchy_name, elem)
+                    if self.elements.exists(dimension_name=dimension_name, hierarchy_name=hierarchy_name, element_name=elem):
+                        temp_edges = self.elements.get_edges_under_consolidation(
+                                            dimension_name=dimension_name, 
+                                            hierarchy_name=hierarchy_name, 
+                                            consolidation=elem)
+                        edges.join(temp_edges)
+                self.elements.delete_edges(
+                            dimension_name=dimension_name, 
+                            hierarchy_name=hierarchy_name,
+                            edges=edges,
+                            use_ti=self.is_admin)
 
         edges = CaseAndSpaceInsensitiveTuplesDict()
         for element_name, *record in df[[element_column, *level_columns, *level_weight_columns]].itertuples(
