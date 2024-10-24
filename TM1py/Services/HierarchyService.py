@@ -418,7 +418,7 @@ class HierarchyService(ObjectService):
     @require_pandas
     @require_data_admin
     @require_ops_admin
-     def update_or_create_hierarchy_from_dataframe(
+    def update_or_create_hierarchy_from_dataframe(
             self,
             dimension_name: str,
             hierarchy_name: str,
