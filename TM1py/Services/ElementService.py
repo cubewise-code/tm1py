@@ -1011,6 +1011,23 @@ class ElementService(ObjectService):
         get_members(consolidation_tree)
         return members
 
+    def execute_set_mdx_element_names(
+        self, mdx: str, top_records: Optional[int] = None, **kwargs
+    ) -> List:
+        """
+        :method to execute an MDX statement against a dimension and get a list with element names back
+        :param mdx: valid dimension mdx statement
+        :param top_records: number of records to return, default: all elements no limit
+        :return: list of element names
+        """
+        elements = self.execute_set_mdx(
+            mdx,
+            member_properties=["Name"],
+            parent_properties=None,
+            element_properties=None,
+        )
+        return [element[0]["Name"] for element in elements]
+
     def execute_set_mdx(
             self,
             mdx: str,
