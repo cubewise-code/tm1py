@@ -651,18 +651,18 @@ class HierarchyService(ObjectService):
             self.remove_all_edges(dimension_name=dimension_name, hierarchy_name=hierarchy_name)
         else:
             if unwind_consolidation is not None:
-                edges = CaseAndSpaceInsensitiveTuplesDict()
+                all_edges = CaseAndSpaceInsensitiveTuplesDict()
                 for elem in unwind_consolidation:
                     if self.elements.exists(dimension_name=dimension_name, hierarchy_name=hierarchy_name, element_name=elem):
                         temp_edges = self.elements.get_edges_under_consolidation(
                                             dimension_name=dimension_name, 
                                             hierarchy_name=hierarchy_name, 
                                             consolidation=elem)
-                        edges.join(temp_edges)
+                        all_edges.join(temp_edges)
                 self.elements.delete_edges(
                             dimension_name=dimension_name, 
                             hierarchy_name=hierarchy_name,
-                            edges=edges,
+                            edges=all_edges,
                             use_ti=self.is_admin)
 
         edges = CaseAndSpaceInsensitiveTuplesDict()
