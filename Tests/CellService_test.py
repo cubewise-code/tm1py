@@ -2905,7 +2905,7 @@ class TestCellService(unittest.TestCase):
             'Attr3': {0: 3},
             'Value': {0: 1}})
 
-        self.assertEquals(df_test.to_dict(), df.to_dict())
+        self.assertEqual(df_test.to_dict(), df.to_dict())
 
     @skip_if_no_pandas
     def test_execute_mdx_dataframe_include_attributes_iter_json_no_attributes(self):

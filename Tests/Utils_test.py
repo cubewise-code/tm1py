@@ -12,7 +12,8 @@ from TM1py.Utils import (
     map_cell_properties_to_compact_json_response, frame_to_significant_digits, drop_dimension_properties
 )
 
-from .Utils import skip_if_version_higher_or_equal_than
+from .Utils import skip_if_version_higher_or_equal_than, skip_if_paoc
+
 
 class TestUtilsMethods(unittest.TestCase):
     tm1: TM1Service
@@ -28,6 +29,7 @@ class TestUtilsMethods(unittest.TestCase):
         cls.config.read(Path(__file__).parent.joinpath("config.ini"))
         cls.tm1 = TM1Service(**cls.config["tm1srv01"])
 
+    @skip_if_paoc
     @skip_if_version_higher_or_equal_than(version="12")
     def test_get_instances_from_adminhost(self):
         servers = Utils.get_all_servers_from_adminhost(

@@ -8,7 +8,7 @@ from TM1py.Objects import User
 from TM1py.Objects.User import UserType
 from TM1py.Services import TM1Service
 from TM1py.Utils.Utils import CaseAndSpaceInsensitiveSet, case_and_space_insensitive_equals, verify_version
-from .Utils import skip_if_version_higher_or_equal_than, skip_if_version_lower_than
+from .Utils import skip_if_version_higher_or_equal_than, skip_if_version_lower_than, skip_if_auth_not_basic
 
 
 class TestSecurityService(unittest.TestCase):
@@ -229,6 +229,7 @@ class TestSecurityService(unittest.TestCase):
         response = self.tm1.security.security_refresh()
         self.assertTrue(response.ok)
 
+    @skip_if_auth_not_basic
     @skip_if_version_higher_or_equal_than(version="12")
     def test_auth_with_exotic_characters_in_password(self):
         exotic_password = "d'8!?:Y4"
@@ -272,6 +273,7 @@ class TestSecurityService(unittest.TestCase):
         self.assertIn(group, groups_before_delete)
         self.assertNotIn(group, groups_after_delete)
 
+    @skip_if_auth_not_basic
     @skip_if_version_higher_or_equal_than(version='12')
     def test_tm1service_with_encrypted_password_decode_b64_as_string(self):
         user_name = "TM1py user name"
@@ -291,6 +293,7 @@ class TestSecurityService(unittest.TestCase):
 
         self.tm1.security.delete_user(user.name)
 
+    @skip_if_auth_not_basic
     @skip_if_version_higher_or_equal_than(version='12')
     def test_tm1service_without_encrypted_password(self):
         user_name = "TM1py user name"
@@ -310,6 +313,7 @@ class TestSecurityService(unittest.TestCase):
 
         self.tm1.security.delete_user(user.name)
 
+    @skip_if_auth_not_basic
     @skip_if_version_higher_or_equal_than(version='12')
     def test_tm1service_with_encrypted_password(self):
         user_name = "TM1py user name"
@@ -346,6 +350,7 @@ class TestSecurityService(unittest.TestCase):
 
         self.tm1.security.delete_user(user.name)
 
+    @skip_if_auth_not_basic
     @skip_if_version_higher_or_equal_than(version='12')
     def test_tm1service_with_plain_password(self):
         user_name = "TM1py user name"
@@ -420,6 +425,7 @@ class TestSecurityService(unittest.TestCase):
         self.assertEqual(1, len(read_only_users))
         self.assertEqual(self.read_only_user_name, read_only_users[0])
 
+    @skip_if_auth_not_basic
     @skip_if_version_higher_or_equal_than(version='12')
     def test_update_user_password(self):
         self.tm1.security.update_user_password(user_name=self.user.name, password="new_password123")
