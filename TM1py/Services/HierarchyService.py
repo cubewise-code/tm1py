@@ -9,7 +9,7 @@ except ImportError:
 
 import json
 import math
-from typing import Dict, Tuple, List, Optional
+from typing import Dict, Tuple, List, Optional, Iterable
 
 import networkx as nx
 from requests import Response
@@ -22,7 +22,7 @@ from TM1py.Services.RestService import RestService
 from TM1py.Services.SubsetService import SubsetService
 from TM1py.Utils.Utils import case_and_space_insensitive_equals, format_url, CaseAndSpaceInsensitiveDict, \
     CaseAndSpaceInsensitiveSet, CaseAndSpaceInsensitiveTuplesDict, require_pandas, require_data_admin, \
-    lower_and_drop_spaces, require_ops_admin, verify_version
+    require_ops_admin, verify_version
 
 
 class HierarchyService(ObjectService):
@@ -353,8 +353,9 @@ class HierarchyService(ObjectService):
         hierarchy = self.get(dimension_name, hierarchy_name)
         from TM1py.Services import ElementService
         element_service = ElementService(self._rest)
-        elements_under_consolidations = CaseAndSpaceInsensitiveSet(element_service.get_members_under_consolidation(dimension_name, hierarchy_name,
-                                                                                        consolidation_element))
+        elements_under_consolidations = CaseAndSpaceInsensitiveSet(
+            element_service.get_members_under_consolidation(dimension_name, hierarchy_name,
+                                                            consolidation_element))
         elements_under_consolidations.add(consolidation_element)
         remove_edges = []
         for (parent, component) in hierarchy.edges:
@@ -428,7 +429,7 @@ class HierarchyService(ObjectService):
             verify_edges: bool = True,
             element_type_column: str = 'ElementType',
             unwind_all: bool = False,
-            unwind_consolidation: list = None,
+            unwind_consolidations: Iterable = None,
             update_attribute_types: bool = False,
             **kwargs):
         """ Update or Create a hierarchy based on a dataframe, while never deleting existing elements.
@@ -459,8 +460,9 @@ class HierarchyService(ObjectService):
             Abort early if edges contain a circular reference
         :param unwind_all: bool
             Unwind hierarch before creating new edges
-        :param unwind_consolidation: list
-            Unwind a list specific consolidations in hierarch before creating new edges, if unwind_all is true, this list is ignored
+        :param unwind_consolidations: list
+            Unwind a list of specific consolidations in the hierarchy before creating new edges,
+            if unwind_all is true, this list is ignored
         :param update_attribute_types: bool
             If True, function will delete and recreate attributes when a type change is requested.
             By default, function will not delete attributes.
@@ -493,10 +495,12 @@ class HierarchyService(ObjectService):
         if "unwind" in kwargs:
             unwind_all = kwargs["unwind"]
 
-        # verify unwind_consolidation is a list
-        if unwind_consolidation is not None:
-            if not isinstance(unwind_consolidation, list):
-                raise ValueError(f"Inconsistent Type for 'unwind_consolidation': expected type-> list, current type-> '{type(unwind_consolidation)}'")
+        if unwind_consolidations:
+            if isinstance(unwind_consolidations, str) or not isinstance(unwind_consolidations, Iterable):
+                raise ValueError(
+                    f"value for 'unwind_consolidations' must be an iterable (e.g., list), "
+                    f"but received: '{unwind_consolidations}' of type {type(unwind_consolidations).__name__}"
+                )
 
         # identify and sort level columns
         level_columns = []
@@ -650,20 +654,26 @@ class HierarchyService(ObjectService):
         if unwind_all:
             self.remove_all_edges(dimension_name=dimension_name, hierarchy_name=hierarchy_name)
         else:
-            if unwind_consolidation is not None:
-                all_edges = CaseAndSpaceInsensitiveTuplesDict()
-                for elem in unwind_consolidation:
-                    if self.elements.exists(dimension_name=dimension_name, hierarchy_name=hierarchy_name, element_name=elem):
-                        temp_edges = self.elements.get_edges_under_consolidation(
-                                            dimension_name=dimension_name, 
-                                            hierarchy_name=hierarchy_name, 
-                                            consolidation=elem)
-                        all_edges.join(temp_edges)
-                self.elements.delete_edges(
-                            dimension_name=dimension_name, 
+            if unwind_consolidations:
+                edges_to_delete = CaseAndSpaceInsensitiveTuplesDict()
+                for elem in unwind_consolidations:
+                    if not self.elements.exists(
+                            dimension_name=dimension_name,
                             hierarchy_name=hierarchy_name,
-                            edges=all_edges,
-                            use_ti=self.is_admin)
+                            element_name=elem):
+                        continue
+
+                    edges_under_consolidation = self.elements.get_edges_under_consolidation(
+                        dimension_name=dimension_name,
+                        hierarchy_name=hierarchy_name,
+                        consolidation=elem)
+                    edges_to_delete.join(edges_under_consolidation)
+
+                self.elements.delete_edges(
+                    dimension_name=dimension_name,
+                    hierarchy_name=hierarchy_name,
+                    edges=edges_to_delete,
+                    use_blob=self.is_admin)
 
         edges = CaseAndSpaceInsensitiveTuplesDict()
         for element_name, *record in df[[element_column, *level_columns, *level_weight_columns]].itertuples(
@@ -694,16 +704,16 @@ class HierarchyService(ObjectService):
                 else:
                     raise ex
 
-            delete_edges = {
+            edges_to_delete = {
                 (k, v): w
                 for (k, v), w
                 in edges.items()
                 if w != current_edges.get((k, v), w)}
-            if delete_edges:
+            if edges_to_delete:
                 self.elements.delete_edges(
                     dimension_name=dimension_name,
                     hierarchy_name=hierarchy_name,
-                    edges=delete_edges.keys(),
+                    edges=edges_to_delete.keys(),
                     use_blob=self.is_admin)
 
             new_edges = {

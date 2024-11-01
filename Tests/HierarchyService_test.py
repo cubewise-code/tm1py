@@ -506,7 +506,7 @@ class TestHierarchyService(unittest.TestCase):
             df=df,
             element_column=self.region_dimension_name,
             element_type_column="ElementType",
-            unwind=True
+            unwind_all=True
         )
 
         hierarchy = self.tm1.hierarchies.get(
@@ -533,7 +533,7 @@ class TestHierarchyService(unittest.TestCase):
             df=df,
             element_column=self.region_dimension_name,
             element_type_column="ElementType",
-            unwind=True
+            unwind_all=True
         )
 
         hierarchy = self.tm1.hierarchies.get(
@@ -555,7 +555,7 @@ class TestHierarchyService(unittest.TestCase):
             hierarchy_name=self.alternative_region_dimension_name,
             df=df,
             element_type_column="ElementType",
-            unwind=True
+            unwind_all=True
         )
 
         columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n", "level001",
@@ -571,7 +571,7 @@ class TestHierarchyService(unittest.TestCase):
             hierarchy_name=self.region_dimension_name,
             df=df,
             element_type_column="ElementType",
-            unwind=True
+            unwind_all=True
         )
         hierarchy = self.tm1.hierarchies.get(
             dimension_name=self.alternative_region_dimension_name,
@@ -592,7 +592,7 @@ class TestHierarchyService(unittest.TestCase):
             hierarchy_name=self.alternative_region_dimension_name,
             df=df,
             element_type_column="ElementType",
-            unwind=True
+            unwind_all=True
         )
 
         columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:s", "level001",
@@ -609,7 +609,7 @@ class TestHierarchyService(unittest.TestCase):
             df=df,
             element_type_column="ElementType",
             update_attribute_types=True,
-            unwind=True
+            unwind_all=True
         )
         hierarchy = self.tm1.hierarchies.get(
             dimension_name=self.alternative_region_dimension_name,
@@ -630,7 +630,7 @@ class TestHierarchyService(unittest.TestCase):
             hierarchy_name=self.region_dimension_name,
             df=df,
             element_type_column="ElementType",
-            unwind=True
+            unwind_all=True
         )
 
         columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n", "level001",
@@ -646,7 +646,7 @@ class TestHierarchyService(unittest.TestCase):
             hierarchy_name=self.alternative_region_dimension_name,
             df=df,
             element_type_column="ElementType",
-            unwind=True
+            unwind_all=True
         )
         hierarchy = self.tm1.hierarchies.get(
             dimension_name=self.alternative_region_dimension_name,
@@ -669,7 +669,7 @@ class TestHierarchyService(unittest.TestCase):
             df=df,
             element_column=self.region_dimension_name,
             element_type_column="ElementType",
-            unwind=True
+            unwind_all=True
         )
 
         hierarchy = self.tm1.hierarchies.get(
@@ -693,7 +693,7 @@ class TestHierarchyService(unittest.TestCase):
             hierarchy_name=self.region_dimension_name,
             df=df,
             element_column=self.region_dimension_name,
-            unwind=True
+            unwind_all=True
         )
 
         hierarchy = self.tm1.hierarchies.get(self.region_dimension_name, self.region_dimension_name)
@@ -712,7 +712,7 @@ class TestHierarchyService(unittest.TestCase):
             hierarchy_name=self.region_dimension_name,
             df=df,
             element_column=self.region_dimension_name,
-            unwind=True
+            unwind_all=True
         )
 
         columns = [self.region_dimension_name, "Currency", "population"]
@@ -727,7 +727,7 @@ class TestHierarchyService(unittest.TestCase):
             hierarchy_name=self.region_dimension_name,
             df=df,
             element_column=self.region_dimension_name,
-            unwind=True
+            unwind_all=True
         )
 
         hierarchy = self.tm1.hierarchies.get(self.region_dimension_name, self.region_dimension_name)
@@ -749,7 +749,7 @@ class TestHierarchyService(unittest.TestCase):
             df=df,
             element_column=self.region_dimension_name,
             element_type_column="ElementType",
-            unwind=True
+            unwind_all=True
         )
         hierarchy = self.tm1.hierarchies.get(self.region_dimension_name, self.region_dimension_name)
         # Assert that edges exist
@@ -767,7 +767,7 @@ class TestHierarchyService(unittest.TestCase):
             hierarchy_name=self.region_dimension_name,
             df=df,
             element_column=self.region_dimension_name,
-            unwind=True
+            unwind_all=True
         )
 
         hierarchy = self.tm1.hierarchies.get(self.region_dimension_name, self.region_dimension_name)
@@ -794,7 +794,7 @@ class TestHierarchyService(unittest.TestCase):
             df=df,
             element_column=self.region_dimension_name,
             element_type_column="ElementType",
-            unwind=True
+            unwind_all=True
         )
 
         hierarchy = self.tm1.hierarchies.get(
@@ -817,7 +817,7 @@ class TestHierarchyService(unittest.TestCase):
             hierarchy_name=self.region_dimension_name,
             df=df,
             element_column="Element Name",
-            unwind=True
+            unwind_all=True
         )
 
         hierarchy = self.tm1.hierarchies.get(
@@ -839,7 +839,7 @@ class TestHierarchyService(unittest.TestCase):
             hierarchy_name=self.region_dimension_name,
             df=df,
             element_column="Element Name",
-            unwind=True)
+            unwind_all=True)
 
         hierarchy = self.tm1.hierarchies.get(
             dimension_name=self.region_dimension_name,
@@ -860,7 +860,7 @@ class TestHierarchyService(unittest.TestCase):
             dimension_name=self.region_dimension_name,
             hierarchy_name=self.region_dimension_name,
             df=df,
-            unwind=True
+            unwind_all=True
         )
 
         hierarchy = self.tm1.hierarchies.get(
@@ -892,7 +892,7 @@ class TestHierarchyService(unittest.TestCase):
                 df=df,
                 element_column=self.region_dimension_name,
                 element_type_column="ElementType",
-                unwind=True)
+                unwind_all=True)
 
     def test_update_or_create_hierarchy_from_dataframe_duplicate_records(self):
         columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n", "level001",
@@ -911,7 +911,7 @@ class TestHierarchyService(unittest.TestCase):
             df=df,
             element_column=self.region_dimension_name,
             element_type_column="ElementType",
-            unwind=True)
+            unwind_all=True)
 
         hierarchy = self.tm1.hierarchies.get(
             dimension_name=self.region_dimension_name,
@@ -937,7 +937,7 @@ class TestHierarchyService(unittest.TestCase):
             df=df,
             element_column=self.region_dimension_name,
             element_type_column="ElementType",
-            unwind=True)
+            unwind_all=True)
 
         hierarchy = self.tm1.hierarchies.get(
             dimension_name=self.region_dimension_name,
@@ -964,7 +964,7 @@ class TestHierarchyService(unittest.TestCase):
                 df=df,
                 element_column=self.region_dimension_name,
                 element_type_column="ElementType",
-                unwind=True)
+                unwind_all=True)
 
     def test_update_or_create_hierarchy_from_dataframe_circular_reference(self):
         columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n", "level001",
@@ -985,7 +985,7 @@ class TestHierarchyService(unittest.TestCase):
                 df=df,
                 element_column=self.region_dimension_name,
                 element_type_column="ElementType",
-                unwind=True
+                unwind_all=True
             )
 
     def test_update_or_create_hierarchy_from_dataframe_circular_references(self):
@@ -1007,7 +1007,7 @@ class TestHierarchyService(unittest.TestCase):
                 df=df,
                 element_column=self.region_dimension_name,
                 element_type_column="ElementType",
-                unwind=True
+                unwind_all=True
             )
 
     def test_update_or_create_hierarchy_from_dataframe_no_weight_columns(self):
@@ -1026,7 +1026,7 @@ class TestHierarchyService(unittest.TestCase):
             df=df,
             element_column=self.region_dimension_name,
             element_type_column="ElementType",
-            unwind=True
+            unwind_all=True
         )
 
         hierarchy = self.tm1.hierarchies.get(
@@ -1050,13 +1050,136 @@ class TestHierarchyService(unittest.TestCase):
             df=df,
             element_column=self.region_dimension_name,
             element_type_column="ElementType",
-            unwind=True
+            unwind_all=True
         )
 
         hierarchy = self.tm1.hierarchies.get(
             dimension_name=self.alternative_region_dimension_name,
             hierarchy_name=self.region_dimension_name)
         self._verify_region_dimension(hierarchy)
+
+    def test_update_or_create_hierarchy_from_dataframe_unwind_all_false(self):
+        columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n", "level001",
+                   "level000", "level001_weight", "level000_weight"]
+        data = [
+            ['France', "Numeric", "Frankreich", "EUR", 60_000_000, "Europe", "World", 1, 1],
+            ['Switzerland', 'Numeric', "Schweiz", "CHF", 9_000_000, "Europe", "World", 1, 1],
+            ['Germany', 'Numeric', "Deutschland", "EUR", 84_000_000, "Europe", "World", 1, 1],
+        ]
+        df = DataFrame(data=data, columns=columns)
+
+        self.tm1.hierarchies.update_or_create_hierarchy_from_dataframe(
+            dimension_name=self.region_dimension_name,
+            hierarchy_name=self.region_dimension_name,
+            df=df,
+            element_column=self.region_dimension_name,
+            element_type_column="ElementType",
+            unwind_all=False
+        )
+
+        hierarchy = self.tm1.hierarchies.get(
+            dimension_name=self.region_dimension_name,
+            hierarchy_name=self.region_dimension_name)
+        self._verify_region_dimension(hierarchy)
+
+    def test_update_or_create_hierarchy_from_dataframe_unwind_consolidations_single(self):
+        columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n", "level002",
+                   "level001", "level000", "level002_weight", "level001_weight", "level000_weight"]
+        data = [
+            ['France', "Numeric", "Frankreich", "EUR", 60_000_000, "", "Europe", "World", 0, 1, 1],
+            ['Switzerland', 'Numeric', "Schweiz", "CHF", 9_000_000, "DACH", "Europe", "World", 1, 1, 1],
+            ['Germany', 'Numeric', "Deutschland", "EUR", 84_000_000, "DACH", "Europe", "World", 1, 1, 1],
+        ]
+        df = DataFrame(data=data, columns=columns)
+
+        self.tm1.hierarchies.update_or_create_hierarchy_from_dataframe(
+            dimension_name=self.region_dimension_name,
+            hierarchy_name=self.region_dimension_name,
+            df=df,
+            unwind_all=True
+        )
+
+
+        columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n"]
+        data = [
+            ['France', "Numeric", "Frankreich", "EUR", 60_000_000],
+            ['Switzerland', 'Numeric', "Schweiz", "CHF", 9_000_000],
+            ['Germany', 'Numeric', "Deutschland", "EUR", 84_000_000],
+        ]
+        df = DataFrame(data=data, columns=columns)
+
+        self.tm1.hierarchies.update_or_create_hierarchy_from_dataframe(
+            dimension_name=self.region_dimension_name,
+            hierarchy_name=self.region_dimension_name,
+            df=df,
+            unwind_consolidations=["Dach"],
+            unwind_all=False
+        )
+
+        hierarchy = self.tm1.hierarchies.get(
+            dimension_name=self.region_dimension_name,
+            hierarchy_name=self.region_dimension_name)
+        self._verify_region_attributes(hierarchy)
+
+        self.assertEqual(1, hierarchy.edges["Europe", "France"])
+        self.assertEqual(1, hierarchy.edges["Europe", "DACH"])
+        self.assertEqual(1, hierarchy.edges["Europe", "DACH"])
+
+        self.assertNotIn(("DACH", "Germany"), hierarchy.edges)
+        self.assertNotIn(("DACH", "Switzerland"), hierarchy.edges)
+
+
+    def test_update_or_create_hierarchy_from_dataframe_unwind_consolidations_multi(self):
+        columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n", "level002",
+                   "level001", "level000", "level002_weight", "level001_weight", "level000_weight"]
+        data = [
+            ['France', "Numeric", "Frankreich", "EUR", 48_000_000, "South Europe", "Europe", "World", 1, 1, 1],
+            ['Spain', "Numeric", "Spanien", "EUR", 60_000_000, "South Europe", "Europe", "World", 1, 1, 1],
+            ['Switzerland', 'Numeric', "Schweiz", "CHF", 9_000_000, "North Europe", "Europe", "World", 1, 1, 1],
+            ['Germany', 'Numeric', "Deutschland", "EUR", 84_000_000, "North Europe", "Europe", "World", 1, 1, 1],
+            ['USA', 'Numeric', "Vereinigte Staaten", "USD", 346_000_000, "", "North America", "World", 0, 1, 1],
+        ]
+        df = DataFrame(data=data, columns=columns)
+
+        self.tm1.hierarchies.update_or_create_hierarchy_from_dataframe(
+            dimension_name=self.region_dimension_name,
+            hierarchy_name=self.region_dimension_name,
+            df=df,
+            unwind_all=True
+        )
+
+
+        columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n"]
+        data = [
+            ['France', "Numeric", "Frankreich", "EUR", 60_000_000],
+            ['Switzerland', 'Numeric', "Schweiz", "CHF", 9_000_000],
+            ['Germany', 'Numeric', "Deutschland", "EUR", 84_000_000],
+        ]
+        df = DataFrame(data=data, columns=columns)
+
+        self.tm1.hierarchies.update_or_create_hierarchy_from_dataframe(
+            dimension_name=self.region_dimension_name,
+            hierarchy_name=self.region_dimension_name,
+            df=df,
+            unwind_consolidations=["South Europe", "North Europe"],
+            unwind_all=False
+        )
+
+        hierarchy = self.tm1.hierarchies.get(
+            dimension_name=self.region_dimension_name,
+            hierarchy_name=self.region_dimension_name)
+        self._verify_region_attributes(hierarchy)
+
+        self.assertEqual(1, hierarchy.edges["World", "Europe"])
+        self.assertEqual(1, hierarchy.edges["Europe", "North Europe"])
+        self.assertEqual(1, hierarchy.edges["Europe", "North Europe"])
+        self.assertEqual(1, hierarchy.edges["World", "North America"])
+        self.assertEqual(1, hierarchy.edges["North America", "USA"])
+
+        self.assertNotIn(("North Europe", "Germany"), hierarchy.edges)
+        self.assertNotIn(("North Europe", "Switzerland"), hierarchy.edges)
+        self.assertNotIn(("South Europe", "Spain"), hierarchy.edges)
+        self.assertNotIn(("South Europe", "France"), hierarchy.edges)
 
 
 if __name__ == '__main__':
