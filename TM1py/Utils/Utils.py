@@ -4,16 +4,15 @@ import functools
 import http.client as http_client
 import json
 import math
-import pytz
 import re
 import ssl
 import urllib.parse as urlparse
-from contextlib import suppress
 from enum import Enum, unique
 from io import StringIO
 from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator, Union, Callable
 from urllib.parse import unquote
 
+import pytz
 import requests
 from mdxpy import MdxBuilder, Member
 from requests.adapters import HTTPAdapter
@@ -1034,160 +1033,424 @@ def map_cell_properties_to_compact_json_response(properties: List, compact_cells
 
 
 class CaseAndSpaceInsensitiveDict(collections.abc.MutableMapping):
-    """A case-and-space-insensitive dict-like object with String keys.
-    Implements all methods and operations of
-    ``collections.abc.MutableMapping`` as well as dict's ``copy``. Also
-    provides ``adjusted_items``, ``adjusted_keys``.
-    All keys are expected to be strings. The structure remembers the
-    case of the last key to be set, and ``iter(instance)``,
-    ``keys()``, ``items()``, ``iterkeys()``, and ``iteritems()``
-    will contain case-sensitive keys.
-    However, querying and contains testing is case insensitive:
-        elements = TM1pyElementsDictionary()
-        elements['Travel Expenses'] = 100
-        elements['travelexpenses'] == 100 # True
-    Entries are ordered
+    """
+    A case-and-space-insensitive dict-like object with string keys.
+
+    This class implements all methods and operations of `collections.abc.MutableMapping`,
+    as well as dict's `copy`. It also provides `adjusted_items` and `adjusted_keys`.
+    All keys are expected to be strings.
+
+    The structure remembers the case of the last key set, and methods like `__iter__`,
+    `keys()`, `items()`, etc., will contain case-sensitive keys.
+
+    However, querying and membership tests are case-and-space-insensitive:
+        data = CaseAndSpaceInsensitiveDict()
+        data['Travel Expenses'] = 100
+        assert data['travelexpenses'] == 100  # True
+
+    Entries are ordered.
     """
 
     def __init__(self, data=None, **kwargs):
+        """Initialize the dictionary with optional initial data."""
         self._store = collections.OrderedDict()
         if data is None:
             data = {}
         self.update(data, **kwargs)
 
-    def __setitem__(self, key: str, value):
-        # Use the adjusted cased key for lookups, but store the actual
-        # key alongside the value.
-        self._store[lower_and_drop_spaces(key)] = (key, value)
+    def _adjust_key(self, key):
+        """Adjust the key by lowering case and removing spaces."""
+        if not isinstance(key, str):
+            raise TypeError("Keys must be strings.")
+        return lower_and_drop_spaces(key)
 
-    def __getitem__(self, key: str):
-        return self._store[lower_and_drop_spaces(key)][1]
+    def __setitem__(self, key, value):
+        """Set the value for a key, adjusting the key as needed."""
+        adjusted_key = self._adjust_key(key)
+        self._store[adjusted_key] = (key, value)
 
-    def __delitem__(self, key: str):
-        del self._store[lower_and_drop_spaces(key)]
+    def __getitem__(self, key):
+        """Retrieve the value for a key, using the adjusted key."""
+        adjusted_key = self._adjust_key(key)
+        try:
+            return self._store[adjusted_key][1]
+        except KeyError:
+            raise KeyError(f"Key '{key}' not found.") from None
+
+    def __delitem__(self, key):
+        """Delete the item associated with the key."""
+        adjusted_key = self._adjust_key(key)
+        try:
+            del self._store[adjusted_key]
+        except KeyError:
+            raise KeyError(f"Key '{key}' not found.") from None
 
     def __iter__(self):
-        return (casedkey for casedkey, mappedvalue in self._store.values())
+        """Iterate over the keys in their original case."""
+        return (key for key, _ in self._store.values())
 
     def __len__(self):
         return len(self._store)
 
-    def adjusted_items(self) -> Generator:
-        """Like iteritems(), but with all adjusted keys."""
-        return (
-            (adjusted_key, key_value[1])
-            for (adjusted_key, key_value)
-            in self._store.items()
-        )
+    def __contains__(self, key):
+        """Check if the key exists in the dictionary."""
+        adjusted_key = self._adjust_key(key)
+        return adjusted_key in self._store
 
-    def adjusted_keys(self) -> Generator:
-        """Like keys(), but with all adjusted keys."""
-        return (
-            adjusted_key
-            for (adjusted_key, key_value)
-            in self._store.items()
-        )
+    def keys(self):
+        """Return a view of the keys in their original case."""
+        return [key for key, _ in self._store.values()]
+
+    def values(self):
+        """Return a view of the values."""
+        return [value for _, value in self._store.values()]
+
+    def items(self):
+        """Return a view of the items in their original case."""
+        return [(key, value) for key, value in self._store.values()]
+
+    def adjusted_keys(self):
+        """Return a generator of the adjusted keys."""
+        return (adjusted_key for adjusted_key in self._store.keys())
+
+    def adjusted_items(self):
+        """Return a generator of (adjusted_key, value) pairs."""
+        return ((adjusted_key, key_value[1]) for adjusted_key, key_value in self._store.items())
 
     def __eq__(self, other):
+        """Check equality with another dictionary."""
         if isinstance(other, collections.abc.Mapping):
             other = CaseAndSpaceInsensitiveDict(other)
         else:
             return NotImplemented
-        # Compare insensitively
         return dict(self.adjusted_items()) == dict(other.adjusted_items())
 
-    # Copy is required
     def copy(self):
         return CaseAndSpaceInsensitiveDict(self._store.values())
 
+    def update(self, other=(), **kwargs):
+        """
+        Update the dictionary with key/value pairs from other, overwriting existing keys.
+
+        Parameters:
+            other (Mapping or Iterable): A mapping or iterable of key-value pairs.
+            **kwargs: Additional key-value pairs.
+        """
+        if isinstance(other, collections.abc.Mapping):
+            for key, value in other.items():
+                self[key] = value
+
+        elif hasattr(other, '__iter__'):
+            for item in other:
+                if not isinstance(item, collections.abc.Iterable):
+                    raise TypeError("Items must be key-value pairs.")
+                key, value = item
+                self[key] = value
+
+        elif other:
+            raise TypeError("Other object is not a mapping or iterable of key-value pairs.")
+
+        for key, value in kwargs.items():
+            self[key] = value
+
+    def get(self, key, default=None):
+        """
+        Return the value for key if key is in the dictionary, else default.
+
+        Parameters:
+            key (str): The key to look up.
+            default: The value to return if the key is not found.
+        """
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def setdefault(self, key, default=None):
+        """
+        If key is in the dictionary, return its value.
+        If not, insert key with a value of default and return default.
+
+        Parameters:
+            key (str): The key to look up or insert.
+            default: The value to set if the key is not found.
+        """
+        if key in self:
+            return self[key]
+        else:
+            self[key] = default
+            return default
+
+    def pop(self, key, default=None):
+        """
+        Remove the specified key and return the corresponding value.
+        If key is not found, default is returned if provided, otherwise KeyError is raised.
+
+        Parameters:
+            key (str): The key to remove.
+            default: The value to return if the key is not found.
+        """
+        adjusted_key = self._adjust_key(key)
+        try:
+            value = self._store.pop(adjusted_key)[1]
+            return value
+        except KeyError:
+            if default is not None:
+                return default
+            else:
+                raise KeyError(f"Key '{key}' not found.") from None
+
+    def popitem(self):
+        """
+        Remove and return a (key, value) pair from the dictionary.
+        Pairs are returned in LIFO order.
+
+        Raises:
+            KeyError: If the dictionary is empty.
+        """
+        adjusted_key, (key, value) = self._store.popitem()
+        return key, value
+
+    def clear(self):
+        """Remove all items from the dictionary."""
+        self._store.clear()
+
     def __repr__(self):
-        return str(dict(self.items()))
+        """Return the dictionary's string representation."""
+        items = ", ".join(f"{key!r}: {value!r}" for key, value in self.items())
+        return f"{self.__class__.__name__}({{{items}}})"
+
+    def __str__(self):
+        """Return a user-friendly string representation."""
+        return repr(self)
 
 
 class CaseAndSpaceInsensitiveTuplesDict(collections.abc.MutableMapping):
-    """A case-and-space-insensitive dict-like object with String-Tuples Keys.
-    Implements all methods and operations of
-    ``collections.abc.MutableMapping`` as well as dict's ``copy``. Also
-    provides ``adjusted_items``, ``adjusted_keys``.
-    All keys are expected to be tuples of strings. The structure remembers the
-    case of the last key to be set, and ``iter(instance)``,
-    ``keys()``, ``items()``, ``iterkeys()``, and ``iteritems()``
-    will contain case-sensitive keys.
-    However, querying and contains testing is case insensitive:
+    """
+    A case-and-space-insensitive dict-like object with tuple of strings as keys.
+
+    This class implements all methods and operations of `collections.abc.MutableMapping`,
+    as well as dict's `copy`. It also provides `adjusted_items` and `adjusted_keys`.
+    All keys are expected to be tuples of strings.
+
+    The structure remembers the case of the last key set, and methods like `__iter__`,
+    `keys()`, `items()`, etc., will contain case-sensitive keys.
+
+    However, querying and membership tests are case-and-space-insensitive:
         data = CaseAndSpaceInsensitiveTuplesDict()
         data[('[Business Unit].[UK]', '[Scenario].[Worst Case]')] = 1000
-        data[('[BusinessUnit].[UK]', '[Scenario].[worstcase]')] == 1000 # True
-        data[('[Business Unit].[UK]', '[Scenario].[Worst Case]')] == 1000 # True
-    Entries are ordered
+        assert data[('[BusinessUnit].[UK]', '[Scenario].[worstcase]')] == 1000
+        assert data[('[Business Unit].[UK]', '[Scenario].[Worst Case]')] == 1000
+
+    Entries are ordered.
     """
 
     def __init__(self, data=None, **kwargs):
+        """Initialize the dictionary with optional initial data."""
         self._store = collections.OrderedDict()
         if data is None:
             data = {}
         self.update(data, **kwargs)
 
+    def _adjust_key(self, key):
+        """Adjust the key by lowering case and removing spaces."""
+        if not isinstance(key, tuple):
+            raise TypeError("Keys must be tuples of strings.")
+        try:
+            return tuple(lower_and_drop_spaces(item) for item in key)
+        except TypeError as e:
+            raise TypeError("All items in the key tuple must be strings.") from e
+
     def __setitem__(self, key, value):
-        # Use the adjusted cased key for lookups, but store the actual
-        # key alongside the value.
-        self._store[tuple([lower_and_drop_spaces(item) for item in key])] = (key, value)
+        """Set the value for a key, adjusting the key as needed."""
+        adjusted_key = self._adjust_key(key)
+        self._store[adjusted_key] = (key, value)
 
     def __getitem__(self, key):
-        return self._store[tuple([lower_and_drop_spaces(item) for item in key])][1]
+        """Retrieve the value for a key, using the adjusted key."""
+        adjusted_key = self._adjust_key(key)
+        try:
+            return self._store[adjusted_key][1]
+        except KeyError:
+            raise KeyError(f"Key {key} not found.") from None
 
     def __delitem__(self, key):
-        del self._store[tuple([lower_and_drop_spaces(item) for item in key])]
+        """Delete the item associated with the key."""
+        adjusted_key = self._adjust_key(key)
+        try:
+            del self._store[adjusted_key]
+        except KeyError:
+            raise KeyError(f"Key {key} not found.") from None
 
     def __iter__(self):
-        return (casedkey for casedkey, mappedvalue in self._store.values())
+        """Iterate over the keys in their original case."""
+        return (key for key, _ in self._store.values())
 
     def __len__(self):
+        """Return the number of items in the dictionary."""
         return len(self._store)
 
-    def items(self):
-        return super(CaseAndSpaceInsensitiveTuplesDict, self).items()
+    def __contains__(self, key):
+        """Check if the key exists in the dictionary."""
+        adjusted_key = self._adjust_key(key)
+        return adjusted_key in self._store
 
-    def adjusted_items(self):
-        """Like iteritems(), but with all adjusted keys."""
-        return (
-            (adjusted_key, key_value[1])
-            for (adjusted_key, key_value)
-            in self._store.items()
-        )
+    def keys(self):
+        """Return a view of the keys in their original case."""
+        return [key for key, _ in self._store.values()]
+
+    def values(self):
+        """Return a view of the values."""
+        return [value for _, value in self._store.values()]
+
+    def items(self):
+        """Return a view of the items (key-value pairs)."""
+        return [(key, value) for key, value in self._store.values()]
 
     def adjusted_keys(self):
-        """Like keys(), but with all adjusted keys."""
-        return (
-            adjusted_key
-            for (adjusted_key, key_value)
-            in self._store.items()
-        )
+        """Return a generator of the adjusted keys."""
+        return (adjusted_key for adjusted_key in self._store.keys())
+
+    def adjusted_items(self):
+        """Return a generator of (adjusted_key, value) pairs."""
+        return ((adjusted_key, key_value[1]) for adjusted_key, key_value in self._store.items())
 
     def __eq__(self, other):
+        """Check equality with another dictionary."""
         if isinstance(other, collections.abc.Mapping):
             other = CaseAndSpaceInsensitiveTuplesDict(other)
         else:
             return NotImplemented
-        # Compare insensitively
         return dict(self.adjusted_items()) == dict(other.adjusted_items())
 
-    # Copy is required
     def copy(self):
-        return CaseAndSpaceInsensitiveTuplesDict(self._store.values())
+        """Create a shallow copy of the dictionary."""
+        new_copy = CaseAndSpaceInsensitiveTuplesDict()
+        new_copy._store = self._store.copy()
+        return new_copy
 
-    # Join two dictionaries together
+    def update(self, other=(), **kwargs):
+        """
+        Update the dictionary with key/value pairs from other, overwriting existing keys.
+
+        Parameters:
+            other (Mapping or Iterable): A mapping or iterable of key-value pairs.
+            **kwargs: Additional key-value pairs.
+        """
+        if isinstance(other, collections.abc.Mapping):
+            for key, value in other.items():
+                self[key] = value
+
+        elif hasattr(other, '__iter__'):
+            for item in other:
+                if not isinstance(item, collections.abc.Iterable):
+                    raise TypeError("Items must be key-value pairs.")
+                key, value = item
+                self[key] = value
+
+        elif other:
+            raise TypeError("Other object is not a mapping or iterable of key-value pairs.")
+
+        for key, value in kwargs.items():
+            self[key] = value
+
     def join(self, other):
-        if isinstance(other, CaseAndSpaceInsensitiveTuplesDict):
-            for key,value in other.items():
-                self._store[tuple([lower_and_drop_spaces(item) for item in key])] = (key, value)
+        """
+        Merge another mapping or iterable of key-value pairs into this dictionary.
+
+        Parameters:
+            other (Mapping or Iterable): A mapping or iterable of key-value pairs.
+        """
+        self.update(other)
+
+    def get(self, key, default=None):
+        """
+        Return the value for key if key is in the dictionary, else default.
+
+        Parameters:
+            key (tuple): The key to look up.
+            default: The value to return if the key is not found.
+        """
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def setdefault(self, key, default=None):
+        """
+        If key is in the dictionary, return its value.
+        If not, insert key with a value of default and return default.
+
+        Parameters:
+            key (tuple): The key to look up or insert.
+            default: The value to set if the key is not found.
+        """
+        if key in self:
+            return self[key]
         else:
-             raise ValueError("Other object is not of type CaseAndSpaceInsensitiveTuplesDict")
+            self[key] = default
+            return default
+
+    def pop(self, key, default=None):
+        """
+        Remove the specified key and return the corresponding value.
+        If key is not found, default is returned if provided, otherwise KeyError is raised.
+
+        Parameters:
+            key (tuple): The key to remove.
+            default: The value to return if the key is not found.
+        """
+        adjusted_key = self._adjust_key(key)
+        try:
+            value = self._store.pop(adjusted_key)[1]
+            return value
+        except KeyError:
+            if default is not None:
+                return default
+            else:
+                raise KeyError(f"Key {key} not found.") from None
+
+    def popitem(self):
+        """
+        Remove and return a (key, value) pair from the dictionary.
+        Pairs are returned in LIFO order.
+
+        Raises:
+            KeyError: If the dictionary is empty.
+        """
+        adjusted_key, (key, value) = self._store.popitem()
+        return key, value
+
+    def clear(self):
+        """Remove all items from the dictionary."""
+        self._store.clear()
 
     def __repr__(self):
-        return str(dict(self.items()))
+        """Return the dictionary's string representation."""
+        items = ", ".join(f"{key!r}: {value!r}" for key, value in self.items())
+        return f"{self.__class__.__name__}({{{items}}})"
+
+    def __str__(self):
+        """Return a user-friendly string representation."""
+        return repr(self)
 
 
 class CaseAndSpaceInsensitiveSet(collections.abc.MutableSet):
+    """
+    A case-and-space-insensitive set-like object for strings.
+
+    This class implements all methods and operations of `collections.abc.MutableSet`.
+    All values are expected to be strings. The set remembers the case of the last
+    value added, and methods like `__iter__` and `__str__` will contain case-sensitive values.
+
+    However, membership tests are case-and-space-insensitive:
+        data = CaseAndSpaceInsensitiveSet('Apple', 'Banana')
+        assert 'apple' in data         # True
+        assert '  BANANA ' in data     # True
+
+    Entries are ordered based on insertion order.
+    """
+
     def __init__(self, *values):
         self._store = {}
         for v in values:
@@ -1199,44 +1462,131 @@ class CaseAndSpaceInsensitiveSet(collections.abc.MutableSet):
             else:
                 self.add(v)
 
-    def __contains__(self, value):
-        return value.lower().replace(" ", "") in self._store
+    def _adjust_value(self, value):
+        if not isinstance(value, str):
+            raise TypeError("Value must be string.")
+        return lower_and_drop_spaces(value)
 
-    def __delitem__(self, key):
-        del self._store[key.lower().replace(" ", "")]
+    def __contains__(self, value):
+        adjusted_value = self._adjust_value(value)
+        return adjusted_value in self._store
 
     def __iter__(self):
+        """Iterate over the values in their original case."""
         return iter(self._store.values())
 
     def __len__(self):
         return len(self._store)
 
     def add(self, value):
-        self._store[value.lower().replace(" ", "")] = value
+        adjusted_value = self._adjust_value(value)
+        self._store[adjusted_value] = value
 
     def discard(self, value):
-        with suppress(KeyError):
-            del self._store[value.lower().replace(" ", "")]
+        adjusted_value = self._adjust_value(value)
+        self._store.pop(adjusted_value, None)
 
-    def copy(self):
-        return CaseAndSpaceInsensitiveSet(*self._store.values())
+    def clear(self):
+        self._store.clear()
 
-    def __repr__(self):
-        return str(self._store)
+    def pop(self):
+        """
+        Remove and return an arbitrary element from the set.
+        Raises KeyError if the set is empty.
+        """
+        if not self._store:
+            raise KeyError("pop from an empty set")
+        adjusted_value, value = self._store.popitem()
+        return value
+
+    def update(self, *others):
+        """Update the set, adding elements from all others."""
+        for iterable in others:
+            for value in iterable:
+                self.add(value)
 
     def __eq__(self, other):
-        if isinstance(other, collections.abc.MutableSet):
-            other = CaseAndSpaceInsensitiveSet(*other)
-        else:
+        """Check equality with another set."""
+        if not isinstance(other, collections.abc.Set):
             return NotImplemented
-        # Compare insensitively
-        return set(self._store.keys()) == set(other._store.keys())
+        return set(self._adjust_value(v) for v in self) == \
+            set(self._adjust_value(v) for v in other)
+
+    def __ne__(self, other):
+        """Check inequality with another set."""
+        return not self == other
 
     def __sub__(self, other):
+        """Return a new set with elements in the set that are not in the others."""
         result = self.copy()
-        for entry in other:
-            result.discard(entry)
+        result.difference_update(other)
         return result
+
+    def copy(self):
+        """Create a shallow copy of the set."""
+        return CaseAndSpaceInsensitiveSet(self)
+
+    def __repr__(self):
+        """Return the set's string representation."""
+        items = ", ".join(repr(value) for value in self)
+        return f"{self.__class__.__name__}([{items}])"
+
+    def __str__(self):
+        """Return a user-friendly string representation."""
+        return f"{{{', '.join(map(str, self))}}}"
+
+    def __le__(self, other):
+        """Test whether every element in the set is in other."""
+        return all(item in other for item in self)
+
+    def __lt__(self, other):
+        """Test whether the set is a proper subset of other."""
+        return self <= other and self != other
+
+    def __ge__(self, other):
+        """Test whether every element in other is in the set."""
+        return all(item in self for item in other)
+
+    def __gt__(self, other):
+        """Test whether the set is a proper superset of other."""
+        return self >= other and self != other
+
+    def __or__(self, other):
+        """Return the union of the sets as a new set."""
+        return self.union(other)
+
+    def __and__(self, other):
+        """Return the intersection of the sets as a new set."""
+        return self.intersection(other)
+
+    def __delitem__(self, key):
+        del self._store[key.lower().replace(" ", "")]
+
+    def difference_update(self, *others):
+        """Remove all elements of another set from this set."""
+        for iterable in others:
+            for value in iterable:
+                self.discard(value)
+
+    def intersection(self, *others):
+        """Return a new set with elements common to the set and all others."""
+        new_set = CaseAndSpaceInsensitiveSet()
+        for value in self:
+            if all(value in other for other in others):
+                new_set.add(value)
+        return new_set
+
+    def difference(self, *others):
+        """Return a new set with elements in the set that are not in the others."""
+        new_set = self.copy()
+        new_set.difference_update(*others)
+        return new_set
+
+    def union(self, *others):
+        """Return a new set with elements from the set and all others."""
+        new_set = self.copy()
+        new_set.update(*others)
+        return new_set
 
 
 def get_dimensions_from_where_clause(mdx: str) -> List[str]:
@@ -1373,10 +1723,12 @@ def read_object_name_from_url(url: str, pattern: str) -> str:
 
     return unquote(match.group(1))
 
+
 def utc_localize_time(timestamp):
     timestamp = pytz.utc.localize(timestamp)
     timestamp_utc = timestamp.astimezone(pytz.utc)
     return timestamp_utc
+
 
 class HTTPAdapterWithSocketOptions(HTTPAdapter):
     def __init__(self, *args, **kwargs):
