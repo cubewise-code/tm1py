@@ -526,7 +526,7 @@ class TestHierarchyService(unittest.TestCase):
 
         df = pd.DataFrame(df[[self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n", "level000",
                  "Level001", "level000_weight", "level001_weight"]])
-        print(df.to_markdown())
+
         self.tm1.hierarchies.update_or_create_hierarchy_from_dataframe(
             dimension_name=self.region_dimension_name,
             hierarchy_name=self.region_dimension_name,

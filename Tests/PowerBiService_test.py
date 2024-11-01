@@ -1,10 +1,14 @@
 import configparser
-import math
 import unittest
 from math import nan
 from pathlib import Path
 
-from pandas import DataFrame
+try:
+    import pandas as pd
+except ImportError:
+    pass
+
+
 
 from TM1py import MDXView, NativeView, AnonymousSubset
 from TM1py.Objects import Cube, Dimension, Element, Hierarchy, ElementAttribute
@@ -211,13 +215,13 @@ class TestPowerBiService(unittest.TestCase):
     def test_execute_native_view(self):
         df = self.tm1.power_bi.execute_view(self.cube_name, self.native_view_name, use_blob=False, private=False)
 
-        expected_df = DataFrame(
+        expected_df = pd.DataFrame(
             {'TM1py_Tests_PowerBiService_Dimension1': {0: 'Element 1', 1: 'Element 1', 2: 'Element 2', 3: 'Element 2'},
              'TM1py_Tests_PowerBiService_Dimension2': {0: 'Element 1', 1: 'Element 2', 2: 'Element 1', 3: 'Element 2'},
              'Element 1': {0: '1.0', 1: nan, 2: nan, 3: nan},
              'Element 2': {0: nan, 1: nan, 2: nan, 3: '1.0'}})
 
-        self.assertEqual(expected_df.to_markdown(), df.to_markdown())
+        pd._testing.assert_frame_equal(expected_df, df, check_column_type=False, check_dtype=False)
 
     @skip_if_no_pandas
     def test_execute_view(self):
@@ -260,13 +264,13 @@ class TestPowerBiService(unittest.TestCase):
         df = self.tm1.power_bi.execute_view(self.cube_name, self.native_view_name,
                                             use_blob=True, skip_zeros=False, private=False)
 
-        expected_df = DataFrame(
+        expected_df = pd.DataFrame(
             {'TM1py_Tests_PowerBiService_Dimension1': {0: 'Element 1', 1: 'Element 1', 2: 'Element 2', 3: 'Element 2'},
              'TM1py_Tests_PowerBiService_Dimension2': {0: 'Element 1', 1: 'Element 2', 2: 'Element 1', 3: 'Element 2'},
              'Element 1': {0: 1.0, 1: 0, 2: 0, 3: 0},
              'Element 2': {0: 0, 1: 0, 2: 0, 3: 1.0}})
 
-        self.assertEqual(expected_df.to_markdown(), df.to_markdown())
+        pd._testing.assert_frame_equal(expected_df, df, check_column_type=False, check_dtype=False)
 
     @skip_if_no_pandas
     def test_execute_view_use_blob(self):
@@ -315,13 +319,13 @@ class TestPowerBiService(unittest.TestCase):
         df = self.tm1.power_bi.execute_view(self.cube_name, self.native_view_name, use_iterative_json=True,
                                             private=False, skip_zeros=False)
 
-        expected_df = DataFrame(
+        expected_df = pd.DataFrame(
             {'TM1py_Tests_PowerBiService_Dimension1': {0: 'Element 1', 1: 'Element 1', 2: 'Element 2', 3: 'Element 2'},
              'TM1py_Tests_PowerBiService_Dimension2': {0: 'Element 1', 1: 'Element 2', 2: 'Element 1', 3: 'Element 2'},
-             'Element 1': {0: '1.0', 1: 0, 2: 0, 3: 0},
-             'Element 2': {0: 0, 1: 0, 2: 0, 3: '1.0'}})
+             'Element 1': {0: 1.0, 1: 0, 2: 0, 3: 0},
+             'Element 2': {0: 0, 1: 0, 2: 0, 3: 1.0}})
 
-        self.assertEqual(expected_df.to_markdown(), df.to_markdown())
+        pd._testing.assert_frame_equal(expected_df, df, check_column_type=False, check_dtype=False)
 
     @skip_if_no_pandas
     def test_execute_view_use_iterative_json(self):
@@ -338,7 +342,6 @@ class TestPowerBiService(unittest.TestCase):
             tuple(df.columns),
             (self.dimension_names[0], "Element 1", "Element 2"))
 
-        row1 = df.loc[df[self.dimension_names[0]] == "Element 1"]
         row1 = df.loc[df[self.dimension_names[0]] == "Element 1"]
         self.assertEqual(
             ("Element 1", 1.0, 0.0),

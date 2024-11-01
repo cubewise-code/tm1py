@@ -971,6 +971,31 @@ class TestElementService(unittest.TestCase):
             "1990",
             self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name))
 
+
+    def test_delete_elements_use_blob(self):
+        self.assertIn(
+            "1989",
+            self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name))
+
+        self.assertIn(
+            "1990",
+            self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name))
+
+        element_names = ["1989", "1990"]
+        self.tm1.elements.delete_elements(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            element_names=element_names,
+            use_blob=True
+        )
+        self.assertNotIn(
+            "1989",
+            self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name))
+
+        self.assertNotIn(
+            "1990",
+            self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name))
+
     def test_delete_element_attribute(self):
         element_attribute = ElementAttribute("NewAttribute", "String")
         self.tm1.dimensions.hierarchies.elements.create_element_attribute(
