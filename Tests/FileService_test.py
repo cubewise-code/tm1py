@@ -41,20 +41,55 @@ class TestFileService(unittest.TestCase):
         if self.tm1.files.exists(self.FILE_NAME2_IN_FOLDER):
             self.tm1.files.delete(self.FILE_NAME2_IN_FOLDER)
 
-    @skip_if_version_lower_than(version="11.4")
-    def test_create_get(self):
+
+    def run_create_get(self, mpu, max_mb_per_part=None, max_workers=1):
         with open(Path(__file__).parent.joinpath('resources', 'file.csv'), "rb") as original_file:
-            self.tm1.files.update_or_create(self.FILE_NAME1, original_file.read())
+            self.tm1.files.update_or_create(
+                self.FILE_NAME1,
+                original_file.read(),
+                multi_part_upload=mpu,
+                max_mb_per_part=max_mb_per_part,
+                max_workers=max_workers)
 
             created_file = self.tm1.files.get(self.FILE_NAME1)
-
         with open(Path(__file__).parent.joinpath('resources', 'file.csv'), "rb") as original_file:
             self.assertEqual(original_file.read(), created_file)
+
+    @skip_if_version_lower_than(version="11.4")
+    def test_create_get(self):
+        self.run_create_get(mpu=False)
+
+    @skip_if_version_lower_than(version="12")
+    def test_create_get_with_mpu_1_byte_per_part(self):
+        self.run_create_get(mpu=True, max_mb_per_part=1/(1024*1024))
+
+
+    @skip_if_version_lower_than(version="12")
+    def test_create_get_with_mpu_1_byte_per_part_10_max_workers(self):
+        self.run_create_get(mpu=True, max_mb_per_part=1/(1024*1024), max_workers=10)
+
+    @skip_if_version_lower_than(version="12")
+    def test_create_get_with_mpu_200_megabyte_per_part(self):
+        self.run_create_get(mpu=True, max_mb_per_part=200)
 
     @skip_if_version_lower_than(version="12")
     def test_create_get_in_folder(self):
         with open(Path(__file__).parent.joinpath('resources', 'file.csv'), "rb") as original_file:
             self.tm1.files.update_or_create(self.FILE_NAME1_IN_FOLDER, original_file.read())
+
+            created_file = self.tm1.files.get(self.FILE_NAME1_IN_FOLDER)
+
+        with open(Path(__file__).parent.joinpath('resources', 'file.csv'), "rb") as original_file:
+            self.assertEqual(original_file.read(), created_file)
+
+    @skip_if_version_lower_than(version="12")
+    def test_create_get_in_folder_with_mpu(self):
+        with open(Path(__file__).parent.joinpath('resources', 'file.csv'), "rb") as original_file:
+            self.tm1.files.update_or_create(
+                self.FILE_NAME1_IN_FOLDER,
+                original_file.read(),
+                mpu=True,
+                max_mb_per_part=1/(1024*1024))
 
             created_file = self.tm1.files.get(self.FILE_NAME1_IN_FOLDER)
 
