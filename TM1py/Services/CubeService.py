@@ -145,9 +145,7 @@ class CubeService(ObjectService):
         """
         if isinstance(rules, str):
             rules = Rules(rules=rules)
-        if isinstance(rules, Rules):
-            pass
-        else:
+        if not isinstance(rules, Rules):
             raise ValueError('rules must be type str or Rules')
 
         url = format_url("/Cubes('{}')", cube_name)
