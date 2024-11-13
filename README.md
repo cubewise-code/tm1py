@@ -80,7 +80,7 @@ with TM1Service(
 ```
 
 
-> TM1 12 MCSP
+> TM1 12 PAaaS
 
 ``` python
 from TM1py import TM1Service
@@ -98,20 +98,6 @@ with TM1Service(**params) as tm1:
     print(tm1.server.get_product_version())
 ```
 
-
-> TM1 12 PAaaS
-
-``` python
-with TM1Service(
-        address="us-east-2.aws.planninganalytics.ibm.com",
-        api_key="AB4VfG7T8wPM-912uFKeYG5PGh0XbS80MVBAt7SEG6xn",
-        iam_url="https://iam.cloud.ibm.com/identity/token",
-        tenant="YA9A2T8BS2ZU",
-        database="Database") as tm1:
-    print(tm1.server.get_product_version())
-```
-
-
 > TM1 12 on-premise & Cloud Pak For Data
 
 ``` python
@@ -127,7 +113,21 @@ with TM1Service(
     print(tm1.server.get_product_version())
 ```
 
+> TM1 12 on-premise with access token
 
+``` python
+params = {
+    "base_url": "https://pa12.dev.net/api/<InstanceId>/v0/tm1/<DatabaseName>",
+    "user": "8643fd6....8a6b",
+    "access_token":"<TheActualAccessToken>",
+    "async_requests_mode": True,
+    "ssl": True,
+    "verify": True
+}
+
+with TM1Service(**params) as tm1:
+    print(tm1.server.get_product_version())
+```
 
 
 Documentation
@@ -139,7 +139,7 @@ https://tm1py.readthedocs.io/en/master/
 Issues
 =======================
 
-If you find issues, sign up in Github and open an Issue in this repository
+If you find issues, sign up in GitHub and open an Issue in this repository
 
 
 Contribution
