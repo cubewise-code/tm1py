@@ -135,12 +135,23 @@ class FileService(ObjectService):
             self,
             path: Path,
             file_content: bytes,
-            multi_part_upload: bool = False,
+            multi_part_upload: bool = None,
             max_mb_per_part: float = 200,
             max_workers: int = 1,
             **kwargs):
+        """
+        :param path: file name in root or path to file
+        :param file_content: file_content as bytes or BytesIO
+        :param multi_part_upload: boolean use multipart upload or not (only available from TM1 12 onwards)
+        By default, multi_part_upload is used for TM1 v12 and not used for TM1 v11
+        :param max_mb_per_part: max megabyte per part in multipart upload (only available from TM1 12 onwards)
+        :param max_workers: max parallel workers for multipart upload (only available from TM1 12 onwards)
+        """
 
         url = self._construct_content_url(path, exclude_path_end=False, extension="Content")
+
+        if multi_part_upload is None:
+            multi_part_upload = self.version.startswith("12.")
 
         if multi_part_upload:
             return self.upload_file_content_with_mpu(url, file_content, max_mb_per_part, max_workers, **kwargs)
@@ -217,7 +228,7 @@ class FileService(ObjectService):
         )
 
     @require_version(version="11.4")
-    def create(self, file_name: Union[str, Path], file_content: bytes, multi_part_upload: bool = False,
+    def create(self, file_name: Union[str, Path], file_content: bytes, multi_part_upload: bool = None,
                max_mb_per_part: float = 200, max_workers: int = 1, **kwargs):
         """ Create file
 
@@ -226,6 +237,7 @@ class FileService(ObjectService):
         :param file_name: file name in root or path to file
         :param file_content: file_content as bytes or BytesIO
         :param multi_part_upload: boolean use multipart upload or not (only available from TM1 12 onwards)
+        By default, multi_part_upload is used for TM1 v12 and not used for TM1 v11
         :param max_mb_per_part: max megabyte per part in multipart upload (only available from TM1 12 onwards)
         :param max_workers: max parallel workers for multipart upload (only available from TM1 12 onwards)
         """
@@ -252,13 +264,14 @@ class FileService(ObjectService):
         return self._upload_file_content(path, file_content, multi_part_upload, max_mb_per_part, max_workers, **kwargs)
 
     @require_version(version="11.4")
-    def update(self, file_name: Union[str, Path], file_content: bytes, multi_part_upload: bool = False,
+    def update(self, file_name: Union[str, Path], file_content: bytes, multi_part_upload: bool = None,
                max_mb_per_part: float = 200, max_workers: int = 1, **kwargs):
         """ Update existing file
 
         :param file_name: file name in root or path to file
         :param file_content: file_content as bytes or BytesIO
         :param multi_part_upload: boolean use multipart upload or not (only available from TM1 12 onwards)
+        By default, multi_part_upload is used for TM1 v12 and not used for TM1 v11
         :param max_mb_per_part: max megabyte per part in multipart upload (only available from TM1 12 onwards)
         :param max_workers: max parallel workers for multipart upload (only available from TM1 12 onwards)
         """
@@ -270,13 +283,14 @@ class FileService(ObjectService):
         return self._upload_file_content(path, file_content, multi_part_upload, max_mb_per_part, max_workers, **kwargs)
 
     @require_version(version="11.4")
-    def update_or_create(self, file_name: Union[str, Path], file_content: bytes, multi_part_upload: bool = False,
+    def update_or_create(self, file_name: Union[str, Path], file_content: bytes, multi_part_upload: bool = None,
                          max_mb_per_part: float = 200, max_workers: int = 1, **kwargs):
         """ Create file or update file if it already exists
 
         :param file_name: file name in root or path to file
         :param file_content: file_content as bytes or BytesIO
-        :param multi_part_upload: boolean use multipart upload or not (only available from TM1 12 onwards)
+        :param multi_part_upload: boolean use multipart upload or not (only available from TM1 12 onwards).
+        By default, multi_part_upload is used for TM1 v12 and not used for TM1 v11
         :param max_mb_per_part: max megabyte per part in multipart upload (only available from TM1 12 onwards)
         :param max_workers: max parallel workers for multipart upload (only available from TM1 12 onwards)
         """
