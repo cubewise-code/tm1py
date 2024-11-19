@@ -15,6 +15,7 @@ class TestFileService(unittest.TestCase):
 
     FILE_NAME1 = "TM1py_unittest_file1"
     FILE_NAME2 = "TM1py_unittest_file2"
+    FILE_NAME3 = "TM1py_unittest_file3"
 
     FILE_NAME1_IN_FOLDER = Path("TM1py") / "Tests" / FILE_NAME1
     FILE_NAME2_IN_FOLDER = Path("TM1py") / "Tests" / FILE_NAME2
@@ -29,6 +30,9 @@ class TestFileService(unittest.TestCase):
 
         if self.tm1.files.exists(self.FILE_NAME2):
             self.tm1.files.delete(self.FILE_NAME2)
+
+        if self.tm1.files.exists(self.FILE_NAME3):
+            self.tm1.files.delete(self.FILE_NAME3)
 
         if verify_version(required_version="12", version=self.tm1.version):
             self.setUpV12()
@@ -60,9 +64,20 @@ class TestFileService(unittest.TestCase):
         self.run_create_get(mpu=False)
 
     @skip_if_version_lower_than(version="12")
+    def test_create_get_empty_file_with_mpu(self):
+        self.tm1.files.update_or_create(
+            self.FILE_NAME3,
+            b"",
+            multi_part_upload=True,
+            max_mb_per_part=200,
+            max_workers=1)
+
+        created_file = self.tm1.files.get(self.FILE_NAME3)
+        self.assertEqual(b"", created_file)
+
+    @skip_if_version_lower_than(version="12")
     def test_create_get_with_mpu_1_byte_per_part(self):
         self.run_create_get(mpu=True, max_mb_per_part=1/(1024*1024))
-
 
     @skip_if_version_lower_than(version="12")
     def test_create_get_with_mpu_1_byte_per_part_10_max_workers(self):
@@ -213,6 +228,8 @@ class TestFileService(unittest.TestCase):
             self.tm1.files.delete(self.FILE_NAME1)
         if self.tm1.files.exists(self.FILE_NAME2):
             self.tm1.files.delete(self.FILE_NAME2)
+        if self.tm1.files.exists(self.FILE_NAME3):
+            self.tm1.files.delete(self.FILE_NAME3)
         if self.tm1.files.exists(self.FILE_NAME1_IN_FOLDER):
             self.tm1.files.delete(self.FILE_NAME1_IN_FOLDER)
         if self.tm1.files.exists(self.FILE_NAME2_IN_FOLDER):
