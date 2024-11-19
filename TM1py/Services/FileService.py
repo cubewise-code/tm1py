@@ -134,7 +134,7 @@ class FileService(ObjectService):
     def _upload_file_content(
             self,
             path: Path,
-            file_content: bytes,
+            file_content: Union[bytes, BytesIO],
             multi_part_upload: bool = None,
             max_mb_per_part: float = 200,
             max_workers: int = 1,
@@ -150,20 +150,29 @@ class FileService(ObjectService):
 
         url = self._construct_content_url(path, exclude_path_end=False, extension="Content")
 
+        # empty files must be created without MPU
+        if self._file_content_is_empty(file_content):
+            return self._upload_file_content_without_mpu(url, file_content, **kwargs)
+
         if multi_part_upload is None:
             multi_part_upload = self.version.startswith("12.")
 
         if multi_part_upload:
-            return self.upload_file_content_with_mpu(url, file_content, max_mb_per_part, max_workers, **kwargs)
+            return self._upload_file_content_with_mpu(url, file_content, max_mb_per_part, max_workers, **kwargs)
 
+        return self._upload_file_content_without_mpu(url, file_content, **kwargs)
+
+    def _upload_file_content_without_mpu(self, url, file_content, **kwargs):
         return self._rest.PUT(
             url=url,
             data=file_content,
             headers=self.binary_http_header,
             **kwargs)
 
-    def upload_file_content_with_mpu(self, content_url: str, file_content: bytes, max_mb_per_part: float,
-                                     max_workers: int = 1, **kwargs):
+    def _upload_file_content_with_mpu(self, content_url: str, file_content: Union[bytes, BytesIO], 
+                                      max_mb_per_part: float, max_workers: int = 1, **kwargs):
+
+
         # Initiate multipart upload
         response = self._rest.POST(
             url=content_url + "/mpu.CreateMultipartUpload",
@@ -228,7 +237,7 @@ class FileService(ObjectService):
         )
 
     @require_version(version="11.4")
-    def create(self, file_name: Union[str, Path], file_content: bytes, multi_part_upload: bool = None,
+    def create(self, file_name: Union[str, Path], file_content: Union[bytes, BytesIO], multi_part_upload: bool = None,
                max_mb_per_part: float = 200, max_workers: int = 1, **kwargs):
         """ Create file
 
@@ -264,7 +273,7 @@ class FileService(ObjectService):
         return self._upload_file_content(path, file_content, multi_part_upload, max_mb_per_part, max_workers, **kwargs)
 
     @require_version(version="11.4")
-    def update(self, file_name: Union[str, Path], file_content: bytes, multi_part_upload: bool = None,
+    def update(self, file_name: Union[str, Path], file_content: Union[bytes, BytesIO], multi_part_upload: bool = None,
                max_mb_per_part: float = 200, max_workers: int = 1, **kwargs):
         """ Update existing file
 
@@ -387,3 +396,14 @@ class FileService(ObjectService):
             parts.append(part)
 
         return parts
+
+    @staticmethod
+    def _file_content_is_empty(file_content: Union[bytes, BytesIO]):
+        if isinstance(file_content, bytes):
+            return not file_content  # Empty bytes are falsy
+
+        elif isinstance(file_content, BytesIO):
+            return file_content.getbuffer().nbytes == 0  # Check buffer size
+
+        else:
+            raise TypeError("Expected 'bytes' or 'BytesIO'.")
