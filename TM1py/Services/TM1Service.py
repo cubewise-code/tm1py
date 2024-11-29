@@ -60,6 +60,7 @@ class TM1Service:
         :param re_connect_on_session_timeout: attempt to reconnect once if session is timed out
         :param proxies: pass a dictionary with proxies e.g.
                 {'http': 'http://proxy.example.com:8080', 'https': 'http://secureproxy.example.com:8090'}
+        :param ssl_context: pass a user defined ssl context
         """
         self._tm1_rest = RestService(**kwargs)
         self.annotations = AnnotationService(self._tm1_rest)
