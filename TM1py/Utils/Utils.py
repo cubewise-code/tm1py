@@ -909,6 +909,8 @@ def build_cellset_from_pandas_dataframe(
 
 
 def aggregate_duplicate_intersections(df, dimension_headers, value_header):
+    for col in dimension_headers:
+        df[col] = df[col].str.lower().str.replace(' ', '')
     return df.groupby([*dimension_headers])[value_header].sum().reset_index()
 
 
