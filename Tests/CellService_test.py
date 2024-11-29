@@ -1096,6 +1096,26 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(list(df["Value"]), values)
 
     @skip_if_no_pandas
+    def test_write_dataframe_same_intersection(self):
+        df = pd.DataFrame({
+            self.dimension_names[0]: ["element 1", "Element1", "ELEMENT  1"],
+            self.dimension_names[1]: ["element 2", "element 2", "element 2"],
+            self.dimension_names[2]: ["element 3", "element 3", "element 3"],
+            "Value": [1, 3, 12]})
+
+        self.tm1.cells.write_dataframe(self.cube_name, df, use_blob=True)
+
+        query = MdxBuilder.from_cube(self.cube_name)
+        query = query.add_hierarchy_set_to_column_axis(
+            MdxHierarchySet.member(Member.of(self.dimension_names[0], "element 1")))
+        query = query.add_hierarchy_set_to_row_axis(
+            MdxHierarchySet.member(Member.of(self.dimension_names[1], "element 2")))
+        query = query.add_member_to_where(Member.of(self.dimension_names[2], "element 3"))
+        values = self.tm1.cells.execute_mdx_values(query.to_mdx())
+
+        self.assertEqual(sum(df["Value"]), values[0])
+
+    @skip_if_no_pandas
     def test_write_dataframe_ordering(self):
         df = pd.DataFrame({
             self.dimension_names[1]: ["element 1", "element 2", "element 3"],
