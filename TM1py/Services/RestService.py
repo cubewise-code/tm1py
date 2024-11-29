@@ -122,6 +122,7 @@ class RestService:
         :param re_connect_on_session_timeout: attempt to reconnect once if session is timed out
         :param proxies: pass a dictionary with proxies e.g.
                 {'http': 'http://proxy.example.com:8080', 'https': 'http://secureproxy.example.com:8090'}
+        :param ssl_context: Pass a user defined ssl context
         """
         # store kwargs for future use e.g. re_connect on 401 session timeout
         self._kwargs = kwargs
@@ -158,6 +159,7 @@ class RestService:
         self._is_data_admin = None
         self._is_security_admin = None
         self._is_ops_admin = None
+        self._ssl_context = kwargs.get('ssl_context', None)
 
         # populated later on the fly for users with the name different from 'Admin'
         if self._user and case_and_space_insensitive_equals(self._user, 'ADMIN'):
@@ -178,6 +180,7 @@ class RestService:
         self.disable_http_warnings()
 
         self._s = Session()
+        self._manage_http_adapter()
         if self._proxies:
             self._s.proxies = self._proxies
 
@@ -185,8 +188,6 @@ class RestService:
         self.connect()
         if not self._version:
             self.set_version()
-
-        self._manage_http_adapter()
 
     def _determine_verify(self, verify: [bool, str] = None) -> [bool, str]:
         if verify is None:
@@ -462,8 +463,9 @@ class RestService:
     def _manage_http_adapter(self):
         adapter = HTTPAdapterWithSocketOptions(
             pool_connections=int(self._connection_pool_size or self.DEFAULT_CONNECTION_POOL_SIZE),
-            pool_maxsize=int(self._connection_pool_size))
-
+            pool_maxsize=int(self._connection_pool_size),
+            ssl_context=self._ssl_context)
+        self._s.mount('https://', adapter),
         self._s.mount(self._base_url, adapter)
 
     def __enter__(self):

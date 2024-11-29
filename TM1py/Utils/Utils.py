@@ -1735,10 +1735,13 @@ def utc_localize_time(timestamp):
 class HTTPAdapterWithSocketOptions(HTTPAdapter):
     def __init__(self, *args, **kwargs):
         self.socket_options = kwargs.pop("socket_options", None)
+        self.ssl_context = kwargs.pop("ssl_context", None)
         super(HTTPAdapterWithSocketOptions, self).__init__(*args, **kwargs)
 
     def init_poolmanager(self, *args, **kwargs):
         # must use hasattr here, as socket_options may be not-set in case TM1Service was created with restore_from_file
         if hasattr(self, "socket_options"):
             kwargs["socket_options"] = self.socket_options
+        if hasattr(self, "ssl_context"):
+            kwargs['ssl_context'] = self.ssl_context
         super(HTTPAdapterWithSocketOptions, self).init_poolmanager(*args, **kwargs)
