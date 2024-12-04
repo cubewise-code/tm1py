@@ -394,6 +394,22 @@ class TestHierarchyService(unittest.TestCase):
             'Total Years')
         self.assertEqual(len(members), 0)
 
+    def test_remove_edges_under_consolidation_case_and_space_insensitive(self):
+        members = self.tm1.dimensions.hierarchies.elements.get_members_under_consolidation(
+            self.dimension_name,
+            self.dimension_name,
+            'Total Years')
+        self.assertGreater(len(members), 0)
+        self.tm1.dimensions.hierarchies.remove_edges_under_consolidation(
+            self.dimension_name,
+            self.dimension_name,
+            'TOTALYEARS')
+        members = self.tm1.dimensions.hierarchies.elements.get_members_under_consolidation(
+            self.dimension_name,
+            self.dimension_name,
+            'Total Years')
+        self.assertEqual(len(members), 0)
+
     def test_add_edges(self):
         edges = {("Total Years", "My Element"): 1, ("Total Years", "No Year"): 1}
         self.tm1.dimensions.hierarchies.add_edges(self.dimension_name, self.dimension_name, edges)
