@@ -514,6 +514,46 @@ class TestHierarchyService(unittest.TestCase):
             hierarchy_name=self.region_dimension_name)
         self._verify_region_dimension(hierarchy)
 
+    def test_update_or_create_hierarchy_from_dataframe_consol_exists(self):
+        columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n", "level001",
+                   "level000", "level001_weight", "level000_weight"]
+        data = [
+            ['France', "Numeric", "Frankreich", "EUR", 60_000_000, "Europe", "World", 1, 1],
+            ['Switzerland', 'Numeric', "Schweiz", "CHF", 9_000_000, "Europe", "World", 1, 1],
+            ['Germany', 'Numeric', "Deutschland", "EUR", 84_000_000, "Europe", "World", 1, 1],
+        ]
+        df = DataFrame(data=data, columns=columns)
+
+        self.tm1.hierarchies.update_or_create_hierarchy_from_dataframe(
+            dimension_name=self.region_dimension_name,
+            hierarchy_name=self.region_dimension_name,
+            df=df,
+            element_column=self.region_dimension_name,
+            element_type_column="ElementType",
+            unwind_all=True
+        )
+
+        data = [
+            ['france', "Numeric", "Frankreich", "EUR", 60_000_000, "Europe", "World", 1, 1],
+            ['switz  erland', 'Numeric', "Schweiz", "CHF", 9_000_000, "Europe", "World", 1, 1],
+            ['GerMANY', 'Numeric', "Deutschland", "EUR", 84_000_000, "Europe", "World", 1, 1],
+        ]
+        df = DataFrame(data=data, columns=columns)
+
+        self.tm1.hierarchies.update_or_create_hierarchy_from_dataframe(
+            dimension_name=self.region_dimension_name,
+            hierarchy_name=self.region_dimension_name,
+            df=df,
+            element_column=self.region_dimension_name,
+            element_type_column="ElementType",
+            unwind_all=True
+        )
+
+        hierarchy = self.tm1.hierarchies.get(
+            dimension_name=self.region_dimension_name,
+            hierarchy_name=self.region_dimension_name)
+        self._verify_region_dimension(hierarchy)
+
     def test_update_or_create_hierarchy_from_dataframe_non_standard_level_order(self):
         columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n", "Level001",
                    "level000", "level001_weight", "level000_weight"]
@@ -524,8 +564,9 @@ class TestHierarchyService(unittest.TestCase):
         ]
         df = DataFrame(data=data, columns=columns)
 
-        df = pd.DataFrame(df[[self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n", "level000",
-                 "Level001", "level000_weight", "level001_weight"]])
+        df = pd.DataFrame(
+            df[[self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n", "level000",
+                "Level001", "level000_weight", "level001_weight"]])
 
         self.tm1.hierarchies.update_or_create_hierarchy_from_dataframe(
             dimension_name=self.region_dimension_name,
@@ -1099,7 +1140,6 @@ class TestHierarchyService(unittest.TestCase):
             unwind_all=True
         )
 
-
         columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n"]
         data = [
             ['France', "Numeric", "Frankreich", "EUR", 60_000_000],
@@ -1128,7 +1168,6 @@ class TestHierarchyService(unittest.TestCase):
         self.assertNotIn(("DACH", "Germany"), hierarchy.edges)
         self.assertNotIn(("DACH", "Switzerland"), hierarchy.edges)
 
-
     def test_update_or_create_hierarchy_from_dataframe_unwind_consolidations_multi(self):
         columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n", "level002",
                    "level001", "level000", "level002_weight", "level001_weight", "level000_weight"]
@@ -1147,7 +1186,6 @@ class TestHierarchyService(unittest.TestCase):
             df=df,
             unwind_all=True
         )
-
 
         columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n"]
         data = [

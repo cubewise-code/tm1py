@@ -555,7 +555,7 @@ class HierarchyService(ObjectService):
             element_name: Element.Types(element_type)
             for element_name, element_type
             in df.loc[
-                ~df[element_column].isin(existing_element_identifiers),
+                ~df[element_column].str.lower().str.replace(' ', '').isin(existing_element_identifiers._store.keys()),
                 (element_column, element_type_column)
             ].itertuples(index=False)
         })
