@@ -465,7 +465,6 @@ class RestService:
             pool_connections=int(self._connection_pool_size or self.DEFAULT_CONNECTION_POOL_SIZE),
             pool_maxsize=int(self._connection_pool_size),
             ssl_context=self._ssl_context)
-        self._s.mount('https://', adapter),
         self._s.mount(self._base_url, adapter)
 
     def __enter__(self):
