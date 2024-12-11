@@ -123,6 +123,8 @@ class RestService:
         :param proxies: pass a dictionary with proxies e.g.
                 {'http': 'http://proxy.example.com:8080', 'https': 'http://secureproxy.example.com:8090'}
         :param ssl_context: Pass a user defined ssl context
+        :param cert: (optional) If String, path to SSL client cert file (.pem).
+                If Tuple, ('cert', 'key') pair
         """
         # store kwargs for future use e.g. re_connect on 401 session timeout
         self._kwargs = kwargs
@@ -181,6 +183,10 @@ class RestService:
 
         self._s = Session()
         self._manage_http_adapter()
+
+        self._cert = kwargs.get("cert")
+        self._s.cert = self._cert
+
         if self._proxies:
             self._s.proxies = self._proxies
 
@@ -714,7 +720,8 @@ class RestService:
                 namespace,
                 gateway,
                 cam_passport,
-                self._verify)
+                self._verify,
+                self._cert)
             self.add_http_header('Authorization', token)
 
         # process additional headers
@@ -910,19 +917,19 @@ class RestService:
 
     @staticmethod
     def _build_authorization_token(user: str, password: str, namespace: str = None, gateway: str = None,
-                                   cam_passport: str = None, verify: bool = False) -> str:
+                                   cam_passport: str = None, verify: bool = False, cert: Optional[Union[str, Tuple[str, str]]] = None) -> str:
         """ Build the Authorization Header for CAM and Native Security
         """
         if cam_passport:
             return 'CAMPassport ' + cam_passport
         elif namespace:
-            return RestService._build_authorization_token_cam(user, password, namespace, gateway, verify)
+            return RestService._build_authorization_token_cam(user, password, namespace, gateway, verify, cert)
         else:
             return RestService._build_authorization_token_basic(user, password)
 
     @staticmethod
     def _build_authorization_token_cam(user: str = None, password: str = None, namespace: str = None,
-                                       gateway: str = None, verify: bool = False) -> str:
+                                       gateway: str = None, verify: bool = False, cert: Optional[Union[str, Tuple[str, str]]] = None) -> str:
         if gateway:
             try:
                 HttpNegotiateAuth
@@ -930,7 +937,7 @@ class RestService:
                 raise RuntimeError(
                     "SSO failed due to missing dependency requests_negotiate_sspi.HttpNegotiateAuth. "
                     "SSO only supported for Windows")
-            response = requests.get(gateway, auth=HttpNegotiateAuth(), verify=verify,
+            response = requests.get(gateway, auth=HttpNegotiateAuth(), verify=verify, cert=cert,
                                     params={"CAMNamespace": namespace})
             if not response.status_code == 200:
                 raise RuntimeError(
