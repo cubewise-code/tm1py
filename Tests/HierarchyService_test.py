@@ -859,6 +859,52 @@ class TestHierarchyService(unittest.TestCase):
             hierarchy_name=self.region_dimension_name)
         self._verify_region_dimension(hierarchy)
 
+    def test_update_or_create_hierarchy_from_dataframe_with_wrong_case_in_level_column(self):
+        # create with correct case first
+        columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n", "level001",
+                   "level000", "level001_weight", "level000_weight"]
+        data = [
+            ['France', "Numeric", "Frankreich", "EUR", 60_000_000, "Europe", "World", 1, 1],
+            ['Switzerland', 'Numeric', "Schweiz", "CHF", 9_000_000, "Europe", "World", 1, 1],
+            ['Germany', 'Numeric', "Deutschland", "EUR", 84_000_000, "Europe", "World", 1, 1],
+            ["Europe", "Consolidated", "", "", "", "", "", 0, 0],
+            ["World", "Consolidated", "", "", "", "", "", 0, 0],
+        ]
+        df = DataFrame(data=data, columns=columns)
+        self.tm1.hierarchies.update_or_create_hierarchy_from_dataframe(
+            dimension_name=self.region_dimension_name,
+            hierarchy_name=self.region_dimension_name,
+            df=df,
+            element_column=self.region_dimension_name,
+            element_type_column="ElementType",
+            unwind_all=True
+        )
+
+        # now attempt to update with wrong case
+        columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n", "level001",
+                   "level000", "level001_weight", "level000_weight"]
+        data = [
+            ['France', "Numeric", "Frankreich", "EUR", 60_000_000, "Europe".lower(), "World".lower(), 1, 1],
+            ['Switzerland', 'Numeric', "Schweiz", "CHF", 9_000_000, "Europe".lower(), "World".lower(), 1, 1],
+            ['Germany', 'Numeric', "Deutschland", "EUR", 84_000_000, "Europe".lower(), "World".lower(), 1, 1],
+            ["Europe", "Consolidated", "", "", "", "", "", 0, 0],
+            ["World", "Consolidated", "", "", "", "", "", 0, 0],
+        ]
+        df = DataFrame(data=data, columns=columns)
+        self.tm1.hierarchies.update_or_create_hierarchy_from_dataframe(
+            dimension_name=self.region_dimension_name,
+            hierarchy_name=self.region_dimension_name,
+            df=df,
+            element_column=self.region_dimension_name,
+            element_type_column="ElementType",
+            unwind_all=False
+        )
+
+        hierarchy = self.tm1.hierarchies.get(
+            dimension_name=self.region_dimension_name,
+            hierarchy_name=self.region_dimension_name)
+        self._verify_region_dimension(hierarchy)
+
     def test_update_or_create_hierarchy_from_dataframe_with_no_element_type(self):
         columns = ["Element Name", "Alias:a", "Currency:s", "population:n", "level001",
                    "level000", "level001_weight", "level000_weight"]
