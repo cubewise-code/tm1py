@@ -695,9 +695,9 @@ class HierarchyService(ObjectService):
 
         if edges:
             try:
-                current_edges = self.elements.get_edges(
+                current_edges = CaseAndSpaceInsensitiveTuplesDict(self.elements.get_edges(
                     dimension_name=dimension_name,
-                    hierarchy_name=hierarchy_name)
+                    hierarchy_name=hierarchy_name))
             except TM1pyRestException as ex:
                 if ex.status_code == 404:
                     current_edges = CaseAndSpaceInsensitiveTuplesDict()
