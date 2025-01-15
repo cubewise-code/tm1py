@@ -5,30 +5,33 @@ import datetime
 
 class ChoreStartTime:
     """ Utility class to handle time representation for Chore Start Time
-        
+
     """
 
-    def __init__(self, year: int, month: int, day: int, hour: int, minute: int, second: int, tz: str = None):
+    def __init__(self, year: int, month: int, day: int, hour: int, minute: int, tz: str = None):
         """
-        
-        :param year: year 
+
+        :param year: year
         :param month: month
         :param day: day
         :param hour: hour or None
         :param minute: minute or None
         :param second: second or None
         """
-        self._datetime = datetime.datetime.combine(datetime.date(year, month, day), datetime.time(hour, minute, second))
+
+        # StartTime is always set based on Hour and Minute - Seconds are added as 00 to ensure a valid datetime value
+        self._datetime = datetime.datetime.combine(datetime.date(year, month, day), datetime.time(hour, minute, 00))
         self.tz = tz
 
     @classmethod
     def from_string(cls, start_time_string: str) -> 'ChoreStartTime':
+        # StartTime format is yyyy-mm-ddThh:mmZ|+-hh:mm - Z is Zulu Time, other values are offset to Zulu/UTC Time
         # extract optional tz info (e.g., +01:00) from string end
         if '+' in start_time_string:
-            # case "2020-11-05T08:00:01+01:00",
+            # case UTC+1 : "2020-11-05T08:00+01:00",
             tz = "+" + start_time_string.split('+')[1]
         elif start_time_string.count('-') == 3:
-            # case: "2020-11-05T08:00:01-01:00",
+            # case UTC-1 : "2020-11-05T08:00-01:00",
             tz = "-" + start_time_string.split('-')[-1]
         else:
             tz = None
@@ -40,7 +43,6 @@ class ChoreStartTime:
                    day=f(start_time_string[8:10]),
                    hour=f(start_time_string[11:13]),
                    minute=f(start_time_string[14:16]),
-                   second=f(start_time_string[17:19]),
                    tz=tz)
 
     @property
@@ -65,17 +67,15 @@ class ChoreStartTime:
     def __str__(self):
         return self.start_time_string
 
-    def set_time(self, year: int = None, month: int = None, day: int = None, hour: int = None, minute: int = None,
-                 second: int = None):
+    def set_time(self, year: int = None, month: int = None, day: int = None, hour: int = None, minute: int = None):
 
         _year = year if year is not None else self._datetime.year
         _month = month if month is not None else self._datetime.month
         _day = day if day is not None else self._datetime.day
         _hour = hour if hour is not None else self._datetime.hour
         _minute = minute if minute is not None else self._datetime.minute
-        _second = second if second is not None else self._datetime.second
 
-        self._datetime = self._datetime.replace(year=_year,month=_month,day=_day,hour=_hour,minute=_minute,second=_second)
+        self._datetime = self._datetime.replace(year=_year, month=_month, day=_day, hour=_hour, minute=_minute)
 
     def add(self, days: int = 0, hours: int = 0, minutes: int = 0, seconds: int = 0):
         self._datetime = self._datetime + datetime.timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
