@@ -126,6 +126,13 @@ class Chore(TM1Object):
     def add_task(self, task: ChoreTask):
         self._tasks.append(task)
 
+    def insert_task(self, new_task: ChoreTask):
+        task_list = self.tasks
+        for task in task_list[new_task._step:]:
+            task._step = task._step + 1
+        task_list.insert(new_task._step, new_task)
+        self.tasks = task_list
+
     def activate(self):
         self._active = True
 
