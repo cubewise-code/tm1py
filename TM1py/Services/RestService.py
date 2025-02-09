@@ -783,8 +783,13 @@ class RestService:
                 raise ValueError(f"No response returned from URL: '{self._auth_url}'. "
                                  f"Please double check your address and port number in the URL.")
 
-
         finally:
+            # If the TM1 REST API is routed through a reverse proxy that alters the expected URL,
+            # we explicitly re-set the 'TM1SessionId' cookie to maintain session continuity.
+            session_id = self._s.cookies.pop('TM1SessionId', None)
+            if session_id is not None:
+                self._s.cookies.set('TM1SessionId', session_id)
+
             # After we have session cookie, drop the Authorization Header
             self.remove_http_header('Authorization')
 
@@ -917,7 +922,8 @@ class RestService:
 
     @staticmethod
     def _build_authorization_token(user: str, password: str, namespace: str = None, gateway: str = None,
-                                   cam_passport: str = None, verify: bool = False, cert: Optional[Union[str, Tuple[str, str]]] = None) -> str:
+                                   cam_passport: str = None, verify: bool = False,
+                                   cert: Optional[Union[str, Tuple[str, str]]] = None) -> str:
         """ Build the Authorization Header for CAM and Native Security
         """
         if cam_passport:
@@ -929,7 +935,8 @@ class RestService:
 
     @staticmethod
     def _build_authorization_token_cam(user: str = None, password: str = None, namespace: str = None,
-                                       gateway: str = None, verify: bool = False, cert: Optional[Union[str, Tuple[str, str]]] = None) -> str:
+                                       gateway: str = None, verify: bool = False,
+                                       cert: Optional[Union[str, Tuple[str, str]]] = None) -> str:
         if gateway:
             try:
                 HttpNegotiateAuth
