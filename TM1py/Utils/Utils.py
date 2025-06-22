@@ -1732,6 +1732,23 @@ def utc_localize_time(timestamp):
     return timestamp_utc
 
 
+def reorder_with_priority(items: List[Any], priority: List[Any], unsorted_non_prio_items: bool = True) -> List[Any]:
+    """
+    Reorder a list of items so that items in 'priority' appear first (in given order),
+    followed by the remaining items (in given order or sorted alphabetically). Missing priority items are ignored.
+
+    Example case: hierarchy names
+    "correct" order: first the main hierarchy name (matching the dimension name), 
+    then the Leaves hierarchy, then the other hierarchy names.
+    When trying to create the Leaves hierarchy when it already exists (because of creating a different hierarchy),
+    an error pops up.
+    """
+    result = [s for s in priority if s in items]
+    remaining = [s for s in items if s not in result]
+    result += remaining if unsorted_non_prio_items else sorted(remaining)
+    return result
+
+
 class HTTPAdapterWithSocketOptions(HTTPAdapter):
     def __init__(self, *args, **kwargs):
         self.socket_options = kwargs.pop("socket_options", None)
