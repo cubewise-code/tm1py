@@ -431,6 +431,7 @@ class HierarchyService(ObjectService):
             unwind_all: bool = False,
             unwind_consolidations: Iterable = None,
             update_attribute_types: bool = False,
+            delete_orphaned_c_elements: bool = False,
             **kwargs):
         """ Update or Create a hierarchy based on a dataframe, while never deleting existing elements.
 
@@ -466,6 +467,9 @@ class HierarchyService(ObjectService):
         :param update_attribute_types: bool
             If True, function will delete and recreate attributes when a type change is requested.
             By default, function will not delete attributes.
+        :param delete_orphaned_c_elements: bool
+            If True, function will delete c elements that will have no children and will have no parents post update.
+            By default, function will not delete orphaned c elements.
 
         :return:
 
@@ -723,6 +727,23 @@ class HierarchyService(ObjectService):
                 if (k, v) not in current_edges or w != current_edges[(k, v)]}
             if new_edges:
                 self.elements.add_edges(dimension_name=dimension_name, hierarchy_name=hierarchy_name, edges=new_edges)
+
+        if delete_orphaned_c_elements:
+            all_edges = self.elements.get_edges(dimension_name=dimension_name, hierarchy_name=hierarchy_name)
+            parents = [k[0] for k in all_edges.keys()]
+            children = [k[1] for k in all_edges.keys()]
+            c_element_names = self.elements.get_consolidated_element_names(
+                dimension_name=dimension_name,
+                hierarchy_name=hierarchy_name
+            )
+            orphaned_c = [c for c in c_element_names if c not in parents and c not in children]
+            if orphaned_c:
+                self.elements.delete_elements(
+                    dimension_name=dimension_name,
+                    hierarchy_name=hierarchy_name,
+                    element_names=orphaned_c,
+                    use_ti=True)
+
 
     def get_dimension_service(self):
         from TM1py import DimensionService
