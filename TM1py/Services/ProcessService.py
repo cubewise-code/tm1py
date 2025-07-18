@@ -46,7 +46,9 @@ class ProcessService(ObjectService):
             "DataSource/userName,"
             "DataSource/password,"
             "DataSource/usesUnicode,"
-            "DataSource/subset", name_process)
+            "DataSource/subset"
+            "DataSource/jsonRootPointer"
+            "DataSource/jsonVariableMapping", name_process)
         response = self._rest.GET(url, **kwargs)
         return Process.from_dict(response.json())
 
@@ -72,7 +74,9 @@ class ProcessService(ObjectService):
               "DataSource/userName," \
               "DataSource/password," \
               "DataSource/usesUnicode," \
-              "DataSource/subset{}".format(model_process_filter if skip_control_processes else "")
+              "DataSource/subset," \
+              "DataSource/jsonRootPointer," \
+              "DataSource/jsonVariableMapping{}".format(model_process_filter if skip_control_processes else "")
 
         response = self._rest.GET(url, **kwargs)
         response_as_dict = response.json()
