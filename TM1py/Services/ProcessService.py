@@ -49,6 +49,7 @@ class ProcessService(ObjectService):
             "DataSource/subset"
             "DataSource/jsonRootPointer"
             "DataSource/jsonVariableMapping", name_process)
+        
         response = self._rest.GET(url, **kwargs)
         return Process.from_dict(response.json())
 
