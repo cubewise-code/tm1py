@@ -52,6 +52,17 @@ class TestProcessService(unittest.TestCase):
                      datasource_password='password',
                      datasource_user_name='user')
 
+    p_json = Process(name=prefix + '_json_' + some_name,
+                     datasource_type='JSON',
+                     datasource_json_root_pointer='data',
+                     datasource_json_variable_mapping='{}',
+                     prolog_procedure="sTestProlog = 'test prolog procedure';",
+                     metadata_procedure="sTestMeta = 'test metadata procedure';",
+                     data_procedure="sTestData =  'test data procedure';",
+                     epilog_procedure="sTestEpilog = 'test epilog procedure';",
+                     datasource_data_source_name_for_server=r'C:\Data\file.json',
+                     datasource_data_source_name_for_client=r'C:\Data\file.json')
+    
     p_debug = Process(
         name=prefix + "_debug",
         datasource_type="None",
@@ -101,6 +112,7 @@ class TestProcessService(unittest.TestCase):
         self.tm1.processes.update_or_create(self.p_ascii)
         self.tm1.processes.update_or_create(self.p_view)
         self.tm1.processes.update_or_create(self.p_odbc)
+        self.tm1.processes.update_or_create(self.p_json)
         self.tm1.processes.update_or_create(self.p_subset)
         self.tm1.processes.update_or_create(self.p_debug)
         self.tm1.processes.update_or_create(self.p_error)
@@ -110,6 +122,7 @@ class TestProcessService(unittest.TestCase):
         self.tm1.processes.delete(self.p_ascii.name)
         self.tm1.processes.delete(self.p_view.name)
         self.tm1.processes.delete(self.p_odbc.name)
+        self.tm1.processes.delete(self.p_json.name)
         self.tm1.processes.delete(self.p_subset.name)
         self.tm1.processes.delete(self.p_debug.name)
         self.tm1.processes.delete(self.p_error.name)
@@ -391,6 +404,14 @@ class TestProcessService(unittest.TestCase):
         p_odbc_orig._ui_data = p._ui_data = None
 
         self.assertEqual(p.body, p_odbc_orig.body)
+
+    @skip_if_version_lower_than(version="12")
+    def test_get_process_json(self):
+        p_json_orig = copy.deepcopy(self.p_json)
+
+        p = self.tm1.processes.get(p_json_orig.name)
+        p._ui_data = p_json_orig._ui_data = None
+        self.assertEqual(p.body, p_json_orig.body)
 
     def test_update_process(self):
         # get
