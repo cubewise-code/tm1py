@@ -142,7 +142,7 @@ class RestService:
         self._pa_url = kwargs.get('pa_url', None)
         self._cpd_url = kwargs.get('cpd_url', None)
         self._tenant = kwargs.get('tenant', None)
-        self._user = kwargs.get('user', None)
+        self._user = kwargs.get('user', kwargs.get('username', None))
 
         # other arguments
         self._auth_mode = self._determine_auth_mode()
