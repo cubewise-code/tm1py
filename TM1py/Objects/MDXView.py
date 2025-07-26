@@ -104,7 +104,9 @@ class MDXView(View):
     def from_dict(cls, view_as_dict: Dict, cube_name: str = None) -> 'MDXView':
         return cls(cube_name=view_as_dict['Cube']['Name'] if not cube_name else cube_name,
                    view_name=view_as_dict['Name'],
-                   MDX=view_as_dict['MDX'])
+                   MDX=view_as_dict['MDX'],
+                   Meta=view_as_dict.get('Meta', {})
+                   )
 
     def construct_body(self) -> str:
         mdx_view_as_dict = collections.OrderedDict()
