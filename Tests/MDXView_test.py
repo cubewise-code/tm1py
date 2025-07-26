@@ -1,6 +1,9 @@
 import unittest
 
 from TM1py import MDXView
+from unittest.mock import Mock, patch 
+from TM1py import ViewService
+import json 
 
 
 class TestMDXView(unittest.TestCase):
@@ -13,6 +16,8 @@ class TestMDXView(unittest.TestCase):
     FROM [c1]
     WHERE ([d3].[d3].[e1], [d4].[e1], [d5].[h1].[e1])
     """
+    
+    rest_response = '''{"@odata.context":"../$metadata#Cubes(\'Cube\')/Views/ibm.tm1.api.v1.MDXView(Cube,LocalizedAttributes)/$entity","@odata.type":"#ibm.tm1.api.v1.MDXView","Name":"MDX View","Attributes":{"Caption":"MDX View"},"MDX":"SELECT {[Dim B].[Dim B].Members} PROPERTIES [Dim B].[Dim B].[Description B]  ON COLUMNS , {[Dim A].[Dim A].Members} PROPERTIES [Dim A].[Dim A].[Description]  ON ROWS FROM [Cube] ","Cube":{"Name":"Cube","Rules":null,"DrillthroughRules":null,"LastSchemaUpdate":"2025-07-26T10:53:18.870Z","LastDataUpdate":"2025-07-26T10:53:18.870Z","Attributes":{"Caption":"Cube"}},"LocalizedAttributes":[],"FormatString":"0.#########"\n,"Meta":{"Aliases":{"[Dim A].[Dim A]":"Description","[Dim B].[Dim B]":"Description B"},"ContextSets":{},"ExpandAboves":{}}\n}'''
 
     def setUp(self) -> None:
         self.view = MDXView(
@@ -68,3 +73,20 @@ class TestMDXView(unittest.TestCase):
         with self.assertRaises(ValueError) as error:
             self.view.substitute_title(dimension="d6", hierarchy="d6", element="e2")
             print(error)
+
+    @patch('TM1py.Services.RestService.RestService')
+    def test_get_with_retrieving_meta_from_response(self, mock_rest):
+        mock_response_dict = json.loads(self.rest_response)
+        mock_response = Mock()
+        mock_response.json.return_value = mock_response_dict
+        mock_rest.GET.return_value = mock_response
+        
+        service = ViewService(mock_rest)
+        view = service.get('Cube', 'MDX View', private=False)
+        self.assertIsInstance(view, MDXView)
+        self.assertDictEqual(view.aliases, {"Dim A": "Description", "Dim B": "Description B"})
+    
+    def test_from_json_with_Meta_key(self):
+        view = MDXView.from_json(view_as_json=self.rest_response, cube_name='Cube')
+        self.assertIsInstance(view, MDXView)
+        self.assertDictEqual(view.aliases, {"Dim A": "Description", "Dim B": "Description B"})
