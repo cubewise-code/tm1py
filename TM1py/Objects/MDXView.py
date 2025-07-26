@@ -15,13 +15,39 @@ class MDXView(View):
         IMPORTANT. MDXViews can't be seen through the old TM1 clients (Archict, Perspectives). They do exist though!
     """
 
-    def __init__(self, cube_name: str, view_name: str, MDX: str):
+    def __init__(self, cube_name: str, view_name: str, MDX: str, Meta: dict = {}):
         View.__init__(self, cube_name, view_name)
         self._mdx = MDX
+        self._aliases = Meta.get('Aliases', {})
 
     @property
     def mdx(self):
         return self._mdx
+    
+    @property
+    def aliases(self) -> dict[str, str]:
+        """ Returns a dictionary with aliases for dimensions in the MDX view 
+        self._aliases =  {
+            '[Account].[Account]': 'Description',
+            '[Cost Center].[Cost Center]': 'Full Name',
+        }
+        return: 
+            {
+                'Account': 'Description',
+                'Cost Center': 'Full Name'
+            }
+        """
+        dimension_hierarchy_pattern = re.compile(r'\[(?P<dimension>[^\]]+)\]\.\[(?P<hierarchy>[^\]]+)\]')
+        alias_pool = {}
+        for dimension_hierarchy_tuple, alias in self._aliases.items():
+            pattern_matches = dimension_hierarchy_pattern.search(dimension_hierarchy_tuple)
+            if not pattern_matches:
+                continue 
+            dimension = pattern_matches.group('dimension')
+            hierarchy = pattern_matches.group('hierarchy')
+            alias_pool[dimension] = alias
+            
+        return alias_pool
 
     @mdx.setter
     def mdx(self, value: str):
