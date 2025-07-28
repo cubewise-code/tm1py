@@ -136,6 +136,53 @@ class TestHierarchyService(unittest.TestCase):
         h.update_element('No Year', 'String')
         self.tm1.dimensions.update(d)
 
+    def test__validate_hierarchy_sort_order_arguments_happy_case(self):
+        hierarchy_sort_order = {
+            'CompSortType': 'ByName',
+            'CompSortSense': 'Descending',
+            'ElSortType': 'ByLevel',
+            'ElSortSense': 'Ascending'
+        }
+        self.tm1.hierarchies._validate_hierarchy_sort_order_arguments(hierarchy_sort_order)
+
+    def test__validate_hierarchy_sort_order_arguments_wrong_case(self):
+        hierarchy_sort_order = {
+            'COMPSORTTYPE': 'BYNAME',
+            'CompSortSense': 'Descending',
+            'ElSortType': 'ByLevel',
+            'ElSortSense': 'Ascending'
+        }
+        self.tm1.hierarchies._validate_hierarchy_sort_order_arguments(hierarchy_sort_order)
+
+    def test__validate_hierarchy_sort_order_arguments_missing_key(self):
+        hierarchy_sort_order = {
+            'CompSortType': 'ByName',
+            'CompSortSense': 'Descending',
+            'ElSortType': 'ByLevel',
+        }
+        with self.assertRaises(ValueError):
+            self.tm1.hierarchies._validate_hierarchy_sort_order_arguments(hierarchy_sort_order)
+
+    def test__validate_hierarchy_sort_order_arguments_wrong_value(self):
+        hierarchy_sort_order = {
+            'CompSortType': 'ByName',
+            'CompSortSense': 'Descending',
+            'ElSortType': 'ByLevel',
+            'ElSortSense': 'WrongValue'
+        }
+        with self.assertRaises(ValueError):
+            self.tm1.hierarchies._validate_hierarchy_sort_order_arguments(hierarchy_sort_order)
+
+    def test__validate_hierarchy_sort_order_arguments_wrong_key(self):
+        hierarchy_sort_order = {
+            'CompSortType': 'ByName',
+            'CompSortSense': 'Descending',
+            'ElSortType': 'ByLevel',
+            'WrongKey': 'Ascending'
+        }
+        with self.assertRaises(ValueError):
+            self.tm1.hierarchies._validate_hierarchy_sort_order_arguments(hierarchy_sort_order)
+
     def test_get_hierarchy(self):
         h = self.tm1.dimensions.hierarchies.get(self.dimension_name, self.dimension_name)
         self.assertIn('Total Years', h.elements.keys())
@@ -1280,6 +1327,76 @@ class TestHierarchyService(unittest.TestCase):
         self.assertNotIn(("North Europe", "Switzerland"), hierarchy.edges)
         self.assertNotIn(("South Europe", "Spain"), hierarchy.edges)
         self.assertNotIn(("South Europe", "France"), hierarchy.edges)
+
+    def test_update_or_create_hierarchy_from_dataframe_with_hierarchy_sort_order_ascending(self):
+        columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n", "level001",
+                   "level000", "level001_weight", "level000_weight"]
+        data = [
+            ['France', "Numeric", "Frankreich", "EUR", 60_000_000, "Europe", "World", 1, 1],
+            ['Switzerland', 'Numeric', "Schweiz", "CHF", 9_000_000, "Europe", "World", 1, 1],
+            ['Germany', 'Numeric', "Deutschland", "EUR", 84_000_000, "Europe", "World", 1, 1],
+        ]
+        df = DataFrame(data=data, columns=columns)
+
+        self.tm1.hierarchies.update_or_create_hierarchy_from_dataframe(
+            dimension_name=self.region_dimension_name,
+            hierarchy_name=self.region_dimension_name,
+            df=df,
+            element_column=self.region_dimension_name,
+            element_type_column="ElementType",
+            unwind_all=True,
+            hierarchy_sort_order={
+                "CompSortType": "ByName",
+                "CompSortSense": "Ascending",
+                "ElSortType": "ByName",
+                "ElSortSense": "Ascending"
+            })
+
+        hierarchy = self.tm1.hierarchies.get(
+            dimension_name=self.region_dimension_name,
+            hierarchy_name=self.region_dimension_name)
+        self._verify_region_dimension(hierarchy)
+
+        expected_element_order = ["Europe", "France", "Germany", "Switzerland", "World"]
+        self.assertEqual(
+            expected_element_order,
+            [element for element in hierarchy.elements]
+        )
+
+    def test_update_or_create_hierarchy_from_dataframe_with_hierarchy_sort_order_descending(self):
+        columns = [self.region_dimension_name, "ElementType", "Alias:a", "Currency:s", "population:n", "level001",
+                   "level000", "level001_weight", "level000_weight"]
+        data = [
+            ['France', "Numeric", "Frankreich", "EUR", 60_000_000, "Europe", "World", 1, 1],
+            ['Switzerland', 'Numeric', "Schweiz", "CHF", 9_000_000, "Europe", "World", 1, 1],
+            ['Germany', 'Numeric', "Deutschland", "EUR", 84_000_000, "Europe", "World", 1, 1],
+        ]
+        df = DataFrame(data=data, columns=columns)
+
+        self.tm1.hierarchies.update_or_create_hierarchy_from_dataframe(
+            dimension_name=self.region_dimension_name,
+            hierarchy_name=self.region_dimension_name,
+            df=df,
+            element_column=self.region_dimension_name,
+            element_type_column="ElementType",
+            unwind_all=True,
+            hierarchy_sort_order={
+                "CompSortType": "ByName",
+                "CompSortSense": "Descending",
+                "ElSortType": "ByName",
+                "ElSortSense": "Descending"
+            })
+
+        hierarchy = self.tm1.hierarchies.get(
+            dimension_name=self.region_dimension_name,
+            hierarchy_name=self.region_dimension_name)
+        self._verify_region_dimension(hierarchy)
+
+        expected_element_order = ["World", "Switzerland", "Germany", "France", "Europe"]
+        self.assertEqual(
+            expected_element_order,
+            [element for element in hierarchy.elements]
+        )
 
 
 if __name__ == '__main__':
