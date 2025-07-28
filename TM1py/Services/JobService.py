@@ -41,7 +41,7 @@ class JobService(ObjectService):
 
     @require_version(version="12.0.0")
     def cancel_all(self, **kwargs):
-        jobs = self.get()
+        jobs = self.get_all()
         canceled_jobs = list()
         for job in jobs:
             self.cancel(job["ID"])
@@ -54,7 +54,7 @@ class JobService(ObjectService):
         """ Gets jobs and returns them as a dataframe
 
         """
-        jobs = self.get()
+        jobs = self.get_all()
         df = pd.DataFrame.from_records(jobs)
         return df
 
