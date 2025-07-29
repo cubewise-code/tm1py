@@ -18,6 +18,7 @@ from requests import Timeout, Response, ConnectionError, Session
 from requests.adapters import HTTPAdapter
 from requests.auth import HTTPBasicAuth
 from urllib3._collections import HTTPHeaderDict
+import socket
 
 # SSO not supported for Linux
 from TM1py.Exceptions.Exceptions import TM1pyTimeout, TM1pyVersionDeprecationException
@@ -76,6 +77,7 @@ class RestService:
     }
 
     DEFAULT_CONNECTION_POOL_SIZE = 10
+    DEFAULT_POOL_CONNECTIONS = 1
 
     def __init__(self, **kwargs):
         """ Create an instance of RESTService
@@ -106,8 +108,9 @@ class RestService:
         :param timeout: Float - Number of seconds that the client will wait to receive the first byte.
         :param cancel_at_timeout: Abort operation in TM1 when timeout is reached
         :param async_requests_mode: changes internal REST execution mode to avoid 60s timeout on IBM cloud
-        :param connection_pool_size - In a multi threaded environment, you should set this value to a
-                higher number, such as the number of threads
+        :param connection_pool_size - Maximum number of connections to save in the pool (default: 10).
+                In a multi threaded environment, you should set this value to a higher number, such as the number of threads
+        :param pool_connections: Number of connection pools to cache (default: 1 for a single TM1 instance)
         :param integrated_login: True for IntegratedSecurityMode3
         :param integrated_login_domain: NT Domain name.
                 Default: '.' for local account.
@@ -119,6 +122,7 @@ class RestService:
                 Default: False
         :param impersonate: Name of user to impersonate
         :param re_connect_on_session_timeout: attempt to reconnect once if session is timed out
+        :param re_connect_on_remote_disconnect: attempt to reconnect once if connection is aborted by remote end
         :param proxies: pass a dictionary with proxies e.g.
                 {'http': 'http://proxy.example.com:8080', 'https': 'http://secureproxy.example.com:8090'}
         """
@@ -146,7 +150,9 @@ class RestService:
         self._cancel_at_timeout = kwargs.get('cancel_at_timeout', False)
         self._async_requests_mode = self.translate_to_boolean(kwargs.get('async_requests_mode', False))
         self._connection_pool_size = kwargs.get('connection_pool_size', self.DEFAULT_CONNECTION_POOL_SIZE)
+        self._pool_connections = kwargs.get('pool_connections', self.DEFAULT_POOL_CONNECTIONS)
         self._re_connect_on_session_timeout = kwargs.get('re_connect_on_session_timeout', True)
+        self._re_connect_on_remote_disconnect = kwargs.get('re_connect_on_remote_disconnect', True)
         # is retrieved on demand and then cached
         self._sandboxing_disabled = None
         # optional verbose logging to stdout
@@ -242,8 +248,11 @@ class RestService:
             return_async_id=False,
             timeout: float = None,
             cancel_at_timeout: bool = False,
+            idempotent: bool = False,
             **kwargs):
-
+        """
+        Execute a request to TM1 REST API
+        """
         url, data = self._url_and_body(
             url=url,
             data=data,
@@ -252,66 +261,24 @@ class RestService:
         timeout = timeout if timeout else self._timeout
 
         try:
+            # Determine async mode
             if return_async_id:
                 async_requests_mode = True
-            # determine async_requests_mode
             elif async_requests_mode is None:
                 async_requests_mode = self._async_requests_mode
 
+            # Execute request based on mode
             if not async_requests_mode:
-                response = self._s.request(method=method, url=url, data=data, verify=self._verify, timeout=timeout,
-                                           **kwargs)
-                if self._re_connect_on_session_timeout and response.status_code == 401:
-                    self.connect()
-                    response = self._s.request(method=method, url=url, data=data, verify=self._verify, timeout=timeout,
-                                               **kwargs)
-
+                response = self._execute_sync_request(
+                    method=method, url=url, data=data, timeout=timeout, **kwargs)
             else:
-                additional_header = {'Prefer': f'respond-async'}
-                http_headers = kwargs.get('headers', dict())
-                http_headers.update(additional_header)
-                kwargs['headers'] = http_headers
-                response = self._s.request(method=method, url=url, data=data, verify=self._verify, timeout=timeout,
-                                           **kwargs)
+                response = self._execute_async_request(
+                    method=method, url=url, data=data, timeout=timeout,
+                    cancel_at_timeout=cancel_at_timeout, return_async_id=return_async_id, **kwargs)
 
-                # reconnect in case of session timeout
-                if self._re_connect_on_session_timeout and response.status_code == 401:
-                    self.connect()
-                    response = self._s.request(method=method, url=url, data=data, verify=self._verify, timeout=timeout,
-                                               **kwargs)
-                self.verify_response(response=response)
-
-                if 'Location' not in response.headers or "'" not in response.headers['Location']:
-                    raise ValueError(f"Failed to retrieve async_id from request {method} '{url}'")
-                async_id = response.headers.get('Location').split("'")[1]
-                if return_async_id:
-                    return async_id
-
-                for wait in RestService.wait_time_generator(timeout):
-                    response = self.retrieve_async_response(async_id)
-                    if response.status_code in [200, 201]:
-                        break
-                    time.sleep(wait)
-
-                # all wait times consumed and still no 200
-                if response.status_code not in [200, 201]:
-                    if cancel_at_timeout or (cancel_at_timeout is None and self._cancel_at_timeout):
-                        self.cancel_async_operation(async_id)
-                    raise TM1pyTimeout(method=method, url=url, timeout=timeout)
-
-                # response transformation necessary in TM1 < v11. Not required for v12
-                if response.content.startswith(b"HTTP/"):
-                    response = self.build_response_from_binary_response(response.content)
-                else:
-                    # In v12 status_code must be set explicitly, as it is 200 by default
-                    response.status_code = int(response.headers['asyncresult'])
-
-            # verify
+            # Verify and encode response
             self.verify_response(response=response)
-
-            # response encoding
             response.encoding = encoding
-
             return response
 
         except Timeout:
@@ -320,14 +287,151 @@ class RestService:
             raise TM1pyTimeout(method=method, url=url, timeout=timeout)
 
         except ConnectionError as e:
-            # cater for issue in requests library: https://github.com/psf/requests/issues/5430
+            # Handle read timeout issue in requests library
             if re.search('Read timed out', str(e), re.IGNORECASE):
                 if cancel_at_timeout or (cancel_at_timeout is None and self._cancel_at_timeout):
                     self.cancel_running_operation()
                 raise TM1pyTimeout(method=method, url=url, timeout=timeout)
 
-            # A connection error that requires attention (e.g. SSL)
+            # Handle RemoteDisconnected errors
+            elif re.search('RemoteDisconnected|Connection aborted', str(e), re.IGNORECASE):
+                if self._re_connect_on_remote_disconnect:
+                    return self._handle_remote_disconnect(
+                        e, method, url, data, timeout, idempotent, async_requests_mode,
+                        cancel_at_timeout, return_async_id, encoding, **kwargs)
+                else:
+                    raise e
+
+            # Other connection errors
             raise e
+
+    def _execute_sync_request(self, method: str, url: str, data: str, timeout: float, **kwargs):
+        """
+        Execute a synchronous request with session timeout handling
+        """
+        response = self._s.request(
+            method=method, url=url, data=data, verify=self._verify, timeout=timeout, **kwargs)
+        
+        # Handle session timeout
+        if self._re_connect_on_session_timeout and response.status_code == 401:
+            self.connect()
+            response = self._s.request(
+                method=method, url=url, data=data, verify=self._verify, timeout=timeout, **kwargs)
+        
+        return response
+
+    def _execute_async_request(self, method: str, url: str, data: str, timeout: float,
+                              cancel_at_timeout: bool, return_async_id: bool, **kwargs):
+        """
+        Execute an asynchronous request with response polling
+        """
+        # Add async header
+        http_headers = kwargs.get('headers', dict())
+        http_headers.update({'Prefer': 'respond-async'})
+        kwargs['headers'] = http_headers
+        
+        # Make initial request
+        response = self._s.request(
+            method=method, url=url, data=data, verify=self._verify, timeout=timeout, **kwargs)
+        
+        # Handle session timeout
+        if self._re_connect_on_session_timeout and response.status_code == 401:
+            self.connect()
+            response = self._s.request(
+                method=method, url=url, data=data, verify=self._verify, timeout=timeout, **kwargs)
+        
+        self.verify_response(response=response)
+        
+        # Handle async response
+        if 'Location' in response.headers and "'" in response.headers.get('Location', ''):
+            async_id = response.headers.get('Location').split("'")[1]
+            if return_async_id:
+                return async_id
+            
+            # Poll for async result
+            response = self._poll_async_response(
+                async_id, timeout, cancel_at_timeout, method, url)
+            
+            # Transform response if needed
+            response = self._transform_async_response(response)
+        
+        return response
+
+    def _poll_async_response(self, async_id: str, timeout: float, cancel_at_timeout: bool,
+                            method: str, url: str):
+        """
+        Poll for async operation completion
+        """
+        for wait in RestService.wait_time_generator(timeout):
+            response = self.retrieve_async_response(async_id)
+            if response.status_code in [200, 201]:
+                return response
+            time.sleep(wait)
+        
+        # Timeout reached
+        if cancel_at_timeout or (cancel_at_timeout is None and self._cancel_at_timeout):
+            self.cancel_async_operation(async_id)
+        raise TM1pyTimeout(method=method, url=url, timeout=timeout)
+
+    def _transform_async_response(self, response):
+        """
+        Transform async response for TM1 version compatibility
+        """
+        # Response transformation necessary in TM1 < v11
+        if response.content.startswith(b"HTTP/"):
+            return self.build_response_from_binary_response(response.content)
+        else:
+            # In v12 status_code must be set explicitly
+            if 'asyncresult' in response.headers:
+                async_result = response.headers['asyncresult']
+                response.status_code = int(async_result.split()[0])
+        
+        return response
+
+    def _handle_remote_disconnect(self, original_error, method: str, url: str, data: str,
+                                timeout: float, idempotent: bool, async_requests_mode: bool,
+                                cancel_at_timeout: bool, return_async_id: bool, 
+                                encoding: str, **kwargs):
+        """
+        Handle remote disconnect errors with reconnection and retry logic
+        """
+        warnings.warn(f"Connection aborted due to remote disconnect. Attempting to reconnect: {original_error}")
+        
+        try:
+            # Reconnect
+            self._manage_http_adapter()
+            self.connect()
+            
+            # Only retry if idempotent
+            if not idempotent:
+                warnings.warn(f"Successfully reconnected but not retrying {method.upper()} request (idempotent={idempotent})")
+                raise original_error
+            
+            warnings.warn(f"Successfully reconnected. Retrying {method.upper()} request...")
+            
+            # Retry the request using the same execution path
+            if not async_requests_mode:
+                response = self._execute_sync_request(
+                    method=method, url=url, data=data, timeout=timeout, **kwargs)
+            else:
+                response = self._execute_async_request(
+                    method=method, url=url, data=data, timeout=timeout,
+                    cancel_at_timeout=cancel_at_timeout, return_async_id=return_async_id, **kwargs)
+            
+            # Verify and encode response
+            self.verify_response(response=response)
+            response.encoding = encoding
+            return response
+            
+        except TM1pyTimeout:
+            # Re-raise timeout exceptions as-is
+            raise
+        except TM1pyRestException:
+            # Re-raise TM1 exceptions as-is
+            raise
+        except Exception as retry_error:
+            warnings.warn(f"Failed to reconnect or retry after remote disconnect: {retry_error}")
+            raise original_error
 
     def connect(self):
         if "session_id" in self._kwargs:
@@ -459,8 +563,14 @@ class RestService:
 
     def _manage_http_adapter(self):
         adapter = HTTPAdapterWithSocketOptions(
-            pool_connections=int(self._connection_pool_size or self.DEFAULT_CONNECTION_POOL_SIZE),
-            pool_maxsize=int(self._connection_pool_size))
+            pool_connections=self._pool_connections,
+            pool_maxsize=self._connection_pool_size,
+            socket_options=[
+                (socket.SOL_TCP, socket.TCP_NODELAY, 1),
+                (socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
+                (socket.SOL_SOCKET, socket.SO_REUSEADDR, 1),
+            ]
+        )
 
         self._s.mount(self._base_url, adapter)
 
@@ -483,6 +593,7 @@ class RestService:
             timeout: float = None,
             cancel_at_timeout: bool = False,
             encoding: str = 'utf-8',
+            idempotent: bool = True,
             **kwargs):
         """ Perform a GET request against TM1 instance
         :param url:
@@ -505,7 +616,8 @@ class RestService:
             return_async_id=return_async_id,
             timeout=timeout if timeout else self._timeout,
             cancel_at_timeout=cancel_at_timeout,
-            encoding=encoding
+            encoding=encoding,
+            idempotent=idempotent
         )
 
     def POST(
@@ -518,8 +630,9 @@ class RestService:
             timeout: float = None,
             cancel_at_timeout: bool = False,
             encoding: str = 'utf-8',
+            idempotent: bool = False,
             **kwargs):
-        """ Perform a GET request against TM1 instance
+        """ Perform a POST request against TM1 instance
         :param url:
         :param data: the payload
         :param headers: custom headers
@@ -540,7 +653,8 @@ class RestService:
             return_async_id=return_async_id,
             timeout=timeout if timeout else self._timeout,
             cancel_at_timeout=cancel_at_timeout,
-            encoding=encoding
+            encoding=encoding,
+            idempotent=idempotent
         )
 
         return response
@@ -555,8 +669,9 @@ class RestService:
             timeout: float = None,
             cancel_at_timeout: bool = False,
             encoding: str = 'utf-8',
+            idempotent: bool = False,
             **kwargs):
-        """ Perform a GET request against TM1 instance
+        """ Perform a PATCH request against TM1 instance
         :param url:
         :param data: the payload
         :param headers: custom headers
@@ -577,7 +692,8 @@ class RestService:
             return_async_id=return_async_id,
             timeout=timeout if timeout else self._timeout,
             cancel_at_timeout=cancel_at_timeout,
-            encoding=encoding
+            encoding=encoding,
+            idempotent=idempotent
         )
 
     def PUT(
@@ -590,8 +706,9 @@ class RestService:
             timeout: float = None,
             cancel_at_timeout: bool = False,
             encoding: str = 'utf-8',
+            idempotent: bool = False,
             **kwargs):
-        """ Perform a GET request against TM1 instance
+        """ Perform a PUT request against TM1 instance
         :param url:
         :param data: the payload
         :param headers: custom headers
@@ -612,7 +729,8 @@ class RestService:
             return_async_id=return_async_id,
             timeout=timeout if timeout else self._timeout,
             cancel_at_timeout=cancel_at_timeout,
-            encoding=encoding
+            encoding=encoding,
+            idempotent=idempotent
         )
 
     def DELETE(
@@ -625,8 +743,9 @@ class RestService:
             timeout: float = None,
             cancel_at_timeout: bool = False,
             encoding: str = 'utf-8',
+            idempotent: bool = False,
             **kwargs):
-        """ Perform a GET request against TM1 instance
+        """ Perform a DELETE request against TM1 instance
         :param url:
         :param data: the payload
         :param headers: custom headers
@@ -647,7 +766,8 @@ class RestService:
             return_async_id=return_async_id,
             timeout=timeout if timeout else self._timeout,
             cancel_at_timeout=cancel_at_timeout,
-            encoding=encoding
+            encoding=encoding,
+            idempotent=idempotent
         )
 
     def logout(self, timeout: float = None, **kwargs):
@@ -969,12 +1089,14 @@ class RestService:
         return original_header
 
     def retrieve_async_response(self, async_id: str, **kwargs) -> Response:
-        url = self._base_url + f"/_async('{async_id}')"
-        return self._s.get(url, verify=self._verify, **kwargs)
+        url = f"/_async('{async_id}')"
+        # Use GET method which includes reconnect logic, but force sync mode
+        return self.GET(url, async_requests_mode=False, **kwargs)
 
     def cancel_async_operation(self, async_id: str, **kwargs):
-        url = self._base_url + f"/_async('{async_id}')"
-        response = self._s.delete(url, verify=self._verify, **kwargs)
+        url = f"/_async('{async_id}')"
+        # Use DELETE method which includes reconnect logic, but force sync mode
+        response = self.DELETE(url, async_requests_mode=False, **kwargs)
         self.verify_response(response)
 
     def cancel_running_operation(self):

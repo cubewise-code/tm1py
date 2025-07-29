@@ -45,8 +45,9 @@ class TM1Service:
         :param timeout: Float - Number of seconds that the client will wait to receive the first byte.
         :param cancel_at_timeout: Abort operation in TM1 when timeout is reached
         :param async_requests_mode: changes internal REST execution mode to avoid 60s timeout on IBM cloud
-        :param connection_pool_size - In a multi threaded environment, you should set this value to a
-                higher number, such as the number of threads
+        :param connection_pool_size - Maximum number of connections to save in the pool (default: 10).
+                In a multi threaded environment, you should set this value to a higher number, such as the number of threads
+        :param pool_connections: Number of connection pools to cache (default: 1 for a single TM1 instance)
         :param integrated_login: True for IntegratedSecurityMode3
         :param integrated_login_domain: NT Domain name.
                 Default: '.' for local account.
@@ -58,6 +59,7 @@ class TM1Service:
                 Default: False
         :param impersonate: Name of user to impersonate
         :param re_connect_on_session_timeout: attempt to reconnect once if session is timed out
+        :param re_connect_on_remote_disconnect: attempt to reconnect once if connection is aborted by remote end
         :param proxies: pass a dictionary with proxies e.g.
                 {'http': 'http://proxy.example.com:8080', 'https': 'http://secureproxy.example.com:8090'}
         """
