@@ -38,6 +38,24 @@ def decohints(decorator: Callable) -> Callable:
     return decorator
 
 
+def reorder_with_priority(original_items: List[Any], priority_items: List[Any] = [], exclude_items: List[Any] = [], unsorted_non_prio_items: bool = True) -> List[Any]:
+    """
+    Reorder a list of original items so that items in 'priority_items' list appear first (in specified order),
+    followed by the remaining items of original items (in specified order or sorted alphabetically), 
+    unless they are part of the exclude_items list. Missing priority items and exclude items are ignored.
+
+    Example case: hierarchy names
+    "correct" order: first the main hierarchy name (matching the dimension name), 
+    then the Leaves hierarchy, then the other hierarchy names.
+    But when trying to create the Leaves hierarchy when it already exists (because of creating a different alternate hierarchy),
+    an error pops up. So exclude_items could be ['Leaves'].
+    """
+    result = [s for s in priority_items if s in original_items]
+    remaining = [s for s in original_items if (s not in result) and (s not in exclude_items)]
+    result += remaining if unsorted_non_prio_items else sorted(remaining)
+    return result
+
+
 @decohints
 def odata_track_changes_header(func):
     """ Higher Order function to handle addition and removal of odata.track-changes HTTP Header
