@@ -137,49 +137,39 @@ class TestHierarchyService(unittest.TestCase):
         self.tm1.dimensions.update(d)
 
     def test__validate_hierarchy_sort_order_arguments_happy_case(self):
-        hierarchy_sort_order = {
-            'CompSortType': 'ByName',
-            'CompSortSense': 'Descending',
-            'ElSortType': 'ByLevel',
-            'ElSortSense': 'Ascending'
-        }
+        hierarchy_sort_order = (
+            'ByName',
+            'Descending',
+            'ByLevel',
+            'Ascending'
+        )
         self.tm1.hierarchies._validate_hierarchy_sort_order_arguments(hierarchy_sort_order)
 
     def test__validate_hierarchy_sort_order_arguments_wrong_case(self):
-        hierarchy_sort_order = {
-            'COMPSORTTYPE': 'BYNAME',
-            'CompSortSense': 'Descending',
-            'ElSortType': 'ByLevel',
-            'ElSortSense': 'Ascending'
-        }
+        hierarchy_sort_order = (
+            'BYNAME',
+            'Descending',
+            'ByLevel',
+            'Ascending'
+        )
         self.tm1.hierarchies._validate_hierarchy_sort_order_arguments(hierarchy_sort_order)
 
-    def test__validate_hierarchy_sort_order_arguments_missing_key(self):
-        hierarchy_sort_order = {
-            'CompSortType': 'ByName',
-            'CompSortSense': 'Descending',
-            'ElSortType': 'ByLevel',
-        }
+    def test__validate_hierarchy_sort_order_arguments_missing_arg(self):
+        hierarchy_sort_order = (
+            'ByName',
+            'Descending',
+            'ByLevel',
+        )
         with self.assertRaises(ValueError):
             self.tm1.hierarchies._validate_hierarchy_sort_order_arguments(hierarchy_sort_order)
 
     def test__validate_hierarchy_sort_order_arguments_wrong_value(self):
-        hierarchy_sort_order = {
-            'CompSortType': 'ByName',
-            'CompSortSense': 'Descending',
-            'ElSortType': 'ByLevel',
-            'ElSortSense': 'WrongValue'
-        }
-        with self.assertRaises(ValueError):
-            self.tm1.hierarchies._validate_hierarchy_sort_order_arguments(hierarchy_sort_order)
-
-    def test__validate_hierarchy_sort_order_arguments_wrong_key(self):
-        hierarchy_sort_order = {
-            'CompSortType': 'ByName',
-            'CompSortSense': 'Descending',
-            'ElSortType': 'ByLevel',
-            'WrongKey': 'Ascending'
-        }
+        hierarchy_sort_order = (
+            'ByName',
+            'Descending',
+            'ByLevel',
+            'WrongValue'
+        )
         with self.assertRaises(ValueError):
             self.tm1.hierarchies._validate_hierarchy_sort_order_arguments(hierarchy_sort_order)
 
@@ -1345,12 +1335,12 @@ class TestHierarchyService(unittest.TestCase):
             element_column=self.region_dimension_name,
             element_type_column="ElementType",
             unwind_all=True,
-            hierarchy_sort_order={
-                "CompSortType": "ByName",
-                "CompSortSense": "Ascending",
-                "ElSortType": "ByName",
-                "ElSortSense": "Ascending"
-            })
+            hierarchy_sort_order=(
+                "ByName",
+                "Ascending",
+                "ByName",
+                "Ascending",
+            ))
 
         hierarchy = self.tm1.hierarchies.get(
             dimension_name=self.region_dimension_name,
@@ -1380,12 +1370,12 @@ class TestHierarchyService(unittest.TestCase):
             element_column=self.region_dimension_name,
             element_type_column="ElementType",
             unwind_all=True,
-            hierarchy_sort_order={
-                "CompSortType": "ByName",
-                "CompSortSense": "Descending",
-                "ElSortType": "ByName",
-                "ElSortSense": "Descending"
-            })
+            hierarchy_sort_order=(
+                "ByName",
+                "Descending",
+                "ByName",
+                "Descending",
+            ))
 
         hierarchy = self.tm1.hierarchies.get(
             dimension_name=self.region_dimension_name,
@@ -1397,6 +1387,68 @@ class TestHierarchyService(unittest.TestCase):
             expected_element_order,
             [element for element in hierarchy.elements]
         )
+
+    def test__implement_hierarchy_sort_order_ascending(self):
+        self.tm1.hierarchies._implement_hierarchy_sort_order(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.dimension_name,
+            hierarchy_sort_order=(
+                "ByName",
+                "Ascending",
+                "ByName",
+                "Ascending",
+            ))
+        hierarchy = self.tm1.hierarchies.get(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.dimension_name)
+
+        self.assertEqual(
+            ['1989', 'My Element', 'No Year', 'Total Years'],
+            [elem for elem in hierarchy.elements]
+        )
+
+    def test__implement_hierarchy_sort_order_descending(self):
+        self.tm1.hierarchies._implement_hierarchy_sort_order(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.dimension_name,
+            hierarchy_sort_order=(
+                "ByName",
+                "Descending",
+                "ByName",
+                "Descending",
+            ))
+        hierarchy = self.tm1.hierarchies.get(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.dimension_name)
+
+        self.assertEqual(
+            ['Total Years', 'No Year', 'My Element', '1989', ],
+            [elem for elem in hierarchy.elements]
+        )
+
+    def test__implement_hierarchy_sort_order_wrong_dimension(self):
+        with self.assertRaises(RuntimeError):
+            self.tm1.hierarchies._implement_hierarchy_sort_order(
+                dimension_name="Not Existing Dimension",
+                hierarchy_name="Not Existing Hierarchy",
+                hierarchy_sort_order=(
+                    "ByName",
+                    "Descending",
+                    "ByName",
+                    "Descending",
+                ))
+
+    def test__implement_hierarchy_sort_order_wrong_sort_type(self):
+        with self.assertRaises(ValueError):
+            self.tm1.hierarchies._implement_hierarchy_sort_order(
+                dimension_name="Not Existing Dimension",
+                hierarchy_name="Not Existing Hierarchy",
+                hierarchy_sort_order=(
+                    "Invalid Sort Type",
+                    "Descending",
+                    "ByName",
+                    "Descending",
+                ))
 
 
 if __name__ == '__main__':

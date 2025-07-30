@@ -38,20 +38,23 @@ class HierarchyService(ObjectService):
     # Tuple with TM1 Versions where Edges need to be created through TI, due to bug:
     # https://www.ibm.com/developerworks/community/forums/html/topic?id=75f2b99e-6961-4c71-9364-1d5e1e083eff
     EDGES_WORKAROUND_VERSIONS = ('11.0.002', '11.0.003', '11.1.000')
-    HIERARCHY_SORT_ORDER_ARGUMENTS = {
+
+    HIERARCHY_SORT_ORDER_ARGUMENTS = CaseAndSpaceInsensitiveDict({
         "CompSortType": CaseAndSpaceInsensitiveSet(["ByInput", "ByName"]),
         "CompSortSense": CaseAndSpaceInsensitiveSet(["Ascending", "Descending"]),
         "ElSortType": CaseAndSpaceInsensitiveSet(["ByInput", "ByName", "ByLevel", "ByHierarchy"]),
         "ElSortSense": CaseAndSpaceInsensitiveSet(["Ascending", "Descending"]),
-    }
+    })
 
     def __init__(self, rest: RestService):
         super().__init__(rest)
         self.subsets = SubsetService(rest)
         self.elements = ElementService(rest)
 
+
+    @staticmethod
     @require_networkx
-    def _validate_edges(self, df: 'pd.DataFrame'):
+    def _validate_edges(df: 'pd.DataFrame'):
         graph = nx.DiGraph()
         for _, *record in df.itertuples():
             child = record[0]
@@ -441,7 +444,7 @@ class HierarchyService(ObjectService):
             unwind_all: bool = False,
             unwind_consolidations: Iterable = None,
             update_attribute_types: bool = False,
-            hierarchy_sort_order: Dict = None,
+            hierarchy_sort_order: Tuple[str, str, str, str] = None,
             **kwargs):
         """ Update or Create a hierarchy based on a dataframe, while never deleting existing elements.
 
@@ -478,7 +481,7 @@ class HierarchyService(ObjectService):
             If True, function will delete and recreate attributes when a type change is requested.
             By default, function will not delete attributes.
         :param hierarchy_sort_order: Dict
-            Pass a dictionary with keys: `CompSortType`, `CompSortSense`, `ElSortType`, `ElSortSense` to control
+            Pass a Tuple with 4 values for: `CompSortType`, `CompSortSense`, `ElSortType`, `ElSortSense` to control
             sort order as in IBM docs:
             https://www.ibm.com/docs/en/planning-analytics/2.0.0?topic=hmtf-hierarchysortorder-1
         :return:
@@ -771,30 +774,25 @@ class HierarchyService(ObjectService):
         else:
             return ElementAttribute.Types(attribute_type)
 
-    def _validate_hierarchy_sort_order_arguments(
-            self,
-            hierarchy_sort_order: Optional[Dict]
-    ) -> Tuple[str, str, str, str]:
-        hierarchy_sort_order = CaseAndSpaceInsensitiveDict(**hierarchy_sort_order)
+    def _validate_hierarchy_sort_order_arguments(self,hierarchy_sort_order: Tuple[str, str, str, str]):
+        if not len(hierarchy_sort_order) == 4:
+            raise ValueError(
+                f"Argument 'hierarchy_sort_order' must be a tuple of 4 keys: "
+                f"'CompSortType', 'CompSortSense', 'ElSortType', 'ElSortSense'")
 
-        for expected_argument in self.HIERARCHY_SORT_ORDER_ARGUMENTS:
-            if expected_argument not in hierarchy_sort_order:
-                raise ValueError(f"Key '{expected_argument}' must be included in 'hierarchy_sort_order'")
-
-            value = hierarchy_sort_order.get(expected_argument)
-            valid_values = self.HIERARCHY_SORT_ORDER_ARGUMENTS.get(expected_argument)
-            if value not in valid_values:
+        for arg_name, arg_value in zip(self.HIERARCHY_SORT_ORDER_ARGUMENTS.keys(), hierarchy_sort_order):
+            valid_values = self.HIERARCHY_SORT_ORDER_ARGUMENTS.get(arg_name)
+            if arg_value not in valid_values:
                 raise ValueError(
-                    f"Value '{value}' for argument '{expected_argument}' is not among valid values: '{valid_values}'")
+                    f"Value '{arg_value}' for argument '{arg_name}' is not among valid values: '{valid_values}'")
 
-        return (
-            hierarchy_sort_order["CompSortType"],
-            hierarchy_sort_order["CompSortSense"],
-            hierarchy_sort_order["ElSortType"],
-            hierarchy_sort_order["ElSortSense"],
-        )
 
-    def _implement_hierarchy_sort_order(self, dimension_name: str, hierarchy_name: str, hierarchy_sort_order: Dict):
+    def _implement_hierarchy_sort_order(
+            self,
+            dimension_name: str,
+            hierarchy_name: str,
+            hierarchy_sort_order: Tuple[str, str, str, str]
+    ):
         if not hierarchy_sort_order:
             return
 
@@ -804,28 +802,27 @@ class HierarchyService(ObjectService):
         if not hierarchy_name:
             hierarchy_name = dimension_name
 
-        (
-            comp_sort_type,
-            comp_sort_sense,
-            el_sort_type,
-            el_sort_sense
-        ) = self._validate_hierarchy_sort_order_arguments(hierarchy_sort_order)
+        self._validate_hierarchy_sort_order_arguments(hierarchy_sort_order)
 
         code = (
             f"HierarchySortOrder("
-            f"'{dimension_name}', "
-            f"'{hierarchy_name}', "
-            f"'{comp_sort_type}', "
-            f"'{comp_sort_sense}',"
-            f"'{el_sort_type}', "
-            f"'{el_sort_sense}');"
+            f"'{dimension_name}',"
+            f"'{hierarchy_name}',"
+            f"'{hierarchy_sort_order[0]}',"
+            f"'{hierarchy_sort_order[1]}',"
+            f"'{hierarchy_sort_order[2]}',"
+            f"'{hierarchy_sort_order[3]}');"
         )
 
         process_service = self._get_process_service()
         process = Process(name=self.suggest_unique_object_name(), prolog_procedure=code)
         success, status, error_log_file = process_service.execute_process_with_return(process)
         if not success:
-            raise RuntimeError(f"Failed to implement hierarchy sort order: {code}")
+            message = f"Failed to implement hierarchy sort order: {code}"
+            error_log_file_content = process_service.get_error_log_file_content(error_log_file)
+            error_log_file_content = error_log_file_content.strip().strip('\ufeff')
+            message += f". {error_log_file_content}"
+            raise RuntimeError(message)
 
 
     def _get_process_service(self):
