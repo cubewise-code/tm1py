@@ -608,6 +608,18 @@ class TestUtilsMethods(unittest.TestCase):
             expected_mdx,
             drop_dimension_properties(mdx))
 
+    def test_reorder_with_priority(self):
+        original_items = ['Customer by Budget holder', 'Customer by Segment', 'Customer List', 'Leaves', 'Customer', 'Customer by Region']
+        priority_items = ['Customer', 'Customer List']
+        exclude_items = ['Leaves']
+        sort_remaining = True
+
+        expected_outcome = ['Customer', 'Customer List', 'Customer by Budget holder', 'Customer by Region', 'Customer by Segment']
+
+        self.assertEqual(
+            expected_outcome,
+            reorder_with_priority(original_items, priority_items, exclude_items, sort_remaining))
+    
     @classmethod
     def tearDownClass(cls):
         cls.tm1.logout()
