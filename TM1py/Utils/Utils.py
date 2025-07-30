@@ -153,10 +153,10 @@ def require_pandas(func):
 @decohints
 def require_networkx(func):
     @functools.wraps(func)
-    def wrapper(self, *args, **kwargs):
+    def wrapper(*args, **kwargs):
         try:
             import networkx
-            return func(self, *args, **kwargs)
+            return func(*args, **kwargs)
         except ImportError:
             raise ImportError(f"Function '{func.__name__}' requires networkx")
 
