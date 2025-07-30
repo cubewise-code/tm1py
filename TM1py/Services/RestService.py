@@ -285,6 +285,10 @@ class RestService:
                     method=method, url=url, data=data, timeout=timeout,
                     cancel_at_timeout=cancel_at_timeout, return_async_id=return_async_id, **kwargs)
 
+            # If async_id is returned as string, return it directly
+            if return_async_id and isinstance(response, str):
+                return response
+            
             # Verify and encode response
             self.verify_response(response=response)
             response.encoding = encoding
