@@ -911,8 +911,22 @@ class RestService:
         finally:
             # If the TM1 REST API is routed through a reverse proxy that alters the expected URL,
             # we explicitly re-set the 'TM1SessionId' cookie to maintain session continuity.
-            session_id = self._s.cookies.pop('TM1SessionId', None)
-            if session_id is not None:
+            session_id = None
+            for cookie in self._s.cookies:
+                if cookie.name == 'TM1SessionId':
+                    session_id = cookie.value
+                    # break  # Use the first match
+
+            # Clear all TM1SessionId cookies to prevent duplicates
+            cookies_to_remove = [
+                (cookie.domain, cookie.path)
+                for cookie in self._s.cookies
+                if cookie.name == 'TM1SessionId'
+            ]
+            for domain, path in cookies_to_remove:
+                self._s.cookies.clear(domain=domain, path=path, name='TM1SessionId')
+
+            if session_id:
                 self._s.cookies.set('TM1SessionId', session_id)
 
             # After we have session cookie, drop the Authorization Header

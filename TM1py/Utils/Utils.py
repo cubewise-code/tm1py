@@ -558,7 +558,7 @@ def build_dataframe_from_csv(raw_csv, sep='~', shaped: bool = False,
 
     # make sure all element names are strings and values column is derived from data
     if 'dtype' not in kwargs:
-        kwargs['dtype'] = {'Value': None, **{col: str for col in range(999)}}
+        kwargs['dtype'] = {'Value': str, **{col: str for col in range(999)}}
     try:
         df = pd.read_csv(StringIO(raw_csv), sep=sep, na_values={'Value': ['None']}, keep_default_na=False, **kwargs)
 
