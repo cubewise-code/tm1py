@@ -33,6 +33,7 @@ class TestElementService(unittest.TestCase):
 
         self.dimension_name = pure_dimension_name
         self.dimension_with_hierarchies_name = pure_dimension_name + '_with_hierarchies'
+        self.dimension_with_same_attribute_name = pure_dimension_name + '_attribute_same_name'
         self.hierarchy_name = pure_dimension_name
         self.attribute_cube_name = '}ElementAttributes_' + pure_dimension_name
         self.dimension_does_not_exist_name = pure_dimension_name + "_does_not_exist"
@@ -79,9 +80,15 @@ class TestElementService(unittest.TestCase):
 
         self.create_or_update_dimension_with_hierarchies()
 
+        d.name = self.dimension_with_same_attribute_name
+        h = d.get_hierarchy(d.name)
+        h.add_element_attribute(name=self.dimension_with_same_attribute_name, attribute_type="String")
+        self.tm1.dimensions.update_or_create(d)
+
     def tearDown(self):
         self.tm1.dimensions.delete(self.dimension_name)
         self.tm1.dimensions.delete(self.dimension_with_hierarchies_name)
+        self.tm1.dimensions.delete(self.dimension_with_same_attribute_name)
 
     def create_or_update_dimension_with_hierarchies(self):
         dimension = Dimension(self.dimension_with_hierarchies_name)
@@ -574,6 +581,39 @@ class TestElementService(unittest.TestCase):
             use_blob=use_blob)
 
         self.assertTrue(df.equals(reference_df))
+
+    @skip_if_no_pandas
+    def test_get_elements_dataframe_attribute_same_name(self):
+        self.run_test_get_elements_dataframe_attribute_same_name(False)
+
+    @skip_if_no_pandas
+    def test_get_elements_dataframe_attribute_same_name_use_blob(self):
+        self.run_test_get_elements_dataframe_attribute_same_name(True)
+
+    def run_test_get_elements_dataframe_attribute_same_name(self, use_blob: bool):
+        df = self.tm1.elements.get_elements_dataframe(
+            dimension_name=self.dimension_with_same_attribute_name,
+            hierarchy_name=self.dimension_with_same_attribute_name,
+            skip_consolidations=True,
+            attributes=None,
+            attribute_column_prefix="Attribute ",
+            skip_parents=True,
+            level_names=None,
+            parent_attribute=None,
+            skip_weights=False,
+            use_blob=use_blob)
+
+        expected_columns = (
+            self.dimension_with_same_attribute_name,
+            'Type',
+            'Attribute Previous Year',
+            'Attribute Next Year',
+            'Attribute Financial Year',
+            'Attribute ' + self.dimension_with_same_attribute_name
+            ,)
+
+        self.assertEqual((5, 6), df.shape)
+        self.assertEqual(expected_columns, tuple(df.columns))
 
     @skip_if_no_pandas
     def test_get_elements_dataframe_not_elements(self):
