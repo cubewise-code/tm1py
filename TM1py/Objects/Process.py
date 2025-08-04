@@ -61,7 +61,9 @@ class Process(TM1Object):
                  datasource_query: str = '',
                  datasource_uses_unicode: bool = True,
                  datasource_view: str = '',
-                 datasource_subset: str = ''):
+                 datasource_subset: str = '',
+                 datasource_json_root_pointer: str = '',
+                 datasource_json_variable_mapping: str = ''):
         """ Default construcor
 
         :param name: name of the process - mandatory
@@ -89,6 +91,8 @@ class Process(TM1Object):
         :param datasource_uses_unicode:
         :param datasource_view:
         :param datasource_subset:
+        :param datasource_json_root_pointer:
+        :param datasource_json_variable_mapping:
         """
         self._name = name
         self._has_security_access = has_security_access
@@ -119,6 +123,8 @@ class Process(TM1Object):
         self._datasource_uses_unicode = datasource_uses_unicode
         self._datasource_view = datasource_view
         self._datasource_subset = datasource_subset
+        self._datasource_json_root_pointer = datasource_json_root_pointer
+        self._datasource_json_variable_mapping = datasource_json_variable_mapping
 
     @classmethod
     def from_json(cls, process_as_json: str) -> 'Process':
@@ -161,11 +167,17 @@ class Process(TM1Object):
                    datasource_query=process_as_dict['DataSource'].get('query', ''),
                    datasource_uses_unicode=process_as_dict['DataSource'].get('usesUnicode', ''),
                    datasource_view=process_as_dict['DataSource'].get('view', ''),
-                   datasource_subset=process_as_dict['DataSource'].get('subset', ''))
+                   datasource_subset=process_as_dict['DataSource'].get('subset', ''),
+                   datasource_json_root_pointer=process_as_dict['DataSource'].get('jsonRootPointer', ''),
+                   datasource_json_variable_mapping=process_as_dict['DataSource'].get('jsonVariableMapping', ''))
 
     @property
     def body(self) -> str:
         return self._construct_body()
+
+    @property
+    def body_as_dict(self) -> str:
+        return self._construct_body_as_dict()
 
     @property
     def name(self) -> str:
@@ -222,11 +234,11 @@ class Process(TM1Object):
     @epilog_procedure.setter
     def epilog_procedure(self, value: str):
         self._epilog_procedure = Process.add_generated_string_to_code(value)
-    
+
     @property
     def all_procedures(self) -> str:
         return self._prolog_procedure + self._metadata_procedure + self._data_procedure + self._epilog_procedure
-    
+
     @property
     def datasource_type(self) -> str:
         return self._datasource_type
@@ -347,6 +359,22 @@ class Process(TM1Object):
     def datasource_subset(self, value: str):
         self._datasource_subset = value
 
+    @property
+    def datasource_json_root_pointer(self) -> str:
+        return self._datasource_json_root_pointer
+
+    @datasource_json_root_pointer.setter
+    def datasource_json_root_pointer(self, value: str):
+        self._datasource_json_root_pointer = value
+
+    @property
+    def datasource_json_variable_mapping(self) -> str:
+        return self._datasource_json_variable_mapping
+
+    @datasource_json_variable_mapping.setter
+    def datasource_json_variable_mapping(self, value: str):
+        self._datasource_json_variable_mapping = value
+
     def add_variable(self, name: str, variable_type: str):
         """ add variable to the process
 
@@ -411,6 +439,9 @@ class Process(TM1Object):
 
     # construct self.body (json) from the class-attributes
     def _construct_body(self) -> str:
+        return json.dumps(self._construct_body_as_dict(), ensure_ascii=False)
+
+    def _construct_body_as_dict(self) -> Dict:
         # general parameters
         body_as_dict = {
             'Name': self._name,
@@ -469,4 +500,12 @@ class Process(TM1Object):
                 "dataSourceNameForServer": self._datasource_data_source_name_for_server,
                 "subset": self._datasource_subset
             }
-        return json.dumps(body_as_dict, ensure_ascii=False)
+        elif self._datasource_type == 'JSON':
+            body_as_dict['DataSource'] = {
+                "Type": self._datasource_type,
+                "dataSourceNameForClient": self._datasource_data_source_name_for_server,
+                "dataSourceNameForServer": self._datasource_data_source_name_for_server,
+                "jsonRootPointer": self._datasource_json_root_pointer,
+                "jsonVariableMapping": self._datasource_json_variable_mapping,
+            }
+        return body_as_dict
