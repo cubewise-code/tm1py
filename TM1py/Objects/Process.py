@@ -236,6 +236,10 @@ class Process(TM1Object):
         self._epilog_procedure = Process.add_generated_string_to_code(value)
 
     @property
+    def all_procedures(self) -> str:
+        return self._prolog_procedure + self._metadata_procedure + self._data_procedure + self._epilog_procedure
+
+    @property
     def datasource_type(self) -> str:
         return self._datasource_type
 
