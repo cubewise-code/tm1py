@@ -62,7 +62,7 @@ class TestProcessService(unittest.TestCase):
                      epilog_procedure="sTestEpilog = 'test epilog procedure';",
                      datasource_data_source_name_for_server=r'C:\Data\file.json',
                      datasource_data_source_name_for_client=r'C:\Data\file.json')
-    
+
     p_debug = Process(
         name=prefix + "_debug",
         datasource_type="None",
@@ -112,7 +112,8 @@ class TestProcessService(unittest.TestCase):
         self.tm1.processes.update_or_create(self.p_ascii)
         self.tm1.processes.update_or_create(self.p_view)
         self.tm1.processes.update_or_create(self.p_odbc)
-        self.tm1.processes.update_or_create(self.p_json)
+        if verify_version("12", self.tm1.server.get_product_version()):
+            self.tm1.processes.update_or_create(self.p_json)
         self.tm1.processes.update_or_create(self.p_subset)
         self.tm1.processes.update_or_create(self.p_debug)
         self.tm1.processes.update_or_create(self.p_error)
@@ -122,7 +123,8 @@ class TestProcessService(unittest.TestCase):
         self.tm1.processes.delete(self.p_ascii.name)
         self.tm1.processes.delete(self.p_view.name)
         self.tm1.processes.delete(self.p_odbc.name)
-        self.tm1.processes.delete(self.p_json.name)
+        if verify_version("12", self.tm1.server.get_product_version()):
+            self.tm1.processes.delete(self.p_json.name)
         self.tm1.processes.delete(self.p_subset.name)
         self.tm1.processes.delete(self.p_debug.name)
         self.tm1.processes.delete(self.p_error.name)
