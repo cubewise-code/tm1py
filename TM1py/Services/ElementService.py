@@ -429,6 +429,18 @@ class ElementService(ObjectService):
 
         cell_service = self._get_cell_service()
 
+        # override column names. hierarchy name with dimension and prefix attributes
+        element_attributes = self.get_element_attributes(dimension_name, hierarchy_name)
+        column_renaming = dict()
+        if attribute_column_prefix or attribute_suffix:
+            column_renaming = {
+                ea.name: f"{attribute_column_prefix}{ea.name}" + (
+                    f":{ea.attribute_type.lower()[0]}"
+                    if attribute_suffix
+                    else "")
+                for ea
+                in element_attributes}
+
         # responses are similar but not equivalent.
         # Therefor only use execute_mdx_dataframe when use_blob is True
         if use_blob:
@@ -455,13 +467,20 @@ class ElementService(ObjectService):
                 columns='}ElementAttributes_' + dimension_name,
                 values='Value',
                 aggfunc='first',
-                sort=False).reset_index()
+                sort=False)
+
+            # override column names. hierarchy name with dimension and prefix attributes
+            df_data.columns = [column_renaming.get(col, col) for col in df_data.columns]
+            df_data = df_data.reset_index()
 
             # Drop the group key
             df_data = df_data.fillna("").drop(columns='_group')
 
         else:
             df_data = cell_service.execute_mdx_dataframe_shaped(mdx, **kwargs)
+
+            # override column names. hierarchy name with dimension and prefix attributes
+            df_data.columns = [df_data.columns[0]] + [column_renaming.get(col, col) for col in df_data.columns[1:]]
 
         if levels_dict:
             # rename level names to conform sto standard levels "1" -> "level001"
@@ -493,21 +512,6 @@ class ElementService(ObjectService):
 
             for col in alias_attributes:
                 df_data[col] = np.where(df_data[col] == '', df_data[dimension_name], df_data[col])
-
-        # override column names. hierarchy name with dimension and prefix attributes
-        column_renaming = dict()
-        if attribute_column_prefix or attribute_suffix:
-            column_renaming = {
-                ea.name: f"{attribute_column_prefix}{ea.name}" + (
-                    f":{ea.attribute_type.lower()[0]}"
-                    if attribute_suffix
-                    else "")
-                for ea
-                in element_attributes}
-
-        column_renaming[hierarchy_name] = dimension_name
-
-        df_data.rename(columns=column_renaming, inplace=True)
 
         # shift levels to right hand side
         if not skip_parents:
