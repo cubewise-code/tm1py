@@ -153,8 +153,8 @@ class RestService:
         self._timeout = None if kwargs.get('timeout', None) is None else float(kwargs.get('timeout'))
         self._cancel_at_timeout = kwargs.get('cancel_at_timeout', False)
         self._async_requests_mode = self.translate_to_boolean(kwargs.get('async_requests_mode', False))
-        self._connection_pool_size = float(kwargs.get('connection_pool_size', self.DEFAULT_CONNECTION_POOL_SIZE))
-        self._pool_connections = float(kwargs.get('pool_connections', self.DEFAULT_POOL_CONNECTIONS))
+        self._connection_pool_size = int(kwargs.get('connection_pool_size', self.DEFAULT_CONNECTION_POOL_SIZE))
+        self._pool_connections = int(kwargs.get('pool_connections', self.DEFAULT_POOL_CONNECTIONS))
         self._re_connect_on_session_timeout = kwargs.get('re_connect_on_session_timeout', True)
         self._re_connect_on_remote_disconnect = kwargs.get('re_connect_on_remote_disconnect', True)
         # is retrieved on demand and then cached
