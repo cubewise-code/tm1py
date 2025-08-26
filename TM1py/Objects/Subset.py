@@ -198,7 +198,7 @@ class AnonymousSubset(Subset):
         return cls.from_dict(subset_as_dict=subset_as_dict)
 
     @classmethod
-    def from_dict(cls, subset_as_dict: Dict) -> 'Subset':
+    def from_dict(cls, subset_as_dict: Dict, save_elements: bool = False) -> 'Subset':
         """Alternative constructor
         
         :param subset_as_dict: dictionary, representation of Subset as specified in CSDL
@@ -248,7 +248,7 @@ class AnonymousSubset(Subset):
             hierarchy_name=hierarchy_name,
             expression=subset_as_dict.get('Expression', None),
             alias=subset_as_dict.get('Alias', None),
-            elements=elements if not subset_as_dict.get('Expression', None) else None)
+            elements=elements if not subset_as_dict.get('Expression', None)  or save_elements else None)
 
     def _construct_body_dynamic(self) -> Dict:
         body_as_dict = collections.OrderedDict()
