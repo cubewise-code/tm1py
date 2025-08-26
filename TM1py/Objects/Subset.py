@@ -115,7 +115,7 @@ class Subset(TM1Object):
                    alias=subset_as_dict.get('Alias'),
                    expression=subset_as_dict.get('Expression'),
                    elements=[element['Name'] for element in subset_as_dict.get('Elements', [])]
-                   if not subset_as_dict.get('Expression') else None)
+                   if subset_as_dict.get('Elements') else None)
 
     @property
     def body(self) -> str:
