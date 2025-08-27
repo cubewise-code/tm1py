@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import collections
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Iterable, Optional
 
 from requests import Response
 
@@ -71,7 +71,7 @@ class ViewService(ObjectService):
         else:
             return self.get_native_view(cube_name=cube_name, view_name=view_name, private=private)
 
-    def get_native_view(self, cube_name: str, view_name: str, private=False, get_element_names: bool = True, **kwargs) -> NativeView:
+    def get_native_view(self, cube_name: str, view_name: str, private=False, element_properties: Optional[Iterable[str]] = ('Name',), **kwargs) -> NativeView:
         """ Get a NativeView from TM1 Server
 
         :param cube_name:  string, name of the cube
@@ -81,7 +81,13 @@ class ViewService(ObjectService):
         :return: instance of TM1py.NativeView
         """
         view_type = "PrivateViews" if private else "Views"
-        expand_elements = ',Elements($select=Name)' if get_element_names else ''
+
+        if element_properties:
+            element_properties = ",".join(element_properties)
+            element_properties = f',Elements($select={element_properties})'
+        else:
+            element_properties = ''
+
         url = format_url(
             "/Cubes('{}')/{}('{}')?$expand="
             "tm1.NativeView/Rows/Subset($expand=Hierarchy($select=Name;"
@@ -94,7 +100,7 @@ class ViewService(ObjectService):
             "$expand=Dimension($select=Name)){};"
             "$select=Expression,UniqueName,Name,Alias), "
             "tm1.NativeView/Titles/Selected($select=Name)",
-            cube_name, view_type, view_name, expand_elements, expand_elements, expand_elements)
+            cube_name, view_type, view_name, element_properties, element_properties, element_properties)
         response = self._rest.GET(url, **kwargs)
         native_view = NativeView.from_json(response.text, cube_name)
         return native_view
