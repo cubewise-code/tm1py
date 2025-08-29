@@ -445,6 +445,7 @@ class HierarchyService(ObjectService):
             unwind_consolidations: Iterable = None,
             update_attribute_types: bool = False,
             hierarchy_sort_order: Tuple[str, str, str, str] = None,
+            delete_orphaned_consolidations: bool = False,
             **kwargs):
         """ Update or Create a hierarchy based on a dataframe, while never deleting existing elements.
 
@@ -484,6 +485,10 @@ class HierarchyService(ObjectService):
             Pass a Tuple with 4 values for: `CompSortType`, `CompSortSense`, `ElSortType`, `ElSortSense` to control
             sort order as in IBM docs:
             https://www.ibm.com/docs/en/planning-analytics/2.0.0?topic=hmtf-hierarchysortorder-1
+        :param delete_orphaned_consolidations: bool
+            If True, function will delete c elements that will have no children and will have no parents post update.
+            By default, function will not delete orphaned consolidations.
+
         :return:
 
         """
@@ -746,6 +751,27 @@ class HierarchyService(ObjectService):
 
         if hierarchy_sort_order:
             self._implement_hierarchy_sort_order(dimension_name, hierarchy_name, hierarchy_sort_order)
+
+        if delete_orphaned_consolidations:
+            all_edges = self.elements.get_edges(dimension_name=dimension_name, hierarchy_name=hierarchy_name)
+
+            parents = CaseAndSpaceInsensitiveSet(parent for parent, _ in all_edges)
+            children = CaseAndSpaceInsensitiveSet(child for _, child in all_edges)
+            parents_and_children = parents.union(children)
+
+            consolidated_element_names = CaseAndSpaceInsensitiveSet(self.elements.get_consolidated_element_names(
+                dimension_name=dimension_name,
+                hierarchy_name=hierarchy_name
+            ))
+            orphaned_consolidations = list(consolidated_element_names - parents_and_children)
+
+            if orphaned_consolidations:
+                self.elements.delete_elements(
+                    dimension_name=dimension_name,
+                    hierarchy_name=hierarchy_name,
+                    element_names=orphaned_consolidations,
+                    use_ti=self.is_admin)
+
 
     def get_dimension_service(self):
         from TM1py import DimensionService
