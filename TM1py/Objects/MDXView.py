@@ -15,10 +15,10 @@ class MDXView(View):
         IMPORTANT. MDXViews can't be seen through the old TM1 clients (Archict, Perspectives). They do exist though!
     """
 
-    def __init__(self, cube_name: str, view_name: str, MDX: str, Meta: dict = {}):
+    def __init__(self, cube_name: str, view_name: str, MDX: str, meta: dict = {}):
         View.__init__(self, cube_name, view_name)
         self._mdx = MDX
-        self._aliases = Meta.get('Aliases', {})
+        self._aliases = meta.get('Aliases', {})
 
     @property
     def mdx(self):
