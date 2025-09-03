@@ -61,7 +61,7 @@ class ViewService(ObjectService):
                     raise e
         return tuple(view_types.values())
 
-    def get(self, cube_name: str, view_name: str, private: bool = False, **kwargs) -> View:
+    def get(self, cube_name: str, view_name: str, private: bool = False, element_properties: Optional[Iterable[str]] = ('Name',), **kwargs) -> View:
         view_type = "PrivateViews" if private else "Views"
         url = format_url("/Cubes('{}')/{}('{}')?$expand=*", cube_name, view_type, view_name)
         response = self._rest.GET(url, **kwargs)
@@ -69,7 +69,7 @@ class ViewService(ObjectService):
         if "MDX" in view_as_dict:
             return MDXView(cube_name=cube_name, view_name=view_name, MDX=view_as_dict["MDX"])
         else:
-            return self.get_native_view(cube_name=cube_name, view_name=view_name, private=private)
+            return self.get_native_view(cube_name=cube_name, view_name=view_name, element_properties=element_properties, private=private)
 
     def get_native_view(self, cube_name: str, view_name: str, private=False, element_properties: Optional[Iterable[str]] = ('Name',), **kwargs) -> NativeView:
         """ Get a NativeView from TM1 Server
