@@ -148,23 +148,24 @@ class TestViewService(unittest.TestCase):
         self.assertEqual(len(private_views), len(private_view_names))
 
     def test_get_native_view(self):
-        for private in (True, False):
-            # generic get
-            view = self.tm1.views.get(
-                cube_name=self.cube_name,
-                view_name=self.native_view_name,
-                private=private)
-
-            # get native view
-            native_view = self.tm1.views.get_native_view(
-                cube_name=self.cube_name,
-                view_name=self.native_view_name,
-                private=private)
-
-            self.assertIsInstance(view, NativeView)
-            self.assertEqual(view.name, self.native_view_name)
-            self.assertIsInstance(native_view, NativeView)
-            self.assertEqual(view, native_view)
+        for element_properties in [(), ('Name',), ('Name', 'Index')]:
+            for private in (True, False):
+                # generic get
+                view = self.tm1.views.get(
+                    cube_name=self.cube_name,
+                    view_name=self.native_view_name,
+                    private=private)
+    
+                # get native view
+                native_view = self.tm1.views.get_native_view(
+                    cube_name=self.cube_name,
+                    view_name=self.native_view_name,
+                    private=private)
+    
+                self.assertIsInstance(view, NativeView)
+                self.assertEqual(view.name, self.native_view_name)
+                self.assertIsInstance(native_view, NativeView)
+                self.assertEqual(view, native_view)
 
     def test_get_mdx_view(self):
         for private in (True, False):
