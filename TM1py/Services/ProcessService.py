@@ -46,7 +46,10 @@ class ProcessService(ObjectService):
             "DataSource/userName,"
             "DataSource/password,"
             "DataSource/usesUnicode,"
-            "DataSource/subset", name_process)
+            "DataSource/subset,"
+            "DataSource/jsonRootPointer,"
+            "DataSource/jsonVariableMapping", name_process)
+
         response = self._rest.GET(url, **kwargs)
         return Process.from_dict(response.json())
 
@@ -72,7 +75,9 @@ class ProcessService(ObjectService):
               "DataSource/userName," \
               "DataSource/password," \
               "DataSource/usesUnicode," \
-              "DataSource/subset{}".format(model_process_filter if skip_control_processes else "")
+              "DataSource/subset," \
+              "DataSource/jsonRootPointer," \
+              "DataSource/jsonVariableMapping{}".format(model_process_filter if skip_control_processes else "")
 
         response = self._rest.GET(url, **kwargs)
         response_as_dict = response.json()
@@ -264,13 +269,14 @@ class ProcessService(ObjectService):
 
     @require_version(version="11.3")
     def execute_process_with_return(self, process: Process, timeout: float = None, cancel_at_timeout: bool = False,
-                                    return_async_id: bool = False, **kwargs) -> Tuple[bool, str, str]:
+                                    return_async_id: bool = False, retry_on_disconnect: bool = False, **kwargs) -> Tuple[bool, str, str]:
         """Run unbound TI code directly.
 
         :param process: a TI Process Object
         :param timeout: Number of seconds that the client will wait to receive the first byte.
         :param cancel_at_timeout: Abort operation in TM1 when timeout is reached
         :param return_async_id: return async_id instead of (success, status, error_log_file)
+        :param retry_on_disconnect: bool, indicates that the operation is idempotent and can be safely retried on connection errors
         :param kwargs: dictionary of process parameters and values
         :return: success (boolean), status (String), error_log_file (String)
         """
@@ -290,6 +296,7 @@ class ProcessService(ObjectService):
             timeout=timeout,
             cancel_at_timeout=cancel_at_timeout,
             return_async_id=return_async_id,
+            idempotent=retry_on_disconnect,
             **kwargs)
 
         if return_async_id:
@@ -298,7 +305,7 @@ class ProcessService(ObjectService):
         return self._execute_with_return_parse_response(response)
 
     def execute_with_return(self, process_name: str = None, timeout: float = None, cancel_at_timeout: bool = False,
-                            return_async_id: bool = False, **kwargs) -> Tuple[bool, str, str]:
+                            return_async_id: bool = False, retry_on_disconnect: bool = False, **kwargs) -> Tuple[bool, str, str]:
         """ Ask TM1 Server to execute a process.
         pass process parameters as keyword arguments to this function. E.g:
 
@@ -310,6 +317,7 @@ class ProcessService(ObjectService):
         :param timeout: Number of seconds that the client will wait to receive the first byte.
         :param cancel_at_timeout: Abort operation in TM1 when timeout is reached
         :param return_async_id: return async_id instead of (success, status, error_log_file)
+        :param retry_on_disconnect: bool, indicates that the operation is idempotent and can be safely retried on connection errors
         :param kwargs: dictionary of process parameters and values
         :return: success (boolean), status (String), error_log_file (String)
         """
@@ -327,6 +335,7 @@ class ProcessService(ObjectService):
             timeout=timeout,
             cancel_at_timeout=cancel_at_timeout,
             return_async_id=return_async_id,
+            idempotent=retry_on_disconnect,
             **kwargs)
 
         if return_async_id:

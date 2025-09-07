@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 try:
     import pandas as pd
 
@@ -11,18 +10,24 @@ import json
 import math
 from typing import Dict, Tuple, List, Optional, Iterable
 
-import networkx as nx
+try:
+    import networkx as nx
+
+    _has_networkx = True
+except ImportError:
+    _has_networkx = False
+
 from requests import Response
 
 from TM1py.Exceptions import TM1pyRestException
-from TM1py.Objects import Hierarchy, Element, ElementAttribute, Dimension
+from TM1py.Objects import Hierarchy, Element, ElementAttribute, Dimension, Process
 from TM1py.Services.ElementService import ElementService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.SubsetService import SubsetService
 from TM1py.Utils.Utils import case_and_space_insensitive_equals, format_url, CaseAndSpaceInsensitiveDict, \
     CaseAndSpaceInsensitiveSet, CaseAndSpaceInsensitiveTuplesDict, require_pandas, require_data_admin, \
-    require_ops_admin, verify_version
+    require_ops_admin, verify_version, require_networkx
 
 
 class HierarchyService(ObjectService):
@@ -34,12 +39,21 @@ class HierarchyService(ObjectService):
     # https://www.ibm.com/developerworks/community/forums/html/topic?id=75f2b99e-6961-4c71-9364-1d5e1e083eff
     EDGES_WORKAROUND_VERSIONS = ('11.0.002', '11.0.003', '11.1.000')
 
+    HIERARCHY_SORT_ORDER_ARGUMENTS = CaseAndSpaceInsensitiveDict({
+        "CompSortType": CaseAndSpaceInsensitiveSet(["ByInput", "ByName"]),
+        "CompSortSense": CaseAndSpaceInsensitiveSet(["Ascending", "Descending"]),
+        "ElSortType": CaseAndSpaceInsensitiveSet(["ByInput", "ByName", "ByLevel", "ByHierarchy"]),
+        "ElSortSense": CaseAndSpaceInsensitiveSet(["Ascending", "Descending"]),
+    })
+
     def __init__(self, rest: RestService):
         super().__init__(rest)
         self.subsets = SubsetService(rest)
         self.elements = ElementService(rest)
 
+
     @staticmethod
+    @require_networkx
     def _validate_edges(df: 'pd.DataFrame'):
         graph = nx.DiGraph()
         for _, *record in df.itertuples():
@@ -147,8 +161,7 @@ class HierarchyService(ObjectService):
 
         # Workaround EDGES
         if self.version[0:8] in self.EDGES_WORKAROUND_VERSIONS:
-            from TM1py.Services import ProcessService
-            process_service = ProcessService(self._rest)
+            process_service = self._get_process_service()
             ti_function = "HierarchyElementComponentAdd('{}', '{}', '{}', '{}', {});"
             ti_statements = [ti_function.format(hierarchy.dimension_name, hierarchy.name,
                                                 edge[0],
@@ -431,6 +444,8 @@ class HierarchyService(ObjectService):
             unwind_all: bool = False,
             unwind_consolidations: Iterable = None,
             update_attribute_types: bool = False,
+            hierarchy_sort_order: Tuple[str, str, str, str] = None,
+            delete_orphaned_consolidations: bool = False,
             **kwargs):
         """ Update or Create a hierarchy based on a dataframe, while never deleting existing elements.
 
@@ -466,10 +481,20 @@ class HierarchyService(ObjectService):
         :param update_attribute_types: bool
             If True, function will delete and recreate attributes when a type change is requested.
             By default, function will not delete attributes.
+        :param hierarchy_sort_order: Dict
+            Pass a Tuple with 4 values for: `CompSortType`, `CompSortSense`, `ElSortType`, `ElSortSense` to control
+            sort order as in IBM docs:
+            https://www.ibm.com/docs/en/planning-analytics/2.0.0?topic=hmtf-hierarchysortorder-1
+        :param delete_orphaned_consolidations: bool
+            If True, function will delete c elements that will have no children and will have no parents post update.
+            By default, function will not delete orphaned consolidations.
 
         :return:
 
         """
+        if hierarchy_sort_order:
+            self._validate_hierarchy_sort_order_arguments(hierarchy_sort_order)
+
         df = df.copy()
 
         # element ID is in first column if not specified.
@@ -724,6 +749,30 @@ class HierarchyService(ObjectService):
             if new_edges:
                 self.elements.add_edges(dimension_name=dimension_name, hierarchy_name=hierarchy_name, edges=new_edges)
 
+        if hierarchy_sort_order:
+            self._implement_hierarchy_sort_order(dimension_name, hierarchy_name, hierarchy_sort_order)
+
+        if delete_orphaned_consolidations:
+            all_edges = self.elements.get_edges(dimension_name=dimension_name, hierarchy_name=hierarchy_name)
+
+            parents = CaseAndSpaceInsensitiveSet(parent for parent, _ in all_edges)
+            children = CaseAndSpaceInsensitiveSet(child for _, child in all_edges)
+            parents_and_children = parents.union(children)
+
+            consolidated_element_names = CaseAndSpaceInsensitiveSet(self.elements.get_consolidated_element_names(
+                dimension_name=dimension_name,
+                hierarchy_name=hierarchy_name
+            ))
+            orphaned_consolidations = list(consolidated_element_names - parents_and_children)
+
+            if orphaned_consolidations:
+                self.elements.delete_elements(
+                    dimension_name=dimension_name,
+                    hierarchy_name=hierarchy_name,
+                    element_names=orphaned_consolidations,
+                    use_ti=self.is_admin)
+
+
     def get_dimension_service(self):
         from TM1py import DimensionService
         return DimensionService(self._rest)
@@ -750,3 +799,59 @@ class HierarchyService(ObjectService):
 
         else:
             return ElementAttribute.Types(attribute_type)
+
+    def _validate_hierarchy_sort_order_arguments(self,hierarchy_sort_order: Tuple[str, str, str, str]):
+        if not len(hierarchy_sort_order) == 4:
+            raise ValueError(
+                f"Argument 'hierarchy_sort_order' must be a tuple of 4 keys: "
+                f"'CompSortType', 'CompSortSense', 'ElSortType', 'ElSortSense'")
+
+        for arg_name, arg_value in zip(self.HIERARCHY_SORT_ORDER_ARGUMENTS.keys(), hierarchy_sort_order):
+            valid_values = self.HIERARCHY_SORT_ORDER_ARGUMENTS.get(arg_name)
+            if arg_value not in valid_values:
+                raise ValueError(
+                    f"Value '{arg_value}' for argument '{arg_name}' is not among valid values: '{valid_values}'")
+
+
+    def _implement_hierarchy_sort_order(
+            self,
+            dimension_name: str,
+            hierarchy_name: str,
+            hierarchy_sort_order: Tuple[str, str, str, str]
+    ):
+        if not hierarchy_sort_order:
+            return
+
+        if not dimension_name:
+            raise ValueError("Arguments 'dimension_name' must be provided")
+
+        if not hierarchy_name:
+            hierarchy_name = dimension_name
+
+        self._validate_hierarchy_sort_order_arguments(hierarchy_sort_order)
+
+        code = (
+            f"HierarchySortOrder("
+            f"'{dimension_name}',"
+            f"'{hierarchy_name}',"
+            f"'{hierarchy_sort_order[0]}',"
+            f"'{hierarchy_sort_order[1]}',"
+            f"'{hierarchy_sort_order[2]}',"
+            f"'{hierarchy_sort_order[3]}');"
+        )
+
+        process_service = self._get_process_service()
+        process = Process(name=self.suggest_unique_object_name(), prolog_procedure=code)
+        success, status, error_log_file = process_service.execute_process_with_return(process)
+        if not success:
+            message = f"Failed to implement hierarchy sort order: {code}"
+            error_log_file_content = process_service.get_error_log_file_content(error_log_file)
+            error_log_file_content = error_log_file_content.strip().strip('\ufeff')
+            message += f". {error_log_file_content}"
+            raise RuntimeError(message)
+
+
+    def _get_process_service(self):
+        from TM1py.Services import ProcessService
+        process_service = ProcessService(self._rest)
+        return process_service

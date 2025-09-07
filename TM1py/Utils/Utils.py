@@ -150,6 +150,19 @@ def require_pandas(func):
     return wrapper
 
 
+@decohints
+def require_networkx(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            import networkx
+            return func(*args, **kwargs)
+        except ImportError:
+            raise ImportError(f"Function '{func.__name__}' requires networkx")
+
+    return wrapper
+
+
 def get_all_servers_from_adminhost(adminhost='localhost', port=None, use_ssl=False) -> List:
     from TM1py.Objects import Server
     """ Ask Adminhost for TM1 Servers
@@ -1730,6 +1743,26 @@ def utc_localize_time(timestamp):
     timestamp = pytz.utc.localize(timestamp)
     timestamp_utc = timestamp.astimezone(pytz.utc)
     return timestamp_utc
+
+
+def reorder_with_priority(original_items: List[Any], priority_items: List[Any] = None, exclude_items: List[Any] = None, sort_remaining: bool = True, **kwargs) -> List[Any]:
+    """
+    Reorder a list of original items so that items in 'priority_items' list appear first (in specified order),
+    followed by the remaining items of original items. The order of the remaining items depends on the 
+    'sort_remaining' parameter: if True, the original order is preserved; if False, the items 
+    are sorted alphabetically. Items in the 'exclude_items' list are omitted. Missing priority items 
+    and exclude items are ignored.
+
+    Example case: hierarchy names
+    "correct" order: first the main hierarchy name (matching the dimension name), 
+    then the Leaves hierarchy, then the other hierarchy names (sorted or not).
+    When trying to create the Leaves hierarchy when it already exists (because of creating a different alternate hierarchy),
+    an error pops up. Set exclude_items equal to ['Leaves'].
+    """
+    result = [s for s in priority_items if s in original_items]
+    remaining = [s for s in original_items if (s not in result) and (s not in exclude_items)]
+    result += sorted(remaining) if sort_remaining else remaining
+    return result
 
 
 class HTTPAdapterWithSocketOptions(HTTPAdapter):
