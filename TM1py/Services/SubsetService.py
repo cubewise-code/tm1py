@@ -13,7 +13,7 @@ from TM1py.Utils import format_url
 
 class SubsetService(ObjectService):
     """ Service to handle Object Updates for TM1 Subsets (dynamic and static)
-    
+
     """
 
     def __init__(self, rest: RestService):
@@ -239,9 +239,8 @@ class SubsetService(ObjectService):
         if elements is None:
             elements = subset.elements
 
-
         subsets = "PrivateSubsets" if private else "Subsets"
-        url = format_url( "/Dimensions('{}')/Hierarchies('{}')/{}('{}')/Elements/$ref", dimension_name, hierarchy_name, subsets, subset_name)
+        url = format_url("/Dimensions('{}')/Hierarchies('{}')/{}('{}')/Elements/$ref", dimension_name, hierarchy_name, subsets, subset_name)
 
         elements = [element.name if isinstance(element, Element) else element for element in elements]
         elements = [{"@odata.id": f"Dimensions('{dimension_name}')/Hierarchies('{hierarchy_name}')/Elements('{element}')"} for element in elements]
