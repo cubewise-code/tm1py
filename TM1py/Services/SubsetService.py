@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-from typing import List, Optional, Union, Iterable
+import json
+from typing import List, Union, Iterable, Optional
 
 from requests import Response
 
-from TM1py.Objects import Subset
+from TM1py.Objects import Subset, Element
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.ProcessService import ProcessService
 from TM1py.Services.RestService import RestService
@@ -84,7 +85,7 @@ class SubsetService(ObjectService):
         :return: response
         """
         if subset.is_static:
-            return self.update_static_elements(subset=subset, elements=subset.elements)
+            return self.update_static_elements(subset=subset, elements=subset.elements, private=private, **kwargs)
         subsets = "PrivateSubsets" if private else "Subsets"
         url = format_url(
             "/Dimensions('{}')/Hierarchies('{}')/{}('{}')",
@@ -172,39 +173,16 @@ class SubsetService(ObjectService):
             dimension_name, hierarchy_name, subsets, subset_name)
         return self._rest.DELETE(url=url, **kwargs)
 
-    def get_element_names(self, dimension_name: str, hierarchy_name: str, subset: Union[str, Subset], private: bool = False, **kwargs):
-        """ Get elements from existing (dynamic or static) subset
-
-        :param dimension_name:
-        :param hierarchy_name:
-        :param subset_name:
-        :param private:
-        :param kwargs:
-        :return:
+    def get_element_names(
+            self,
+            dimension_name: str,
+            hierarchy_name: str,
+            subset: Union[str, Subset],
+            private: bool = False,
+            **kwargs
+    ) -> List[str]:
         """
-        if isinstance(subset, str):
-            subset = self.get(subset, dimension_name, hierarchy_name, private=private, **kwargs)
-        elif not isinstance(subset, Subet):
-            raise ValueError(f"subset argument must be of type 'str' or 'Subset', not '{type(subset)}'.")
-
-        if subset.is_static:
-            return subset.elements
-
-        mdx = subset.expression
-        from TM1py import ElementService
-        element_service = ElementService(self._rest)
-        tuples = element_service.execute_set_mdx(
-            mdx=mdx,
-            member_properties=["Name"],
-            element_properties=None,
-            parent_properties=None,
-            **kwargs)
-        return [entry[0]["Name"] for entry in tuples]
-
-    def update_static_elements(self, subset: Union[str, Subset], dimension_name: str = None, hierarchy_name: str = None, private: bool = False, elements: Iterable[Union[str, Element]] = (), 
-                               **kwargs) -> Response:
-        """
-        Replaces elements in a static.
+        Retrieve element names from a static or dynamic subset.
 
         :param dimension_name: Name of the dimension.
         :param hierarchy_name: Name of the hierarchy.
@@ -213,19 +191,59 @@ class SubsetService(ObjectService):
         :param kwargs: Additional arguments.
         :return: List of element names.
         """
+        if isinstance(subset, str):
+            subset = self.get(subset, dimension_name, hierarchy_name, private=private, **kwargs)
+        elif not isinstance(subset, Subset):
+            raise ValueError(f"subset argument must be of type 'str' or 'Subset', not '{type(subset)}'.")
+
+        if subset.is_static:
+            return list(subset.elements)
+
+        from TM1py.Services import ElementService
+        element_service = ElementService(self._rest)
+        tuples = element_service.execute_set_mdx(
+            mdx=subset.expression,
+            member_properties=["Name"],
+            element_properties=None,
+            parent_properties=None,
+            **kwargs
+        )
+        return [entry[0].get("Name", "") for entry in tuples if entry and "Name" in entry[0]]
+
+    def update_static_elements(self, subset: Union[str, Subset], dimension_name: str = None, hierarchy_name: str = None, private: bool = False, elements: Optional[Iterable[Union[str, Element]]] = None,
+                               **kwargs) -> Response:
+        """
+        Replaces elements in a static.
+        :param dimension_name: Name of the dimension.
+        :param hierarchy_name: Name of the hierarchy.
+        :param subset: Subset name (str) or Subset object.
+        :param private: Whether the subset is private.
+        :param kwargs: Additional arguments.
+        :param elements: List of element names (str) or Element objects.
+        :return:
+        """
         if isinstance(subset, Subset):
             subset_name = subset.name
             if not subset.is_static:
-                raise ValueError()
+                raise ValueError('Subset must be static.')
+            dimension_name = subset.dimension_name
+            hierarchy_name = subset.hierarchy_name
         elif isinstance(subset, str):
             subset_name = subset
+            if not (dimension_name and hierarchy_name):
+                raise ValueError(f"When subset is str, dimension_name and hierarchy_name must also be provided.")
+            elif elements is None:
+                raise ValueError(f'When subset is str, elements must also be provided.')
         else:
             raise ValueError(f"subset argument must be of type 'str' or 'Subset', not '{type(subset)}'")
+        if elements is None:
+            elements = subset.elements
+
 
         subsets = "PrivateSubsets" if private else "Subsets"
         url = format_url( "/Dimensions('{}')/Hierarchies('{}')/{}('{}')/Elements/$ref", dimension_name, hierarchy_name, subsets, subset_name)
 
         elements = [element.name if isinstance(element, Element) else element for element in elements]
         elements = [{"@odata.id": f"Dimensions('{dimension_name}')/Hierarchies('{hierarchy_name}')/Elements('{element}')"} for element in elements]
-        
-        return self._rest.PUT(url=url, data=json.dumps(elements))
+
+        return self._rest.PUT(url=url, data=json.dumps(elements, ensure_ascii=False), **kwargs)
