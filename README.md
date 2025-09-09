@@ -1,9 +1,11 @@
-
+<h1 align="center">
 <img src="https://s3-ap-southeast-2.amazonaws.com/downloads.cubewise.com/web_assets/CubewiseLogos/TM1py-logo.png" style="width: 70%; height: 70%;text-align: center"/>
+
 
 ![PyPI - License](https://img.shields.io/pypi/l/TM1py)
 ![PyPI - Version](https://img.shields.io/pypi/v/TM1py)
 ![Pepy Total Downloads](https://img.shields.io/pepy/dt/TM1py)
+</h1>
 
 TM1py is the python package for IBM Planning Analytics (TM1).
 
