@@ -125,11 +125,7 @@ class TestCaseAndSpaceInsensitiveDict(unittest.TestCase):
 
     def test_adjusted_items(self):
         # Test adjusted_items() for lowercased, spaceless keys
-        expected_adjusted_items = {
-            "key1": "value1",
-            "key2": "value2",
-            "key3": "value3"
-        }
+        expected_adjusted_items = {"key1": "value1", "key2": "value2", "key3": "value3"}
         adjusted_items = dict(self.map.adjusted_items())
         self.assertEqual(adjusted_items, expected_adjusted_items)
 
@@ -146,5 +142,5 @@ class TestCaseAndSpaceInsensitiveDict(unittest.TestCase):
             _ = self.map["nonexistent_key"]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -16,9 +16,7 @@ from TM1py.Utils.Utils import case_and_space_insensitive_equals, format_url, Cas
 
 
 class DimensionService(ObjectService):
-    """ Service to handle Object Updates for TM1 Dimensions
-    
-    """
+    """Service to handle Object Updates for TM1 Dimensions"""
 
     def __init__(self, rest: RestService):
         super().__init__(rest)
@@ -26,7 +24,7 @@ class DimensionService(ObjectService):
         self.subsets = SubsetService(rest)
 
     def create(self, dimension: Dimension, **kwargs) -> Response:
-        """ Create a dimension
+        """Create a dimension
 
         :param dimension: instance of TM1py.Dimension
         :return: response
@@ -51,7 +49,7 @@ class DimensionService(ObjectService):
         return response
 
     def get(self, dimension_name: str, **kwargs) -> Dimension:
-        """ Get a Dimension
+        """Get a Dimension
 
         :param dimension_name:
         :return:
@@ -61,7 +59,7 @@ class DimensionService(ObjectService):
         return Dimension.from_json(response.text)
 
     def update(self, dimension: Dimension, keep_existing_attributes=False, **kwargs):
-        """ Update an existing dimension
+        """Update an existing dimension
 
         :param dimension: instance of TM1py.Dimension
         :param keep_existing_attributes: True to make sure existing attributes are not removed
@@ -69,7 +67,8 @@ class DimensionService(ObjectService):
         """
         # delete hierarchies that have been removed from the dimension object
         hierarchies_to_be_removed = CaseAndSpaceInsensitiveSet(
-            *self.hierarchies.get_all_names(dimension.name, **kwargs))
+            *self.hierarchies.get_all_names(dimension.name, **kwargs)
+        )
         for hierarchy in dimension.hierarchy_names:
             hierarchies_to_be_removed.discard(hierarchy)
 
@@ -84,7 +83,8 @@ class DimensionService(ObjectService):
         # Edge case: elements in leaves hierarchy that do not exist in other hierarchies
         if "Leaves" in dimension:
             existing_leaves = CaseAndSpaceInsensitiveSet(
-                self.hierarchies.elements.get_leaf_element_names(dimension.name, "Leaves"))
+                self.hierarchies.elements.get_leaf_element_names(dimension.name, "Leaves")
+            )
 
             leaves_to_create = list()
             for leaf in dimension.get_hierarchy("Leaves"):
@@ -93,16 +93,15 @@ class DimensionService(ObjectService):
 
             if leaves_to_create:
                 self.hierarchies.elements.add_elements(
-                    dimension_name=dimension.name,
-                    hierarchy_name="Leaves",
-                    elements=leaves_to_create)
+                    dimension_name=dimension.name, hierarchy_name="Leaves", elements=leaves_to_create
+                )
 
         for hierarchy_name in hierarchies_to_be_removed:
             if not case_and_space_insensitive_equals(hierarchy_name, "Leaves"):
                 self.hierarchies.delete(dimension_name=dimension.name, hierarchy_name=hierarchy_name, **kwargs)
 
     def update_or_create(self, dimension: Dimension, **kwargs):
-        """ update if exists else create
+        """update if exists else create
 
         :param dimension:
         :return:
@@ -113,7 +112,7 @@ class DimensionService(ObjectService):
             self.create(dimension=dimension, **kwargs)
 
     def delete(self, dimension_name: str, **kwargs) -> Response:
-        """ Delete a dimension
+        """Delete a dimension
 
         :param dimension_name: Name of the dimension
         :return:
@@ -122,9 +121,9 @@ class DimensionService(ObjectService):
         return self._rest.DELETE(url, **kwargs)
 
     def exists(self, dimension_name: str, **kwargs) -> bool:
-        """ Check if dimension exists
-        
-        :return: 
+        """Check if dimension exists
+
+        :return:
         """
         url = format_url("/Dimensions('{}')", dimension_name)
         return self._exists(url, **kwargs)
@@ -136,14 +135,11 @@ class DimensionService(ObjectService):
         :Returns:
             List of Strings
         """
-        url = format_url(
-            "/{}?$select=Name",
-            'ModelDimensions()' if skip_control_dims else 'Dimensions'
-        )
+        url = format_url("/{}?$select=Name", "ModelDimensions()" if skip_control_dims else "Dimensions")
 
         response = self._rest.GET(url, **kwargs)
 
-        dimension_names = list(entry['Name'] for entry in response.json()['value'])
+        dimension_names = list(entry["Name"] for entry in response.json()["value"])
         return dimension_names
 
     def get_number_of_dimensions(self, skip_control_dims: bool = False, **kwargs) -> int:
@@ -155,46 +151,54 @@ class DimensionService(ObjectService):
 
         if skip_control_dims:
             response = self._rest.GET("/ModelDimensions()?$select=Name&$top=0&$count", **kwargs)
-            return response.json()['@odata.count']
+            return response.json()["@odata.count"]
 
         return int(self._rest.GET("/Dimensions/$count", **kwargs).text)
 
     def execute_mdx(self, dimension_name: str, mdx: str, **kwargs) -> List:
-        """ Execute MDX against Dimension. 
+        """Execute MDX against Dimension.
         Requires }ElementAttributes_ Cube of the dimension to exist !
- 
+
         :param dimension_name: Name of the Dimension
-        :param mdx: valid Dimension-MDX Statement 
+        :param mdx: valid Dimension-MDX Statement
         :return: List of Element names
         """
 
-        warnings.warn("execute_mdx() will be deprecated; use ElementService execute_set_mdx_element_names().", DeprecationWarning,
-                      stacklevel=2)
+        warnings.warn(
+            "execute_mdx() will be deprecated; use ElementService execute_set_mdx_element_names().",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
-        mdx_skeleton = "SELECT " \
-                       "{} ON ROWS, " \
-                       "{{ [}}ElementAttributes_{}].DefaultMember }} ON COLUMNS  " \
-                       "FROM [}}ElementAttributes_{}]"
+        mdx_skeleton = (
+            "SELECT "
+            "{} ON ROWS, "
+            "{{ [}}ElementAttributes_{}].DefaultMember }} ON COLUMNS  "
+            "FROM [}}ElementAttributes_{}]"
+        )
         mdx_full = mdx_skeleton.format(mdx, dimension_name, dimension_name)
-        request = '/ExecuteMDX?$expand=Axes(' \
-                  '$filter=Ordinal eq 1;' \
-                  '$expand=Tuples($expand=Members($select=Ordinal;$expand=Element($select=Name))))'
+        request = (
+            "/ExecuteMDX?$expand=Axes("
+            "$filter=Ordinal eq 1;"
+            "$expand=Tuples($expand=Members($select=Ordinal;$expand=Element($select=Name))))"
+        )
         payload = {"MDX": mdx_full}
         response = self._rest.POST(request, json.dumps(payload, ensure_ascii=False), **kwargs)
         raw_dict = response.json()
-        return [row_tuple['Members'][0]['Element']['Name'] for row_tuple in raw_dict['Axes'][0]['Tuples']]
+        return [row_tuple["Members"][0]["Element"]["Name"] for row_tuple in raw_dict["Axes"][0]["Tuples"]]
 
     def create_element_attributes_through_ti(self, dimension: Dimension, **kwargs):
-        """ 
-        
+        """
+
         :param dimension. Instance of TM1py.Objects.Dimension class
-        :return: 
+        :return:
         """
         process_service = ProcessService(self._rest)
         for h in dimension:
-            statements = ["AttrInsert('{}', '', '{}', '{}');".format(dimension.name, ea.name, ea.attribute_type[0])
-                          for ea
-                          in h.element_attributes]
+            statements = [
+                "AttrInsert('{}', '', '{}', '{}');".format(dimension.name, ea.name, ea.attribute_type[0])
+                for ea in h.element_attributes
+            ]
             process_service.execute_ti_code(lines_prolog=statements, **kwargs)
 
     def uses_alternate_hierarchies(self, dimension_name: str, **kwargs) -> bool:

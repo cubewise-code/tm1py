@@ -25,36 +25,44 @@ from TM1py.Services.ElementService import ElementService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.SubsetService import SubsetService
-from TM1py.Utils.Utils import case_and_space_insensitive_equals, format_url, CaseAndSpaceInsensitiveDict, \
-    CaseAndSpaceInsensitiveSet, CaseAndSpaceInsensitiveTuplesDict, require_pandas, require_data_admin, \
-    require_ops_admin, verify_version, require_networkx
+from TM1py.Utils.Utils import (
+    case_and_space_insensitive_equals,
+    format_url,
+    CaseAndSpaceInsensitiveDict,
+    CaseAndSpaceInsensitiveSet,
+    CaseAndSpaceInsensitiveTuplesDict,
+    require_pandas,
+    require_data_admin,
+    require_ops_admin,
+    verify_version,
+    require_networkx,
+)
 
 
 class HierarchyService(ObjectService):
-    """ Service to handle Object Updates for TM1 Hierarchies
-
-    """
+    """Service to handle Object Updates for TM1 Hierarchies"""
 
     # Tuple with TM1 Versions where Edges need to be created through TI, due to bug:
     # https://www.ibm.com/developerworks/community/forums/html/topic?id=75f2b99e-6961-4c71-9364-1d5e1e083eff
-    EDGES_WORKAROUND_VERSIONS = ('11.0.002', '11.0.003', '11.1.000')
+    EDGES_WORKAROUND_VERSIONS = ("11.0.002", "11.0.003", "11.1.000")
 
-    HIERARCHY_SORT_ORDER_ARGUMENTS = CaseAndSpaceInsensitiveDict({
-        "CompSortType": CaseAndSpaceInsensitiveSet(["ByInput", "ByName"]),
-        "CompSortSense": CaseAndSpaceInsensitiveSet(["Ascending", "Descending"]),
-        "ElSortType": CaseAndSpaceInsensitiveSet(["ByInput", "ByName", "ByLevel", "ByHierarchy"]),
-        "ElSortSense": CaseAndSpaceInsensitiveSet(["Ascending", "Descending"]),
-    })
+    HIERARCHY_SORT_ORDER_ARGUMENTS = CaseAndSpaceInsensitiveDict(
+        {
+            "CompSortType": CaseAndSpaceInsensitiveSet(["ByInput", "ByName"]),
+            "CompSortSense": CaseAndSpaceInsensitiveSet(["Ascending", "Descending"]),
+            "ElSortType": CaseAndSpaceInsensitiveSet(["ByInput", "ByName", "ByLevel", "ByHierarchy"]),
+            "ElSortSense": CaseAndSpaceInsensitiveSet(["Ascending", "Descending"]),
+        }
+    )
 
     def __init__(self, rest: RestService):
         super().__init__(rest)
         self.subsets = SubsetService(rest)
         self.elements = ElementService(rest)
 
-
     @staticmethod
     @require_networkx
-    def _validate_edges(df: 'pd.DataFrame'):
+    def _validate_edges(df: "pd.DataFrame"):
         graph = nx.DiGraph()
         for _, *record in df.itertuples():
             child = record[0]
@@ -71,7 +79,7 @@ class HierarchyService(ObjectService):
             raise ValueError(f"Circular reference{'s' if len(cycles) > 1 else ''} found in edges: {cycles}")
 
     @staticmethod
-    def _validate_alias_uniqueness(df: 'pd.DataFrame'):
+    def _validate_alias_uniqueness(df: "pd.DataFrame"):
         # map alias values against their principal element name
         seen_values = CaseAndSpaceInsensitiveDict()
 
@@ -95,7 +103,7 @@ class HierarchyService(ObjectService):
                 seen_values[value] = element_name
 
     def create(self, hierarchy: Hierarchy, **kwargs):
-        """ Create a hierarchy in an existing dimension
+        """Create a hierarchy in an existing dimension
 
         :param hierarchy:
         :return:
@@ -108,7 +116,7 @@ class HierarchyService(ObjectService):
         return response
 
     def get(self, dimension_name: str, hierarchy_name: str, **kwargs) -> Hierarchy:
-        """ get hierarchy
+        """get hierarchy
 
         :param dimension_name: name of the dimension
         :param hierarchy_name: name of the hierarchy
@@ -117,12 +125,13 @@ class HierarchyService(ObjectService):
         url = format_url(
             "/Dimensions('{}')/Hierarchies('{}')?$expand=Edges,Elements,ElementAttributes,Subsets,DefaultMember",
             dimension_name,
-            hierarchy_name)
+            hierarchy_name,
+        )
         response = self._rest.GET(url, **kwargs)
         return Hierarchy.from_dict(response.json())
 
     def get_all_names(self, dimension_name: str, **kwargs) -> List[str]:
-        """ get all names of existing Hierarchies in a dimension
+        """get all names of existing Hierarchies in a dimension
 
         :param dimension_name:
         :return:
@@ -132,7 +141,7 @@ class HierarchyService(ObjectService):
         return [hierarchy["Name"] for hierarchy in response.json()["value"]]
 
     def update(self, hierarchy: Hierarchy, keep_existing_attributes=False, **kwargs) -> List[Response]:
-        """ update a hierarchy. It's a two step process:
+        """update a hierarchy. It's a two step process:
         1. Update Hierarchy
         2. Update Element-Attributes
 
@@ -154,27 +163,28 @@ class HierarchyService(ObjectService):
         responses.append(self._rest.PATCH(url, json.dumps(hierarchy_body), **kwargs))
 
         # 2. Update Attributes
-        responses.append(self.update_element_attributes(
-            hierarchy=hierarchy,
-            keep_existing_attributes=keep_existing_attributes,
-            **kwargs))
+        responses.append(
+            self.update_element_attributes(
+                hierarchy=hierarchy, keep_existing_attributes=keep_existing_attributes, **kwargs
+            )
+        )
 
         # Workaround EDGES
         if self.version[0:8] in self.EDGES_WORKAROUND_VERSIONS:
             process_service = self._get_process_service()
             ti_function = "HierarchyElementComponentAdd('{}', '{}', '{}', '{}', {});"
-            ti_statements = [ti_function.format(hierarchy.dimension_name, hierarchy.name,
-                                                edge[0],
-                                                edge[1],
-                                                hierarchy.edges[(edge[0], edge[1])])
-                             for edge
-                             in hierarchy.edges]
+            ti_statements = [
+                ti_function.format(
+                    hierarchy.dimension_name, hierarchy.name, edge[0], edge[1], hierarchy.edges[(edge[0], edge[1])]
+                )
+                for edge in hierarchy.edges
+            ]
             responses.append(process_service.execute_ti_code(lines_prolog=ti_statements, **kwargs))
 
         return responses
 
     def update_or_create(self, hierarchy: Hierarchy, **kwargs):
-        """ update if exists else create
+        """update if exists else create
 
         :param hierarchy:
         :return:
@@ -200,10 +210,7 @@ class HierarchyService(ObjectService):
                 return False
             raise e
 
-        existing_hierarchies = CaseAndSpaceInsensitiveSet([
-            hierarchy["Name"]
-            for hierarchy
-            in response.json()["value"]])
+        existing_hierarchies = CaseAndSpaceInsensitiveSet([hierarchy["Name"] for hierarchy in response.json()["value"]])
         return hierarchy_name in existing_hierarchies
 
     def delete(self, dimension_name: str, hierarchy_name: str, **kwargs) -> Response:
@@ -216,15 +223,17 @@ class HierarchyService(ObjectService):
             "/Dimensions('{}')/Hierarchies('{}')?$expand=Edges/$count,Elements/$count,"
             "ElementAttributes/$count,Members/$count,Levels/$count&$select=Cardinality",
             dimension_name,
-            hierarchy_name)
+            hierarchy_name,
+        )
         hierary_summary_raw = self._rest.GET(url, **kwargs).json()
 
-        return {hierarchy_property: hierary_summary_raw[hierarchy_property + "@odata.count"]
-                for hierarchy_property
-                in hierarchy_properties}
+        return {
+            hierarchy_property: hierary_summary_raw[hierarchy_property + "@odata.count"]
+            for hierarchy_property in hierarchy_properties
+        }
 
     def update_element_attributes(self, hierarchy: Hierarchy, keep_existing_attributes=False, **kwargs):
-        """ Update the elementattributes of a hierarchy
+        """Update the elementattributes of a hierarchy
 
         :param hierarchy: Instance of TM1py.Hierarchy
         :param keep_existing_attributes: True to make sure existing attributes are not removed
@@ -232,9 +241,8 @@ class HierarchyService(ObjectService):
         """
         # get existing attributes first
         existing_element_attributes = self.elements.get_element_attributes(
-            dimension_name=hierarchy.dimension_name,
-            hierarchy_name=hierarchy.name,
-            **kwargs)
+            dimension_name=hierarchy.dimension_name, hierarchy_name=hierarchy.name, **kwargs
+        )
         existing_element_attributes = CaseAndSpaceInsensitiveDict({ea.name: ea for ea in existing_element_attributes})
 
         attributes_to_create = list()
@@ -254,7 +262,8 @@ class HierarchyService(ObjectService):
         if not keep_existing_attributes:
             for existing_element_attribute in existing_element_attributes:
                 if existing_element_attribute not in CaseAndSpaceInsensitiveSet(
-                        [ea.name for ea in hierarchy.element_attributes]):
+                    [ea.name for ea in hierarchy.element_attributes]
+                ):
                     attributes_to_delete.append(existing_element_attribute)
 
         for element_attribute in attributes_to_create:
@@ -262,29 +271,33 @@ class HierarchyService(ObjectService):
                 dimension_name=hierarchy.dimension_name,
                 hierarchy_name=hierarchy.name,
                 element_attribute=element_attribute,
-                **kwargs)
+                **kwargs,
+            )
 
         for element_attribute in attributes_to_delete:
             self.elements.delete_element_attribute(
                 dimension_name=hierarchy.dimension_name,
                 hierarchy_name=hierarchy.name,
                 element_attribute=element_attribute,
-                **kwargs)
+                **kwargs,
+            )
 
         for element_attribute in attributes_to_update:
             self.elements.delete_element_attribute(
                 dimension_name=hierarchy.dimension_name,
                 hierarchy_name=hierarchy.name,
                 element_attribute=element_attribute.name,
-                **kwargs)
+                **kwargs,
+            )
             self.elements.create_element_attribute(
                 dimension_name=hierarchy.dimension_name,
                 hierarchy_name=hierarchy.name,
                 element_attribute=element_attribute,
-                **kwargs)
+                **kwargs,
+            )
 
     def get_default_member(self, dimension_name: str, hierarchy_name: str = None, **kwargs) -> Optional[str]:
-        """ Get the defined default_member for a Hierarchy.
+        """Get the defined default_member for a Hierarchy.
         Will return the element with index 1, if default member is not specified explicitly in }HierarchyProperty Cube
 
         :param dimension_name:
@@ -294,54 +307,61 @@ class HierarchyService(ObjectService):
         url = format_url(
             "/Dimensions('{dimension}')/Hierarchies('{hierarchy}')/DefaultMember",
             dimension=dimension_name,
-            hierarchy=hierarchy_name if hierarchy_name else dimension_name)
+            hierarchy=hierarchy_name if hierarchy_name else dimension_name,
+        )
         response = self._rest.GET(url=url, **kwargs)
 
         if not response.text:
             return None
         return response.json()["Name"]
 
-    def _update_default_member_via_props_cube(self, dimension_name: str, hierarchy_name: str = None,
-                                              member_name: str = "",
-                                              **kwargs) -> Response:
+    def _update_default_member_via_props_cube(
+        self, dimension_name: str, hierarchy_name: str = None, member_name: str = "", **kwargs
+    ) -> Response:
         from TM1py import ProcessService, CellService
+
         if hierarchy_name and not case_and_space_insensitive_equals(dimension_name, hierarchy_name):
             dimension = "{}:{}".format(dimension_name, hierarchy_name)
         else:
             dimension = dimension_name
-        cells = {(dimension, 'hierarchy0', 'defaultMember'): member_name}
+        cells = {(dimension, "hierarchy0", "defaultMember"): member_name}
 
         CellService(self._rest).write_values(
             cube_name="}HierarchyProperties",
             cellset_as_dict=cells,
-            dimensions=('}Dimensions', '}Hierarchies', '}HierarchyProperties'),
-            **kwargs)
+            dimensions=("}Dimensions", "}Hierarchies", "}HierarchyProperties"),
+            **kwargs,
+        )
 
         return ProcessService(self._rest).execute_ti_code(
-            lines_prolog=format_url("RefreshMdxHierarchy('{}');", dimension_name),
-            **kwargs)
+            lines_prolog=format_url("RefreshMdxHierarchy('{}');", dimension_name), **kwargs
+        )
 
-    def _update_default_member_via_api(self, dimension_name: str, hierarchy_name: str = None, member_name: str = "",
-                                       **kwargs) -> Response:
+    def _update_default_member_via_api(
+        self, dimension_name: str, hierarchy_name: str = None, member_name: str = "", **kwargs
+    ) -> Response:
 
-        url = format_url("/Dimensions('{dimension}')/Hierarchies('{hierarchy}')",
-                         dimension=dimension_name,
-                         hierarchy=hierarchy_name if hierarchy_name else dimension_name)
+        url = format_url(
+            "/Dimensions('{dimension}')/Hierarchies('{hierarchy}')",
+            dimension=dimension_name,
+            hierarchy=hierarchy_name if hierarchy_name else dimension_name,
+        )
 
         payload = {"DefaultMemberName": member_name}
 
         return self._rest.PATCH(url=url, data=json.dumps(payload))
 
-    def update_default_member(self, dimension_name: str, hierarchy_name: str = None, member_name: str = "",
-                              **kwargs) -> Response:
-        """ Update the default member of a hierarchy.
+    def update_default_member(
+        self, dimension_name: str, hierarchy_name: str = None, member_name: str = "", **kwargs
+    ) -> Response:
+        """Update the default member of a hierarchy.
 
         :param dimension_name:
         :param hierarchy_name:
         :param member_name:
         :return:
         """
-        if verify_version(required_version='12', version=self.version):
+        if verify_version(required_version="12", version=self.version):
             return self._update_default_member_via_api(dimension_name, hierarchy_name, member_name)
         else:
             return self._update_default_member_via_props_cube(dimension_name, hierarchy_name, member_name)
@@ -350,13 +370,12 @@ class HierarchyService(ObjectService):
         if not hierarchy_name:
             hierarchy_name = dimension_name
         url = format_url("/Dimensions('{}')/Hierarchies('{}')", dimension_name, hierarchy_name)
-        body = {
-            "Edges": []
-        }
+        body = {"Edges": []}
         return self._rest.PATCH(url=url, data=json.dumps(body), **kwargs)
 
-    def remove_edges_under_consolidation(self, dimension_name: str, hierarchy_name: str,
-                                         consolidation_element: str, **kwargs) -> List[Response]:
+    def remove_edges_under_consolidation(
+        self, dimension_name: str, hierarchy_name: str, consolidation_element: str, **kwargs
+    ) -> List[Response]:
         """
         :param dimension_name: Name of the dimension
         :param hierarchy_name: Name of the hierarchy
@@ -365,21 +384,23 @@ class HierarchyService(ObjectService):
         """
         hierarchy = self.get(dimension_name, hierarchy_name)
         from TM1py.Services import ElementService
+
         element_service = ElementService(self._rest)
         elements_under_consolidations = CaseAndSpaceInsensitiveSet(
-            element_service.get_members_under_consolidation(dimension_name, hierarchy_name,
-                                                            consolidation_element))
+            element_service.get_members_under_consolidation(dimension_name, hierarchy_name, consolidation_element)
+        )
         elements_under_consolidations.add(consolidation_element)
         remove_edges = []
-        for (parent, component) in hierarchy.edges:
+        for parent, component in hierarchy.edges:
             if parent in elements_under_consolidations and component in elements_under_consolidations:
                 remove_edges.append((parent, component))
         hierarchy.remove_edges(remove_edges)
         return self.update(hierarchy, **kwargs)
 
-    def add_edges(self, dimension_name: str, hierarchy_name: str = None, edges: Dict[Tuple[str, str], int] = None,
-                  **kwargs) -> Response:
-        """ Add Edges to hierarchy. Fails if one edge already exists.
+    def add_edges(
+        self, dimension_name: str, hierarchy_name: str = None, edges: Dict[Tuple[str, str], int] = None, **kwargs
+    ) -> Response:
+        """Add Edges to hierarchy. Fails if one edge already exists.
 
         :param dimension_name:
         :param hierarchy_name:
@@ -389,7 +410,7 @@ class HierarchyService(ObjectService):
         return self.elements.add_edges(dimension_name, hierarchy_name, edges, **kwargs)
 
     def add_elements(self, dimension_name: str, hierarchy_name: str, elements: List[Element], **kwargs):
-        """ Add elements to hierarchy. Fails if one element already exists.
+        """Add elements to hierarchy. Fails if one element already exists.
 
         :param dimension_name:
         :param hierarchy_name:
@@ -398,9 +419,10 @@ class HierarchyService(ObjectService):
         """
         return self.elements.add_elements(dimension_name, hierarchy_name, elements, **kwargs)
 
-    def add_element_attributes(self, dimension_name: str, hierarchy_name: str,
-                               element_attributes: List[ElementAttribute], **kwargs):
-        """ Add element attributes to hierarchy. Fails if one element attribute already exists.
+    def add_element_attributes(
+        self, dimension_name: str, hierarchy_name: str, element_attributes: List[ElementAttribute], **kwargs
+    ):
+        """Add element attributes to hierarchy. Fails if one element attribute already exists.
 
         :param dimension_name:
         :param hierarchy_name:
@@ -410,16 +432,13 @@ class HierarchyService(ObjectService):
         return self.elements.add_element_attributes(dimension_name, hierarchy_name, element_attributes, **kwargs)
 
     def is_balanced(self, dimension_name: str, hierarchy_name: str, **kwargs):
-        """ Check if hierarchy is balanced
+        """Check if hierarchy is balanced
 
         :param dimension_name:
         :param hierarchy_name:
         :return:
         """
-        url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Structure/$value",
-            dimension_name,
-            hierarchy_name)
+        url = format_url("/Dimensions('{}')/Hierarchies('{}')/Structure/$value", dimension_name, hierarchy_name)
         structure = int(self._rest.GET(url, **kwargs).text)
         # 0 = balanced, 2 = unbalanced
         if structure == 0:
@@ -433,21 +452,22 @@ class HierarchyService(ObjectService):
     @require_data_admin
     @require_ops_admin
     def update_or_create_hierarchy_from_dataframe(
-            self,
-            dimension_name: str,
-            hierarchy_name: str,
-            df: 'pd.DataFrame',
-            element_column: str = None,
-            verify_unique_elements: bool = False,
-            verify_edges: bool = True,
-            element_type_column: str = 'ElementType',
-            unwind_all: bool = False,
-            unwind_consolidations: Iterable = None,
-            update_attribute_types: bool = False,
-            hierarchy_sort_order: Tuple[str, str, str, str] = None,
-            delete_orphaned_consolidations: bool = False,
-            **kwargs):
-        """ Update or Create a hierarchy based on a dataframe, while never deleting existing elements.
+        self,
+        dimension_name: str,
+        hierarchy_name: str,
+        df: "pd.DataFrame",
+        element_column: str = None,
+        verify_unique_elements: bool = False,
+        verify_edges: bool = True,
+        element_type_column: str = "ElementType",
+        unwind_all: bool = False,
+        unwind_consolidations: Iterable = None,
+        update_attribute_types: bool = False,
+        hierarchy_sort_order: Tuple[str, str, str, str] = None,
+        delete_orphaned_consolidations: bool = False,
+        **kwargs,
+    ):
+        """Update or Create a hierarchy based on a dataframe, while never deleting existing elements.
 
         :param dimension_name:
             Name of the dimension
@@ -507,7 +527,7 @@ class HierarchyService(ObjectService):
 
         # verify uniqueness of element names
         if verify_unique_elements:
-            unique_element_names = len(set(df[element_column].str.lower().str.replace(' ', '')))
+            unique_element_names = len(set(df[element_column].str.lower().str.replace(" ", "")))
             if df.shape[0] != unique_element_names:
                 raise ValueError("There must be no duplicates in the element column")
 
@@ -533,14 +553,14 @@ class HierarchyService(ObjectService):
         # sort to assure right order of levels (e.g. Level003 -> level002 -> LEVEL001)
         sorted_level_columns = sorted(
             [col for col in df.columns if any(char.isdigit() for char in col)],  # Filter columns with digits
-            key=lambda x: int(''.join(filter(str.isdigit, x))),  # Sort based on numeric part
-            reverse=True  # Descending order
+            key=lambda x: int("".join(filter(str.isdigit, x))),  # Sort based on numeric part
+            reverse=True,  # Descending order
         )
         for column in sorted_level_columns:
-            if column.lower().startswith('level') and column[5:8].isdigit():
+            if column.lower().startswith("level") and column[5:8].isdigit():
                 if len(column) == 8:  # "LevelXXX"
                     level_columns.append(column)
-                elif len(column) == 15 and column.lower().endswith('_weight'):  # "LevelXXX_weight"
+                elif len(column) == 15 and column.lower().endswith("_weight"):  # "LevelXXX_weight"
                     level_weight_columns.append(column)
 
         # case: no level weight columns. All weights are 1
@@ -562,8 +582,8 @@ class HierarchyService(ObjectService):
             existing_element_identifiers = CaseAndSpaceInsensitiveSet()
         else:
             existing_element_identifiers = self.elements.get_all_element_identifiers(
-                dimension_name=dimension_name,
-                hierarchy_name=hierarchy_name)
+                dimension_name=dimension_name, hierarchy_name=hierarchy_name
+            )
 
         if not hierarchy_exists:
             hierarchy = Hierarchy(name=hierarchy_name, dimension_name=dimension_name)
@@ -576,14 +596,18 @@ class HierarchyService(ObjectService):
                 self.create(hierarchy)
 
         # determine new elements based on Element Name column
-        new_elements = CaseAndSpaceInsensitiveDict({
-            element_name: Element.Types(element_type)
-            for element_name, element_type
-            in df.loc[
-                ~df[element_column].str.lower().str.replace(' ', '').isin(existing_element_identifiers._store.keys()),
-                (element_column, element_type_column)
-            ].itertuples(index=False)
-        })
+        new_elements = CaseAndSpaceInsensitiveDict(
+            {
+                element_name: Element.Types(element_type)
+                for element_name, element_type in df.loc[
+                    ~df[element_column]
+                    .str.lower()
+                    .str.replace(" ", "")
+                    .isin(existing_element_identifiers._store.keys()),
+                    (element_column, element_type_column),
+                ].itertuples(index=False)
+            }
+        )
 
         # determine new consolidations based on level columns
         for element_name in df[[*level_columns]].stack().unique():
@@ -600,23 +624,22 @@ class HierarchyService(ObjectService):
             self.elements.add_elements(
                 dimension_name=dimension_name,
                 hierarchy_name=hierarchy_name,
-                elements=(
-                    Element(element_name, element_type)
-                    for element_name, element_type in
-                    new_elements.items()))
+                elements=(Element(element_name, element_type) for element_name, element_type in new_elements.items()),
+            )
 
         # define the attribute columns in df. Applies to all elements in df, not only new ones.
         attribute_columns = df.columns.drop(
-            labels=[element_column] + [element_type_column] + level_columns + level_weight_columns,
-            errors='ignore')
+            labels=[element_column] + [element_type_column] + level_columns + level_weight_columns, errors="ignore"
+        )
 
         # new attributes are created as strings if no type is provided
         try:
-            existing_attributes = CaseAndSpaceInsensitiveDict({
-                ea.name: ElementAttribute.Types(ea.attribute_type)
-                for ea
-                in self.elements.get_element_attributes(dimension_name, hierarchy_name)
-            })
+            existing_attributes = CaseAndSpaceInsensitiveDict(
+                {
+                    ea.name: ElementAttribute.Types(ea.attribute_type)
+                    for ea in self.elements.get_element_attributes(dimension_name, hierarchy_name)
+                }
+            )
 
         except TM1pyRestException as ex:
             if ex.status_code == 404:
@@ -626,7 +649,7 @@ class HierarchyService(ObjectService):
 
         new_attributes = []
         for attribute_column in attribute_columns:
-            if ':' in attribute_column:
+            if ":" in attribute_column:
                 attribute_name, attribute_type = attribute_column.rsplit(":", maxsplit=1)
                 attribute_type = self._attribute_type_from_code(attribute_type)
 
@@ -644,9 +667,8 @@ class HierarchyService(ObjectService):
 
         if new_attributes:
             self.elements.add_element_attributes(
-                dimension_name=dimension_name,
-                hierarchy_name=hierarchy_name,
-                element_attributes=new_attributes)
+                dimension_name=dimension_name, hierarchy_name=hierarchy_name, element_attributes=new_attributes
+            )
 
         # define attributes df with ID + attribute columns.
         id_attribute_cols = [element_column] + list(attribute_columns.values)
@@ -656,13 +678,14 @@ class HierarchyService(ObjectService):
         attributes_df = attributes_df.melt(
             id_vars=element_column,
             value_vars=attribute_columns,
-            var_name='}ElementAttributes_' + dimension_name,
-            value_name='attribute_value', )
-        attributes_df.fillna('', inplace=True)
+            var_name="}ElementAttributes_" + dimension_name,
+            value_name="attribute_value",
+        )
+        attributes_df.fillna("", inplace=True)
 
         # drop ':' suffix in attribute column
-        attribute_column = '}ElementAttributes_' + dimension_name
-        attributes_df[attribute_column] = attributes_df[attribute_column].apply(lambda x: x.rsplit(':', 1)[0])
+        attribute_column = "}ElementAttributes_" + dimension_name
+        attributes_df[attribute_column] = attributes_df[attribute_column].apply(lambda x: x.rsplit(":", 1)[0])
 
         # write attributes to cube
         if not attributes_df.empty:
@@ -671,10 +694,11 @@ class HierarchyService(ObjectService):
             if not case_and_space_insensitive_equals(dimension_name, hierarchy_name):
                 attributes_df.iloc[:, 0] = hierarchy_name + ":" + attributes_df.iloc[:, 0].astype(str)
             cell_service.write_dataframe(
-                cube_name='}ElementAttributes_' + dimension_name,
+                cube_name="}ElementAttributes_" + dimension_name,
                 data=attributes_df,
                 sum_numeric_duplicates=False,
-                use_blob=True)
+                use_blob=True,
+            )
 
         if unwind_all:
             self.remove_all_edges(dimension_name=dimension_name, hierarchy_name=hierarchy_name)
@@ -683,28 +707,28 @@ class HierarchyService(ObjectService):
                 edges_to_delete = CaseAndSpaceInsensitiveTuplesDict()
                 for elem in unwind_consolidations:
                     if not self.elements.exists(
-                            dimension_name=dimension_name,
-                            hierarchy_name=hierarchy_name,
-                            element_name=elem):
+                        dimension_name=dimension_name, hierarchy_name=hierarchy_name, element_name=elem
+                    ):
                         continue
 
                     edges_under_consolidation = self.elements.get_edges_under_consolidation(
-                        dimension_name=dimension_name,
-                        hierarchy_name=hierarchy_name,
-                        consolidation=elem)
+                        dimension_name=dimension_name, hierarchy_name=hierarchy_name, consolidation=elem
+                    )
                     edges_to_delete.join(edges_under_consolidation)
 
                 self.elements.delete_edges(
                     dimension_name=dimension_name,
                     hierarchy_name=hierarchy_name,
                     edges=edges_to_delete,
-                    use_blob=self.is_admin)
+                    use_blob=self.is_admin,
+                )
 
         edges = CaseAndSpaceInsensitiveTuplesDict()
         for element_name, *record in df[[element_column, *level_columns, *level_weight_columns]].itertuples(
-                index=False):
-            levels = record[:len(level_columns)]
-            level_weights = record[len(level_columns):]
+            index=False
+        ):
+            levels = record[: len(level_columns)]
+            level_weights = record[len(level_columns) :]
 
             previous_level = element_name
             for level, weight in zip(levels, level_weights):
@@ -720,32 +744,27 @@ class HierarchyService(ObjectService):
 
         if edges:
             try:
-                current_edges = CaseAndSpaceInsensitiveTuplesDict(self.elements.get_edges(
-                    dimension_name=dimension_name,
-                    hierarchy_name=hierarchy_name))
+                current_edges = CaseAndSpaceInsensitiveTuplesDict(
+                    self.elements.get_edges(dimension_name=dimension_name, hierarchy_name=hierarchy_name)
+                )
             except TM1pyRestException as ex:
                 if ex.status_code == 404:
                     current_edges = CaseAndSpaceInsensitiveTuplesDict()
                 else:
                     raise ex
 
-            edges_to_delete = {
-                (k, v): w
-                for (k, v), w
-                in edges.items()
-                if w != current_edges.get((k, v), w)}
+            edges_to_delete = {(k, v): w for (k, v), w in edges.items() if w != current_edges.get((k, v), w)}
             if edges_to_delete:
                 self.elements.delete_edges(
                     dimension_name=dimension_name,
                     hierarchy_name=hierarchy_name,
                     edges=edges_to_delete.keys(),
-                    use_blob=self.is_admin)
+                    use_blob=self.is_admin,
+                )
 
             new_edges = {
-                (k, v): w
-                for (k, v), w
-                in edges.items()
-                if (k, v) not in current_edges or w != current_edges[(k, v)]}
+                (k, v): w for (k, v), w in edges.items() if (k, v) not in current_edges or w != current_edges[(k, v)]
+            }
             if new_edges:
                 self.elements.add_edges(dimension_name=dimension_name, hierarchy_name=hierarchy_name, edges=new_edges)
 
@@ -759,10 +778,11 @@ class HierarchyService(ObjectService):
             children = CaseAndSpaceInsensitiveSet(child for _, child in all_edges)
             parents_and_children = parents.union(children)
 
-            consolidated_element_names = CaseAndSpaceInsensitiveSet(self.elements.get_consolidated_element_names(
-                dimension_name=dimension_name,
-                hierarchy_name=hierarchy_name
-            ))
+            consolidated_element_names = CaseAndSpaceInsensitiveSet(
+                self.elements.get_consolidated_element_names(
+                    dimension_name=dimension_name, hierarchy_name=hierarchy_name
+                )
+            )
             orphaned_consolidations = list(consolidated_element_names - parents_and_children)
 
             if orphaned_consolidations:
@@ -770,54 +790,56 @@ class HierarchyService(ObjectService):
                     dimension_name=dimension_name,
                     hierarchy_name=hierarchy_name,
                     element_names=orphaned_consolidations,
-                    use_ti=self.is_admin)
-
+                    use_ti=self.is_admin,
+                )
 
     def get_dimension_service(self):
         from TM1py import DimensionService
+
         return DimensionService(self._rest)
 
     def get_cell_service(self):
         from TM1py import CellService
+
         return CellService(self._rest)
 
     @staticmethod
     def _attribute_type_from_code(attribute_type: str) -> ElementAttribute.Types:
         attribute_type = attribute_type.lower()
         if attribute_type not in ["a", "s", "n"] and attribute_type not in ElementAttribute.Types:
-            raise ValueError(f"Attribute Type '{attribute_type}' is not a valid "
-                             f"value: 'a', 's', 'n', 'alias', 'string', 'numeric'")
+            raise ValueError(
+                f"Attribute Type '{attribute_type}' is not a valid "
+                f"value: 'a', 's', 'n', 'alias', 'string', 'numeric'"
+            )
 
-        if attribute_type == 'a':
+        if attribute_type == "a":
             return ElementAttribute.Types.ALIAS
 
-        if attribute_type == 's':
+        if attribute_type == "s":
             return ElementAttribute.Types.STRING
 
-        if attribute_type == 'n':
+        if attribute_type == "n":
             return ElementAttribute.Types.NUMERIC
 
         else:
             return ElementAttribute.Types(attribute_type)
 
-    def _validate_hierarchy_sort_order_arguments(self,hierarchy_sort_order: Tuple[str, str, str, str]):
+    def _validate_hierarchy_sort_order_arguments(self, hierarchy_sort_order: Tuple[str, str, str, str]):
         if not len(hierarchy_sort_order) == 4:
             raise ValueError(
                 f"Argument 'hierarchy_sort_order' must be a tuple of 4 keys: "
-                f"'CompSortType', 'CompSortSense', 'ElSortType', 'ElSortSense'")
+                f"'CompSortType', 'CompSortSense', 'ElSortType', 'ElSortSense'"
+            )
 
         for arg_name, arg_value in zip(self.HIERARCHY_SORT_ORDER_ARGUMENTS.keys(), hierarchy_sort_order):
             valid_values = self.HIERARCHY_SORT_ORDER_ARGUMENTS.get(arg_name)
             if arg_value not in valid_values:
                 raise ValueError(
-                    f"Value '{arg_value}' for argument '{arg_name}' is not among valid values: '{valid_values}'")
-
+                    f"Value '{arg_value}' for argument '{arg_name}' is not among valid values: '{valid_values}'"
+                )
 
     def _implement_hierarchy_sort_order(
-            self,
-            dimension_name: str,
-            hierarchy_name: str,
-            hierarchy_sort_order: Tuple[str, str, str, str]
+        self, dimension_name: str, hierarchy_name: str, hierarchy_sort_order: Tuple[str, str, str, str]
     ):
         if not hierarchy_sort_order:
             return
@@ -846,12 +868,12 @@ class HierarchyService(ObjectService):
         if not success:
             message = f"Failed to implement hierarchy sort order: {code}"
             error_log_file_content = process_service.get_error_log_file_content(error_log_file)
-            error_log_file_content = error_log_file_content.strip().strip('\ufeff')
+            error_log_file_content = error_log_file_content.strip().strip("\ufeff")
             message += f". {error_log_file_content}"
             raise RuntimeError(message)
 
-
     def _get_process_service(self):
         from TM1py.Services import ProcessService
+
         process_service = ProcessService(self._rest)
         return process_service

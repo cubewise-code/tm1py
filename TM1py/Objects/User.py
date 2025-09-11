@@ -29,12 +29,17 @@ class UserType(Enum):
 
 
 class User(TM1Object):
-    """ Abstraction of a TM1 User
-    
-    """
+    """Abstraction of a TM1 User"""
 
-    def __init__(self, name: str, groups: Iterable[str], friendly_name: Optional[str] = None,
-                 password: Optional[str] = None, user_type: Union[UserType, str] = None, enabled: bool = None):
+    def __init__(
+        self,
+        name: str,
+        groups: Iterable[str],
+        friendly_name: Optional[str] = None,
+        password: Optional[str] = None,
+        user_type: Union[UserType, str] = None,
+        enabled: bool = None,
+    ):
         self._name = name
         self._groups = CaseAndSpaceInsensitiveSet(*groups)
         self._friendly_name = friendly_name
@@ -76,21 +81,18 @@ class User(TM1Object):
     @property
     def is_admin(self) -> bool:
         return "ADMIN" in CaseAndSpaceInsensitiveSet(*self.groups)
-    
+
     @property
     def is_data_admin(self) -> bool:
-        return any(g in CaseAndSpaceInsensitiveSet(
-            *self.groups) for g in ["Admin", "DataAdmin"])
-    
+        return any(g in CaseAndSpaceInsensitiveSet(*self.groups) for g in ["Admin", "DataAdmin"])
+
     @property
     def is_security_admin(self) -> bool:
-        return any(g in CaseAndSpaceInsensitiveSet(
-            *self.groups) for g in ["Admin", "SecurityAdmin"])
-    
+        return any(g in CaseAndSpaceInsensitiveSet(*self.groups) for g in ["Admin", "SecurityAdmin"])
+
     @property
     def is_ops_admin(self) -> bool:
-        return any(g in CaseAndSpaceInsensitiveSet(
-            *self.groups) for g in ["Admin", "OperationsAdmin"])
+        return any(g in CaseAndSpaceInsensitiveSet(*self.groups) for g in ["Admin", "OperationsAdmin"])
 
     @property
     def groups(self) -> List[str]:
@@ -134,7 +136,7 @@ class User(TM1Object):
 
     @classmethod
     def from_json(cls, user_as_json: str):
-        """ Alternative constructor
+        """Alternative constructor
 
         :param user_as_json: user as JSON string
         :return: user, an instance of this class
@@ -143,17 +145,19 @@ class User(TM1Object):
         return cls.from_dict(user_as_dict)
 
     @classmethod
-    def from_dict(cls, user_as_dict: Dict) -> 'User':
-        """ Alternative constructor
+    def from_dict(cls, user_as_dict: Dict) -> "User":
+        """Alternative constructor
 
         :param user_as_dict: user as dict
         :return: user, an instance of this class
         """
-        return cls(name=user_as_dict['Name'],
-                   friendly_name=user_as_dict['FriendlyName'],
-                   enabled=user_as_dict.get('Enabled', None),
-                   user_type=user_as_dict["Type"],
-                   groups=[group["Name"] for group in user_as_dict['Groups']])
+        return cls(
+            name=user_as_dict["Name"],
+            friendly_name=user_as_dict["FriendlyName"],
+            enabled=user_as_dict.get("Enabled", None),
+            user_type=user_as_dict["Type"],
+            groups=[group["Name"] for group in user_as_dict["Groups"]],
+        )
 
     @property
     def body(self) -> str:
@@ -165,13 +169,11 @@ class User(TM1Object):
         :return: String, TM1 JSON representation of a user
         """
         body_as_dict = collections.OrderedDict()
-        body_as_dict['Name'] = self.name
-        body_as_dict['FriendlyName'] = self.friendly_name or self.name
-        body_as_dict['Enabled'] = self._enabled
-        body_as_dict['Type'] = str(self._user_type)
+        body_as_dict["Name"] = self.name
+        body_as_dict["FriendlyName"] = self.friendly_name or self.name
+        body_as_dict["Enabled"] = self._enabled
+        body_as_dict["Type"] = str(self._user_type)
         if self.password:
-            body_as_dict['Password'] = self._password
-        body_as_dict['Groups@odata.bind'] = [format_url("Groups('{}')", group)
-                                             for group
-                                             in self.groups]
+            body_as_dict["Password"] = self._password
+        body_as_dict["Groups@odata.bind"] = [format_url("Groups('{}')", group) for group in self.groups]
         return json.dumps(body_as_dict, ensure_ascii=False)

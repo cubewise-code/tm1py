@@ -20,8 +20,8 @@ class TestAnnotationService(unittest.TestCase):
 
         # Connection to TM1
         cls.config = configparser.ConfigParser()
-        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
-        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        cls.config.read(Path(__file__).parent.joinpath("config.ini"))
+        cls.tm1 = TM1Service(**cls.config["tm1srv01"])
 
     @classmethod
     def tearDownClass(cls):
@@ -35,7 +35,7 @@ class TestAnnotationService(unittest.TestCase):
         Run before each test to create a cube with test annotations
         """
         # Build Dimensions
-        test_uuid = str(uuid1()).replace('-', "_")
+        test_uuid = str(uuid1()).replace("-", "_")
         self.dimension_names = (
             "TM1py_tests_annotations_dimension1_" + test_uuid,
             "TM1py_tests_annotations_dimension2_" + test_uuid,
@@ -43,10 +43,8 @@ class TestAnnotationService(unittest.TestCase):
         )
 
         for dimension_name in self.dimension_names:
-            elements = [Element('Element {}'.format(str(j)), 'Numeric') for j in range(1, 1001)]
-            hierarchy = Hierarchy(dimension_name=dimension_name,
-                                  name=dimension_name,
-                                  elements=elements)
+            elements = [Element("Element {}".format(str(j)), "Numeric") for j in range(1, 1001)]
+            hierarchy = Hierarchy(dimension_name=dimension_name, name=dimension_name, elements=elements)
             dimension = Dimension(dimension_name, [hierarchy])
             self.tm1.dimensions.update_or_create(dimension)
 
@@ -58,9 +56,9 @@ class TestAnnotationService(unittest.TestCase):
         random_intersection = self.tm1.cubes.get_random_intersection(self.cube_name, False)
         random_text = "".join([random.choice(string.printable) for _ in range(100)])
 
-        annotation = Annotation(comment_value=random_text,
-                                object_name=self.cube_name,
-                                dimensional_context=random_intersection)
+        annotation = Annotation(
+            comment_value=random_text, object_name=self.cube_name, dimensional_context=random_intersection
+        )
 
         self.annotation_id = self.tm1.cubes.annotations.create(annotation).json().get("ID")
 
@@ -95,9 +93,8 @@ class TestAnnotationService(unittest.TestCase):
         random_text = "".join([random.choice(string.printable) for _ in range(100)])
 
         annotation = Annotation(
-            comment_value=random_text,
-            object_name=self.cube_name,
-            dimensional_context=random_intersection)
+            comment_value=random_text, object_name=self.cube_name, dimensional_context=random_intersection
+        )
 
         annotation_id = self.tm1.cubes.annotations.create(annotation).json().get("ID")
         all_annotations = self.tm1.cubes.annotations.get_all(self.cube_name)
@@ -118,10 +115,11 @@ class TestAnnotationService(unittest.TestCase):
             random_intersection = self.tm1.cubes.get_random_intersection(self.cube_name, False)
             random_text = "".join([random.choice(string.printable) for _ in range(100)])
 
-            annotations.append(Annotation(
-                comment_value=random_text,
-                object_name=self.cube_name,
-                dimensional_context=random_intersection))
+            annotations.append(
+                Annotation(
+                    comment_value=random_text, object_name=self.cube_name, dimensional_context=random_intersection
+                )
+            )
 
         self.tm1.cubes.annotations.create_many(annotations)
         all_annotations = self.tm1.cubes.annotations.get_all(self.cube_name)
@@ -162,5 +160,5 @@ class TestAnnotationService(unittest.TestCase):
         self.assertLess(len(self.tm1.cubes.annotations.get_all(self.cube_name)), annotation_count)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

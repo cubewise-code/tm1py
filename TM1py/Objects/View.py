@@ -5,8 +5,8 @@ from TM1py.Objects.TM1Object import TM1Object
 
 
 class View(TM1Object):
-    """ Abstraction of TM1 View
-        serves as a parentclass for TM1py.Objects.MDXView and TM1py.Objects.NativeView
+    """Abstraction of TM1 View
+    serves as a parentclass for TM1py.Objects.MDXView and TM1py.Objects.NativeView
 
     """
 

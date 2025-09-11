@@ -25,25 +25,13 @@ class TestSubset(unittest.TestCase):
         cls.subset_dict = {
             "Name": "dict_subset",
             "UniqueName": f"[{cls.dimension_name}]",
-            "Hierarchy": {
-                "Name": f"{cls.hierarchy_name}"
-            },
+            "Hierarchy": {"Name": f"{cls.hierarchy_name}"},
             "Alias": "dict_subset" + "_alias",
-            "Elements": [
-                {
-                    "Name": "x"
-                },
-                {
-                    "Name": "y"
-                },
-                {
-                    "Name": "z"
-                }
-            ],
-            "Expression": ""
+            "Elements": [{"Name": "x"}, {"Name": "y"}, {"Name": "z"}],
+            "Expression": "",
         }
 
-        cls.subset_json = '''
+        cls.subset_json = """
         {
             "Name": "json_subset",
             "UniqueName" : "json_subset",
@@ -64,7 +52,7 @@ class TestSubset(unittest.TestCase):
             ],
             "Expression" : ""
         }
-        '''
+        """
 
     def setUp(self):
         """
@@ -74,18 +62,17 @@ class TestSubset(unittest.TestCase):
         self.static_subset = Subset(
             dimension_name=self.dimension_name,
             subset_name=self.subset_name_static,
-            elements=['USD', 'EUR', 'NZD', 'Dum\'my'])
+            elements=["USD", "EUR", "NZD", "Dum'my"],
+        )
 
         self.dynamic_subset = Subset(
             dimension_name=self.dimension_name,
             subset_name=self.subset_name_dynamic,
-            expression='{ HIERARCHIZE( {TM1SUBSETALL( [' + self.dimension_name + '] )} ) }')
+            expression="{ HIERARCHIZE( {TM1SUBSETALL( [" + self.dimension_name + "] )} ) }",
+        )
 
         # subset constructed from only the mandatory arguments
-        self.minimal_subset = Subset(
-            dimension_name=self.dimension_name,
-            subset_name=self.subset_name_minimal
-        )
+        self.minimal_subset = Subset(dimension_name=self.dimension_name, subset_name=self.subset_name_minimal)
 
         # a static subset constructed with optional arguments
         self.complete_subset = Subset(
@@ -93,14 +80,12 @@ class TestSubset(unittest.TestCase):
             subset_name=self.subset_name_complete,
             hierarchy_name=self.hierarchy_name,
             alias=self.subset_name_alias,
-            elements=["a", "b", "c"]
+            elements=["a", "b", "c"],
         )
 
         # an instance of the AnonymoustSubset subclass
         self.anon_subset = AnonymousSubset(
-            dimension_name=self.dimension_name,
-            hierarchy_name=self.hierarchy_name,
-            elements=["x", "y", "z"]
+            dimension_name=self.dimension_name, hierarchy_name=self.hierarchy_name, elements=["x", "y", "z"]
         )
 
     def tearDown(self):
@@ -149,8 +134,7 @@ class TestSubset(unittest.TestCase):
     def test_property_getters(self):
         self.assertEqual(self.complete_subset.name, self.subset_name_complete)
         self.assertEqual(self.dynamic_subset.name, self.subset_name_dynamic)
-        self.assertEqual(self.static_subset.dimension_name,
-                         self.dimension_name)
+        self.assertEqual(self.static_subset.dimension_name, self.dimension_name)
         self.assertEqual(self.minimal_subset.elements, [])
         self.assertIn("a", self.complete_subset.elements)
 
@@ -171,5 +155,5 @@ class TestSubset(unittest.TestCase):
         pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

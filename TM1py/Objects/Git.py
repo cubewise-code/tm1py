@@ -6,12 +6,12 @@ from TM1py.Objects.GitRemote import GitRemote
 
 
 class Git:
-    """ Abstraction of Git object
-    """
+    """Abstraction of Git object"""
 
-    def __init__(self, url: str, deployment: str, force: bool, deployed_commit: GitCommit, remote: GitRemote,
-                 config: dict = None):
-        """ Initialize GIT object
+    def __init__(
+        self, url: str, deployment: str, force: bool, deployed_commit: GitCommit, remote: GitRemote, config: dict = None
+    ):
+        """Initialize GIT object
         :param url: file or http(s) path to GIT repository
         :param deployment: name of selected deployment group
         :param force: whether or not Git context was forced
@@ -52,11 +52,11 @@ class Git:
         return self._remote
 
     @classmethod
-    def from_dict(cls, json_response: Dict) -> 'Git':
+    def from_dict(cls, json_response: Dict) -> "Git":
         deployed_commit = GitCommit(
             commit_id=json_response["DeployedCommit"].get("ID"),
             summary=json_response["DeployedCommit"].get("Summary"),
-            author=json_response["DeployedCommit"].get("Author")
+            author=json_response["DeployedCommit"].get("Author"),
         )
 
         remote = GitRemote(
@@ -70,6 +70,7 @@ class Git:
             deployment=json_response["Deployment"],
             force=json_response["Deployment"],
             deployed_commit=deployed_commit,
-            remote=remote)
+            remote=remote,
+        )
 
         return git

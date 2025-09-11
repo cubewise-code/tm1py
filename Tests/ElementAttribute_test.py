@@ -38,10 +38,8 @@ class TestElementAttribute(unittest.TestCase):
     def test_construct_body(self):
         element = ElementAttribute(name="Attribute 1", attribute_type="Numeric")
 
-        self.assertEqual(
-            element.body_as_dict,
-            {'Name': 'Attribute 1', 'Type': 'Numeric'})
+        self.assertEqual(element.body_as_dict, {"Name": "Attribute 1", "Type": "Numeric"})
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

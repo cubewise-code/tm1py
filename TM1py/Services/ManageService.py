@@ -4,7 +4,7 @@ from requests.auth import HTTPBasicAuth
 
 
 class ManageService:
-    """ Manage service to interact with the manage endpoint.
+    """Manage service to interact with the manage endpoint.
     The manage endpoint uses basic auth using the root client and secret
 
     """
@@ -25,7 +25,7 @@ class ManageService:
     def get_instances(self):
         url = f"{self._root_url}/Instances"
         response = requests.get(url=url, auth=self._auth_header)
-        return json.loads(response.content).get('value')
+        return json.loads(response.content).get("value")
 
     def get_instance(self, instance_name):
         url = f"{self._root_url}/Instances('{instance_name}')"
@@ -54,102 +54,80 @@ class ManageService:
     def get_databases(self, instance_name):
         url = f"{self._root_url}/Instances('{instance_name}')/Databases"
         response = requests.get(url=url, auth=self._auth_header)
-        return json.loads(response.content).get('value')
+        return json.loads(response.content).get("value")
 
     def get_database(self, instance_name, database_name):
         url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')"
         response = requests.get(url=url, auth=self._auth_header)
         return json.loads(response.content)
 
-    def create_database(self,
-                        instance_name,
-                        database_name,
-                        number_replicas,
-                        product_version,
-                        cpu_requests="1000m",
-                        cpu_limits="2000m",
-                        memory_requests="1G",
-                        memory_limits="2G",
-                        storage_size="20Gi"):
+    def create_database(
+        self,
+        instance_name,
+        database_name,
+        number_replicas,
+        product_version,
+        cpu_requests="1000m",
+        cpu_limits="2000m",
+        memory_requests="1G",
+        memory_limits="2G",
+        storage_size="20Gi",
+    ):
 
         url = f"{self._root_url}/Instances('{instance_name}')/Databases"
 
-        payload = {"Name": database_name,
-                   "Replicas": number_replicas,
-                   "ProductVersion": product_version,
-                   "Resources": {
-                       "Replica": {
-                           "CPU": {
-                               "Requests": cpu_requests,
-                               "Limits": cpu_limits
-                           },
-                           "Memory": {
-                               "Requests": memory_requests,
-                               "Limits": memory_limits
-                           }
-                       },
-                       "Storage": {
-                           "Size": storage_size
-                       }
-                   }
-                   }
+        payload = {
+            "Name": database_name,
+            "Replicas": number_replicas,
+            "ProductVersion": product_version,
+            "Resources": {
+                "Replica": {
+                    "CPU": {"Requests": cpu_requests, "Limits": cpu_limits},
+                    "Memory": {"Requests": memory_requests, "Limits": memory_limits},
+                },
+                "Storage": {"Size": storage_size},
+            },
+        }
         response = requests.post(url=url, json=payload, auth=self._auth_header)
 
         return response
 
-    def update_database_cpu(self,
-                            instance_name,
-                            database_name,
-                            cpu_requests,
-                            cpu_limits,
-                            ):
+    def update_database_cpu(
+        self,
+        instance_name,
+        database_name,
+        cpu_requests,
+        cpu_limits,
+    ):
         url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')"
 
-        payload = {"Resources": {
-            "Replica": {
-                "CPU": {
-                    "Requests": cpu_requests,
-                    "Limits": cpu_limits
-                },
-            }
-        }
-        }
-        response = requests.patch(url=url, json=payload, auth=self._auth_header)
-        return response
-
-    def update_database_memory(self,
-                               instance_name,
-                               database_name,
-                               memory_requests,
-                               memory_limits,
-                               ):
-        url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')"
-
-        payload = {"Resources": {
-            "Replica": {
-                "Memory": {
-                    "Requests": memory_requests,
-                    "Limits": memory_limits
+        payload = {
+            "Resources": {
+                "Replica": {
+                    "CPU": {"Requests": cpu_requests, "Limits": cpu_limits},
                 }
             }
         }
-        }
         response = requests.patch(url=url, json=payload, auth=self._auth_header)
         return response
 
-    def update_database_storage(self,
-                                instance_name,
-                                database_name,
-                                storage_size
-                                ):
+    def update_database_memory(
+        self,
+        instance_name,
+        database_name,
+        memory_requests,
+        memory_limits,
+    ):
         url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')"
 
-        payload = {"Resources": {
-            "Storage": {
-                "Size": storage_size
-            }
-        }
-        }
+        payload = {"Resources": {"Replica": {"Memory": {"Requests": memory_requests, "Limits": memory_limits}}}}
+        response = requests.patch(url=url, json=payload, auth=self._auth_header)
+        return response
+
+    def update_database_storage(self, instance_name, database_name, storage_size):
+        url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')"
+
+        payload = {"Resources": {"Storage": {"Size": storage_size}}}
         response = requests.patch(url=url, json=payload, auth=self._auth_header)
         return response
 
@@ -180,13 +158,17 @@ class ManageService:
 
     def create_and_upload_database_backup_set_file(self, instance_name: str, database_name: str, backup_set_name: str):
 
-        create_url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')" \
-                     f"/Contents('Files')/Contents('.backupsets')/Contents"
+        create_url = (
+            f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')"
+            f"/Contents('Files')/Contents('.backupsets')/Contents"
+        )
         payload = {"@odata.type": "#ibm.tm1.api.v1.Document", "Name": f"{backup_set_name}.tgz"}
         requests.post(url=create_url, json=payload, auth=self._auth_header)
 
-        upload_url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')" \
-                     f"/Contents('Files')/Contents('.backupsets')/Contents('{backup_set_name}.tgz')/Content"
+        upload_url = (
+            f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')"
+            f"/Contents('Files')/Contents('.backupsets')/Contents('{backup_set_name}.tgz')/Content"
+        )
         response = requests.post(url=upload_url, json=payload, auth=self._auth_header)
         return response
 
@@ -217,7 +199,7 @@ class ManageService:
         payload = {"Name": application_name}
         response = requests.post(url=url, json=payload, auth=self._auth_header)
         response_json = json.loads(response.content)
-        return response_json['ClientID'], response_json['ClientSecret']
+        return response_json["ClientID"], response_json["ClientSecret"]
 
     def get_metadata(self):
         url = f"{self._root_url}/$metadata?$format=json"
@@ -226,10 +208,7 @@ class ManageService:
 
     def subscribe_to_data_changes(self, instance_name, database_name, target_url, additional_properties: dict = {}):
         url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')/tm1.Subscribe"
-        payload = {
-            "URL": target_url,
-            "AdditionalProperties": additional_properties
-        }
+        payload = {"URL": target_url, "AdditionalProperties": additional_properties}
         response = requests.post(url=url, json=payload, auth=self._auth_header)
         return response
 
@@ -237,6 +216,3 @@ class ManageService:
         url = f"{self._root_url}/Instances('{instance_name}')/Databases('{database_name}')/tm1.Unsubscribe"
         response = requests.post(url=url, auth=self._auth_header)
         return response
-
-
-

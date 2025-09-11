@@ -9,9 +9,7 @@ from TM1py.Utils import case_and_space_insensitive_equals
 
 
 class ElementAttribute(TM1Object):
-    """ Abstraction of TM1 Element Attributes
-    
-    """
+    """Abstraction of TM1 Element Attributes"""
 
     class Types(Enum):
         NUMERIC = 1
@@ -58,15 +56,14 @@ class ElementAttribute(TM1Object):
         return json.dumps(self.body_as_dict, ensure_ascii=False)
 
     @classmethod
-    def from_json(cls, element_attribute_as_json: str) -> 'ElementAttribute':
+    def from_json(cls, element_attribute_as_json: str) -> "ElementAttribute":
         return cls.from_dict(json.loads(element_attribute_as_json))
 
     @classmethod
-    def from_dict(cls, element_attribute_as_dict: Dict) -> 'ElementAttribute':
-        return cls(name=element_attribute_as_dict['Name'],
-                   attribute_type=element_attribute_as_dict['Type'])
+    def from_dict(cls, element_attribute_as_dict: Dict) -> "ElementAttribute":
+        return cls(name=element_attribute_as_dict["Name"], attribute_type=element_attribute_as_dict["Type"])
 
-    def __eq__(self, other: Union[str, 'ElementAttribute']):
+    def __eq__(self, other: Union[str, "ElementAttribute"]):
         if isinstance(other, str):
             return case_and_space_insensitive_equals(self.name, other)
         elif isinstance(other, ElementAttribute):

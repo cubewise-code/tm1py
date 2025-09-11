@@ -14,8 +14,8 @@ from .Utils import skip_if_version_lower_than
 class TestChoreService(unittest.TestCase):
     tm1: TM1Service
     prefix = "TM1py_Tests_Chore_"
-    process_name1 = prefix + 'Process1'
-    process_name2 = prefix + 'Process2'
+    process_name1 = prefix + "Process1"
+    process_name2 = prefix + "Process2"
     chore_name1 = prefix + "Chore1"
     chore_name2 = prefix + "Chore2"
     chore_name3 = prefix + "Chore3"
@@ -26,14 +26,13 @@ class TestChoreService(unittest.TestCase):
     frequency_minutes = int(random.uniform(0, 59))
     frequency_seconds = int(random.uniform(0, 59))
     frequency = ChoreFrequency(
-        days=frequency_days,
-        hours=frequency_hours,
-        minutes=frequency_minutes,
-        seconds=frequency_seconds)
+        days=frequency_days, hours=frequency_hours, minutes=frequency_minutes, seconds=frequency_seconds
+    )
     tasks = [
-        ChoreTask(0, process_name1, parameters=[{'Name': 'pRegion', 'Value': 'UK'}]),
-        ChoreTask(1, process_name1, parameters=[{'Name': 'pRegion', 'Value': 'FR'}]),
-        ChoreTask(2, process_name1, parameters=[{'Name': 'pRegion', 'Value': 'CH'}])]
+        ChoreTask(0, process_name1, parameters=[{"Name": "pRegion", "Value": "UK"}]),
+        ChoreTask(1, process_name1, parameters=[{"Name": "pRegion", "Value": "FR"}]),
+        ChoreTask(2, process_name1, parameters=[{"Name": "pRegion", "Value": "CH"}]),
+    ]
 
     @classmethod
     def setUpClass(cls):
@@ -43,38 +42,54 @@ class TestChoreService(unittest.TestCase):
 
         # Connection to TM1
         cls.config = configparser.ConfigParser()
-        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
-        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        cls.config.read(Path(__file__).parent.joinpath("config.ini"))
+        cls.tm1 = TM1Service(**cls.config["tm1srv01"])
 
         # create processes
         p1 = Process(name=cls.process_name1)
-        p1.add_parameter('pRegion', 'pRegion (String)', value='US')
+        p1.add_parameter("pRegion", "pRegion (String)", value="US")
 
         cls.tm1.processes.update_or_create(p1)
         p2 = Process(name=cls.process_name2)
-        p2.add_parameter('pRegion', 'pRegion (String)', value='UK')
+        p2.add_parameter("pRegion", "pRegion (String)", value="UK")
         cls.tm1.processes.update_or_create(p2)
 
     def setUp(self):
         # create chores
-        c1 = Chore(name=self.chore_name1,
-                   start_time=ChoreStartTime(self.start_time.year, self.start_time.month, self.start_time.day,
-                                             self.start_time.hour, self.start_time.minute, self.start_time.second),
-                   dst_sensitivity=True,
-                   active=True,
-                   execution_mode=Chore.MULTIPLE_COMMIT,
-                   frequency=self.frequency,
-                   tasks=self.tasks)
+        c1 = Chore(
+            name=self.chore_name1,
+            start_time=ChoreStartTime(
+                self.start_time.year,
+                self.start_time.month,
+                self.start_time.day,
+                self.start_time.hour,
+                self.start_time.minute,
+                self.start_time.second,
+            ),
+            dst_sensitivity=True,
+            active=True,
+            execution_mode=Chore.MULTIPLE_COMMIT,
+            frequency=self.frequency,
+            tasks=self.tasks,
+        )
         self.tm1.chores.update_or_create(c1)
 
-        c2 = Chore(name=self.chore_name2,
-                   start_time=ChoreStartTime(self.start_time.year, self.start_time.month, self.start_time.day,
-                                             self.start_time.hour, self.start_time.minute, self.start_time.second),
-                   dst_sensitivity=True,
-                   active=False,
-                   execution_mode=Chore.SINGLE_COMMIT,
-                   frequency=self.frequency,
-                   tasks=self.tasks)
+        c2 = Chore(
+            name=self.chore_name2,
+            start_time=ChoreStartTime(
+                self.start_time.year,
+                self.start_time.month,
+                self.start_time.day,
+                self.start_time.hour,
+                self.start_time.minute,
+                self.start_time.second,
+            ),
+            dst_sensitivity=True,
+            active=False,
+            execution_mode=Chore.SINGLE_COMMIT,
+            frequency=self.frequency,
+            tasks=self.tasks,
+        )
         self.tm1.chores.update_or_create(c2)
 
         # chore without tasks
@@ -96,14 +111,22 @@ class TestChoreService(unittest.TestCase):
     @skip_if_version_lower_than(version="11.7.00002.1")
     def test_create_chore_with_dst_multi_commit(self):
         # create chores
-        c4 = Chore(name=self.chore_name4,
-                   start_time=ChoreStartTime(self.start_time.year, self.start_time.month, self.start_time.day,
-                                             self.start_time.hour, self.start_time.minute, self.start_time.second),
-                   dst_sensitivity=True,
-                   active=True,
-                   execution_mode=Chore.MULTIPLE_COMMIT,
-                   frequency=self.frequency,
-                   tasks=self.tasks)
+        c4 = Chore(
+            name=self.chore_name4,
+            start_time=ChoreStartTime(
+                self.start_time.year,
+                self.start_time.month,
+                self.start_time.day,
+                self.start_time.hour,
+                self.start_time.minute,
+                self.start_time.second,
+            ),
+            dst_sensitivity=True,
+            active=True,
+            execution_mode=Chore.MULTIPLE_COMMIT,
+            frequency=self.frequency,
+            tasks=self.tasks,
+        )
         self.tm1.chores.create(c4)
 
         c4 = self.tm1.chores.get(self.chore_name4)
@@ -124,14 +147,22 @@ class TestChoreService(unittest.TestCase):
 
     def test_create_chore_with_dst_single_commit(self):
         # create chores
-        c4 = Chore(name=self.chore_name4,
-                   start_time=ChoreStartTime(self.start_time.year, self.start_time.month, self.start_time.day,
-                                             self.start_time.hour, self.start_time.minute, self.start_time.second),
-                   dst_sensitivity=True,
-                   active=True,
-                   execution_mode=Chore.SINGLE_COMMIT,
-                   frequency=self.frequency,
-                   tasks=self.tasks)
+        c4 = Chore(
+            name=self.chore_name4,
+            start_time=ChoreStartTime(
+                self.start_time.year,
+                self.start_time.month,
+                self.start_time.day,
+                self.start_time.hour,
+                self.start_time.minute,
+                self.start_time.second,
+            ),
+            dst_sensitivity=True,
+            active=True,
+            execution_mode=Chore.SINGLE_COMMIT,
+            frequency=self.frequency,
+            tasks=self.tasks,
+        )
         self.tm1.chores.create(c4)
 
         c4 = self.tm1.chores.get(self.chore_name4)
@@ -202,11 +233,11 @@ class TestChoreService(unittest.TestCase):
         self.assertEqual(self.chore_name2, chore_names[1].name)
 
     def test_search_for_parameter_value_no_match(self):
-        chore_names = self.tm1.chores.search_for_parameter_value(parameter_value='NotAParamValue')
+        chore_names = self.tm1.chores.search_for_parameter_value(parameter_value="NotAParamValue")
         self.assertEqual([], chore_names)
 
     def test_search_for_parameter_value_happy_case(self):
-        chore_names = self.tm1.chores.search_for_parameter_value(parameter_value='UK')
+        chore_names = self.tm1.chores.search_for_parameter_value(parameter_value="UK")
         self.assertEqual(2, len(chore_names))
         self.assertEqual(self.chore_name1, chore_names[0].name)
         self.assertEqual(self.chore_name2, chore_names[1].name)
@@ -217,19 +248,23 @@ class TestChoreService(unittest.TestCase):
         # update all properties
         # update start time
         start_time = datetime(2020, 5, 6, 17, 4, 2)
-        c._start_time = ChoreStartTime(start_time.year, start_time.month, start_time.day,
-                                       start_time.hour, start_time.minute, start_time.second)
+        c._start_time = ChoreStartTime(
+            start_time.year, start_time.month, start_time.day, start_time.hour, start_time.minute, start_time.second
+        )
         # update frequency
         frequency_days = int(random.uniform(0, 355))
         frequency_hours = int(random.uniform(0, 23))
         frequency_minutes = int(random.uniform(0, 59))
         frequency_seconds = int(random.uniform(0, 59))
-        c._frequency = ChoreFrequency(days=frequency_days, hours=frequency_hours,
-                                      minutes=frequency_minutes, seconds=frequency_seconds)
+        c._frequency = ChoreFrequency(
+            days=frequency_days, hours=frequency_hours, minutes=frequency_minutes, seconds=frequency_seconds
+        )
         # update tasks
-        tasks = [ChoreTask(0, self.process_name2, parameters=[{'Name': 'pRegion', 'Value': 'DE'}]),
-                 ChoreTask(1, self.process_name2, parameters=[{'Name': 'pRegion', 'Value': 'ES'}]),
-                 ChoreTask(2, self.process_name2, parameters=[{'Name': 'pRegion', 'Value': 'US'}])]
+        tasks = [
+            ChoreTask(0, self.process_name2, parameters=[{"Name": "pRegion", "Value": "DE"}]),
+            ChoreTask(1, self.process_name2, parameters=[{"Name": "pRegion", "Value": "ES"}]),
+            ChoreTask(2, self.process_name2, parameters=[{"Name": "pRegion", "Value": "US"}]),
+        ]
         c._tasks = tasks
         # execution mode
         c._execution_mode = Chore.SINGLE_COMMIT
@@ -275,17 +310,19 @@ class TestChoreService(unittest.TestCase):
         c = self.tm1.chores.get(self.chore_name1)
         # update all properties
         # update start time
-        start_time = datetime(2023,4,5, 12,5,30)
-        c._start_time = ChoreStartTime(start_time.year, start_time.month, start_time.day,
-                                       start_time.hour, start_time.minute, start_time.second)
+        start_time = datetime(2023, 4, 5, 12, 5, 30)
+        c._start_time = ChoreStartTime(
+            start_time.year, start_time.month, start_time.day, start_time.hour, start_time.minute, start_time.second
+        )
         c.dst_sensitivity = True
         # update frequency
         frequency_days = int(random.uniform(0, 355))
         frequency_hours = int(random.uniform(0, 23))
         frequency_minutes = int(random.uniform(0, 59))
         frequency_seconds = int(random.uniform(0, 59))
-        c._frequency = ChoreFrequency(days=frequency_days, hours=frequency_hours,
-                                      minutes=frequency_minutes, seconds=frequency_seconds)
+        c._frequency = ChoreFrequency(
+            days=frequency_days, hours=frequency_hours, minutes=frequency_minutes, seconds=frequency_seconds
+        )
 
         # execution mode
         c._execution_mode = Chore.SINGLE_COMMIT
@@ -310,21 +347,25 @@ class TestChoreService(unittest.TestCase):
         # update all properties
         # update start time
         start_time = datetime.now()
-        c._start_time = ChoreStartTime(start_time.year, start_time.month, start_time.day,
-                                       start_time.hour, start_time.minute, start_time.second)
+        c._start_time = ChoreStartTime(
+            start_time.year, start_time.month, start_time.day, start_time.hour, start_time.minute, start_time.second
+        )
         c.dst_sensitivity = True
         # update frequency
         frequency_days = int(random.uniform(0, 355))
         frequency_hours = int(random.uniform(0, 23))
         frequency_minutes = int(random.uniform(0, 59))
         frequency_seconds = int(random.uniform(0, 59))
-        c._frequency = ChoreFrequency(days=frequency_days, hours=frequency_hours,
-                                      minutes=frequency_minutes, seconds=frequency_seconds)
+        c._frequency = ChoreFrequency(
+            days=frequency_days, hours=frequency_hours, minutes=frequency_minutes, seconds=frequency_seconds
+        )
         # update tasks
-        tasks = [ChoreTask(0, self.process_name2, parameters=[{'Name': 'pRegion', 'Value': 'DE'}]),
-                 ChoreTask(1, self.process_name2, parameters=[{'Name': 'pRegion', 'Value': 'ES'}]),
-                 ChoreTask(2, self.process_name2, parameters=[{'Name': 'pRegion', 'Value': 'CH'}]),
-                 ChoreTask(3, self.process_name2, parameters=[{'Name': 'pRegion', 'Value': 'US'}])]
+        tasks = [
+            ChoreTask(0, self.process_name2, parameters=[{"Name": "pRegion", "Value": "DE"}]),
+            ChoreTask(1, self.process_name2, parameters=[{"Name": "pRegion", "Value": "ES"}]),
+            ChoreTask(2, self.process_name2, parameters=[{"Name": "pRegion", "Value": "CH"}]),
+            ChoreTask(3, self.process_name2, parameters=[{"Name": "pRegion", "Value": "US"}]),
+        ]
         c._tasks = tasks
         # execution mode
         c._execution_mode = Chore.SINGLE_COMMIT
@@ -354,19 +395,23 @@ class TestChoreService(unittest.TestCase):
         # update all properties
         # update start time
         start_time = datetime.now()
-        c._start_time = ChoreStartTime(start_time.year, start_time.month, start_time.day,
-                                       start_time.hour, start_time.minute, start_time.second)
+        c._start_time = ChoreStartTime(
+            start_time.year, start_time.month, start_time.day, start_time.hour, start_time.minute, start_time.second
+        )
         c.dst_sensitivity = True
         # update frequency
         frequency_days = int(random.uniform(0, 355))
         frequency_hours = int(random.uniform(0, 23))
         frequency_minutes = int(random.uniform(0, 59))
         frequency_seconds = int(random.uniform(0, 59))
-        c._frequency = ChoreFrequency(days=frequency_days, hours=frequency_hours,
-                                      minutes=frequency_minutes, seconds=frequency_seconds)
+        c._frequency = ChoreFrequency(
+            days=frequency_days, hours=frequency_hours, minutes=frequency_minutes, seconds=frequency_seconds
+        )
         # update tasks
-        tasks = [ChoreTask(0, self.process_name2, parameters=[{'Name': 'pRegion', 'Value': 'DE'}]),
-                 ChoreTask(1, self.process_name2, parameters=[{'Name': 'pRegion', 'Value': 'US'}])]
+        tasks = [
+            ChoreTask(0, self.process_name2, parameters=[{"Name": "pRegion", "Value": "DE"}]),
+            ChoreTask(1, self.process_name2, parameters=[{"Name": "pRegion", "Value": "US"}]),
+        ]
         c._tasks = tasks
         # execution mode
         c._execution_mode = Chore.SINGLE_COMMIT
@@ -426,5 +471,5 @@ class TestChoreService(unittest.TestCase):
         cls.tm1.logout()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

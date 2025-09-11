@@ -15,10 +15,7 @@ class TestMDXView(unittest.TestCase):
     """
 
     def setUp(self) -> None:
-        self.view = MDXView(
-            cube_name=self.cube_name,
-            view_name=self.view_name,
-            MDX=self.mdx)
+        self.view = MDXView(cube_name=self.cube_name, view_name=self.view_name, MDX=self.mdx)
 
     def test_substitute_title(self):
         self.view.substitute_title(dimension="d3", hierarchy="d3", element="e2")

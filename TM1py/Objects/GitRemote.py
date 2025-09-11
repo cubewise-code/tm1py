@@ -3,11 +3,10 @@ from typing import List
 
 
 class GitRemote:
-    """ Abstraction of GitRemote
-    """
+    """Abstraction of GitRemote"""
 
     def __init__(self, connected: bool, branches: List[str], tags: List[str]):
-        """ Initialize GitRemote object
+        """Initialize GitRemote object
         :param connected: is Git connected to remote
         :param branches: list of remote branches
         :param tags: list of remote tags

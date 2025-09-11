@@ -5,11 +5,10 @@ from TM1py.Objects.GitCommit import GitCommit
 
 
 class GitPlan:
-    """ Base GitPlan abstraction
-    """
+    """Base GitPlan abstraction"""
 
     def __init__(self, plan_id: str, branch: str, force: bool):
-        """ Initialize GitPlan object
+        """Initialize GitPlan object
         :param plan_id: id of the Plan
         :param branch: current branch
         :param force: force git context reset
@@ -32,12 +31,19 @@ class GitPlan:
 
 
 class GitPushPlan(GitPlan):
-    """ GitPushPlan abstraction based on GitPlan
-    """
+    """GitPushPlan abstraction based on GitPlan"""
 
-    def __init__(self, plan_id: str, branch: str, force: bool, new_branch: str, new_commit: GitCommit,
-                 parent_commit: GitCommit, source_files: List[str]):
-        """ Initialize GitPushPlan object
+    def __init__(
+        self,
+        plan_id: str,
+        branch: str,
+        force: bool,
+        new_branch: str,
+        new_commit: GitCommit,
+        parent_commit: GitCommit,
+        source_files: List[str],
+    ):
+        """Initialize GitPushPlan object
         :param plan_id: id of the PushPlan
         :param branch: current branch to base the pushplan on
         :param force: force git context reset
@@ -71,11 +77,10 @@ class GitPushPlan(GitPlan):
 
 
 class GitPullPlan(GitPlan):
-    """ GitPushPlan abstraction based on GitPlan
-    """
+    """GitPushPlan abstraction based on GitPlan"""
 
     def __init__(self, plan_id: str, branch: str, force: bool, commit: GitCommit, operations: List[str]):
-        """ Initialize GitPushPlan object
+        """Initialize GitPushPlan object
         :param plan_id: id of the PullPlan
         :param branch: current branch to base the pullplan on
         :param force: force git context reset

@@ -1,4 +1,4 @@
-    # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import json
 from typing import Optional, Dict, List
@@ -22,8 +22,15 @@ def clean_null_terms(d: Dict):
 
 class TM1ProjectTask:
 
-    def __init__(self, task_name: str, chore: str = None, process: str = None, parameters: List[Dict[str, str]] = None,
-                 dependencies: List[str] = None, precondition: str = None):
+    def __init__(
+        self,
+        task_name: str,
+        chore: str = None,
+        process: str = None,
+        parameters: List[Dict[str, str]] = None,
+        dependencies: List[str] = None,
+        precondition: str = None,
+    ):
         """
         Defines an action that executes a Process or a Chore with certain parameters.
 
@@ -64,12 +71,10 @@ class TM1ProjectTask:
 
     def construct_body(self) -> Dict:
         body = dict()
-        
+
         if self.chore:
             if not self.chore.startswith("Chores('"):
-                body = {
-                    "Chore": f"Chores('{self.chore}')"
-                }
+                body = {"Chore": f"Chores('{self.chore}')"}
             else:
                 body["Chore"] = self.chore
         else:
@@ -80,7 +85,7 @@ class TM1ProjectTask:
             else:
                 body["Process"] = self.process
             body.update({"Parameters": self.parameters})
-        
+
         if self.dependencies:
             body["Dependencies"] = self.dependencies
 
@@ -99,23 +104,23 @@ class TM1ProjectTask:
 
 
 class TM1Project(TM1Object):
-    """ Abstraction of Git tm1project
-    """
+    """Abstraction of Git tm1project"""
 
     def __init__(
-            self,
-            version: int = 1.0,
-            name: Optional[str] = '',
-            settings: Optional[Dict] = None,
-            tasks: Optional[Dict[str, TM1ProjectTask]] = None,
-            objects: Optional[Dict] = None,
-            ignore: Optional[List] = None,
-            files: Optional[List] = None,
-            deployment: Optional[Dict] = None,
-            pre_push: Optional[List] = None,
-            post_push: Optional[List] = None,
-            pre_pull: Optional[List] = None,
-            post_pull: Optional[List] = None):
+        self,
+        version: int = 1.0,
+        name: Optional[str] = "",
+        settings: Optional[Dict] = None,
+        tasks: Optional[Dict[str, TM1ProjectTask]] = None,
+        objects: Optional[Dict] = None,
+        ignore: Optional[List] = None,
+        files: Optional[List] = None,
+        deployment: Optional[Dict] = None,
+        pre_push: Optional[List] = None,
+        post_push: Optional[List] = None,
+        pre_pull: Optional[List] = None,
+        post_pull: Optional[List] = None,
+    ):
         """
 
         Args:
@@ -149,8 +154,9 @@ class TM1Project(TM1Object):
             self._tasks = dict()
 
         if project_task.task_name in self._tasks:
-            raise ValueError(f"Task with name '{project_task.task_name}' already exists in TM1 project. "
-                             f"Task name must be unique")
+            raise ValueError(
+                f"Task with name '{project_task.task_name}' already exists in TM1 project. " f"Task name must be unique"
+            )
 
         self._tasks[project_task.task_name] = project_task
 
@@ -165,9 +171,9 @@ class TM1Project(TM1Object):
         """
         attribute_dimensions = [
             dimension
-            for dimension
-            in tm1.dimensions.get_all_names()
-            if dimension.lower().startswith("}elementattributes_")]
+            for dimension in tm1.dimensions.get_all_names()
+            if dimension.lower().startswith("}elementattributes_")
+        ]
 
         self.add_ignore_exceptions("Dimensions", attribute_dimensions)
 
@@ -249,7 +255,7 @@ class TM1Project(TM1Object):
         if ignore_entry in self.ignore:
             self.ignore.remove(ignore_entry)
 
-    def add_deployment(self, deployment: 'TM1ProjectDeployment'):
+    def add_deployment(self, deployment: "TM1ProjectDeployment"):
         """
         "Deployment is an OPTIONAL property. Each of its property defines a named deployment and its specific properties.
         All the tm1project properties can be redefined for a deployment, except Version.
@@ -262,8 +268,10 @@ class TM1Project(TM1Object):
             self._deployment = dict()
 
         if deployment._deployment_name in self._deployment:
-            raise ValueError(f"Deployment with name '{deployment._deployment_name}' already exists in TM1 project. "
-                             f"Deployment name must be unique")
+            raise ValueError(
+                f"Deployment with name '{deployment._deployment_name}' already exists in TM1 project. "
+                f"Deployment name must be unique"
+            )
 
         self._deployment[deployment._deployment_name] = deployment
 
@@ -272,7 +280,7 @@ class TM1Project(TM1Object):
             self._deployment.pop(deployment_name, None)
 
     @classmethod
-    def from_json(cls, tm1project_as_json: str) -> 'TM1Project':
+    def from_json(cls, tm1project_as_json: str) -> "TM1Project":
         """
         :param tm1project_as_json: response of /!tm1project
         :return: an instance of this class
@@ -281,35 +289,43 @@ class TM1Project(TM1Object):
         return cls.from_dict(tm1project_as_dict=tm1project_as_dict)
 
     @classmethod
-    def from_dict(cls, tm1project_as_dict: Dict) -> 'TM1Project':
+    def from_dict(cls, tm1project_as_dict: Dict) -> "TM1Project":
         """
         :param tm1project_as_dict: Dictionary, tm1project as dictionary
         :return: an instance of this class
         """
         return cls(
-            version=tm1project_as_dict['Version'],
-            name=tm1project_as_dict.get('Name'),
-            settings=tm1project_as_dict.get('Settings'),
-            tasks={
-                task_name: TM1ProjectTask.from_dict(task_name, task)
-                for task_name, task
-                in tm1project_as_dict.get('Tasks').items()} if "Tasks" in tm1project_as_dict else {},
-            objects=tm1project_as_dict.get('Objects'),
-            ignore=tm1project_as_dict.get('Ignore'),
-            files=tm1project_as_dict.get('Files'),
-            deployment={
-                deployment_name: TM1ProjectDeployment.from_dict(deployment_name, deployment)
-                for deployment_name, deployment
-                in tm1project_as_dict.get('Deployment').items()} if "Deployment" in tm1project_as_dict else {},
-            pre_push=tm1project_as_dict.get('PrePush'),
-            post_push=tm1project_as_dict.get('PostPush'),
-            pre_pull=tm1project_as_dict.get('PrePull'),
-            post_pull=tm1project_as_dict.get('PostPull'),
+            version=tm1project_as_dict["Version"],
+            name=tm1project_as_dict.get("Name"),
+            settings=tm1project_as_dict.get("Settings"),
+            tasks=(
+                {
+                    task_name: TM1ProjectTask.from_dict(task_name, task)
+                    for task_name, task in tm1project_as_dict.get("Tasks").items()
+                }
+                if "Tasks" in tm1project_as_dict
+                else {}
+            ),
+            objects=tm1project_as_dict.get("Objects"),
+            ignore=tm1project_as_dict.get("Ignore"),
+            files=tm1project_as_dict.get("Files"),
+            deployment=(
+                {
+                    deployment_name: TM1ProjectDeployment.from_dict(deployment_name, deployment)
+                    for deployment_name, deployment in tm1project_as_dict.get("Deployment").items()
+                }
+                if "Deployment" in tm1project_as_dict
+                else {}
+            ),
+            pre_push=tm1project_as_dict.get("PrePush"),
+            post_push=tm1project_as_dict.get("PostPush"),
+            pre_pull=tm1project_as_dict.get("PrePull"),
+            post_pull=tm1project_as_dict.get("PostPull"),
         )
 
     @classmethod
-    def from_file(cls, filename: str) -> 'TM1Project':
-        with open(filename, 'r') as file_object:
+    def from_file(cls, filename: str) -> "TM1Project":
+        with open(filename, "r") as file_object:
             json_file = json.load(file_object)
 
         return cls.from_dict(json_file)
@@ -317,21 +333,23 @@ class TM1Project(TM1Object):
     # construct self.body (json) from the class-attributes
     def _construct_body(self) -> Dict:
         body = {
-            'Version': self._version,
-            'Name': self._name,
-            'Settings': self._settings,
-            'Tasks': {name: task.construct_body() for name, task in self.tasks.items()} if self._tasks else None,
-            'Objects': self._objects,
-            'Ignore': self._ignore,
-            'Files': self._files,
-            'Deployment': {
-                name: deployment.construct_body()
-                for name, deployment
-                in self._deployment.items()} if self._deployment else None,
-            'PrePush': self._pre_push,
-            'PostPush': self._post_push,
-            'PrePull': self._pre_pull,
-            'PostPull': self._post_pull}
+            "Version": self._version,
+            "Name": self._name,
+            "Settings": self._settings,
+            "Tasks": {name: task.construct_body() for name, task in self.tasks.items()} if self._tasks else None,
+            "Objects": self._objects,
+            "Ignore": self._ignore,
+            "Files": self._files,
+            "Deployment": (
+                {name: deployment.construct_body() for name, deployment in self._deployment.items()}
+                if self._deployment
+                else None
+            ),
+            "PrePush": self._pre_push,
+            "PostPush": self._post_push,
+            "PrePull": self._pre_pull,
+            "PostPull": self._post_pull,
+        }
         return clean_null_terms(body)
 
     @property
@@ -433,17 +451,18 @@ class TM1Project(TM1Object):
 
 class TM1ProjectDeployment(TM1Project):
     def __init__(
-            self,
-            deployment_name: str,
-            settings: Optional[Dict] = None,
-            tasks: Optional[Dict[str, TM1ProjectTask]] = None,
-            objects: Optional[Dict] = None,
-            ignore: Optional[List] = None,
-            files: Optional[List] = None,
-            pre_push: Optional[List] = None,
-            post_push: Optional[List] = None,
-            pre_pull: Optional[List] = None,
-            post_pull: Optional[List] = None):
+        self,
+        deployment_name: str,
+        settings: Optional[Dict] = None,
+        tasks: Optional[Dict[str, TM1ProjectTask]] = None,
+        objects: Optional[Dict] = None,
+        ignore: Optional[List] = None,
+        files: Optional[List] = None,
+        pre_push: Optional[List] = None,
+        post_push: Optional[List] = None,
+        pre_pull: Optional[List] = None,
+        post_pull: Optional[List] = None,
+    ):
         super().__init__(
             version=None,
             name=deployment_name,
@@ -455,30 +474,31 @@ class TM1ProjectDeployment(TM1Project):
             pre_push=pre_push,
             post_push=post_push,
             pre_pull=pre_pull,
-            post_pull=post_pull)
+            post_pull=post_pull,
+        )
 
         self._deployment_name = deployment_name
 
     @classmethod
-    def from_dict(cls, deployment_name: str, deployment: Dict) -> 'TM1ProjectDeployment':
+    def from_dict(cls, deployment_name: str, deployment: Dict) -> "TM1ProjectDeployment":
         """
         :param deployment_as_dict: Dictionary, deployment as dictionary
         :return: an instance of this class
         """
         return cls(
             deployment_name=deployment_name,
-            settings=deployment.get('Settings'),
+            settings=deployment.get("Settings"),
             tasks={
                 task_name: TM1ProjectTask.from_dict(task_name, task)
-                for task_name, task
-                in deployment.get('Tasks').items()},
-            objects=deployment.get('Objects'),
-            ignore=deployment.get('Ignore'),
-            files=deployment.get('Files'),
-            pre_push=deployment.get('PrePush'),
-            post_push=deployment.get('PostPush'),
-            pre_pull=deployment.get('PrePull'),
-            post_pull=deployment.get('PostPull')
+                for task_name, task in deployment.get("Tasks").items()
+            },
+            objects=deployment.get("Objects"),
+            ignore=deployment.get("Ignore"),
+            files=deployment.get("Files"),
+            pre_push=deployment.get("PrePush"),
+            post_push=deployment.get("PostPush"),
+            pre_pull=deployment.get("PrePull"),
+            post_pull=deployment.get("PostPull"),
         )
 
     @property
@@ -492,14 +512,14 @@ class TM1ProjectDeployment(TM1Project):
     # construct self.body (json) from the class-attributes
     def construct_body(self) -> Dict:
         body_as_dict = {
-            'Settings': self._settings,
-            'Tasks': {name: task.construct_body() for name, task in self.tasks.items()} if self._tasks else None,
-            'Objects': self._objects,
-            'Ignore': self._ignore,
-            'Files': self._files,
-            'PrePush': self._pre_push,
-            'PostPush': self._post_push,
-            'PrePull': self._pre_pull,
-            'PostPull': self._post_pull
+            "Settings": self._settings,
+            "Tasks": {name: task.construct_body() for name, task in self.tasks.items()} if self._tasks else None,
+            "Objects": self._objects,
+            "Ignore": self._ignore,
+            "Files": self._files,
+            "PrePush": self._pre_push,
+            "PostPush": self._post_push,
+            "PrePull": self._pre_pull,
+            "PostPull": self._post_pull,
         }
         return clean_null_terms(body_as_dict)

@@ -23,27 +23,32 @@ class PowerBiService:
         self.elements = ElementService(tm1_rest)
 
     @require_pandas
-    def execute_mdx(self, mdx, **kwargs) -> 'pd.DataFrame':
+    def execute_mdx(self, mdx, **kwargs) -> "pd.DataFrame":
         return self.cells.execute_mdx_dataframe_shaped(mdx, **kwargs)
 
     @require_pandas
-    def execute_view(self, cube_name: str, view_name: str, private: bool, use_iterative_json=False, use_blob=False,
-                     **kwargs) -> 'pd.DataFrame':
+    def execute_view(
+        self, cube_name: str, view_name: str, private: bool, use_iterative_json=False, use_blob=False, **kwargs
+    ) -> "pd.DataFrame":
         return self.cells.execute_view_dataframe_shaped(
-            cube_name,
-            view_name,
-            private,
-            use_iterative_json=use_iterative_json,
-            use_blob=use_blob,
-            **kwargs)
+            cube_name, view_name, private, use_iterative_json=use_iterative_json, use_blob=use_blob, **kwargs
+        )
 
     @require_pandas
-    def get_member_properties(self, dimension_name: str = None, hierarchy_name: str = None,
-                              member_selection: Iterable = None,
-                              skip_consolidations: bool = True, attributes: Iterable = None,
-                              skip_parents: bool = False, level_names=None,
-                              parent_attribute: str = None, skip_weights=True, use_blob=False,
-                              **kwargs) -> 'pd.DataFrame':
+    def get_member_properties(
+        self,
+        dimension_name: str = None,
+        hierarchy_name: str = None,
+        member_selection: Iterable = None,
+        skip_consolidations: bool = True,
+        attributes: Iterable = None,
+        skip_parents: bool = False,
+        level_names=None,
+        parent_attribute: str = None,
+        skip_weights=True,
+        use_blob=False,
+        **kwargs,
+    ) -> "pd.DataFrame":
         """
 
         :param dimension_name: Name of the dimension
@@ -63,7 +68,15 @@ class PowerBiService:
             raise ValueError("skip_weights must not be False if skip_parents is True")
 
         return self.elements.get_elements_dataframe(
-            dimension_name=dimension_name, hierarchy_name=hierarchy_name, elements=member_selection,
-            skip_consolidations=skip_consolidations, attributes=attributes, skip_parents=skip_parents,
-            level_names=level_names, parent_attribute=parent_attribute, skip_weights=skip_weights,
-            use_blob=use_blob, **kwargs)
+            dimension_name=dimension_name,
+            hierarchy_name=hierarchy_name,
+            elements=member_selection,
+            skip_consolidations=skip_consolidations,
+            attributes=attributes,
+            skip_parents=skip_parents,
+            level_names=level_names,
+            parent_attribute=parent_attribute,
+            skip_weights=skip_weights,
+            use_blob=use_blob,
+            **kwargs,
+        )

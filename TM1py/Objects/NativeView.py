@@ -12,21 +12,23 @@ from TM1py.Utils import case_and_space_insensitive_equals, read_object_name_from
 
 
 class NativeView(View):
-    """ Abstraction of TM1 NativeView (classic cube view)
+    """Abstraction of TM1 NativeView (classic cube view)
 
-        :Notes:
-            Complete, functional and tested
+    :Notes:
+        Complete, functional and tested
     """
 
-    def __init__(self,
-                 cube_name: str,
-                 view_name: str,
-                 suppress_empty_columns: Optional[bool] = False,
-                 suppress_empty_rows: Optional[bool] = False,
-                 format_string: Optional[str] = "0.#########",
-                 titles: Optional[Iterable[ViewTitleSelection]] = None,
-                 columns: Optional[Iterable[ViewAxisSelection]] = None,
-                 rows: Optional[Iterable[ViewAxisSelection]] = None):
+    def __init__(
+        self,
+        cube_name: str,
+        view_name: str,
+        suppress_empty_columns: Optional[bool] = False,
+        suppress_empty_rows: Optional[bool] = False,
+        format_string: Optional[str] = "0.#########",
+        titles: Optional[Iterable[ViewTitleSelection]] = None,
+        columns: Optional[Iterable[ViewAxisSelection]] = None,
+        rows: Optional[Iterable[ViewAxisSelection]] = None,
+    ):
         super().__init__(cube_name, view_name)
         self._suppress_empty_columns = suppress_empty_columns
         self._suppress_empty_rows = suppress_empty_rows
@@ -61,8 +63,8 @@ class NativeView(View):
 
     @property
     def as_MDX(self) -> str:
-        """ Build a valid MDX Query from an Existing cubeview. 
-        Takes Zero suppression into account. 
+        """Build a valid MDX Query from an Existing cubeview.
+        Takes Zero suppression into account.
         Throws an Exception when no elements are place on the columns.
         Subsets are referenced in the result-MDX through the TM1SubsetToSet Function
 
@@ -89,9 +91,8 @@ class NativeView(View):
                 if isinstance(subset, AnonymousSubset):
                     if subset.expression is not None:
                         mdx_hierarchy_set = MdxHierarchySet.from_str(
-                            dimension=subset.dimension_name,
-                            hierarchy=subset.hierarchy_name,
-                            mdx=subset.expression)
+                            dimension=subset.dimension_name, hierarchy=subset.hierarchy_name, mdx=subset.expression
+                        )
 
                     else:
                         members = [Member.of(subset.dimension_name, element) for element in subset.elements]
@@ -101,7 +102,8 @@ class NativeView(View):
                     mdx_hierarchy_set = MdxHierarchySet.tm1_subset_to_set(
                         dimension=axis_selection.dimension_name,
                         hierarchy=axis_selection.hierarchy_name,
-                        subset=subset.name)
+                        subset=subset.name,
+                    )
                 query.add_hierarchy_set_to_axis(axis=axis_id, mdx_hierarchy_set=mdx_hierarchy_set)
 
         for title in self._titles:
@@ -143,7 +145,7 @@ class NativeView(View):
         self._format_string = value
 
     def add_column(self, dimension_name: str, subset: Union[Subset, AnonymousSubset] = None):
-        """ Add Dimension or Subset to the column-axis
+        """Add Dimension or Subset to the column-axis
 
         :param dimension_name: name of the dimension
         :param subset: instance of TM1py.Subset. Can be None
@@ -153,7 +155,7 @@ class NativeView(View):
         self._columns.append(view_axis_selection)
 
     def remove_column(self, dimension_name: str):
-        """ remove dimension from the column axis
+        """remove dimension from the column axis
 
         :param dimension_name:
         :return:
@@ -163,7 +165,7 @@ class NativeView(View):
                 self._columns.remove(column)
 
     def add_row(self, dimension_name: str, subset: Subset = None):
-        """ Add Dimension or Subset to the row-axis
+        """Add Dimension or Subset to the row-axis
 
         :param dimension_name:
         :param subset: instance of TM1py.Subset. Can be None instead.
@@ -173,7 +175,7 @@ class NativeView(View):
         self._rows.append(view_axis_selection)
 
     def remove_row(self, dimension_name: str):
-        """ remove dimension from the row axis
+        """remove dimension from the row axis
 
         :param dimension_name:
         :return:
@@ -183,7 +185,7 @@ class NativeView(View):
                 self._rows.remove(row)
 
     def add_title(self, dimension_name: str, selection: str, subset: Union[Subset, AnonymousSubset] = None):
-        """ Add subset and element to the titles-axis
+        """Add subset and element to the titles-axis
 
         :param dimension_name: name of the dimension.
         :param selection: name of an element.
@@ -194,7 +196,7 @@ class NativeView(View):
         self._titles.append(view_title_selection)
 
     def remove_title(self, dimension_name: str):
-        """ Remove dimension from the titles-axis
+        """Remove dimension from the titles-axis
 
         :param dimension_name: name of the dimension.
         :return:
@@ -213,109 +215,117 @@ class NativeView(View):
         raise ValueError(f"Dimension '{dimension}' not found in titles")
 
     @classmethod
-    def from_json(cls, view_as_json: str, cube_name: Optional[str] = None) -> 'NativeView':
-        """ Alternative constructor
-                :Parameters:
-                    `view_as_json` : string, JSON
+    def from_json(cls, view_as_json: str, cube_name: Optional[str] = None) -> "NativeView":
+        """Alternative constructor
+        :Parameters:
+            `view_as_json` : string, JSON
 
-                :Returns:
-                    `View` : an instance of this class
+        :Returns:
+            `View` : an instance of this class
         """
         view_as_dict = json.loads(view_as_json)
         return NativeView.from_dict(view_as_dict, cube_name)
 
     @classmethod
-    def from_dict(cls, view_as_dict: Dict, cube_name: str = None) -> 'NativeView':
+    def from_dict(cls, view_as_dict: Dict, cube_name: str = None) -> "NativeView":
         titles, columns, rows = [], [], []
 
-        for axis_selection in view_as_dict['Titles']:
+        for axis_selection in view_as_dict["Titles"]:
             subset = cls._build_subset_from_axis_selection(axis_selection)
 
             if "Selected" in axis_selection:
-                selected = axis_selection['Selected']['Name']
+                selected = axis_selection["Selected"]["Name"]
 
             elif "Selected@odata.bind" in axis_selection:
                 selected = read_object_name_from_url(
                     url=axis_selection["Selected@odata.bind"],
-                    pattern=r"Dimensions\('.*?'\)/Hierarchies\('.*?'\)/Elements\('(.+?)'\)")
+                    pattern=r"Dimensions\('.*?'\)/Hierarchies\('.*?'\)/Elements\('(.+?)'\)",
+                )
 
                 if not selected:
                     raise ValueError(
-                        f"Unexpected value for 'Selected@odata.bind' property "
-                        f"in view title dict: '{selected}'")
+                        f"Unexpected value for 'Selected@odata.bind' property " f"in view title dict: '{selected}'"
+                    )
 
             else:
                 raise ValueError("View Title dict must contain 'Selected' or 'Selected@odata.bind' as key")
 
-            titles.append(ViewTitleSelection(
-                dimension_name=subset.dimension_name,
-                subset=subset,
-                selected=selected))
+            titles.append(ViewTitleSelection(dimension_name=subset.dimension_name, subset=subset, selected=selected))
 
-        for i, axis in enumerate([view_as_dict['Columns'], view_as_dict['Rows']]):
+        for i, axis in enumerate([view_as_dict["Columns"], view_as_dict["Rows"]]):
             for axis_selection in axis:
                 subset = cls._build_subset_from_axis_selection(axis_selection)
 
-                axis_selection = ViewAxisSelection(
-                    dimension_name=subset.dimension_name,
-                    subset=subset)
+                axis_selection = ViewAxisSelection(dimension_name=subset.dimension_name, subset=subset)
                 columns.append(axis_selection) if i == 0 else rows.append(axis_selection)
 
         if not cube_name:
-            cube_name = view_as_dict["@odata.context"][20:view_as_dict["@odata.context"].find("')/")]
+            cube_name = view_as_dict["@odata.context"][20 : view_as_dict["@odata.context"].find("')/")]
         return cls(
             cube_name=cube_name,
-            view_name=view_as_dict['Name'],
-            suppress_empty_columns=view_as_dict['SuppressEmptyColumns'],
-            suppress_empty_rows=view_as_dict['SuppressEmptyRows'],
-            format_string=view_as_dict['FormatString'],
+            view_name=view_as_dict["Name"],
+            suppress_empty_columns=view_as_dict["SuppressEmptyColumns"],
+            suppress_empty_rows=view_as_dict["SuppressEmptyRows"],
+            format_string=view_as_dict["FormatString"],
             titles=titles,
             columns=columns,
-            rows=rows)
+            rows=rows,
+        )
 
     @classmethod
-    def _build_subset_from_axis_selection(cls, axis_selection) -> 'Subset':
-        if 'Subset' in axis_selection:
-            if not axis_selection['Subset'].get('Name', ''):
-                subset = AnonymousSubset.from_dict(axis_selection['Subset'])
+    def _build_subset_from_axis_selection(cls, axis_selection) -> "Subset":
+        if "Subset" in axis_selection:
+            if not axis_selection["Subset"].get("Name", ""):
+                subset = AnonymousSubset.from_dict(axis_selection["Subset"])
             else:
-                subset = Subset.from_dict(axis_selection['Subset'])
+                subset = Subset.from_dict(axis_selection["Subset"])
 
         elif "Subset@odata.bind" in axis_selection:
             subset_name = read_object_name_from_url(
                 url=axis_selection["Subset@odata.bind"],
-                pattern=r"Dimensions\('.*?'\)/Hierarchies\('.*?'\)/Subsets\('(.+?)'\)")
+                pattern=r"Dimensions\('.*?'\)/Hierarchies\('.*?'\)/Subsets\('(.+?)'\)",
+            )
             dimension_name = read_object_name_from_url(
-                url=axis_selection["Subset@odata.bind"],
-                pattern=r"Dimensions\('(.*?)'\)/Hierarchies\('(.+?)'\)")
+                url=axis_selection["Subset@odata.bind"], pattern=r"Dimensions\('(.*?)'\)/Hierarchies\('(.+?)'\)"
+            )
             subset = Subset(
                 subset_name=subset_name,
                 dimension_name=dimension_name,
                 # alternate hierarchies can are not supported in classic TM1 views
-                hierarchy_name=dimension_name)
+                hierarchy_name=dimension_name,
+            )
         else:
             raise ValueError("View Axis Selection dict must contain 'Subset' or 'Subset@odata.bind' as key")
         return subset
 
     def _construct_body(self) -> str:
-        """ construct the ODATA conform JSON representation for the NativeView entity.
+        """construct the ODATA conform JSON representation for the NativeView entity.
 
         :return: string, the valid JSON
         """
-        top_json = "{\"@odata.type\": \"ibm.tm1.api.v1.NativeView\",\"Name\": \"" + self._name + "\","
-        columns_json = ','.join([column.body for column in self._columns])
-        rows_json = ','.join([row.body for row in self._rows])
-        titles_json = ','.join([title.body for title in self._titles])
-        bottom_json = "\"SuppressEmptyColumns\": " + str(self._suppress_empty_columns).lower() + \
-                      ",\"SuppressEmptyRows\":" + str(self._suppress_empty_rows).lower() + \
-                      ",\"FormatString\": \"" + self._format_string + "\"}"
-        return "".join([
-            top_json,
-            '\"Columns\":[',
-            columns_json,
-            '],\"Rows\":[',
-            rows_json,
-            '],\"Titles\":[',
-            titles_json,
-            '],',
-            bottom_json])
+        top_json = '{"@odata.type": "ibm.tm1.api.v1.NativeView","Name": "' + self._name + '",'
+        columns_json = ",".join([column.body for column in self._columns])
+        rows_json = ",".join([row.body for row in self._rows])
+        titles_json = ",".join([title.body for title in self._titles])
+        bottom_json = (
+            '"SuppressEmptyColumns": '
+            + str(self._suppress_empty_columns).lower()
+            + ',"SuppressEmptyRows":'
+            + str(self._suppress_empty_rows).lower()
+            + ',"FormatString": "'
+            + self._format_string
+            + '"}'
+        )
+        return "".join(
+            [
+                top_json,
+                '"Columns":[',
+                columns_json,
+                '],"Rows":[',
+                rows_json,
+                '],"Titles":[',
+                titles_json,
+                "],",
+                bottom_json,
+            ]
+        )

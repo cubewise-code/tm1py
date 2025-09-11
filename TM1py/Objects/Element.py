@@ -10,9 +10,8 @@ from TM1py.Utils import case_and_space_insensitive_equals
 
 
 class Element(TM1Object):
-    """ Abstraction of TM1 Element
+    """Abstraction of TM1 Element"""
 
-    """
     ELEMENT_ATTRIBUTES_PREFIX = "}ElementAttributes_"
 
     class Types(Enum):
@@ -31,8 +30,14 @@ class Element(TM1Object):
             # default
             raise ValueError(f"Invalid element type: '{value}'")
 
-    def __init__(self, name, element_type: Union[Types, str], attributes: List[str] = None, unique_name: str = None,
-                 index: int = None):
+    def __init__(
+        self,
+        name,
+        element_type: Union[Types, str],
+        attributes: List[str] = None,
+        unique_name: str = None,
+        index: int = None,
+    ):
         self._name = name
         self._unique_name = unique_name
         self._index = index
@@ -41,12 +46,14 @@ class Element(TM1Object):
         self._attributes = attributes
 
     @staticmethod
-    def from_dict(element_as_dict: Dict) -> 'Element':
-        return Element(name=element_as_dict['Name'],
-                       unique_name=element_as_dict.get('UniqueName', None),
-                       index=element_as_dict.get('Index', None),
-                       element_type=element_as_dict['Type'],
-                       attributes=element_as_dict.get('Attributes', None))
+    def from_dict(element_as_dict: Dict) -> "Element":
+        return Element(
+            name=element_as_dict["Name"],
+            unique_name=element_as_dict.get("UniqueName", None),
+            index=element_as_dict.get("Index", None),
+            element_type=element_as_dict["Type"],
+            attributes=element_as_dict.get("Attributes", None),
+        )
 
     @property
     def name(self) -> str:
@@ -86,15 +93,18 @@ class Element(TM1Object):
 
     def _construct_body(self) -> Dict:
         body_as_dict = collections.OrderedDict()
-        body_as_dict['Name'] = self._name
-        body_as_dict['Type'] = str(self._element_type)
+        body_as_dict["Name"] = self._name
+        body_as_dict["Type"] = str(self._element_type)
         return body_as_dict
 
-    def __eq__(self, other: 'Element'):
-        return all([
-            isinstance(other, Element),
-            case_and_space_insensitive_equals(self.name, other.name),
-            self.element_type == other.element_type])
+    def __eq__(self, other: "Element"):
+        return all(
+            [
+                isinstance(other, Element),
+                case_and_space_insensitive_equals(self.name, other.name),
+                self.element_type == other.element_type,
+            ]
+        )
 
     def __hash__(self):
         return super().__hash__()

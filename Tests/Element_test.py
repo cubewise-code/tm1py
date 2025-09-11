@@ -32,10 +32,8 @@ class TestElement(unittest.TestCase):
     def test_construct_body(self):
         element = Element("e1", "Numeric")
 
-        self.assertEqual(
-            element._construct_body(),
-            {'Name': 'e1', 'Type': 'Numeric'})
+        self.assertEqual(element._construct_body(), {"Name": "e1", "Type": "Numeric"})
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

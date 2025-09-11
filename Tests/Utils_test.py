@@ -13,10 +13,19 @@ from TM1py.Utils import (
     Utils,
     get_dimensions_from_where_clause,
     integerize_version,
-    verify_version, get_cube, resembles_mdx, format_url, add_url_parameters, extract_cell_updateable_property,
-    CellUpdateableProperty, cell_is_updateable, extract_cell_properties_from_odata_context,
-    map_cell_properties_to_compact_json_response, frame_to_significant_digits, drop_dimension_properties,
-    build_dataframe_from_csv
+    verify_version,
+    get_cube,
+    resembles_mdx,
+    format_url,
+    add_url_parameters,
+    extract_cell_updateable_property,
+    CellUpdateableProperty,
+    cell_is_updateable,
+    extract_cell_properties_from_odata_context,
+    map_cell_properties_to_compact_json_response,
+    frame_to_significant_digits,
+    drop_dimension_properties,
+    build_dataframe_from_csv,
 )
 from .Utils import skip_if_version_higher_or_equal_than, skip_if_paoc
 
@@ -38,9 +47,7 @@ class TestUtilsMethods(unittest.TestCase):
     @skip_if_paoc
     @skip_if_version_higher_or_equal_than(version="12")
     def test_get_instances_from_adminhost(self):
-        servers = Utils.get_all_servers_from_adminhost(
-            self.config["tm1srv01"]["address"]
-        )
+        servers = Utils.get_all_servers_from_adminhost(self.config["tm1srv01"]["address"])
         self.assertGreater(len(servers), 0)
 
     def test_integerize_version(self):
@@ -112,59 +119,46 @@ class TestUtilsMethods(unittest.TestCase):
         self.assertEqual(["DIM2", "DIM1"], dimensions)
 
     def test_build_dataframe_from_csv(self):
-        raw_csv = (
-            "d1~d2~Value\r\n"
-            "e1~e1~1.0\r\n"
-            "e1~e2~2.0\r\n"
-            "e2~e1~3.0\r\n"
-            "e2~e2~4.0"
-        )
+        raw_csv = "d1~d2~Value\r\n" "e1~e1~1.0\r\n" "e1~e2~2.0\r\n" "e2~e1~3.0\r\n" "e2~e2~4.0"
         df = build_dataframe_from_csv(raw_csv)
 
-        expected_df = pd.DataFrame({
-            'd1': ["e1", "e1", "e2", "e2"],
-            'd2': ["e1", "e2", "e1", "e2"],
-            'Value': [1.0, 2.0, 3.0, 4.0],
-        })
+        expected_df = pd.DataFrame(
+            {
+                "d1": ["e1", "e1", "e2", "e2"],
+                "d2": ["e1", "e2", "e1", "e2"],
+                "Value": [1.0, 2.0, 3.0, 4.0],
+            }
+        )
 
         pd._testing.assert_frame_equal(expected_df, df, check_column_type=False)
 
     def test_build_dataframe_from_csv_with_none_element_and_none_value(self):
-        raw_csv = (
-            "d1~d2~Value\r\n"
-            "e1~e1~None\r\n"
-            "e1~e2~2.0\r\n"
-            "None~e1~3.0\r\n"
-            "None~e2~4.0"
-        )
+        raw_csv = "d1~d2~Value\r\n" "e1~e1~None\r\n" "e1~e2~2.0\r\n" "None~e1~3.0\r\n" "None~e2~4.0"
         df = build_dataframe_from_csv(raw_csv)
 
-        expected_df = pd.DataFrame({
-            'd1': ["e1", "e1", "None", "None"],
-            'd2': ["e1", "e2", "e1", "e2"],
-            'Value': [np.nan, 2.0, 3.0, 4.0],
-        }).astype(object)
+        expected_df = pd.DataFrame(
+            {
+                "d1": ["e1", "e1", "None", "None"],
+                "d2": ["e1", "e2", "e1", "e2"],
+                "Value": [np.nan, 2.0, 3.0, 4.0],
+            }
+        ).astype(object)
 
         pd._testing.assert_frame_equal(expected_df, df, check_column_type=False, check_dtype=False, check_exact=False)
 
     def test_build_dataframe_from_csv_with_none_and_empty_string_value(self):
-        raw_csv = (
-            "d1~d2~Value\r\n"
-            "e1~e1~None\r\n"
-            "e1~e2~\"\"\r\n"
-            "None~e1~3.0\r\n"
-            "None~e2~4.0"
-        )
+        raw_csv = "d1~d2~Value\r\n" "e1~e1~None\r\n" 'e1~e2~""\r\n' "None~e1~3.0\r\n" "None~e2~4.0"
         df = build_dataframe_from_csv(raw_csv)
 
-        expected_df = pd.DataFrame({
-            'd1': ["e1", "e1", "None", "None"],
-            'd2': ["e1", "e2", "e1", "e2"],
-            'Value': [np.nan, "", "3.0", "4.0"],
-        }).astype(object)
+        expected_df = pd.DataFrame(
+            {
+                "d1": ["e1", "e1", "None", "None"],
+                "d2": ["e1", "e2", "e1", "e2"],
+                "Value": [np.nan, "", "3.0", "4.0"],
+            }
+        ).astype(object)
 
         pd._testing.assert_frame_equal(expected_df, df, check_column_type=False, check_dtype=False, check_exact=False)
-
 
     def test_get_dimensions_from_where_clause_no_where(self):
         mdx = """
@@ -297,9 +291,7 @@ class TestUtilsMethods(unittest.TestCase):
         url = "/Processes('{}')/tm1.ExecuteWithReturn?$expand=*"
         process_name = "process"
         escaped_url = format_url(url, process_name)
-        self.assertEqual(
-            "/Processes('process')/tm1.ExecuteWithReturn?$expand=*", escaped_url
-        )
+        self.assertEqual("/Processes('process')/tm1.ExecuteWithReturn?$expand=*", escaped_url)
 
     def test_format_url_args_one_single_quote(self):
         url = "/Processes('{}')/tm1.ExecuteWithReturn?$expand=*"
@@ -323,9 +315,7 @@ class TestUtilsMethods(unittest.TestCase):
         url = "/Processes('{process_name}')/tm1.ExecuteWithReturn?$expand=*"
         process_name = "process"
         escaped_url = format_url(url, process_name=process_name)
-        self.assertEqual(
-            "/Processes('process')/tm1.ExecuteWithReturn?$expand=*", escaped_url
-        )
+        self.assertEqual("/Processes('process')/tm1.ExecuteWithReturn?$expand=*", escaped_url)
 
     def test_format_url_kwargs_one_single_quote(self):
         url = "/Processes('{process_name}')/tm1.ExecuteWithReturn?$expand=*"
@@ -349,17 +339,13 @@ class TestUtilsMethods(unittest.TestCase):
         url = "/Cubes('cube')/tm1.Update"
         url = add_url_parameters(url, **{"!sandbox": "sandbox1"})
 
-        self.assertEqual(
-            "/Cubes('cube')/tm1.Update?!sandbox=sandbox1",
-            url)
+        self.assertEqual("/Cubes('cube')/tm1.Update?!sandbox=sandbox1", url)
 
     def test_url_parameters_add_with_query_options(self):
         url = "/Cellsets('abcd')?$expand=Cells($select=Value)"
         url = add_url_parameters(url, **{"!sandbox": "sandbox1"})
 
-        self.assertEqual(
-            "/Cellsets('abcd')?$expand=Cells($select=Value)&!sandbox=sandbox1",
-            url)
+        self.assertEqual("/Cellsets('abcd')?$expand=Cells($select=Value)&!sandbox=sandbox1", url)
 
     def test_get_seconds_from_duration(self):
         elapsed_time = "P0DT00H04M02S"
@@ -376,93 +362,101 @@ class TestUtilsMethods(unittest.TestCase):
 
     def test_extract_cell_updateable_property_rule_is_applied_true(self):
         value = 268435716
-        self.assertTrue(extract_cell_updateable_property(
-            decimal_value=value,
-            cell_property=CellUpdateableProperty.RULE_IS_APPLIED))
+        self.assertTrue(
+            extract_cell_updateable_property(decimal_value=value, cell_property=CellUpdateableProperty.RULE_IS_APPLIED)
+        )
 
     def test_extract_cell_updateable_property_rule_is_applied_false(self):
         value = 258
-        self.assertFalse(extract_cell_updateable_property(
-            decimal_value=value,
-            cell_property=CellUpdateableProperty.RULE_IS_APPLIED))
+        self.assertFalse(
+            extract_cell_updateable_property(decimal_value=value, cell_property=CellUpdateableProperty.RULE_IS_APPLIED)
+        )
 
     def test_extract_cell_updateable_property_cell_is_not_updateable_true(self):
         value = 268435716
-        self.assertTrue(extract_cell_updateable_property(
-            decimal_value=value,
-            cell_property=CellUpdateableProperty.CELL_IS_NOT_UPDATEABLE))
+        self.assertTrue(
+            extract_cell_updateable_property(
+                decimal_value=value, cell_property=CellUpdateableProperty.CELL_IS_NOT_UPDATEABLE
+            )
+        )
 
     def test_extract_cell_updateable_property_cell_is_not_updateable_false(self):
         value = 258
-        self.assertFalse(extract_cell_updateable_property(
-            decimal_value=value,
-            cell_property=CellUpdateableProperty.CELL_IS_NOT_UPDATEABLE))
+        self.assertFalse(
+            extract_cell_updateable_property(
+                decimal_value=value, cell_property=CellUpdateableProperty.CELL_IS_NOT_UPDATEABLE
+            )
+        )
 
     def test_cell_is_updateable_true(self):
-        cell = {'Updateable': 258}
+        cell = {"Updateable": 258}
         self.assertTrue(cell_is_updateable(cell))
 
     def test_cell_is_updateable_false(self):
-        cell = {'Updateable': 268435716}
+        cell = {"Updateable": 268435716}
         self.assertFalse(cell_is_updateable(cell))
 
     def test_extract_cell_properties_from_odata_context_cell_properties(self):
         context = "$metadata#Cellsets(Cells(Ordinal,Value,RuleDerived))/$entity"
         cell_properties = extract_cell_properties_from_odata_context(context)
 
-        self.assertEqual(['Ordinal', 'Value', 'RuleDerived'], cell_properties)
+        self.assertEqual(["Ordinal", "Value", "RuleDerived"], cell_properties)
 
     def test_extract_cell_properties_from_odata_context_only_value(self):
         context = "$metadata#Cellsets(Cells(Value))/$entity"
         cell_properties = extract_cell_properties_from_odata_context(context)
 
-        self.assertEqual(['Value'], cell_properties)
+        self.assertEqual(["Value"], cell_properties)
 
     def test_map_cell_properties_to_compact_json_response_ordinal_value(self):
-        properties = ['Ordinal', 'Value']
+        properties = ["Ordinal", "Value"]
         compact_cells_response = [[1, 200], [2, 350], [3, 100]]
         actual = map_cell_properties_to_compact_json_response(properties, compact_cells_response)
 
-        expected = {'Cells': [
-            {'Ordinal': 1, 'Value': 200},
-            {'Ordinal': 2, 'Value': 350},
-            {'Ordinal': 3, 'Value': 100},
-        ]}
+        expected = {
+            "Cells": [
+                {"Ordinal": 1, "Value": 200},
+                {"Ordinal": 2, "Value": 350},
+                {"Ordinal": 3, "Value": 100},
+            ]
+        }
 
         self.assertEqual(expected, actual)
 
     def test_map_cell_properties_to_compact_json_response_value(self):
-        properties = ['Value']
+        properties = ["Value"]
         compact_cells_response = [[200], [350], [100]]
         actual = map_cell_properties_to_compact_json_response(properties, compact_cells_response)
 
-        expected = {'Cells': [
-            {'Value': 200},
-            {'Value': 350},
-            {'Value': 100},
-        ]}
+        expected = {
+            "Cells": [
+                {"Value": 200},
+                {"Value": 350},
+                {"Value": 100},
+            ]
+        }
 
         self.assertEqual(expected, actual)
 
     def test_frame_to_significant_digits_happy_case(self):
         framed_value = frame_to_significant_digits(1000, 4)
-        self.assertEqual('1000', framed_value)
+        self.assertEqual("1000", framed_value)
 
     def test_frame_to_significant_digits_too_many_decimals(self):
         framed_value = frame_to_significant_digits(1000.1234, 6)
-        self.assertEqual('1000.12', framed_value)
+        self.assertEqual("1000.12", framed_value)
 
     def test_frame_to_significant_digits_too_many_digits(self):
         framed_value = frame_to_significant_digits(1234, 2)
-        self.assertEqual('1200', framed_value)
+        self.assertEqual("1200", framed_value)
 
     def test_frame_to_significant_digits_scientific_too_many_digits(self):
-        framed_value = frame_to_significant_digits(1.2345E-1, 2)
-        self.assertEqual('0.12', framed_value)
+        framed_value = frame_to_significant_digits(1.2345e-1, 2)
+        self.assertEqual("0.12", framed_value)
 
     def test_frame_to_significant_digits_scientific_too_many_digits_large(self):
-        framed_value = frame_to_significant_digits(1.2345E3, 2)
-        self.assertEqual('1200.0', framed_value)
+        framed_value = frame_to_significant_digits(1.2345e3, 2)
+        self.assertEqual("1200.0", framed_value)
 
     def test_element_name_from_element_unique_name_happy_case(self):
         element_name = Utils.element_name_from_element_unique_name("[d1].[e1]")
@@ -485,9 +479,7 @@ class TestUtilsMethods(unittest.TestCase):
         {[d2].[e1]} ON 1
         FROM [c1]
         """
-        self.assertEqual(
-            expected_mdx,
-            drop_dimension_properties(mdx))
+        self.assertEqual(expected_mdx, drop_dimension_properties(mdx))
 
     def test_drop_dimension_properties_member_name_lower_case(self):
         mdx = """
@@ -502,9 +494,7 @@ class TestUtilsMethods(unittest.TestCase):
         {[d2].[e1]} ON 1
         FROM [c1]
         """
-        self.assertEqual(
-            expected_mdx,
-            drop_dimension_properties(mdx))
+        self.assertEqual(expected_mdx, drop_dimension_properties(mdx))
 
     def test_drop_dimension_properties_one_axis(self):
         mdx = """
@@ -517,9 +507,7 @@ class TestUtilsMethods(unittest.TestCase):
         {[d1].[e1]} * {[d2].[e1]} ON 0
         FROM [c1]
         """
-        self.assertEqual(
-            expected_mdx,
-            drop_dimension_properties(mdx))
+        self.assertEqual(expected_mdx, drop_dimension_properties(mdx))
 
     def test_drop_dimension_properties_attributes(self):
         mdx = """
@@ -536,9 +524,7 @@ class TestUtilsMethods(unittest.TestCase):
             FROM [cube]
             WHERE ([dim3].[dim3].[elem3],[dim4].[dim4].[elem4])
         """
-        self.assertEqual(
-            expected_mdx,
-            drop_dimension_properties(mdx))
+        self.assertEqual(expected_mdx, drop_dimension_properties(mdx))
 
     def test_drop_dimension_properties_member_name(self):
         mdx = """
@@ -553,9 +539,7 @@ class TestUtilsMethods(unittest.TestCase):
         {[d2].[e1]} ON 1
         FROM [c1]
         """
-        self.assertEqual(
-            expected_mdx,
-            drop_dimension_properties(mdx))
+        self.assertEqual(expected_mdx, drop_dimension_properties(mdx))
 
     def test_drop_dimension_properties_member_name_lower_case(self):
         mdx = """
@@ -570,9 +554,7 @@ class TestUtilsMethods(unittest.TestCase):
         {[d2].[e1]} ON 1
         FROM [c1]
         """
-        self.assertEqual(
-            expected_mdx,
-            drop_dimension_properties(mdx))
+        self.assertEqual(expected_mdx, drop_dimension_properties(mdx))
 
     def test_drop_dimension_properties_one_axis(self):
         mdx = """
@@ -585,9 +567,7 @@ class TestUtilsMethods(unittest.TestCase):
         {[d1].[e1]} * {[d2].[e1]} ON 0
         FROM [c1]
         """
-        self.assertEqual(
-            expected_mdx,
-            drop_dimension_properties(mdx))
+        self.assertEqual(expected_mdx, drop_dimension_properties(mdx))
 
     def test_drop_properties_attributes(self):
         mdx = """
@@ -604,22 +584,33 @@ class TestUtilsMethods(unittest.TestCase):
             FROM [cube]
             WHERE ([dim3].[dim3].[elem3],[dim4].[dim4].[elem4])
         """
-        self.assertEqual(
-            expected_mdx,
-            drop_dimension_properties(mdx))
+        self.assertEqual(expected_mdx, drop_dimension_properties(mdx))
 
     def test_reorder_with_priority(self):
-        original_items = ['Customer by Budget holder', 'Customer by Segment', 'Customer List', 'Leaves', 'Customer', 'Customer by Region']
-        priority_items = ['Customer', 'Customer List']
-        exclude_items = ['Leaves']
+        original_items = [
+            "Customer by Budget holder",
+            "Customer by Segment",
+            "Customer List",
+            "Leaves",
+            "Customer",
+            "Customer by Region",
+        ]
+        priority_items = ["Customer", "Customer List"]
+        exclude_items = ["Leaves"]
         sort_remaining = True
 
-        expected_outcome = ['Customer', 'Customer List', 'Customer by Budget holder', 'Customer by Region', 'Customer by Segment']
+        expected_outcome = [
+            "Customer",
+            "Customer List",
+            "Customer by Budget holder",
+            "Customer by Region",
+            "Customer by Segment",
+        ]
 
         self.assertEqual(
-            expected_outcome,
-            reorder_with_priority(original_items, priority_items, exclude_items, sort_remaining))
-    
+            expected_outcome, reorder_with_priority(original_items, priority_items, exclude_items, sort_remaining)
+        )
+
     @classmethod
     def tearDownClass(cls):
         cls.tm1.logout()

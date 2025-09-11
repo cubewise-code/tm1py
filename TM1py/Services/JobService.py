@@ -1,5 +1,6 @@
 try:
     import pandas as pd
+
     _has_pandas = True
 except ImportError:
     _has_pandas = False
@@ -10,27 +11,25 @@ from TM1py.Utils.Utils import format_url, require_pandas, require_version
 
 
 class JobService(ObjectService):
-    """ Service to handle TM1 Job objects introduced in v12
-
-    """
+    """Service to handle TM1 Job objects introduced in v12"""
 
     def __init__(self, rest: RestService):
         super().__init__(rest)
 
     @require_version(version="12.0.0")
     def get_all(self, **kwargs):
-        """ Return a dict of the currently running jobs from the TM1 Server
+        """Return a dict of the currently running jobs from the TM1 Server
 
-            :return:
-                dict: the response
+        :return:
+            dict: the response
         """
-        url = '/Jobs'
+        url = "/Jobs"
         response = self._rest.GET(url, **kwargs)
-        return response.json()['value']
+        return response.json()["value"]
 
     @require_version(version="12.0.0")
     def cancel(self, job_id, **kwargs):
-        """ Cancels a running Job
+        """Cancels a running Job
 
         :param job_id:
         :return:
@@ -51,11 +50,7 @@ class JobService(ObjectService):
     @require_pandas
     @require_version(version="12.0.0")
     def get_as_dataframe(self):
-        """ Gets jobs and returns them as a dataframe
-
-        """
+        """Gets jobs and returns them as a dataframe"""
         jobs = self.get_all()
         df = pd.DataFrame.from_records(jobs)
         return df
-
-

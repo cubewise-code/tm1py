@@ -19,18 +19,31 @@ except ImportError:
 from mdxpy import MdxHierarchySet, Member, MdxLevelExpression
 from requests import Response
 
-from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyWritePartialFailureException, TM1pyWriteFailureException, \
-    TM1pyRestException
+from TM1py.Exceptions.Exceptions import (
+    TM1pyException,
+    TM1pyWritePartialFailureException,
+    TM1pyWriteFailureException,
+    TM1pyRestException,
+)
 from TM1py.Objects import ElementAttribute, Element
 from TM1py.Services.FileService import FileService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.ProcessService import ProcessService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import CaseAndSpaceInsensitiveDict, format_url, CaseAndSpaceInsensitiveSet, require_data_admin, \
-     require_ops_admin, dimension_hierarchy_element_tuple_from_unique_name, require_pandas, require_version
+from TM1py.Utils import (
+    CaseAndSpaceInsensitiveDict,
+    format_url,
+    CaseAndSpaceInsensitiveSet,
+    require_data_admin,
+    require_ops_admin,
+    dimension_hierarchy_element_tuple_from_unique_name,
+    require_pandas,
+    require_version,
+)
 from TM1py.Utils import build_element_unique_names, CaseAndSpaceInsensitiveTuplesDict, verify_version
 from itertools import islice
 from collections import OrderedDict
+
 
 class MDXDrillMethod(Enum):
     TM1DRILLDOWNMEMBER = 1
@@ -38,60 +51,52 @@ class MDXDrillMethod(Enum):
 
 
 class ElementService(ObjectService):
-    """ Service to handle Object Updates for TM1 Dimension (resp. Hierarchy) Elements
-
-    """
+    """Service to handle Object Updates for TM1 Dimension (resp. Hierarchy) Elements"""
 
     def __init__(self, rest: RestService):
         super().__init__(rest)
 
     def get(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> Element:
         url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Elements('{}')?$expand=*",
-            dimension_name, hierarchy_name, element_name)
+            "/Dimensions('{}')/Hierarchies('{}')/Elements('{}')?$expand=*", dimension_name, hierarchy_name, element_name
+        )
         response = self._rest.GET(url, **kwargs)
         return Element.from_dict(response.json())
 
     def create(self, dimension_name: str, hierarchy_name: str, element: Element, **kwargs) -> Response:
-        url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Elements",
-            dimension_name,
-            hierarchy_name)
+        url = format_url("/Dimensions('{}')/Hierarchies('{}')/Elements", dimension_name, hierarchy_name)
         return self._rest.POST(url, element.body, **kwargs)
 
     def update(self, dimension_name: str, hierarchy_name: str, element: Element, **kwargs) -> Response:
         url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
-            dimension_name,
-            hierarchy_name,
-            element.name)
+            "/Dimensions('{}')/Hierarchies('{}')/Elements('{}')", dimension_name, hierarchy_name, element.name
+        )
         return self._rest.PATCH(url, element.body, **kwargs)
 
     def exists(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> bool:
         url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
-            dimension_name,
-            hierarchy_name,
-            element_name)
+            "/Dimensions('{}')/Hierarchies('{}')/Elements('{}')", dimension_name, hierarchy_name, element_name
+        )
         return self._exists(url, **kwargs)
 
     def update_or_create(self, dimension_name: str, hierarchy_name: str, element: Element, **kwargs) -> Response:
-        if self.exists(dimension_name=dimension_name, hierarchy_name=hierarchy_name, element_name=element.name, **kwargs):
+        if self.exists(
+            dimension_name=dimension_name, hierarchy_name=hierarchy_name, element_name=element.name, **kwargs
+        ):
             return self.update(dimension_name=dimension_name, hierarchy_name=hierarchy_name, element=element, **kwargs)
 
-        return self.create(dimension_name=dimension_name, hierarchy_name=hierarchy_name, element=element, **kwargs)   
-        
+        return self.create(dimension_name=dimension_name, hierarchy_name=hierarchy_name, element=element, **kwargs)
+
     def delete(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> Response:
         url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
-            dimension_name,
-            hierarchy_name,
-            element_name)
+            "/Dimensions('{}')/Hierarchies('{}')/Elements('{}')", dimension_name, hierarchy_name, element_name
+        )
         return self._rest.DELETE(url, **kwargs)
 
     @require_version("11.4")
-    def delete_elements(self, dimension_name: str, hierarchy_name: str, element_names: List[str] = None,
-                        use_ti: bool = False, **kwargs):
+    def delete_elements(
+        self, dimension_name: str, hierarchy_name: str, element_names: List[str] = None, use_ti: bool = False, **kwargs
+    ):
         if use_ti:
             return self.delete_elements_use_ti(dimension_name, hierarchy_name, element_names, **kwargs)
 
@@ -101,8 +106,9 @@ class ElementService(ObjectService):
             h.remove_element(ele)
         h_service.update(h, **kwargs)
 
-    def delete_elements_use_ti(self, dimension_name: str, hierarchy_name: str, element_names: List[str] = None,
-                               **kwargs):
+    def delete_elements_use_ti(
+        self, dimension_name: str, hierarchy_name: str, element_names: List[str] = None, **kwargs
+    ):
         subset_service = self._get_subset_service()
         unbound_process_name = subset_name = self.suggest_unique_object_name()
         subset = Subset(subset_name, dimension_name, hierarchy_name, elements=element_names)
@@ -111,7 +117,8 @@ class ElementService(ObjectService):
             process_service = self._get_process_service()
             process = Process(
                 name=unbound_process_name,
-                prolog_procedure=f"HierarchyDeleteElements('{dimension_name}', '{hierarchy_name}', '{subset_name}');")
+                prolog_procedure=f"HierarchyDeleteElements('{dimension_name}', '{hierarchy_name}', '{subset_name}');",
+            )
             success, status, error_log_file = process_service.execute_process_with_return(process, **kwargs)
             if not success:
                 raise TM1pyException(f"Failed to delete elements through unbound process. Error: '{error_log_file}'")
@@ -120,14 +127,22 @@ class ElementService(ObjectService):
             subset_service.delete(subset_name, dimension_name, hierarchy_name, private=False, **kwargs)
 
     @require_version("11.4")
-    def delete_edges(self, dimension_name: str, hierarchy_name: str, edges: Iterable[Tuple[str, str]] = None,
-                     use_ti: bool = False, use_blob: bool = False, remove_blob: bool = True, **kwargs):
+    def delete_edges(
+        self,
+        dimension_name: str,
+        hierarchy_name: str,
+        edges: Iterable[Tuple[str, str]] = None,
+        use_ti: bool = False,
+        use_blob: bool = False,
+        remove_blob: bool = True,
+        **kwargs,
+    ):
         if use_ti:
             return self.delete_edges_use_ti(dimension_name, hierarchy_name, edges, **kwargs)
-            
+
         if use_blob:
             return self.delete_edges_use_blob(dimension_name, hierarchy_name, edges, remove_blob, **kwargs)
-            
+
         h_service = self._get_hierarchy_service()
         h = h_service.get(dimension_name, hierarchy_name, **kwargs)
         for edge in edges:
@@ -144,35 +159,34 @@ class ElementService(ObjectService):
         statements = [
             f"HierarchyElementComponentDelete('{dimension_name}', '{hierarchy_name}', "
             f"'{escape_single_quote(parent)}', '{escape_single_quote(child)}');"
-            for (parent, child)
-            in edges
+            for (parent, child) in edges
         ]
 
         unbound_process_name = self.suggest_unique_object_name()
 
         process_service = self._get_process_service()
-        process = Process(
-            name=unbound_process_name,
-            prolog_procedure="\r\n".join(statements))
+        process = Process(name=unbound_process_name, prolog_procedure="\r\n".join(statements))
         success, status, error_log_file = process_service.execute_process_with_return(process, **kwargs)
         if not success:
             raise TM1pyException(f"Failed to delete edges through unbound process. Error: '{error_log_file}'")
 
     @require_data_admin
     @require_ops_admin
-    def delete_edges_use_blob(self, dimension_name: str, hierarchy_name: str, edges: List[str] = None, remove_blob: bool = True, **kwargs):
+    def delete_edges_use_blob(
+        self, dimension_name: str, hierarchy_name: str, edges: List[str] = None, remove_blob: bool = True, **kwargs
+    ):
         """
         Remove edges in TM1 via an unbound TI process having an uploaded CSV as data source
         :param dimension_name as str: dimension name
         :param hierarchy_name as str: hierarchy name
-        :param edges as list: 
+        :param edges as list:
         :remove_blob as bool: remove the parent child file after use, default True
         :param kwargs:
         :return: Success: bool, Messages: list, ChangeSet: None
         """
         if not edges:
             return
-            
+
         process_service = ProcessService(self._rest)
         file_service = FileService(self._rest)
 
@@ -180,20 +194,11 @@ class ElementService(ObjectService):
 
         # Transform cells to format that's consumable for TI
         csv_content = StringIO()
-        csv_writer = csv.writer(
-            csv_content,
-            delimiter=",",
-            quoting=csv.QUOTE_ALL)
-        csv_writer.writerows(
-            list(edge)
-            for edge 
-            in edges)
+        csv_writer = csv.writer(csv_content, delimiter=",", quoting=csv.QUOTE_ALL)
+        csv_writer.writerows(list(edge) for edge in edges)
 
-        file_name = f'{unique_name}.csv'
-        file_service.create(
-            file_name=file_name,
-            file_content=csv_content.getvalue().encode('utf-8'),
-            **kwargs)
+        file_name = f"{unique_name}.csv"
+        file_service.create(file_name=file_name, file_content=csv_content.getvalue().encode("utf-8"), **kwargs)
 
         try:
             # Create and execute unbound TI process to delete edges using blob file
@@ -201,11 +206,12 @@ class ElementService(ObjectService):
                 dimension_name=dimension_name,
                 hierarchy_name=hierarchy_name,
                 process_name=unique_name,
-                blob_filename=file_name)
+                blob_filename=file_name,
+            )
 
             success, status, log_file = process_service.execute_process_with_return(process=process, **kwargs)
             if not success:
-                if status in ['HasMinorErrors']:
+                if status in ["HasMinorErrors"]:
                     raise TM1pyWritePartialFailureException([status], [log_file], 1)
                 else:
                     raise TM1pyWriteFailureException([status], [log_file])
@@ -214,56 +220,68 @@ class ElementService(ObjectService):
             if remove_blob:
                 file_service.delete(file_name=file_name)
 
-    def _build_unwind_hierarchy_edges_from_blob_process(self, dimension_name: str, hierarchy_name: str, process_name: str, blob_filename: str) -> Process:
+    def _build_unwind_hierarchy_edges_from_blob_process(
+        self, dimension_name: str, hierarchy_name: str, process_name: str, blob_filename: str
+    ) -> Process:
 
         # v11 automatically adds blb file extensions to documents created via the contents api
         if not verify_version(required_version="12", version=self.version):
             blob_filename += ".blb"
         hierarchyupdate_process = Process(
             name=process_name,
-            datasource_type='ASCII',
+            datasource_type="ASCII",
             datasource_ascii_header_records=0,
             datasource_data_source_name_for_server=f"{blob_filename}",
             datasource_data_source_name_for_client=f"{blob_filename}",
-            datasource_ascii_delimiter_char=',',
-            datasource_ascii_decimal_separator='.',
-            datasource_ascii_thousand_separator='',
-            datasource_ascii_quote_character='"')
+            datasource_ascii_delimiter_char=",",
+            datasource_ascii_decimal_separator=".",
+            datasource_ascii_thousand_separator="",
+            datasource_ascii_quote_character='"',
+        )
 
         # Define encoding in Prolog section
         hierarchyupdate_process.prolog_procedure = f"""
         SetInputCharacterSet('TM1CS_UTF8');
          """
-        parent_variable="vParent"
-        child_variable="vChild"
-        hierarchyupdate_process.add_variable(name=parent_variable, variable_type='String')
-        hierarchyupdate_process.add_variable(name=child_variable, variable_type='String')
+        parent_variable = "vParent"
+        child_variable = "vChild"
+        hierarchyupdate_process.add_variable(name=parent_variable, variable_type="String")
+        hierarchyupdate_process.add_variable(name=child_variable, variable_type="String")
 
         # Write the statement for delete component in hierarchy
         delete_component = f"\rHierarchyElementComponentDelete('{dimension_name}', '{hierarchy_name}', {parent_variable}, {child_variable});"
- 
+
         # Define Metadata section
         metadata_statement = delete_component
         hierarchyupdate_process.metadata_procedure = metadata_statement
         return hierarchyupdate_process
-    
+
     def get_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[Element]:
         url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Elements?select=Name,Type",
-            dimension_name,
-            hierarchy_name)
+            "/Dimensions('{}')/Hierarchies('{}')/Elements?select=Name,Type", dimension_name, hierarchy_name
+        )
         response = self._rest.GET(url, **kwargs)
         return [Element.from_dict(element) for element in response.json()["value"]]
 
     @require_pandas
-    def get_elements_dataframe(self, dimension_name: str = None, hierarchy_name: str = None,
-                               elements: Union[str, Iterable[str]] = None,
-                               skip_consolidations: bool = True, attributes: Iterable[str] = None,
-                               attribute_column_prefix: str = "", skip_parents: bool = False,
-                               level_names: List[str] = None, parent_attribute: str = None,
-                               skip_weights: bool = False, use_blob: bool = False, allow_empty_alias: bool = True,
-                               attribute_suffix: bool = False, element_type_column: str = 'Type',
-                               **kwargs) -> 'pd.DataFrame':
+    def get_elements_dataframe(
+        self,
+        dimension_name: str = None,
+        hierarchy_name: str = None,
+        elements: Union[str, Iterable[str]] = None,
+        skip_consolidations: bool = True,
+        attributes: Iterable[str] = None,
+        attribute_column_prefix: str = "",
+        skip_parents: bool = False,
+        level_names: List[str] = None,
+        parent_attribute: str = None,
+        skip_weights: bool = False,
+        use_blob: bool = False,
+        allow_empty_alias: bool = True,
+        attribute_suffix: bool = False,
+        element_type_column: str = "Type",
+        **kwargs,
+    ) -> "pd.DataFrame":
         """
 
         :param dimension_name: Name of the dimension. Can be derived from elements MDX
@@ -289,12 +307,13 @@ class ElementService(ObjectService):
                 top_records=1,
                 member_properties=["UniqueName"],
                 parent_properties=None,
-                element_properties=None)
+                element_properties=None,
+            )
 
             if not record:
                 raise ValueError(f"member_selection invalid: '{elements}'")
 
-            unique_name = record[0][0]['UniqueName']
+            unique_name = record[0][0]["UniqueName"]
             dimension_name, hierarchy_name, _ = dimension_hierarchy_element_tuple_from_unique_name(unique_name)
 
         if elements is None or not any(elements):
@@ -304,32 +323,33 @@ class ElementService(ObjectService):
 
         if not isinstance(elements, str):
             if isinstance(elements, Iterable):
-                elements = "{" + ",".join(
-                    f"[{dimension_name}].[{hierarchy_name}].[{member}]" for member in elements) + "}"
+                elements = (
+                    "{" + ",".join(f"[{dimension_name}].[{hierarchy_name}].[{member}]" for member in elements) + "}"
+                )
             else:
                 raise ValueError("Argument 'element_selection' must be None or str")
 
         if not self.attribute_cube_exists(dimension_name):
             raise RuntimeError(self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name + " cube must exist")
 
-        members = [tupl[0] for tupl in self.execute_set_mdx(
-            mdx=elements,
-            element_properties=None,
-            member_properties=("Name", "UniqueName"),
-            parent_properties=None)]
+        members = [
+            tupl[0]
+            for tupl in self.execute_set_mdx(
+                mdx=elements, element_properties=None, member_properties=("Name", "UniqueName"), parent_properties=None
+            )
+        ]
 
         element_types = self.get_element_types(
-            dimension_name=dimension_name,
-            hierarchy_name=hierarchy_name,
-            skip_consolidations=skip_consolidations)
+            dimension_name=dimension_name, hierarchy_name=hierarchy_name, skip_consolidations=skip_consolidations
+        )
 
         df = pd.DataFrame(
-            data=[(member["Name"], element_types[member["Name"]])
-                  for member
-                  in members
-                  if member["Name"] in element_types],
+            data=[
+                (member["Name"], element_types[member["Name"]]) for member in members if member["Name"] in element_types
+            ],
             dtype=str,
-            columns=[dimension_name, element_type_column])
+            columns=[dimension_name, element_type_column],
+        )
 
         calculated_members_definition = list()
         calculated_members_selection = list()
@@ -362,7 +382,7 @@ class ElementService(ObjectService):
             for calculated_name, level_name in levels_dict.items():
                 depth += 1
                 name_or_attribute = f"Properties('{parent_attribute}')" if parent_attribute else "NAME"
-                if not verify_version(required_version='12', version=self.version):
+                if not verify_version(required_version="12", version=self.version):
                     member = f"""
                     MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{calculated_name}] 
                     AS [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * depth}{name_or_attribute}
@@ -377,7 +397,7 @@ class ElementService(ObjectService):
                 parent_members.append(f"[{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{calculated_name}]")
 
                 if not skip_weights:
-                    if not verify_version(required_version='12', version=self.version):
+                    if not verify_version(required_version="12", version=self.version):
                         member_weight = f"""
                         MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_name}_Weight] 
                         AS IIF(
@@ -395,8 +415,7 @@ class ElementService(ObjectService):
                         """
                     calculated_members_definition.append(member_weight)
 
-                    weight_members.append(
-                        f"[{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_name}_Weight]")
+                    weight_members.append(f"[{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_name}_Weight]")
 
             calculated_members_selection.extend(weight_members)
             calculated_members_selection.extend(parent_members)
@@ -404,10 +423,14 @@ class ElementService(ObjectService):
         if attributes is None:
             column_selection = "{Tm1SubsetAll([" + self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name + "])}"
         else:
-            column_selection = "{" + ",".join(
-                "[" + self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name + "].[" + attribute + "]"
-                for attribute
-                in attributes) + "}"
+            column_selection = (
+                "{"
+                + ",".join(
+                    "[" + self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name + "].[" + attribute + "]"
+                    for attribute in attributes
+                )
+                + "}"
+            )
 
         if calculated_members_selection:
             if column_selection == "{}":
@@ -434,12 +457,10 @@ class ElementService(ObjectService):
         column_renaming = dict()
         if attribute_column_prefix or attribute_suffix:
             column_renaming = {
-                ea.name: f"{attribute_column_prefix}{ea.name}" + (
-                    f":{ea.attribute_type.lower()[0]}"
-                    if attribute_suffix
-                    else "")
-                for ea
-                in element_attributes}
+                ea.name: f"{attribute_column_prefix}{ea.name}"
+                + (f":{ea.attribute_type.lower()[0]}" if attribute_suffix else "")
+                for ea in element_attributes
+            }
 
         # responses are similar but not equivalent.
         # Therefor only use execute_mdx_dataframe when use_blob is True
@@ -452,29 +473,31 @@ class ElementService(ObjectService):
                 line_separator="\r\n",
                 value_separator="~",
                 use_blob=True,
-                **kwargs)
+                **kwargs,
+            )
 
-            df_data = pd.read_csv(StringIO(raw_csv), sep='~', na_filter=False, dtype={0: str})
+            df_data = pd.read_csv(StringIO(raw_csv), sep="~", na_filter=False, dtype={0: str})
 
             # Use _group to avoid aggregation of multiple members into one df record
             # example: element A is part of multiple consolidations resulting df must have multiple records for A
-            unique_values_count = df_data['}ElementAttributes_' + dimension_name].nunique()
-            df_data['_group'] = (df_data.index // unique_values_count) + 1
+            unique_values_count = df_data["}ElementAttributes_" + dimension_name].nunique()
+            df_data["_group"] = (df_data.index // unique_values_count) + 1
 
             # pivot the dataframe
             df_data = df_data.pivot_table(
-                index=[dimension_name, '_group'],
-                columns='}ElementAttributes_' + dimension_name,
-                values='Value',
-                aggfunc='first',
-                sort=False)
+                index=[dimension_name, "_group"],
+                columns="}ElementAttributes_" + dimension_name,
+                values="Value",
+                aggfunc="first",
+                sort=False,
+            )
 
             # override column names. hierarchy name with dimension and prefix attributes
             df_data.columns = [column_renaming.get(col, col) for col in df_data.columns]
             df_data = df_data.reset_index()
 
             # Drop the group key
-            df_data = df_data.fillna("").drop(columns='_group')
+            df_data = df_data.fillna("").drop(columns="_group")
 
         else:
             df_data = cell_service.execute_mdx_dataframe_shaped(mdx, **kwargs)
@@ -488,30 +511,29 @@ class ElementService(ObjectService):
 
         # format weights
         # Find columns with certain names
-        cols_to_format = [col for col in df_data.columns if '_Weight' in col]
+        cols_to_format = [col for col in df_data.columns if "_Weight" in col]
 
         # format the columns
         df_data[cols_to_format] = df_data[cols_to_format].apply(pd.to_numeric)
-        df_data[cols_to_format] = df_data[cols_to_format].applymap(lambda x: '{:.6f}'.format(x))
+        df_data[cols_to_format] = df_data[cols_to_format].applymap(lambda x: "{:.6f}".format(x))
 
         # override colum types
         element_attributes = self.get_element_attributes(dimension_name, hierarchy_name)
         attribute_column_types = {
-            ea.name: 'float' if ea.attribute_type == 'Numeric' else 'str'
-            for ea
-            in element_attributes
-            if ea.name in df_data.columns}
+            ea.name: "float" if ea.attribute_type == "Numeric" else "str"
+            for ea in element_attributes
+            if ea.name in df_data.columns
+        }
         df_data = df_data.astype(attribute_column_types)
 
         # substitute empty strings with element name if empty alias is not allowed
         if not allow_empty_alias:
             alias_attributes = [
-                ea.name
-                for ea in element_attributes
-                if ea.attribute_type == 'Alias' and ea.name in df_data.columns]
+                ea.name for ea in element_attributes if ea.attribute_type == "Alias" and ea.name in df_data.columns
+            ]
 
             for col in alias_attributes:
-                df_data[col] = np.where(df_data[col] == '', df_data[dimension_name], df_data[col])
+                df_data[col] = np.where(df_data[col] == "", df_data[dimension_name], df_data[col])
 
         # shift levels to right hand side
         if not skip_parents:
@@ -521,26 +543,25 @@ class ElementService(ObjectService):
             # iterative approach
             for _ in level_columns:
 
-                rows_to_shift = df_data[df_data[level_columns[-1]].isin(['', None])].index
+                rows_to_shift = df_data[df_data[level_columns[-1]].isin(["", None])].index
                 if rows_to_shift.empty:
                     break
-                shifted_cols = df_data.iloc[rows_to_shift, -len(level_columns):].shift(1, axis=1)
-                df_data.iloc[rows_to_shift, -len(level_columns):] = shifted_cols
+                shifted_cols = df_data.iloc[rows_to_shift, -len(level_columns) :].shift(1, axis=1)
+                df_data.iloc[rows_to_shift, -len(level_columns) :] = shifted_cols
 
                 # also shift weight columns
                 if not skip_weights:
-                    shifted_cols = df_data.iloc[
-                                   rows_to_shift,
-                                   -len(level_columns) * 2:-len(level_columns)].shift(1, axis=1)
+                    shifted_cols = df_data.iloc[rows_to_shift, -len(level_columns) * 2 : -len(level_columns)].shift(
+                        1, axis=1
+                    )
 
-                    df_data.iloc[rows_to_shift, -len(level_columns) * 2:-len(level_columns)] = shifted_cols
+                    df_data.iloc[rows_to_shift, -len(level_columns) * 2 : -len(level_columns)] = shifted_cols
 
-            df_data.iloc[:, -len(level_columns):] = df_data.iloc[:, -len(level_columns):].fillna('')
+            df_data.iloc[:, -len(level_columns) :] = df_data.iloc[:, -len(level_columns) :].fillna("")
             if not skip_weights:
-                df_data.iloc[:, -len(level_columns) * 2:-len(level_names)] = df_data.iloc[
-                                                                             :,
-                                                                             -len(level_columns) * 2:
-                                                                             -len(level_names)].fillna(0)
+                df_data.iloc[:, -len(level_columns) * 2 : -len(level_names)] = df_data.iloc[
+                    :, -len(level_columns) * 2 : -len(level_names)
+                ].fillna(0)
 
         return pd.merge(df, df_data, on=dimension_name).drop_duplicates()
 
@@ -548,128 +569,124 @@ class ElementService(ObjectService):
         url = format_url(
             "/Dimensions('{}')/Hierarchies('{}')/Edges?select=ParentName,ComponentName,Weight",
             dimension_name,
-            hierarchy_name)
+            hierarchy_name,
+        )
         response = self._rest.GET(url, **kwargs)
 
         return {(edge["ParentName"], edge["ComponentName"]): edge["Weight"] for edge in response.json()["value"]}
 
     def get_leaf_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[Element]:
         url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*&$filter=Type ne 3",
-            dimension_name,
-            hierarchy_name)
+            "/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*&$filter=Type ne 3", dimension_name, hierarchy_name
+        )
         response = self._rest.GET(url, **kwargs)
         return [Element.from_dict(element) for element in response.json()["value"]]
 
     def get_leaf_element_names(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
-        url = format_url("/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Type ne 3",
-                         dimension_name,
-                         hierarchy_name)
+        url = format_url(
+            "/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Type ne 3",
+            dimension_name,
+            hierarchy_name,
+        )
         response = self._rest.GET(url, **kwargs)
-        return [e["Name"] for e in response.json()['value']]
+        return [e["Name"] for e in response.json()["value"]]
 
     def get_consolidated_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[Element]:
         url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*&$filter=Type eq 3",
-            dimension_name,
-            hierarchy_name)
+            "/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*&$filter=Type eq 3", dimension_name, hierarchy_name
+        )
         response = self._rest.GET(url, **kwargs)
         return [Element.from_dict(element) for element in response.json()["value"]]
 
     def get_consolidated_element_names(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
-        url = format_url("/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Type eq 3",
-                         dimension_name,
-                         hierarchy_name)
+        url = format_url(
+            "/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Type eq 3",
+            dimension_name,
+            hierarchy_name,
+        )
         response = self._rest.GET(url, **kwargs)
-        return [e["Name"] for e in response.json()['value']]
+        return [e["Name"] for e in response.json()["value"]]
 
     def get_numeric_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[Element]:
         url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*&$filter=Type eq 1",
-            dimension_name,
-            hierarchy_name)
+            "/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*&$filter=Type eq 1", dimension_name, hierarchy_name
+        )
         response = self._rest.GET(url, **kwargs)
         return [Element.from_dict(element) for element in response.json()["value"]]
 
     def get_numeric_element_names(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
-        url = format_url("/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Type eq 1",
-                         dimension_name,
-                         hierarchy_name)
+        url = format_url(
+            "/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Type eq 1",
+            dimension_name,
+            hierarchy_name,
+        )
         response = self._rest.GET(url, **kwargs)
-        return [e["Name"] for e in response.json()['value']]
+        return [e["Name"] for e in response.json()["value"]]
 
     def get_string_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[Element]:
         url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*&$filter=Type eq 2",
-            dimension_name,
-            hierarchy_name)
+            "/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*&$filter=Type eq 2", dimension_name, hierarchy_name
+        )
         response = self._rest.GET(url, **kwargs)
         return [Element.from_dict(element) for element in response.json()["value"]]
 
     def get_string_element_names(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
-        url = format_url("/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Type eq 2",
-                         dimension_name,
-                         hierarchy_name)
+        url = format_url(
+            "/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Type eq 2",
+            dimension_name,
+            hierarchy_name,
+        )
         response = self._rest.GET(url, **kwargs)
-        return [e["Name"] for e in response.json()['value']]
+        return [e["Name"] for e in response.json()["value"]]
 
     def get_element_names(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
-        """ Get all element names
+        """Get all element names
 
         :param dimension_name:
         :param hierarchy_name:
         :return: Generator of element-names
         """
-        url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name",
-            dimension_name,
-            hierarchy_name)
+        url = format_url("/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name", dimension_name, hierarchy_name)
         response = self._rest.GET(url, **kwargs)
-        return [e["Name"] for e in response.json()['value']]
+        return [e["Name"] for e in response.json()["value"]]
 
     def get_number_of_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> int:
-        url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Elements/$count",
-            dimension_name,
-            hierarchy_name)
+        url = format_url("/Dimensions('{}')/Hierarchies('{}')/Elements/$count", dimension_name, hierarchy_name)
         response = self._rest.GET(url, **kwargs)
         return int(response.text)
 
     def get_number_of_consolidated_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> int:
         url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Elements/$count?$filter=Type eq 3",
-            dimension_name,
-            hierarchy_name)
+            "/Dimensions('{}')/Hierarchies('{}')/Elements/$count?$filter=Type eq 3", dimension_name, hierarchy_name
+        )
         response = self._rest.GET(url, **kwargs)
         return int(response.text)
 
     def get_number_of_leaf_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> int:
         url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Elements/$count?$filter=Type ne 3",
-            dimension_name,
-            hierarchy_name)
+            "/Dimensions('{}')/Hierarchies('{}')/Elements/$count?$filter=Type ne 3", dimension_name, hierarchy_name
+        )
         response = self._rest.GET(url, **kwargs)
         return int(response.text)
 
     def get_number_of_numeric_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> int:
         url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Elements/$count?$filter=Type eq 1",
-            dimension_name,
-            hierarchy_name)
+            "/Dimensions('{}')/Hierarchies('{}')/Elements/$count?$filter=Type eq 1", dimension_name, hierarchy_name
+        )
         response = self._rest.GET(url, **kwargs)
         return int(response.text)
 
     def get_number_of_string_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> int:
         url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Elements/$count?$filter=Type eq 2",
-            dimension_name,
-            hierarchy_name)
+            "/Dimensions('{}')/Hierarchies('{}')/Elements/$count?$filter=Type eq 2", dimension_name, hierarchy_name
+        )
         response = self._rest.GET(url, **kwargs)
         return int(response.text)
 
-    def get_all_leaf_element_identifiers(self, dimension_name: str, hierarchy_name: str,
-                                         **kwargs) -> CaseAndSpaceInsensitiveSet:
-        """ Get all element names and alias values for leaf elements in a hierarchy
+    def get_all_leaf_element_identifiers(
+        self, dimension_name: str, hierarchy_name: str, **kwargs
+    ) -> CaseAndSpaceInsensitiveSet:
+        """Get all element names and alias values for leaf elements in a hierarchy
 
         :param dimension_name:
         :param hierarchy_name:
@@ -679,7 +696,7 @@ class ElementService(ObjectService):
         return self.get_element_identifiers(dimension_name, hierarchy_name, mdx_elements, **kwargs)
 
     def get_elements_by_level(self, dimension_name: str, hierarchy_name: str, level: int, **kwargs) -> List[str]:
-        """ Get all element names by level in a hierarchy
+        """Get all element names by level in a hierarchy
 
         :param dimension_name: Name of the dimension
         :param hierarchy_name: Name of the hierarchy
@@ -690,13 +707,15 @@ class ElementService(ObjectService):
             "/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Level eq {}",
             dimension_name,
             hierarchy_name,
-            str(level))
+            str(level),
+        )
         response = self._rest.GET(url, **kwargs)
-        return [e["Name"] for e in response.json()['value']]
+        return [e["Name"] for e in response.json()["value"]]
 
-    def get_elements_filtered_by_wildcard(self, dimension_name: str, hierarchy_name: str,
-                                          wildcard: str, level: int = None, **kwargs) -> List[str]:
-        """ Get all element names filtered by wildcard (CaseAndSpaceInsensitive) and level in a hierarchy
+    def get_elements_filtered_by_wildcard(
+        self, dimension_name: str, hierarchy_name: str, wildcard: str, level: int = None, **kwargs
+    ) -> List[str]:
+        """Get all element names filtered by wildcard (CaseAndSpaceInsensitive) and level in a hierarchy
 
         :param dimension_name: Name of the dimension
         :param hierarchy_name: Name of the hierarchy
@@ -710,13 +729,15 @@ class ElementService(ObjectService):
         url = format_url(
             "/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=" + filter_elements,
             dimension_name,
-            hierarchy_name)
+            hierarchy_name,
+        )
         response = self._rest.GET(url, **kwargs)
-        return [e["Name"] for e in response.json()['value']]
+        return [e["Name"] for e in response.json()["value"]]
 
-    def get_all_element_identifiers(self, dimension_name: str, hierarchy_name: str,
-                                    **kwargs) -> CaseAndSpaceInsensitiveSet:
-        """ Get all element names and alias values in a hierarchy
+    def get_all_element_identifiers(
+        self, dimension_name: str, hierarchy_name: str, **kwargs
+    ) -> CaseAndSpaceInsensitiveSet:
+        """Get all element names and alias values in a hierarchy
 
         :param dimension_name:
         :param hierarchy_name:
@@ -726,9 +747,10 @@ class ElementService(ObjectService):
         mdx_elements = f"{{ Tm1SubsetAll ([{dimension_name}].[{hierarchy_name}]) }}"
         return self.get_element_identifiers(dimension_name, hierarchy_name, mdx_elements, **kwargs)
 
-    def get_element_identifiers(self, dimension_name: str, hierarchy_name: str,
-                                elements: Union[str, List[str]], **kwargs) -> CaseAndSpaceInsensitiveSet:
-        """ Get all element names and alias values for a set of elements in a hierarchy
+    def get_element_identifiers(
+        self, dimension_name: str, hierarchy_name: str, elements: Union[str, List[str]], **kwargs
+    ) -> CaseAndSpaceInsensitiveSet:
+        """Get all element names and alias values for a set of elements in a hierarchy
 
         :param dimension_name:
         :param hierarchy_name:
@@ -741,17 +763,14 @@ class ElementService(ObjectService):
         if isinstance(elements, str):
             mdx_element_selection = elements
         else:
-            mdx_element_selection = ",".join(build_element_unique_names(
-                [dimension_name] * len(elements),
-                elements,
-                [hierarchy_name] * len(elements)))
+            mdx_element_selection = ",".join(
+                build_element_unique_names([dimension_name] * len(elements), elements, [hierarchy_name] * len(elements))
+            )
 
         if not alias_attributes:
             result = self.execute_set_mdx(
-                mdx=mdx_element_selection,
-                member_properties=["Name"],
-                parent_properties=None,
-                element_properties=None)
+                mdx=mdx_element_selection, member_properties=["Name"], parent_properties=None, element_properties=None
+            )
             return CaseAndSpaceInsensitiveSet([record[0]["Name"] for record in result])
 
         mdx = """
@@ -761,14 +780,24 @@ class ElementService(ObjectService):
              FROM [}}ElementAttributes_{dim}]
              """.format(
             elem_mdx=mdx_element_selection,
-            attr_mdx=",".join(build_element_unique_names(
-                ["}ElementAttributes_" + dimension_name] * len(alias_attributes), alias_attributes)),
-            dim=dimension_name)
+            attr_mdx=",".join(
+                build_element_unique_names(
+                    ["}ElementAttributes_" + dimension_name] * len(alias_attributes), alias_attributes
+                )
+            ),
+            dim=dimension_name,
+        )
         return self._retrieve_mdx_rows_and_cell_values_as_string_set(mdx, **kwargs)
 
-    def get_attribute_of_elements(self, dimension_name: str, hierarchy_name: str, attribute: str,
-                                  elements: Union[str, List[str]] = None, exclude_empty_cells: bool = True,
-                                  element_unique_names: bool = False) -> dict:
+    def get_attribute_of_elements(
+        self,
+        dimension_name: str,
+        hierarchy_name: str,
+        attribute: str,
+        elements: Union[str, List[str]] = None,
+        exclude_empty_cells: bool = True,
+        element_unique_names: bool = False,
+    ) -> dict:
         """
          Get element name and attribute value for a set of elements in a hierarchy
 
@@ -786,10 +815,9 @@ class ElementService(ObjectService):
         if isinstance(elements, str):
             mdx_element_selection = elements
         else:
-            mdx_element_selection = ",".join(build_element_unique_names(
-                [dimension_name] * len(elements),
-                elements,
-                [hierarchy_name] * len(elements)))
+            mdx_element_selection = ",".join(
+                build_element_unique_names([dimension_name] * len(elements), elements, [hierarchy_name] * len(elements))
+            )
         mdx = """
              SELECT
              {{ {elem_mdx} }} ON ROWS, 
@@ -798,28 +826,27 @@ class ElementService(ObjectService):
              """.format(
             elem_mdx=mdx_element_selection,
             attr_mdx="[}ElementAttributes_" + dimension_name + "].[" + attribute + "]",
-            dim=dimension_name)
+            dim=dimension_name,
+        )
         rows_and_values = self._retrieve_mdx_rows_and_values(mdx, element_unique_names=element_unique_names)
         return self._extract_dict_from_rows_and_values(rows_and_values, exclude_empty_cells=exclude_empty_cells)
 
     @require_version("11.8.023")
     def element_lock(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> Response:
-        """ Lock element
+        """Lock element
         :param dimension_name: Name of dimension.
         :param hierarchy_name: Name of hierarchy.
         :param element_name: Name of element to lock.
         :return: response
         """
         url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Elements('{}')/tm1.Lock",
-            dimension_name,
-            hierarchy_name,
-            element_name)
-        return self._rest.POST(url, '', **kwargs)
+            "/Dimensions('{}')/Hierarchies('{}')/Elements('{}')/tm1.Lock", dimension_name, hierarchy_name, element_name
+        )
+        return self._rest.POST(url, "", **kwargs)
 
     @require_version("11.8.023")
     def element_unlock(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> Response:
-        """ Unlock element
+        """Unlock element
         :param dimension_name: Name of dimension.
         :param hierarchy_name: Name of hierarchy.
         :param element_name: Name of element to unlock.
@@ -829,14 +856,15 @@ class ElementService(ObjectService):
             "/Dimensions('{}')/Hierarchies('{}')/Elements('{}')/tm1.Unlock",
             dimension_name,
             hierarchy_name,
-            element_name)
-        return self._rest.POST(url, '', **kwargs)
-    
+            element_name,
+        )
+        return self._rest.POST(url, "", **kwargs)
+
     @staticmethod
     def _extract_dict_from_rows_and_values(
-            rows_and_values: CaseAndSpaceInsensitiveTuplesDict,
-            exclude_empty_cells: bool = True) -> dict:
-        """ Helper function for get_element_by_attribute method
+        rows_and_values: CaseAndSpaceInsensitiveTuplesDict, exclude_empty_cells: bool = True
+    ) -> dict:
+        """Helper function for get_element_by_attribute method
 
         :param rows_and_values:
         :param exclude_empty_cells: Boolean
@@ -851,10 +879,7 @@ class ElementService(ObjectService):
         return result_set
 
     def get_level_names(self, dimension_name: str, hierarchy_name: str, descending: bool = True, **kwargs) -> List[str]:
-        url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Levels?$select=Name",
-            dimension_name,
-            hierarchy_name)
+        url = format_url("/Dimensions('{}')/Hierarchies('{}')/Levels?$select=Name", dimension_name, hierarchy_name)
         response = self._rest.GET(url, **kwargs)
         if descending:
             return [level["Name"] for level in reversed(response.json()["value"])]
@@ -866,33 +891,34 @@ class ElementService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return int(response.text)
 
-    def get_element_types(self, dimension_name: str, hierarchy_name: str,
-                          skip_consolidations: bool = False, **kwargs) -> CaseAndSpaceInsensitiveDict:
+    def get_element_types(
+        self, dimension_name: str, hierarchy_name: str, skip_consolidations: bool = False, **kwargs
+    ) -> CaseAndSpaceInsensitiveDict:
         url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name,Type",
-            dimension_name,
-            hierarchy_name)
+            "/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name,Type", dimension_name, hierarchy_name
+        )
         if skip_consolidations:
             url += "&$filter=Type ne 3"
         response = self._rest.GET(url, **kwargs)
 
         result = CaseAndSpaceInsensitiveDict()
         for element in response.json()["value"]:
-            result[element['Name']] = element["Type"]
+            result[element["Name"]] = element["Type"]
         return result
 
     def get_element_types_from_all_hierarchies(
-            self, dimension_name: str, skip_consolidations: bool = False, **kwargs) -> CaseAndSpaceInsensitiveDict:
+        self, dimension_name: str, skip_consolidations: bool = False, **kwargs
+    ) -> CaseAndSpaceInsensitiveDict:
         url = format_url(
-            "/Dimensions('{}')?$expand=Hierarchies($select=Elements;$expand=Elements($select=Name,Type",
-            dimension_name)
+            "/Dimensions('{}')?$expand=Hierarchies($select=Elements;$expand=Elements($select=Name,Type", dimension_name
+        )
         url += ";$filter=Type ne 3))" if skip_consolidations else "))"
         response = self._rest.GET(url, **kwargs)
 
         result = CaseAndSpaceInsensitiveDict()
         for hierarchy in response.json()["Hierarchies"]:
             for element in hierarchy["Elements"]:
-                result[element['Name']] = element["Type"]
+                result[element["Name"]] = element["Type"]
         return result
 
     def attribute_cube_exists(self, dimension_name: str, **kwargs) -> bool:
@@ -901,10 +927,12 @@ class ElementService(ObjectService):
 
     def _retrieve_mdx_rows_and_cell_values_as_string_set(self, mdx: str, exclude_empty_cells=True, **kwargs):
         from TM1py import CellService
+
         return CellService(self._rest).execute_mdx_rows_and_values_string_set(mdx, exclude_empty_cells, **kwargs)
 
     def _retrieve_mdx_rows_and_values(self, mdx: str, **kwargs):
         from TM1py import CellService
+
         return CellService(self._rest).execute_mdx_rows_and_values(mdx, **kwargs)
 
     def get_alias_element_attributes(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
@@ -915,42 +943,42 @@ class ElementService(ObjectService):
         :return:
         """
         attributes = self.get_element_attributes(dimension_name, hierarchy_name, **kwargs)
-        return [attr.name
-                for attr
-                in attributes if attr.attribute_type == 'Alias']
+        return [attr.name for attr in attributes if attr.attribute_type == "Alias"]
 
     def get_element_attributes(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[ElementAttribute]:
-        """ Get element attributes from hierarchy
+        """Get element attributes from hierarchy
 
         :param dimension_name:
         :param hierarchy_name:
         :return:
         """
-        url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/ElementAttributes",
-            dimension_name,
-            hierarchy_name)
+        url = format_url("/Dimensions('{}')/Hierarchies('{}')/ElementAttributes", dimension_name, hierarchy_name)
         response = self._rest.GET(url, **kwargs)
-        element_attributes = [ElementAttribute.from_dict(ea) for ea in response.json()['value']]
+        element_attributes = [ElementAttribute.from_dict(ea) for ea in response.json()["value"]]
         return element_attributes
 
     def get_element_attribute_names(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
-        """ Get element attributes from hierarchy
+        """Get element attributes from hierarchy
 
         :param dimension_name:
         :param hierarchy_name:
         :return:
         """
         url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/ElementAttributes?$select=Name",
-            dimension_name,
-            hierarchy_name)
+            "/Dimensions('{}')/Hierarchies('{}')/ElementAttributes?$select=Name", dimension_name, hierarchy_name
+        )
         response = self._rest.GET(url, **kwargs)
-        return [ea["Name"] for ea in response.json()['value']]
+        return [ea["Name"] for ea in response.json()["value"]]
 
-    def get_elements_filtered_by_attribute(self, dimension_name: str, hierarchy_name: str, attribute_name: str,
-                                           attribute_value: Union[str, float], **kwargs) -> List[str]:
-        """ Get all elements from a hierarchy with given attribute value
+    def get_elements_filtered_by_attribute(
+        self,
+        dimension_name: str,
+        hierarchy_name: str,
+        attribute_name: str,
+        attribute_value: Union[str, float],
+        **kwargs,
+    ) -> List[str]:
+        """Get all elements from a hierarchy with given attribute value
 
         :param dimension_name:
         :param hierarchy_name:
@@ -958,47 +986,45 @@ class ElementService(ObjectService):
         :param attribute_value:
         :return: List of element names
         """
-        if not self.exists(f"}}ElementAttributes_{dimension_name}",
-                           f"}}ElementAttributes_{dimension_name}",
-                           attribute_name):
+        if not self.exists(
+            f"}}ElementAttributes_{dimension_name}", f"}}ElementAttributes_{dimension_name}", attribute_name
+        ):
             raise RuntimeError(f"Attribute '{attribute_name}' does not exist in Dimension '{dimension_name}'")
 
         if isinstance(attribute_value, str):
             mdx = (
                 f"{{FILTER({{TM1SUBSETALL([{dimension_name}].[{hierarchy_name}])}},"
-                f"[{dimension_name}].[{hierarchy_name}].CURRENTMEMBER.PROPERTIES(\"{attribute_name}\") = \"{attribute_value}\")}}")
+                f'[{dimension_name}].[{hierarchy_name}].CURRENTMEMBER.PROPERTIES("{attribute_name}") = "{attribute_value}")}}'
+            )
         else:
             mdx = (
                 f"{{FILTER({{TM1SUBSETALL([{dimension_name}].[{hierarchy_name}])}},"
-                f"(IIF([{dimension_name}].[{hierarchy_name}].CURRENTMEMBER.PROPERTIES(\"{attribute_name}\")=\"\", 0.0," 
-                f"STRTOVALUE([{dimension_name}].[{hierarchy_name}].CURRENTMEMBER.PROPERTIES(\"{attribute_name}\"))) = 1))}}"
+                f'(IIF([{dimension_name}].[{hierarchy_name}].CURRENTMEMBER.PROPERTIES("{attribute_name}")="", 0.0,'
+                f'STRTOVALUE([{dimension_name}].[{hierarchy_name}].CURRENTMEMBER.PROPERTIES("{attribute_name}"))) = 1))}}'
             )
 
         elems = self.execute_set_mdx(
-            mdx=mdx,
-            member_properties=["Name"],
-            parent_properties=None,
-            element_properties=None)
+            mdx=mdx, member_properties=["Name"], parent_properties=None, element_properties=None
+        )
         return [elem[0]["Name"] for elem in elems]
 
-    def create_element_attribute(self, dimension_name: str, hierarchy_name: str, element_attribute: ElementAttribute,
-                                 **kwargs) -> Response:
-        """ like AttrInsert
+    def create_element_attribute(
+        self, dimension_name: str, hierarchy_name: str, element_attribute: ElementAttribute, **kwargs
+    ) -> Response:
+        """like AttrInsert
 
         :param dimension_name:
         :param hierarchy_name:
         :param element_attribute: instance of TM1py.ElementAttribute
         :return:
         """
-        url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/ElementAttributes",
-            dimension_name,
-            hierarchy_name)
+        url = format_url("/Dimensions('{}')/Hierarchies('{}')/ElementAttributes", dimension_name, hierarchy_name)
         return self._rest.POST(url, element_attribute.body, **kwargs)
 
-    def delete_element_attribute(self, dimension_name: str, hierarchy_name: str, element_attribute: str,
-                                 **kwargs) -> Response:
-        """ like AttrDelete
+    def delete_element_attribute(
+        self, dimension_name: str, hierarchy_name: str, element_attribute: str, **kwargs
+    ) -> Response:
+        """like AttrDelete
 
         :param dimension_name:
         :param hierarchy_name:
@@ -1009,7 +1035,8 @@ class ElementService(ObjectService):
             "/Dimensions('}}ElementAttributes_{}')/Hierarchies('}}ElementAttributes_{}')/Elements('{}')",
             dimension_name,
             hierarchy_name,
-            element_attribute)
+            element_attribute,
+        )
         try:
             return self._rest.DELETE(url, **kwargs)
 
@@ -1018,9 +1045,10 @@ class ElementService(ObjectService):
             if not ex.status_code == 404:
                 raise ex
 
-    def get_leaves_under_consolidation(self, dimension_name: str, hierarchy_name: str, consolidation: str,
-                                       max_depth: int = None, **kwargs) -> List[str]:
-        """ Get all leaves under a consolidated element
+    def get_leaves_under_consolidation(
+        self, dimension_name: str, hierarchy_name: str, consolidation: str, max_depth: int = None, **kwargs
+    ) -> List[str]:
+        """Get all leaves under a consolidated element
 
         :param dimension_name: name of dimension
         :param hierarchy_name: name of hierarchy
@@ -1028,12 +1056,14 @@ class ElementService(ObjectService):
         :param max_depth: 99 if not passed
         :return:
         """
-        return self.get_members_under_consolidation(dimension_name, hierarchy_name, consolidation, max_depth, True,
-                                                    **kwargs)
+        return self.get_members_under_consolidation(
+            dimension_name, hierarchy_name, consolidation, max_depth, True, **kwargs
+        )
 
-    def get_edges_under_consolidation(self, dimension_name: str, hierarchy_name: str, consolidation: str,
-                                      max_depth: int = None, **kwargs) -> List[str]:
-        """ Get all members under a consolidated element
+    def get_edges_under_consolidation(
+        self, dimension_name: str, hierarchy_name: str, consolidation: str, max_depth: int = None, **kwargs
+    ) -> List[str]:
+        """Get all members under a consolidated element
 
         :param dimension_name: name of dimension
         :param hierarchy_name: name of hierarchy
@@ -1073,9 +1103,16 @@ class ElementService(ObjectService):
         get_edges(consolidation_tree["Edges"])
         return edges
 
-    def get_members_under_consolidation(self, dimension_name: str, hierarchy_name: str, consolidation: str,
-                                        max_depth: int = None, leaves_only: bool = False, **kwargs) -> List[str]:
-        """ Get all members under a consolidated element
+    def get_members_under_consolidation(
+        self,
+        dimension_name: str,
+        hierarchy_name: str,
+        consolidation: str,
+        max_depth: int = None,
+        leaves_only: bool = False,
+        **kwargs,
+    ) -> List[str]:
+        """Get all members under a consolidated element
 
         :param dimension_name: name of dimension
         :param hierarchy_name: name of hierarchy
@@ -1111,9 +1148,7 @@ class ElementService(ObjectService):
         get_members(consolidation_tree)
         return members
 
-    def execute_set_mdx_element_names(
-        self, mdx: str, top_records: Optional[int] = None, **kwargs
-    ) -> List:
+    def execute_set_mdx_element_names(self, mdx: str, top_records: Optional[int] = None, **kwargs) -> List:
         """
         :method to execute an MDX statement against a dimension and get a list with element names back
         :param mdx: valid dimension mdx statement
@@ -1129,13 +1164,14 @@ class ElementService(ObjectService):
         return [element[0]["Name"] for element in elements]
 
     def execute_set_mdx(
-            self,
-            mdx: str,
-            top_records: Optional[int] = None,
-            member_properties: Optional[Iterable[str]] = ('Name', 'Weight'),
-            parent_properties: Optional[Iterable[str]] = ('Name', 'UniqueName'),
-            element_properties: Optional[Iterable[str]] = ('Type', 'Level'),
-            **kwargs) -> List:
+        self,
+        mdx: str,
+        top_records: Optional[int] = None,
+        member_properties: Optional[Iterable[str]] = ("Name", "Weight"),
+        parent_properties: Optional[Iterable[str]] = ("Name", "UniqueName"),
+        element_properties: Optional[Iterable[str]] = ("Type", "Level"),
+        **kwargs,
+    ) -> List:
         """
         :method to execute an MDX statement against a dimension
         :param mdx: valid dimension mdx statement
@@ -1152,39 +1188,39 @@ class ElementService(ObjectService):
         top = f"$top={top_records};" if top_records else ""
 
         if not member_properties:
-            member_properties = ['Name']
+            member_properties = ["Name"]
 
         # drop spaces in Attribute names
         else:
             member_properties = [
-                member_property.replace(' ', '') if member_property.startswith('Attributes/') else member_property
-                for member_property
-                in member_properties]
+                member_property.replace(" ", "") if member_property.startswith("Attributes/") else member_property
+                for member_property in member_properties
+            ]
 
         if element_properties:
             element_properties = [
-                element_property.replace(' ', '') if element_property.startswith('Attributes/') else element_property
-                for element_property
-                in element_properties]
+                element_property.replace(" ", "") if element_property.startswith("Attributes/") else element_property
+                for element_property in element_properties
+            ]
 
         if parent_properties:
             parent_properties = [
-                parent_property.replace(' ', '') if parent_property.startswith('Attributes/') else parent_property
-                for parent_property
-                in parent_properties]
+                parent_property.replace(" ", "") if parent_property.startswith("Attributes/") else parent_property
+                for parent_property in parent_properties
+            ]
 
         member_properties = ",".join(member_properties)
-        select_member_properties = f'$select={member_properties}'
+        select_member_properties = f"$select={member_properties}"
 
         properties_to_expand = []
         if parent_properties:
             parent_properties = ",".join(parent_properties)
-            select_parent_properties = f'Parent($select={parent_properties})'
+            select_parent_properties = f"Parent($select={parent_properties})"
             properties_to_expand.append(select_parent_properties)
 
         if element_properties:
             element_properties = ",".join(element_properties)
-            select_element_properties = f'Element($select={element_properties})'
+            select_element_properties = f"Element($select={element_properties})"
             properties_to_expand.append(select_element_properties)
 
         if properties_to_expand:
@@ -1192,17 +1228,19 @@ class ElementService(ObjectService):
         else:
             expand_properties = ""
 
-        url = f'/ExecuteMDXSetExpression?$expand=Tuples({top}' \
-              f'$expand=Members({select_member_properties}' \
-              f'{expand_properties}))'
+        url = (
+            f"/ExecuteMDXSetExpression?$expand=Tuples({top}"
+            f"$expand=Members({select_member_properties}"
+            f"{expand_properties}))"
+        )
 
         payload = {"MDX": mdx}
         response = self._rest.POST(url, json.dumps(payload, ensure_ascii=False), **kwargs)
         raw_dict = response.json()
-        return [tuples['Members'] for tuples in raw_dict['Tuples']]
+        return [tuples["Members"] for tuples in raw_dict["Tuples"]]
 
     def remove_edge(self, dimension_name: str, hierarchy_name: str, parent: str, component: str, **kwargs) -> Response:
-        """ Remove one edge from hierarchy. Fails if parent or child element doesn't exist.
+        """Remove one edge from hierarchy. Fails if parent or child element doesn't exist.
 
         :param dimension_name:
         :param hierarchy_name:
@@ -1217,13 +1255,15 @@ class ElementService(ObjectService):
             hierarchy_name,
             parent,
             parent,
-            component)
+            component,
+        )
 
         return self._rest.DELETE(url=url, **kwargs)
 
-    def add_edges(self, dimension_name: str, hierarchy_name: str = None, edges: Dict[Tuple[str, str], int] = None,
-                  **kwargs) -> Response:
-        """ Add Edges to hierarchy. Fails if one edge already exists.
+    def add_edges(
+        self, dimension_name: str, hierarchy_name: str = None, edges: Dict[Tuple[str, str], int] = None, **kwargs
+    ) -> Response:
+        """Add Edges to hierarchy. Fails if one edge already exists.
 
         :param dimension_name:
         :param hierarchy_name:
@@ -1234,14 +1274,15 @@ class ElementService(ObjectService):
             hierarchy_name = dimension_name
 
         url = format_url("/Dimensions('{}')/Hierarchies('{}')/Edges", dimension_name, hierarchy_name)
-        body = [{"ParentName": parent, "ComponentName": component, "Weight": float(weight)}
-                for (parent, component), weight
-                in edges.items()]
+        body = [
+            {"ParentName": parent, "ComponentName": component, "Weight": float(weight)}
+            for (parent, component), weight in edges.items()
+        ]
 
         return self._rest.POST(url=url, data=json.dumps(body), **kwargs)
 
     def add_elements(self, dimension_name: str, hierarchy_name: str, elements: Iterable[Element], **kwargs):
-        """ Add elements to hierarchy. Fails if one element already exists.
+        """Add elements to hierarchy. Fails if one element already exists.
 
         :param dimension_name:
         :param hierarchy_name:
@@ -1253,9 +1294,10 @@ class ElementService(ObjectService):
 
         return self._rest.POST(url=url, data=json.dumps(body), **kwargs)
 
-    def add_element_attributes(self, dimension_name: str, hierarchy_name: str,
-                               element_attributes: List[ElementAttribute], **kwargs):
-        """ Add element attributes to hierarchy. Fails if one element attribute already exists.
+    def add_element_attributes(
+        self, dimension_name: str, hierarchy_name: str, element_attributes: List[ElementAttribute], **kwargs
+    ):
+        """Add element attributes to hierarchy. Fails if one element attribute already exists.
 
         :param dimension_name:
         :param hierarchy_name:
@@ -1273,7 +1315,7 @@ class ElementService(ObjectService):
             f"?$select=Name",
             dimension_name=dimension_name,
             hierarchy_name=hierarchy_name,
-            element_name=element_name
+            element_name=element_name,
         )
         response = self._rest.GET(url=url, **kwargs)
 
@@ -1296,11 +1338,17 @@ class ElementService(ObjectService):
         url = format_url("/ExecuteMDXSetExpression?$select=Cardinality")
         payload = {"MDX": mdx}
         response = self._rest.POST(url, json.dumps(payload, ensure_ascii=False))
-        return (response.json()).get('Cardinality')
+        return (response.json()).get("Cardinality")
 
     @staticmethod
-    def _build_drill_intersection_mdx(dimension_name: str, hierarchy_name: str, first_element_name: str,
-                                      second_element_name: str, mdx_method: str, recursive: bool) -> str:
+    def _build_drill_intersection_mdx(
+        dimension_name: str,
+        hierarchy_name: str,
+        first_element_name: str,
+        second_element_name: str,
+        mdx_method: str,
+        recursive: bool,
+    ) -> str:
 
         first_member = Member.of(dimension_name, hierarchy_name, first_element_name)
         second_member = Member.of(dimension_name, hierarchy_name, second_element_name)
@@ -1310,9 +1358,8 @@ class ElementService(ObjectService):
 
         elif MDXDrillMethod.DESCENDANTS.name == mdx_method.upper():
             query = MdxHierarchySet.descendants(
-                member=first_member,
-                level_or_depth=MdxLevelExpression.member_level(second_member),
-                desc_flag='SELF')
+                member=first_member, level_or_depth=MdxLevelExpression.member_level(second_member), desc_flag="SELF"
+            )
 
         else:
             raise TM1pyException("Invalid MDX Drill Method Specified, Options: 'TM1DrillDownMember' or 'Descendants'")
@@ -1320,26 +1367,28 @@ class ElementService(ObjectService):
         mdx = query.intersect(MdxHierarchySet.members([second_member]))
         return mdx.to_mdx()
 
-    def element_is_parent(self, dimension_name: str, hierarchy_name: str, parent_name: str,
-                          element_name: str) -> bool:
-        """ Element is Parent
+    def element_is_parent(self, dimension_name: str, hierarchy_name: str, parent_name: str, element_name: str) -> bool:
+        """Element is Parent
         :Note, unlike the related function in TM1 (ELISPAR or ElementIsParent), this function will return False
         :if an invalid element is passed;
         :but will raise an exception if an invalid dimension, or hierarchy is passed
         """
-        mdx = self._build_drill_intersection_mdx(dimension_name=dimension_name,
-                                                 hierarchy_name=hierarchy_name,
-                                                 first_element_name=parent_name,
-                                                 second_element_name=element_name,
-                                                 mdx_method='TM1DrillDownMember',
-                                                 recursive=False)
+        mdx = self._build_drill_intersection_mdx(
+            dimension_name=dimension_name,
+            hierarchy_name=hierarchy_name,
+            first_element_name=parent_name,
+            second_element_name=element_name,
+            mdx_method="TM1DrillDownMember",
+            recursive=False,
+        )
 
         cardinality = self._get_mdx_set_cardinality(mdx)
         return bool(cardinality)
 
-    def element_is_ancestor(self, dimension_name: str, hierarchy_name: str, ancestor_name: str,
-                            element_name: str, method: str = None) -> bool:
-        """ Element is Ancestor
+    def element_is_ancestor(
+        self, dimension_name: str, hierarchy_name: str, ancestor_name: str, element_name: str, method: str = None
+    ) -> bool:
+        """Element is Ancestor
 
         :Note, unlike the related function in TM1 (`ELISANC` or `ElementIsAncestor`), this function will return False
         if an invalid element is passed; but will raise an exception if an invalid dimension, or hierarchy is passed
@@ -1353,7 +1402,7 @@ class ElementService(ObjectService):
         and 'TM1DrillDownMember' for users without admin permissions
         """
         if not method:
-            method = 'TI' if self.is_admin else 'TM1DrillDownMember'
+            method = "TI" if self.is_admin else "TM1DrillDownMember"
 
         if method.upper() == "TI":
             if self._element_is_ancestor_ti(dimension_name, hierarchy_name, element_name, ancestor_name):
@@ -1391,7 +1440,8 @@ class ElementService(ObjectService):
             first_element_name=ancestor_name,
             second_element_name=element_name,
             mdx_method=method,
-            recursive=True)
+            recursive=True,
+        )
 
         cardinality = self._get_mdx_set_cardinality(mdx)
         return bool(cardinality)
@@ -1401,28 +1451,34 @@ class ElementService(ObjectService):
         return hierarchy_service.exists(dimension_name, hierarchy_name)
 
     @require_data_admin
-    def _element_is_ancestor_ti(self, dimension_name: str, hierarchy_name: str, element_name: str,
-                                ancestor_name: str) -> bool:
+    def _element_is_ancestor_ti(
+        self, dimension_name: str, hierarchy_name: str, element_name: str, ancestor_name: str
+    ) -> bool:
         process_service = self.get_process_service()
         code = f"ElementIsAncestor('{dimension_name}', '{hierarchy_name}', '{ancestor_name}', '{element_name}')=1"
         return process_service.evaluate_boolean_ti_expression(code)
 
     def get_process_service(self):
         from TM1py import ProcessService
+
         return ProcessService(self._rest)
 
     def _get_hierarchy_service(self):
         from TM1py import HierarchyService
+
         return HierarchyService(self._rest)
 
     def _get_subset_service(self):
         from TM1py import SubsetService
+
         return SubsetService(self._rest)
 
     def _get_process_service(self):
         from TM1py import ProcessService
+
         return ProcessService(self._rest)
 
     def _get_cell_service(self):
         from TM1py import CellService
+
         return CellService(self._rest)

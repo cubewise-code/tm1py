@@ -2,11 +2,10 @@
 
 
 class GitCommit:
-    """ Abstraction of Git Commit
-    """
+    """Abstraction of Git Commit"""
 
     def __init__(self, commit_id: str, summary: str, author: str):
-        """ Initialize GitCommit object
+        """Initialize GitCommit object
         :param commit_id: id of the commit
         :param summary: commit message
         :param author: the author of the commit

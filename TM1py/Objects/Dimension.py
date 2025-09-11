@@ -10,13 +10,13 @@ from TM1py.Utils.Utils import case_and_space_insensitive_equals
 
 
 class Dimension(TM1Object):
-    """ Abstraction of TM1 Dimension
+    """Abstraction of TM1 Dimension
 
-        A Dimension is a container for hierarchies.
+    A Dimension is a container for hierarchies.
     """
 
     def __init__(self, name: str, hierarchies: Optional[Iterable[Hierarchy]] = None):
-        """ Abstraction of TM1 Dimension
+        """Abstraction of TM1 Dimension
 
 
         :param name: Name of the dimension
@@ -24,19 +24,22 @@ class Dimension(TM1Object):
         """
         self._name = name
         self._hierarchies = list(hierarchies) if hierarchies else []
-        self._attributes = {'Caption': name}
+        self._attributes = {"Caption": name}
 
     @classmethod
-    def from_json(cls, dimension_as_json: str) -> 'Dimension':
+    def from_json(cls, dimension_as_json: str) -> "Dimension":
         dimension_as_dict = json.loads(dimension_as_json)
         return cls.from_dict(dimension_as_dict)
 
     @classmethod
-    def from_dict(cls, dimension_as_dict: Dict) -> 'Dimension':
-        return cls(name=dimension_as_dict['Name'],
-                   hierarchies=[Hierarchy.from_dict(hierarchy, dimension_name=dimension_as_dict['Name'])
-                                for hierarchy
-                                in dimension_as_dict['Hierarchies']])
+    def from_dict(cls, dimension_as_dict: Dict) -> "Dimension":
+        return cls(
+            name=dimension_as_dict["Name"],
+            hierarchies=[
+                Hierarchy.from_dict(hierarchy, dimension_name=dimension_as_dict["Name"])
+                for hierarchy in dimension_as_dict["Hierarchies"]
+            ],
+        )
 
     @property
     def name(self) -> str:
@@ -44,7 +47,7 @@ class Dimension(TM1Object):
 
     @property
     def unique_name(self) -> str:
-        return '[' + self._name + ']'
+        return "[" + self._name + "]"
 
     @property
     def hierarchies(self) -> List[Hierarchy]:
@@ -119,7 +122,7 @@ class Dimension(TM1Object):
         body_as_dict["Attributes"] = self._attributes
         body_as_dict["Hierarchies"] = [
             hierarchy.body_as_dict
-            for hierarchy
-            in self.hierarchies if
-            not case_and_space_insensitive_equals(hierarchy.name, "Leaves") or include_leaves_hierarchy]
+            for hierarchy in self.hierarchies
+            if not case_and_space_insensitive_equals(hierarchy.name, "Leaves") or include_leaves_hierarchy
+        ]
         return body_as_dict

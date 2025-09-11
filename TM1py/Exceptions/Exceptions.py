@@ -44,20 +44,23 @@ class TM1pyNotAdminException(Exception):
     def __str__(self):
         return f"Function '{self.function}' requires admin permissions"
 
+
 class TM1pyNotDataAdminException(Exception):
     def __init__(self, function: str):
         self.function = function
 
     def __str__(self):
         return f"Function '{self.function}' requires DataAdmin permissions"
-    
+
+
 class TM1pyNotSecurityAdminException(Exception):
     def __init__(self, function: str):
         self.function = function
 
     def __str__(self):
         return f"Function '{self.function}' requires SecurityAdmin permissions"
-    
+
+
 class TM1pyNotOpsAdminException(Exception):
     def __init__(self, function: str):
         self.function = function
@@ -65,10 +68,9 @@ class TM1pyNotOpsAdminException(Exception):
     def __str__(self):
         return f"Function '{self.function}' requires OperationsAdmin permissions"
 
-class TM1pyException(Exception):
-    """ The default exception for TM1py
 
-    """
+class TM1pyException(Exception):
+    """The default exception for TM1py"""
 
     def __init__(self, message):
         self.message = message
@@ -78,9 +80,7 @@ class TM1pyException(Exception):
 
 
 class TM1pyRestException(TM1pyException):
-    """ Exception for failing REST operations
-
-    """
+    """Exception for failing REST operations"""
 
     def __init__(self, response: str, status_code: int, reason: str, headers: Mapping):
         super(TM1pyRestException, self).__init__(response)
@@ -106,10 +106,8 @@ class TM1pyRestException(TM1pyException):
 
     def __str__(self):
         return "Text: '{}' - Status Code: {} - Reason: '{}' - Headers: {}".format(
-            self.message,
-            self._status_code,
-            self._reason,
-            self._headers)
+            self.message, self._status_code, self._reason, self._headers
+        )
 
 
 class TM1pyWriteFailureException(TM1pyException):
@@ -129,6 +127,8 @@ class TM1pyWritePartialFailureException(TM1pyException):
         self.error_log_files = error_log_files
         self.attempts = attempts
 
-        message = f"{len(self.statuses)} out of {self.attempts} write operations failed partially. " \
-                  f"Details: {self.error_log_files}"
+        message = (
+            f"{len(self.statuses)} out of {self.attempts} write operations failed partially. "
+            f"Details: {self.error_log_files}"
+        )
         super(TM1pyWritePartialFailureException, self).__init__(message)

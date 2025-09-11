@@ -8,9 +8,7 @@ from TM1py.Utils.Utils import CaseAndSpaceInsensitiveDict, require_ops_admin
 
 
 class LoggerService(ObjectService):
-    """ Service to query and update loggers
-
-    """
+    """Service to query and update loggers"""
 
     def __init__(self, rest: RestService):
         super().__init__(rest)
@@ -19,16 +17,16 @@ class LoggerService(ObjectService):
     def get_all(self, **kwargs) -> Dict:
         url = f"/Loggers"
         loggers = self._rest.GET(url, **kwargs).json()
-        return loggers['value']
+        return loggers["value"]
 
     @require_ops_admin
     def get_all_names(self, **kwargs) -> List[str]:
         loggers = self.get_all(**kwargs)
-        return [logger['Name'] for logger in loggers]
+        return [logger["Name"] for logger in loggers]
 
     @require_ops_admin
     def get(self, logger: str, **kwargs) -> Dict:
-        """ Get level for specified logger
+        """Get level for specified logger
 
         :param logger: string name of logger
         :return: Dict of logger and level
@@ -39,8 +37,8 @@ class LoggerService(ObjectService):
         return logger
 
     @require_ops_admin
-    def search(self, wildcard: str = '', level: str = '', **kwargs) -> Dict:
-        """ Searches logger names by wildcard or by level. Combining wildcard and level will filter via AND and not OR
+    def search(self, wildcard: str = "", level: str = "", **kwargs) -> Dict:
+        """Searches logger names by wildcard or by level. Combining wildcard and level will filter via AND and not OR
 
         :param wildcard: string to match in logger name
         :param level: string e.g. FATAL, ERROR, WARNING, INFO, DEBUG, UNKOWN, OFF
@@ -52,7 +50,7 @@ class LoggerService(ObjectService):
 
         if level:
             level_dict = CaseAndSpaceInsensitiveDict(
-                {'FATAL': 0, 'ERROR': 1, 'WARNING': 2, 'INFO': 3, 'DEBUG': 4, 'UNKNOWN': 5, 'OFF': 6}
+                {"FATAL": 0, "ERROR": 1, "WARNING": 2, "INFO": 3, "DEBUG": 4, "UNKNOWN": 5, "OFF": 6}
             )
             level_index = level_dict.get(level)
             if level_index:
@@ -64,11 +62,11 @@ class LoggerService(ObjectService):
         url += "?$filter={}".format(" and ".join(logger_filters))
 
         loggers = self._rest.GET(url, **kwargs).json()
-        return loggers['value']
+        return loggers["value"]
 
     @require_ops_admin
     def exists(self, logger: str, **kwargs) -> bool:
-        """ Test if logger exists
+        """Test if logger exists
         :param logger: string name of logger
         :return: bool
         """
@@ -77,7 +75,7 @@ class LoggerService(ObjectService):
 
     @require_ops_admin
     def set_level(self, logger: str, level: str, **kwargs):
-        """ Set logger level
+        """Set logger level
         :param logger: string name of logger
         :param level: string e.g. FATAL, ERROR, WARNING, INFO, DEBUG, UNKOWN, OFF
         :return: response
@@ -85,15 +83,15 @@ class LoggerService(ObjectService):
         url = format_url("/Loggers('{}')", logger)
 
         if not self.exists(logger=logger, **kwargs):
-            raise ValueError('{} is not a valid logger'.format(logger))
+            raise ValueError("{} is not a valid logger".format(logger))
 
         level_dict = CaseAndSpaceInsensitiveDict(
-            {'FATAL': 0, 'ERROR': 1, 'WARNING': 2, 'INFO': 3, 'DEBUG': 4, 'UNKNOWN': 5, 'OFF': 6}
+            {"FATAL": 0, "ERROR": 1, "WARNING": 2, "INFO": 3, "DEBUG": 4, "UNKNOWN": 5, "OFF": 6}
         )
         level_index = level_dict.get(level)
         if level_index:
-            logger = {'Level': level_index}
+            logger = {"Level": level_index}
         else:
-            raise ValueError('{} is not a valid level'.format(level))
+            raise ValueError("{} is not a valid level".format(level))
 
         return self._rest.PATCH(url, json.dumps(logger))

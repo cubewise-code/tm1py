@@ -16,10 +16,8 @@ from TM1py.Services.MessageLogService import MessageLogService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.TransactionLogService import TransactionLogService
-from TM1py.Utils.Utils import require_admin, require_version, \
-    deprecated_in_version
-from TM1py.Utils.Utils import require_data_admin, \
-    require_ops_admin
+from TM1py.Utils.Utils import require_admin, require_version, deprecated_in_version
+from TM1py.Utils.Utils import require_data_admin, require_ops_admin
 
 
 class LogLevel(Enum):
@@ -32,9 +30,7 @@ class LogLevel(Enum):
 
 
 class ServerService(ObjectService):
-    """ Service to query common information from the TM1 Server
-
-    """
+    """Service to query common information from the TM1 Server"""
 
     def __init__(self, rest: RestService):
         super().__init__(rest)
@@ -65,10 +61,18 @@ class ServerService(ObjectService):
 
     @deprecated_in_version(version="12.0.0")
     @require_ops_admin
-    def get_message_log_entries(self, reverse: bool = True, since: datetime = None,
-                                until: datetime = None, top: int = None, logger: str = None,
-                                level: str = None, msg_contains: Iterable = None, msg_contains_operator: str = 'and',
-                                **kwargs) -> Dict:
+    def get_message_log_entries(
+        self,
+        reverse: bool = True,
+        since: datetime = None,
+        until: datetime = None,
+        top: int = None,
+        logger: str = None,
+        level: str = None,
+        msg_contains: Iterable = None,
+        msg_contains_operator: str = "and",
+        **kwargs,
+    ) -> Dict:
         """
         :param reverse: Boolean
         :param since: of type datetime. If it doesn't have tz information, UTC is assumed.
@@ -83,15 +87,17 @@ class ServerService(ObjectService):
         :return: Dict of server log
         """
 
-        return self.message_logs.get_entries(reverse=reverse,
-                                             since=since,
-                                             until=until,
-                                             top=top,
-                                             logger=logger,
-                                             level=level,
-                                             msg_contains=msg_contains,
-                                             msg_contains_operator=msg_contains_operator,
-                                             **kwargs)
+        return self.message_logs.get_entries(
+            reverse=reverse,
+            since=since,
+            until=until,
+            top=top,
+            logger=logger,
+            level=level,
+            msg_contains=msg_contains,
+            msg_contains_operator=msg_contains_operator,
+            **kwargs,
+        )
 
     @require_data_admin
     def write_to_message_log(self, level: str, message: str, **kwargs) -> None:
@@ -101,16 +107,22 @@ class ServerService(ObjectService):
         :return:
         """
 
-        return self.message_logs.create_entry(level=level,
-                                              message=message,
-                                              **kwargs)
+        return self.message_logs.create_entry(level=level, message=message, **kwargs)
 
     @deprecated_in_version(version="12.0.0")
     @require_admin
-    def get_transaction_log_entries(self, reverse: bool = True, user: str = None, cube: str = None,
-                                    since: datetime = None, until: datetime = None, top: int = None,
-                                    element_tuple_filter: Dict[str, str] = None,
-                                    element_position_filter: Dict[int, Dict[str, str]] = None, **kwargs) -> Dict:
+    def get_transaction_log_entries(
+        self,
+        reverse: bool = True,
+        user: str = None,
+        cube: str = None,
+        since: datetime = None,
+        until: datetime = None,
+        top: int = None,
+        element_tuple_filter: Dict[str, str] = None,
+        element_position_filter: Dict[int, Dict[str, str]] = None,
+        **kwargs,
+    ) -> Dict:
         """
         :param reverse: Boolean
         :param user: UserName
@@ -123,21 +135,31 @@ class ServerService(ObjectService):
         tuple={'Actual':'eq','2020': 'ge'}
         :return:
         """
-        return self.transaction_logs.get_entries(reverse=reverse,
-                                                 user=user,
-                                                 cube=cube,
-                                                 since=since,
-                                                 until=until,
-                                                 top=top,
-                                                 element_tuple_filter=element_tuple_filter,
-                                                 element_position_filter=element_position_filter,
-                                                 **kwargs)
+        return self.transaction_logs.get_entries(
+            reverse=reverse,
+            user=user,
+            cube=cube,
+            since=since,
+            until=until,
+            top=top,
+            element_tuple_filter=element_tuple_filter,
+            element_position_filter=element_position_filter,
+            **kwargs,
+        )
 
     @require_data_admin
     @deprecated_in_version(version="12.0.0")
     @require_version(version="11.6")
-    def get_audit_log_entries(self, user: str = None, object_type: str = None, object_name: str = None,
-                              since: datetime = None, until: datetime = None, top: int = None, **kwargs) -> Dict:
+    def get_audit_log_entries(
+        self,
+        user: str = None,
+        object_type: str = None,
+        object_name: str = None,
+        since: datetime = None,
+        until: datetime = None,
+        top: int = None,
+        **kwargs,
+    ) -> Dict:
         """
         :param user: UserName
         :param object_type: ObjectType
@@ -147,26 +169,22 @@ class ServerService(ObjectService):
         :param top: int
         :return:
         """
-        return self.audit_logs.get_entries(user=user,
-                                           object_type=object_type,
-                                           object_name=object_name,
-                                           since=since,
-                                           until=until,
-                                           top=top,
-                                           **kwargs)
+        return self.audit_logs.get_entries(
+            user=user, object_type=object_type, object_name=object_name, since=since, until=until, top=top, **kwargs
+        )
 
     @require_ops_admin
     @deprecated_in_version(version="12.0.0")
     def get_last_process_message_from_message_log(self, process_name: str, **kwargs) -> Optional[str]:
-        """ Get the latest message log entry for a process
+        """Get the latest message log entry for a process
 
-            :param process_name: name of the process
-            :return: String - the message, for instance: "Ausführung normal beendet, verstrichene Zeit 0.03  Sekunden"
+        :param process_name: name of the process
+        :return: String - the message, for instance: "Ausführung normal beendet, verstrichene Zeit 0.03  Sekunden"
         """
         self.message_logs.get_last_process_message(process_name, **kwargs)
 
     def get_server_name(self, **kwargs) -> str:
-        """ Ask TM1 Server for its name
+        """Ask TM1 Server for its name
 
         :Returns:
             String, the server name
@@ -174,7 +192,7 @@ class ServerService(ObjectService):
         return self.configuration.get_server_name()
 
     def get_product_version(self, **kwargs) -> str:
-        """ Ask TM1 Server for its version
+        """Ask TM1 Server for its version
 
         :Returns:
             String, the version
@@ -194,21 +212,21 @@ class ServerService(ObjectService):
         return self.configuration.get_static()
 
     def get_active_configuration(self, **kwargs) -> Dict:
-        """ Read effective(!) TM1 config settings as dictionary from TM1 Server
+        """Read effective(!) TM1 config settings as dictionary from TM1 Server
 
         :return: config as dictionary
         """
         return self.configuration.get_active()
 
     def get_api_metadata(self):
-        """ Read effective(!) TM1 config settings as dictionary from TM1 Server
+        """Read effective(!) TM1 config settings as dictionary from TM1 Server
 
         :return: config as dictionary
         """
         return self._rest.get_api_metadata()
 
     def update_static_configuration(self, configuration: Dict) -> Response:
-        """ Update the .cfg file and triggers TM1 to re-read the file.
+        """Update the .cfg file and triggers TM1 to re-read the file.
 
         :param configuration:
         :return: Response
@@ -219,6 +237,7 @@ class ServerService(ObjectService):
     @require_data_admin
     def save_data(self, **kwargs) -> Response:
         from TM1py.Services import ProcessService
+
         ti = "SaveDataAll;"
         process_service = ProcessService(self._rest)
         return process_service.execute_ti_code(ti, **kwargs)
@@ -226,20 +245,17 @@ class ServerService(ObjectService):
     @require_data_admin
     def delete_persistent_feeders(self, **kwargs) -> Response:
         from TM1py.Services import ProcessService
+
         ti = "DeleteAllPersistentFeeders;"
         process_service = ProcessService(self._rest)
         return process_service.execute_ti_code(ti, **kwargs)
 
     def start_performance_monitor(self):
-        config = {
-            "Administration": {"PerformanceMonitorOn": True}
-        }
+        config = {"Administration": {"PerformanceMonitorOn": True}}
         self.configuration.update_static(config)
 
     def stop_performance_monitor(self):
-        config = {
-            "Administration": {"PerformanceMonitorOn": False}
-        }
+        config = {"Administration": {"PerformanceMonitorOn": False}}
         self.configuration.update_static(config)
 
     def activate_audit_log(self):
@@ -247,27 +263,27 @@ class ServerService(ObjectService):
 
     @require_ops_admin
     def deactivate_audit_log(self):
-        config = {'Administration': {'AuditLog': {'Enable': False}}}
+        config = {"Administration": {"AuditLog": {"Enable": False}}}
         self.update_static_configuration(config)
 
     @require_admin
     def update_message_logger_level(self, logger, level):
-        '''
+        """
         Updates tm1 message log levels
         :param logger:
         :param level:
         :return:
-        '''
+        """
 
         return self.loggers.set_level(logger, level)
 
     @require_admin
     def get_all_message_logger_level(self):
-        '''
+        """
         Get tm1 message log levels
         :param logger:
         :param level:
         :return:
-        '''
+        """
 
         return self.loggers.get_all()

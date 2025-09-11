@@ -10,15 +10,13 @@ from TM1py.Utils import format_url
 
 
 class ViewAxisSelection(TM1Object):
-    """ Describes what is selected in a dimension on an axis. Can be a Registered Subset or an Anonymous Subset
-
-    """
+    """Describes what is selected in a dimension on an axis. Can be a Registered Subset or an Anonymous Subset"""
 
     def __init__(self, dimension_name: str, subset: Union[Subset, AnonymousSubset]):
         """
-            :Parameters:
-                `dimension_name` : String
-                `subset` : Subset or AnonymousSubset
+        :Parameters:
+            `dimension_name` : String
+            `subset` : Subset or AnonymousSubset
         """
         self._subset = subset
         self._dimension_name = dimension_name
@@ -45,24 +43,27 @@ class ViewAxisSelection(TM1Object):
         return self._construct_body()
 
     def _construct_body(self) -> Dict:
-        """ construct the ODATA conform JSON represenation for the ViewAxisSelection entity.
+        """construct the ODATA conform JSON represenation for the ViewAxisSelection entity.
 
         :return: dictionary
         """
         body_as_dict = collections.OrderedDict()
         if isinstance(self._subset, AnonymousSubset):
-            body_as_dict['Subset'] = json.loads(self._subset.body)
+            body_as_dict["Subset"] = json.loads(self._subset.body)
         elif isinstance(self._subset, Subset):
             subset_path = format_url(
                 "Dimensions('{}')/Hierarchies('{}')/Subsets('{}')",
-                self._dimension_name, self._hierarchy_name, self._subset.name)
-            body_as_dict['Subset@odata.bind'] = subset_path
+                self._dimension_name,
+                self._hierarchy_name,
+                self._subset.name,
+            )
+            body_as_dict["Subset@odata.bind"] = subset_path
         return body_as_dict
 
 
 class ViewTitleSelection:
-    """ Describes what is selected in a dimension on the view title.
-        Can be a Registered Subset or an Anonymous Subset
+    """Describes what is selected in a dimension on the view title.
+    Can be a Registered Subset or an Anonymous Subset
 
     """
 
@@ -93,20 +94,26 @@ class ViewTitleSelection:
         return json.dumps(self._construct_body(), ensure_ascii=False)
 
     def _construct_body(self) -> Dict:
-        """ construct the ODATA conform JSON represenation for the ViewTitleSelection entity.
+        """construct the ODATA conform JSON represenation for the ViewTitleSelection entity.
 
         :return: string, the valid JSON
         """
         body_as_dict = collections.OrderedDict()
         if isinstance(self._subset, AnonymousSubset):
-            body_as_dict['Subset'] = json.loads(self._subset.body)
+            body_as_dict["Subset"] = json.loads(self._subset.body)
         elif isinstance(self._subset, Subset):
             subset_path = format_url(
                 "Dimensions('{}')/Hierarchies('{}')/Subsets('{}')",
-                self._dimension_name, self._hierarchy_name, self._subset.name)
-            body_as_dict['Subset@odata.bind'] = subset_path
+                self._dimension_name,
+                self._hierarchy_name,
+                self._subset.name,
+            )
+            body_as_dict["Subset@odata.bind"] = subset_path
         element_path = format_url(
             "Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
-            self._dimension_name, self._hierarchy_name, self._selected)
-        body_as_dict['Selected@odata.bind'] = element_path
+            self._dimension_name,
+            self._hierarchy_name,
+            self._selected,
+        )
+        body_as_dict["Selected@odata.bind"] = element_path
         return body_as_dict
