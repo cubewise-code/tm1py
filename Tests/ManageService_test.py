@@ -34,17 +34,19 @@ class TestManagerService(unittest.TestCase):
         """
         # Manager Connection
         cls.config = configparser.ConfigParser()
-        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
-        connection_details = cls.config['tm1srv01']
+        cls.config.read(Path(__file__).parent.joinpath("config.ini"))
+        connection_details = cls.config["tm1srv01"]
 
-        #Connect to TM1 to get server versions.
-        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        # Connect to TM1 to get server versions.
+        cls.tm1 = TM1Service(**cls.config["tm1srv01"])
 
         if verify_version(required_version="12.0.0", version=cls.tm1.version):
 
-            cls.manager = ManageService(domain=connection_details["domain"],
-                                        root_client=connection_details["root_client"],
-                                        root_secret=connection_details["root_secret"])
+            cls.manager = ManageService(
+                domain=connection_details["domain"],
+                root_client=connection_details["root_client"],
+                root_secret=connection_details["root_secret"],
+            )
 
             # Cleanup and Create New Instance
             if cls.manager.instance_exists(instance_name=cls.instance):
@@ -54,78 +56,78 @@ class TestManagerService(unittest.TestCase):
             # Cleanup and Create New Database
             if cls.manager.database_exists(instance_name=cls.instance, database_name=cls.database):
                 cls.manager.delete_database(instance_name=cls.instance, database_name=cls.database)
-            cls.manager.create_database(instance_name=cls.instance,
-                                        database_name=cls.database,
-                                        product_version=cls.version,
-                                        number_replicas=cls.starting_replicas,
-                                        cpu_requests=cls.cpu_requests,
-                                        cpu_limits=cls.cpu_limits,
-                                        memory_limits=cls.memory_limits,
-                                        memory_requests=cls.memory_requests,
-                                        storage_size=cls.storage_size)
+            cls.manager.create_database(
+                instance_name=cls.instance,
+                database_name=cls.database,
+                product_version=cls.version,
+                number_replicas=cls.starting_replicas,
+                cpu_requests=cls.cpu_requests,
+                cpu_limits=cls.cpu_limits,
+                memory_limits=cls.memory_limits,
+                memory_requests=cls.memory_requests,
+                storage_size=cls.storage_size,
+            )
         else:
-            raise unittest.SkipTest(f"Skipping all Manager Service tests, version minimum not met, "
-                                    f"12.0.0 > {cls.tm1.version}")
+            raise unittest.SkipTest(
+                f"Skipping all Manager Service tests, version minimum not met, " f"12.0.0 > {cls.tm1.version}"
+            )
 
     @classmethod
     def tearDownClass(cls):
-        cls.manager.delete_database(instance_name=cls.instance,
-                                    database_name=cls.database)
+        cls.manager.delete_database(instance_name=cls.instance, database_name=cls.database)
         cls.manager.delete_instance(instance_name=cls.instance)
 
     def test_get_instance(self):
         instance = self.manager.get_instance(instance_name=self.instance)
-        self.assertEqual(self.instance, instance.get('Name'))
+        self.assertEqual(self.instance, instance.get("Name"))
 
     def test_get_database(self):
-        database = self.manager.get_database(instance_name=self.instance,
-                                             database_name=self.database)
-        self.assertEqual(self.database, database.get('Name'))
+        database = self.manager.get_database(instance_name=self.instance, database_name=self.database)
+        self.assertEqual(self.database, database.get("Name"))
 
     @pytest.mark.skip(reason="Too slow for regular tests. Only run before releases")
     def test_scale_database(self):
-        self.manager.scale_database(instance_name=self.instance,
-                                    database_name=self.database,
-                                    replicas=(self.starting_replicas + 1))
+        self.manager.scale_database(
+            instance_name=self.instance, database_name=self.database, replicas=(self.starting_replicas + 1)
+        )
 
-        replicas = self.manager.get_database(instance_name=self.instance,
-                                             database_name=self.database).get('Replicas')
+        replicas = self.manager.get_database(instance_name=self.instance, database_name=self.database).get("Replicas")
 
         self.assertEqual(replicas, (self.starting_replicas + 1))
 
         time.sleep(30)
 
-        self.manager.scale_database(instance_name=self.instance,
-                                    database_name=self.database,
-                                    replicas=self.starting_replicas)
+        self.manager.scale_database(
+            instance_name=self.instance, database_name=self.database, replicas=self.starting_replicas
+        )
 
-        replicas = self.manager.get_database(instance_name=self.instance,
-                                             database_name=self.database).get('Replicas')
+        replicas = self.manager.get_database(instance_name=self.instance, database_name=self.database).get("Replicas")
 
         self.assertEqual(replicas, self.starting_replicas)
 
     def test_create_and_get_application(self):
 
         # Create Application and Store Credentials
-        self.clientID, self.clientSecret = self.manager.create_application(instance_name=self.instance,
-                                                                           application_name=self.application)
+        self.clientID, self.clientSecret = self.manager.create_application(
+            instance_name=self.instance, application_name=self.application
+        )
 
         self.assertIsNotNone(self.clientID)
         self.assertIsNotNone(self.clientSecret)
 
         application = self.manager.get_application(instance_name=self.instance, application_name=self.application)
 
-        self.assertEqual(self.application, application.get('Name'))
+        self.assertEqual(self.application, application.get("Name"))
 
     @pytest.mark.skip(reason="Too slow for regular tests. Only run before releases")
     def test_create_backup_set(self):
 
-        response = self.manager.create_database_backup(instance_name=self.instance,
-                                                       database_name=self.database,
-                                                       backup_set_name=self.backup_set)
+        response = self.manager.create_database_backup(
+            instance_name=self.instance, database_name=self.database, backup_set_name=self.backup_set
+        )
 
         self.assertTrue(response.ok)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(failfast=True)

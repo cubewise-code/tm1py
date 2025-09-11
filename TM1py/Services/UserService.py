@@ -12,38 +12,38 @@ class UserService(ObjectService):
     def __init__(self, rest: RestService):
         super().__init__(rest)
 
-    def get_all(self, **kwargs) ->List[User]:
-        """ Get all users
+    def get_all(self, **kwargs) -> List[User]:
+        """Get all users
 
         :return: List of TM1py.User instances
         """
-        url = '/Users?$expand=Groups'
+        url = "/Users?$expand=Groups"
         response = self._rest.GET(url, **kwargs)
-        users = [User.from_dict(user) for user in response.json()['value']]
+        users = [User.from_dict(user) for user in response.json()["value"]]
         return users
 
     def get_active(self, **kwargs) -> List[User]:
-        """ Get the activate users in TM1
+        """Get the activate users in TM1
 
         :return: List of TM1py.User instances
         """
-        url = '/Users?$filter=IsActive eq true&$expand=Groups'
+        url = "/Users?$filter=IsActive eq true&$expand=Groups"
         response = self._rest.GET(url, **kwargs)
-        users = [User.from_dict(user) for user in response.json()['value']]
+        users = [User.from_dict(user) for user in response.json()["value"]]
         return users
 
     def is_active(self, user_name: str, **kwargs) -> bool:
-        """ Check if user is currently active in TM1
+        """Check if user is currently active in TM1
 
         :param user_name:
         :return: Boolean
         """
         url = format_url("/Users('{}')/IsActive", user_name)
         response = self._rest.GET(url, **kwargs)
-        return bool(response.json()['value'])
+        return bool(response.json()["value"])
 
     def disconnect(self, user_name: str, **kwargs) -> Response:
-        """ Disconnect User
+        """Disconnect User
 
         :param user_name:
         :return:
@@ -65,5 +65,6 @@ class UserService(ObjectService):
 
     def get_current(self, **kwargs):
         from TM1py import SecurityService
+
         security_service = SecurityService(self._rest)
         return security_service.get_current_user(**kwargs)

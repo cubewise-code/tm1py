@@ -9,12 +9,17 @@ from TM1py.Utils import format_url, read_object_name_from_url
 
 
 class Subset(TM1Object):
-    """ Abstraction of the TM1 Subset (dynamic and static)
+    """Abstraction of the TM1 Subset (dynamic and static)"""
 
-    """
-
-    def __init__(self, subset_name: str, dimension_name: str, hierarchy_name: str = None, alias: str = None,
-                 expression: str = None, elements: Iterable[str] = None):
+    def __init__(
+        self,
+        subset_name: str,
+        dimension_name: str,
+        hierarchy_name: str = None,
+        alias: str = None,
+        expression: str = None,
+        elements: Iterable[str] = None,
+    ):
         """
 
         :param subset_name: String
@@ -82,8 +87,8 @@ class Subset(TM1Object):
     @property
     def type(self) -> str:
         if self.expression:
-            return 'dynamic'
-        return 'static'
+            return "dynamic"
+        return "static"
 
     @property
     def is_dynamic(self) -> bool:
@@ -94,113 +99,124 @@ class Subset(TM1Object):
         return not self.is_dynamic
 
     @classmethod
-    def from_json(cls, subset_as_json: str) -> 'Subset':
-        """ Alternative constructor
-                :Parameters:
-                    `subset_as_json` : string, JSON
-                        representation of Subset as specified in CSDL
+    def from_json(cls, subset_as_json: str) -> "Subset":
+        """Alternative constructor
+        :Parameters:
+            `subset_as_json` : string, JSON
+                representation of Subset as specified in CSDL
 
-                :Returns:
-                    `Subset` : an instance of this class
+        :Returns:
+            `Subset` : an instance of this class
         """
 
         subset_as_dict = json.loads(subset_as_json)
         return cls.from_dict(subset_as_dict=subset_as_dict)
 
     @classmethod
-    def from_dict(cls, subset_as_dict: Dict) -> 'Subset':
-        return cls(dimension_name=subset_as_dict["UniqueName"][1:subset_as_dict["UniqueName"].find('].[')],
-                   hierarchy_name=subset_as_dict.get("Hierarchy", {}).get("Name"),
-                   subset_name=subset_as_dict['Name'],
-                   alias=subset_as_dict.get('Alias'),
-                   expression=subset_as_dict.get('Expression'),
-                   elements=[element['Name'] for element in subset_as_dict.get('Elements', [])]
-                   if not subset_as_dict.get('Expression') else None)
+    def from_dict(cls, subset_as_dict: Dict) -> "Subset":
+        return cls(
+            dimension_name=subset_as_dict["UniqueName"][1 : subset_as_dict["UniqueName"].find("].[")],
+            hierarchy_name=subset_as_dict.get("Hierarchy", {}).get("Name"),
+            subset_name=subset_as_dict["Name"],
+            alias=subset_as_dict.get("Alias"),
+            expression=subset_as_dict.get("Expression"),
+            elements=(
+                [element["Name"] for element in subset_as_dict.get("Elements", [])]
+                if not subset_as_dict.get("Expression")
+                else None
+            ),
+        )
 
     @property
     def body(self) -> str:
-        """ same logic here as in TM1 : when subset has expression its dynamic, otherwise static
-        """
+        """same logic here as in TM1 : when subset has expression its dynamic, otherwise static"""
         return json.dumps(self.body_as_dict, ensure_ascii=False)
 
     @property
     def body_as_dict(self) -> Dict:
-        """ same logic here as in TM1 : when subset has expression its dynamic, otherwise static
-        """
+        """same logic here as in TM1 : when subset has expression its dynamic, otherwise static"""
         if self._expression:
             return self._construct_body_dynamic()
         else:
             return self._construct_body_static()
 
     def add_elements(self, elements: Iterable[str]):
-        """ add Elements to static subsets
-            :Parameters:
-                `elements` : list of element names
+        """add Elements to static subsets
+        :Parameters:
+            `elements` : list of element names
         """
         self._elements = self._elements + list(elements)
 
     def _construct_body_dynamic(self) -> Dict:
         body_as_dict = collections.OrderedDict()
-        body_as_dict['Name'] = self._subset_name
+        body_as_dict["Name"] = self._subset_name
         if self.alias:
-            body_as_dict['Alias'] = self._alias
-        body_as_dict['Hierarchy@odata.bind'] = format_url(
-            "Dimensions('{}')/Hierarchies('{}')",
-            self._dimension_name,
-            self._hierarchy_name)
-        body_as_dict['Expression'] = self._expression
+            body_as_dict["Alias"] = self._alias
+        body_as_dict["Hierarchy@odata.bind"] = format_url(
+            "Dimensions('{}')/Hierarchies('{}')", self._dimension_name, self._hierarchy_name
+        )
+        body_as_dict["Expression"] = self._expression
         return body_as_dict
 
     def _construct_body_static(self) -> Dict:
         body_as_dict = collections.OrderedDict()
-        body_as_dict['Name'] = self._subset_name
+        body_as_dict["Name"] = self._subset_name
         if self.alias:
-            body_as_dict['Alias'] = self._alias
-        body_as_dict['Hierarchy@odata.bind'] = format_url(
-            "Dimensions('{}')/Hierarchies('{}')",
-            self._dimension_name,
-            self.hierarchy_name)
+            body_as_dict["Alias"] = self._alias
+        body_as_dict["Hierarchy@odata.bind"] = format_url(
+            "Dimensions('{}')/Hierarchies('{}')", self._dimension_name, self.hierarchy_name
+        )
         if self.elements and len(self.elements) > 0:
-            body_as_dict['Elements@odata.bind'] = [
-                format_url("Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
-                           self.dimension_name, self.hierarchy_name, element)
-                for element
-                in self.elements]
+            body_as_dict["Elements@odata.bind"] = [
+                format_url(
+                    "Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
+                    self.dimension_name,
+                    self.hierarchy_name,
+                    element,
+                )
+                for element in self.elements
+            ]
         return body_as_dict
 
 
 class AnonymousSubset(Subset):
-    """ Abstraction of unregistered Subsets used in NativeViews (Check TM1py.ViewAxisSelection)
+    """Abstraction of unregistered Subsets used in NativeViews (Check TM1py.ViewAxisSelection)"""
 
-    """
-
-    def __init__(self, dimension_name: str, hierarchy_name: Optional[str] = None, expression: Optional[str] = None,
-                 elements: Optional[Iterable[str]] = None, alias: str = ''):
-        Subset.__init__(self,
-                        dimension_name=dimension_name,
-                        hierarchy_name=hierarchy_name if hierarchy_name else dimension_name,
-                        subset_name='',
-                        alias=alias,
-                        expression=expression,
-                        elements=elements)
+    def __init__(
+        self,
+        dimension_name: str,
+        hierarchy_name: Optional[str] = None,
+        expression: Optional[str] = None,
+        elements: Optional[Iterable[str]] = None,
+        alias: str = "",
+    ):
+        Subset.__init__(
+            self,
+            dimension_name=dimension_name,
+            hierarchy_name=hierarchy_name if hierarchy_name else dimension_name,
+            subset_name="",
+            alias=alias,
+            expression=expression,
+            elements=elements,
+        )
 
     @classmethod
-    def from_json(cls, subset_as_json: str) -> 'Subset':
-        """ Alternative constructor
-                :Parameters:
-                    `subset_as_json` : string, JSON
-                        representation of Subset as specified in CSDL
+    def from_json(cls, subset_as_json: str) -> "Subset":
+        """Alternative constructor
+        :Parameters:
+            `subset_as_json` : string, JSON
+                representation of Subset as specified in CSDL
 
-                :Returns:
-                    `Subset` : an instance of this class
+        :Returns:
+            `Subset` : an instance of this class
         """
         subset_as_dict = json.loads(subset_as_json)
         return cls.from_dict(subset_as_dict=subset_as_dict)
 
     @classmethod
-    def from_dict(cls, subset_as_dict: Dict) -> 'Subset':
+    def from_dict(cls, subset_as_dict: Dict) -> "Subset":
         """Alternative constructor
-        
+
         :param subset_as_dict: dictionary, representation of Subset as specified in CSDL
         :return: an instance of this class
         """
@@ -212,22 +228,23 @@ class AnonymousSubset(Subset):
             hierarchy_odata = subset_as_dict["Hierarchy@odata.bind"]
 
             dimension_name = read_object_name_from_url(
-                url=hierarchy_odata,
-                pattern=r"Dimensions\('(.*?)'\)/Hierarchies\('(.+?)'\)")
+                url=hierarchy_odata, pattern=r"Dimensions\('(.*?)'\)/Hierarchies\('(.+?)'\)"
+            )
 
             hierarchy_name = read_object_name_from_url(
-                url=hierarchy_odata,
-                pattern=r"Dimensions\('(.+?)'\)/Hierarchies\('(.*?)'\)")
+                url=hierarchy_odata, pattern=r"Dimensions\('(.+?)'\)/Hierarchies\('(.*?)'\)"
+            )
 
             if not all([dimension_name, hierarchy_name]):
                 raise ValueError(
-                    f"Unexpected value for 'Hierarchy@odata.bind' property in subset dict: '{hierarchy_odata}'")
+                    f"Unexpected value for 'Hierarchy@odata.bind' property in subset dict: '{hierarchy_odata}'"
+                )
 
         else:
             raise ValueError("Subset dict must contain 'Hierarchy' or 'Hierarchy@odata.bind' as key")
 
         if "Elements" in subset_as_dict:
-            elements = [element['Name'] for element in subset_as_dict['Elements']]
+            elements = [element["Name"] for element in subset_as_dict["Elements"]]
         elif "Elements@odata.bind" in subset_as_dict:
             elements = list()
 
@@ -237,7 +254,8 @@ class AnonymousSubset(Subset):
                 element = read_object_name_from_url(element_odata, pattern)
                 if not element:
                     raise ValueError(
-                        f"Unexpected entry '{element_odata}' for 'Elements@odata.bind' property in subset dict")
+                        f"Unexpected entry '{element_odata}' for 'Elements@odata.bind' property in subset dict"
+                    )
 
                 elements.append(element)
         else:
@@ -246,34 +264,32 @@ class AnonymousSubset(Subset):
         return cls(
             dimension_name=dimension_name,
             hierarchy_name=hierarchy_name,
-            expression=subset_as_dict.get('Expression', None),
-            alias=subset_as_dict.get('Alias', None),
-            elements=elements if not subset_as_dict.get('Expression', None) else None)
+            expression=subset_as_dict.get("Expression", None),
+            alias=subset_as_dict.get("Alias", None),
+            elements=elements if not subset_as_dict.get("Expression", None) else None,
+        )
 
     def _construct_body_dynamic(self) -> Dict:
         body_as_dict = collections.OrderedDict()
-        body_as_dict['Hierarchy@odata.bind'] = format_url(
-            "Dimensions('{}')/Hierarchies('{}')",
-            self._dimension_name,
-            self.hierarchy_name)
+        body_as_dict["Hierarchy@odata.bind"] = format_url(
+            "Dimensions('{}')/Hierarchies('{}')", self._dimension_name, self.hierarchy_name
+        )
         if self.alias:
-            body_as_dict['Alias'] = self._alias
-        body_as_dict['Expression'] = self._expression
+            body_as_dict["Alias"] = self._alias
+        body_as_dict["Expression"] = self._expression
         return body_as_dict
 
     def _construct_body_static(self) -> Dict:
         body_as_dict = collections.OrderedDict()
-        body_as_dict['Hierarchy@odata.bind'] = format_url(
-            "Dimensions('{}')/Hierarchies('{}')",
-            self._dimension_name,
-            self.hierarchy_name)
+        body_as_dict["Hierarchy@odata.bind"] = format_url(
+            "Dimensions('{}')/Hierarchies('{}')", self._dimension_name, self.hierarchy_name
+        )
         if self.alias:
-            body_as_dict['Alias'] = self._alias
-        body_as_dict['Elements@odata.bind'] = [
+            body_as_dict["Alias"] = self._alias
+        body_as_dict["Elements@odata.bind"] = [
             format_url(
-                "Dimensions('{}')/Hierarchies('{}')/Elements('{}')",
-                self.dimension_name,
-                self.hierarchy_name,
-                element)
-            for element in self.elements]
+                "Dimensions('{}')/Hierarchies('{}')/Elements('{}')", self.dimension_name, self.hierarchy_name, element
+            )
+            for element in self.elements
+        ]
         return body_as_dict

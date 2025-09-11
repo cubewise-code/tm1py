@@ -5,12 +5,11 @@ from TM1py.Objects.TM1Object import TM1Object
 
 
 class ChoreFrequency(TM1Object):
-    """ Utility class to handle time representation fore Chore Frequency
-    
-    """
+    """Utility class to handle time representation fore Chore Frequency"""
 
-    def __init__(self, days: Union[str, int], hours: Union[str, int], minutes: Union[str, int],
-                 seconds: Union[str, int]):
+    def __init__(
+        self, days: Union[str, int], hours: Union[str, int], minutes: Union[str, int], seconds: Union[str, int]
+    ):
         self._days = str(days).zfill(2)
         self._hours = str(hours).zfill(2)
         self._minutes = str(minutes).zfill(2)
@@ -49,15 +48,17 @@ class ChoreFrequency(TM1Object):
         self._seconds = str(value).zfill(2)
 
     @classmethod
-    def from_string(cls, frequency_string: str) -> 'ChoreFrequency':
-        pos_dt = frequency_string.find('DT', 1)
-        pos_h = frequency_string.find('H', pos_dt)
-        pos_m = frequency_string.find('M', pos_h)
+    def from_string(cls, frequency_string: str) -> "ChoreFrequency":
+        pos_dt = frequency_string.find("DT", 1)
+        pos_h = frequency_string.find("H", pos_dt)
+        pos_m = frequency_string.find("M", pos_h)
         pos_s = len(frequency_string) - 1
-        return cls(days=frequency_string[1:pos_dt],
-                   hours=frequency_string[pos_dt + 2:pos_h],
-                   minutes=frequency_string[pos_h + 1:pos_m],
-                   seconds=frequency_string[pos_m + 1:pos_s])
+        return cls(
+            days=frequency_string[1:pos_dt],
+            hours=frequency_string[pos_dt + 2 : pos_h],
+            minutes=frequency_string[pos_h + 1 : pos_m],
+            seconds=frequency_string[pos_m + 1 : pos_s],
+        )
 
     @property
     def frequency_string(self) -> str:

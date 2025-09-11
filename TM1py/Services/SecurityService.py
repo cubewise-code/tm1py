@@ -12,9 +12,7 @@ from TM1py.Utils.Utils import format_url, CaseAndSpaceInsensitiveSet, require_se
 
 
 class SecurityService(ObjectService):
-    """ Service to handle Security stuff
-    
-    """
+    """Service to handle Security stuff"""
 
     def __init__(self, rest: RestService):
         super().__init__(rest)
@@ -27,39 +25,37 @@ class SecurityService(ObjectService):
 
     @require_security_admin
     def create_user(self, user: User, **kwargs) -> Response:
-        """ Create a user on TM1 Server
+        """Create a user on TM1 Server
 
         :param user: instance of TM1py.User
         :return: response
         """
-        url = '/Users'
+        url = "/Users"
         return self._rest.POST(url, user.body, **kwargs)
 
     @require_security_admin
     def create_group(self, group_name: str, **kwargs) -> Response:
-        """ Create a Security group in the TM1 Server
+        """Create a Security group in the TM1 Server
 
         :param group_name:
         :return:
         """
-        url = '/Groups'
+        url = "/Groups"
         return self._rest.POST(url, json.dumps({"Name": group_name}), **kwargs)
 
     def get_user(self, user_name: str, **kwargs) -> User:
-        """ Get user from TM1 Server
+        """Get user from TM1 Server
 
         :param user_name:
         :return: instance of TM1py.User
         """
         user_name = self.determine_actual_user_name(user_name, **kwargs)
-        url = format_url(
-            "/Users('{}')?$select=Name,FriendlyName,Password,Type,Enabled&$expand=Groups",
-            user_name)
+        url = format_url("/Users('{}')?$select=Name,FriendlyName,Password,Type,Enabled&$expand=Groups", user_name)
         response = self._rest.GET(url, **kwargs)
         return User.from_dict(response.json())
 
     def get_current_user(self, **kwargs) -> User:
-        """ Get user and group assignments of this session
+        """Get user and group assignments of this session
 
         :return: instance of TM1py.User
         """
@@ -69,7 +65,7 @@ class SecurityService(ObjectService):
 
     @require_security_admin
     def update_user(self, user: User, **kwargs) -> Response:
-        """ Update user on TM1 Server
+        """Update user on TM1 Server
 
         :param user: instance of TM1py.User
         :return: response
@@ -88,7 +84,7 @@ class SecurityService(ObjectService):
 
     @require_security_admin
     def delete_user(self, user_name: str, **kwargs) -> Response:
-        """ Delete user on TM1 Server
+        """Delete user on TM1 Server
 
         :param user_name:
         :return: response
@@ -99,7 +95,7 @@ class SecurityService(ObjectService):
 
     @require_security_admin
     def delete_group(self, group_name: str, **kwargs) -> Response:
-        """ Delete a group in the TM1 Server
+        """Delete a group in the TM1 Server
 
         :param group_name:
         :return:
@@ -109,51 +105,51 @@ class SecurityService(ObjectService):
         return self._rest.DELETE(url, **kwargs)
 
     def get_all_users(self, **kwargs):
-        """ Get all users from TM1 Server
+        """Get all users from TM1 Server
 
         :return: List of TM1py.User instances
         """
-        url = '/Users?$select=Name,FriendlyName,Password,Type,Enabled&$expand=Groups'
+        url = "/Users?$select=Name,FriendlyName,Password,Type,Enabled&$expand=Groups"
         response = self._rest.GET(url, **kwargs)
-        users = [User.from_dict(user) for user in response.json()['value']]
+        users = [User.from_dict(user) for user in response.json()["value"]]
         return users
 
     def get_all_user_names(self, **kwargs):
-        """ Get all user names from TM1 Server
+        """Get all user names from TM1 Server
 
         :return: List of TM1py.User instances
         """
-        url = '/Users?select=Name'
+        url = "/Users?select=Name"
         response = self._rest.GET(url, **kwargs)
-        users = [user["Name"] for user in response.json()['value']]
+        users = [user["Name"] for user in response.json()["value"]]
         return users
 
     def get_users_from_group(self, group_name: str, **kwargs):
-        """ Get all users from group
+        """Get all users from group
 
         :param group_name:
         :return: List of TM1py.User instances
         """
         url = format_url(
-            "/Groups('{}')?$expand=Users($select=Name,FriendlyName,Password,Type,Enabled;$expand=Groups)",
-            group_name)
+            "/Groups('{}')?$expand=Users($select=Name,FriendlyName,Password,Type,Enabled;$expand=Groups)", group_name
+        )
         response = self._rest.GET(url, **kwargs)
-        users = [User.from_dict(user) for user in response.json()['Users']]
+        users = [User.from_dict(user) for user in response.json()["Users"]]
         return users
 
     def get_user_names_from_group(self, group_name: str, **kwargs) -> List[str]:
-        """ Get all users from group
+        """Get all users from group
 
         :param group_name:
         :return: List of strings
         """
         url = format_url("/Groups('{}')?$expand=Users($expand=Groups)", group_name)
         response = self._rest.GET(url, **kwargs)
-        users = [user["Name"] for user in response.json()['Users']]
+        users = [user["Name"] for user in response.json()["Users"]]
         return users
 
     def get_groups(self, user_name: str, **kwargs) -> List[str]:
-        """ Get the groups of a user in TM1 Server
+        """Get the groups of a user in TM1 Server
 
         :param user_name:
         :return: List of strings
@@ -161,12 +157,12 @@ class SecurityService(ObjectService):
         user_name = self.determine_actual_user_name(user_name, **kwargs)
         url = format_url("/Users('{}')/Groups", user_name)
         response = self._rest.GET(url, **kwargs)
-        return [group['Name'] for group in response.json()['value']]
+        return [group["Name"] for group in response.json()["value"]]
 
     @require_security_admin
     def add_user_to_groups(self, user_name: str, groups: Iterable[str], **kwargs) -> Response:
         """
-        
+
         :param user_name: name of user
         :param groups: iterable of groups
         :return: response
@@ -176,15 +172,14 @@ class SecurityService(ObjectService):
         body = {
             "Name": user_name,
             "Groups@odata.bind": [
-                format_url("Groups('{}')", self.determine_actual_group_name(group))
-                for group
-                in groups]
+                format_url("Groups('{}')", self.determine_actual_group_name(group)) for group in groups
+            ],
         }
         return self._rest.PATCH(url, json.dumps(body), **kwargs)
 
     @require_security_admin
     def remove_user_from_group(self, group_name: str, user_name: str, **kwargs) -> Response:
-        """ Remove user from group in TM1 Server
+        """Remove user from group in TM1 Server
 
         :param group_name:
         :param user_name:
@@ -196,18 +191,19 @@ class SecurityService(ObjectService):
         return self._rest.DELETE(url, **kwargs)
 
     def get_all_groups(self, **kwargs) -> List[str]:
-        """ Get all groups from TM1 Server
+        """Get all groups from TM1 Server
 
         :return: List of strings
         """
-        url = '/Groups?$select=Name'
+        url = "/Groups?$select=Name"
         response = self._rest.GET(url, **kwargs)
-        groups = [entry['Name'] for entry in response.json()['value']]
+        groups = [entry["Name"] for entry in response.json()["value"]]
         return groups
 
     @require_admin
     def security_refresh(self, **kwargs) -> Response:
         from TM1py.Services import ProcessService
+
         ti = "SecurityRefresh;"
         process_service = ProcessService(self._rest)
         return process_service.execute_ti_code(ti, **kwargs)
@@ -222,11 +218,11 @@ class SecurityService(ObjectService):
 
     def get_custom_security_groups(self, **kwargs) -> List[str]:
         custom_groups = CaseAndSpaceInsensitiveSet(*self.get_all_groups(**kwargs))
-        custom_groups.discard('Admin')
-        custom_groups.discard('DataAdmin')
-        custom_groups.discard('SecurityAdmin')
-        custom_groups.discard('OperationsAdmin')
-        custom_groups.discard('}tp_Everyone')
+        custom_groups.discard("Admin")
+        custom_groups.discard("DataAdmin")
+        custom_groups.discard("SecurityAdmin")
+        custom_groups.discard("OperationsAdmin")
+        custom_groups.discard("}tp_Everyone")
 
         return list(custom_groups)
 
@@ -241,12 +237,10 @@ class SecurityService(ObjectService):
         """
 
         from TM1py import CellService
+
         cell_service = CellService(self._rest)
 
-        users_with_flag = cell_service.execute_mdx_rows_and_values(
-            mdx=mdx,
-            element_unique_names=False,
-            **kwargs)
+        users_with_flag = cell_service.execute_mdx_rows_and_values(mdx=mdx, element_unique_names=False, **kwargs)
 
         for row, values in users_with_flag.items():
             user = row[0]

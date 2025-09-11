@@ -7,14 +7,15 @@ from TM1py.Objects.TM1Object import TM1Object
 
 class Rules(TM1Object):
     """
-        Abstraction of Rules on a cube.
+    Abstraction of Rules on a cube.
 
-        rules_analytics
-            A collection of rulestatements, where each statement is stored in uppercase without linebreaks.
-            comments are not included.
+    rules_analytics
+        A collection of rulestatements, where each statement is stored in uppercase without linebreaks.
+        comments are not included.
 
     """
-    KEYWORDS = ['SKIPCHECK', 'FEEDSTRINGS', 'UNDEFVALS', 'FEEDERS']
+
+    KEYWORDS = ["SKIPCHECK", "FEEDSTRINGS", "UNDEFVALS", "FEEDERS"]
 
     def __init__(self, rules: str):
         self._text = rules
@@ -23,13 +24,12 @@ class Rules(TM1Object):
 
     # self._rules_analytics_upper serves for analysis on cube rules
     def init_analytics(self):
-        text_without_comments = '\n'.join(
-            [rule
-             for rule in self._text.split('\n')
-             if len(rule.strip()) > 0 and rule.strip()[0] != '#'])
-        for statement in text_without_comments.split(';'):
+        text_without_comments = "\n".join(
+            [rule for rule in self._text.split("\n") if len(rule.strip()) > 0 and rule.strip()[0] != "#"]
+        )
+        for statement in text_without_comments.split(";"):
             if len(statement.strip()) > 0:
-                self._rules_analytics.append(statement.replace('\n', '').upper())
+                self._rules_analytics.append(statement.replace("\n", "").upper())
 
     @property
     def text(self) -> str:
@@ -42,41 +42,41 @@ class Rules(TM1Object):
     @property
     def rule_statements(self) -> List[str]:
         if self.has_feeders:
-            return self.rules_analytics[:self._rules_analytics.index('FEEDERS')]
+            return self.rules_analytics[: self._rules_analytics.index("FEEDERS")]
         return self.rules_analytics
 
     @property
     def feeder_statements(self) -> List[str]:
         if self.has_feeders:
-            return self.rules_analytics[self._rules_analytics.index('FEEDERS') + 1:]
+            return self.rules_analytics[self._rules_analytics.index("FEEDERS") + 1 :]
         return []
 
     @property
     def skipcheck(self) -> bool:
         for rule in self._rules_analytics[0:5]:
-            if rule == 'SKIPCHECK':
+            if rule == "SKIPCHECK":
                 return True
         return False
 
     @property
     def undefvals(self) -> bool:
         for rule in self._rules_analytics[0:5]:
-            if rule == 'UNDEFVALS':
+            if rule == "UNDEFVALS":
                 return True
         return False
 
     @property
     def feedstrings(self) -> bool:
         for rule in self._rules_analytics[0:5]:
-            if rule == 'FEEDSTRINGS':
+            if rule == "FEEDSTRINGS":
                 return True
         return False
 
     @property
     def has_feeders(self) -> bool:
-        if 'FEEDERS' in self._rules_analytics:
+        if "FEEDERS" in self._rules_analytics:
             # has feeders declaration
-            feeders = self.rules_analytics[self._rules_analytics.index('FEEDERS'):]
+            feeders = self.rules_analytics[self._rules_analytics.index("FEEDERS") :]
             # has at least one actual feeder statements
             return len(feeders) > 1
         return False
@@ -87,7 +87,7 @@ class Rules(TM1Object):
 
     @property
     def body_as_dict(self) -> Dict:
-        return {'Rules': self.text}
+        return {"Rules": self.text}
 
     def __len__(self):
         return len(self.rules_analytics)

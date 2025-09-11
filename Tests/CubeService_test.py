@@ -17,24 +17,19 @@ class TestCubeService(unittest.TestCase):
 
     cube_name = prefix + "some_name"
     cube_name_to_delete = prefix + "Some_Other_Name"
-    control_cube_name = '}' + prefix + 'some_control_cube_name'
-    dimension_names = [
-        prefix + "dimension1",
-        prefix + "dimension2",
-        prefix + "dimension3"]
+    control_cube_name = "}" + prefix + "some_control_cube_name"
+    dimension_names = [prefix + "dimension1", prefix + "dimension2", prefix + "dimension3"]
 
     def setUp(self):
 
         # Connection to TM1
         self.config = configparser.ConfigParser()
-        self.config.read(Path(__file__).parent.joinpath('config.ini'))
-        self.tm1 = TM1Service(**self.config['tm1srv01'])
+        self.config.read(Path(__file__).parent.joinpath("config.ini"))
+        self.tm1 = TM1Service(**self.config["tm1srv01"])
 
         for dimension_name in self.dimension_names:
-            elements = [Element('Element {}'.format(str(j)), 'Numeric') for j in range(1, 1001)]
-            hierarchy = Hierarchy(dimension_name=dimension_name,
-                                  name=dimension_name,
-                                  elements=elements)
+            elements = [Element("Element {}".format(str(j)), "Numeric") for j in range(1, 1001)]
+            hierarchy = Hierarchy(dimension_name=dimension_name, name=dimension_name, elements=elements)
             dimension = Dimension(dimension_name, [hierarchy])
             if not self.tm1.dimensions.exists(dimension.name):
                 self.tm1.dimensions.create(dimension)
@@ -43,7 +38,7 @@ class TestCubeService(unittest.TestCase):
         cube = Cube(self.cube_name, self.dimension_names)
         if not self.tm1.cubes.exists(self.cube_name):
             self.tm1.cubes.create(cube)
-        c = Cube(self.cube_name, dimensions=self.dimension_names, rules=Rules(''))
+        c = Cube(self.cube_name, dimensions=self.dimension_names, rules=Rules(""))
         if self.tm1.cubes.exists(c.name):
             self.tm1.cubes.delete(c.name)
         self.tm1.cubes.create(c)
@@ -52,7 +47,7 @@ class TestCubeService(unittest.TestCase):
         control_cube = Cube(self.control_cube_name, self.dimension_names)
         if not self.tm1.cubes.exists(self.control_cube_name):
             self.tm1.cubes.create(control_cube)
-        c = Cube(self.control_cube_name, dimensions=self.dimension_names, rules=Rules(''))
+        c = Cube(self.control_cube_name, dimensions=self.dimension_names, rules=Rules(""))
         if self.tm1.cubes.exists(c.name):
             self.tm1.cubes.delete(c.name)
         self.tm1.cubes.create(c)
@@ -113,12 +108,8 @@ class TestCubeService(unittest.TestCase):
         all_cubes_before = self.tm1.cubes.get_all_names()
         self.tm1.cubes.update_or_create(cube)
         all_cubes_after = self.tm1.cubes.get_all_names()
-        self.assertEqual(
-            len(all_cubes_before) + 1,
-            len(all_cubes_after))
-        self.assertEqual(
-            self.tm1.cubes.get_dimension_names(cube_name),
-            dimension_names)
+        self.assertEqual(len(all_cubes_before) + 1, len(all_cubes_after))
+        self.assertEqual(self.tm1.cubes.get_dimension_names(cube_name), dimension_names)
 
         all_cubes_before = self.tm1.cubes.get_all_names()
         self.tm1.cubes.delete(cube_name)
@@ -132,8 +123,9 @@ class TestCubeService(unittest.TestCase):
 
         self.assertEqual(len(all_cubes_before), len(cubes_with_rules) + len(cubes_without_rules))
 
-        self.assertNotEqual(len(self.tm1.cubes.get_all_names()),
-                            len(self.tm1.cubes.get_all_names(skip_control_cubes=True)))
+        self.assertNotEqual(
+            len(self.tm1.cubes.get_all_names()), len(self.tm1.cubes.get_all_names(skip_control_cubes=True))
+        )
 
         cube_name = self.prefix + "Some_Other_Name"
         dimension_names = self.tm1.dimensions.get_all_names()[1:3]
@@ -152,10 +144,13 @@ class TestCubeService(unittest.TestCase):
         cube = self.tm1.cubes.get(self.control_cube_name)
         cube.rules = "SKIPCHECK"
         self.tm1.cubes.update(cube)
-        self.assertNotEqual(self.tm1.cubes.get_all_names_with_rules(),
-                            self.tm1.cubes.get_all_names_with_rules(skip_control_cubes=True))
-        self.assertNotEqual(self.tm1.cubes.get_all_names_without_rules(),
-                            self.tm1.cubes.get_all_names_without_rules(skip_control_cubes=True))
+        self.assertNotEqual(
+            self.tm1.cubes.get_all_names_with_rules(), self.tm1.cubes.get_all_names_with_rules(skip_control_cubes=True)
+        )
+        self.assertNotEqual(
+            self.tm1.cubes.get_all_names_without_rules(),
+            self.tm1.cubes.get_all_names_without_rules(skip_control_cubes=True),
+        )
 
     @skip_if_version_lower_than(version="11.4")
     def test_get_storage_dimension_order(self):
@@ -181,20 +176,20 @@ class TestCubeService(unittest.TestCase):
     def test_search_for_dimension_substring_happy_case(self):
         cubes = self.tm1.cubes.search_for_dimension_substring(substring=self.dimension_names[0])
         self.assertEqual(
-            {self.cube_name: [self.dimension_names[0]], self.control_cube_name: [self.dimension_names[0]]},
-            cubes)
+            {self.cube_name: [self.dimension_names[0]], self.control_cube_name: [self.dimension_names[0]]}, cubes
+        )
 
     def test_search_for_dimension_substring_case_insensitive(self):
         cubes = self.tm1.cubes.search_for_dimension_substring(substring=self.dimension_names[1].upper())
         self.assertEqual(
-            cubes,
-            {self.cube_name: [self.dimension_names[1]], self.control_cube_name: [self.dimension_names[1]]})
+            cubes, {self.cube_name: [self.dimension_names[1]], self.control_cube_name: [self.dimension_names[1]]}
+        )
 
     def test_search_for_dimension_substring_space_insensitive(self):
         cubes = self.tm1.cubes.search_for_dimension_substring(substring=" " + self.dimension_names[2] + " ")
         self.assertEqual(
-            cubes,
-            {self.cube_name: [self.dimension_names[2]], self.control_cube_name: [self.dimension_names[2]]})
+            cubes, {self.cube_name: [self.dimension_names[2]], self.control_cube_name: [self.dimension_names[2]]}
+        )
 
     def test_search_for_dimension_substring_no_match(self):
         cubes = self.tm1.cubes.search_for_dimension_substring(substring="NotADimensionName")
@@ -207,12 +202,12 @@ class TestCubeService(unittest.TestCase):
     @skip_if_version_higher_or_equal_than(version="12")
     def test_search_for_dimension_substring_skip_control_cubes_false_v11(self):
         cubes = self.tm1.cubes.search_for_dimension_substring(substring="}cubes", skip_control_cubes=False)
-        self.assertEqual(cubes['}CubeProperties'], ['}Cubes'])
+        self.assertEqual(cubes["}CubeProperties"], ["}Cubes"])
 
     @skip_if_version_lower_than(version="12")
     def test_search_for_dimension_substring_skip_control_cubes_false_v12(self):
         cubes = self.tm1.cubes.search_for_dimension_substring(substring="}cubes", skip_control_cubes=False)
-        self.assertEqual(cubes['}CubeSecurity'], ['}Cubes'])
+        self.assertEqual(cubes["}CubeSecurity"], ["}Cubes"])
 
     def test_get_number_of_cubes(self):
         number_of_cubes = self.tm1.cubes.get_number_of_cubes()
@@ -221,12 +216,10 @@ class TestCubeService(unittest.TestCase):
     @skip_if_version_lower_than(version="11.4")
     def test_update_storage_dimension_order(self):
         self.tm1.cubes.update_storage_dimension_order(
-            cube_name=self.cube_name,
-            dimension_names=reversed(self.dimension_names))
+            cube_name=self.cube_name, dimension_names=reversed(self.dimension_names)
+        )
         dimensions = self.tm1.cubes.get_storage_dimension_order(self.cube_name)
-        self.assertEqual(
-            list(reversed(dimensions)),
-            self.dimension_names)
+        self.assertEqual(list(reversed(dimensions)), self.dimension_names)
 
     @skip_if_version_lower_than(version="11.6")
     @skip_if_version_higher_or_equal_than(version="12")
@@ -281,24 +274,27 @@ class TestCubeService(unittest.TestCase):
         """
         Check if the function will raise TM1pyRestException for an update on a nonexistent cube
         """
-        nonexist_cube_name = 'nonexist_cube'
+        nonexist_cube_name = "nonexist_cube"
         rules = "#test_rules"
-        self.assertRaises(TM1pyRestException,
-                          lambda: self.tm1.cubes.update_or_create_rules(cube_name=nonexist_cube_name, rules=rules))
+        self.assertRaises(
+            TM1pyRestException, lambda: self.tm1.cubes.update_or_create_rules(cube_name=nonexist_cube_name, rules=rules)
+        )
 
     def test_update_or_create_rules_list_typing_error(self):
         """
         Check if the function will raise a ValueError for rules in list type
         """
-        self.assertRaises(ValueError, lambda: self.tm1.cubes.update_or_create_rules(cube_name=self.cube_name,
-                                                                                    rules=["#list_rules"]))
+        self.assertRaises(
+            ValueError, lambda: self.tm1.cubes.update_or_create_rules(cube_name=self.cube_name, rules=["#list_rules"])
+        )
 
     def test_update_or_create_rules_dict_typing_error(self):
         """
         Check if the function will raise a ValueError for rules in dict type
         """
-        self.assertRaises(ValueError, lambda: self.tm1.cubes.update_or_create_rules(cube_name=self.cube_name,
-                                                                                    rules={"#dict_rules"}))
+        self.assertRaises(
+            ValueError, lambda: self.tm1.cubes.update_or_create_rules(cube_name=self.cube_name, rules={"#dict_rules"})
+        )
 
     def test_search_for_rule_substring_no_match(self):
         cubes = self.tm1.cubes.search_for_rule_substring(substring="find_nothing")
@@ -350,5 +346,5 @@ class TestCubeService(unittest.TestCase):
         self.tm1.logout()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

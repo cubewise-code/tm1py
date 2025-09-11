@@ -8,7 +8,7 @@ from typing import Union, Dict
 from TM1py.Objects.TM1Object import TM1Object
 from TM1py.Utils import format_url
 
-ApplicationType = namedtuple('ApplicationType', ['value', 'suffix', 'odata_type'])
+ApplicationType = namedtuple("ApplicationType", ["value", "suffix", "odata_type"])
 
 
 class ApplicationTypes(Enum):
@@ -43,7 +43,7 @@ class Application(TM1Object):
         self.path = path
         # remove suffix from name
         if application_type.suffix and name.endswith(application_type.suffix):
-            self.name = name[: - len(application_type.suffix)]
+            self.name = name[: -len(application_type.suffix)]
         else:
             self.name = name
         # raise ValueError if not a valid type
@@ -103,8 +103,9 @@ class DimensionApplication(Application):
 
 
 class DocumentApplication(Application):
-    def __init__(self, path: str, name: str, content: bytes, file_id: str = None, file_name: str = None,
-                 last_updated: str = None):
+    def __init__(
+        self, path: str, name: str, content: bytes, file_id: str = None, file_name: str = None, last_updated: str = None
+    ):
         super().__init__(path, name, ApplicationTypes.DOCUMENT)
         self.content = content
         # below fields only populated for retrieved applications
@@ -113,10 +114,7 @@ class DocumentApplication(Application):
         self.last_updated = last_updated
 
     def to_xlsx(self, path_to_file: str):
-        warnings.warn(
-            f"Function 'to_xlsx' is deprecated. Use 'to_file' instead",
-            DeprecationWarning,
-            stacklevel=2)
+        warnings.warn(f"Function 'to_xlsx' is deprecated. Use 'to_file' instead", DeprecationWarning, stacklevel=2)
         return self.to_file(path_to_file=path_to_file)
 
     def to_file(self, path_to_file: str):
@@ -170,7 +168,10 @@ class SubsetApplication(Application):
         body_as_dict = self.body_as_dict
         body_as_dict["Subset@odata.bind"] = format_url(
             "Dimensions('{}')/Hierarchies('{}')/Subsets('{}')",
-            self.dimension_name, self.hierarchy_name, self.subset_name)
+            self.dimension_name,
+            self.hierarchy_name,
+            self.subset_name,
+        )
         return json.dumps(body_as_dict, ensure_ascii=False)
 
 

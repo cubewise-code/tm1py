@@ -31,44 +31,34 @@ class TestCaseAndSpaceInsensitiveTuplesDict(unittest.TestCase):
 
     def test_equality(self):
         # Exact match
-        other_map = CaseAndSpaceInsensitiveTuplesDict({
-            ("Elem1", "Elem1"): "Value1",
-            ("Elem1", "Elem2"): 2,
-            ("Elem1", "Elem3"): 3
-        })
+        other_map = CaseAndSpaceInsensitiveTuplesDict(
+            {("Elem1", "Elem1"): "Value1", ("Elem1", "Elem2"): 2, ("Elem1", "Elem3"): 3}
+        )
         self.assertEqual(other_map, self.map)
 
         # Case and space-insensitive match
-        other_map = CaseAndSpaceInsensitiveTuplesDict({
-            ("Elem 1", "Elem1"): "Value1",
-            ("ELEM 1", "E L E M 2"): 2,
-            (" Elem1 ", "Elem 3"): 3
-        })
+        other_map = CaseAndSpaceInsensitiveTuplesDict(
+            {("Elem 1", "Elem1"): "Value1", ("ELEM 1", "E L E M 2"): 2, (" Elem1 ", "Elem 3"): 3}
+        )
         self.assertEqual(other_map, self.map)
 
     def test_inequality(self):
         # Different value
-        other_map = CaseAndSpaceInsensitiveTuplesDict({
-            ("Elem1", "Elem1"): "Value1",
-            ("Elem1", "Elem2"): 0,
-            ("Elem1", "Elem3"): 3
-        })
+        other_map = CaseAndSpaceInsensitiveTuplesDict(
+            {("Elem1", "Elem1"): "Value1", ("Elem1", "Elem2"): 0, ("Elem1", "Elem3"): 3}
+        )
         self.assertNotEqual(other_map, self.map)
 
         # Partially matching keys with incorrect values
-        other_map = CaseAndSpaceInsensitiveTuplesDict({
-            ("Elem 1", "Elem1"): "Value1",
-            ("ELEM 1", "E L E M 2"): "wrong",
-            (" Elem1 ", "Elem 3"): 3
-        })
+        other_map = CaseAndSpaceInsensitiveTuplesDict(
+            {("Elem 1", "Elem1"): "Value1", ("ELEM 1", "E L E M 2"): "wrong", (" Elem1 ", "Elem 3"): 3}
+        )
         self.assertNotEqual(other_map, self.map)
 
         # Completely different key
-        other_map = CaseAndSpaceInsensitiveTuplesDict({
-            ("wrong", "Elem1"): "Value1",
-            ("Elem1", "Elem2"): 2,
-            ("Elem1", "Elem3"): 3
-        })
+        other_map = CaseAndSpaceInsensitiveTuplesDict(
+            {("wrong", "Elem1"): "Value1", ("Elem1", "Elem2"): 2, ("Elem1", "Elem3"): 3}
+        )
         self.assertNotEqual(other_map, self.map)
 
     def test_get_item(self):
@@ -112,19 +102,12 @@ class TestCaseAndSpaceInsensitiveTuplesDict(unittest.TestCase):
     def test_adjusted_items(self):
         # Test adjusted items
         adjusted_items = dict(self.map.adjusted_items())
-        expected_items = {
-            ("elem1", "elem1"): "Value1",
-            ("elem1", "elem2"): 2,
-            ("elem1", "elem3"): 3
-        }
+        expected_items = {("elem1", "elem1"): "Value1", ("elem1", "elem2"): 2, ("elem1", "elem3"): 3}
         self.assertEqual(adjusted_items, expected_items)
 
     def test_update(self):
         # Test updating with new values
-        update_map = {
-            ("Elem1", "Elem2"): "Updated",
-            ("Elem1", "NewElem"): 10
-        }
+        update_map = {("Elem1", "Elem2"): "Updated", ("Elem1", "NewElem"): 10}
         self.map.update(update_map)
 
         # Check that updates are applied
@@ -168,5 +151,5 @@ class TestCaseAndSpaceInsensitiveTuplesDict(unittest.TestCase):
         self.assertEqual(list(self.map.items()), expected_items)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

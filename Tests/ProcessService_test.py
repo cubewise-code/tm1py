@@ -16,57 +16,66 @@ from .Utils import skip_if_version_lower_than, skip_if_version_higher_or_equal_t
 class TestProcessService(unittest.TestCase):
     tm1: TM1Service
 
-    prefix = 'TM1py_Tests_'
+    prefix = "TM1py_Tests_"
 
     some_name = "some_name"
 
-    p_none = Process(name=prefix + '_none_' + some_name, datasource_type='None')
-    p_ascii = Process(name=prefix + '_ascii_' + some_name,
-                      datasource_type='ASCII',
-                      datasource_ascii_delimiter_type='Character',
-                      datasource_ascii_delimiter_char=',',
-                      datasource_ascii_header_records=2,
-                      datasource_ascii_quote_character='^',
-                      datasource_ascii_thousand_separator='~',
-                      prolog_procedure="sTestProlog = 'test prolog procedure';",
-                      metadata_procedure="sTestMeta = 'test metadata procedure';",
-                      data_procedure="sTestData =  'test data procedure';",
-                      epilog_procedure="sTestEpilog = 'test epilog procedure';",
-                      datasource_data_source_name_for_server=r'C:\Data\file.csv',
-                      datasource_data_source_name_for_client=r'C:\Data\file.csv')
-    p_ascii.add_variable('v_1', 'Numeric')
-    p_ascii.add_variable('v_2', 'Numeric')
-    p_ascii.add_variable('v_3', 'Numeric')
-    p_ascii.add_variable('v_4', 'Numeric')
-    p_ascii.add_parameter('p_Year', 'year?', '2016')
-    p_ascii.add_parameter('p_Number', 'number?', 2)
+    p_none = Process(name=prefix + "_none_" + some_name, datasource_type="None")
+    p_ascii = Process(
+        name=prefix + "_ascii_" + some_name,
+        datasource_type="ASCII",
+        datasource_ascii_delimiter_type="Character",
+        datasource_ascii_delimiter_char=",",
+        datasource_ascii_header_records=2,
+        datasource_ascii_quote_character="^",
+        datasource_ascii_thousand_separator="~",
+        prolog_procedure="sTestProlog = 'test prolog procedure';",
+        metadata_procedure="sTestMeta = 'test metadata procedure';",
+        data_procedure="sTestData =  'test data procedure';",
+        epilog_procedure="sTestEpilog = 'test epilog procedure';",
+        datasource_data_source_name_for_server=r"C:\Data\file.csv",
+        datasource_data_source_name_for_client=r"C:\Data\file.csv",
+    )
+    p_ascii.add_variable("v_1", "Numeric")
+    p_ascii.add_variable("v_2", "Numeric")
+    p_ascii.add_variable("v_3", "Numeric")
+    p_ascii.add_variable("v_4", "Numeric")
+    p_ascii.add_parameter("p_Year", "year?", "2016")
+    p_ascii.add_parameter("p_Number", "number?", 2)
 
-    p_view = Process(name=prefix + '_view_' + some_name,
-                     datasource_type='TM1CubeView',
-                     datasource_view='view1',
-                     datasource_data_source_name_for_client='Plan_BudgetPlan',
-                     datasource_data_source_name_for_server='Plan_BudgetPlan')
+    p_view = Process(
+        name=prefix + "_view_" + some_name,
+        datasource_type="TM1CubeView",
+        datasource_view="view1",
+        datasource_data_source_name_for_client="Plan_BudgetPlan",
+        datasource_data_source_name_for_server="Plan_BudgetPlan",
+    )
 
-    p_odbc = Process(name=prefix + '_odbc_' + some_name,
-                     datasource_type='ODBC',
-                     datasource_password='password',
-                     datasource_user_name='user')
+    p_odbc = Process(
+        name=prefix + "_odbc_" + some_name,
+        datasource_type="ODBC",
+        datasource_password="password",
+        datasource_user_name="user",
+    )
 
-    p_json = Process(name=prefix + '_json_' + some_name,
-                     datasource_type='JSON',
-                     datasource_json_root_pointer='data',
-                     datasource_json_variable_mapping='{}',
-                     prolog_procedure="sTestProlog = 'test prolog procedure';",
-                     metadata_procedure="sTestMeta = 'test metadata procedure';",
-                     data_procedure="sTestData =  'test data procedure';",
-                     epilog_procedure="sTestEpilog = 'test epilog procedure';",
-                     datasource_data_source_name_for_server=r'C:\Data\file.json',
-                     datasource_data_source_name_for_client=r'C:\Data\file.json')
+    p_json = Process(
+        name=prefix + "_json_" + some_name,
+        datasource_type="JSON",
+        datasource_json_root_pointer="data",
+        datasource_json_variable_mapping="{}",
+        prolog_procedure="sTestProlog = 'test prolog procedure';",
+        metadata_procedure="sTestMeta = 'test metadata procedure';",
+        data_procedure="sTestData =  'test data procedure';",
+        epilog_procedure="sTestEpilog = 'test epilog procedure';",
+        datasource_data_source_name_for_server=r"C:\Data\file.json",
+        datasource_data_source_name_for_client=r"C:\Data\file.json",
+    )
 
     p_debug = Process(
         name=prefix + "_debug",
         datasource_type="None",
-        prolog_procedure="sleep(1);\r\nsleep(1);\r\nsleep(1);\r\nsleep(1);\r\nsleep(1);\r\nsleep(1);\r\n")
+        prolog_procedure="sleep(1);\r\nsleep(1);\r\nsleep(1);\r\nsleep(1);\r\nsleep(1);\r\nsleep(1);\r\n",
+    )
 
     subset: Subset
     subset_name: str
@@ -81,8 +90,8 @@ class TestProcessService(unittest.TestCase):
 
         # Connection to TM1
         cls.config = configparser.ConfigParser()
-        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
-        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        cls.config.read(Path(__file__).parent.joinpath("config.ini"))
+        cls.tm1 = TM1Service(**cls.config["tm1srv01"])
 
         cls.all_dimension_names = cls.tm1.dimensions.get_all_names()
         cls.random_dimension = cls.tm1.dimensions.get(random.choice(cls.all_dimension_names))
@@ -90,21 +99,25 @@ class TestProcessService(unittest.TestCase):
         cls.random_dimension_elements = [element for element in cls.random_dimension_all_elements][0:2]
 
         # Subset process
-        cls.subset_name = cls.prefix + '_subset_' + cls.some_name
-        cls.subset = Subset(dimension_name=cls.random_dimension.name,
-                            subset_name=cls.subset_name,
-                            elements=cls.random_dimension_elements)
+        cls.subset_name = cls.prefix + "_subset_" + cls.some_name
+        cls.subset = Subset(
+            dimension_name=cls.random_dimension.name,
+            subset_name=cls.subset_name,
+            elements=cls.random_dimension_elements,
+        )
         cls.tm1.dimensions.subsets.update_or_create(cls.subset, False)
-        cls.p_subset = Process(name=cls.prefix + '_subset_' + cls.some_name,
-                               datasource_type='TM1DimensionSubset',
-                               datasource_data_source_name_for_server=cls.subset.dimension_name,
-                               datasource_subset=cls.subset.name,
-                               metadata_procedure="sTest = 'abc';")
+        cls.p_subset = Process(
+            name=cls.prefix + "_subset_" + cls.some_name,
+            datasource_type="TM1DimensionSubset",
+            datasource_data_source_name_for_server=cls.subset.dimension_name,
+            datasource_subset=cls.subset.name,
+            metadata_procedure="sTest = 'abc';",
+        )
 
         cls.p_error = Process(name=cls.prefix + "_error")
         cls.p_error.epilog_procedure = "ItemReject('just an error');"
 
-        with open(Path(__file__).parent.joinpath('resources', 'Bedrock.Server.Wait.json'), 'r') as file:
+        with open(Path(__file__).parent.joinpath("resources", "Bedrock.Server.Wait.json"), "r") as file:
             cls.p_bedrock_server_wait = Process.from_json(file.read())
 
     def setUp(self):
@@ -152,8 +165,9 @@ class TestProcessService(unittest.TestCase):
 
         # with parameters argument
         start_time = time.time()
-        self.tm1.processes.execute(self.p_bedrock_server_wait.name, parameters={"Parameters": [
-            {"Name": "pWaitSec", "Value": "3"}]})
+        self.tm1.processes.execute(
+            self.p_bedrock_server_wait.name, parameters={"Parameters": [{"Name": "pWaitSec", "Value": "3"}]}
+        )
         elapsed_time = time.time() - start_time
         self.assertGreater(elapsed_time, 3)
 
@@ -171,17 +185,14 @@ class TestProcessService(unittest.TestCase):
         process = self.p_bedrock_server_wait
         self.tm1.processes.update_or_create(process)
         # with parameters
-        success, status, error_log_file = self.tm1.processes.execute_with_return(
-            process_name=process.name,
-            pWaitSec=2)
+        success, status, error_log_file = self.tm1.processes.execute_with_return(process_name=process.name, pWaitSec=2)
         self.assertTrue(success)
         self.assertEqual(status, "CompletedSuccessfully")
         # v12 returns a log file for every process execution
         if not verify_version(required_version="12", version=self.tm1.version):
             self.assertIsNone(error_log_file)
         # without parameters
-        success, status, error_log_file = self.tm1.processes.execute_with_return(
-            process_name=process.name)
+        success, status, error_log_file = self.tm1.processes.execute_with_return(process_name=process.name)
         self.assertTrue(success)
         self.assertEqual(status, "CompletedSuccessfully")
         # v12 returns a log file for every process execution
@@ -192,10 +203,7 @@ class TestProcessService(unittest.TestCase):
         process = self.p_bedrock_server_wait
         self.tm1.processes.update_or_create(process)
         # with parameters
-        async_id = self.tm1.processes.execute_with_return(
-            return_async_id=True,
-            process_name=process.name,
-            pWaitSec=2)
+        async_id = self.tm1.processes.execute_with_return(return_async_id=True, process_name=process.name, pWaitSec=2)
         self.assertGreater(len(async_id), 5)
 
     def test_execute_with_return_timeout(self):
@@ -203,10 +211,7 @@ class TestProcessService(unittest.TestCase):
         self.tm1.processes.update_or_create(process)
 
         with self.assertRaises(TM1pyTimeout):
-            self.tm1.processes.execute_with_return(
-                timeout=1,
-                process_name=process.name,
-                pWaitSec='5')
+            self.tm1.processes.execute_with_return(timeout=1, process_name=process.name, pWaitSec="5")
 
     def test_execute_with_return_compile_error(self):
         process = Process(name=str(uuid.uuid4()))
@@ -241,8 +246,7 @@ class TestProcessService(unittest.TestCase):
 
         self.tm1.processes.update_or_create(process)
         # with parameters
-        success, status, error_log_file = self.tm1.processes.execute_with_return(
-            process_name=process.name)
+        success, status, error_log_file = self.tm1.processes.execute_with_return(process_name=process.name)
         self.assertTrue(success)
         self.assertEqual(status, "CompletedSuccessfully")
         # v12 returns a log file for every process execution
@@ -258,8 +262,7 @@ class TestProcessService(unittest.TestCase):
 
         self.tm1.processes.update_or_create(process)
         # with parameters
-        success, status, error_log_file = self.tm1.processes.execute_with_return(
-            process_name=process.name)
+        success, status, error_log_file = self.tm1.processes.execute_with_return(process_name=process.name)
         self.assertFalse(success)
         self.assertEqual(status, "QuitCalled")
         # v12 returns a log file for every process execution
@@ -269,22 +272,18 @@ class TestProcessService(unittest.TestCase):
         self.tm1.processes.delete(process.name)
 
     def test_compile_success(self):
-        p_good = Process(
-            name=str(uuid.uuid4()),
-            prolog_procedure="nPro = DimSiz('}Processes');")
+        p_good = Process(name=str(uuid.uuid4()), prolog_procedure="nPro = DimSiz('}Processes');")
         self.tm1.processes.update_or_create(p_good)
         errors = self.tm1.processes.compile(p_good.name)
         self.assertTrue(len(errors) == 0)
         self.tm1.processes.delete(p_good.name)
 
     def test_compile_with_errors(self):
-        p_bad = Process(
-            name=str(uuid.uuid4()),
-            prolog_procedure="nPro = DimSize('}Processes');")
+        p_bad = Process(name=str(uuid.uuid4()), prolog_procedure="nPro = DimSize('}Processes');")
         self.tm1.processes.update_or_create(p_bad)
         errors = self.tm1.processes.compile(p_bad.name)
         self.assertTrue(len(errors) == 1)
-        self.assertIn("\"dimsize\"", errors[0]["Message"])
+        self.assertIn('"dimsize"', errors[0]["Message"])
         self.tm1.processes.delete(p_bad.name)
 
     @skip_if_version_lower_than(version="11.4")
@@ -357,21 +356,17 @@ class TestProcessService(unittest.TestCase):
             self.assertIsNone(error_log_file)
 
     def test_compile_process_success(self):
-        p_good = Process(
-            name=str(uuid.uuid4()),
-            prolog_procedure="nPro = DimSiz('}Processes');")
+        p_good = Process(name=str(uuid.uuid4()), prolog_procedure="nPro = DimSiz('}Processes');")
 
         errors = self.tm1.processes.compile_process(p_good)
         self.assertTrue(len(errors) == 0)
 
     def test_compile_process_with_errors(self):
-        p_bad = Process(
-            name=str(uuid.uuid4()),
-            prolog_procedure="nPro = DimSize('}Processes');")
+        p_bad = Process(name=str(uuid.uuid4()), prolog_procedure="nPro = DimSize('}Processes');")
 
         errors = self.tm1.processes.compile_process(p_bad)
         self.assertTrue(len(errors) == 1)
-        self.assertIn("\"dimsize\"", errors[0]["Message"])
+        self.assertIn('"dimsize"', errors[0]["Message"])
 
     def test_get_process(self):
         p_ascii_orig = copy.deepcopy(self.p_ascii)
@@ -443,7 +438,7 @@ class TestProcessService(unittest.TestCase):
 
         self.tm1.processes.delete(process.name)
 
-    @skip_if_version_higher_or_equal_than(version='12')
+    @skip_if_version_higher_or_equal_than(version="12")
     def test_get_last_message_from_processerrorlog(self):
         process = Process(name=str(uuid.uuid4()))
         process.epilog_procedure = "ItemReject('Not Relevant');"
@@ -478,14 +473,14 @@ class TestProcessService(unittest.TestCase):
         self.assertIsNotNone(error_log_file)
 
         # many process error logs have been generated by this point, expecting more than 1 that begin with TM1
-        content = self.tm1.processes.search_error_log_filenames(search_string='TM1')
+        content = self.tm1.processes.search_error_log_filenames(search_string="TM1")
         self.assertGreater(len(content), 0)
 
     def test_search_error_log_filenames_top_3(self):
         for _ in range(3):
             self.tm1.processes.execute_with_return(process_name=self.p_error.name)
 
-        content = self.tm1.processes.search_error_log_filenames(search_string='TM1', top=3)
+        content = self.tm1.processes.search_error_log_filenames(search_string="TM1", top=3)
         self.assertEqual(len(content), 3)
 
     def test_delete_process(self):
@@ -495,13 +490,11 @@ class TestProcessService(unittest.TestCase):
         self.tm1.processes.delete(process.name)
 
     def test_search_string_in_name_no_match_startswith(self):
-        process_names = self.tm1.processes.search_string_in_name(
-            name_startswith="NotAProcessName")
+        process_names = self.tm1.processes.search_string_in_name(name_startswith="NotAProcessName")
         self.assertEqual([], process_names)
 
     def test_search_string_in_name_no_match_contains(self):
-        process_names = self.tm1.processes.search_string_in_name(
-            name_contains="NotAProcessName")
+        process_names = self.tm1.processes.search_string_in_name(name_contains="NotAProcessName")
         self.assertEqual([], process_names)
 
     def test_search_string_in_name_startswith_happy_case(self):
@@ -525,13 +518,14 @@ class TestProcessService(unittest.TestCase):
         self.assertEqual([self.p_ascii.name], process_names)
 
     def test_get_all_names(self):
-        process = Process(name='}' + f'{self.prefix}_ControlProcess')
+        process = Process(name="}" + f"{self.prefix}_ControlProcess")
         process.epilog_procedure = "#Empty Process"
         self.tm1.processes.update_or_create(process)
-        self.assertNotEqual(self.tm1.processes.get_all_names(),
-                            self.tm1.processes.get_all_names(skip_control_processes=True))
-        self.assertNotEqual('}', self.tm1.processes.get_all_names(skip_control_processes=True)[-1][0][0])
-        self.assertEqual('}', self.tm1.processes.get_all_names()[-1][0][0])
+        self.assertNotEqual(
+            self.tm1.processes.get_all_names(), self.tm1.processes.get_all_names(skip_control_processes=True)
+        )
+        self.assertNotEqual("}", self.tm1.processes.get_all_names(skip_control_processes=True)[-1][0][0])
+        self.assertEqual("}", self.tm1.processes.get_all_names()[-1][0][0])
         self.tm1.processes.delete(process.name)
 
     def test_ti_formula(self):
@@ -544,53 +538,45 @@ class TestProcessService(unittest.TestCase):
 
     def test_debug_get_variable_values(self):
         result = self.tm1.processes.debug_process(self.p_debug.name)
-        debug_id = result['ID']
+        debug_id = result["ID"]
         time.sleep(0.1)
 
         result = self.tm1.processes.debug_get_variable_values(debug_id=debug_id)
 
-        self.assertEqual(result['DATASOURCETYPE'], 'NULL')
+        self.assertEqual(result["DATASOURCETYPE"], "NULL")
 
         self.tm1.processes.debug_step_out(debug_id=debug_id)
 
     def test_debug_get_single_variable_value(self):
         result = self.tm1.processes.debug_process(self.p_debug.name)
-        debug_id = result['ID']
+        debug_id = result["ID"]
         time.sleep(0.1)
 
         value = self.tm1.processes.debug_get_single_variable_value(debug_id=debug_id, variable_name="DATASOURCETYPE")
 
-        self.assertEqual(value, 'NULL')
+        self.assertEqual(value, "NULL")
 
         self.tm1.processes.debug_step_out(debug_id=debug_id)
 
     def test_debug_step_over(self):
         result = self.tm1.processes.debug_process(self.p_debug.name)
-        debug_id = result['ID']
+        debug_id = result["ID"]
         time.sleep(0.1)
 
         result = self.tm1.processes.debug_step_over(debug_id=debug_id)
-        self.assertEqual(
-            4,
-            result['CallStack'][0]['LineNumber'])
+        self.assertEqual(4, result["CallStack"][0]["LineNumber"])
         time.sleep(0.1)
 
         result = self.tm1.processes.debug_step_over(debug_id=debug_id)
-        self.assertEqual(
-            5,
-            result['CallStack'][0]['LineNumber'])
+        self.assertEqual(5, result["CallStack"][0]["LineNumber"])
         time.sleep(0.1)
 
         result = self.tm1.processes.debug_step_over(debug_id=debug_id)
-        self.assertEqual(
-            6,
-            result['CallStack'][0]['LineNumber'])
+        self.assertEqual(6, result["CallStack"][0]["LineNumber"])
         time.sleep(0.1)
 
         result = self.tm1.processes.debug_step_over(debug_id=debug_id)
-        self.assertEqual(
-            7,
-            result['CallStack'][0]['LineNumber'])
+        self.assertEqual(7, result["CallStack"][0]["LineNumber"])
         time.sleep(0.1)
 
         result = self.tm1.processes.debug_step_out(debug_id=debug_id)
@@ -600,45 +586,42 @@ class TestProcessService(unittest.TestCase):
         line_numbers = 4, 5
 
         result = self.tm1.processes.debug_process(self.p_debug.name)
-        debug_id = result['ID']
+        debug_id = result["ID"]
         time.sleep(0.1)
 
         break_points = []
         for i, line_number in enumerate(line_numbers):
-            break_points.append(ProcessDebugBreakpoint(
-                breakpoint_id=i,
-                breakpoint_type=BreakPointType.PROCESS_DEBUG_CONTEXT_LINE_BREAK_POINT,
-                process_name=self.p_debug.name,
-                procedure="Prolog",
-                hit_mode=HitMode.BREAK_ALWAYS,
-                line_number=line_number))
+            break_points.append(
+                ProcessDebugBreakpoint(
+                    breakpoint_id=i,
+                    breakpoint_type=BreakPointType.PROCESS_DEBUG_CONTEXT_LINE_BREAK_POINT,
+                    process_name=self.p_debug.name,
+                    procedure="Prolog",
+                    hit_mode=HitMode.BREAK_ALWAYS,
+                    line_number=line_number,
+                )
+            )
 
         self.tm1.processes.debug_add_breakpoints(debug_id, break_points)
 
         time.sleep(0.1)
         result = self.tm1.processes.debug_continue(debug_id=debug_id)
-        self.assertEqual(
-            line_numbers[0],
-            result['CallStack'][0]['LineNumber'])
+        self.assertEqual(line_numbers[0], result["CallStack"][0]["LineNumber"])
         time.sleep(0.1)
 
         result = self.tm1.processes.debug_continue(debug_id=debug_id)
-        self.assertEqual(
-            line_numbers[1],
-            result['CallStack'][0]['LineNumber'])
+        self.assertEqual(line_numbers[1], result["CallStack"][0]["LineNumber"])
         time.sleep(0.1)
 
         result = self.tm1.processes.debug_step_out(debug_id=debug_id)
-        self.assertEqual(
-            2,
-            len(result['Breakpoints']))
+        self.assertEqual(2, len(result["Breakpoints"]))
         self.assertEqual(result["Status"], "Complete")
 
     def test_debug_add_breakpoint(self):
         line_number = 4
 
         result = self.tm1.processes.debug_process(self.p_debug.name)
-        debug_id = result['ID']
+        debug_id = result["ID"]
 
         time.sleep(0.1)
         break_point = ProcessDebugBreakpoint(
@@ -647,25 +630,22 @@ class TestProcessService(unittest.TestCase):
             process_name=self.p_debug.name,
             procedure="Prolog",
             hit_mode=HitMode.BREAK_ALWAYS,
-            line_number=line_number)
+            line_number=line_number,
+        )
         self.tm1.processes.debug_add_breakpoint(debug_id, break_point)
 
         time.sleep(0.1)
         result = self.tm1.processes.debug_continue(debug_id=debug_id)
-        self.assertEqual(
-            line_number,
-            result['CallStack'][0]['LineNumber'])
+        self.assertEqual(line_number, result["CallStack"][0]["LineNumber"])
 
         time.sleep(0.1)
         result = self.tm1.processes.debug_step_out(debug_id=debug_id)
-        self.assertEqual(
-            1,
-            len(result['Breakpoints']))
+        self.assertEqual(1, len(result["Breakpoints"]))
         self.assertEqual(result["Status"], "Complete")
 
     def test_debug_remove_breakpoint(self):
         result = self.tm1.processes.debug_process(self.p_debug.name)
-        debug_id = result['ID']
+        debug_id = result["ID"]
 
         time.sleep(0.1)
         break_point = ProcessDebugBreakpoint(
@@ -674,7 +654,8 @@ class TestProcessService(unittest.TestCase):
             process_name=self.p_debug.name,
             procedure="Prolog",
             hit_mode=HitMode.BREAK_ALWAYS,
-            line_number=4)
+            line_number=4,
+        )
         self.tm1.processes.debug_add_breakpoint(debug_id, break_point)
         time.sleep(0.1)
         break_point = ProcessDebugBreakpoint(
@@ -683,26 +664,21 @@ class TestProcessService(unittest.TestCase):
             process_name=self.p_debug.name,
             procedure="Prolog",
             hit_mode=HitMode.BREAK_ALWAYS,
-            line_number=5)
+            line_number=5,
+        )
         self.tm1.processes.debug_add_breakpoint(debug_id, break_point)
 
         time.sleep(0.1)
         result = self.tm1.processes.debug_step_out(debug_id=debug_id)
-        self.assertEqual(
-            4,
-            result['CallStack'][0]['LineNumber'])
-        self.assertEqual(
-            2,
-            len(result['Breakpoints']))
+        self.assertEqual(4, result["CallStack"][0]["LineNumber"])
+        self.assertEqual(2, len(result["Breakpoints"]))
 
         time.sleep(0.1)
         self.tm1.processes.debug_remove_breakpoint(debug_id, breakpoint_id=2)
 
         time.sleep(0.1)
         result = self.tm1.processes.debug_step_out(debug_id=debug_id)
-        self.assertEqual(
-            1,
-            len(result['Breakpoints']))
+        self.assertEqual(1, len(result["Breakpoints"]))
         self.assertEqual(result["Status"], "Complete")
 
     def test_evaluate_boolean_ti_expression_true(self):
@@ -729,11 +705,10 @@ class TestProcessService(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.tm1.dimensions.subsets.delete(
-            dimension_name=cls.subset.dimension_name,
-            subset_name=cls.subset_name,
-            private=False)
+            dimension_name=cls.subset.dimension_name, subset_name=cls.subset_name, private=False
+        )
         cls.tm1.logout()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

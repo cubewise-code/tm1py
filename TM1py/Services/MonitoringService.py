@@ -13,9 +13,7 @@ from TM1py.Services.UserService import UserService
 
 
 class MonitoringService(ObjectService):
-    """ Service to Query and Cancel Threads in TM1
-    
-    """
+    """Service to Query and Cancel Threads in TM1"""
 
     def __init__(self, rest: RestService):
         super().__init__(rest)
@@ -25,26 +23,26 @@ class MonitoringService(ObjectService):
         self.session = SessionService(rest)
 
     def get_threads(self, **kwargs) -> List:
-        """ Return a dict of the currently running threads from the TM1 Server
+        """Return a dict of the currently running threads from the TM1 Server
 
-            :return:
-                dict: the response
+        :return:
+            dict: the response
         """
         return self.threads.get_all(**kwargs)
 
     def get_active_threads(self, **kwargs):
         """Return a list of non-idle threads from the TM1 Server
 
-            :return:
-                list: TM1 threads as dict
+        :return:
+            list: TM1 threads as dict
         """
         return self.threads.get_active(**kwargs)
 
     def cancel_thread(self, thread_id: int, **kwargs) -> Response:
-        """ Kill a running thread
-        
-        :param thread_id: 
-        :return: 
+        """Kill a running thread
+
+        :param thread_id:
+        :return:
         """
         return self.threads.cancel(thread_id, **kwargs)
 
@@ -52,14 +50,14 @@ class MonitoringService(ObjectService):
         return self.threads.cancel_all_running(**kwargs)
 
     def get_active_users(self, **kwargs) -> List[User]:
-        """ Get the activate users in TM1
+        """Get the activate users in TM1
 
         :return: List of TM1py.User instances
         """
         return self.users.get_active(**kwargs)
 
     def user_is_active(self, user_name: str, **kwargs) -> bool:
-        """ Check if user is currently active in TM1
+        """Check if user is currently active in TM1
 
         :param user_name:
         :return: Boolean
@@ -67,10 +65,10 @@ class MonitoringService(ObjectService):
         return self.users.is_active(user_name, **kwargs)
 
     def disconnect_user(self, user_name: str, **kwargs) -> Response:
-        """ Disconnect User
-        
-        :param user_name: 
-        :return: 
+        """Disconnect User
+
+        :param user_name:
+        :return:
         """
         return self.users.disconnect(user_name, **kwargs)
 

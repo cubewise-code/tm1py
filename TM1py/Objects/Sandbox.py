@@ -8,23 +8,21 @@ from TM1py.Objects.TM1Object import TM1Object
 
 
 class Sandbox(TM1Object):
-    """ Abstraction of a TM1 Sandbox
-        
-    """
+    """Abstraction of a TM1 Sandbox"""
 
     def __init__(
-        self, 
-        name: str, 
+        self,
+        name: str,
         include_in_sandbox_dimension: bool = True,
         loaded: bool = False,
         active: bool = False,
-        queued: bool = False
+        queued: bool = False,
     ):
         """
-        
+
         :param name: name of the Sandbox
         :param include_in_sandbox_dimension:
-        :params loaded, active, queued: leave default as false when creating sanbox 
+        :params loaded, active, queued: leave default as false when creating sanbox
         """
         self.name = name
         self.include_in_sandbox_dimension = include_in_sandbox_dimension
@@ -50,7 +48,7 @@ class Sandbox(TM1Object):
 
     @classmethod
     def from_json(cls, sandbox_as_json: str) -> "Sandbox":
-        """ Alternative constructor
+        """Alternative constructor
 
         :param sandbox_as_json: user as JSON string
         :return: sandbox, an instance of this class
@@ -60,7 +58,7 @@ class Sandbox(TM1Object):
 
     @classmethod
     def from_dict(cls, sandbox_as_dict: Dict) -> "Sandbox":
-        """ Alternative constructor
+        """Alternative constructor
 
         :param sandbox_as_dict: user as dict
         :return: an instance of this class
@@ -70,7 +68,7 @@ class Sandbox(TM1Object):
             include_in_sandbox_dimension=sandbox_as_dict["IncludeInSandboxDimension"],
             loaded=sandbox_as_dict["IsLoaded"],
             active=sandbox_as_dict["IsActive"],
-            queued=sandbox_as_dict["IsQueued"]
+            queued=sandbox_as_dict["IsQueued"],
         )
 
     @property

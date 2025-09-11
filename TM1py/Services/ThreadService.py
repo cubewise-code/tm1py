@@ -9,7 +9,7 @@ from TM1py.Utils.Utils import format_url, verify_version, deprecated_in_version
 
 
 class ThreadService(ObjectService):
-    """ Service to work with Threads in TM1
+    """Service to work with Threads in TM1
     Deprecated as of TM1 Server v12
 
     """
@@ -22,29 +22,29 @@ class ThreadService(ObjectService):
 
     @deprecated_in_version(version="12.0.0")
     def get_all(self, **kwargs) -> List:
-        """ Return a list of the currently running threads from the TM1 Server
+        """Return a list of the currently running threads from the TM1 Server
 
-            :return:
-                dict: the response
+        :return:
+            dict: the response
         """
-        url = '/Threads'
+        url = "/Threads"
         response = self._rest.GET(url, **kwargs)
-        return response.json()['value']
+        return response.json()["value"]
 
     @deprecated_in_version(version="12.0.0")
     def get_active(self, **kwargs):
         """Return a list of non-idle threads from the TM1 Server
 
-            :return:
-                list: TM1 threads as dict
+        :return:
+            list: TM1 threads as dict
         """
         url = "/Threads?$filter=Function ne 'GET /Threads' and State ne 'Idle'"
         response = self._rest.GET(url, **kwargs)
-        return response.json()['value']
+        return response.json()["value"]
 
     @deprecated_in_version(version="12.0.0")
     def cancel(self, thread_id: int, **kwargs) -> Response:
-        """ Kill a running thread
+        """Kill a running thread
 
         :param thread_id:
         :return:

@@ -14,7 +14,8 @@ class TestNativeView(unittest.TestCase):
             suppress_empty_rows=False,
             titles=[ViewTitleSelection("d3", AnonymousSubset("d3", "d3", "", ["e3"]), "e3")],
             columns=[ViewAxisSelection("d1", AnonymousSubset("d1", "d1", "{[d1].[e1]}"))],
-            rows=[ViewAxisSelection("d2", AnonymousSubset("d2", "d2", "{[d2].[e2]}"))])
+            rows=[ViewAxisSelection("d2", AnonymousSubset("d2", "d2", "{[d2].[e2]}"))],
+        )
 
         self.assertEqual(
             "SELECT\r\n"
@@ -22,7 +23,8 @@ class TestNativeView(unittest.TestCase):
             "{[d2].[e2]} DIMENSION PROPERTIES MEMBER_NAME ON 1\r\n"
             "FROM [c1]\r\n"
             "WHERE ([d3].[d3].[e3])",
-            native_view.mdx)
+            native_view.mdx,
+        )
 
     def test_as_mdx_multi_rows_multi_columns(self):
         native_view = NativeView(
@@ -32,13 +34,17 @@ class TestNativeView(unittest.TestCase):
             suppress_empty_rows=True,
             titles=[
                 ViewTitleSelection("d5", AnonymousSubset("d5", "d5", "", ["e5"]), "e5"),
-                ViewTitleSelection("d6", AnonymousSubset("d6", "d6", "", ["e6"]), "e6")],
+                ViewTitleSelection("d6", AnonymousSubset("d6", "d6", "", ["e6"]), "e6"),
+            ],
             columns=[
                 ViewAxisSelection("d1", AnonymousSubset("d1", "d1", "{[d1].[e1]}")),
-                ViewAxisSelection("d2", AnonymousSubset("d2", "d2", "{[d2].[e2]}"))],
+                ViewAxisSelection("d2", AnonymousSubset("d2", "d2", "{[d2].[e2]}")),
+            ],
             rows=[
                 ViewAxisSelection("d3", AnonymousSubset("d3", "d3", "{[d3].[e3]}")),
-                ViewAxisSelection("d4", AnonymousSubset("d4", "d4", "{[d4].[e4]}"))])
+                ViewAxisSelection("d4", AnonymousSubset("d4", "d4", "{[d4].[e4]}")),
+            ],
+        )
 
         self.assertEqual(
             "SELECT\r\n"
@@ -46,7 +52,8 @@ class TestNativeView(unittest.TestCase):
             "NON EMPTY {[d3].[e3]} * {[d4].[e4]} DIMENSION PROPERTIES MEMBER_NAME ON 1\r\n"
             "FROM [c1]\r\n"
             "WHERE ([d5].[d5].[e5],[d6].[d6].[e6])",
-            native_view.mdx)
+            native_view.mdx,
+        )
 
     def test_as_mdx_no_rows(self):
         native_view = NativeView(
@@ -55,14 +62,16 @@ class TestNativeView(unittest.TestCase):
             suppress_empty_columns=True,
             suppress_empty_rows=False,
             titles=[ViewTitleSelection("d3", AnonymousSubset("d3", "d3", "", ["e3"]), "e3")],
-            columns=[ViewAxisSelection("d1", AnonymousSubset("d1", "d1", "{[d1].[e1]}"))])
+            columns=[ViewAxisSelection("d1", AnonymousSubset("d1", "d1", "{[d1].[e1]}"))],
+        )
 
         self.assertEqual(
             "SELECT\r\n"
             "NON EMPTY {[d1].[e1]} DIMENSION PROPERTIES MEMBER_NAME ON 0\r\n"
             "FROM [c1]\r\n"
             "WHERE ([d3].[d3].[e3])",
-            native_view.mdx)
+            native_view.mdx,
+        )
 
     def test_as_mdx_no_columns(self):
         with self.assertRaises(ValueError) as _:
@@ -72,7 +81,8 @@ class TestNativeView(unittest.TestCase):
                 suppress_empty_columns=True,
                 suppress_empty_rows=False,
                 titles=[ViewTitleSelection("d3", AnonymousSubset("d3", "d3", "", ["e3"]), "e3")],
-                rows=[ViewAxisSelection("d1", AnonymousSubset("d1", "d1", "{[d1].[e1]}"))])
+                rows=[ViewAxisSelection("d1", AnonymousSubset("d1", "d1", "{[d1].[e1]}"))],
+            )
 
             _ = native_view.mdx
 
@@ -82,13 +92,12 @@ class TestNativeView(unittest.TestCase):
             view_name="not_relevant",
             suppress_empty_columns=True,
             suppress_empty_rows=False,
-            columns=[ViewAxisSelection("d1", AnonymousSubset("d1", "d1", "{[d1].[e1]}"))])
+            columns=[ViewAxisSelection("d1", AnonymousSubset("d1", "d1", "{[d1].[e1]}"))],
+        )
 
         self.assertEqual(
-            "SELECT\r\n"
-            "NON EMPTY {[d1].[e1]} DIMENSION PROPERTIES MEMBER_NAME ON 0\r\n"
-            "FROM [c1]",
-            native_view.mdx)
+            "SELECT\r\n" "NON EMPTY {[d1].[e1]} DIMENSION PROPERTIES MEMBER_NAME ON 0\r\n" "FROM [c1]", native_view.mdx
+        )
 
     def test_as_mdx_registered_subsets(self):
         s1 = Subset("s1", "d1", "d1", None, None, ["e1", "e2"])
@@ -102,15 +111,17 @@ class TestNativeView(unittest.TestCase):
             suppress_empty_rows=False,
             titles=[ViewTitleSelection("d1", s1, "e1")],
             columns=[ViewAxisSelection("d2", s2)],
-            rows=[ViewAxisSelection("d3", s3)])
+            rows=[ViewAxisSelection("d3", s3)],
+        )
 
         self.assertEqual(
             "SELECT\r\n"
-            "NON EMPTY {TM1SUBSETTOSET([d2].[d2],\"s2\")} DIMENSION PROPERTIES MEMBER_NAME ON 0,\r\n"
-            "{TM1SUBSETTOSET([d3].[d3],\"s3\")} DIMENSION PROPERTIES MEMBER_NAME ON 1\r\n"
+            'NON EMPTY {TM1SUBSETTOSET([d2].[d2],"s2")} DIMENSION PROPERTIES MEMBER_NAME ON 0,\r\n'
+            '{TM1SUBSETTOSET([d3].[d3],"s3")} DIMENSION PROPERTIES MEMBER_NAME ON 1\r\n'
             "FROM [c1]\r\n"
             "WHERE ([d1].[d1].[e1])",
-            native_view.mdx)
+            native_view.mdx,
+        )
 
     def test_substitute_title(self):
         s1 = Subset("s1", "d1", "d1", None, None, ["e1", "e2"])
@@ -124,29 +135,43 @@ class TestNativeView(unittest.TestCase):
             suppress_empty_rows=False,
             titles=[ViewTitleSelection("d1", s1, "e1")],
             columns=[ViewAxisSelection("d2", s2)],
-            rows=[ViewAxisSelection("d3", s3)])
+            rows=[ViewAxisSelection("d3", s3)],
+        )
 
         native_view.substitute_title("d1", "e2")
 
         self.assertEqual(native_view.titles[0].selected, "e2")
 
     def test_from_dict_with_unregistered_subsets(self):
-        view_json = json.dumps({
-            "@odata.type": "ibm.tm1.api.v1.NativeView",
-            "Name": "Default",
-            "Columns": [{"Subset": {
-                "Hierarchy@odata.bind": "Dimensions('d2')/Hierarchies('d2')",
-                "Expression": "{[d2].[e3],[d2].[e4]}"}}],
-            "Rows": [{"Subset": {
-                "Hierarchy@odata.bind": "Dimensions('d1')/Hierarchies('d1')",
-                "Elements@odata.bind": [
-                    "Dimensions('d1')/Hierarchies('d1')/Elements('e1')",
-                    "Dimensions('d1')/Hierarchies('d1')/Elements('e2')"]}}],
-            "Titles": [],
-            "SuppressEmptyColumns": False,
-            "SuppressEmptyRows": False,
-            "FormatString": "0.#########"
-        })
+        view_json = json.dumps(
+            {
+                "@odata.type": "ibm.tm1.api.v1.NativeView",
+                "Name": "Default",
+                "Columns": [
+                    {
+                        "Subset": {
+                            "Hierarchy@odata.bind": "Dimensions('d2')/Hierarchies('d2')",
+                            "Expression": "{[d2].[e3],[d2].[e4]}",
+                        }
+                    }
+                ],
+                "Rows": [
+                    {
+                        "Subset": {
+                            "Hierarchy@odata.bind": "Dimensions('d1')/Hierarchies('d1')",
+                            "Elements@odata.bind": [
+                                "Dimensions('d1')/Hierarchies('d1')/Elements('e1')",
+                                "Dimensions('d1')/Hierarchies('d1')/Elements('e2')",
+                            ],
+                        }
+                    }
+                ],
+                "Titles": [],
+                "SuppressEmptyColumns": False,
+                "SuppressEmptyRows": False,
+                "FormatString": "0.#########",
+            }
+        )
 
         view = NativeView.from_json(view_json, cube_name="c1")
 
@@ -161,21 +186,32 @@ class TestNativeView(unittest.TestCase):
         self.assertEqual(["e1", "e2"], view.rows[0].subset.elements)
 
     def test_from_dict_with_ampersand_element_name(self):
-        view_json = json.dumps({
-            "@odata.type": "ibm.tm1.api.v1.NativeView",
-            "Name": "Default",
-            "Columns": [{"Subset": {
-                "Hierarchy@odata.bind": "Dimensions('d2')/Hierarchies('d2')",
-                "Expression": "{[d2].[P&L]}"}}],
-            "Rows": [{"Subset": {
-                "Hierarchy@odata.bind": "Dimensions('d1')/Hierarchies('d1')",
-                "Elements@odata.bind": [
-                    "Dimensions('d1')/Hierarchies('d1')/Elements('A&B')"]}}],
-            "Titles": [],
-            "SuppressEmptyColumns": False,
-            "SuppressEmptyRows": False,
-            "FormatString": "0.#########"
-        })
+        view_json = json.dumps(
+            {
+                "@odata.type": "ibm.tm1.api.v1.NativeView",
+                "Name": "Default",
+                "Columns": [
+                    {
+                        "Subset": {
+                            "Hierarchy@odata.bind": "Dimensions('d2')/Hierarchies('d2')",
+                            "Expression": "{[d2].[P&L]}",
+                        }
+                    }
+                ],
+                "Rows": [
+                    {
+                        "Subset": {
+                            "Hierarchy@odata.bind": "Dimensions('d1')/Hierarchies('d1')",
+                            "Elements@odata.bind": ["Dimensions('d1')/Hierarchies('d1')/Elements('A&B')"],
+                        }
+                    }
+                ],
+                "Titles": [],
+                "SuppressEmptyColumns": False,
+                "SuppressEmptyRows": False,
+                "FormatString": "0.#########",
+            }
+        )
 
         view = NativeView.from_json(view_json, cube_name="c1")
 
@@ -190,18 +226,25 @@ class TestNativeView(unittest.TestCase):
         self.assertEqual(["A&B"], view.rows[0].subset.elements)
 
     def test_from_dict_with_registered_subsets(self):
-        view_json = json.dumps({
-            "@odata.type": "ibm.tm1.api.v1.NativeView",
-            "Name": "Default", "Columns": [{
-                "Subset": {
-                    "Hierarchy@odata.bind": "Dimensions('d2')/Hierarchies('d2')",
-                    "Expression": "{[d2].[e1],[d2].[e2]}"}}],
-            "Rows": [{
-                "Subset@odata.bind": "Dimensions('d1')/Hierarchies('d1')/Subsets('Registered Subset')"}],
-            "Titles": [],
-            "SuppressEmptyColumns": False,
-            "SuppressEmptyRows": False,
-            "FormatString": "0.#########"})
+        view_json = json.dumps(
+            {
+                "@odata.type": "ibm.tm1.api.v1.NativeView",
+                "Name": "Default",
+                "Columns": [
+                    {
+                        "Subset": {
+                            "Hierarchy@odata.bind": "Dimensions('d2')/Hierarchies('d2')",
+                            "Expression": "{[d2].[e1],[d2].[e2]}",
+                        }
+                    }
+                ],
+                "Rows": [{"Subset@odata.bind": "Dimensions('d1')/Hierarchies('d1')/Subsets('Registered Subset')"}],
+                "Titles": [],
+                "SuppressEmptyColumns": False,
+                "SuppressEmptyRows": False,
+                "FormatString": "0.#########",
+            }
+        )
 
         view = NativeView.from_json(view_json, cube_name="c1")
 
@@ -216,20 +259,29 @@ class TestNativeView(unittest.TestCase):
         self.assertEqual("{[d2].[e1],[d2].[e2]}", view.columns[0].subset.expression)
 
     def test_from_dict_with_registered_subset_in_title(self):
-        view_json = json.dumps({
-            "@odata.type": "ibm.tm1.api.v1.NativeView",
-            "Name": "Default",
-            "Columns": [{
-                "Subset": {
-                    "Hierarchy@odata.bind": "Dimensions('d2')/Hierarchies('d2')",
-                    "Expression": "{[d2].[e1],[d2].[e2]}"}}],
-            "Rows": [],
-            "Titles": [{
-                "Subset@odata.bind": "Dimensions('d1')/Hierarchies('d1')/Subsets('Registered Subset')",
-                "Selected@odata.bind": "Dimensions('d1')/Hierarchies('d1')/Elements('e1')"}],
-            "SuppressEmptyColumns": False,
-            "SuppressEmptyRows": False,
-            "FormatString": "0.#########"}
+        view_json = json.dumps(
+            {
+                "@odata.type": "ibm.tm1.api.v1.NativeView",
+                "Name": "Default",
+                "Columns": [
+                    {
+                        "Subset": {
+                            "Hierarchy@odata.bind": "Dimensions('d2')/Hierarchies('d2')",
+                            "Expression": "{[d2].[e1],[d2].[e2]}",
+                        }
+                    }
+                ],
+                "Rows": [],
+                "Titles": [
+                    {
+                        "Subset@odata.bind": "Dimensions('d1')/Hierarchies('d1')/Subsets('Registered Subset')",
+                        "Selected@odata.bind": "Dimensions('d1')/Hierarchies('d1')/Elements('e1')",
+                    }
+                ],
+                "SuppressEmptyColumns": False,
+                "SuppressEmptyRows": False,
+                "FormatString": "0.#########",
+            }
         )
 
         view = NativeView.from_json(view_json, cube_name="c1")

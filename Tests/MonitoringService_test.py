@@ -19,8 +19,8 @@ class TestMonitoringService(unittest.TestCase):
 
         # Connection to TM1
         cls.config = configparser.ConfigParser()
-        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
-        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        cls.config.read(Path(__file__).parent.joinpath("config.ini"))
+        cls.tm1 = TM1Service(**cls.config["tm1srv01"])
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
             cls.tm1.monitoring
@@ -28,9 +28,10 @@ class TestMonitoringService(unittest.TestCase):
     @skip_if_version_higher_or_equal_than(version="12.0.0")
     def test_get_threads(self):
         threads = self.tm1.monitoring.get_threads()
-        self.assertTrue(any(thread["Function"] == "GET /api/v1/Threads" for thread in threads)
-                        or
-                        any(thread["Function"] == "GET /Threads" for thread in threads))
+        self.assertTrue(
+            any(thread["Function"] == "GET /api/v1/Threads" for thread in threads)
+            or any(thread["Function"] == "GET /Threads" for thread in threads)
+        )
 
     def test_get_active_users(self):
         current_user = self.tm1.security.get_current_user()
@@ -54,43 +55,43 @@ class TestMonitoringService(unittest.TestCase):
     def test_get_sessions(self):
         sessions = self.tm1.monitoring.get_sessions()
         self.assertTrue(len(sessions) > 0)
-        self.assertIn('ID', sessions[0])
-        self.assertIn('Context', sessions[0])
-        self.assertIn('Active', sessions[0])
-        self.assertIn('User', sessions[0])
-        self.assertIn('Threads', sessions[0])
+        self.assertIn("ID", sessions[0])
+        self.assertIn("Context", sessions[0])
+        self.assertIn("Active", sessions[0])
+        self.assertIn("User", sessions[0])
+        self.assertIn("Threads", sessions[0])
 
     def test_get_sessions_exclude_user(self):
         sessions = self.tm1.monitoring.get_sessions(include_user=False)
         self.assertTrue(len(sessions) > 0)
-        self.assertIn('ID', sessions[0])
-        self.assertIn('Context', sessions[0])
-        self.assertIn('Active', sessions[0])
-        self.assertNotIn('User', sessions[0])
-        self.assertIn('Threads', sessions[0])
+        self.assertIn("ID", sessions[0])
+        self.assertIn("Context", sessions[0])
+        self.assertIn("Active", sessions[0])
+        self.assertNotIn("User", sessions[0])
+        self.assertIn("Threads", sessions[0])
 
     def test_get_sessions_exclude_threads(self):
         sessions = self.tm1.monitoring.get_sessions(include_threads=False)
         self.assertTrue(len(sessions) > 0)
-        self.assertIn('ID', sessions[0])
-        self.assertIn('Context', sessions[0])
-        self.assertIn('Active', sessions[0])
-        self.assertIn('User', sessions[0])
-        self.assertNotIn('Threads', sessions[0])
+        self.assertIn("ID", sessions[0])
+        self.assertIn("Context", sessions[0])
+        self.assertIn("Active", sessions[0])
+        self.assertIn("User", sessions[0])
+        self.assertNotIn("Threads", sessions[0])
 
     def test_get_sessions_exclude_threads_and_user(self):
         sessions = self.tm1.monitoring.get_sessions(include_threads=False, include_user=False)
         self.assertTrue(len(sessions) > 0)
-        self.assertIn('ID', sessions[0])
-        self.assertIn('Context', sessions[0])
-        self.assertIn('Active', sessions[0])
-        self.assertNotIn('User', sessions[0])
-        self.assertNotIn('Threads', sessions[0])
+        self.assertIn("ID", sessions[0])
+        self.assertIn("Context", sessions[0])
+        self.assertIn("Active", sessions[0])
+        self.assertNotIn("User", sessions[0])
+        self.assertNotIn("Threads", sessions[0])
 
     @classmethod
     def tearDownClass(cls):
         cls.tm1.logout()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

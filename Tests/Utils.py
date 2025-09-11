@@ -5,7 +5,7 @@ from TM1py.Utils.Utils import verify_version
 
 
 def skip_if_no_pandas(func):
-    """ 
+    """
     Checks whether pandas is installed and skips the test if not
     """
 
@@ -22,8 +22,8 @@ def skip_if_no_pandas(func):
 
 
 def skip_if_version_lower_than(version):
-    """ 
-    Checks whether TM1 version is lower than a certain version and skips the test 
+    """
+    Checks whether TM1 version is lower than a certain version and skips the test
     if this is the case. This function is useful if a test needs a minimum required version.
     """
 
@@ -31,9 +31,7 @@ def skip_if_version_lower_than(version):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
             if not verify_version(required_version=version, version=self.tm1.version):
-                return self.skipTest(
-                    f"Function '{func.__name__,}' requires TM1 server version >= '{version}'"
-                )
+                return self.skipTest(f"Function '{func.__name__,}' requires TM1 server version >= '{version}'")
             else:
                 return func(self, *args, **kwargs)
 
@@ -44,7 +42,7 @@ def skip_if_version_lower_than(version):
 
 def skip_if_version_higher_or_equal_than(version):
     """
-    Checks whether TM1 version is higher or equal than a certain version and skips the test 
+    Checks whether TM1 version is higher or equal than a certain version and skips the test
     if this is the case. This function is useful if a test should not run for higher versions.
     """
 
@@ -52,9 +50,7 @@ def skip_if_version_higher_or_equal_than(version):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
             if verify_version(required_version=version, version=self.tm1.version):
-                return self.skipTest(
-                    f"Function '{func.__name__,}' requires TM1 server version < '{version}'"
-                )
+                return self.skipTest(f"Function '{func.__name__,}' requires TM1 server version < '{version}'")
             else:
                 return func(self, *args, **kwargs)
 
@@ -72,9 +68,7 @@ def skip_if_auth_not_basic(version):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
             if self.tm1.conn._auth_mode != AuthenticationMode.BASIC:
-                return self.skipTest(
-                    f"Function '{func.__name__,}' requires IntegratedSecurityMode1 (Basic)"
-                )
+                return self.skipTest(f"Function '{func.__name__,}' requires IntegratedSecurityMode1 (Basic)")
             else:
                 return func(self, *args, **kwargs)
 
@@ -92,9 +86,7 @@ def skip_if_paoc(version):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
             if "planning-analytics.ibmcloud.com/tm1/api" in self.tm1.conn._base_url:
-                return self.skipTest(
-                    f"Function '{func.__name__,}' requires on prem TM1 instead of PAoC"
-                )
+                return self.skipTest(f"Function '{func.__name__,}' requires on prem TM1 instead of PAoC")
             else:
                 return func(self, *args, **kwargs)
 

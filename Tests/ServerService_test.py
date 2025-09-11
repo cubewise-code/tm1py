@@ -35,44 +35,38 @@ class TestServerService(unittest.TestCase):
 
         # Connection to TM1
         cls.config = configparser.ConfigParser()
-        cls.config.read(Path(__file__).parent.joinpath('config.ini'))
-        cls.tm1 = TM1Service(**cls.config['tm1srv01'])
+        cls.config.read(Path(__file__).parent.joinpath("config.ini"))
+        cls.tm1 = TM1Service(**cls.config["tm1srv01"])
 
         # create a simple cube with dimensions to test transactionlog methods
         if not cls.tm1.dimensions.exists(cls.dimension_name1):
             d = Dimension(cls.dimension_name1)
             h = Hierarchy(cls.dimension_name1, cls.dimension_name1)
-            h.add_element('Total Years', 'Consolidated')
-            h.add_element('No Year', 'Numeric')
+            h.add_element("Total Years", "Consolidated")
+            h.add_element("No Year", "Numeric")
             for year in range(1989, 2040, 1):
-                h.add_element(str(year), 'Numeric')
-                h.add_edge('Total Years', str(year), 1)
+                h.add_element(str(year), "Numeric")
+                h.add_edge("Total Years", str(year), 1)
             d.add_hierarchy(h)
             cls.tm1.dimensions.update_or_create(d)
 
         if not cls.tm1.dimensions.exists(cls.dimension_name2):
             d = Dimension(cls.dimension_name2)
             h = Hierarchy(cls.dimension_name2, cls.dimension_name2)
-            h.add_element('Value', 'Numeric')
+            h.add_element("Value", "Numeric")
             d.add_hierarchy(h)
             cls.tm1.dimensions.update_or_create(d)
 
         if not cls.tm1.cubes.exists(cls.cube_name):
-            cube = Cube(
-                cls.cube_name,
-                [cls.dimension_name1, cls.dimension_name2])
+            cube = Cube(cls.cube_name, [cls.dimension_name1, cls.dimension_name2])
             cls.tm1.cubes.update_or_create(cube)
 
         # inject process with ItemReject
-        cls.process1 = Process(
-            name=cls.process_name1,
-            prolog_procedure="ItemReject('TM1py Tests');")
+        cls.process1 = Process(name=cls.process_name1, prolog_procedure="ItemReject('TM1py Tests');")
         cls.tm1.processes.update_or_create(cls.process1)
 
         # inject process that does nothing and runs successful
-        cls.process2 = Process(
-            name=cls.process_name2,
-            prolog_procedure="sText = 'text';")
+        cls.process2 = Process(name=cls.process_name2, prolog_procedure="sText = 'text';")
         cls.tm1.processes.update_or_create(cls.process2)
 
         cls.tm1.server.activate_audit_log()
@@ -101,8 +95,7 @@ class TestServerService(unittest.TestCase):
         self.assertGreater(len(data_directory), 0)
 
         active_configuration = self.tm1.server.get_active_configuration()
-        self.assertEqual(
-            data_directory, active_configuration["Administration"]["DataBaseDirectory"])
+        self.assertEqual(data_directory, active_configuration["Administration"]["DataBaseDirectory"])
 
     def test_get_static_configuration(self):
         static_configuration = self.tm1.server.get_static_configuration()
@@ -115,27 +108,16 @@ class TestServerService(unittest.TestCase):
 
     def test_get_active_configuration(self):
         active_configuration = self.tm1.server.get_active_configuration()
-        self.assertEqual(
-            int(self.tm1._tm1_rest._port),
-            int(active_configuration["Access"]["HTTP"]["Port"]))
+        self.assertEqual(int(self.tm1._tm1_rest._port), int(active_configuration["Access"]["HTTP"]["Port"]))
 
     def test_update_static_configuration(self):
         for new_mtq_threads in (4, 8):
-            config_changes = {
-                "Performance": {
-                    "MTQ": {
-                        "NumberOfThreadsToUse": new_mtq_threads
-                    }
-                }
-            }
-            response = self.tm1.server.update_static_configuration(
-                config_changes)
+            config_changes = {"Performance": {"MTQ": {"NumberOfThreadsToUse": new_mtq_threads}}}
+            response = self.tm1.server.update_static_configuration(config_changes)
             self.assertTrue(response.ok)
 
             active_config = self.tm1.server.get_active_configuration()
-            self.assertEqual(
-                active_config["Performance"]["MTQ"]["NumberOfThreadsToUse"],
-                new_mtq_threads - 1)
+            self.assertEqual(active_config["Performance"]["MTQ"]["NumberOfThreadsToUse"], new_mtq_threads - 1)
 
     @unittest.skip("Doesn't work sometimes")
     def test_get_last_process_message_from_message_log(self):
@@ -148,17 +130,15 @@ class TestServerService(unittest.TestCase):
                 raise e
         # TM1 takes one second to write to the message-log
         time.sleep(1)
-        log_entry = self.tm1.server.get_last_process_message_from_messagelog(
-            self.process_name1)
-        regex = re.compile('TM1ProcessError_.*.log')
+        log_entry = self.tm1.server.get_last_process_message_from_messagelog(self.process_name1)
+        regex = re.compile("TM1ProcessError_.*.log")
         self.assertTrue(regex.search(log_entry))
 
         self.tm1.processes.execute(self.process_name2)
         # TM1 takes one second to write to the message-log
         time.sleep(1)
-        log_entry = self.tm1.server.get_last_process_message_from_messagelog(
-            self.process_name2)
-        regex = re.compile('TM1ProcessError_.*.log')
+        log_entry = self.tm1.server.get_last_process_message_from_messagelog(self.process_name2)
+        regex = re.compile("TM1ProcessError_.*.log")
         self.assertFalse(regex.search(log_entry))
 
     def test_get_last_transaction_log_entries(self):
@@ -167,25 +147,17 @@ class TestServerService(unittest.TestCase):
         # Digest time in TM1
         time.sleep(8)
 
-        user = self.config['tm1srv01']['user']
+        user = self.config["tm1srv01"]["user"]
         cube = self.cube_name
 
         # Query transaction log with top filter
-        entries = self.tm1.server.get_transaction_log_entries(
-            reverse=True,
-            user=user,
-            cube=cube,
-            top=3)
-        values_from_top = [entry['NewValue'] for entry in entries]
+        entries = self.tm1.server.get_transaction_log_entries(reverse=True, user=user, cube=cube, top=3)
+        values_from_top = [entry["NewValue"] for entry in entries]
         self.assertGreaterEqual(len(values_from_top), 3)
 
         # Query transaction log with Since filter
-        entries = self.tm1.server.get_transaction_log_entries(
-            reverse=True,
-            cube=cube,
-            since=tmstp,
-            top=10)
-        values_from_since = [entry['NewValue'] for entry in entries]
+        entries = self.tm1.server.get_transaction_log_entries(reverse=True, cube=cube, since=tmstp, top=10)
+        values_from_since = [entry["NewValue"] for entry in entries]
         self.assertGreaterEqual(len(values_from_since), 3)
 
         # Compare values written to cube vs. values retrieved from transaction log
@@ -199,17 +171,14 @@ class TestServerService(unittest.TestCase):
         # Digest time in TM1
         time.sleep(8)
 
-        user = self.config['tm1srv01']['user']
+        user = self.config["tm1srv01"]["user"]
         cube = self.cube_name
 
         # Query transaction log with Since and Elements filter
         entries = self.tm1.server.get_transaction_log_entries(
-            reverse=True,
-            cube=cube,
-            element_tuple_filter={'2001': 'eq'},
-            since=tmstp,
-            top=10)
-        values_from_elements = [entry['NewValue'] for entry in entries]
+            reverse=True, cube=cube, element_tuple_filter={"2001": "eq"}, since=tmstp, top=10
+        )
+        values_from_elements = [entry["NewValue"] for entry in entries]
         self.assertEqual(len(values_from_elements), 1)
 
         # Compare value written to cube vs. value from filtered log
@@ -217,47 +186,38 @@ class TestServerService(unittest.TestCase):
         self.assertAlmostEqual(values_from_elements[0], random_values[1])
 
     def write_values_to_cube(self):
-        self.tm1.processes.execute_ti_code(
-            lines_prolog="CubeSetLogChanges('{}', {});".format(self.cube_name, 1))
+        self.tm1.processes.execute_ti_code(lines_prolog="CubeSetLogChanges('{}', {});".format(self.cube_name, 1))
         tmstp = datetime.datetime.utcnow()
 
         # Generate 3 random numbers
         random_values = [random.uniform(-10, 10) for _ in range(3)]
 
         # Write value 1 to cube
-        cellset = {
-            ('2000', 'Value'): random_values[0]
-        }
+        cellset = {("2000", "Value"): random_values[0]}
         self.tm1.cubes.cells.write_values(self.cube_name, cellset)
 
         # Digest time in TM1
         time.sleep(1)
 
         # Write value 2 to cube
-        cellset = {
-            ('2001', 'Value'): random_values[1]
-        }
+        cellset = {("2001", "Value"): random_values[1]}
         self.tm1.cubes.cells.write_values(self.cube_name, cellset)
 
         # Digest time in TM1
         time.sleep(1)
 
         # Write value 3 to cube
-        cellset = {
-            ('2002', 'Value'): random_values[2]
-        }
+        cellset = {("2002", "Value"): random_values[2]}
         self.tm1.cubes.cells.write_values(self.cube_name, cellset)
         return random_values, tmstp
 
     def test_get_transaction_log_entries_from_today(self):
         # get datetime from today at 00:00:00
-        today = datetime.datetime.combine(
-            datetime.date.today(), datetime.time(0, 0))
-        entries = self.tm1.server.get_transaction_log_entries(
-            reverse=True, since=today)
+        today = datetime.datetime.combine(datetime.date.today(), datetime.time(0, 0))
+        entries = self.tm1.server.get_transaction_log_entries(reverse=True, since=today)
         self.assertTrue(len(entries) > 0)
         for entry in entries:
-            entry_timestamp = parser.parse(entry['TimeStamp'])
+            entry_timestamp = parser.parse(entry["TimeStamp"])
             # all the entries should have today's date
             entry_date = entry_timestamp.date()
             today_date = datetime.date.today()
@@ -265,12 +225,11 @@ class TestServerService(unittest.TestCase):
 
     def test_get_audit_log_entries_from_today(self):
         # get datetime from today at 00:00:00
-        today = datetime.datetime.combine(
-            datetime.date.today(), datetime.time(0, 0))
+        today = datetime.datetime.combine(datetime.date.today(), datetime.time(0, 0))
         entries = self.tm1.server.get_audit_log_entries(since=today)
         self.assertTrue(len(entries) > 0)
         for entry in entries:
-            entry_timestamp = parser.parse(entry['TimeStamp'])
+            entry_timestamp = parser.parse(entry["TimeStamp"])
             # all the entries should have today's date
             entry_date = entry_timestamp.date()
             today_date = datetime.date.today()
@@ -281,14 +240,14 @@ class TestServerService(unittest.TestCase):
         entries = self.tm1.server.get_audit_log_entries(object_type="Process")
         self.assertTrue(len(entries) > 0)
         for entry in entries:
-            self.assertEqual('Process', entry['ObjectType'])
+            self.assertEqual("Process", entry["ObjectType"])
 
     def test_get_audit_log_entries_object_name_filter(self):
         # get datetime from today at 00:00:00
         entries = self.tm1.server.get_audit_log_entries(object_name="SYSTEM")
         self.assertTrue(len(entries) > 0)
         for entry in entries:
-            self.assertEqual('SYSTEM', entry['ObjectName'])
+            self.assertEqual("SYSTEM", entry["ObjectName"])
 
     def test_get_audit_log_entries_top(self):
         # get datetime from today at 00:00:00
@@ -297,30 +256,26 @@ class TestServerService(unittest.TestCase):
 
     def test_get_transaction_log_entries_until_yesterday(self):
         # get datetime until yesterday at 00:00:00
-        yesterday = datetime.datetime.combine(
-            datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
-        entries = self.tm1.server.get_transaction_log_entries(
-            reverse=True, until=yesterday)
+        yesterday = datetime.datetime.combine(datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
+        entries = self.tm1.server.get_transaction_log_entries(reverse=True, until=yesterday)
         self.assertTrue(len(entries) > 0)
         for entry in entries:
             # skip invalid timestamps from log
-            if entry['TimeStamp'] == '0000-00-00T00:00Z':
+            if entry["TimeStamp"] == "0000-00-00T00:00Z":
                 continue
 
-            entry_timestamp = parser.parse(entry['TimeStamp'])
+            entry_timestamp = parser.parse(entry["TimeStamp"])
             entry_date = entry_timestamp.date()
             yesterdays_date = datetime.date.today() - timedelta(days=1)
             self.assertTrue(entry_date <= yesterdays_date)
 
     def test_get_message_log_entries_from_today(self):
         # get datetime from today at 00:00:00
-        today = datetime.datetime.combine(
-            datetime.date.today(), datetime.time(0, 0))
-        entries = self.tm1.server.get_message_log_entries(
-            reverse=True, since=today)
+        today = datetime.datetime.combine(datetime.date.today(), datetime.time(0, 0))
+        entries = self.tm1.server.get_message_log_entries(reverse=True, since=today)
 
         for entry in entries:
-            entry_timestamp = parser.parse(entry['TimeStamp'])
+            entry_timestamp = parser.parse(entry["TimeStamp"])
             # all the entries should have today's date
             entry_date = entry_timestamp.date()
             today_date = datetime.date.today()
@@ -328,102 +283,93 @@ class TestServerService(unittest.TestCase):
 
     def test_get_message_log_entries_until_yesterday(self):
         # get datetime until yesterday at 00:00:00
-        yesterday = datetime.datetime.combine(
-            datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
+        yesterday = datetime.datetime.combine(datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
 
-        entries = self.tm1.server.get_message_log_entries(
-            reverse=True, until=yesterday)
+        entries = self.tm1.server.get_message_log_entries(reverse=True, until=yesterday)
         self.assertTrue(len(entries) > 0)
         for entry in entries:
             # skip invalid timestamps from log
-            if entry['TimeStamp'] == '0000-00-00T00:00Z':
+            if entry["TimeStamp"] == "0000-00-00T00:00Z":
                 continue
 
-            entry_timestamp = parser.parse(entry['TimeStamp'])
+            entry_timestamp = parser.parse(entry["TimeStamp"])
             entry_date = entry_timestamp.date()
             yesterdays_date = datetime.date.today() - timedelta(days=1)
             self.assertTrue(entry_date <= yesterdays_date)
 
     def test_get_message_log_entries_only_yesterday(self):
         # get datetime only yesterday at 00:00:00
-        yesterday = datetime.datetime.combine(
-            datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
-        today = datetime.datetime.combine(
-            datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
+        yesterday = datetime.datetime.combine(datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
+        today = datetime.datetime.combine(datetime.date.today() - timedelta(days=1), datetime.time(0, 0))
 
-        entries = self.tm1.server.get_message_log_entries(
-            reverse=True, since=yesterday, until=today)
+        entries = self.tm1.server.get_message_log_entries(reverse=True, since=yesterday, until=today)
         for entry in entries:
-            entry_timestamp = parser.parse(entry['TimeStamp'])
+            entry_timestamp = parser.parse(entry["TimeStamp"])
             entry_date = entry_timestamp.date()
             yesterdays_date = datetime.date.today() - timedelta(days=1)
             self.assertTrue(entry_date == yesterdays_date)
 
     def test_get_message_log_with_contains_single(self):
-        wildcards = ['TM1 Server is READY']
+        wildcards = ["TM1 Server is READY"]
 
         entries = self.tm1.server.get_message_log_entries(
-            reverse=True,
-            msg_contains=wildcards,
-            msg_contains_operator="AND")
+            reverse=True, msg_contains=wildcards, msg_contains_operator="AND"
+        )
 
         self.assertGreater(len(entries), 1)
 
         for entry in entries:
-            message = entry['Message'].upper().replace(' ', '')
+            message = entry["Message"].upper().replace(" ", "")
 
-            self.assertIn(wildcards[0].upper().replace(' ', ''), message)
+            self.assertIn(wildcards[0].upper().replace(" ", ""), message)
 
     def test_get_message_log_with_contains_filter_and(self):
 
-        wildcards = ['TM1 Server is ready', 'elapsed time']
+        wildcards = ["TM1 Server is ready", "elapsed time"]
 
         entries = self.tm1.server.get_message_log_entries(
-            reverse=True,
-            msg_contains=wildcards,
-            msg_contains_operator="AND")
+            reverse=True, msg_contains=wildcards, msg_contains_operator="AND"
+        )
 
         self.assertGreater(len(entries), 1)
 
         for entry in entries:
-            message = entry['Message'].upper().replace(' ', '')
+            message = entry["Message"].upper().replace(" ", "")
 
-            self.assertIn(wildcards[0].upper().replace(' ', ''), message)
-            self.assertIn(wildcards[1].upper().replace(' ', ''), message)
+            self.assertIn(wildcards[0].upper().replace(" ", ""), message)
+            self.assertIn(wildcards[1].upper().replace(" ", ""), message)
 
     def test_get_message_log_with_contains_filter_or_1(self):
 
-        wildcards = ['TM1 Server is ready', 'invalid entry']
+        wildcards = ["TM1 Server is ready", "invalid entry"]
 
         entries = self.tm1.server.get_message_log_entries(
-            reverse=True,
-            msg_contains=wildcards,
-            msg_contains_operator="OR")
+            reverse=True, msg_contains=wildcards, msg_contains_operator="OR"
+        )
 
         self.assertGreater(len(entries), 1)
 
         for entry in entries:
-            message = entry['Message'].upper().replace(' ', '')
+            message = entry["Message"].upper().replace(" ", "")
 
-            self.assertIn(wildcards[0].upper().replace(' ', ''), message)
-            self.assertNotIn(wildcards[1].upper().replace(' ', ''), message)
+            self.assertIn(wildcards[0].upper().replace(" ", ""), message)
+            self.assertNotIn(wildcards[1].upper().replace(" ", ""), message)
 
     def test_get_message_log_with_contains_filter_or_2(self):
 
-        wildcards = ['invalid entry', 'elapsed time']
+        wildcards = ["invalid entry", "elapsed time"]
 
         entries = self.tm1.server.get_message_log_entries(
-            reverse=True,
-            msg_contains=wildcards,
-            msg_contains_operator="OR")
+            reverse=True, msg_contains=wildcards, msg_contains_operator="OR"
+        )
 
         self.assertGreater(len(entries), 1)
 
         for entry in entries:
-            message = entry['Message'].upper().replace(' ', '')
+            message = entry["Message"].upper().replace(" ", "")
 
-            self.assertNotIn(wildcards[0].upper().replace(' ', ''), message)
-            self.assertIn(wildcards[1].upper().replace(' ', ''), message)
+            self.assertNotIn(wildcards[0].upper().replace(" ", ""), message)
+            self.assertIn(wildcards[1].upper().replace(" ", ""), message)
 
     def test_session_context_default(self):
         threads = self.tm1.monitoring.get_threads()
@@ -431,18 +377,15 @@ class TestServerService(unittest.TestCase):
 
     def test_session_context_custom(self):
         app_name = "Some Application"
-        with TM1Service(**self.config['tm1srv01'], session_context=app_name) as tm1:
+        with TM1Service(**self.config["tm1srv01"], session_context=app_name) as tm1:
             threads = tm1.monitoring.get_threads()
             self._test_session_context(threads, app_name)
 
     def _test_session_context(self, threads: list, app_name: str) -> None:
         for thread in threads:
             if (
-                "GET /Threads" in thread["Function"]
-                or "GET /api/v1/Threads" in thread["Function"]
-            ) and lower_and_drop_spaces(thread["Name"]) == lower_and_drop_spaces(
-                self.config["tm1srv01"]["user"]
-            ):
+                "GET /Threads" in thread["Function"] or "GET /api/v1/Threads" in thread["Function"]
+            ) and lower_and_drop_spaces(thread["Name"]) == lower_and_drop_spaces(self.config["tm1srv01"]["user"]):
                 self.assertTrue(thread["Context"] == app_name)
                 return
         raise Exception("Did not find my own Thread")
@@ -458,5 +401,5 @@ class TestServerService(unittest.TestCase):
         cls.tm1.logout()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

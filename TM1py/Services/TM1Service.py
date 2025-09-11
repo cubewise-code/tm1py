@@ -1,9 +1,23 @@
 import pickle
 import warnings
 
-from TM1py.Services import HierarchyService, SecurityService, ApplicationService, SubsetService, \
-     ProcessService, AnnotationService, ViewService, RestService, CellService, \
-     ChoreService, DimensionService, CubeService, ElementService, SandboxService, GitService
+from TM1py.Services import (
+    HierarchyService,
+    SecurityService,
+    ApplicationService,
+    SubsetService,
+    ProcessService,
+    AnnotationService,
+    ViewService,
+    RestService,
+    CellService,
+    ChoreService,
+    DimensionService,
+    CubeService,
+    ElementService,
+    SandboxService,
+    GitService,
+)
 from TM1py.Services.FileService import FileService
 from TM1py.Services.JobService import JobService
 from TM1py.Services.UserService import UserService
@@ -19,14 +33,15 @@ from TM1py.Services.PowerBiService import PowerBiService
 from TM1py.Services.ServerService import ServerService
 from TM1py.Services.MonitoringService import MonitoringService
 
+
 class TM1Service:
-    """ All features of TM1py are exposed through this service
-    
+    """All features of TM1py are exposed through this service
+
     Can be saved and restored from File, to avoid multiple authentication with TM1.
     """
 
     def __init__(self, **kwargs):
-        """ Initiate the TM1Service
+        """Initiate the TM1Service
 
         :param address: String - address of the TM1 instance
         :param port: Int - HTTPPortNumber as specified in the tm1s.cfg
@@ -91,7 +106,7 @@ class TM1Service:
         self.configuration = ConfigurationService(self._tm1_rest)
         self.audit_logs = AuditLogService(self._tm1_rest)
 
-        #higher level modules
+        # higher level modules
         self.power_bi = PowerBiService(self._tm1_rest)
         self.loggers = LoggerService(self._tm1_rest)
 
@@ -109,13 +124,13 @@ class TM1Service:
             self.logout()
         except Exception as e:
             warnings.warn(f"Logout Failed due to Exception: {e}")
-    
+
     @property
     def server(self):
         if not self._server:
-             self._server = ServerService(self._tm1_rest)
+            self._server = ServerService(self._tm1_rest)
         return self._server
-    
+
     @property
     def monitoring(self):
         if not self._monitoring:
@@ -139,12 +154,12 @@ class TM1Service:
         return self._tm1_rest
 
     def save_to_file(self, file_name):
-        with open(file_name, 'wb') as file:
+        with open(file_name, "wb") as file:
             pickle.dump(self, file)
 
     @classmethod
     def restore_from_file(cls, file_name):
-        with open(file_name, 'rb') as file:
+        with open(file_name, "rb") as file:
             return pickle.load(file)
 
     def re_authenticate(self):

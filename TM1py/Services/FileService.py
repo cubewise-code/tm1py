@@ -26,26 +26,25 @@ class FileService(ObjectService):
         super().__init__(tm1_rest)
         self._rest = tm1_rest
         if verify_version(required_version="12", version=self.version):
-            self.version_content_path = 'Files'
+            self.version_content_path = "Files"
         else:
-            self.version_content_path = 'Blobs'
+            self.version_content_path = "Blobs"
 
     @require_version(version="11.4")
     def get_names(self, **kwargs) -> bytes:
         warnings.warn(
-            "Function get_names will be deprecated. Use get_all_names instead",
-            DeprecationWarning,
-            stacklevel=2)
+            "Function get_names will be deprecated. Use get_all_names instead", DeprecationWarning, stacklevel=2
+        )
 
         url = format_url(
-            "/Contents('{version_content_path}')/Contents?$select=Name",
-            version_content_path=self.version_content_path)
+            "/Contents('{version_content_path}')/Contents?$select=Name", version_content_path=self.version_content_path
+        )
 
         return self._rest.GET(url, **kwargs).content
 
     @require_version(version="11.4")
     def get_all_names(self, path: Union[str, Path] = "", **kwargs) -> List[str]:
-        """ return list of blob file names
+        """return list of blob file names
 
         :param path: path to folder. When empty searches in root
         """
@@ -53,26 +52,23 @@ class FileService(ObjectService):
         url = self._construct_content_url(path, exclude_path_end=False, extension="Contents")
 
         response = self._rest.GET(url, **kwargs).content
-        return [file['Name'] for file in json.loads(response)['value']]
+        return [file["Name"] for file in json.loads(response)["value"]]
 
     @require_version(version="11.4")
     def get(self, file_name: str, **kwargs) -> bytes:
-        """ Get file
+        """Get file
 
         :param file_name: file name in root or path to file
         """
         path = Path(file_name)
         self._check_subfolder_support(path=path, function="FileService.get")
 
-        url = self._construct_content_url(
-            path=path,
-            exclude_path_end=False,
-            extension="Content")
+        url = self._construct_content_url(path=path, exclude_path_end=False, extension="Content")
 
         return self._rest.GET(url, **kwargs).content
 
     def _create_folder(self, folder_name: Union[str, Path], **kwargs):
-        """ Create folder
+        """Create folder
 
         Can only create 1 folder at a time.
         To create nested folder structures it must be called in an iterative fashion.
@@ -82,14 +78,11 @@ class FileService(ObjectService):
         path = Path(folder_name)
         url = self._construct_content_url(path, exclude_path_end=True, extension="Contents")
 
-        body = {
-            "@odata.type": "#ibm.tm1.api.v1.Folder",
-            "Name": folder_name.name
-        }
+        body = {"@odata.type": "#ibm.tm1.api.v1.Folder", "Name": folder_name.name}
         self._rest.POST(url, json.dumps(body), **kwargs)
 
-    def _construct_content_url(self, path: Path, exclude_path_end: bool = True, extension: str = 'Contents') -> str:
-        """ Dynamically construct URL to use in FileService functions
+    def _construct_content_url(self, path: Path, exclude_path_end: bool = True, extension: str = "Contents") -> str:
+        """Dynamically construct URL to use in FileService functions
 
         :param path: file name in root or path to file
         :param exclude_path_end: Some functions require complete URL to file (e.g. exists),
@@ -99,18 +92,20 @@ class FileService(ObjectService):
         """
         parent_folders = {
             f"level{str(n).zfill(4)}": parent
-            for n, parent
-            in enumerate(path.parts[:-1] if exclude_path_end else path.parts, 1)
+            for n, parent in enumerate(path.parts[:-1] if exclude_path_end else path.parts, 1)
         }
 
         url = format_url(
-            "".join([
-                "/Contents('{version_content_path}')/",
-                "/".join(f"Contents('{{{folder}}}')" for folder in parent_folders) + "/" if parent_folders else "",
-                extension
-            ]),
+            "".join(
+                [
+                    "/Contents('{version_content_path}')/",
+                    "/".join(f"Contents('{{{folder}}}')" for folder in parent_folders) + "/" if parent_folders else "",
+                    extension,
+                ]
+            ),
             version_content_path=self.version_content_path,
-            **parent_folders)
+            **parent_folders,
+        )
 
         return url.rstrip("/")
 
@@ -120,25 +115,24 @@ class FileService(ObjectService):
 
         if not verify_version(required_version=self.SUBFOLDER_REQUIRED_VERSION, version=self.version):
             raise TM1pyVersionException(
-                function=function,
-                required_version=self.SUBFOLDER_REQUIRED_VERSION,
-                feature='Subfolder')
+                function=function, required_version=self.SUBFOLDER_REQUIRED_VERSION, feature="Subfolder"
+            )
 
     def _check_mpu_support(self, function: str) -> None:
         if not verify_version(required_version=self.MPU_REQUIRED_VERSION, version=self.version):
             raise TM1pyVersionException(
-                function=function,
-                required_version=self.MPU_REQUIRED_VERSION,
-                feature='MultiProcessUpload')
+                function=function, required_version=self.MPU_REQUIRED_VERSION, feature="MultiProcessUpload"
+            )
 
     def _upload_file_content(
-            self,
-            path: Path,
-            file_content: Union[bytes, BytesIO],
-            multi_part_upload: bool = None,
-            max_mb_per_part: float = 200,
-            max_workers: int = 1,
-            **kwargs):
+        self,
+        path: Path,
+        file_content: Union[bytes, BytesIO],
+        multi_part_upload: bool = None,
+        max_mb_per_part: float = 200,
+        max_workers: int = 1,
+        **kwargs,
+    ):
         """
         :param path: file name in root or path to file
         :param file_content: file_content as bytes or BytesIO
@@ -163,29 +157,25 @@ class FileService(ObjectService):
         return self._upload_file_content_without_mpu(url, file_content, **kwargs)
 
     def _upload_file_content_without_mpu(self, url, file_content, **kwargs):
-        return self._rest.PUT(
-            url=url,
-            data=file_content,
-            headers=self.binary_http_header,
-            **kwargs)
+        return self._rest.PUT(url=url, data=file_content, headers=self.binary_http_header, **kwargs)
 
-    def _upload_file_content_with_mpu(self, content_url: str, file_content: Union[bytes, BytesIO], 
-                                      max_mb_per_part: float, max_workers: int = 1, **kwargs):
-
+    def _upload_file_content_with_mpu(
+        self,
+        content_url: str,
+        file_content: Union[bytes, BytesIO],
+        max_mb_per_part: float,
+        max_workers: int = 1,
+        **kwargs,
+    ):
 
         # Initiate multipart upload
         response = self._rest.POST(
-            url=content_url + "/mpu.CreateMultipartUpload",
-            data="{}",
-            async_requests_mode=False,
-            **kwargs)
-        upload_id = response.json()['UploadID']
+            url=content_url + "/mpu.CreateMultipartUpload", data="{}", async_requests_mode=False, **kwargs
+        )
+        upload_id = response.json()["UploadID"]
 
         # Split the file content into parts
-        parts_to_upload = self._split_into_parts(
-            data=file_content,
-            max_chunk_size=int(max_mb_per_part * 1024 * 1024)
-        )
+        parts_to_upload = self._split_into_parts(data=file_content, max_chunk_size=int(max_mb_per_part * 1024 * 1024))
 
         part_numbers_and_etags = []
 
@@ -196,13 +186,14 @@ class FileService(ObjectService):
                     part_response = self._rest.POST(
                         url=content_url + f"/!uploads('{upload_id}')/Parts",
                         data=data,
-                        headers={**self.binary_http_header, 'Accept': 'application/json,text/plain'},
+                        headers={**self.binary_http_header, "Accept": "application/json,text/plain"},
                         async_requests_mode=False,
-                        **kwargs)
+                        **kwargs,
+                    )
                     return index, part_response.json()["PartNumber"], part_response.json()["@odata.etag"]
                 except Exception as e:
                     if attempt < retries - 1:
-                        time.sleep(2 ** attempt)  # Exponential backoff
+                        time.sleep(2**attempt)  # Exponential backoff
                     else:
                         raise e from None
 
@@ -211,9 +202,8 @@ class FileService(ObjectService):
             with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
 
                 futures = {
-                    executor.submit(upload_part_with_retry, i, part, 3): i
-                    for i, part
-                    in enumerate(parts_to_upload)}
+                    executor.submit(upload_part_with_retry, i, part, 3): i for i, part in enumerate(parts_to_upload)
+                }
 
                 for future in concurrent.futures.as_completed(futures):
                     part_index, part_number, odata_etag = future.result()
@@ -229,17 +219,26 @@ class FileService(ObjectService):
         self._rest.POST(
             url=content_url + f"/!uploads('{upload_id}')/mpu.Complete",
             data=json.dumps(
-                {"Parts": [
-                    {"PartNumber": part_number, "ETag": etag}
-                    for _, part_number, etag in sorted(part_numbers_and_etags)
-                ]}
-            )
+                {
+                    "Parts": [
+                        {"PartNumber": part_number, "ETag": etag}
+                        for _, part_number, etag in sorted(part_numbers_and_etags)
+                    ]
+                }
+            ),
         )
 
     @require_version(version="11.4")
-    def create(self, file_name: Union[str, Path], file_content: Union[bytes, BytesIO], multi_part_upload: bool = None,
-               max_mb_per_part: float = 200, max_workers: int = 1, **kwargs):
-        """ Create file
+    def create(
+        self,
+        file_name: Union[str, Path],
+        file_content: Union[bytes, BytesIO],
+        multi_part_upload: bool = None,
+        max_mb_per_part: float = 200,
+        max_workers: int = 1,
+        **kwargs,
+    ):
+        """Create file
 
         Folders in file_name (e.g. folderA/folderB/file.csv) will be created implicitly
 
@@ -263,19 +262,22 @@ class FileService(ObjectService):
                 self._create_folder(folder_name=folder_path)
 
         url = self._construct_content_url(path, exclude_path_end=True, extension="Contents")
-        body = {
-            "@odata.type": "#ibm.tm1.api.v1.Document",
-            "ID": path.name,
-            "Name": path.name
-        }
+        body = {"@odata.type": "#ibm.tm1.api.v1.Document", "ID": path.name, "Name": path.name}
         self._rest.POST(url, json.dumps(body), **kwargs)
 
         return self._upload_file_content(path, file_content, multi_part_upload, max_mb_per_part, max_workers, **kwargs)
 
     @require_version(version="11.4")
-    def update(self, file_name: Union[str, Path], file_content: Union[bytes, BytesIO], multi_part_upload: bool = None,
-               max_mb_per_part: float = 200, max_workers: int = 1, **kwargs):
-        """ Update existing file
+    def update(
+        self,
+        file_name: Union[str, Path],
+        file_content: Union[bytes, BytesIO],
+        multi_part_upload: bool = None,
+        max_mb_per_part: float = 200,
+        max_workers: int = 1,
+        **kwargs,
+    ):
+        """Update existing file
 
         :param file_name: file name in root or path to file
         :param file_content: file_content as bytes or BytesIO
@@ -292,9 +294,16 @@ class FileService(ObjectService):
         return self._upload_file_content(path, file_content, multi_part_upload, max_mb_per_part, max_workers, **kwargs)
 
     @require_version(version="11.4")
-    def update_or_create(self, file_name: Union[str, Path], file_content: bytes, multi_part_upload: bool = None,
-                         max_mb_per_part: float = 200, max_workers: int = 1, **kwargs):
-        """ Create file or update file if it already exists
+    def update_or_create(
+        self,
+        file_name: Union[str, Path],
+        file_content: bytes,
+        multi_part_upload: bool = None,
+        max_mb_per_part: float = 200,
+        max_workers: int = 1,
+        **kwargs,
+    ):
+        """Create file or update file if it already exists
 
         :param file_name: file name in root or path to file
         :param file_content: file_content as bytes or BytesIO
@@ -310,38 +319,37 @@ class FileService(ObjectService):
 
     @require_version(version="11.4")
     def exists(self, file_name: Union[str, Path], **kwargs):
-        """ Check if file exists
+        """Check if file exists
 
         :param file_name: file name in root or path to file
         """
-        url = self._construct_content_url(
-            path=Path(file_name),
-            exclude_path_end=False,
-            extension="")
+        url = self._construct_content_url(path=Path(file_name), exclude_path_end=False, extension="")
 
         return self._exists(url, **kwargs)
 
     @require_version(version="11.4")
     def delete(self, file_name: Union[str, Path], **kwargs):
-        """ Delete file
+        """Delete file
 
         :param file_name: file name in root or path to file
         """
         path = Path(file_name)
         self._check_subfolder_support(path=path, function="FileService.delete")
 
-        url = self._construct_content_url(
-            path=path,
-            exclude_path_end=False,
-            extension="")
+        url = self._construct_content_url(path=path, exclude_path_end=False, extension="")
 
         return self._rest.DELETE(url, **kwargs)
 
     @require_version(version="11.4")
-    def search_string_in_name(self, name_startswith: str = None, name_contains: Iterable = None,
-                              name_contains_operator: str = 'and', path: Union[Path, str] = "",
-                              **kwargs) -> List[str]:
-        """ Return list of blob files that match search critera
+    def search_string_in_name(
+        self,
+        name_startswith: str = None,
+        name_contains: Iterable = None,
+        name_contains_operator: str = "and",
+        path: Union[Path, str] = "",
+        **kwargs,
+    ) -> List[str]:
+        """Return list of blob files that match search critera
 
         :param name_startswith: str, file name begins with (case insensitive)
         :param name_contains: iterable, found anywhere in name (case insensitive)
@@ -363,8 +371,9 @@ class FileService(ObjectService):
                 name_filters.append(format_url("contains(tolower(Name),tolower('{}'))", name_contains))
 
             elif isinstance(name_contains, Iterable):
-                name_contains_filters = [format_url("contains(tolower(Name),tolower('{}'))", wildcard)
-                                         for wildcard in name_contains]
+                name_contains_filters = [
+                    format_url("contains(tolower(Name),tolower('{}'))", wildcard) for wildcard in name_contains
+                ]
                 name_filters.append("({})".format(f" {name_contains_operator} ".join(name_contains_filters)))
 
             else:
@@ -376,10 +385,11 @@ class FileService(ObjectService):
         url = self._construct_content_url(
             path=Path(path),
             exclude_path_end=False,
-            extension="Contents?$select=Name&$filter={}".format(" and ".join(name_filters)))
+            extension="Contents?$select=Name&$filter={}".format(" and ".join(name_filters)),
+        )
         response = self._rest.GET(url, **kwargs).content
 
-        return list(file['Name'] for file in json.loads(response)['value'])
+        return list(file["Name"] for file in json.loads(response)["value"])
 
     @staticmethod
     def _split_into_parts(data: Union[bytes, BytesIO], max_chunk_size: int = 200 * 1024 * 1024):
@@ -392,7 +402,7 @@ class FileService(ObjectService):
 
         # Split data into chunks
         for i in range(0, len(data), max_chunk_size):
-            part = data[i:i + max_chunk_size]
+            part = data[i : i + max_chunk_size]
             parts.append(part)
 
         return parts

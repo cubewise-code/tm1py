@@ -7,9 +7,9 @@ from TM1py.Objects.TM1Object import TM1Object
 
 
 class HitMode(Enum):
-    BREAK_ALWAYS = 'BreakAlways'
-    BREAK_EQUAL = 'BreakEqual'
-    BREAK_GREATER_OR_EQUAL = 'BreakGreaterOrEqual'
+    BREAK_ALWAYS = "BreakAlways"
+    BREAK_EQUAL = "BreakEqual"
+    BREAK_GREATER_OR_EQUAL = "BreakGreaterOrEqual"
 
     def __str__(self):
         return self.value
@@ -46,25 +46,23 @@ class BreakPointType(Enum):
 
 
 class ProcessDebugBreakpoint(TM1Object):
-    """ Abstraction of a TM1 Process Debug Breakpoint.
-
-    """
+    """Abstraction of a TM1 Process Debug Breakpoint."""
 
     def __init__(
-            self,
-            breakpoint_id: int,
-            breakpoint_type: Union[BreakPointType, str] = BreakPointType.PROCESS_DEBUG_CONTEXT_LINE_BREAK_POINT,
-            enabled: bool = True,
-            hit_mode: Union[HitMode, str] = HitMode.BREAK_ALWAYS,
-            hit_count: int = 0,
-            expression: str = '',
-            variable_name: str = '',
-            process_name: str = '',
-            procedure: str = '',
-            line_number: int = 0,
-            object_name: str = '',
-            object_type: str = '',
-            lock_mode: str = ''
+        self,
+        breakpoint_id: int,
+        breakpoint_type: Union[BreakPointType, str] = BreakPointType.PROCESS_DEBUG_CONTEXT_LINE_BREAK_POINT,
+        enabled: bool = True,
+        hit_mode: Union[HitMode, str] = HitMode.BREAK_ALWAYS,
+        hit_count: int = 0,
+        expression: str = "",
+        variable_name: str = "",
+        process_name: str = "",
+        procedure: str = "",
+        line_number: int = 0,
+        object_name: str = "",
+        object_type: str = "",
+        lock_mode: str = "",
     ):
         self._type = BreakPointType(breakpoint_type)
         self._id = breakpoint_id
@@ -81,32 +79,37 @@ class ProcessDebugBreakpoint(TM1Object):
         self._lock_mode = lock_mode
 
     @classmethod
-    def from_dict(cls, breakpoint_as_dict: Dict) -> 'ProcessDebugBreakpoint':
+    def from_dict(cls, breakpoint_as_dict: Dict) -> "ProcessDebugBreakpoint":
         """
 
         :param breakpoint_as_dict
         :return: an instance of this class
         """
-        breakpoint_type = breakpoint_as_dict['@odata.type'][16:]
+        breakpoint_type = breakpoint_as_dict["@odata.type"][16:]
         return cls(
             breakpoint_type=breakpoint_type,
-            breakpoint_id=breakpoint_as_dict['ID'],
-            enabled=breakpoint_as_dict['Enabled'],
-            hit_mode=breakpoint_as_dict['HitMode'],
-            hit_count=breakpoint_as_dict['HitCount'],
-            expression=breakpoint_as_dict['Expression'],
-            variable_name=breakpoint_as_dict[
-                'VariableName'] if breakpoint_type == "ProcessDebugContextDataBreakpoint" else "",
-            process_name=breakpoint_as_dict[
-                'ProcessName'] if breakpoint_type == "ProcessDebugContextLineBreakpoint" else "",
-            procedure=breakpoint_as_dict['Procedure'] if breakpoint_type == "ProcessDebugContextLineBreakpoint" else "",
-            line_number=breakpoint_as_dict[
-                'LineNumber'] if breakpoint_type == "ProcessDebugContextLineBreakpoint" else "",
-            object_name=breakpoint_as_dict[
-                'ObjectName'] if breakpoint_type == "ProcessDebugContextLockBreakpoint" else "",
-            object_type=breakpoint_as_dict[
-                'ObjectType'] if breakpoint_type == "ProcessDebugContextLockBreakpoint" else "",
-            lock_mode=breakpoint_as_dict['LockMode'] if breakpoint_type == "ProcessDebugContextLockBreakpoint" else ""
+            breakpoint_id=breakpoint_as_dict["ID"],
+            enabled=breakpoint_as_dict["Enabled"],
+            hit_mode=breakpoint_as_dict["HitMode"],
+            hit_count=breakpoint_as_dict["HitCount"],
+            expression=breakpoint_as_dict["Expression"],
+            variable_name=(
+                breakpoint_as_dict["VariableName"] if breakpoint_type == "ProcessDebugContextDataBreakpoint" else ""
+            ),
+            process_name=(
+                breakpoint_as_dict["ProcessName"] if breakpoint_type == "ProcessDebugContextLineBreakpoint" else ""
+            ),
+            procedure=breakpoint_as_dict["Procedure"] if breakpoint_type == "ProcessDebugContextLineBreakpoint" else "",
+            line_number=(
+                breakpoint_as_dict["LineNumber"] if breakpoint_type == "ProcessDebugContextLineBreakpoint" else ""
+            ),
+            object_name=(
+                breakpoint_as_dict["ObjectName"] if breakpoint_type == "ProcessDebugContextLockBreakpoint" else ""
+            ),
+            object_type=(
+                breakpoint_as_dict["ObjectType"] if breakpoint_type == "ProcessDebugContextLockBreakpoint" else ""
+            ),
+            lock_mode=breakpoint_as_dict["LockMode"] if breakpoint_type == "ProcessDebugContextLockBreakpoint" else "",
         )
 
     @property
@@ -211,24 +214,24 @@ class ProcessDebugBreakpoint(TM1Object):
 
     def _construct_body(self) -> str:
         body_as_dict = {
-            '@odata.type': "#ibm.tm1.api.v1." + str(self._type),
-            'ID': self._id,
-            'Enabled': self._enabled,
-            'HitMode': str(self._hit_mode),
-            'Expression': self._expression
+            "@odata.type": "#ibm.tm1.api.v1." + str(self._type),
+            "ID": self._id,
+            "Enabled": self._enabled,
+            "HitMode": str(self._hit_mode),
+            "Expression": self._expression,
         }
 
         if self._type == BreakPointType.PROCESS_DEBUG_CONTEXT_DATA_BREAK_POINT:
-            body_as_dict['VariableName'] = self._variable_name
+            body_as_dict["VariableName"] = self._variable_name
 
         elif self._type == BreakPointType.PROCESS_DEBUG_CONTEXT_LINE_BREAK_POINT:
-            body_as_dict['ProcessName'] = self._process_name
-            body_as_dict['Procedure'] = self._procedure
-            body_as_dict['LineNumber'] = self._line_number
+            body_as_dict["ProcessName"] = self._process_name
+            body_as_dict["Procedure"] = self._procedure
+            body_as_dict["LineNumber"] = self._line_number
 
         elif self._type == BreakPointType.PROCESS_DEBUG_CONTEXT_LOCK_BREAK_POINT:
-            body_as_dict['ObjectName'] = self._object_name
-            body_as_dict['ObjectType'] = self._object_type
-            body_as_dict['LockMode'] = self._lock_mode
+            body_as_dict["ObjectName"] = self._object_name
+            body_as_dict["ObjectType"] = self._object_type
+            body_as_dict["LockMode"] = self._lock_mode
 
         return body_as_dict
