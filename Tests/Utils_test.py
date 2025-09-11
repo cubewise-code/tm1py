@@ -26,6 +26,7 @@ from TM1py.Utils import (
     frame_to_significant_digits,
     drop_dimension_properties,
     build_dataframe_from_csv,
+    reorder_with_priority,
 )
 from .Utils import skip_if_version_higher_or_equal_than, skip_if_paoc
 
