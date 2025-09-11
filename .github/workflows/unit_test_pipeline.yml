@@ -26,7 +26,6 @@ jobs:
         run: |
           code_ref='${{ inputs.code_reference }}'
           if [[ "$code_ref" == \#* ]]; then
-            # Remove the '#' character
             pr_number="${code_ref#\#}"
             echo "Detected PR number: $pr_number"
             echo "ref=refs/pull/$pr_number/merge" >> $GITHUB_OUTPUT
@@ -34,16 +33,15 @@ jobs:
           else
             echo "Detected branch name: $code_ref"
             echo "ref=$code_ref" >> $GITHUB_OUTPUT
-          fi
 
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
         with:
           repository: ${{ github.repository }}
           ref: ${{ steps.determine-ref.outputs.ref }}
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: '3.x'
 
@@ -69,14 +67,14 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.environment }}
           path: Tests/test-reports/
 
       - name: Post comment to PR
         if: ${{ always() && steps.determine-ref.outputs.pr_number }}
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             github.rest.issues.createComment({
