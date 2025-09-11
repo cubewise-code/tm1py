@@ -33,6 +33,7 @@ jobs:
           else
             echo "Detected branch name: $code_ref"
             echo "ref=$code_ref" >> $GITHUB_OUTPUT
+          fi
 
       - name: Checkout code
         uses: actions/checkout@v5
