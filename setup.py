@@ -47,7 +47,8 @@ setup(
         "dev": [
             "pytest",
             "pytest-xdist",
-            "python-dateutil"
+            "python-dateutil",
+            "black"
         ]
     },
     python_requires='>=3.6',
