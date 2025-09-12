@@ -43,23 +43,12 @@ class ViewService(ObjectService):
 
         :return boolean tuple
         """
-        url_template = "/Cubes('{}')/{}('{}')"
-        if private is not None:
-            url = format_url(url_template, cube_name, "PrivateViews" if private else "Views", view_name)
-            return self._exists(url, **kwargs)
-
-        view_types = collections.OrderedDict()
-        view_types['PrivateViews'] = False
-        view_types['Views'] = False
-        for view_type in view_types:
-            try:
-                url = format_url(url_template, cube_name, view_type, view_name)
-                self._rest.GET(url, **kwargs)
-                view_types[view_type] = True
-            except TM1pyRestException as e:
-                if e.status_code != 404:
-                    raise e
-        return tuple(view_types.values())
+        view_name = view_name.replace(' ', '').lower()
+        url_template = "/Cubes('{}')/{}?$select=Name&$filter=tolower(replace(Name,' ','')) eq '{}'"
+        view_types = ['Views', 'PrivateViews'] if private is None else [private]
+        urls = [format_url(url_template, cube_name, view_type, view_name) for view_type in view_types]
+        return_vals = tuple(bool(self._rest.GET(url, **kwargs).json()['value']) for url in urls)
+        return return_vals[0] if len(return_vals) == 1 else return_vals
 
     def get(self, cube_name: str, view_name: str, private: bool = False, **kwargs) -> View:
         view_type = "PrivateViews" if private else "Views"
