@@ -8,7 +8,7 @@ from TM1py.Objects import Subset, Element
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.ProcessService import ProcessService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import format_url
+from TM1py.Utils import format_url, case_and_space_insensitive_equals
 
 
 class SubsetService(ObjectService):
@@ -232,8 +232,8 @@ class SubsetService(ObjectService):
     def update_static_elements(
         self,
         subset: Union[str, Subset],
-        dimension_name: str,
-        hierarchy_name: str,
+        dimension_name: str=None,
+        hierarchy_name: str=None,
         private: bool = False,
         elements: Optional[Iterable[Union[str, Element]]] = None,
         **kwargs,
@@ -251,16 +251,33 @@ class SubsetService(ObjectService):
         if isinstance(subset, Subset):
             subset_name = subset.name
             if not subset.is_static:
-                raise ValueError("Subset must be static.")
-            # Override dimension_name and hierarchy_name with those from the Subset object
-            dimension_name = subset.dimension_name
-            hierarchy_name = subset.hierarchy_name
+                raise ValueError("Subset must be static")
+
+            if not dimension_name:
+                dimension_name = subset.dimension_name
+            elif not case_and_space_insensitive_equals(dimension_name, subset.dimension_name):
+                raise ValueError(
+                    f"dimension_name argument '{dimension_name}' "
+                    f"differs from subset dimension_name '{subset.dimension_name}'")
+
+            if not hierarchy_name:
+                hierarchy_name = subset.hierarchy_name
+            elif not case_and_space_insensitive_equals(hierarchy_name, subset.hierarchy_name):
+                raise ValueError(
+                    f"hierarchy_name argument '{hierarchy_name}' "
+                    f"differs from subset hierarchy_name '{subset.hierarchy_name}'")
+
             if elements is None:
                 elements = subset.elements
         elif isinstance(subset, str):
             subset_name = subset
+            if not dimension_name:
+                raise ValueError("When subset is of type str, dimension_name must be provided.")
+            if not hierarchy_name:
+                raise ValueError("When subset is of type str, hierarchy_name must be provided.")
             if elements is None:
-                raise ValueError(f"When subset is str, elements must also be provided.")
+                raise ValueError("When subset is of type str, elements must be provided.")
+
         else:
             raise ValueError(f"subset argument must be of type 'str' or 'Subset', not '{type(subset)}'")
 

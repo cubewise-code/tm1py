@@ -55,16 +55,16 @@ class TestSubsetService(unittest.TestCase):
         element_attributes = [ElementAttribute("Currency Name", "String")]
         h = Hierarchy(self.dimension_name, self.dimension_name, elements, element_attributes)
         d = Dimension(self.dimension_name, hierarchies=[h])
-        self.tm1.dimensions.create(d)
+        self.tm1.dimensions.update_or_create(d)
 
         elements = [Element(self.unfriendly_element_name, "Numeric")]
         h = Hierarchy(self.unfriendly_dimension_name, self.unfriendly_dimension_name, elements)
         d = Dimension(self.unfriendly_dimension_name, hierarchies=[h])
-        self.tm1.dimensions.create(d)
+        self.tm1.dimensions.update_or_create(d)
 
         for private in (True, False):
-            self.tm1.dimensions.subsets.create(subset=self.static_subset, private=private)
-            self.tm1.dimensions.subsets.create(subset=self.dynamic_subset, private=private)
+            self.tm1.dimensions.subsets.update_or_create(subset=self.static_subset, private=private)
+            self.tm1.dimensions.subsets.update_or_create(subset=self.dynamic_subset, private=private)
 
     def tearDown(self):
         if self.tm1.dimensions.exists(self.dimension_name):
