@@ -1,22 +1,20 @@
-from warnings import warn
-
 from datetime import datetime
 from typing import Dict
+from warnings import warn
 
-
+from TM1py.Services.ConfigurationService import ConfigurationService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import (
-    verify_version,
     deprecated_in_version,
+    format_url,
     odata_track_changes_header,
     require_data_admin,
-    format_url,
-    require_version,
     require_ops_admin,
+    require_version,
     utc_localize_time,
+    verify_version,
 )
-from TM1py.Services.ConfigurationService import ConfigurationService
 
 
 class AuditLogService(ObjectService):

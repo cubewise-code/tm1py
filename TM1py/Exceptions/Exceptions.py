@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # TM1py Exceptions are defined here
-from typing import Mapping, List
+from typing import List, Mapping
 
 
 class TM1pyTimeout(Exception):

@@ -1,7 +1,13 @@
 import json
 import unittest
 
-from TM1py import NativeView, ViewAxisSelection, AnonymousSubset, ViewTitleSelection, Subset
+from TM1py import (
+    AnonymousSubset,
+    NativeView,
+    Subset,
+    ViewAxisSelection,
+    ViewTitleSelection,
+)
 
 
 class TestNativeView(unittest.TestCase):

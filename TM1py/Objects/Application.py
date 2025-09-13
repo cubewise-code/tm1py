@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import json
 import warnings
-from collections import namedtuple, OrderedDict
+from collections import OrderedDict, namedtuple
 from enum import Enum
-from typing import Union, Dict
+from typing import Dict, Union
 
 from TM1py.Objects.TM1Object import TM1Object
 from TM1py.Utils import format_url

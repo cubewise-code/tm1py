@@ -2,7 +2,7 @@
 
 import collections
 import json
-from typing import List, Dict, Optional, Iterable
+from typing import Dict, Iterable, List, Optional
 
 from TM1py.Objects.TM1Object import TM1Object
 from TM1py.Utils import format_url, read_object_name_from_url

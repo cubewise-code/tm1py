@@ -5,7 +5,7 @@ from pathlib import Path
 
 from mdxpy import MdxBuilder, Member
 
-from TM1py.Objects import Sandbox, Cube, Element, Hierarchy, Dimension, Rules
+from TM1py.Objects import Cube, Dimension, Element, Hierarchy, Rules, Sandbox
 from TM1py.Services import TM1Service
 
 

@@ -1,6 +1,6 @@
 import unittest
 
-from TM1py.Objects.GitProject import TM1Project, TM1ProjectTask, TM1ProjectDeployment
+from TM1py.Objects.GitProject import TM1Project, TM1ProjectDeployment, TM1ProjectTask
 
 
 class TestGitProject(unittest.TestCase):

@@ -10,25 +10,26 @@ except ImportError:
 
 from TM1py.Services import TM1Service
 from TM1py.Utils import (
+    CellUpdateableProperty,
     Utils,
+    add_url_parameters,
+    build_dataframe_from_csv,
+    cell_is_updateable,
+    drop_dimension_properties,
+    extract_cell_properties_from_odata_context,
+    extract_cell_updateable_property,
+    format_url,
+    frame_to_significant_digits,
+    get_cube,
     get_dimensions_from_where_clause,
     integerize_version,
-    verify_version,
-    get_cube,
-    resembles_mdx,
-    format_url,
-    add_url_parameters,
-    extract_cell_updateable_property,
-    CellUpdateableProperty,
-    cell_is_updateable,
-    extract_cell_properties_from_odata_context,
     map_cell_properties_to_compact_json_response,
-    frame_to_significant_digits,
-    drop_dimension_properties,
-    build_dataframe_from_csv,
     reorder_with_priority,
+    resembles_mdx,
+    verify_version,
 )
-from .Utils import skip_if_version_higher_or_equal_than, skip_if_paoc
+
+from .Utils import skip_if_paoc, skip_if_version_higher_or_equal_than
 
 
 class TestUtilsMethods(unittest.TestCase):

@@ -10,7 +10,7 @@ from requests import Response
 from TM1py.Objects import Chore, ChoreTask
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import format_url, decohints
+from TM1py.Utils import decohints, format_url
 
 
 @decohints

@@ -1,11 +1,12 @@
-from typing import List
-from requests import Response
 import json
+from typing import List
 
+from requests import Response
+
+from TM1py.Objects.Sandbox import Sandbox
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import format_url
-from TM1py.Objects.Sandbox import Sandbox
 
 
 class SandboxService(ObjectService):
