@@ -11,17 +11,17 @@ from collections import OrderedDict
 from concurrent.futures.thread import ThreadPoolExecutor
 from contextlib import suppress
 from io import StringIO
-from typing import List, Union, Dict, Iterable, Tuple, Optional, Any
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 import ijson
-from mdxpy import MdxHierarchySet, MdxBuilder, Member, MdxTuple
+from mdxpy import MdxBuilder, MdxHierarchySet, MdxTuple, Member
 from requests import Response
 
 from TM1py.Exceptions.Exceptions import (
     TM1pyException,
-    TM1pyWritePartialFailureException,
-    TM1pyWriteFailureException,
     TM1pyRestException,
+    TM1pyWriteFailureException,
+    TM1pyWritePartialFailureException,
 )
 from TM1py.Objects.MDXView import MDXView
 from TM1py.Objects.NativeView import NativeView
@@ -33,34 +33,39 @@ from TM1py.Services.ProcessService import ProcessService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.SandboxService import SandboxService
 from TM1py.Services.ViewService import ViewService
-from TM1py.Utils import Utils, CaseAndSpaceInsensitiveSet, format_url, add_url_parameters
+from TM1py.Utils import (
+    CaseAndSpaceInsensitiveSet,
+    Utils,
+    add_url_parameters,
+    format_url,
+)
 from TM1py.Utils.Utils import (
-    build_pandas_dataframe_from_cellset,
-    dimension_name_from_element_unique_name,
     CaseAndSpaceInsensitiveDict,
-    wrap_in_curly_braces,
     CaseAndSpaceInsensitiveTuplesDict,
     abbreviate_mdx,
-    build_csv_from_cellset_dict,
-    require_version,
-    require_pandas,
     build_cellset_from_pandas_dataframe,
+    build_csv_from_cellset_dict,
+    build_dataframe_from_csv,
+    build_mdx_and_values_from_cellset,
+    build_mdx_from_cellset,
+    build_pandas_dataframe_from_cellset,
     case_and_space_insensitive_equals,
+    cell_is_updateable,
+    decohints,
+    dimension_name_from_element_unique_name,
+    dimension_names_from_element_unique_names,
+    drop_dimension_properties,
+    extract_compact_json_cellset,
+    frame_to_significant_digits,
     get_cube,
-    resembles_mdx,
+    lower_and_drop_spaces,
     require_data_admin,
     require_ops_admin,
-    extract_compact_json_cellset,
-    cell_is_updateable,
-    build_mdx_from_cellset,
-    build_mdx_and_values_from_cellset,
-    dimension_names_from_element_unique_names,
-    frame_to_significant_digits,
-    build_dataframe_from_csv,
-    drop_dimension_properties,
-    decohints,
+    require_pandas,
+    require_version,
+    resembles_mdx,
     verify_version,
-    lower_and_drop_spaces,
+    wrap_in_curly_braces,
 )
 
 try:
