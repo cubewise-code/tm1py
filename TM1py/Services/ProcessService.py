@@ -3,18 +3,18 @@
 import json
 import time
 import uuid
-from typing import List, Dict, Tuple, Iterable
+from typing import Dict, Iterable, List, Tuple
 
 from requests import Response
 from requests.structures import CaseInsensitiveDict
 
-from TM1py.Exceptions.Exceptions import TM1pyRestException, TM1pyException
+from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyRestException
 from TM1py.Objects.Process import Process
 from TM1py.Objects.ProcessDebugBreakpoint import ProcessDebugBreakpoint
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import format_url, require_data_admin
-from TM1py.Utils.Utils import require_version, deprecated_in_version
+from TM1py.Utils.Utils import deprecated_in_version, require_version
 
 
 class ProcessService(ObjectService):
