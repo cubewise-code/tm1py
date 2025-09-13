@@ -5,3 +5,25 @@ build-backend = "setuptools.build_meta"
 [tool.black]
 line-length = 120
 target-version = ["py37"]
+
+[tool.ruff]
+target-version = "py37"
+
+extend-exclude = [
+    "build",
+    "__pycache__",
+    "docs",
+    "Tests/resources",
+]
+
+[tool.ruff.lint]
+select = [
+    "E4", # imports
+    "E7", # pycodestyle
+    "E9", # io-error
+    "F",  # pyflakes
+    "I", # isort
+]
+ignore = [
+    "F403",  #undefined-local-with-import-star"
+]
