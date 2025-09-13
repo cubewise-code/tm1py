@@ -928,7 +928,7 @@ class RestService:
                             self._extract_tm1_session_id_from_set_cookie_header(auth_response_headers=response.headers),
                         )
                         warnings.warn(
-                            f"TM1SessionId has failed to be automatically added to the session cookies, future requests "
+                            "TM1SessionId has failed to be automatically added to the session cookies, future requests "
                             "using this TM1Service will use the session id extracted from the first response "
                             "Check the tm1-gateway domain settings are correct"
                             "in the container orchestrator "

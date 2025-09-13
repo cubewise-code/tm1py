@@ -15,7 +15,7 @@ class LoggerService(ObjectService):
 
     @require_ops_admin
     def get_all(self, **kwargs) -> Dict:
-        url = f"/Loggers"
+        url = "/Loggers"
         loggers = self._rest.GET(url, **kwargs).json()
         return loggers["value"]
 
@@ -44,7 +44,7 @@ class LoggerService(ObjectService):
         :param level: string e.g. FATAL, ERROR, WARNING, INFO, DEBUG, UNKOWN, OFF
         :return: Dict of matching loggers and levels
         """
-        url = f"/Loggers"
+        url = "/Loggers"
 
         logger_filters = []
 

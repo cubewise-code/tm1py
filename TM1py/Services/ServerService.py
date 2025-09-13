@@ -6,7 +6,6 @@ from enum import Enum
 from typing import Dict, Optional
 from warnings import warn
 
-import pytz
 from requests import Response
 
 from TM1py.Services.AuditLogService import AuditLogService

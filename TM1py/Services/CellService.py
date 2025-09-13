@@ -1894,7 +1894,7 @@ class CellService(ObjectService):
             enable_sandbox = f"ServerActiveSandboxSet('{sandbox_name}');SetUseActiveSandboxProperty(1);"
 
         else:
-            enable_sandbox = f"ServerActiveSandboxSet('');SetUseActiveSandboxProperty(0);"
+            enable_sandbox = "ServerActiveSandboxSet('');SetUseActiveSandboxProperty(0);"
         return enable_sandbox
 
     def get_elements_from_all_measure_hierarchies(self, cube_name: str) -> Dict[str, str]:
@@ -4019,7 +4019,6 @@ class CellService(ObjectService):
                 "Axes({filter_axis}$expand={hierarchies}Tuples($expand=Members({select_member_properties}"
                 "{expand_elem_properties}){partition}))".format(
                     cellset_id=cellset_id,
-                    axis=axis,
                     partition=f";$top={top};$skip={skip}" if partition_size > 0 else "",
                     filter_axis=filter_axis,
                     hierarchies=expand_hierarchies,
