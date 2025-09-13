@@ -41,7 +41,6 @@ from TM1py.Utils import (
     require_version,
 )
 from TM1py.Utils import build_element_unique_names, CaseAndSpaceInsensitiveTuplesDict, verify_version
-from itertools import islice
 from collections import OrderedDict
 
 
@@ -240,7 +239,7 @@ class ElementService(ObjectService):
         )
 
         # Define encoding in Prolog section
-        hierarchyupdate_process.prolog_procedure = f"""
+        hierarchyupdate_process.prolog_procedure = """
         SetInputCharacterSet('TM1CS_UTF8');
          """
         parent_variable = "vParent"
@@ -1312,7 +1311,7 @@ class ElementService(ObjectService):
     def get_parents(self, dimension_name: str, hierarchy_name: str, element_name: str, **kwargs) -> List[str]:
         url = format_url(
             "/Dimensions('{dimension_name}')/Hierarchies('{hierarchy_name}')/Elements('{element_name}')/Parents"
-            f"?$select=Name",
+            "?$select=Name",
             dimension_name=dimension_name,
             hierarchy_name=hierarchy_name,
             element_name=element_name,
