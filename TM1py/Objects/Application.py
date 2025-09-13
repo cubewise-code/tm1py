@@ -114,7 +114,7 @@ class DocumentApplication(Application):
         self.last_updated = last_updated
 
     def to_xlsx(self, path_to_file: str):
-        warnings.warn(f"Function 'to_xlsx' is deprecated. Use 'to_file' instead", DeprecationWarning, stacklevel=2)
+        warnings.warn("Function 'to_xlsx' is deprecated. Use 'to_file' instead", DeprecationWarning, stacklevel=2)
         return self.to_file(path_to_file=path_to_file)
 
     def to_file(self, path_to_file: str):

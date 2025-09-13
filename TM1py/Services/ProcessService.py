@@ -165,7 +165,7 @@ class ProcessService(ObjectService):
             else:
                 raise ValueError("'name_contains' must be str or iterable")
 
-        url += "&$filter={}".format(f" and ".join(name_filters))
+        url += "&$filter={}".format(" and ".join(name_filters))
         url += "{}".format(model_process_filter if skip_control_processes else "")
         response = self._rest.GET(url, **kwargs)
         return list(process["Name"] for process in response.json()["value"])

@@ -7,8 +7,8 @@ from TM1py.Exceptions import TM1pyRestException
 from TM1py.Objects import User
 from TM1py.Objects.User import UserType
 from TM1py.Services import TM1Service
-from TM1py.Utils.Utils import CaseAndSpaceInsensitiveSet, case_and_space_insensitive_equals, verify_version
-from .Utils import skip_if_version_higher_or_equal_than, skip_if_version_lower_than, skip_if_auth_not_basic
+from TM1py.Utils.Utils import CaseAndSpaceInsensitiveSet, verify_version
+from .Utils import skip_if_version_higher_or_equal_than, skip_if_auth_not_basic
 
 
 class TestSecurityService(unittest.TestCase):

@@ -4813,7 +4813,7 @@ class TestCellService(unittest.TestCase):
 
     def test_get_value_other_hierarchy_in_attribute_cube(self):
         value = self.tm1.cells.get_value(
-            cube_name="}ElementAttributes_" + self.dimension_with_hierarchies_name, elements=f"Hierarchy2::Cons1,ea2"
+            cube_name="}ElementAttributes_" + self.dimension_with_hierarchies_name, elements="Hierarchy2::Cons1,ea2"
         )
 
         self.assertEqual("ABC", value)
@@ -4831,7 +4831,7 @@ class TestCellService(unittest.TestCase):
     def test_get_values_other_hierarchy_in_attribute_cube(self):
         values = self.tm1.cells.get_values(
             cube_name="}ElementAttributes_" + self.dimension_with_hierarchies_name,
-            element_sets=[f"Hierarchy2¦Cons1,ea2"],
+            element_sets=["Hierarchy2¦Cons1,ea2"],
             hierarchy_element_separator="¦",
         )
 

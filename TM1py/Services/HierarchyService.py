@@ -827,8 +827,8 @@ class HierarchyService(ObjectService):
     def _validate_hierarchy_sort_order_arguments(self, hierarchy_sort_order: Tuple[str, str, str, str]):
         if not len(hierarchy_sort_order) == 4:
             raise ValueError(
-                f"Argument 'hierarchy_sort_order' must be a tuple of 4 keys: "
-                f"'CompSortType', 'CompSortSense', 'ElSortType', 'ElSortSense'"
+                "Argument 'hierarchy_sort_order' must be a tuple of 4 keys: "
+                "'CompSortType', 'CompSortSense', 'ElSortType', 'ElSortSense'"
             )
 
         for arg_name, arg_value in zip(self.HIERARCHY_SORT_ORDER_ARGUMENTS.keys(), hierarchy_sort_order):

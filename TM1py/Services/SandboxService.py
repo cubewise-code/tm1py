@@ -1,8 +1,7 @@
-from typing import List, Iterable
+from typing import List
 from requests import Response
 import json
 
-from TM1py.Exceptions.Exceptions import TM1pyRestException
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import format_url
