@@ -751,7 +751,7 @@ class CellService(ObjectService):
                 if column in dimension_mapping:
                     hierarchy = dimension_mapping.get(column)
                     if not isinstance(hierarchy, str):
-                        raise ValueError(f"Value for key '{dimension}' in dimension_mapping must be of type str")
+                        raise ValueError(f"Value for key '{column}' in dimension_mapping must be of type str")
                     members.append(Member.of(column, hierarchy, element))
 
                 else:
