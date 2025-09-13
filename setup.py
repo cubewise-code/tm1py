@@ -39,6 +39,15 @@ setup(
         "mdxpy>=1.3.1",
         "networkx",
     ],
-    extras_require={"pandas": ["pandas"], "dev": ["pytest", "pytest-xdist", "python-dateutil", "black"]},
+    extras_require={
+        "pandas": ["pandas"],
+        "dev": [
+            "pytest",
+            "pytest-xdist",
+            "python-dateutil",
+            "black",
+            "ruff",
+        ],
+    },
     python_requires=">=3.6",
 )

@@ -260,7 +260,7 @@ class SubsetService(ObjectService):
         elif isinstance(subset, str):
             subset_name = subset
             if elements is None:
-                raise ValueError(f"When subset is str, elements must also be provided.")
+                raise ValueError("When subset is str, elements must also be provided.")
         else:
             raise ValueError(f"subset argument must be of type 'str' or 'Subset', not '{type(subset)}'")
 

@@ -10,7 +10,7 @@ class DimensionSelection:
 
     def __init__(self, dimension_name, elements=None, subset=None, expression=None):
         warnings.warn(
-            f"class DimensionSelection will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
+            "class DimensionSelection will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -32,7 +32,7 @@ class DimensionSelection:
     @staticmethod
     def determine_selection_type(elements=None, subset=None, expression=None):
         warnings.warn(
-            f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
+            "Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -58,7 +58,7 @@ def construct_mdx_axis(dim_selections):
     :return: a valid MDX for an Axis
     """
     warnings.warn(
-        f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
+        "Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -76,7 +76,7 @@ def construct_mdx(cube_name, rows, columns, contexts=None, suppress=None):
     :return: Generated MDX Query
     """
     warnings.warn(
-        f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
+        "Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -104,7 +104,7 @@ def curly_braces(expression):
     :return:
     """
     warnings.warn(
-        f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
+        "Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -120,7 +120,7 @@ def read_cube_name_from_mdx(mdx):
     :return: String, name of a cube
     """
     warnings.warn(
-        f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
+        "Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -135,7 +135,7 @@ def read_dimension_composition_from_mdx(mdx):
     :return:
     """
     warnings.warn(
-        f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
+        "Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -151,7 +151,7 @@ def read_dimension_composition_from_mdx(mdx):
 
 def read_dimension_composition_from_mdx_set_or_tuple(mdx):
     warnings.warn(
-        f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
+        "Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -172,7 +172,7 @@ def read_dimension_composition_from_mdx_set_or_tuple(mdx):
 
 def read_dimension_composition_from_mdx_set(mdx):
     warnings.warn(
-        f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
+        "Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -187,7 +187,7 @@ def read_dimension_composition_from_mdx_set(mdx):
 
 def read_dimension_composition_from_mdx_tuple(mdx):
     warnings.warn(
-        f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
+        "Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -204,7 +204,7 @@ def read_dimension_composition_from_mdx_tuple(mdx):
 
 def split_mdx(mdx):
     warnings.warn(
-        f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
+        "Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -223,7 +223,7 @@ def split_mdx(mdx):
 
 def _find_case_and_space_insensitive_first_occurrence(text, pattern_start=None, pattern_end=None):
     warnings.warn(
-        f"Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
+        "Module MdxUtils will be deprecated. Use https://github.com/cubewise-code/mdxpy instead",
         DeprecationWarning,
         stacklevel=2,
     )

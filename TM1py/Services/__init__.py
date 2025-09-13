@@ -13,7 +13,6 @@ from TM1py.Services.SandboxService import SandboxService
 from TM1py.Services.SecurityService import SecurityService
 from TM1py.Services.SubsetService import SubsetService
 from TM1py.Services.ViewService import ViewService
-from TM1py.Services.GitService import GitService
 from TM1py.Services.TM1Service import TM1Service
 from TM1py.Services.ManageService import ManageService
 from TM1py.Services.JobService import JobService

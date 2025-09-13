@@ -4,7 +4,7 @@ from typing import List
 from TM1py.Objects.User import User
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import format_url, case_and_space_insensitive_equals, require_admin, deprecated_in_version
+from TM1py.Utils import format_url, case_and_space_insensitive_equals, require_admin
 
 
 class UserService(ObjectService):
