@@ -33,14 +33,16 @@ class ChoreStartTime:
 
         # f to handle strange timestamp 2016-09-25T20:25Z instead of common 2016-09-25T20:25:00Z
         # second is defaulted to 0 if not specified in the chore schedule
-        f = lambda x: int(x) if x else 0
+        def format_time(value: int) -> str:
+            return int(value or 0)
+
         return cls(
-            year=f(start_time_string[0:4]),
-            month=f(start_time_string[5:7]),
-            day=f(start_time_string[8:10]),
-            hour=f(start_time_string[11:13]),
-            minute=f(start_time_string[14:16]),
-            second=f(0 if start_time_string[16] != ":" else start_time_string[17:19]),
+            year=format_time(start_time_string[0:4]),
+            month=format_time(start_time_string[5:7]),
+            day=format_time(start_time_string[8:10]),
+            hour=format_time(start_time_string[11:13]),
+            minute=format_time(start_time_string[14:16]),
+            second=format_time(0 if start_time_string[16] != ":" else start_time_string[17:19]),
             tz=tz,
         )
 
