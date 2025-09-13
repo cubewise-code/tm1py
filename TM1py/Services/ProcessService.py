@@ -436,7 +436,7 @@ class ProcessService(ObjectService):
 
         url += "&$top={}".format(top) if top > 0 else ""
 
-        url += "&$orderby=Filename desc" if descending == True else ""
+        url += "&$orderby=Filename desc" if descending else ""
 
         response = self._rest.GET(url=url, **kwargs)
         return [log["Filename"] for log in response.json()["value"]]
