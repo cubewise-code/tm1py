@@ -24,6 +24,7 @@ from TM1py.Utils import (
     get_dimensions_from_where_clause,
     integerize_version,
     map_cell_properties_to_compact_json_response,
+    reorder_with_priority,
     resembles_mdx,
     verify_version,
 )
