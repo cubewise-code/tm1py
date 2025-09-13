@@ -1,10 +1,12 @@
 import configparser
-import pytest
+import time
 import unittest
 from pathlib import Path
-import time
+
+import pytest
 
 from TM1py.Services import ManageService, TM1Service
+
 from .Utils import verify_version
 
 

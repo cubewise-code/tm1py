@@ -4,9 +4,10 @@ from pathlib import Path
 
 from TM1py import TM1Service
 from TM1py.Exceptions import TM1pyVersionException
+
 from .Utils import (
-    skip_if_version_lower_than,
     skip_if_version_higher_or_equal_than,
+    skip_if_version_lower_than,
     verify_version,
 )
 

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 import json
-from typing import List, Union, Iterable, Optional
+from typing import Iterable, List, Optional, Union
 
 from requests import Response
 
-from TM1py.Objects import Subset, Element
+from TM1py.Objects import Element, Subset
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.ProcessService import ProcessService
 from TM1py.Services.RestService import RestService

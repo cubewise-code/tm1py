@@ -2,7 +2,7 @@
 
 import collections
 import json
-from typing import List, Dict, Iterable, Optional, Tuple, Union, Set
+from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
 
 from TM1py.Objects.Element import Element
 from TM1py.Objects.ElementAttribute import ElementAttribute
@@ -10,8 +10,8 @@ from TM1py.Objects.TM1Object import TM1Object
 from TM1py.Utils.Utils import (
     CaseAndSpaceInsensitiveDict,
     CaseAndSpaceInsensitiveTuplesDict,
-    lower_and_drop_spaces,
     case_and_space_insensitive_equals,
+    lower_and_drop_spaces,
 )
 
 

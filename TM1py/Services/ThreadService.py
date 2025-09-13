@@ -1,11 +1,11 @@
-from requests import Response
+from typing import List
 from warnings import warn
 
-from typing import List
+from requests import Response
 
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils.Utils import format_url, verify_version, deprecated_in_version
+from TM1py.Utils.Utils import deprecated_in_version, format_url, verify_version
 
 
 class ThreadService(ObjectService):

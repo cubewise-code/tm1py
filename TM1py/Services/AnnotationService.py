@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import json
-from typing import List, Iterable
+from typing import Iterable, List
 
 from requests import Response
 
 from TM1py.Objects.Annotation import Annotation
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import format_url, CaseAndSpaceInsensitiveDict
+from TM1py.Utils import CaseAndSpaceInsensitiveDict, format_url
 
 
 class AnnotationService(ObjectService):

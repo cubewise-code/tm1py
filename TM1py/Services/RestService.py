@@ -1,37 +1,41 @@
 # -*- coding: utf-8 -*-
 import json
 import re
+import socket
 import time
 import warnings
 from ast import literal_eval
-from base64 import b64encode, b64decode
+from base64 import b64decode, b64encode
 from enum import Enum
 from http.client import HTTPResponse
 from http.cookies import SimpleCookie
 from io import BytesIO
 from json import JSONDecodeError
-from typing import Union, Dict, Tuple, Optional
+from typing import Dict, Optional, Tuple, Union
 
 import requests
 import urllib3
-from requests import Timeout, Response, ConnectionError, Session
+from requests import ConnectionError, Response, Session, Timeout
 from requests.adapters import HTTPAdapter
 from requests.auth import HTTPBasicAuth
 from urllib3._collections import HTTPHeaderDict
-import socket
 
 # SSO not supported for Linux
 from TM1py.Exceptions.Exceptions import TM1pyTimeout, TM1pyVersionDeprecationException
-from TM1py.Utils import case_and_space_insensitive_equals, CaseAndSpaceInsensitiveSet, HTTPAdapterWithSocketOptions
+from TM1py.Utils import (
+    CaseAndSpaceInsensitiveSet,
+    HTTPAdapterWithSocketOptions,
+    case_and_space_insensitive_equals,
+)
 
 try:
     from requests_negotiate_sspi import HttpNegotiateAuth
 except ImportError:
     warnings.warn("requests_negotiate_sspi failed to import. SSO will not work", ImportWarning)
 
-from TM1py.Exceptions import TM1pyRestException
-
 import http.client as http_client
+
+from TM1py.Exceptions import TM1pyRestException
 
 
 class AuthenticationMode(Enum):

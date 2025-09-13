@@ -3,8 +3,7 @@ import unittest
 import warnings
 from pathlib import Path
 
-from TM1py.Objects import Dimension, Hierarchy, Element
-from TM1py.Objects import ElementAttribute
+from TM1py.Objects import Dimension, Element, ElementAttribute, Hierarchy
 from TM1py.Services import TM1Service
 
 

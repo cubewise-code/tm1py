@@ -4,11 +4,11 @@ from typing import List
 
 from TM1py.Objects.Git import Git
 from TM1py.Objects.GitCommit import GitCommit
-from TM1py.Objects.GitPlan import GitPushPlan, GitPullPlan, GitPlan
-from TM1py.Services.ObjectService import ObjectService
-from TM1py.Services.RestService import RestService, Response
-from TM1py.Utils.Utils import format_url
+from TM1py.Objects.GitPlan import GitPlan, GitPullPlan, GitPushPlan
 from TM1py.Objects.GitProject import TM1Project
+from TM1py.Services.ObjectService import ObjectService
+from TM1py.Services.RestService import Response, RestService
+from TM1py.Utils.Utils import format_url
 
 
 class GitService(ObjectService):

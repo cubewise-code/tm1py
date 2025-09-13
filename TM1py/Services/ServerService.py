@@ -15,8 +15,13 @@ from TM1py.Services.MessageLogService import MessageLogService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.TransactionLogService import TransactionLogService
-from TM1py.Utils.Utils import require_admin, require_version, deprecated_in_version
-from TM1py.Utils.Utils import require_data_admin, require_ops_admin
+from TM1py.Utils.Utils import (
+    deprecated_in_version,
+    require_admin,
+    require_data_admin,
+    require_ops_admin,
+    require_version,
+)
 
 
 class LogLevel(Enum):

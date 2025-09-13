@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import random
-from typing import List, Iterable, Dict, Union
+from typing import Dict, Iterable, List, Union
 
 from requests import Response
 
@@ -11,7 +11,12 @@ from TM1py.Services.CellService import CellService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.ViewService import ViewService
-from TM1py.Utils import format_url, require_version, require_data_admin, case_and_space_insensitive_equals
+from TM1py.Utils import (
+    case_and_space_insensitive_equals,
+    format_url,
+    require_data_admin,
+    require_version,
+)
 
 
 class CubeService(ObjectService):

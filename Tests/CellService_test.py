@@ -2,26 +2,46 @@ import configparser
 import unittest
 from pathlib import Path
 
-from mdxpy import CalculatedMember, MdxBuilder, MdxHierarchySet, Member, DimensionProperty
+from mdxpy import (
+    CalculatedMember,
+    DimensionProperty,
+    MdxBuilder,
+    MdxHierarchySet,
+    Member,
+)
 
 from TM1py import Sandbox
 from TM1py.Exceptions.Exceptions import (
     TM1pyException,
-    TM1pyVersionException,
-    TM1pyWritePartialFailureException,
-    TM1pyWriteFailureException,
     TM1pyRestException,
+    TM1pyVersionException,
+    TM1pyWriteFailureException,
+    TM1pyWritePartialFailureException,
 )
-from TM1py.Objects import AnonymousSubset, Cube, Dimension, Element, ElementAttribute, Hierarchy, MDXView, NativeView
+from TM1py.Objects import (
+    AnonymousSubset,
+    Cube,
+    Dimension,
+    Element,
+    ElementAttribute,
+    Hierarchy,
+    MDXView,
+    NativeView,
+)
 from TM1py.Services import TM1Service
 from TM1py.Utils import (
-    Utils,
-    element_names_from_element_unique_names,
     CaseAndSpaceInsensitiveDict,
     CaseAndSpaceInsensitiveTuplesDict,
+    Utils,
+    element_names_from_element_unique_names,
     verify_version,
 )
-from .Utils import skip_if_version_lower_than, skip_if_no_pandas, skip_if_version_higher_or_equal_than
+
+from .Utils import (
+    skip_if_no_pandas,
+    skip_if_version_higher_or_equal_than,
+    skip_if_version_lower_than,
+)
 
 try:
     import pandas as pd

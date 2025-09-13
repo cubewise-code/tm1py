@@ -9,7 +9,17 @@ import ssl
 import urllib.parse as urlparse
 from enum import Enum, unique
 from io import StringIO
-from typing import Any, Dict, List, Tuple, Iterable, Optional, Generator, Union, Callable
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 from urllib.parse import unquote
 
 import pytz
@@ -18,17 +28,17 @@ from mdxpy import MdxBuilder, Member
 from requests.adapters import HTTPAdapter
 
 from TM1py.Exceptions.Exceptions import (
-    TM1pyVersionException,
     TM1pyNotAdminException,
     TM1pyNotDataAdminException,
-    TM1pyNotSecurityAdminException,
     TM1pyNotOpsAdminException,
+    TM1pyNotSecurityAdminException,
     TM1pyVersionDeprecationException,
+    TM1pyVersionException,
 )
 
 try:
-    import pandas as pd
     import numpy as np
+    import pandas as pd
 
     _has_pandas = True
 except ImportError:

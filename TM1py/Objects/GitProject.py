@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import json
-from typing import Optional, Dict, List
+from typing import Dict, List, Optional
 
 from TM1py.Objects.TM1Object import TM1Object
 

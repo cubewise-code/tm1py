@@ -1,14 +1,19 @@
 # -*- coding: utf-8 -*-
 
 import json
-from typing import List, Iterable
+from typing import Iterable, List
 
 from requests import Response
 
 from TM1py.Objects.User import User
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils.Utils import format_url, CaseAndSpaceInsensitiveSet, require_security_admin, require_admin
+from TM1py.Utils.Utils import (
+    CaseAndSpaceInsensitiveSet,
+    format_url,
+    require_admin,
+    require_security_admin,
+)
 
 
 class SecurityService(ObjectService):

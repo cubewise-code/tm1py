@@ -5,13 +5,13 @@ import time
 import warnings
 from io import BytesIO
 from pathlib import Path
-from typing import List, Iterable, Union, Tuple
+from typing import Iterable, List, Tuple, Union
 
 from TM1py.Exceptions import TM1pyVersionException
 from TM1py.Services import RestService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Utils import format_url
-from TM1py.Utils.Utils import verify_version, require_version
+from TM1py.Utils.Utils import require_version, verify_version
 
 
 class FileService(ObjectService):

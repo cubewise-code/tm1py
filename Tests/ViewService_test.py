@@ -1,9 +1,18 @@
 import configparser
-from pathlib import Path
 import random
 import unittest
+from pathlib import Path
 
-from TM1py.Objects import AnonymousSubset, Subset, Cube, Dimension, Element, Hierarchy, MDXView, NativeView
+from TM1py.Objects import (
+    AnonymousSubset,
+    Cube,
+    Dimension,
+    Element,
+    Hierarchy,
+    MDXView,
+    NativeView,
+    Subset,
+)
 from TM1py.Services import TM1Service
 
 

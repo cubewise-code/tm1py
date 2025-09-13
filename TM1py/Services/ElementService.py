@@ -3,45 +3,47 @@ import csv
 import json
 from enum import Enum
 from io import StringIO
-from typing import List, Union, Iterable, Optional, Dict, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple, Union
 
-
-from TM1py import Subset, Process
+from TM1py import Process, Subset
 
 try:
-    import pandas as pd
     import numpy as np
+    import pandas as pd
 
     _has_pandas = True
 except ImportError:
     _has_pandas = False
 
-from mdxpy import MdxHierarchySet, Member, MdxLevelExpression
+from collections import OrderedDict
+
+from mdxpy import MdxHierarchySet, MdxLevelExpression, Member
 from requests import Response
 
 from TM1py.Exceptions.Exceptions import (
     TM1pyException,
-    TM1pyWritePartialFailureException,
-    TM1pyWriteFailureException,
     TM1pyRestException,
+    TM1pyWriteFailureException,
+    TM1pyWritePartialFailureException,
 )
-from TM1py.Objects import ElementAttribute, Element
+from TM1py.Objects import Element, ElementAttribute
 from TM1py.Services.FileService import FileService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.ProcessService import ProcessService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import (
     CaseAndSpaceInsensitiveDict,
-    format_url,
     CaseAndSpaceInsensitiveSet,
+    CaseAndSpaceInsensitiveTuplesDict,
+    build_element_unique_names,
+    dimension_hierarchy_element_tuple_from_unique_name,
+    format_url,
     require_data_admin,
     require_ops_admin,
-    dimension_hierarchy_element_tuple_from_unique_name,
     require_pandas,
     require_version,
+    verify_version,
 )
-from TM1py.Utils import build_element_unique_names, CaseAndSpaceInsensitiveTuplesDict, verify_version
-from collections import OrderedDict
 
 
 class MDXDrillMethod(Enum):

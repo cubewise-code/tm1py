@@ -2,7 +2,7 @@
 
 import json
 import re
-from typing import Optional, Iterable, Dict, List, Union
+from typing import Dict, Iterable, List, Optional, Union
 
 from TM1py.Objects.TM1Object import TM1Object
 from TM1py.Utils import verify_version

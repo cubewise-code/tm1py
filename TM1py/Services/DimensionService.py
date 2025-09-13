@@ -12,7 +12,11 @@ from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.ProcessService import ProcessService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.SubsetService import SubsetService
-from TM1py.Utils.Utils import case_and_space_insensitive_equals, format_url, CaseAndSpaceInsensitiveSet
+from TM1py.Utils.Utils import (
+    CaseAndSpaceInsensitiveSet,
+    case_and_space_insensitive_equals,
+    format_url,
+)
 
 
 class DimensionService(ObjectService):

@@ -8,7 +8,7 @@ except ImportError:
 
 import json
 import math
-from typing import Dict, Tuple, List, Optional, Iterable
+from typing import Dict, Iterable, List, Optional, Tuple
 
 try:
     import networkx as nx
@@ -20,22 +20,22 @@ except ImportError:
 from requests import Response
 
 from TM1py.Exceptions import TM1pyRestException
-from TM1py.Objects import Hierarchy, Element, ElementAttribute, Dimension, Process
+from TM1py.Objects import Dimension, Element, ElementAttribute, Hierarchy, Process
 from TM1py.Services.ElementService import ElementService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.SubsetService import SubsetService
 from TM1py.Utils.Utils import (
-    case_and_space_insensitive_equals,
-    format_url,
     CaseAndSpaceInsensitiveDict,
     CaseAndSpaceInsensitiveSet,
     CaseAndSpaceInsensitiveTuplesDict,
-    require_pandas,
+    case_and_space_insensitive_equals,
+    format_url,
     require_data_admin,
-    require_ops_admin,
-    verify_version,
     require_networkx,
+    require_ops_admin,
+    require_pandas,
+    verify_version,
 )
 
 
@@ -318,7 +318,7 @@ class HierarchyService(ObjectService):
     def _update_default_member_via_props_cube(
         self, dimension_name: str, hierarchy_name: str = None, member_name: str = "", **kwargs
     ) -> Response:
-        from TM1py import ProcessService, CellService
+        from TM1py import CellService, ProcessService
 
         if hierarchy_name and not case_and_space_insensitive_equals(dimension_name, hierarchy_name):
             dimension = "{}:{}".format(dimension_name, hierarchy_name)
