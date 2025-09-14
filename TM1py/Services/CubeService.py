@@ -409,7 +409,7 @@ class CubeService(ObjectService):
     def set_vmm(self, cube_name: str, vmm: int):
         url = format_url("/Cubes('{}')", cube_name)
         payload = {"ViewStorageMaxMemory": vmm}
-        response = self._rest.PATCH(url=url, data=json.dumps(payload))
+        self._rest.PATCH(url=url, data=json.dumps(payload))
 
     @require_data_admin
     @require_version(version="11.8.20")
@@ -423,4 +423,4 @@ class CubeService(ObjectService):
     def set_vmt(self, cube_name: str, vmt: int):
         url = format_url("/Cubes('{}')", cube_name)
         payload = {"ViewStorageMinTime": vmt}
-        response = self._rest.PATCH(url=url, data=json.dumps(payload))
+        self._rest.PATCH(url=url, data=json.dumps(payload))

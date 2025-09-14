@@ -4587,6 +4587,8 @@ class TestCellService(unittest.TestCase):
             """
             self.tm1.cells.clear_with_mdx(cube=self.cube_name, mdx=mdx)
 
+        self.assertEqual(str(e.exception)[:21], "Failed to clear cube:")
+
     def test_clear_with_mdx_unsupported_version(self):
 
         with self.assertRaises(TM1pyVersionException) as e:
