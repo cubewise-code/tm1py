@@ -989,7 +989,7 @@ class RestService:
         try:
             self.GET("/Configuration/ServerName/$value")
             return True
-        except:
+        except Exception:
             return False
 
     def set_version(self):

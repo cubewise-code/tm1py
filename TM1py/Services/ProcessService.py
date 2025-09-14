@@ -650,7 +650,7 @@ class ProcessService(ObjectService):
 
         try:
             return response.json()["CallStack"][0]["Variables"][0]["Value"]
-        except:
+        except Exception:
             raise ValueError(f"'{variable_name}' not found in collection")
 
     def debug_get_process_procedure(self, debug_id: str, **kwargs) -> str:

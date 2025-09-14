@@ -5333,7 +5333,7 @@ class CellService(ObjectService):
                 # attempt to derive axes setup from MdxBuilder (fast)
                 cube, _, rows, columns = self._attempt_derive_cellset_composition_from_mdx(mdx)
 
-        except:
+        except Exception:
             # fallback: execute MDX and extract axes setup (slow)
             cellset_id = self.create_cellset(mdx)
             cube, _, rows, columns = self.extract_cellset_composition(cellset_id, delete_cellset=True, **kwargs)
