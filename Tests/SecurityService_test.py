@@ -107,6 +107,8 @@ class TestSecurityService(unittest.TestCase):
         with self.assertRaises(ValueError) as e:
             self.tm1.security.create_user(User("not_relevant", groups=["ADMIN"], user_type="not_a_valid_type"))
 
+        self.assertEqual(str(e.exception)[:20], "Invalid element type")
+
     def test_user_type_derive_user_from_groups(self):
         user = User("not_relevant", groups=["Marketing"], user_type=None)
         self.assertEqual(user.user_type, UserType.User)
