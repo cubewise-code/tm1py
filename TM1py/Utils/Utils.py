@@ -156,7 +156,7 @@ def require_pandas(func):
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
         try:
-            import pandas
+            import pandas  # noqa: F401
 
             return func(self, *args, **kwargs)
         except ImportError:
@@ -170,7 +170,7 @@ def require_networkx(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         try:
-            import networkx
+            import networkx  # noqa: F401
 
             return func(*args, **kwargs)
         except ImportError:
