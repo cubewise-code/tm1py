@@ -7,10 +7,17 @@ import uuid
 from pathlib import Path
 
 from TM1py.Exceptions import TM1pyException, TM1pyTimeout
-from TM1py.Objects import Process, Subset, ProcessDebugBreakpoint, BreakPointType, HitMode
+from TM1py.Objects import (
+    BreakPointType,
+    HitMode,
+    Process,
+    ProcessDebugBreakpoint,
+    Subset,
+)
 from TM1py.Services import TM1Service
 from TM1py.Utils import verify_version
-from .Utils import skip_if_version_lower_than, skip_if_version_higher_or_equal_than
+
+from .Utils import skip_if_version_higher_or_equal_than, skip_if_version_lower_than
 
 
 class TestProcessService(unittest.TestCase):

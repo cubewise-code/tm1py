@@ -1,7 +1,6 @@
 import unittest
 
-from TM1py import Chore, ChoreStartTime, ChoreFrequency, ChoreTask
-from TM1py.Objects import Chore
+from TM1py.Objects import Chore, ChoreFrequency, ChoreStartTime, ChoreTask
 
 
 class TestChore(unittest.TestCase):

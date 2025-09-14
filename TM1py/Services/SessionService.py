@@ -1,10 +1,11 @@
 from typing import List
+
 from requests import Response
 
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.UserService import UserService
-from TM1py.Utils import format_url, case_and_space_insensitive_equals, require_admin
+from TM1py.Utils import case_and_space_insensitive_equals, format_url, require_admin
 
 
 class SessionService(ObjectService):

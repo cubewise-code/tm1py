@@ -5,6 +5,7 @@ from pathlib import Path
 
 from TM1py.Services import TM1Service
 from TM1py.Utils import case_and_space_insensitive_equals
+
 from .Utils import skip_if_version_higher_or_equal_than
 
 

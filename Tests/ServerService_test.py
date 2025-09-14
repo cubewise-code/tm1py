@@ -171,7 +171,6 @@ class TestServerService(unittest.TestCase):
         # Digest time in TM1
         time.sleep(8)
 
-        user = self.config["tm1srv01"]["user"]
         cube = self.cube_name
 
         # Query transaction log with Since and Elements filter

@@ -2,36 +2,35 @@ import pickle
 import warnings
 
 from TM1py.Services import (
-    HierarchyService,
-    SecurityService,
-    ApplicationService,
-    SubsetService,
-    ProcessService,
     AnnotationService,
-    ViewService,
-    RestService,
+    ApplicationService,
     CellService,
     ChoreService,
-    DimensionService,
     CubeService,
+    DimensionService,
     ElementService,
-    SandboxService,
     GitService,
+    HierarchyService,
+    ProcessService,
+    RestService,
+    SandboxService,
+    SecurityService,
+    SubsetService,
+    ViewService,
 )
+from TM1py.Services.AuditLogService import AuditLogService
+from TM1py.Services.ConfigurationService import ConfigurationService
 from TM1py.Services.FileService import FileService
 from TM1py.Services.JobService import JobService
-from TM1py.Services.UserService import UserService
-from TM1py.Services.ThreadService import ThreadService
-from TM1py.Services.SessionService import SessionService
-from TM1py.Services.TransactionLogService import TransactionLogService
-from TM1py.Services.MessageLogService import MessageLogService
-from TM1py.Services.ConfigurationService import ConfigurationService
-from TM1py.Services.AuditLogService import AuditLogService
 from TM1py.Services.LoggerService import LoggerService
-
+from TM1py.Services.MessageLogService import MessageLogService
+from TM1py.Services.MonitoringService import MonitoringService
 from TM1py.Services.PowerBiService import PowerBiService
 from TM1py.Services.ServerService import ServerService
-from TM1py.Services.MonitoringService import MonitoringService
+from TM1py.Services.SessionService import SessionService
+from TM1py.Services.ThreadService import ThreadService
+from TM1py.Services.TransactionLogService import TransactionLogService
+from TM1py.Services.UserService import UserService
 
 
 class TM1Service:

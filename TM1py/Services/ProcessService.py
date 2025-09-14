@@ -3,18 +3,18 @@
 import json
 import time
 import uuid
-from typing import List, Dict, Tuple, Iterable
+from typing import Dict, Iterable, List, Tuple
 
 from requests import Response
 from requests.structures import CaseInsensitiveDict
 
-from TM1py.Exceptions.Exceptions import TM1pyRestException, TM1pyException
+from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyRestException
 from TM1py.Objects.Process import Process
 from TM1py.Objects.ProcessDebugBreakpoint import ProcessDebugBreakpoint
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils import format_url, require_data_admin
-from TM1py.Utils.Utils import require_version, deprecated_in_version
+from TM1py.Utils.Utils import deprecated_in_version, require_version
 
 
 class ProcessService(ObjectService):
@@ -165,7 +165,7 @@ class ProcessService(ObjectService):
             else:
                 raise ValueError("'name_contains' must be str or iterable")
 
-        url += "&$filter={}".format(f" and ".join(name_filters))
+        url += "&$filter={}".format(" and ".join(name_filters))
         url += "{}".format(model_process_filter if skip_control_processes else "")
         response = self._rest.GET(url, **kwargs)
         return list(process["Name"] for process in response.json()["value"])
@@ -436,7 +436,7 @@ class ProcessService(ObjectService):
 
         url += "&$top={}".format(top) if top > 0 else ""
 
-        url += "&$orderby=Filename desc" if descending == True else ""
+        url += "&$orderby=Filename desc" if descending else ""
 
         response = self._rest.GET(url=url, **kwargs)
         return [log["Filename"] for log in response.json()["value"]]
@@ -650,7 +650,7 @@ class ProcessService(ObjectService):
 
         try:
             return response.json()["CallStack"][0]["Variables"][0]["Value"]
-        except:
+        except Exception:
             raise ValueError(f"'{variable_name}' not found in collection")
 
     def debug_get_process_procedure(self, debug_id: str, **kwargs) -> str:

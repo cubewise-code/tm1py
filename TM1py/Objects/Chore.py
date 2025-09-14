@@ -2,7 +2,7 @@
 
 import collections
 import json
-from typing import Dict, List, Iterable
+from typing import Dict, Iterable, List
 
 from TM1py.Objects.ChoreFrequency import ChoreFrequency
 from TM1py.Objects.ChoreStartTime import ChoreStartTime

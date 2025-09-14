@@ -3,7 +3,7 @@
 import collections
 import json
 import re
-from typing import Optional, Dict
+from typing import Dict, Optional
 
 from TM1py.Objects.View import View
 from TM1py.Utils import case_and_space_insensitive_equals

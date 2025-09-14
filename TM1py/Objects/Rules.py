@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
-from typing import List, Dict
+from typing import Dict, List
 
 from TM1py.Objects.TM1Object import TM1Object
 

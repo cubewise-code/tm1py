@@ -2,7 +2,7 @@ import configparser
 import unittest
 from pathlib import Path
 
-from TM1py.Objects import Dimension, Hierarchy, Subset, ElementAttribute, Element
+from TM1py.Objects import Dimension, Element, ElementAttribute, Hierarchy, Subset
 from TM1py.Services import TM1Service
 
 

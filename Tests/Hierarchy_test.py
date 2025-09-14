@@ -1,6 +1,6 @@
 import unittest
 
-from TM1py import Hierarchy, Element
+from TM1py import Element, Hierarchy
 
 
 class TestHierarchy(unittest.TestCase):

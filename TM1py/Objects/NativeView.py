@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import json
-from typing import Optional, Iterable, List, Union, Dict
+from typing import Dict, Iterable, List, Optional, Union
 
 from mdxpy import MdxBuilder, MdxHierarchySet, Member
 
 from TM1py.Objects.Axis import ViewAxisSelection, ViewTitleSelection
-from TM1py.Objects.Subset import Subset, AnonymousSubset
+from TM1py.Objects.Subset import AnonymousSubset, Subset
 from TM1py.Objects.View import View
 from TM1py.Utils import case_and_space_insensitive_equals, read_object_name_from_url
 

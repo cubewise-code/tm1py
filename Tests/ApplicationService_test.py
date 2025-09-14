@@ -5,33 +5,34 @@ from _datetime import datetime
 from pathlib import Path
 
 from TM1py import (
-    TM1Service,
+    AnonymousSubset,
+    Chore,
+    ChoreFrequency,
+    ChoreStartTime,
+    ChoreTask,
+    Cube,
+    Dimension,
     Element,
     ElementAttribute,
     Hierarchy,
-    Dimension,
-    Cube,
     NativeView,
-    AnonymousSubset,
-    Subset,
     Process,
-    Chore,
-    ChoreStartTime,
-    ChoreFrequency,
-    ChoreTask,
+    Subset,
+    TM1Service,
 )
 from TM1py.Objects.Application import (
-    CubeApplication,
     ApplicationTypes,
     ChoreApplication,
+    CubeApplication,
     DimensionApplication,
+    DocumentApplication,
     FolderApplication,
     LinkApplication,
     ProcessApplication,
     SubsetApplication,
     ViewApplication,
-    DocumentApplication,
 )
+
 from .Utils import skip_if_version_lower_than, verify_version
 
 

@@ -6,10 +6,10 @@ from uuid import uuid1
 
 from mdxpy import MdxBuilder
 
-from TM1py.Exceptions import TM1pyRestException, TM1pyException
-from TM1py.Objects import Dimension, Hierarchy, Element, ElementAttribute
+from Tests.Utils import skip_if_no_pandas, skip_if_version_lower_than
+from TM1py.Exceptions import TM1pyException, TM1pyRestException
+from TM1py.Objects import Dimension, Element, ElementAttribute, Hierarchy
 from TM1py.Services import TM1Service
-from Tests.Utils import skip_if_version_lower_than, skip_if_no_pandas
 
 
 class TestElementService(unittest.TestCase):
@@ -620,14 +620,6 @@ class TestElementService(unittest.TestCase):
 
         self.assertEqual((5, 6), df.shape)
         self.assertEqual(expected_columns, tuple(df.columns))
-
-    @skip_if_no_pandas
-    def test_get_elements_dataframe_not_elements(self):
-        self.run_test_get_elements_dataframe_not_elements(use_blob=False)
-
-    @skip_if_no_pandas
-    def test_get_elements_dataframe_use_blob_not_elements(self):
-        self.run_test_get_elements_dataframe_not_elements(use_blob=True)
 
     def run_test_get_elements_dataframe_elements_via_mdx(self, use_blob: bool):
         element_names = self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name)

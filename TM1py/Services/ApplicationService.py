@@ -5,17 +5,17 @@ from typing import Union
 from requests import Response
 
 from TM1py.Objects.Application import (
-    DocumentApplication,
+    Application,
     ApplicationTypes,
-    CubeApplication,
     ChoreApplication,
+    CubeApplication,
+    DimensionApplication,
+    DocumentApplication,
     FolderApplication,
     LinkApplication,
     ProcessApplication,
-    DimensionApplication,
     SubsetApplication,
     ViewApplication,
-    Application,
 )
 from TM1py.Services import RestService
 from TM1py.Services.ObjectService import ObjectService

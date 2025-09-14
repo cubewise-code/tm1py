@@ -3,7 +3,7 @@
 import collections
 import json
 from enum import Enum
-from typing import Iterable, Optional, List, Dict, Union
+from typing import Dict, Iterable, List, Optional, Union
 
 from TM1py.Objects.TM1Object import TM1Object
 from TM1py.Utils.Utils import CaseAndSpaceInsensitiveSet, format_url

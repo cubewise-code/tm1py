@@ -9,9 +9,10 @@ except ImportError:
     pass
 
 
-from TM1py import MDXView, NativeView, AnonymousSubset
-from TM1py.Objects import Cube, Dimension, Element, Hierarchy, ElementAttribute
+from TM1py import AnonymousSubset, MDXView, NativeView
+from TM1py.Objects import Cube, Dimension, Element, ElementAttribute, Hierarchy
 from TM1py.Services import TM1Service
+
 from .Utils import skip_if_no_pandas
 
 

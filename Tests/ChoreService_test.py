@@ -6,8 +6,9 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
-from TM1py.Objects import Chore, ChoreStartTime, ChoreFrequency, ChoreTask, Process
+from TM1py.Objects import Chore, ChoreFrequency, ChoreStartTime, ChoreTask, Process
 from TM1py.Services import TM1Service
+
 from .Utils import skip_if_version_lower_than
 
 

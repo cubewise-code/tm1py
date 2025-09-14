@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 from typing import List
 from warnings import warn
+
 from requests import Response
 
 from TM1py.Objects.User import User
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import require_admin
-from TM1py.Services.ThreadService import ThreadService
 from TM1py.Services.SessionService import SessionService
+from TM1py.Services.ThreadService import ThreadService
 from TM1py.Services.UserService import UserService
+from TM1py.Utils import require_admin
 
 
 class MonitoringService(ObjectService):

@@ -2,7 +2,7 @@
 
 import collections
 import json
-from typing import Optional, Iterable, Dict, List
+from typing import Dict, Iterable, List, Optional
 
 from TM1py.Objects.Hierarchy import Hierarchy
 from TM1py.Objects.TM1Object import TM1Object

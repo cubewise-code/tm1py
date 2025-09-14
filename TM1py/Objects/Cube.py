@@ -2,7 +2,7 @@
 
 import collections
 import json
-from typing import Iterable, List, Dict, Optional, Union
+from typing import Dict, Iterable, List, Optional, Union
 
 from TM1py.Objects.Rules import Rules
 from TM1py.Objects.TM1Object import TM1Object

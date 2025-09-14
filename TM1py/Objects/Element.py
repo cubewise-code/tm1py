@@ -3,7 +3,7 @@
 import collections
 import json
 from enum import Enum
-from typing import Union, Dict, List
+from typing import Dict, List, Union
 
 from TM1py.Objects.TM1Object import TM1Object
 from TM1py.Utils import case_and_space_insensitive_equals

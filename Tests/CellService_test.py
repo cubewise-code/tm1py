@@ -2,26 +2,46 @@ import configparser
 import unittest
 from pathlib import Path
 
-from mdxpy import CalculatedMember, MdxBuilder, MdxHierarchySet, Member, DimensionProperty
+from mdxpy import (
+    CalculatedMember,
+    DimensionProperty,
+    MdxBuilder,
+    MdxHierarchySet,
+    Member,
+)
 
 from TM1py import Sandbox
 from TM1py.Exceptions.Exceptions import (
     TM1pyException,
-    TM1pyVersionException,
-    TM1pyWritePartialFailureException,
-    TM1pyWriteFailureException,
     TM1pyRestException,
+    TM1pyVersionException,
+    TM1pyWriteFailureException,
+    TM1pyWritePartialFailureException,
 )
-from TM1py.Objects import AnonymousSubset, Cube, Dimension, Element, ElementAttribute, Hierarchy, MDXView, NativeView
+from TM1py.Objects import (
+    AnonymousSubset,
+    Cube,
+    Dimension,
+    Element,
+    ElementAttribute,
+    Hierarchy,
+    MDXView,
+    NativeView,
+)
 from TM1py.Services import TM1Service
 from TM1py.Utils import (
-    Utils,
-    element_names_from_element_unique_names,
     CaseAndSpaceInsensitiveDict,
     CaseAndSpaceInsensitiveTuplesDict,
+    Utils,
+    element_names_from_element_unique_names,
     verify_version,
 )
-from .Utils import skip_if_version_lower_than, skip_if_no_pandas, skip_if_version_higher_or_equal_than
+
+from .Utils import (
+    skip_if_no_pandas,
+    skip_if_version_higher_or_equal_than,
+    skip_if_version_lower_than,
+)
 
 try:
     import pandas as pd
@@ -1342,20 +1362,6 @@ class TestCellService(unittest.TestCase):
         query = query.add_member_to_where(Member.of(self.string_dimension_names[0], "d1e1"))
         values = self.tm1.cells.execute_mdx_values(query.to_mdx())
         self.assertEqual(["text1", "text3"], values)
-
-    @skip_if_no_pandas
-    def test_write_dataframe_error(self):
-        df = pd.DataFrame(
-            {
-                self.dimension_names[0]: ["element 1", "element 3", "element 5"],
-                self.dimension_names[1]: ["element 1", "element 2", "element 4"],
-                self.dimension_names[2]: ["element 1", "element 3", "element 5"],
-                "Extra Column": ["element 1", "element2", "element3"],
-                "Value": [1, 2, 3],
-            }
-        )
-        with self.assertRaises(ValueError) as _:
-            self.tm1.cells.write_dataframe(self.cube_name, df)
 
     @skip_if_no_pandas
     def test_write_dataframe_async(self):
@@ -4581,6 +4587,8 @@ class TestCellService(unittest.TestCase):
             """
             self.tm1.cells.clear_with_mdx(cube=self.cube_name, mdx=mdx)
 
+        self.assertEqual(str(e.exception)[:21], "Failed to clear cube:")
+
     def test_clear_with_mdx_unsupported_version(self):
 
         with self.assertRaises(TM1pyVersionException) as e:
@@ -4813,7 +4821,7 @@ class TestCellService(unittest.TestCase):
 
     def test_get_value_other_hierarchy_in_attribute_cube(self):
         value = self.tm1.cells.get_value(
-            cube_name="}ElementAttributes_" + self.dimension_with_hierarchies_name, elements=f"Hierarchy2::Cons1,ea2"
+            cube_name="}ElementAttributes_" + self.dimension_with_hierarchies_name, elements="Hierarchy2::Cons1,ea2"
         )
 
         self.assertEqual("ABC", value)
@@ -4831,7 +4839,7 @@ class TestCellService(unittest.TestCase):
     def test_get_values_other_hierarchy_in_attribute_cube(self):
         values = self.tm1.cells.get_values(
             cube_name="}ElementAttributes_" + self.dimension_with_hierarchies_name,
-            element_sets=[f"Hierarchy2¦Cons1,ea2"],
+            element_sets=["Hierarchy2¦Cons1,ea2"],
             hierarchy_element_separator="¦",
         )
 

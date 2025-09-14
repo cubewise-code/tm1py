@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import json
 import warnings
-from collections import namedtuple, OrderedDict
+from collections import OrderedDict, namedtuple
 from enum import Enum
-from typing import Union, Dict
+from typing import Dict, Union
 
 from TM1py.Objects.TM1Object import TM1Object
 from TM1py.Utils import format_url
@@ -114,7 +114,7 @@ class DocumentApplication(Application):
         self.last_updated = last_updated
 
     def to_xlsx(self, path_to_file: str):
-        warnings.warn(f"Function 'to_xlsx' is deprecated. Use 'to_file' instead", DeprecationWarning, stacklevel=2)
+        warnings.warn("Function 'to_xlsx' is deprecated. Use 'to_file' instead", DeprecationWarning, stacklevel=2)
         return self.to_file(path_to_file=path_to_file)
 
     def to_file(self, path_to_file: str):

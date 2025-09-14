@@ -4,7 +4,7 @@ import collections
 import json
 from typing import Dict, Union
 
-from TM1py.Objects.Subset import Subset, AnonymousSubset
+from TM1py.Objects.Subset import AnonymousSubset, Subset
 from TM1py.Objects.TM1Object import TM1Object
 from TM1py.Utils import format_url
 

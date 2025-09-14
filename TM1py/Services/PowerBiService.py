@@ -1,7 +1,6 @@
 from collections.abc import Iterable
 
-from TM1py.Services import CellService
-from TM1py.Services import ElementService
+from TM1py.Services import CellService, ElementService
 from TM1py.Utils import require_pandas
 
 try:

@@ -1,8 +1,7 @@
 import json
+from typing import Dict
 
 from requests import Response
-
-from typing import Dict
 
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService

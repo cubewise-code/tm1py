@@ -12,7 +12,7 @@ def skip_if_no_pandas(func):
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
         try:
-            import pandas
+            import pandas  # noqa: F401
 
             return func(self, *args, **kwargs)
         except ImportError:

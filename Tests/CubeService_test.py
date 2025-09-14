@@ -3,12 +3,12 @@ import unittest
 import uuid
 from pathlib import Path
 
-from TM1py import Element, Hierarchy, Dimension
+from TM1py import Dimension, Element, Hierarchy
 from TM1py.Exceptions.Exceptions import TM1pyRestException
-from TM1py.Objects import Cube
-from TM1py.Objects import Rules
+from TM1py.Objects import Cube, Rules
 from TM1py.Services import TM1Service
-from .Utils import skip_if_version_lower_than, skip_if_version_higher_or_equal_than
+
+from .Utils import skip_if_version_higher_or_equal_than, skip_if_version_lower_than
 
 
 class TestCubeService(unittest.TestCase):

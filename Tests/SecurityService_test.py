@@ -7,8 +7,9 @@ from TM1py.Exceptions import TM1pyRestException
 from TM1py.Objects import User
 from TM1py.Objects.User import UserType
 from TM1py.Services import TM1Service
-from TM1py.Utils.Utils import CaseAndSpaceInsensitiveSet, case_and_space_insensitive_equals, verify_version
-from .Utils import skip_if_version_higher_or_equal_than, skip_if_version_lower_than, skip_if_auth_not_basic
+from TM1py.Utils.Utils import CaseAndSpaceInsensitiveSet, verify_version
+
+from .Utils import skip_if_auth_not_basic, skip_if_version_higher_or_equal_than
 
 
 class TestSecurityService(unittest.TestCase):
@@ -105,6 +106,8 @@ class TestSecurityService(unittest.TestCase):
     def test_user_type_invalid_str(self):
         with self.assertRaises(ValueError) as e:
             self.tm1.security.create_user(User("not_relevant", groups=["ADMIN"], user_type="not_a_valid_type"))
+
+        self.assertEqual(str(e.exception)[:20], "Invalid element type")
 
     def test_user_type_derive_user_from_groups(self):
         user = User("not_relevant", groups=["Marketing"], user_type=None)
