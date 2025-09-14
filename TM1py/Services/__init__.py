@@ -1,4 +1,4 @@
-# ruff: noqa: I001
+# ruff: noqa: F401 I001
 from TM1py.Services.AnnotationService import AnnotationService
 from TM1py.Services.ApplicationService import ApplicationService
 from TM1py.Services.CellService import CellService

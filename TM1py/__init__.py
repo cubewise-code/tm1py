@@ -1,3 +1,5 @@
+# ruff: noqa: F401
+
 """
 A python module for TM1.
 

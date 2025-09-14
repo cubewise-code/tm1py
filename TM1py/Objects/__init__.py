@@ -1,3 +1,4 @@
+# ruff: noqa: F401
 from TM1py.Objects.Annotation import Annotation
 from TM1py.Objects.Application import Application
 from TM1py.Objects.Axis import ViewAxisSelection, ViewTitleSelection
