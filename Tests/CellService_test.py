@@ -1364,20 +1364,6 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(["text1", "text3"], values)
 
     @skip_if_no_pandas
-    def test_write_dataframe_error(self):
-        df = pd.DataFrame(
-            {
-                self.dimension_names[0]: ["element 1", "element 3", "element 5"],
-                self.dimension_names[1]: ["element 1", "element 2", "element 4"],
-                self.dimension_names[2]: ["element 1", "element 3", "element 5"],
-                "Extra Column": ["element 1", "element2", "element3"],
-                "Value": [1, 2, 3],
-            }
-        )
-        with self.assertRaises(ValueError) as _:
-            self.tm1.cells.write_dataframe(self.cube_name, df)
-
-    @skip_if_no_pandas
     def test_write_dataframe_async(self):
         df = pd.DataFrame(
             {

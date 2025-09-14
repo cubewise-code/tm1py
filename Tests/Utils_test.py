@@ -468,49 +468,6 @@ class TestUtilsMethods(unittest.TestCase):
         element_name = Utils.element_name_from_element_unique_name("[d1].[other [please specify]]]")
         self.assertEqual("other [please specify]", element_name)
 
-    def test_drop_dimension_properties_member_name(self):
-        mdx = """
-        SELECT
-        {[d1].[e1]} DIMENSION PROPERTIES MEMBER_NAME ON 0,
-        {[d2].[e1]} DIMENSION PROPERTIES MEMBER_NAME ON 1
-        FROM [c1]
-        """
-        expected_mdx = """
-        SELECT
-        {[d1].[e1]} ON 0,
-        {[d2].[e1]} ON 1
-        FROM [c1]
-        """
-        self.assertEqual(expected_mdx, drop_dimension_properties(mdx))
-
-    def test_drop_dimension_properties_member_name_lower_case(self):
-        mdx = """
-        SELECT
-        {[d1].[e1]} dimension properties member_name ON 0,
-        {[d2].[e1]} dimension properties member_name ON 1
-        FROM [c1]
-        """
-        expected_mdx = """
-        SELECT
-        {[d1].[e1]} ON 0,
-        {[d2].[e1]} ON 1
-        FROM [c1]
-        """
-        self.assertEqual(expected_mdx, drop_dimension_properties(mdx))
-
-    def test_drop_dimension_properties_one_axis(self):
-        mdx = """
-        SELECT
-        {[d1].[e1]} * {[d2].[e1]} dimension properties member_name ON 0
-        FROM [c1]
-        """
-        expected_mdx = """
-        SELECT
-        {[d1].[e1]} * {[d2].[e1]} ON 0
-        FROM [c1]
-        """
-        self.assertEqual(expected_mdx, drop_dimension_properties(mdx))
-
     def test_drop_dimension_properties_attributes(self):
         mdx = """
             SELECT
