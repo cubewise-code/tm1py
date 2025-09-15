@@ -258,6 +258,7 @@ class RestService:
         timeout: float = None,
         cancel_at_timeout: bool = False,
         idempotent: bool = False,
+        verify_response: bool = True,
         **kwargs,
     ):
         """
@@ -293,7 +294,8 @@ class RestService:
                 return response
 
             # Verify and encode response
-            self.verify_response(response=response)
+            if verify_response:
+                self.verify_response(response=response)
             response.encoding = encoding
             return response
 
@@ -636,6 +638,7 @@ class RestService:
         cancel_at_timeout: bool = False,
         encoding: str = "utf-8",
         idempotent: bool = True,
+        verify_response: bool = True,
         **kwargs,
     ):
         """Perform a GET request against TM1 instance
@@ -661,6 +664,7 @@ class RestService:
             cancel_at_timeout=cancel_at_timeout,
             encoding=encoding,
             idempotent=idempotent,
+            verify_response=verify_response,
         )
 
     def POST(
@@ -674,6 +678,7 @@ class RestService:
         cancel_at_timeout: bool = False,
         encoding: str = "utf-8",
         idempotent: bool = False,
+        verify_response: bool = True,
         **kwargs,
     ):
         """Perform a POST request against TM1 instance
@@ -699,6 +704,7 @@ class RestService:
             cancel_at_timeout=cancel_at_timeout,
             encoding=encoding,
             idempotent=idempotent,
+            verify_response=verify_response,
         )
 
         return response
@@ -714,6 +720,7 @@ class RestService:
         cancel_at_timeout: bool = False,
         encoding: str = "utf-8",
         idempotent: bool = False,
+        verify_response: bool = True,
         **kwargs,
     ):
         """Perform a PATCH request against TM1 instance
@@ -739,6 +746,7 @@ class RestService:
             cancel_at_timeout=cancel_at_timeout,
             encoding=encoding,
             idempotent=idempotent,
+            verify_response=verify_response,
         )
 
     def PUT(
@@ -752,6 +760,7 @@ class RestService:
         cancel_at_timeout: bool = False,
         encoding: str = "utf-8",
         idempotent: bool = False,
+        verify_response: bool = True,
         **kwargs,
     ):
         """Perform a PUT request against TM1 instance
@@ -777,6 +786,7 @@ class RestService:
             cancel_at_timeout=cancel_at_timeout,
             encoding=encoding,
             idempotent=idempotent,
+            verify_response=verify_response,
         )
 
     def DELETE(
@@ -790,6 +800,7 @@ class RestService:
         cancel_at_timeout: bool = False,
         encoding: str = "utf-8",
         idempotent: bool = False,
+        verify_response: bool = True,
         **kwargs,
     ):
         """Perform a DELETE request against TM1 instance
@@ -815,6 +826,7 @@ class RestService:
             cancel_at_timeout=cancel_at_timeout,
             encoding=encoding,
             idempotent=idempotent,
+            verify_response=verify_response,
         )
 
     def logout(self, timeout: float = None, **kwargs):
