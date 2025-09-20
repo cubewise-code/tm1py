@@ -178,7 +178,7 @@ class Process(TM1Object):
         return self._construct_body()
 
     @property
-    def body_as_dict(self) -> str:
+    def body_as_dict(self) -> Dict:
         return self._construct_body_as_dict()
 
     @property
