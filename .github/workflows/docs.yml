@@ -1,0 +1,63 @@
+name: Build and Deploy Docs
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "[0-9]+.[0-9]+.?[0-9]*" # Triggered by versions tags e.g. 2.0 or 2.0.1
+  workflow_dispatch: # Manually triggered
+jobs:
+  deploy-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r docs/requirements-docs.txt
+          pip install .
+
+      - name: Configure Git (for mike commits)
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch gh-pages branch (if exists)
+        run: git fetch origin gh-pages:gh-pages || echo "gh-pages does not exist yet"
+
+      - name: Deploy documentation
+        run: |
+          if [[ "${GITHUB_REF}" == refs/heads/master ]]; then
+            echo "→ Deploying latest"
+            mike deploy latest --push --update-aliases
+            mike set-default latest --push
+          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/}"
+            echo "→ Deploying version $VERSION"
+            mike deploy "$VERSION" --push --update-aliases
+            mike set-default --push stable
+          fi
+
+      - name: Copy and commit CNAME file (if exists)
+        run: |
+          git checkout gh-pages
+          if git checkout master -- docs/CNAME 2>/dev/null; then
+            mv docs/CNAME .
+            git add CNAME
+            if ! git diff --cached --quiet; then
+              git commit -m "Update CNAME file"
+              git push origin gh-pages
+            else
+              echo "No changes to commit for CNAME"
+            fi
+          else
+            echo "No CNAME file found in master branch"
+          fi

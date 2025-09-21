@@ -1,7 +1,6 @@
 <h1 align="center">
 <img src="https://s3-ap-southeast-2.amazonaws.com/downloads.cubewise.com/web_assets/CubewiseLogos/TM1py-logo.png" style="width: 70%; height: 70%;text-align: center"/>
 
-
 ![PyPI - License](https://img.shields.io/pypi/l/TM1py)
 ![PyPI - Version](https://img.shields.io/pypi/v/TM1py)
 ![Pepy Total Downloads](https://img.shields.io/pepy/dt/TM1py)
@@ -31,17 +30,14 @@ TM1py offers handy features to interact with TM1 from Python, such as
 Requirements
 =======================
 
-- python (3.7 or higher)
-- requests
-- requests_negotiate_sspi
-- TM1 11, TM1 12
-- keyring
+- [Python](https://www.python.org/downloads/) (3.7 or higher)
+- [TM1/Planning Analytics](https://www.ibm.com/products/planning-analytics) (v11 or higher)
 
-
-Optional Requirements
+Optional Python Packages
 =======================
 
 - pandas
+- networkx
 
 Install
 =======================
@@ -53,10 +49,6 @@ Install
 > with pandas
 
     pip install "tm1py[pandas]"
-    
-> keyring
-
-    pip install keyring
 
 Usage
 =======================
@@ -83,7 +75,6 @@ with TM1Service(
         async_requests_mode=True) as tm1:
     print(tm1.server.get_product_version())
 ```
-
 
 > TM1 12 PAaaS
 
@@ -134,18 +125,15 @@ with TM1Service(**params) as tm1:
     print(tm1.server.get_product_version())
 ```
 
-
 Documentation
 =======================
 
-https://tm1py.readthedocs.io/en/master/
-
+<https://tm1py.org/>
 
 Issues
 =======================
 
 If you find issues, sign up in GitHub and open an Issue in this repository
-
 
 Contribution
 =======================
