@@ -1,0 +1,63 @@
+site_name: TM1py
+site_description: Python client for TM1 REST API
+repo_url: https://github.com/cubewise-code/tm1py
+
+theme:
+  name: material
+  favicon: img/favicon_tm1py_centered_64x64.png
+  logo: img/favicon_tm1py_centered_128x128.png
+  palette:
+    - scheme: default
+      primary: "blue"
+      accent: "orange"
+  features:
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - How to Contribute: how-to-contribute.md
+  - Links: links.md
+  - API Reference: reference/
+
+exclude_docs: |
+  README.md
+  requirements-docs.txt
+
+plugins:
+  - search
+  - literate-nav:
+      nav_file: summary.md
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: sphinx
+            show_root_heading: false
+            show_root_full_path: false
+            show_root_toc_entry: false
+            show_symbol_type_toc: true
+            show_symbol_type_heading: true
+            show_source: true
+            merge_init_into_class: true
+            show_if_no_docstring: true
+
+  - gen-files:
+      scripts:
+        - docs/gen_ref_stubs.py
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/cubewise-code/tm1py
+  version:
+    provider: mike
+
+site_url: https://tm1py.org
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
