@@ -175,7 +175,7 @@ class Hierarchy(TM1Object):
                     descendants.add(descendant)
 
             if recursive and descendant.element_type == Element.Types.CONSOLIDATED:
-                descendants = descendants.union(self.get_descendants(descendant.name, True))
+                descendants = descendants.union(self.get_descendants(descendant.name, True, leaves_only=leaves_only))
         return descendants
 
     def get_descendant_edges(self, element_name: str, recursive: bool = False) -> Dict:
