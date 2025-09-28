@@ -898,18 +898,18 @@ class CellService(ObjectService):
         :param use_blob: Uses blob to write. Requires admin permissions. 10x faster compared to use_ti
         :param use_changeset: Enable ChangesetID: True or False
         :param precision: max precision when writhing through unbound process.
-        Necessary when dealing with large numbers to avoid "number too long" TI syntax error
-        :param skip_non_updateable skip cells that are not updateable (e.g. rule derived or consolidated)
+            Necessary when dealing with large numbers to avoid "number too long" TI syntax error
+        :param skip_non_updateable: skip cells that are not updateable (e.g. rule derived or consolidated)
         :param measure_dimension_elements: dictionary of measure elements and their types to improve
-        performance when `use_ti` is `True`.
-        When all written values are numeric you can pass a default dict with default key 'Numeric'
+            performance when `use_ti` is `True`.
+            When all written values are numeric you can pass a default dict with default key 'Numeric'
         :param sum_numeric_duplicates: Aggregate numerical values for duplicated intersections
         :param remove_blob: remove blob file after writing with use_blob=True
         :param allow_spread: allow TI process in use_blob or use_ti to use CellPutProportionalSpread on C elements
         :param clear_view: name of cube view to clear before writing
         :param static_dimension_elements: Dict of fixed dimension element pairs. Column is created for you.
         :param infer_column_order: bool indicating whether the column order of the dataframe should automatically be
-         inferred and mapped to the dimension order in the cube.
+            inferred and mapped to the dimension order in the cube.
         :return: changeset or None
         """
         if not isinstance(data, pd.DataFrame):
@@ -1210,7 +1210,7 @@ class CellService(ObjectService):
         :param use_changeset: Enable ChangesetID: True or False
         :param precision: max precision when writhing through unbound process.
         Necessary when dealing with large numbers to avoid "number too long" TI syntax error.
-        :param skip_non_updateable skip cells that are not updateable (e.g. rule derived or consolidated)
+        :param skip_non_updateable: skip cells that are not updateable (e.g. rule derived or consolidated)
         :param measure_dimension_elements: dictionary of measure elements and their types to improve
         performance when `use_ti` is `True`.
         When all written values are numeric you can pass a default dict with default key 'Numeric'
@@ -1342,16 +1342,16 @@ class CellService(ObjectService):
         """
         Writes data back to TM1 via an unbound TI process
         :param cube_name: str
-        :param cellset_as_dict:
+        :param cellset_as_dict: cellset_as_dict
         :param increment: increment or update cell values
         :param sandbox_name: str
         :param precision: max precision when writhing through unbound process.
-        :param skip_non_updateable skip cells that are not updateable (e.g. rule derived or consolidated)
-        :param measure_dimension_elements: pass dictionary of measure elements and their types to improve performance
-        When all written values are numeric you can pass a defaultdict with default key: 'Numeric'
-        :param is_attribute_cube bool or None
+        :param skip_non_updateable: skip cells that are not updateable (e.g. rule derived or consolidated)
+        :param measure_dimension_elements: pass dictionary of measure elements and their types to improve performance.
+            When all written values are numeric you can pass a defaultdict with default key: 'Numeric'
+        :param is_attribute_cube: bool or None
         :param allow_spread: allow TI process in use_blob or use_ti to use CellPutProportionalSpread on C elements
-        :param kwargs:
+        :param kwargs: Additional arguments for the REST request.
         :return: Success: bool, Messages: list, ChangeSet: None
         """
         if is_attribute_cube is None:
@@ -1441,12 +1441,12 @@ class CellService(ObjectService):
         :param cellset_as_dict:
         :param increment: increment or update cell values
         :param sandbox_name: str
-        :param skip_non_updateable skip cells that are not updateable (e.g. rule derived or consolidated)
+        :param skip_non_updateable: skip cells that are not updateable (e.g. rule derived or consolidated)
         :param remove_blob: choose False to persist blob after write. Can be helpful for troubleshooting.
         :param dimensions: optional. Dimension names in their natural order. Will speed up the execution!
         :param allow_spread: allow TI process in use_blob or use_ti to use CellPutProportionalSpread on C elements.
         :param clear_view: name of cube view to clear before writing
-        :param kwargs:
+        :param kwargs: Additional arguments for the REST request
         :return: Success: bool, Messages: list, ChangeSet: None
         """
 
@@ -2224,7 +2224,6 @@ class CellService(ObjectService):
         :param view_name: String, name of the view
         :param private: True (private) or False (public)
         :param cell_properties: List, cell properties: [Values, Status, HasPicklist, etc.]
-        :param private: Boolean
         :param top: Int, number of cells to return (counting from top)
         :param skip: Int, number of cells to skip (counting from top)
         :param skip_contexts: skip elements from titles / contexts in response
@@ -2237,7 +2236,7 @@ class CellService(ObjectService):
         :param max_workers: Int, number of threads to use in parallel
         :param async_axis: 0 (columns) or 1 (rows). On which axis to parallelize retrieval
         :param use_compact_json: bool
-        :return: Dictionary : {([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }
+        :return: Dictionary : `{([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }`
         """
         if max_workers > 1:
             return self.execute_view_async(
@@ -2302,7 +2301,6 @@ class CellService(ObjectService):
         :param view_name: String, name of the view
         :param private: True (private) or False (public)
         :param cell_properties: List, cell properties: [Values, Status, HasPicklist, etc.]
-        :param private: Boolean
         :param top: Int, number of cells to return (counting from top)
         :param skip: Int, number of cells to skip (counting from top)
         :param skip_contexts: skip elements from titles / contexts in response
@@ -2314,7 +2312,7 @@ class CellService(ObjectService):
         :param skip_cell_properties: cell values in result dictionary, instead of cell_properties dictionary
         :param max_workers: Int, number of threads to use in parallel
         :param async_axis: 0 (columns) or 1 (rows). On which axis to parallelize retrieval
-        :return: Dictionary : {([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }
+        :return: Dictionary : `{([dim1].[elem1], [dim2][elem6]): {'Value':3127.312, 'Ordinal':12}   ....  }`
         """
         cellset_id = self.create_cellset_from_view(
             cube_name=cube_name, view_name=view_name, private=private, sandbox_name=sandbox_name, **kwargs
@@ -2988,8 +2986,8 @@ class CellService(ObjectService):
 
         :param mdx:
         :param sandbox_name: str
-        :param use_blob
-        :param use_iterative_json
+        :param use_blob:
+        :param use_iterative_json:
         :param display_attribute: bool, show element name or first attribute from MDX PROPERTIES clause
         :param kwargs:
         :return:
@@ -3048,8 +3046,8 @@ class CellService(ObjectService):
         :param view_name:
         :param private:
         :param sandbox_name: str
-        :param use_blob
-        :param use_iterative_json
+        :param use_blob:
+        :param use_iterative_json:
         :param kwargs:
         :return:
         """
@@ -3361,18 +3359,20 @@ class CellService(ObjectService):
         Useful for grids or charting libraries that want an array of cell values per column
         Returns 3-dimensional cell structure for tabbed grids or multiple charts
         Example 'cells' return format:
-            'cells': {
-                '10100': [
-                    ['Q1-2004', 28981046.50724231, 19832724.72429739],
-                    ['Q2-2004', 29512482.207418434, 20365654.788303416],
-                    ['Q3-2004', 29913730.038971487, 20729201.329183243],
-                    ['Q4-2004', 29563345.9542385, 20480205.20121749]],
-                '10200': [
-                    ['Q1-2004', 13888143.710000003, 9853293.623709997],
-                    ['Q2-2004', 14300216.43, 10277650.763958748],
-                    ['Q3-2004', 14502421.63, 10466934.096533755],
-                    ['Q4-2004', 14321501.940000001, 10333095.839474997]]
-            },
+        ```
+        'cells': {
+            '10100': [
+                ['Q1-2004', 28981046.50724231, 19832724.72429739],
+                ['Q2-2004', 29512482.207418434, 20365654.788303416],
+                ['Q3-2004', 29913730.038971487, 20729201.329183243],
+                ['Q4-2004', 29563345.9542385, 20480205.20121749]],
+            '10200': [
+                ['Q1-2004', 13888143.710000003, 9853293.623709997],
+                ['Q2-2004', 14300216.43, 10277650.763958748],
+                ['Q3-2004', 14502421.63, 10466934.096533755],
+                ['Q4-2004', 14321501.940000001, 10333095.839474997]]
+        },
+        ```
         :param top: Int, number of cells to return (counting from top)
         :param skip: Int, number of cells to skip (counting from top)
         :param mdx: String, valid MDX Query
@@ -3381,7 +3381,7 @@ class CellService(ObjectService):
         :param value_precision: Integer (optional) specifying number of decimal places to return
         :param sandbox_name: str
         :param use_compact_json: bool
-        :return: dict: { titles: [], headers: [axis][], cells: { Page0: [ [column name, column values], [], ... ], ...}}
+        :return: dict: `{ titles: [], headers: [axis][], cells: { Page0: [ [column name, column values], [], ... ], ...}}`
         """
         cellset_id = self.create_cellset(mdx=mdx, sandbox_name=sandbox_name)
         data = self.extract_cellset_raw(
@@ -3484,27 +3484,28 @@ class CellService(ObjectService):
         Returns 3-dimensional cell structure for tabbed grids or multiple charts.
         Rows and pages are dicts, addressable by their name. Proper order of rows can be obtained in headers[1]
         Example 'cells' return format:
-            'cells': {
-                '10100': {
-                    'Net Operating Income': [ 19832724.72429739,
-                                              20365654.788303416,
-                                              20729201.329183243,
-                                              20480205.20121749],
-                    'Revenue': [ 28981046.50724231,
-                                 29512482.207418434,
-                                 29913730.038971487,
-                                 29563345.9542385]},
-                '10200': {
-                    'Net Operating Income': [ 9853293.623709997,
-                                               10277650.763958748,
-                                               10466934.096533755,
-                                               10333095.839474997],
-                    'Revenue': [ 13888143.710000003,
-                                 14300216.43,
-                                 14502421.63,
-                                 14321501.940000001]}
-            },
-
+        ```
+        'cells': {
+            '10100': {
+                'Net Operating Income': [ 19832724.72429739,
+                                            20365654.788303416,
+                                            20729201.329183243,
+                                            20480205.20121749],
+                'Revenue': [ 28981046.50724231,
+                                29512482.207418434,
+                                29913730.038971487,
+                                29563345.9542385]},
+            '10200': {
+                'Net Operating Income': [ 9853293.623709997,
+                                            10277650.763958748,
+                                            10466934.096533755,
+                                            10333095.839474997],
+                'Revenue': [ 13888143.710000003,
+                                14300216.43,
+                                14502421.63,
+                                14321501.940000001]}
+        },
+        ```
         :param top: Int, number of cells to return (counting from top)
         :param skip: Int, number of cells to skip (counting from top)
         :param mdx: a valid MDX Query
@@ -3513,7 +3514,7 @@ class CellService(ObjectService):
         :param value_precision: Integer (optional) specifying number of decimal places to return
         :param sandbox_name: str
         :param use_compact_json: bool
-        :return: dict :{ titles: [], headers: [axis][], cells:{ Page0:{ Row0:{ [row values], Row1: [], ...}, ...}, ...}}
+        :return: dict :`{ titles: [], headers: [axis][], cells:{ Page0:{ Row0:{ [row values], Row1: [], ...}, ...}, ...}}`
         """
         cellset_id = self.create_cellset(mdx=mdx, sandbox_name=sandbox_name, **kwargs)
         data = self.extract_cellset_raw(
@@ -3549,27 +3550,28 @@ class CellService(ObjectService):
         Returns 3-dimensional cell structure for tabbed grids or multiple charts.
         Rows and pages are dicts, addressable by their name. Proper order of rows can be obtained in headers[1]
         Example 'cells' return format:
-            'cells': {
-                '10100': {
-                    'Net Operating Income': [ 19832724.72429739,
-                                              20365654.788303416,
-                                              20729201.329183243,
-                                              20480205.20121749],
-                    'Revenue': [ 28981046.50724231,
-                                 29512482.207418434,
-                                 29913730.038971487,
-                                 29563345.9542385]},
-                '10200': {
-                    'Net Operating Income': [ 9853293.623709997,
-                                               10277650.763958748,
-                                               10466934.096533755,
-                                               10333095.839474997],
-                    'Revenue': [ 13888143.710000003,
-                                 14300216.43,
-                                 14502421.63,
-                                 14321501.940000001]}
-            },
-
+        ```
+        'cells': {
+            '10100': {
+                'Net Operating Income': [ 19832724.72429739,
+                                            20365654.788303416,
+                                            20729201.329183243,
+                                            20480205.20121749],
+                'Revenue': [ 28981046.50724231,
+                                29512482.207418434,
+                                29913730.038971487,
+                                29563345.9542385]},
+            '10200': {
+                'Net Operating Income': [ 9853293.623709997,
+                                            10277650.763958748,
+                                            10466934.096533755,
+                                            10333095.839474997],
+                'Revenue': [ 13888143.710000003,
+                                14300216.43,
+                                14502421.63,
+                                14321501.940000001]}
+        },
+        ```
         :param top: Int, number of cells to return (counting from top)
         :param skip: Int, number of cells to skip (counting from top)
         :param cube_name: String, name of the cube
@@ -3580,7 +3582,7 @@ class CellService(ObjectService):
         :param value_precision: Integer (optional) specifying number of decimal places to return
         :param sandbox_name: str
         :param use_compact_json: bool
-        :return: dict :{ titles: [], headers: [axis][], cells:{ Page0:{ Row0: {[row values], Row1: [], ...}, ...}, ...}}
+        :return: dict :`{ titles: [], headers: [axis][], cells:{ Page0:{ Row0: {[row values], Row1: [], ...}, ...}, ...}}`
         """
         cellset_id = self.create_cellset_from_view(
             cube_name=cube_name, view_name=view_name, private=private, sandbox_name=sandbox_name, **kwargs
@@ -4336,7 +4338,7 @@ class CellService(ObjectService):
         :param csv_dialect: provide all csv output settings through standard library csv.Dialect
             If not provided dialect is created based on line_separator and value_separator arguments.
         :param line_separator:
-        :param value_separator
+        :param value_separator:
         :param sandbox_name: str
         :param include_attributes: include attribute columns
         :param use_compact_json: boolean
@@ -4407,7 +4409,7 @@ class CellService(ObjectService):
         :param csv_dialect: provide all csv output settings through standard library csv.Dialect
             If not provided dialect is created based on line_separator and value_separator arguments.
         :param line_separator:
-        :param value_separator
+        :param value_separator:
         :param sandbox_name: str
         :param include_attributes: boolean
         :param mdx_headers: boolean. Fully qualified hierarchy name as header instead of simple dimension name
@@ -4702,7 +4704,7 @@ class CellService(ObjectService):
         """Retrieves data from cellset in the shape of the query.
         Dimensions on rows can be stacked. One dimension must be placed on columns. Title selections are ignored.
 
-        :param cellset_id
+        :param cellset_id: cellset_id
         :param sandbox_name: str
         :param display_attribute: bool, show element name or first attribute from MDX PROPERTIES clause
         :param infer_dtype: bool, if True, lets pandas infer dtypes, otherwise all columns will be of type str.

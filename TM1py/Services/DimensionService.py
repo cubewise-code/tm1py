@@ -194,7 +194,7 @@ class DimensionService(ObjectService):
     def create_element_attributes_through_ti(self, dimension: Dimension, **kwargs):
         """
 
-        :param dimension. Instance of TM1py.Objects.Dimension class
+        :param dimension: Instance of TM1py.Objects.Dimension class
         :return:
         """
         process_service = ProcessService(self._rest)

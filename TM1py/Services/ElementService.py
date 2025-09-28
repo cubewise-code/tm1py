@@ -177,13 +177,14 @@ class ElementService(ObjectService):
         self, dimension_name: str, hierarchy_name: str, edges: List[str] = None, remove_blob: bool = True, **kwargs
     ):
         """
-        Remove edges in TM1 via an unbound TI process having an uploaded CSV as data source
-        :param dimension_name as str: dimension name
-        :param hierarchy_name as str: hierarchy name
-        :param edges as list:
-        :remove_blob as bool: remove the parent child file after use, default True
-        :param kwargs:
-        :return: Success: bool, Messages: list, ChangeSet: None
+        Remove edges in TM1 via an unbound TI process having an uploaded CSV as the data source.
+
+        :param dimension_name: The name of the dimension.
+        :param hierarchy_name: The name of the hierarchy.
+        :param edges: A list of tuples representing the edges to remove, where each tuple contains a parent and a child.
+        :param remove_blob: A boolean indicating whether to remove the parent-child file after use (default: True).
+        :param kwargs: Additional arguments for the process execution.
+        :return: None
         """
         if not edges:
             return

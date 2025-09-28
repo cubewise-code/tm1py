@@ -32,14 +32,15 @@ class ViewService(ObjectService):
         url = format_url("/Cubes('{}')/{}", view.cube, view_type)
         return self._rest.POST(url, view.body, **kwargs)
 
-    def exists(self, cube_name: str, view_name: str, private: bool = None, **kwargs):
+    def exists(self, cube_name: str, view_name: str, private: bool = None, **kwargs) -> Tuple[bool, bool]:
         """Checks if view exists as private, public or both
 
         :param cube_name:  string, name of the cube
         :param view_name: string, name of the view
         :param private: boolean, if None: check for private and public
 
-        :return boolean tuple
+        :return: Boolean tuple (private_exists, public_exists)
+        :rtype: tuple[bool, bool]
         """
         url_template = "/Cubes('{}')/{}('{}')"
         if private is not None:
