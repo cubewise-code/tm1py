@@ -284,9 +284,8 @@ class ServerService(ObjectService):
     @require_admin
     def get_all_message_logger_level(self):
         """
-        Get tm1 message log levels
-        :param logger:
-        :param level:
+        Get all tm1 message loggers
+
         :return:
         """
 

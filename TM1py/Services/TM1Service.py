@@ -37,48 +37,56 @@ class TM1Service:
     """All features of TM1py are exposed through this service
 
     Can be saved and restored from File, to avoid multiple authentication with TM1.
+
     """
 
     def __init__(self, **kwargs):
         """Initiate the TM1Service
 
-        :param address: String - address of the TM1 instance
-        :param port: Int - HTTPPortNumber as specified in the tm1s.cfg
-        :param base_url - base url e.g. https://localhost:12354/api/v1
-        :param user: String - name of the user
-        :param password String - password of the user
-        :param decode_b64 - whether password argument is b64 encoded
-        :param namespace String - optional CAM namespace
-        :param ssl: boolean -  as specified in the tm1s.cfg
-        :param cam_passport: String - the cam passport
-        :param session_id: String - TM1SessionId e.g. q7O6e1w49AixeuLVxJ1GZg
-        :param session_context: String - Name of the Application. Controls "Context" column in Arc / TM1top.
-                If None, use default: TM1py
-        :param verify: path to .cer file or 'True' / True / 'False' / False (if no ssl verification is required)
-        :param logging: boolean - switch on/off verbose http logging into sys.stdout
-        :param timeout: Float - Number of seconds that the client will wait to receive the first byte.
-        :param cancel_at_timeout: Abort operation in TM1 when timeout is reached
-        :param async_requests_mode: changes internal REST execution mode to avoid 60s timeout on IBM cloud
-        :param connection_pool_size - Maximum number of connections to save in the pool (default: 10).
-                In a multi threaded environment, you should set this value to a higher number, such as the number of threads
-        :param pool_connections: Number of connection pools to cache (default: 1 for a single TM1 instance)
-        :param integrated_login: True for IntegratedSecurityMode3
-        :param integrated_login_domain: NT Domain name.
-                Default: '.' for local account.
-        :param integrated_login_service: Kerberos Service type for remote Service Principal Name.
-                Default: 'HTTP'
-        :param integrated_login_host: Host name for Service Principal Name.
-                Default: Extracted from request URI
-        :param integrated_login_delegate: Indicates that the user's credentials are to be delegated to the server.
-                Default: False
-        :param impersonate: Name of user to impersonate
-        :param re_connect_on_session_timeout: attempt to reconnect once if session is timed out
-        :param re_connect_on_remote_disconnect: attempt to reconnect once if connection is aborted by remote end
-        :param proxies: pass a dictionary with proxies e.g.
-                {'http': 'http://proxy.example.com:8080', 'https': 'http://secureproxy.example.com:8090'}
-        :param ssl_context: pass a user defined ssl context
-        :param cert: (optional) If String, path to SSL client cert file (.pem).
-                If Tuple, ('cert', 'key') pair
+        Supported kwargs arguments:
+
+        - **address** (str): Address of the TM1 instance.
+        - **port** (int): HTTPPortNumber as specified in the tm1s.cfg.
+        - **ssl** (bool): Whether to use SSL, as specified in the tm1s.cfg.
+        - **instance** (str): Planning Analytics engine (v12) instance name.
+        - **database** (str): Planning Analytics engine (v12) database name.
+        - **base_url** (str): Base URL for the REST API.
+        - **auth_url** (str): Authentication URL for Planning Analytics engine (v12).
+        - **user** (str): Name of the user.
+        - **password** (str): Password of the user.
+        - **decode_b64** (bool): Whether the password argument is Base64 encoded.
+        - **namespace** (str): Optional CAM namespace.
+        - **cam_passport** (str): The CAM passport.
+        - **session_id** (str): TM1SessionId, e.g., "q7O6e1w49AixeuLVxJ1GZg".
+        - **application_client_id** (str): Planning Analytics engine (v12) named application client ID.
+        - **application_client_secret** (str): Planning Analytics engine (v12) named application secret.
+        - **api_key** (str): Planning Analytics engine (v12) API Key.
+        - **iam_url** (str): IBM Cloud IAM URL. Default: "https://iam.cloud.ibm.com".
+        - **pa_url** (str): Planning Analytics engine (v12) PA URL.
+        - **cpd_url** (str): Cloud Pak for Data URL (aka ZEN).
+        - **tenant** (str): Planning Analytics engine (v12) tenant.
+        - **session_context** (str): Name of the application. Controls "Context" column in Arc/TM1top.
+        - **verify** (bool or str): Path to .cer file or boolean for SSL verification.
+        - **logging** (bool): Enable or disable verbose HTTP logging.
+        - **timeout** (float): Number of seconds to wait for a response.
+        - **cancel_at_timeout** (bool): Abort operation in TM1 when timeout is reached.
+        - **async_requests_mode** (bool): Enable asynchronous request mode.
+        - **connection_pool_size** (int): Maximum number of connections in the pool.
+        - **pool_connections** (int): Number of connection pools to cache.
+        - **integrated_login** (bool): True for IntegratedSecurityMode3.
+        - **integrated_login_domain** (str): NT Domain name.
+        - **integrated_login_service** (str): Kerberos Service type for remote Service Principal Name.
+        - **integrated_login_host** (str): Host name for Service Principal Name.
+        - **integrated_login_delegate** (bool): Delegate user credentials to the server.
+        - **impersonate** (str): Name of the user to impersonate.
+        - **re_connect_on_session_timeout** (bool): Attempt to reconnect if the session times out.
+        - **re_connect_on_remote_disconnect** (bool): Attempt to reconnect if the connection is aborted.
+        - **proxies** (dict): Dictionary of proxies, e.g., {'http': 'http://proxy.example.com:8080'}.
+        - **ssl_context**: User-defined SSL context.
+        - **cert** (str or tuple): Path to SSL client cert file or ('cert', 'key') pair.
+
+        :param kwargs: See description above for all supported arguments
+
         """
         self._tm1_rest = RestService(**kwargs)
         self.annotations = AnnotationService(self._tm1_rest)

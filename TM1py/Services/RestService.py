@@ -86,53 +86,50 @@ class RestService:
 
     def __init__(self, **kwargs):
         """Create an instance of RESTService
-        :param address: String - address of the TM1 instance
-        :param port: Int - HTTPPortNumber as specified in the tm1s.cfg
-        :param ssl: boolean -  as specified in the tm1s.cfg
-        :param instance: string -  planing analytics engine (v12) instance name
-        :param database: string -  planing analytics engine (v12) database name
-        :param base_url - base url
-        :param auth_url - auth url for planning analytics engine (v12)
-        :param user: String - name of the user
-        :param password String - password of the user
-        :param decode_b64 - whether password argument is b64 encoded
-        :param namespace String - optional CAM namespace
-        :param cam_passport: String - the cam passport
-        :param session_id: String - TM1SessionId e.g. q7O6e1w49AixeuLVxJ1GZg
-        :param application_client_id - planning analytics engine (v12) named application client ID created via manage service
-        :param application_client_secret - planning analytics engine (v12) named application secret created via manage service
-        :param api_key: String - planing analytics engine (v12) API Key from https://cloud.ibm.com/iam/apikeys
-        :param iam_url: String - planing analytics engine (v12) IBM Cloud IAM URL. Default: "https://iam.cloud.ibm.com"
-        :param pa_url: String - planing analytics engine (v12) PA URL e.g., "https://us-east-2.aws.planninganalytics.ibm.com"
-        :param cpd_url: String - cloud pack for data url (aka ZEN) CPD URL e.g., "https://cpd-zen.apps.cp4dpa-test11.cp.fyre.ibm.com"
-        :param tenant: String - planing analytics engine (v12) Tenant e.g., YC4B2M1AG2Y6
-        :param session_context: String - Name of the Application. Controls "Context" column in Arc / TM1top.
-                If None, use default: TM1py
-        :param verify: path to .cer file or 'True' / True / 'False' / False (if no ssl verification is required)
-        :param logging: boolean - switch on/off verbose http logging into sys.stdout
-        :param timeout: Float - Number of seconds that the client will wait to receive the first byte.
-        :param cancel_at_timeout: Abort operation in TM1 when timeout is reached
-        :param async_requests_mode: changes internal REST execution mode to avoid 60s timeout on IBM cloud
-        :param connection_pool_size - Maximum number of connections to save in the pool (default: 10).
-                In a multi threaded environment, you should set this value to a higher number, such as the number of threads
-        :param pool_connections: Number of connection pools to cache (default: 1 for a single TM1 instance)
-        :param integrated_login: True for IntegratedSecurityMode3
-        :param integrated_login_domain: NT Domain name.
-                Default: '.' for local account.
-        :param integrated_login_service: Kerberos Service type for remote Service Principal Name.
-                Default: 'HTTP'
-        :param integrated_login_host: Host name for Service Principal Name.
-                Default: Extracted from request URI
-        :param integrated_login_delegate: Indicates that the user's credentials are to be delegated to the server.
-                Default: False
-        :param impersonate: Name of user to impersonate
-        :param re_connect_on_session_timeout: attempt to reconnect once if session is timed out
-        :param re_connect_on_remote_disconnect: attempt to reconnect once if connection is aborted by remote end
-        :param proxies: pass a dictionary with proxies e.g.
-                {'http': 'http://proxy.example.com:8080', 'https': 'http://secureproxy.example.com:8090'}
-        :param ssl_context: Pass a user defined ssl context
-        :param cert: (optional) If String, path to SSL client cert file (.pem).
-                If Tuple, ('cert', 'key') pair
+
+        Supported kwargs arguments:
+
+        - **address** (str): Address of the TM1 instance.
+        - **port** (int): HTTPPortNumber as specified in the tm1s.cfg.
+        - **ssl** (bool): Use SSL as specified in the tm1s.cfg.
+        - **instance** (str): Planning Analytics Engine (v12) instance name.
+        - **database** (str): Planning Analytics Engine (v12) database name.
+        - **base_url** (str): Base URL.
+        - **auth_url** (str): Auth URL for Planning Analytics Engine (v12).
+        - **user** (str): Name of the user.
+        - **password** (str): Password of the user.
+        - **decode_b64** (bool): Whether password argument is b64 encoded.
+        - **namespace** (str): Optional CAM namespace.
+        - **cam_passport** (str): The CAM passport.
+        - **session_id** (str): TM1SessionId, e.g. q7O6e1w49AixeuLVxJ1GZg.
+        - **application_client_id** (str): Planning Analytics Engine (v12) named application client ID created via manage service.
+        - **application_client_secret** (str): Planning Analytics Engine (v12) named application secret created via manage service.
+        - **api_key** (str): Planning Analytics Engine (v12) API Key from https://cloud.ibm.com/iam/apikeys.
+        - **iam_url** (str): Planning Analytics Engine (v12) IBM Cloud IAM URL. Default: "https://iam.cloud.ibm.com".
+        - **pa_url** (str): Planning Analytics Engine (v12) PA URL, e.g., "https://us-east-2.aws.planninganalytics.ibm.com".
+        - **cpd_url** (str): Cloud Pack for Data URL (aka ZEN) CPD URL, e.g., "https://cpd-zen.apps.cp4dpa-test11.cp.fyre.ibm.com".
+        - **tenant** (str): Planning Analytics Engine (v12) Tenant, e.g., YC4B2M1AG2Y6.
+        - **session_context** (str): Name of the Application. Controls "Context" column in Arc / TM1top. If None, uses default: TM1py.
+        - **verify** (str|bool): Path to .cer file or 'True' / True / 'False' / False (if no SSL verification is required).
+        - **logging** (bool): Switch on/off verbose HTTP logging into sys.stdout.
+        - **timeout** (float): Number of seconds that the client will wait to receive the first byte.
+        - **cancel_at_timeout** (bool): Abort operation in TM1 when timeout is reached.
+        - **async_requests_mode** (bool): Changes internal REST execution mode to avoid 60s timeout on IBM cloud.
+        - **connection_pool_size** (int): Maximum number of connections to save in the pool (default: 10). In a multi-threaded environment, set higher.
+        - **pool_connections** (int): Number of connection pools to cache (default: 1 for a single TM1 instance).
+        - **integrated_login** (bool): True for IntegratedSecurityMode3.
+        - **integrated_login_domain** (str): NT Domain name. Default: '.' for local account.
+        - **integrated_login_service** (str): Kerberos Service type for remote Service Principal Name. Default: 'HTTP'.
+        - **integrated_login_host** (str): Host name for Service Principal Name. Default: Extracted from request URI.
+        - **integrated_login_delegate** (bool): Indicates that the user's credentials are to be delegated to the server. Default: False.
+        - **impersonate** (str): Name of user to impersonate.
+        - **re_connect_on_session_timeout** (bool): Attempt to reconnect once if session is timed out.
+        - **re_connect_on_remote_disconnect** (bool): Attempt to reconnect once if connection is aborted by remote end.
+        - **proxies** (dict): Dictionary with proxies, e.g. {'http': 'http://proxy.example.com:8080', 'https': 'http://secureproxy.example.com:8090'}.
+        - **ssl_context**: User-defined SSL context.
+        - **cert** (str|tuple): (Optional) If string, path to SSL client cert file (.pem). If tuple, ('cert', 'key') pair.
+
+        :param kwargs: See description above for all supported arguments	
         """
         # store kwargs for future use e.g. re_connect on 401 session timeout
         self._kwargs = kwargs
@@ -649,7 +646,7 @@ class RestService:
         :param url:
         :param data: the payload
         :param headers: custom headers
-        :param async_requests_mode changes internal REST execution mode to avoid 60s timeout on IBM cloud
+        :param async_requests_mode: changes internal REST execution mode to avoid 60s timeout on IBM cloud
         :param return_async_id: If True function will return async_id after initiation and not await the execution
         :param timeout: Number of seconds that the client will wait to receive the first byte.
         :param cancel_at_timeout: Abort operation in TM1 when timeout is reached
@@ -689,7 +686,7 @@ class RestService:
         :param url:
         :param data: the payload
         :param headers: custom headers
-        :param async_requests_mode changes internal REST execution mode to avoid 60s timeout on IBM cloud
+        :param async_requests_mode: changes internal REST execution mode to avoid 60s timeout on IBM cloud
         :param return_async_id: If True function will return async_id after initiation and not await the execution
         :param timeout: Number of seconds that the client will wait to receive the first byte.
         :param cancel_at_timeout: Abort operation in TM1 when timeout is reached
@@ -731,7 +728,7 @@ class RestService:
         :param url:
         :param data: the payload
         :param headers: custom headers
-        :param async_requests_mode changes internal REST execution mode to avoid 60s timeout on IBM cloud
+        :param async_requests_mode: changes internal REST execution mode to avoid 60s timeout on IBM cloud
         :param return_async_id: If True function will return async_id after initiation and not await the execution
         :param timeout: Number of seconds that the client will wait to receive the first byte.
         :param cancel_at_timeout: Abort operation in TM1 when timeout is reached
@@ -771,7 +768,7 @@ class RestService:
         :param url:
         :param data: the payload
         :param headers: custom headers
-        :param async_requests_mode changes internal REST execution mode to avoid 60s timeout on IBM cloud
+        :param async_requests_mode: changes internal REST execution mode to avoid 60s timeout on IBM cloud
         :param return_async_id: If True function will return async_id after initiation and not await the execution
         :param timeout: Number of seconds that the client will wait to receive the first byte.
         :param cancel_at_timeout: Abort operation in TM1 when timeout is reached
@@ -811,7 +808,7 @@ class RestService:
         :param url:
         :param data: the payload
         :param headers: custom headers
-        :param async_requests_mode changes internal REST execution mode to avoid 60s timeout on IBM cloud
+        :param async_requests_mode: changes internal REST execution mode to avoid 60s timeout on IBM cloud
         :param return_async_id: If True function will return async_id after initiation and not await the execution
         :param timeout: Number of seconds that the client will wait to receive the first byte.
         :param cancel_at_timeout: Abort operation in TM1 when timeout is reached

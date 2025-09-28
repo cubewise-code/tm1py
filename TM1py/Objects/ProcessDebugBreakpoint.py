@@ -81,8 +81,7 @@ class ProcessDebugBreakpoint(TM1Object):
     @classmethod
     def from_dict(cls, breakpoint_as_dict: Dict) -> "ProcessDebugBreakpoint":
         """
-
-        :param breakpoint_as_dict
+        :param breakpoint_as_dict:
         :return: an instance of this class
         """
         breakpoint_type = breakpoint_as_dict["@odata.type"][16:]

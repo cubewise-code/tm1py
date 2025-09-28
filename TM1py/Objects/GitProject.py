@@ -482,7 +482,7 @@ class TM1ProjectDeployment(TM1Project):
     @classmethod
     def from_dict(cls, deployment_name: str, deployment: Dict) -> "TM1ProjectDeployment":
         """
-        :param deployment_as_dict: Dictionary, deployment as dictionary
+        :param deployment: Deployment as dictionary
         :return: an instance of this class
         """
         return cls(
