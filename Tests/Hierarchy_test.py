@@ -187,14 +187,41 @@ class TestHierarchy(unittest.TestCase):
 
         elements = hierarchy.get_descendants("Europe", recursive=True, leaves_only=True)
         self.assertEqual(
-            {
-                Element("Germany", "Numeric"),
-                Element("Austria", "Numeric"),
-                Element("Switzerland", "Numeric"),
-                Element("France", "Numeric"),
-            },
-            elements,
-        )
+            {Element("Germany", "Numeric"), Element("Austria", "Numeric"),
+             Element("Switzerland", "Numeric"), Element("France", "Numeric")},
+            elements)
+        
+    def test_get_descendants_recursive_leaves_only_with_higher_level_consolidation(self):
+        hierarchy = Hierarchy(
+            name="NotRelevant",
+            dimension_name="NotRelevant",
+            elements=[
+                Element("Total", "Consolidated"),
+                Element("A", "Consolidated"),
+                Element("B", "Consolidated"),
+                Element("C", "Consolidated"),
+                Element("AA", "Consolidated"),
+                Element("BBC", "Numeric"),
+                Element("CCC", "Numeric"),
+                Element("AAA", "Numeric"),
+                Element("AAB", "Numeric"),
+                Element("AAC", "Numeric")],
+            edges={
+                ("Total", "A"): 1,
+                ("A", "AA"): 1,
+                ("AA", "AAA"): 1,
+                ("AA", "AAB"): 1,
+                ("AA", "AAC"): 1,
+                ("Total", "B"): 1,
+                ("B", "BBC"): 1,
+                ("Total", "C"): 1,
+                ("C", "CCC"): 1,
+            })
+
+        elements = hierarchy.get_descendants("Total", recursive=True, leaves_only=True)
+        self.assertEqual(
+            {Element("BBC", "Numeric"), Element("CCC", "Numeric"), Element("AAA", "Numeric"), Element("AAB", "Numeric"), Element("AAC", "Numeric")},
+            elements)
 
     def test_get_descendant_edges_recursive_false(self):
         hierarchy = Hierarchy(
