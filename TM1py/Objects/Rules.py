@@ -25,7 +25,7 @@ class Rules(TM1Object):
     # self._rules_analytics_upper serves for analysis on cube rules
     def init_analytics(self):
         text_without_comments = "\n".join(
-            [rule for rule in self._text.split("\n") if len(rule.strip()) > 0 and rule.strip()[0] != "#"]
+            [rule for rule in self._text.split("\n") if rule.strip() and rule.strip()[0] != "#"]
         )
         for statement in text_without_comments.split(";"):
             if len(statement.strip()) > 0:
