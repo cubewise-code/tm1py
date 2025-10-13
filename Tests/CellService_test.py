@@ -4587,7 +4587,7 @@ class TestCellService(unittest.TestCase):
             """
             self.tm1.cells.clear_with_mdx(cube=self.cube_name, mdx=mdx)
 
-        self.assertEqual(str(e.exception)[:21], "Failed to clear cube:")
+        self.assertIn("Failed to initialize View by Expression", str(e.exception) )
 
     def test_clear_with_mdx_unsupported_version(self):
 

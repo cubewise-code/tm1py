@@ -1068,8 +1068,8 @@ class RestService:
     @property
     def sandboxing_disabled(self):
         if self._sandboxing_disabled is None:
-            value = self.GET("/ActiveConfiguration/Administration/DisableSandboxing/$value")
-            self._sandboxing_disabled = value
+            response = self.GET("/ActiveConfiguration/Administration/DisableSandboxing")
+            self._sandboxing_disabled = response.json().get("value", False)
 
         return self._sandboxing_disabled
 
