@@ -20,12 +20,12 @@ from requests.adapters import HTTPAdapter
 from requests.auth import HTTPBasicAuth
 from urllib3._collections import HTTPHeaderDict
 
-# SSO not supported for Linux
 from TM1py.Exceptions.Exceptions import TM1pyTimeout, TM1pyVersionDeprecationException
 from TM1py.Utils import (
     CaseAndSpaceInsensitiveSet,
     HTTPAdapterWithSocketOptions,
     case_and_space_insensitive_equals,
+    verify_version,
 )
 
 try:
@@ -1067,7 +1067,10 @@ class RestService:
 
     @property
     def sandboxing_disabled(self):
-        if self._sandboxing_disabled is None:
+        if verify_version(required_version="12", version=self.version):
+            self._sandboxing_disabled = False
+
+        elif self._sandboxing_disabled is None:
             response = self.GET("/ActiveConfiguration/Administration/DisableSandboxing")
             self._sandboxing_disabled = response.json().get("value", False)
 
