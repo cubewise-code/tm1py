@@ -288,8 +288,9 @@ class ApplicationService(ObjectService):
 
         if application.application_type == ApplicationTypes.DOCUMENT:
             url = format_url(
-                "/Contents('Applications')" + mid + "/" + contents + "('{name}.blob')/Document/Content",
+                "/Contents('Applications')" + mid + "/" + contents + "('{name}{extension}')/Document/Content",
                 name=application.name,
+                extension="" if verify_version("12", self.version) else ".blob"
             )
             response = self._rest.PATCH(url=url, data=application.content, headers=self.binary_http_header, **kwargs)
         else:
