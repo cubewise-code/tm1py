@@ -176,6 +176,7 @@ class ChoreService(ObjectService):
             else:
                 task_old = self._get_task(chore.name, i)
                 if task_new != task_old:
+                    task_new._step = i
                     self._update_task(chore.name, task_new, **kwargs)
         for j in range(i + 1, task_old_count):
             self._delete_task(chore.name, i + 1, **kwargs)

@@ -390,7 +390,7 @@ class TestChoreService(unittest.TestCase):
         for task1, task2 in zip(tasks, c._tasks):
             self.assertEqual(task1, task2)
 
-    def test_update_chore_remove_tasks(self):
+    def test_update_chore_remove_last_task(self):
         # get chore
         c = self.tm1.chores.get(self.chore_name1)
         # update all properties
@@ -409,11 +409,7 @@ class TestChoreService(unittest.TestCase):
             days=frequency_days, hours=frequency_hours, minutes=frequency_minutes, seconds=frequency_seconds
         )
         # update tasks
-        tasks = [
-            ChoreTask(0, self.process_name2, parameters=[{"Name": "pRegion", "Value": "DE"}]),
-            ChoreTask(1, self.process_name2, parameters=[{"Name": "pRegion", "Value": "US"}]),
-        ]
-        c._tasks = tasks
+        del c._tasks[2]
         # execution mode
         c._execution_mode = Chore.SINGLE_COMMIT
         # activate
@@ -430,11 +426,58 @@ class TestChoreService(unittest.TestCase):
         self.assertEqual(int(c._frequency._days), int(frequency_days))
         self.assertEqual(int(c._frequency._hours), int(frequency_hours))
         self.assertEqual(int(c._frequency._minutes), int(frequency_minutes))
-        self.assertEqual(len(tasks), len(c._tasks))
+        self.assertEqual(2, len(c._tasks))
         # sometimes there is one second difference. Probably a small bug in the REST API
         self.assertAlmostEqual(int(c._frequency._seconds), int(frequency_seconds), delta=1)
-        for task1, task2 in zip(tasks, c._tasks):
+        for task1, task2 in zip(self.tasks, c._tasks):
             self.assertEqual(task1, task2)
+
+    def test_update_chore_remove_first_task(self):
+        # get chore
+        c = self.tm1.chores.get(self.chore_name1)
+        # update all properties
+        # update start time
+        start_time = datetime.now()
+        c._start_time = ChoreStartTime(
+            start_time.year, start_time.month, start_time.day, start_time.hour, start_time.minute, start_time.second
+        )
+        c.dst_sensitivity = True
+        # update frequency
+        frequency_days = int(random.uniform(0, 355))
+        frequency_hours = int(random.uniform(0, 23))
+        frequency_minutes = int(random.uniform(0, 59))
+        frequency_seconds = int(random.uniform(0, 59))
+        c._frequency = ChoreFrequency(
+            days=frequency_days, hours=frequency_hours, minutes=frequency_minutes, seconds=frequency_seconds
+        )
+        # update tasks
+        del c._tasks[0]
+        # execution mode
+        c._execution_mode = Chore.SINGLE_COMMIT
+        # activate
+        c.deactivate()
+        # update chore in TM1
+        self.tm1.chores.update(c)
+        # get chore and check all properties
+        c = self.tm1.chores.get(chore_name=self.chore_name1)
+        self.assertEqual(c._start_time._datetime.replace(microsecond=0), start_time.replace(microsecond=0))
+        self.assertEqual(c._name, self.chore_name1)
+        self.assertEqual(c._dst_sensitivity, True)
+        self.assertEqual(c._active, False)
+        self.assertEqual(c._execution_mode, Chore.SINGLE_COMMIT)
+        self.assertEqual(int(c._frequency._days), int(frequency_days))
+        self.assertEqual(int(c._frequency._hours), int(frequency_hours))
+        self.assertEqual(int(c._frequency._minutes), int(frequency_minutes))
+        self.assertEqual(2, len(c._tasks))
+        # sometimes there is one-second difference. Probably a small bug in the REST API
+        self.assertAlmostEqual(int(c._frequency._seconds), int(frequency_seconds), delta=1)
+
+        task1, task2 = self.tasks[1], c._tasks[0]
+        self.assertEqual(task1, task2)
+
+        task1, task2 = self.tasks[2], c._tasks[1]
+        self.assertEqual(task1, task2)
+
 
     def test_activate(self):
         chore = self.tm1.chores.get(self.chore_name1)
