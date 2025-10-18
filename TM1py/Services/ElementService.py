@@ -1090,11 +1090,16 @@ class ElementService(ObjectService):
 
         response = self._rest.GET(url, **kwargs)
         consolidation_tree = response.json()
+        is_v12_or_higher = verify_version("12.0", self.version)
 
         # recursive function to parse consolidation sub_tree
         def get_edges(sub_trees):
             for sub_tree in sub_trees:
-                edges[sub_tree["ParentName"], sub_tree["ComponentName"]] = sub_tree["Weight"]
+                if is_v12_or_higher:
+                    component_name = sub_tree["Component"]["Name"]
+                else:
+                    component_name = sub_tree["ComponentName"]
+                edges[sub_tree["ParentName"],component_name]  = sub_tree["Weight"]
 
                 if "Edges" not in sub_tree["Component"]:
                     continue
