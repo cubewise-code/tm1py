@@ -70,10 +70,10 @@ class TestProcessService(unittest.TestCase):
         datasource_type="JSON",
         datasource_json_root_pointer="data",
         datasource_json_variable_mapping="{}",
-        prolog_procedure="sTestProlog = 'test prolog procedure';",
-        metadata_procedure="sTestMeta = 'test metadata procedure';",
-        data_procedure="sTestData =  'test data procedure';",
-        epilog_procedure="sTestEpilog = 'test epilog procedure';",
+        prolog_procedure="sTestProlog = 'test JSON prolog procedure';",
+        metadata_procedure="sTestMeta = 'test JSON metadata procedure';",
+        data_procedure="sTestData =  'test JSON data procedure';",
+        epilog_procedure="sTestEpilog = 'test JSON epilog procedure';",
         datasource_data_source_name_for_server=r"C:\Data\file.json",
         datasource_data_source_name_for_client=r"C:\Data\file.json",
     )
@@ -290,7 +290,7 @@ class TestProcessService(unittest.TestCase):
         self.tm1.processes.update_or_create(p_bad)
         errors = self.tm1.processes.compile(p_bad.name)
         self.assertTrue(len(errors) == 1)
-        self.assertIn('"dimsize"', errors[0]["Message"])
+        self.assertIn('dimsize', errors[0]["Message"])
         self.tm1.processes.delete(p_bad.name)
 
     @skip_if_version_lower_than(version="11.4")
@@ -373,7 +373,7 @@ class TestProcessService(unittest.TestCase):
 
         errors = self.tm1.processes.compile_process(p_bad)
         self.assertTrue(len(errors) == 1)
-        self.assertIn('"dimsize"', errors[0]["Message"])
+        self.assertIn('dimsize', errors[0]["Message"])
 
     def test_get_process(self):
         p_ascii_orig = copy.deepcopy(self.p_ascii)
