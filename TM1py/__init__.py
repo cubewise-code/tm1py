@@ -74,4 +74,4 @@ from TM1py.Services.UserService import UserService
 from TM1py.Services.ViewService import ViewService
 from TM1py.Utils import Utils
 
-__version__ = "2.1"
+__version__ = "2.2"
