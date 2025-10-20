@@ -34,7 +34,12 @@ class ApplicationService(ObjectService):
         self._rest = tm1_rest
 
     def get_all_public_root_names(self, **kwargs):
+        """
+        Retrieve all public root application names.
 
+        :param kwargs: Additional arguments for the REST request.
+        :return: List of public root application names.
+        """
         url = "/Contents('Applications')/Contents"
         response = self._rest.GET(url, **kwargs)
         applications = list(application["Name"] for application in response.json()["value"])

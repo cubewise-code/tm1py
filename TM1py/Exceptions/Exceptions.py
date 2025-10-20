@@ -3,9 +3,15 @@
 # TM1py Exceptions are defined here
 from typing import List, Mapping
 
-
 class TM1pyTimeout(Exception):
+    """Exception for timeout during a REST request."""
+
     def __init__(self, method: str, url: str, timeout: float):
+        """
+        :param method: HTTP method used
+        :param url: URL of the request
+        :param timeout: Timeout in seconds
+        """
         self.method = method
         self.url = url
         self.timeout = timeout
@@ -15,7 +21,14 @@ class TM1pyTimeout(Exception):
 
 
 class TM1pyVersionException(Exception):
+    """Exception for usage of a feature requiring a higher TM1 server version."""
+
     def __init__(self, function: str, required_version, feature: str = None):
+        """
+        :param function: Name of the function
+        :param required_version: Required TM1 server version
+        :param feature: Optional feature name
+        """
         self.function = function
         self.required_version = required_version
         self.feature = feature
@@ -29,7 +42,13 @@ class TM1pyVersionException(Exception):
 
 
 class TM1pyVersionDeprecationException(Exception):
+    """Exception for usage of a deprecated feature."""
+
     def __init__(self, function: str, deprecated_in_version):
+        """
+        :param function: Name of the function
+        :param deprecated_in_version: Version in which the function was deprecated
+        """
         self.function = function
         self.deprecated_in_version = deprecated_in_version
 
@@ -38,7 +57,12 @@ class TM1pyVersionDeprecationException(Exception):
 
 
 class TM1pyNotAdminException(Exception):
+    """Exception for missing admin permissions."""
+
     def __init__(self, function: str):
+        """
+        :param function: Name of the function
+        """
         self.function = function
 
     def __str__(self):
@@ -46,7 +70,12 @@ class TM1pyNotAdminException(Exception):
 
 
 class TM1pyNotDataAdminException(Exception):
+    """Exception for missing DataAdmin permissions."""
+
     def __init__(self, function: str):
+        """
+        :param function: Name of the function
+        """
         self.function = function
 
     def __str__(self):
@@ -54,7 +83,12 @@ class TM1pyNotDataAdminException(Exception):
 
 
 class TM1pyNotSecurityAdminException(Exception):
+    """Exception for missing SecurityAdmin permissions."""
+
     def __init__(self, function: str):
+        """
+        :param function: Name of the function
+        """
         self.function = function
 
     def __str__(self):
@@ -62,7 +96,12 @@ class TM1pyNotSecurityAdminException(Exception):
 
 
 class TM1pyNotOpsAdminException(Exception):
+    """Exception for missing OperationsAdmin permissions."""
+
     def __init__(self, function: str):
+        """
+        :param function: Name of the function
+        """
         self.function = function
 
     def __str__(self):
@@ -70,9 +109,12 @@ class TM1pyNotOpsAdminException(Exception):
 
 
 class TM1pyException(Exception):
-    """The default exception for TM1py"""
+    """The default exception for TM1py."""
 
     def __init__(self, message):
+        """
+        :param message: Exception message
+        """
         self.message = message
 
     def __str__(self):
@@ -80,9 +122,15 @@ class TM1pyException(Exception):
 
 
 class TM1pyRestException(TM1pyException):
-    """Exception for failing REST operations"""
+    """Exception for failing REST operations."""
 
     def __init__(self, response: str, status_code: int, reason: str, headers: Mapping):
+        """
+        :param response: Response text
+        :param status_code: HTTP status code
+        :param reason: Reason phrase
+        :param headers: HTTP headers
+        """
         super(TM1pyRestException, self).__init__(response)
         self._status_code = status_code
         self._reason = reason
@@ -90,18 +138,22 @@ class TM1pyRestException(TM1pyException):
 
     @property
     def status_code(self):
+        """HTTP status code."""
         return self._status_code
 
     @property
     def reason(self):
+        """Reason phrase."""
         return self._reason
 
     @property
     def response(self):
+        """Response text."""
         return self.message
 
     @property
     def headers(self):
+        """HTTP headers."""
         return self._headers
 
     def __str__(self):
@@ -111,8 +163,13 @@ class TM1pyRestException(TM1pyException):
 
 
 class TM1pyWriteFailureException(TM1pyException):
+    """Exception for complete failure of write operations."""
 
     def __init__(self, statuses: List[str], error_log_files: List[str]):
+        """
+        :param statuses: List of failed statuses
+        :param error_log_files: List of error log file paths
+        """
         self.statuses = statuses
         self.error_log_files = error_log_files
 
@@ -121,8 +178,14 @@ class TM1pyWriteFailureException(TM1pyException):
 
 
 class TM1pyWritePartialFailureException(TM1pyException):
+    """Exception for partial failure of write operations."""
 
     def __init__(self, statuses: List[str], error_log_files: List[str], attempts: int):
+        """
+        :param statuses: List of failed statuses
+        :param error_log_files: List of error log file paths
+        :param attempts: Total number of attempts
+        """
         self.statuses = statuses
         self.error_log_files = error_log_files
         self.attempts = attempts
