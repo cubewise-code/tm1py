@@ -1651,6 +1651,7 @@ class CellService(ObjectService):
         ViewExtractSkipZeroesSet('{cube}', '{view_name}', {'1' if skip_zeros else '0'});
         DatasourceAsciiDelimiter='{value_separator}';
         DatasourceAsciiQuoteCharacter='{quote_character}';
+        DatasourceASCIIDecimalSeparator='.';
         nRecord=0;
         """
 
