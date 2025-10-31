@@ -458,7 +458,7 @@ class HierarchyService(ObjectService):
         df: "pd.DataFrame",
         element_column: str = None,
         verify_unique_elements: bool = False,
-        verify_edges: bool = True,
+        verify_edges: bool = False,
         element_type_column: str = "ElementType",
         unwind_all: bool = False,
         unwind_consolidations: Iterable = None,
@@ -492,7 +492,8 @@ class HierarchyService(ObjectService):
         :param verify_unique_elements:
             Abort early if element names are not unique
         :param verify_edges:
-            Abort early if edges contain a circular reference
+            Abort early if edges contain a circular reference.
+            `True` requires optional dependency `networkx`
         :param unwind_all: bool
             Unwind hierarch before creating new edges
         :param unwind_consolidations: list

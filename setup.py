@@ -10,7 +10,7 @@ setup(
     name="TM1py",
     packages=["TM1py", "TM1py/Exceptions", "TM1py/Objects", "TM1py/Services", "TM1py/Utils"],
     version=SCHEDULE_VERSION,
-    description="A python module for TM1.",
+    description="The python module for TM1.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="MIT",
@@ -29,6 +29,8 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "Natural Language :: English",
     ],
     install_requires=[
@@ -37,7 +39,6 @@ setup(
         "pytz",
         'requests_negotiate_sspi;platform_system=="Windows"',
         "mdxpy>=1.3.1",
-        "networkx",
     ],
     extras_require={
         "pandas": ["pandas"],
