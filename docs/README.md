@@ -56,7 +56,7 @@ The documentation is automatically deployed to the gh-pages branch using GitHub 
 
 2. **Tagging a Commit:**
 
-    When a commit is tagged with v* (e.g., v1.0.0), the documentation is deployed as a versioned release.
+    When a commit is tagged with x.x or x.x.x (e.g., 2.0 or 2.0.1), the documentation is deployed as a versioned release.
 
 3. **Manual Trigger:**
 
@@ -64,7 +64,7 @@ The documentation is automatically deployed to the gh-pages branch using GitHub 
 
 ### Deployment Workflow Details
 
-- The workflow is defined in docs.yml.
+- The workflow is defined in .github/workflows/docs.yml.
 - It performs the following steps:
     1. Checks out the repository.
     2. Sets up Python and installs dependencies.
