@@ -165,20 +165,6 @@ def require_pandas(func):
     return wrapper
 
 
-@decohints
-def require_networkx(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            import networkx  # noqa: F401
-
-            return func(*args, **kwargs)
-        except ImportError:
-            raise ImportError(f"Function '{func.__name__}' requires networkx")
-
-    return wrapper
-
-
 def get_all_servers_from_adminhost(adminhost="localhost", port=None, use_ssl=False) -> List:
     from TM1py.Objects import Server
 
