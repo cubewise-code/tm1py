@@ -8,14 +8,9 @@ except ImportError:
 
 import json
 import math
+from collections import defaultdict
 from typing import Dict, Iterable, List, Optional, Tuple
 
-try:
-    import networkx as nx
-
-    _has_networkx = True
-except ImportError:
-    _has_networkx = False
 
 from requests import Response
 
@@ -32,7 +27,6 @@ from TM1py.Utils.Utils import (
     case_and_space_insensitive_equals,
     format_url,
     require_data_admin,
-    require_networkx,
     require_ops_admin,
     require_pandas,
     verify_version,
@@ -61,22 +55,47 @@ class HierarchyService(ObjectService):
         self.elements = ElementService(rest)
 
     @staticmethod
-    @require_networkx
     def _validate_edges(df: "pd.DataFrame"):
-        graph = nx.DiGraph()
-        for _, *record in df.itertuples():
-            child = record[0]
-            for parent in record[1:]:
+        graph = defaultdict(list)  # Build adjacency list (child -> list of parents)
+        for row in df.itertuples(index=False, name=None):
+            child, *parents = row
+            for parent in parents:
                 if not parent:
                     continue
                 if isinstance(parent, float) and math.isnan(parent):
                     continue
-                graph.add_edge(child, parent)
+                graph[child].append(parent)
                 child = parent
 
-        cycles = list(nx.simple_cycles(graph))
+        visited = set()  # nodes already fully explored
+        active_path = set()  # nodes currently being explored (for cycle detection)
+        cycles = []  # stores detected cycles
+
+        def explore_relationships(node, path):
+            if node in active_path:
+                # Found a cycle: extract the part of the path that loops
+                loop_start = path.index(node)
+                cycles.append(path[loop_start:])
+                return
+            if node in visited:
+                return
+
+            visited.add(node)
+            active_path.add(node)
+
+            for parent in graph.get(node, []):
+                explore_relationships(parent, path + [parent])
+
+            active_path.remove(node)
+
+        for node in graph:
+            if node not in visited:
+                explore_relationships(node, [node])
+
         if cycles:
-            raise ValueError(f"Circular reference{'s' if len(cycles) > 1 else ''} found in edges: {cycles}")
+            raise ValueError(
+                f"Circular reference{'s' if len(cycles) > 1 else ''} found in edges: {cycles}"
+            )
 
     @staticmethod
     def _validate_alias_uniqueness(df: "pd.DataFrame"):
@@ -493,7 +512,6 @@ class HierarchyService(ObjectService):
             Abort early if element names are not unique
         :param verify_edges:
             Abort early if edges contain a circular reference.
-            `True` requires optional dependency `networkx`
         :param unwind_all: bool
             Unwind hierarch before creating new edges
         :param unwind_consolidations: list
