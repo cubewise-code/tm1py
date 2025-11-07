@@ -286,8 +286,7 @@ install_requires=[
     'requests',
     'pytz',
     'requests_negotiate_sspi;platform_system=="Windows"',
-    'mdxpy>=1.3.1',
-    'networkx'],
+    'mdxpy>=1.3.1'],
 extras_require={
     "pandas": ["pandas"],
     "dev": [
