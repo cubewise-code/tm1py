@@ -308,7 +308,7 @@ class TestChoreService(unittest.TestCase):
 
     def test_update_chore_without_tasks(self):
         # get chore
-        c = self.tm1.chores.get(self.chore_name1)
+        c = self.tm1.chores.get(self.chore_name3)
         # update all properties
         # update start time
         start_time = datetime(2023, 4, 5, 12, 5, 30)
@@ -332,9 +332,9 @@ class TestChoreService(unittest.TestCase):
         # update chore in TM1
         self.tm1.chores.update(c)
         # get chore and check all properties
-        c = self.tm1.chores.get(chore_name=self.chore_name1)
+        c = self.tm1.chores.get(chore_name=self.chore_name3)
         self.assertEqual(c._start_time._datetime.replace(microsecond=0), start_time.replace(microsecond=0))
-        self.assertEqual(c._name, self.chore_name1)
+        self.assertEqual(c._name, self.chore_name3)
         self.assertEqual(c._dst_sensitivity, True)
         self.assertEqual(c._active, False)
         self.assertEqual(c._execution_mode, Chore.SINGLE_COMMIT)
