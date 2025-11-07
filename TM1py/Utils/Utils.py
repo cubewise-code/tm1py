@@ -937,6 +937,23 @@ def build_cellset_from_pandas_dataframe(
 
     :return: a CaseAndSpaceInsensitiveTuplesDict
     """
+    df = build_dataframe_aggregate_intersections(df, sum_numeric_duplicates)
+
+    cellset = CaseAndSpaceInsensitiveTuplesDict(
+        dict(zip(df.iloc[:, :-1].itertuples(index=False, name=None), df.iloc[:, -1].values))
+    )
+    return cellset
+
+
+@require_pandas
+def build_dataframe_aggregate_intersections(df: "pd.DataFrame", sum_numeric_duplicates: bool = True) -> "pd.DataFrame":
+    """
+
+    param sum_numeric_duplicates: Aggregate numerical values for duplicated intersections
+    param df: A Dataframe, with dimension-column mapping in correct order.
+
+    :return: A Dataframe
+    """
     if isinstance(df.index, pd.MultiIndex):
         df.reset_index(inplace=True)
 
