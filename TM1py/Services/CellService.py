@@ -45,6 +45,7 @@ from TM1py.Utils.Utils import (
     abbreviate_mdx,
     build_cellset_from_pandas_dataframe,
     build_csv_from_cellset_dict,
+    build_dataframe_aggregate_intersections,
     build_dataframe_from_csv,
     build_mdx_and_values_from_cellset,
     build_mdx_from_cellset,
@@ -1068,7 +1069,7 @@ class CellService(ObjectService):
         slice_size_of_dataframe: int = 250_000,
         max_workers: int = 8,
         dimensions: Iterable[str] = None,
-        increment: bool = False,
+        increment: bool = True,
         sandbox_name: str = None,
         deactivate_transaction_log: bool = False,
         reactivate_transaction_log: bool = False,
@@ -1083,7 +1084,7 @@ class CellService(ObjectService):
         :param slice_size_of_dataframe: Number of rows for each DataFrame slice, e.g. 10000
         :param max_workers: Max number of threads, e.g. 14
         :param dimensions:
-        :param increment: increment or update cell values. Defaults to False.
+        :param increment: increment or update cell values. Defaults to True.
         :param sandbox_name: name of the sandbox or None
         :param deactivate_transaction_log:
         :param reactivate_transaction_log:
@@ -1126,6 +1127,9 @@ class CellService(ObjectService):
                         failures.append(exception)
 
             return failures
+
+        if increment:
+            data = build_dataframe_aggregate_intersections(data, sum_numeric_duplicates=True)
 
         exceptions = asyncio.run(_write_async(data))
         if not exceptions:
