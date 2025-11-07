@@ -170,6 +170,7 @@ class ChoreService(ObjectService):
 
         # Update Tasks individually
         task_old_count = self._get_tasks_count(chore.name)
+        i = -1
         for i, task_new in enumerate(chore.tasks):
             if i >= task_old_count:
                 self._add_task(chore.name, task_new, **kwargs)
