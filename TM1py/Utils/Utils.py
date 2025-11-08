@@ -44,6 +44,13 @@ try:
 except ImportError:
     _has_pandas = False
 
+try:
+    import polars as pl
+
+    _has_polars = True
+except ImportError:
+    _has_polars = False
+
 
 def decohints(decorator: Callable) -> Callable:
     """
@@ -925,6 +932,18 @@ def build_pandas_dataframe_from_cellset(
         raise ValueError(message)
 
 
+def build_cellset_from_dataframe(
+    df: "pd.DataFrame", sum_numeric_duplicates: bool = True
+) -> "CaseAndSpaceInsensitiveTuplesDict":
+    if isinstance(df, pd.DataFrame):
+        return build_cellset_from_pandas_dataframe(df, sum_numeric_duplicates)
+
+    if isinstance(df, pl.DataFrame):
+        return build_cellset_from_polars_dataframe(df, sum_numeric_duplicates)
+
+    raise ValueError("DataFrame must of type 'pd.DataFrame' or 'pl.DataFrame'")
+
+
 @require_pandas
 def build_cellset_from_pandas_dataframe(
     df: "pd.DataFrame", sum_numeric_duplicates: bool = True
@@ -937,7 +956,7 @@ def build_cellset_from_pandas_dataframe(
 
     :return: a CaseAndSpaceInsensitiveTuplesDict
     """
-    if isinstance(df.index, pd.MultiIndex):
+    if isinstance(df, pd.DataFrame) and isinstance(df.index, pd.MultiIndex):
         df.reset_index(inplace=True)
 
     if sum_numeric_duplicates:
@@ -963,6 +982,92 @@ def aggregate_duplicate_intersections(df, dimension_headers, value_header):
     for col in dimension_headers:
         df[col] = df[col].str.lower().str.replace(" ", "")
     return df.groupby([*dimension_headers])[value_header].sum().reset_index()
+
+
+def _is_numeric_dtype(dtype: pl.datatypes.DataType) -> bool:
+    """Check if a Polars dtype is numeric."""
+    return dtype in {
+        pl.Int8,
+        pl.Int16,
+        pl.Int32,
+        pl.Int64,
+        pl.UInt8,
+        pl.UInt16,
+        pl.UInt32,
+        pl.UInt64,
+        pl.Float32,
+        pl.Float64,
+        pl.Decimal,
+    }
+
+
+def _aggregate_duplicate_intersections_polars(
+    df: "pl.DataFrame", dimension_headers: Iterable[str], value_header: str
+) -> "pl.DataFrame":
+    """Group by all dimension columns and sum the value column."""
+    if not dimension_headers:
+        return df.select(pl.col(value_header).sum().alias(value_header))
+    return (
+        df.group_by(list(dimension_headers))
+        .agg(pl.col(value_header).sum().alias(value_header))
+        .select([*dimension_headers, value_header])
+    )
+
+
+def build_cellset_from_polars_dataframe(
+    df: "pl.DataFrame", sum_numeric_duplicates: bool = True
+) -> "CaseAndSpaceInsensitiveTuplesDict":
+    """
+    Build a CaseAndSpaceInsensitiveTuplesDict from a polars DataFrame that was produced in the
+    same shape as build_pandas_dataframe_from_cellset:
+      - All dimension columns first, in order
+      - The last column is the value column
+    """
+    if not isinstance(df, pl.DataFrame):
+        raise TypeError("df must be a polars DataFrame")
+
+    if df.is_empty() or df.width == 0:
+        return CaseAndSpaceInsensitiveTuplesDict({})
+
+    value_header = df.columns[-1]
+    dimension_headers = df.columns[:-1]
+
+    if sum_numeric_duplicates:
+        dtype = df.schema[value_header]
+
+        if _is_numeric_dtype(dtype):
+            df = _aggregate_duplicate_intersections_polars(df, dimension_headers, value_header)
+        else:
+            casted = df.with_columns(pl.col(value_header).cast(pl.Float64, strict=False).alias("__value_float__"))
+            numeric_mask = pl.col("__value_float__").is_not_null()
+
+            df_n = casted.filter(numeric_mask).select([*dimension_headers, "__value_float__"])
+            if df_n.height > 0:
+                df_n = df_n.rename({"__value_float__": value_header})
+                df_n = _aggregate_duplicate_intersections_polars(df_n, dimension_headers, value_header)
+
+            df_s = casted.filter(~numeric_mask).select([*dimension_headers, value_header])
+
+            if df_n.height > 0 and df_s.height > 0:
+                df = pl.concat([df_n, df_s], how="vertical")
+            elif df_n.height > 0:
+                df = df_n
+            else:
+                df = df_s
+
+    # Convert to CaseAndSpaceInsensitiveTuplesDict
+    cell_dict = {tuple(row[:-1]): row[-1] for row in df.iter_rows()}
+    return CaseAndSpaceInsensitiveTuplesDict(cell_dict)
+
+
+def clone_dataframe(df):
+    if isinstance(df, pd.DataFrame):
+        return df.copy()
+
+    if isinstance(df, pl.DataFrame):
+        return df.clone()
+
+    raise ValueError("DataFrame must of type pd.DataFrame or pl.DataFrame")
 
 
 def lower_and_drop_spaces(item: str) -> str:
