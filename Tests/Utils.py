@@ -77,19 +77,13 @@ def skip_if_auth_not_basic(version):
     return wrap
 
 
-def skip_if_paoc(version):
-    """
-    Checks whether TM1 is deployed as Planning Analytics on Cloud (PAoC)
-    """
+def skip_if_paoc(func):
+    """Skip test when TM1 runs on Planning Analytics on Cloud (PAoC)."""
 
-    def wrap(func):
-        @functools.wraps(func)
-        def wrapper(self, *args, **kwargs):
-            if "planning-analytics.ibmcloud.com/tm1/api" in self.tm1.conn._base_url:
-                return self.skipTest(f"Function '{func.__name__,}' requires on prem TM1 instead of PAoC")
-            else:
-                return func(self, *args, **kwargs)
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if "planning-analytics.ibmcloud.com/tm1/api" in self.tm1.connection._base_url:
+            self.skipTest(f"Function '{func.__name__}' requires on-prem TM1 instead of PAoC")
+        return func(self, *args, **kwargs)
 
-        return wrapper
-
-    return wrap
+    return wrapper
