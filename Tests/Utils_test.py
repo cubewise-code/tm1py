@@ -8,6 +8,12 @@ try:
 except ImportError:
     pass
 
+from TM1py.Exceptions.Exceptions import (
+    TM1pyNotAdminException,
+    TM1pyNotDataAdminException,
+    TM1pyNotOpsAdminException,
+    TM1pyNotSecurityAdminException,
+)
 from TM1py.Services import TM1Service
 from TM1py.Utils import (
     CellUpdateableProperty,
@@ -25,6 +31,10 @@ from TM1py.Utils import (
     integerize_version,
     map_cell_properties_to_compact_json_response,
     reorder_with_priority,
+    require_admin,
+    require_data_admin,
+    require_ops_admin,
+    require_security_admin,
     resembles_mdx,
     verify_version,
 )
@@ -45,6 +55,12 @@ class TestUtilsMethods(unittest.TestCase):
         cls.config = configparser.ConfigParser()
         cls.config.read(Path(__file__).parent.joinpath("config.ini"))
         cls.tm1 = TM1Service(**cls.config["tm1srv01"])
+        cls.EXCEPTION_MESSAGES = {
+            "is_admin": "admin",
+            "is_data_admin": "DataAdmin",
+            "is_security_admin": "SecurityAdmin",
+            "is_ops_admin": "OperationsAdmin",
+        }
 
     @skip_if_paoc
     @skip_if_version_higher_or_equal_than(version="12")
@@ -568,6 +584,89 @@ class TestUtilsMethods(unittest.TestCase):
 
         self.assertEqual(
             expected_outcome, reorder_with_priority(original_items, priority_items, exclude_items, sort_remaining)
+        )
+
+    def _run_permission_test(self, attr_name, decorator, value, expected_exception=None):
+        class Dummy:
+            pass
+
+        setattr(Dummy, attr_name, value)
+
+        @decorator
+        def test_method(self):
+            return "OK"
+
+        Dummy.method = test_method
+        dummy = Dummy()
+
+        if expected_exception:
+            with self.assertRaises(expected_exception) as context:
+                dummy.method()
+            required_permission = self.EXCEPTION_MESSAGES[attr_name]
+            self.assertEqual(
+                str(context.exception), f"Function 'test_method' requires {required_permission} permissions"
+            )
+        else:
+            self.assertEqual(dummy.method(), "OK")
+
+    def test_require_admin_allows(self):
+        self._run_permission_test(
+            attr_name="is_admin",
+            decorator=require_admin,
+            value=True,
+        )
+
+    def test_require_admin_blocks(self):
+        self._run_permission_test(
+            attr_name="is_admin",
+            decorator=require_admin,
+            value=False,
+            expected_exception=TM1pyNotAdminException,
+        )
+
+    def test_require_data_admin_allows(self):
+        self._run_permission_test(
+            attr_name="is_data_admin",
+            decorator=require_data_admin,
+            value=True,
+        )
+
+    def test_require_data_admin_blocks(self):
+        self._run_permission_test(
+            attr_name="is_data_admin",
+            decorator=require_data_admin,
+            value=False,
+            expected_exception=TM1pyNotDataAdminException,
+        )
+
+    def test_require_security_admin_allows(self):
+        self._run_permission_test(
+            attr_name="is_security_admin",
+            decorator=require_security_admin,
+            value=True,
+        )
+
+    def test_require_security_admin_blocks(self):
+        self._run_permission_test(
+            attr_name="is_security_admin",
+            decorator=require_security_admin,
+            value=False,
+            expected_exception=TM1pyNotSecurityAdminException,
+        )
+
+    def test_require_ops_admin_allows(self):
+        self._run_permission_test(
+            attr_name="is_ops_admin",
+            decorator=require_ops_admin,
+            value=True,
+        )
+
+    def test_require_ops_admin_blocks(self):
+        self._run_permission_test(
+            attr_name="is_ops_admin",
+            decorator=require_ops_admin,
+            value=False,
+            expected_exception=TM1pyNotOpsAdminException,
         )
 
     @classmethod
