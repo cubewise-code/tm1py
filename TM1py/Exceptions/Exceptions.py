@@ -3,6 +3,7 @@
 # TM1py Exceptions are defined here
 from typing import List, Mapping
 
+
 class TM1pyTimeout(Exception):
     """Exception for timeout during a REST request."""
 
@@ -56,56 +57,59 @@ class TM1pyVersionDeprecationException(Exception):
         return f"Function '{self.function}' has been deprecated in TM1 server version >= '{self.deprecated_in_version}'"
 
 
-class TM1pyNotAdminException(Exception):
+class TM1pyPermissionException(Exception):
+    """Exception for missing permissions."""
+
+    def __init__(self, function: str, required_permission: str):
+        """
+        :param function: Name of the function
+        :param permission: Name of Permission, e.g.
+        """
+        self.function = function
+        self.required_permission = required_permission
+
+    def __str__(self):
+        return f"Function '{self.function}' requires {self.required_permission} permissions"
+
+
+class TM1pyNotAdminException(TM1pyPermissionException):
     """Exception for missing admin permissions."""
 
     def __init__(self, function: str):
         """
         :param function: Name of the function
         """
-        self.function = function
-
-    def __str__(self):
-        return f"Function '{self.function}' requires admin permissions"
+        super().__init__(function, "admin")
 
 
-class TM1pyNotDataAdminException(Exception):
+class TM1pyNotDataAdminException(TM1pyPermissionException):
     """Exception for missing DataAdmin permissions."""
 
     def __init__(self, function: str):
         """
         :param function: Name of the function
         """
-        self.function = function
-
-    def __str__(self):
-        return f"Function '{self.function}' requires DataAdmin permissions"
+        super().__init__(function, "DataAdmin")
 
 
-class TM1pyNotSecurityAdminException(Exception):
+class TM1pyNotSecurityAdminException(TM1pyPermissionException):
     """Exception for missing SecurityAdmin permissions."""
 
     def __init__(self, function: str):
         """
         :param function: Name of the function
         """
-        self.function = function
-
-    def __str__(self):
-        return f"Function '{self.function}' requires SecurityAdmin permissions"
+        super().__init__(function, "SecurityAdmin")
 
 
-class TM1pyNotOpsAdminException(Exception):
+class TM1pyNotOpsAdminException(TM1pyPermissionException):
     """Exception for missing OperationsAdmin permissions."""
 
     def __init__(self, function: str):
         """
         :param function: Name of the function
         """
-        self.function = function
-
-    def __str__(self):
-        return f"Function '{self.function}' requires OperationsAdmin permissions"
+        super().__init__(function, "OperationsAdmin")
 
 
 class TM1pyException(Exception):
