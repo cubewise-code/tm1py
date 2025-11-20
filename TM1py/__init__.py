@@ -74,4 +74,10 @@ from TM1py.Services.UserService import UserService
 from TM1py.Services.ViewService import ViewService
 from TM1py.Utils import Utils
 
-__version__ = "2.2"
+# Version is managed in pyproject.toml
+try:
+    from importlib.metadata import version
+    __version__ = version("TM1py")
+except Exception:
+    # Fallback for development installations
+    __version__ = "2.2.0"

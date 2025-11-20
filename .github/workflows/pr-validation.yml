@@ -1,0 +1,44 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [master]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install black ruff
+
+      - name: Run Black (formatting check)
+        run: black --check --diff .
+
+      - name: Run Ruff (linting)
+        run: ruff check .
+
+      # Placeholder for future unit tests
+      # Uncomment when unit tests are available
+      # - name: Run unit tests
+      #   run: |
+      #     pip install -e .[dev]
+      #     pytest Tests/unit/ -v
+
+      - name: Validation Summary
+        if: success()
+        run: |
+          echo "✅ All validation checks passed!"
+          echo "- Code formatting (Black): PASSED"
+          echo "- Linting (Ruff): PASSED"
+          # echo "- Unit tests: PASSED"

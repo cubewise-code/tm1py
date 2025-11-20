@@ -1,0 +1,353 @@
+name: Nightly Release
+
+on:
+  schedule:
+    # Run at 4 AM CET (3 AM UTC in winter, 2 AM UTC in summer)
+    # Using 2 AM UTC to be safe for CET/CEST transitions
+    - cron: '0 2 * * *'
+  workflow_dispatch:  # Allow manual trigger for testing
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  check-for-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      has_changes: ${{ steps.check.outputs.has_changes }}
+      last_tag: ${{ steps.check.outputs.last_tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for proper comparison
+
+      - name: Check for commits since last release
+        id: check
+        run: |
+          # Get the last release tag
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          echo "last_tag=$LAST_TAG" >> $GITHUB_OUTPUT
+
+          if [ -z "$LAST_TAG" ]; then
+            echo "No previous tags found, will create first release"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check if there are commits since last tag
+          COMMITS_SINCE=$(git rev-list ${LAST_TAG}..HEAD --count)
+          echo "Commits since $LAST_TAG: $COMMITS_SINCE"
+
+          if [ "$COMMITS_SINCE" -gt 0 ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "✅ Found $COMMITS_SINCE new commits since last release"
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "⏭️  No new commits since last release, skipping"
+          fi
+
+  run-tests:
+    needs: check-for-changes
+    if: needs.check-for-changes.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: ["tm1-12", "tm1-11-cloud"]
+    environment: ${{ matrix.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -e .[pandas,dev]
+
+      - name: Retrieve TM1 Connection Details
+        run: echo "Retrieving TM1 connection details"
+        env:
+          TM1_CONNECTION: ${{ vars.TM1_CONNECTION }}
+          TM1_CONNECTION_SECRET: ${{ secrets.TM1_CONNECTION_SECRET }}
+
+      - name: Generate config.ini
+        run: |
+          python Tests/resources/generate_config.py
+        env:
+          TM1_CONNECTION: ${{ vars.TM1_CONNECTION }}
+          TM1_CONNECTION_SECRET: ${{ secrets.TM1_CONNECTION_SECRET }}
+
+      - name: Run integration tests
+        run: pytest Tests/
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.environment }}
+          path: Tests/test-reports/
+          retention-days: 7
+
+  determine-version:
+    needs: [check-for-changes, run-tests]
+    runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.version.outputs.new_version }}
+      version_type: ${{ steps.version.outputs.version_type }}
+      changelog: ${{ steps.changelog.outputs.changelog }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version bump type
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LAST_TAG="${{ needs.check-for-changes.outputs.last_tag }}"
+
+          # Parse current version (default to 2.2.0 if no tags)
+          if [ -z "$LAST_TAG" ]; then
+            CURRENT_VERSION="2.2.0"
+          else
+            CURRENT_VERSION="${LAST_TAG#v}"  # Remove 'v' prefix if present
+          fi
+
+          echo "Current version: $CURRENT_VERSION"
+
+          # Split version into parts
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+
+          # Get all merged PRs since last tag
+          if [ -z "$LAST_TAG" ]; then
+            COMMITS=$(git log --format="%H" HEAD)
+          else
+            COMMITS=$(git log --format="%H" ${LAST_TAG}..HEAD)
+          fi
+
+          # Determine version bump type by checking PR labels
+          VERSION_TYPE="skip"  # Default to skip (no release unless explicitly labeled)
+          FOUND_RELEASE_LABEL=false
+
+          for COMMIT in $COMMITS; do
+            # Get PR number from commit message
+            PR_NUM=$(git log --format=%s -n 1 $COMMIT | grep -oP '#\K[0-9]+' | head -1)
+
+            if [ -n "$PR_NUM" ]; then
+              echo "Checking PR #$PR_NUM for release labels..."
+
+              # Get PR labels using GitHub CLI
+              LABELS=$(gh pr view $PR_NUM --json labels --jq '.labels[].name' 2>/dev/null || echo "")
+
+              if echo "$LABELS" | grep -q "release:major"; then
+                VERSION_TYPE="major"
+                FOUND_RELEASE_LABEL=true
+                echo "Found release:major label in PR #$PR_NUM"
+                break  # Major takes precedence
+              elif echo "$LABELS" | grep -q "release:minor"; then
+                VERSION_TYPE="minor"
+                FOUND_RELEASE_LABEL=true
+                echo "Found release:minor label in PR #$PR_NUM"
+                # Don't break, continue checking for major
+              elif echo "$LABELS" | grep -q "release:patch"; then
+                # Only set to patch if we haven't found minor yet
+                if [ "$VERSION_TYPE" != "minor" ]; then
+                  VERSION_TYPE="patch"
+                  FOUND_RELEASE_LABEL=true
+                fi
+                echo "Found release:patch label in PR #$PR_NUM"
+              elif echo "$LABELS" | grep -q "skip-release"; then
+                echo "Found skip-release label in PR #$PR_NUM"
+                # Explicit skip, don't change VERSION_TYPE
+              fi
+            fi
+          done
+
+          # If no release labels found, skip the release
+          if [ "$FOUND_RELEASE_LABEL" = false ]; then
+            echo "⏭️  No release labels found on any merged PRs, skipping release"
+            VERSION_TYPE="skip"
+          fi
+
+          # Calculate new version
+          case $VERSION_TYPE in
+            major)
+              NEW_VERSION="$((MAJOR + 1)).0.0"
+              ;;
+            minor)
+              NEW_VERSION="${MAJOR}.$((MINOR + 1)).0"
+              ;;
+            patch)
+              NEW_VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
+              ;;
+            skip)
+              NEW_VERSION=""  # No version bump
+              echo "⏭️  Skipping release - no release labels found"
+              ;;
+          esac
+
+          echo "Version bump type: $VERSION_TYPE"
+          echo "New version: $NEW_VERSION"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "version_type=$VERSION_TYPE" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LAST_TAG="${{ needs.check-for-changes.outputs.last_tag }}"
+
+          echo "Generating changelog..."
+
+          # Get commits since last tag
+          if [ -z "$LAST_TAG" ]; then
+            COMMITS=$(git log --format="- %s (%h)" HEAD)
+          else
+            COMMITS=$(git log --format="- %s (%h)" ${LAST_TAG}..HEAD)
+          fi
+
+          # Create changelog
+          CHANGELOG="## What's Changed"$'\n\n'"$COMMITS"$'\n\n'"**Full Changelog**: https://github.com/${{ github.repository }}/compare/${LAST_TAG}...${{ steps.version.outputs.new_version }}"
+
+          # Save to output (handle multiline)
+          {
+            echo 'changelog<<EOF'
+            echo "$CHANGELOG"
+            echo EOF
+          } >> $GITHUB_OUTPUT
+
+  create-release:
+    needs: [determine-version]
+    if: needs.determine-version.outputs.version_type != 'skip' && needs.determine-version.outputs.new_version != ''
+    runs-on: ubuntu-latest
+    environment: release-approval  # Requires manual approval
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Update version in pyproject.toml
+        run: |
+          NEW_VERSION="${{ needs.determine-version.outputs.new_version }}"
+          sed -i "s/^version = .*/version = \"$NEW_VERSION\"/" pyproject.toml
+          sed -i "s|tarball/.*\"|tarball/$NEW_VERSION\"|" pyproject.toml
+
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add pyproject.toml
+          git commit -m "chore: bump version to ${{ needs.determine-version.outputs.new_version }}"
+          git push
+
+      - name: Create and push tag
+        run: |
+          git tag ${{ needs.determine-version.outputs.new_version }}
+          git push origin ${{ needs.determine-version.outputs.new_version }}
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.determine-version.outputs.new_version }}
+          release_name: Release ${{ needs.determine-version.outputs.new_version }}
+          body: |
+            ${{ needs.determine-version.outputs.changelog }}
+
+            ---
+
+            🤖 This release was automatically created by the nightly release workflow.
+
+            Install via pip:
+            ```bash
+            pip install --upgrade TM1py
+            ```
+          draft: false
+          prerelease: false
+
+  publish-to-pypi:
+    needs: [determine-version, create-release]
+    runs-on: ubuntu-latest
+    environment: pypi-publish  # Requires manual approval (configure in GitHub repo settings)
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.determine-version.outputs.new_version }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build package
+        run: python -m build
+
+      - name: Check package
+        run: twine check dist/*
+
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: twine upload dist/*
+
+      - name: Success notification
+        run: |
+          echo "✅ Successfully published TM1py ${{ needs.determine-version.outputs.new_version }} to PyPI!"
+          echo "Users can now install it with: pip install --upgrade TM1py"
+
+  notify-on-skip:
+    needs: [determine-version]
+    if: needs.determine-version.outputs.version_type == 'skip'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify skip
+        run: |
+          echo "⏭️  Release skipped - no release labels found on merged PRs"
+          echo ""
+          echo "To trigger a release, add one of these labels to PRs before merging:"
+          echo "  - release:patch (for bug fixes)"
+          echo "  - release:minor (for new features)"
+          echo "  - release:major (for breaking changes)"
+          echo ""
+          echo "Or use 'skip-release' label to explicitly skip a PR"
+
+  notify-on-failure:
+    needs: [run-tests, determine-version, create-release, publish-to-pypi]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create issue on failure
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Nightly Release Failed',
+              body: `The nightly release workflow failed. Please check the [workflow run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}) for details.`,
+              labels: ['release', 'bug', 'automation']
+            });
+            console.log('Created issue:', issue.data.number);
