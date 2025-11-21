@@ -70,6 +70,11 @@ from TM1py.Utils.Utils import (
 )
 
 
+from TM1py.Utils.DataFrameUtils import (
+    DataFrameLike,
+    convert_to_dataframe_like,
+    build_cellset_from_dataframe
+)
 
 @decohints
 def tidy_cellset(func):
@@ -858,7 +863,7 @@ class CellService(ObjectService):
     def write_dataframe(
         self,
         cube_name: str,
-        data: "pd.DataFrame",
+        data: Any,
         dimensions: Iterable[str] = None,
         increment: bool = False,
         deactivate_transaction_log: bool = False,
@@ -908,8 +913,9 @@ class CellService(ObjectService):
         :return: changeset or None
         """
         # don't mutate passed data frame. Work on a copy instead
-        data = clone_dataframe(data)
 
+        data: DataFrameLike = convert_to_dataframe_like(data)
+        data = data.copy()
 
         if not dimensions:
             dimensions = self.get_dimension_names_for_writing(cube_name=cube_name)
