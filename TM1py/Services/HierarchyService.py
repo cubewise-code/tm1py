@@ -477,7 +477,7 @@ class HierarchyService(ObjectService):
         df: "pd.DataFrame",
         element_column: str = None,
         verify_unique_elements: bool = False,
-        verify_edges: bool = False,
+        verify_edges: bool = True,
         element_type_column: str = "ElementType",
         unwind_all: bool = False,
         unwind_consolidations: Iterable = None,
