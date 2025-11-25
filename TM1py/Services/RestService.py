@@ -127,6 +127,7 @@ class RestService:
         - **re_connect_on_remote_disconnect** (bool): Attempt to reconnect once if connection is aborted by remote end.
         - **remote_disconnect_max_retries** (int): Maximum number of retry attempts after remote disconnect (default: 5).
         - **remote_disconnect_retry_delay** (float): Initial delay in seconds before first retry attempt (default: 1).
+        - **remote_disconnect_max_delay** (float): Maximum delay cap in seconds between retry attempts (default: 30).
         - **remote_disconnect_backoff_factor** (float): Multiplier for exponential backoff between retry attempts (default: 2).
         - **async_polling_initial_delay** (float): Initial polling delay in seconds for async operations (default: 0.1).
         - **async_polling_max_delay** (float): Maximum polling delay cap in seconds for async operations (default: 1.0).
@@ -166,6 +167,7 @@ class RestService:
         self._re_connect_on_remote_disconnect = kwargs.get("re_connect_on_remote_disconnect", True)
         self._remote_disconnect_max_retries = int(kwargs.get("remote_disconnect_max_retries", 5))
         self._remote_disconnect_retry_delay = float(kwargs.get("remote_disconnect_retry_delay", 1))
+        self._remote_disconnect_max_delay = float(kwargs.get("remote_disconnect_max_delay", 30))
         self._remote_disconnect_backoff_factor = float(kwargs.get("remote_disconnect_backoff_factor", 2))
         self._async_polling_initial_delay = float(kwargs.get("async_polling_initial_delay", 0.1))
         self._async_polling_max_delay = float(kwargs.get("async_polling_max_delay", 1.0))
@@ -445,14 +447,17 @@ class RestService:
         """
         Handle remote disconnect errors with reconnection and retry logic using exponential backoff.
 
-        Retries up to `remote_disconnect_max_retries` times with exponential backoff delay.
-        The delay is calculated as: delay * backoff_factor^(attempt-1).
+        Retries up to `remote_disconnect_max_retries` times with capped exponential backoff delay.
+        The delay is calculated as: min(delay * backoff_factor^(attempt-1), max_delay).
         """
         warnings.warn(f"Connection aborted due to remote disconnect: {original_error}")
 
         for attempt in range(1, self._remote_disconnect_max_retries + 1):
-            # Calculate delay with exponential backoff: delay * backoff_factor^(attempt-1)
-            current_delay = self._remote_disconnect_retry_delay * (self._remote_disconnect_backoff_factor ** (attempt - 1))
+            # Calculate delay with exponential backoff: delay * backoff_factor^(attempt-1), capped at max_delay
+            current_delay = min(
+                self._remote_disconnect_retry_delay * (self._remote_disconnect_backoff_factor ** (attempt - 1)),
+                self._remote_disconnect_max_delay
+            )
 
             warnings.warn(
                 f"Retry attempt {attempt}/{self._remote_disconnect_max_retries} "

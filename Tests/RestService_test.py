@@ -98,6 +98,7 @@ class TestRestService(unittest.TestCase):
         # Verify default values for remote disconnect retry parameters
         self.assertEqual(5, self.tm1._tm1_rest._remote_disconnect_max_retries)
         self.assertEqual(1.0, self.tm1._tm1_rest._remote_disconnect_retry_delay)
+        self.assertEqual(30.0, self.tm1._tm1_rest._remote_disconnect_max_delay)
         self.assertEqual(2.0, self.tm1._tm1_rest._remote_disconnect_backoff_factor)
 
     def test_default_async_polling_parameters(self):
