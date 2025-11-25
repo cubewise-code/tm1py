@@ -125,6 +125,8 @@ class RestService:
         - **impersonate** (str): Name of user to impersonate.
         - **re_connect_on_session_timeout** (bool): Attempt to reconnect once if session is timed out.
         - **re_connect_on_remote_disconnect** (bool): Attempt to reconnect once if connection is aborted by remote end.
+        - **remote_disconnect_max_retries** (int): Maximum number of retry attempts after remote disconnect (default: 5).
+        - **remote_disconnect_retry_delay** (float): Initial delay in seconds before first retry attempt. Uses exponential backoff: delay doubles after each failed attempt (default: 1).
         - **proxies** (dict): Dictionary with proxies, e.g. {'http': 'http://proxy.example.com:8080', 'https': 'http://secureproxy.example.com:8090'}.
         - **ssl_context**: User-defined SSL context.
         - **cert** (str|tuple): (Optional) If string, path to SSL client cert file (.pem). If tuple, ('cert', 'key') pair.
@@ -158,6 +160,8 @@ class RestService:
         self._pool_connections = int(kwargs.get("pool_connections", self.DEFAULT_POOL_CONNECTIONS))
         self._re_connect_on_session_timeout = kwargs.get("re_connect_on_session_timeout", True)
         self._re_connect_on_remote_disconnect = kwargs.get("re_connect_on_remote_disconnect", True)
+        self._remote_disconnect_max_retries = int(kwargs.get("remote_disconnect_max_retries", 5))
+        self._remote_disconnect_retry_delay = float(kwargs.get("remote_disconnect_retry_delay", 1))
         # is retrieved on demand and then cached
         self._sandboxing_disabled = None
         # optional verbose logging to stdout
@@ -431,52 +435,74 @@ class RestService:
         **kwargs,
     ):
         """
-        Handle remote disconnect errors with reconnection and retry logic
+        Handle remote disconnect errors with reconnection and retry logic using exponential backoff.
+
+        Retries up to `remote_disconnect_max_retries` times with exponential backoff delay.
+        The delay doubles after each failed attempt: delay * 2^(attempt-1).
         """
-        warnings.warn(f"Connection aborted due to remote disconnect. Attempting to reconnect: {original_error}")
+        warnings.warn(f"Connection aborted due to remote disconnect: {original_error}")
 
-        try:
-            # Reconnect
-            self._manage_http_adapter()
-            self.connect()
+        for attempt in range(1, self._remote_disconnect_max_retries + 1):
+            # Calculate delay with exponential backoff: delay * 2^(attempt-1)
+            current_delay = self._remote_disconnect_retry_delay * (2 ** (attempt - 1))
 
-            # Only retry if idempotent
-            if not idempotent:
+            warnings.warn(
+                f"Retry attempt {attempt}/{self._remote_disconnect_max_retries} "
+                f"after {current_delay:.1f}s delay..."
+            )
+
+            time.sleep(current_delay)
+
+            try:
+                # Reconnect
+                self._manage_http_adapter()
+                self.connect()
+
+                # Only retry if idempotent
+                if not idempotent:
+                    warnings.warn(
+                        f"Successfully reconnected but not retrying {method.upper()} request (idempotent={idempotent})"
+                    )
+                    raise original_error
+
+                warnings.warn(f"Successfully reconnected. Retrying {method.upper()} request...")
+
+                # Retry the request using the same execution path
+                if not async_requests_mode:
+                    response = self._execute_sync_request(method=method, url=url, data=data, timeout=timeout, **kwargs)
+                else:
+                    response = self._execute_async_request(
+                        method=method,
+                        url=url,
+                        data=data,
+                        timeout=timeout,
+                        cancel_at_timeout=cancel_at_timeout,
+                        return_async_id=return_async_id,
+                        **kwargs,
+                    )
+
+                # Verify and encode response
+                self.verify_response(response=response)
+                response.encoding = encoding
+                return response
+
+            except TM1pyTimeout:
+                # Re-raise timeout exceptions as-is
+                raise
+            except TM1pyRestException:
+                # Re-raise TM1 exceptions as-is
+                raise
+            except Exception as retry_error:
                 warnings.warn(
-                    f"Successfully reconnected but not retrying {method.upper()} request (idempotent={idempotent})"
+                    f"Retry attempt {attempt}/{self._remote_disconnect_max_retries} failed: {retry_error}"
                 )
-                raise original_error
+                continue
 
-            warnings.warn(f"Successfully reconnected. Retrying {method.upper()} request...")
-
-            # Retry the request using the same execution path
-            if not async_requests_mode:
-                response = self._execute_sync_request(method=method, url=url, data=data, timeout=timeout, **kwargs)
-            else:
-                response = self._execute_async_request(
-                    method=method,
-                    url=url,
-                    data=data,
-                    timeout=timeout,
-                    cancel_at_timeout=cancel_at_timeout,
-                    return_async_id=return_async_id,
-                    **kwargs,
-                )
-
-            # Verify and encode response
-            self.verify_response(response=response)
-            response.encoding = encoding
-            return response
-
-        except TM1pyTimeout:
-            # Re-raise timeout exceptions as-is
-            raise
-        except TM1pyRestException:
-            # Re-raise TM1 exceptions as-is
-            raise
-        except Exception as retry_error:
-            warnings.warn(f"Failed to reconnect or retry after remote disconnect: {retry_error}")
-            raise original_error
+        # All retries exhausted
+        warnings.warn(
+            f"All {self._remote_disconnect_max_retries} retry attempts failed after remote disconnect"
+        )
+        raise original_error
 
     def connect(self):
         if "session_id" in self._kwargs:
