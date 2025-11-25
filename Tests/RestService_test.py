@@ -24,20 +24,26 @@ class TestRestService(unittest.TestCase):
         self.assertTrue(self.tm1._tm1_rest.is_connected())
 
     def test_wait_time_generator_with_float_timeout(self):
-        self.assertEqual([0.1, 0.3, 0.6, 1, 1, 1, 1, 1, 1, 1, 1, 1], list(self.tm1._tm1_rest.wait_time_generator(10.0)))
-        self.assertEqual(sum(self.tm1._tm1_rest.wait_time_generator(10)), 10)
+        # With default params (0.1s initial, 1.0s max, 2x factor): 0.1 -> 0.2 -> 0.4 -> 0.8 -> 1.0 -> 1.0...
+        expected = [0.1, 0.2, 0.4, 0.8, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+        self.assertEqual(expected, list(self.tm1._tm1_rest.wait_time_generator(10.0)))
+        self.assertEqual(10.5, sum(self.tm1._tm1_rest.wait_time_generator(10.0)))
 
     def test_wait_time_generator_with_timeout(self):
-        self.assertEqual([0.1, 0.3, 0.6, 1, 1, 1, 1, 1, 1, 1, 1, 1], list(self.tm1._tm1_rest.wait_time_generator(10)))
-        self.assertEqual(sum(self.tm1._tm1_rest.wait_time_generator(10)), 10)
+        # With default params (0.1s initial, 1.0s max, 2x factor): 0.1 -> 0.2 -> 0.4 -> 0.8 -> 1.0 -> 1.0...
+        expected = [0.1, 0.2, 0.4, 0.8, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+        self.assertEqual(expected, list(self.tm1._tm1_rest.wait_time_generator(10)))
+        self.assertEqual(10.5, sum(self.tm1._tm1_rest.wait_time_generator(10)))
 
     def test_wait_time_generator_without_timeout(self):
+        # With default params (0.1s initial, 1.0s max, 2x factor): 0.1 -> 0.2 -> 0.4 -> 0.8 -> 1.0 -> 1.0...
         generator = self.tm1._tm1_rest.wait_time_generator(None)
         self.assertEqual(0.1, next(generator))
-        self.assertEqual(0.3, next(generator))
-        self.assertEqual(0.6, next(generator))
-        self.assertEqual(1, next(generator))
-        self.assertEqual(1, next(generator))
+        self.assertEqual(0.2, next(generator))
+        self.assertEqual(0.4, next(generator))
+        self.assertEqual(0.8, next(generator))
+        self.assertEqual(1.0, next(generator))
+        self.assertEqual(1.0, next(generator))
 
     def test_build_response_from_async_response_ok(self):
         response_content = (
