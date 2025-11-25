@@ -45,6 +45,67 @@ class TestRestService(unittest.TestCase):
         self.assertEqual(1.0, next(generator))
         self.assertEqual(1.0, next(generator))
 
+    def test_wait_time_generator_custom_max_delay(self):
+        # Test with custom max_delay for long-running operations
+        original_max_delay = self.tm1._tm1_rest._async_polling_max_delay
+        try:
+            self.tm1._tm1_rest._async_polling_max_delay = 30.0
+            # With 0.1s initial, 30s max, 2x factor: 0.1 -> 0.2 -> 0.4 -> 0.8 -> 1.6 -> 3.2 -> 6.4 -> 12.8 -> 25.6 -> 30.0...
+            generator = self.tm1._tm1_rest.wait_time_generator(None)
+            self.assertEqual(0.1, next(generator))
+            self.assertEqual(0.2, next(generator))
+            self.assertEqual(0.4, next(generator))
+            self.assertEqual(0.8, next(generator))
+            self.assertEqual(1.6, next(generator))
+            self.assertEqual(3.2, next(generator))
+            self.assertEqual(6.4, next(generator))
+            self.assertEqual(12.8, next(generator))
+            self.assertEqual(25.6, next(generator))
+            self.assertEqual(30.0, next(generator))
+            self.assertEqual(30.0, next(generator))
+        finally:
+            self.tm1._tm1_rest._async_polling_max_delay = original_max_delay
+
+    def test_wait_time_generator_custom_backoff_factor(self):
+        # Test with custom backoff factor (3x instead of 2x)
+        original_factor = self.tm1._tm1_rest._async_polling_backoff_factor
+        try:
+            self.tm1._tm1_rest._async_polling_backoff_factor = 3.0
+            # With 0.1s initial, 1.0s max, 3x factor: 0.1 -> 0.3 -> 0.9 -> 1.0 -> 1.0...
+            generator = self.tm1._tm1_rest.wait_time_generator(None)
+            self.assertEqual(0.1, next(generator))
+            self.assertAlmostEqual(0.3, next(generator), places=5)
+            self.assertAlmostEqual(0.9, next(generator), places=5)
+            self.assertEqual(1.0, next(generator))
+            self.assertEqual(1.0, next(generator))
+        finally:
+            self.tm1._tm1_rest._async_polling_backoff_factor = original_factor
+
+    def test_wait_time_generator_custom_initial_delay(self):
+        # Test with custom initial delay
+        original_initial = self.tm1._tm1_rest._async_polling_initial_delay
+        try:
+            self.tm1._tm1_rest._async_polling_initial_delay = 0.5
+            # With 0.5s initial, 1.0s max, 2x factor: 0.5 -> 1.0 -> 1.0...
+            generator = self.tm1._tm1_rest.wait_time_generator(None)
+            self.assertEqual(0.5, next(generator))
+            self.assertEqual(1.0, next(generator))
+            self.assertEqual(1.0, next(generator))
+        finally:
+            self.tm1._tm1_rest._async_polling_initial_delay = original_initial
+
+    def test_default_remote_disconnect_parameters(self):
+        # Verify default values for remote disconnect retry parameters
+        self.assertEqual(5, self.tm1._tm1_rest._remote_disconnect_max_retries)
+        self.assertEqual(1.0, self.tm1._tm1_rest._remote_disconnect_retry_delay)
+        self.assertEqual(2.0, self.tm1._tm1_rest._remote_disconnect_backoff_factor)
+
+    def test_default_async_polling_parameters(self):
+        # Verify default values for async polling parameters
+        self.assertEqual(0.1, self.tm1._tm1_rest._async_polling_initial_delay)
+        self.assertEqual(1.0, self.tm1._tm1_rest._async_polling_max_delay)
+        self.assertEqual(2.0, self.tm1._tm1_rest._async_polling_backoff_factor)
+
     def test_build_response_from_async_response_ok(self):
         response_content = (
             b"HTTP/1.1 200 OK\r\nContent-Length: 32\r\nConnection: keep-alive\r\nContent-Encoding: "
