@@ -548,3 +548,265 @@ class TestApplicationService(unittest.TestCase):
 
     def test_view_application_public(self):
         self.run_view_application(False)
+
+    # Tests for private path resolution functionality
+
+    def test_build_path_url_all_public(self):
+        """Test _build_path_url with all public segments"""
+        segments = ["Folder1", "Folder2", "Folder3"]
+        result = self.tm1.applications._build_path_url(segments, private_from=None)
+        expected = "/Contents('Folder1')/Contents('Folder2')/Contents('Folder3')"
+        self.assertEqual(result, expected)
+
+    def test_build_path_url_all_private(self):
+        """Test _build_path_url with all private segments"""
+        segments = ["Folder1", "Folder2", "Folder3"]
+        result = self.tm1.applications._build_path_url(segments, private_from=0)
+        expected = "/PrivateContents('Folder1')/PrivateContents('Folder2')/PrivateContents('Folder3')"
+        self.assertEqual(result, expected)
+
+    def test_build_path_url_mixed_boundary_at_1(self):
+        """Test _build_path_url with private boundary at index 1"""
+        segments = ["Folder1", "Folder2", "Folder3"]
+        result = self.tm1.applications._build_path_url(segments, private_from=1)
+        expected = "/Contents('Folder1')/PrivateContents('Folder2')/PrivateContents('Folder3')"
+        self.assertEqual(result, expected)
+
+    def test_build_path_url_mixed_boundary_at_2(self):
+        """Test _build_path_url with private boundary at index 2"""
+        segments = ["Folder1", "Folder2", "Folder3"]
+        result = self.tm1.applications._build_path_url(segments, private_from=2)
+        expected = "/Contents('Folder1')/Contents('Folder2')/PrivateContents('Folder3')"
+        self.assertEqual(result, expected)
+
+    def test_build_path_url_empty_segments(self):
+        """Test _build_path_url with empty segments list"""
+        segments = []
+        result = self.tm1.applications._build_path_url(segments, private_from=None)
+        self.assertEqual(result, "")
+
+    def test_build_path_url_single_segment_public(self):
+        """Test _build_path_url with single public segment"""
+        segments = ["Folder1"]
+        result = self.tm1.applications._build_path_url(segments, private_from=None)
+        expected = "/Contents('Folder1')"
+        self.assertEqual(result, expected)
+
+    def test_build_path_url_single_segment_private(self):
+        """Test _build_path_url with single private segment"""
+        segments = ["Folder1"]
+        result = self.tm1.applications._build_path_url(segments, private_from=0)
+        expected = "/PrivateContents('Folder1')"
+        self.assertEqual(result, expected)
+
+    def test_build_path_url_special_characters(self):
+        """Test _build_path_url handles special characters in folder names"""
+        segments = ["Folder's Name", "Folder & Co"]
+        result = self.tm1.applications._build_path_url(segments, private_from=None)
+        # format_url should escape single quotes
+        self.assertIn("Folder''s Name", result)
+
+    def test_private_folder_get_names(self):
+        """Test get_names on a private folder at root level"""
+        # Create a private folder
+        private_folder_name = self.prefix + "PrivateFolder"
+        private_folder = FolderApplication("", private_folder_name)
+
+        # Clean up if exists
+        if self.tm1.applications.exists(
+            path="", application_type=ApplicationTypes.FOLDER, name=private_folder_name, private=True
+        ):
+            self.tm1.applications.delete(
+                path="", application_type=ApplicationTypes.FOLDER, application_name=private_folder_name, private=True
+            )
+
+        # Create private folder
+        self.tm1.applications.create(application=private_folder, private=True)
+
+        try:
+            # Create a link application inside the private folder
+            link_app = LinkApplication(private_folder_name, self.application_name, "http://example.com")
+            self.tm1.applications.create(application=link_app, private=True)
+
+            # Test get_names - should auto-resolve the private path
+            names = self.tm1.applications.get_names(path=private_folder_name, private=True)
+            self.assertIn(self.application_name, names)
+
+            # Clean up link
+            self.tm1.applications.delete(
+                path=private_folder_name,
+                application_type=ApplicationTypes.LINK,
+                application_name=self.application_name,
+                private=True,
+            )
+        finally:
+            # Clean up private folder
+            self.tm1.applications.delete(
+                path="", application_type=ApplicationTypes.FOLDER, application_name=private_folder_name, private=True
+            )
+
+    def test_private_folder_exists(self):
+        """Test exists on an application inside a private folder"""
+        # Create a private folder
+        private_folder_name = self.prefix + "PrivateFolder2"
+        private_folder = FolderApplication("", private_folder_name)
+
+        # Clean up if exists
+        if self.tm1.applications.exists(
+            path="", application_type=ApplicationTypes.FOLDER, name=private_folder_name, private=True
+        ):
+            self.tm1.applications.delete(
+                path="", application_type=ApplicationTypes.FOLDER, application_name=private_folder_name, private=True
+            )
+
+        # Create private folder
+        self.tm1.applications.create(application=private_folder, private=True)
+
+        try:
+            # Create a link application inside the private folder
+            link_app = LinkApplication(private_folder_name, self.application_name, "http://example.com")
+            self.tm1.applications.create(application=link_app, private=True)
+
+            # Test exists - should auto-resolve the private path
+            exists = self.tm1.applications.exists(
+                path=private_folder_name,
+                application_type=ApplicationTypes.LINK,
+                name=self.application_name,
+                private=True,
+            )
+            self.assertTrue(exists)
+
+            # Clean up link
+            self.tm1.applications.delete(
+                path=private_folder_name,
+                application_type=ApplicationTypes.LINK,
+                application_name=self.application_name,
+                private=True,
+            )
+        finally:
+            # Clean up private folder
+            self.tm1.applications.delete(
+                path="", application_type=ApplicationTypes.FOLDER, application_name=private_folder_name, private=True
+            )
+
+    def test_private_folder_with_cache(self):
+        """Test that caching works for private path resolution"""
+        # Create a private folder
+        private_folder_name = self.prefix + "PrivateFolderCache"
+        private_folder = FolderApplication("", private_folder_name)
+
+        # Clean up if exists
+        if self.tm1.applications.exists(
+            path="", application_type=ApplicationTypes.FOLDER, name=private_folder_name, private=True
+        ):
+            self.tm1.applications.delete(
+                path="", application_type=ApplicationTypes.FOLDER, application_name=private_folder_name, private=True
+            )
+
+        # Create private folder
+        self.tm1.applications.create(application=private_folder, private=True)
+
+        try:
+            # Create a link application inside the private folder
+            link_app = LinkApplication(private_folder_name, self.application_name, "http://example.com")
+            self.tm1.applications.create(application=link_app, private=True)
+
+            # Clear cache
+            self.tm1.applications._private_path_cache.clear()
+
+            # First call - should populate cache
+            names1 = self.tm1.applications.get_names(path=private_folder_name, private=True, use_cache=True)
+            self.assertIn(self.application_name, names1)
+
+            # Verify cache was populated
+            self.assertIn(private_folder_name, self.tm1.applications._private_path_cache)
+
+            # Second call - should use cache
+            names2 = self.tm1.applications.get_names(path=private_folder_name, private=True, use_cache=True)
+            self.assertEqual(names1, names2)
+
+            # Clean up link
+            self.tm1.applications.delete(
+                path=private_folder_name,
+                application_type=ApplicationTypes.LINK,
+                application_name=self.application_name,
+                private=True,
+            )
+        finally:
+            # Clean up private folder
+            self.tm1.applications.delete(
+                path="", application_type=ApplicationTypes.FOLDER, application_name=private_folder_name, private=True
+            )
+            # Clear cache
+            self.tm1.applications._private_path_cache.clear()
+
+    def test_nested_private_folder(self):
+        """Test accessing applications in nested private folders"""
+        # Create a private folder with a subfolder
+        private_folder_name = self.prefix + "PrivateFolderNested"
+        subfolder_name = self.prefix + "SubFolder"
+        private_folder = FolderApplication("", private_folder_name)
+        subfolder = FolderApplication(private_folder_name, subfolder_name)
+
+        # Clean up if exists
+        if self.tm1.applications.exists(
+            path="", application_type=ApplicationTypes.FOLDER, name=private_folder_name, private=True
+        ):
+            # Try to delete subfolder first
+            try:
+                self.tm1.applications.delete(
+                    path=private_folder_name,
+                    application_type=ApplicationTypes.FOLDER,
+                    application_name=subfolder_name,
+                    private=True,
+                )
+            except Exception:
+                pass
+            self.tm1.applications.delete(
+                path="", application_type=ApplicationTypes.FOLDER, application_name=private_folder_name, private=True
+            )
+
+        # Create private folder and subfolder
+        self.tm1.applications.create(application=private_folder, private=True)
+        self.tm1.applications.create(application=subfolder, private=True)
+
+        try:
+            # Create a link application inside the nested folder
+            nested_path = f"{private_folder_name}/{subfolder_name}"
+            link_app = LinkApplication(nested_path, self.application_name, "http://example.com")
+            self.tm1.applications.create(application=link_app, private=True)
+
+            # Test get_names on nested path - should auto-resolve
+            names = self.tm1.applications.get_names(path=nested_path, private=True)
+            self.assertIn(self.application_name, names)
+
+            # Test exists on nested path
+            exists = self.tm1.applications.exists(
+                path=nested_path,
+                application_type=ApplicationTypes.LINK,
+                name=self.application_name,
+                private=True,
+            )
+            self.assertTrue(exists)
+
+            # Clean up link
+            self.tm1.applications.delete(
+                path=nested_path,
+                application_type=ApplicationTypes.LINK,
+                application_name=self.application_name,
+                private=True,
+            )
+        finally:
+            # Clean up folders
+            try:
+                self.tm1.applications.delete(
+                    path=private_folder_name,
+                    application_type=ApplicationTypes.FOLDER,
+                    application_name=subfolder_name,
+                    private=True,
+                )
+            except Exception:
+                pass
+            self.tm1.applications.delete(
+                path="", application_type=ApplicationTypes.FOLDER, application_name=private_folder_name, private=True
+            )
