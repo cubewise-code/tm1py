@@ -88,13 +88,17 @@ class ApplicationService(ObjectService):
 
         return len(segments)  # All segments are public
 
-    def _resolve_path(self, path: str, contents_suffix: str, use_cache: bool = False, **kwargs) -> str:
+    def _resolve_path(self, path: str, contents_suffix: str, private: bool = False, use_cache: bool = False,
+                       **kwargs) -> str:
         """Resolve application path, automatically handling mixed public/private hierarchies.
 
-        Tries optimistic approaches first, falls back to iterative discovery on 404.
+        For public paths (private=False), returns direct URL without probing.
+        For private paths (private=True), tries optimistic approaches first,
+        falls back to iterative discovery on 404.
 
         :param path: path with forward slashes
         :param contents_suffix: final URL suffix (e.g., "/Contents", "/PrivateContents('name')")
+        :param private: whether we're accessing private content (triggers path resolution)
         :param use_cache: whether to use/update the private boundary cache
         :return: complete URL path from Contents('Applications') to contents_suffix
         """
@@ -104,6 +108,12 @@ class ApplicationService(ObjectService):
             return base + contents_suffix
 
         segments = path.split("/")
+
+        # For public paths, just build the direct URL without probing
+        if not private:
+            mid = self._build_path_url(segments, None)
+            return base + mid + contents_suffix
+
         cache_key = "/".join(segments)
 
         # Check cache first
@@ -192,7 +202,7 @@ class ApplicationService(ObjectService):
         :return: list of application names
         """
         contents = "PrivateContents" if private else "Contents"
-        url = self._resolve_path(path, "/" + contents, use_cache, **kwargs)
+        url = self._resolve_path(path, "/" + contents, private, use_cache, **kwargs)
 
         response = self._rest.GET(url=url, **kwargs)
         return [application["Name"] for application in response.json()["value"]]
@@ -226,7 +236,7 @@ class ApplicationService(ObjectService):
 
         contents = "PrivateContents" if private else "Contents"
         suffix = format_url("/" + contents + "('{}')", name)
-        base_url = self._resolve_path(path, suffix, use_cache, **kwargs)
+        base_url = self._resolve_path(path, suffix, private, use_cache, **kwargs)
 
         if application_type == ApplicationTypes.CUBE:
             response = self._rest.GET(url=base_url + "?$expand=Cube($select=Name)", **kwargs)
@@ -299,11 +309,11 @@ class ApplicationService(ObjectService):
 
         contents = "PrivateContents" if private else "Contents"
         suffix = format_url("/" + contents + "('{}')/Document/Content", name)
-        url = self._resolve_path(path, suffix, use_cache, **kwargs)
+        url = self._resolve_path(path, suffix, private, use_cache, **kwargs)
         content = self._rest.GET(url, **kwargs).content
 
         suffix = format_url("/" + contents + "('{}')/Document", name)
-        url = self._resolve_path(path, suffix, use_cache, **kwargs)
+        url = self._resolve_path(path, suffix, private, use_cache, **kwargs)
         document_fields = self._rest.GET(url, **kwargs).json()
 
         return DocumentApplication(
@@ -345,7 +355,7 @@ class ApplicationService(ObjectService):
 
         contents = "PrivateContents" if private else "Contents"
         suffix = format_url("/" + contents + "('{}')", application_name)
-        url = self._resolve_path(path, suffix, use_cache, **kwargs)
+        url = self._resolve_path(path, suffix, private, use_cache, **kwargs)
         return self._rest.DELETE(url, **kwargs)
 
     def rename(
@@ -380,7 +390,7 @@ class ApplicationService(ObjectService):
 
         contents = "PrivateContents" if private else "Contents"
         suffix = format_url("/" + contents + "('{}')/tm1.Move", application_name)
-        url = self._resolve_path(path, suffix, use_cache, **kwargs)
+        url = self._resolve_path(path, suffix, private, use_cache, **kwargs)
         data = {"Name": new_application_name}
 
         return self._rest.POST(url, data=json.dumps(data), **kwargs)
@@ -397,7 +407,7 @@ class ApplicationService(ObjectService):
         :return:
         """
         contents = "PrivateContents" if private else "Contents"
-        url = self._resolve_path(application.path, "/" + contents, use_cache, **kwargs)
+        url = self._resolve_path(application.path, "/" + contents, private, use_cache, **kwargs)
         response = self._rest.POST(url, application.body, **kwargs)
 
         if application.application_type == ApplicationTypes.DOCUMENT:
@@ -406,7 +416,7 @@ class ApplicationService(ObjectService):
                 name=application.name,
                 ext=".blob" if not verify_version(required_version="12", version=self.version) else "",
             )
-            url = self._resolve_path(application.path, suffix, use_cache, **kwargs)
+            url = self._resolve_path(application.path, suffix, private, use_cache, **kwargs)
             response = self._rest.PUT(url, application.content, headers=self.binary_http_header, **kwargs)
 
         return response
@@ -430,10 +440,10 @@ class ApplicationService(ObjectService):
                 name=application.name,
                 ext="" if verify_version("12", self.version) else ".blob"
             )
-            url = self._resolve_path(application.path, suffix, use_cache, **kwargs)
+            url = self._resolve_path(application.path, suffix, private, use_cache, **kwargs)
             response = self._rest.PATCH(url=url, data=application.content, headers=self.binary_http_header, **kwargs)
         else:
-            url = self._resolve_path(application.path, "/" + contents, use_cache, **kwargs)
+            url = self._resolve_path(application.path, "/" + contents, private, use_cache, **kwargs)
             response = self._rest.POST(url, application.body, **kwargs)
 
         return response
@@ -518,13 +528,20 @@ class ApplicationService(ObjectService):
         contents = "PrivateContents" if private else "Contents"
         suffix = format_url("/" + contents + "('{}')", name)
 
-        # For exists, we need a special approach: try to resolve the path by checking
-        # the folders only, then check if the item exists
+        # For empty path, just check directly
         if not path.strip():
             url = "/Contents('Applications')" + suffix
             return self._exists(url, **kwargs)
 
         segments = path.split("/")
+
+        # For public paths, just check directly without probing
+        if not private:
+            mid = self._build_path_url(segments, None)
+            url = "/Contents('Applications')" + mid + suffix
+            return self._exists(url, **kwargs)
+
+        # For private paths, we need path resolution
         cache_key = "/".join(segments)
 
         # Check cache first
