@@ -43,7 +43,7 @@ from TM1py.Utils.Utils import (
     CaseAndSpaceInsensitiveDict,
     CaseAndSpaceInsensitiveTuplesDict,
     abbreviate_mdx,
-    build_cellset_from_pandas_dataframe,
+    build_cellset_from_dataframe,
     build_csv_from_cellset_dict,
     build_dataframe_from_csv,
     build_mdx_and_values_from_cellset,
@@ -51,6 +51,7 @@ from TM1py.Utils.Utils import (
     build_pandas_dataframe_from_cellset,
     case_and_space_insensitive_equals,
     cell_is_updateable,
+    clone_dataframe,
     decohints,
     dimension_name_from_element_unique_name,
     dimension_names_from_element_unique_names,
@@ -68,13 +69,12 @@ from TM1py.Utils.Utils import (
     wrap_in_curly_braces,
 )
 
-try:
-    import pandas as pd
 
-    _has_pandas = True
-except ImportError:
-    _has_pandas = False
-
+from TM1py.Utils.DataFrameUtils import (
+    DataFrameLike,
+    convert_to_dataframe_like,
+    build_cellset_from_dataframe
+)
 
 @decohints
 def tidy_cellset(func):
@@ -863,7 +863,7 @@ class CellService(ObjectService):
     def write_dataframe(
         self,
         cube_name: str,
-        data: "pd.DataFrame",
+        data: Any,
         dimensions: Iterable[str] = None,
         increment: bool = False,
         deactivate_transaction_log: bool = False,
@@ -912,10 +912,9 @@ class CellService(ObjectService):
             inferred and mapped to the dimension order in the cube.
         :return: changeset or None
         """
-        if not isinstance(data, pd.DataFrame):
-            raise ValueError("argument 'data' must of type DataFrame")
-
         # don't mutate passed data frame. Work on a copy instead
+
+        data: DataFrameLike = convert_to_dataframe_like(data)
         data = data.copy()
 
         if not dimensions:
@@ -947,7 +946,7 @@ class CellService(ObjectService):
         if not len(data.columns) == len(dimensions) + 1:
             raise ValueError("Number of columns in 'data' DataFrame must be number of dimensions in cube + 1")
 
-        cells = build_cellset_from_pandas_dataframe(data, sum_numeric_duplicates=sum_numeric_duplicates)
+        cells = build_cellset_from_dataframe(data)
 
         return self.write(
             cube_name=cube_name,
