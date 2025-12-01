@@ -79,8 +79,15 @@ class TM1Service:
         - **integrated_login_host** (str): Host name for Service Principal Name.
         - **integrated_login_delegate** (bool): Delegate user credentials to the server.
         - **impersonate** (str): Name of the user to impersonate.
-        - **re_connect_on_session_timeout** (bool): Attempt to reconnect if the session times out.
-        - **re_connect_on_remote_disconnect** (bool): Attempt to reconnect if the connection is aborted.
+        - **re_connect_on_session_timeout** (bool): Attempt to reconnect once if session is timed out.
+        - **re_connect_on_remote_disconnect** (bool): Attempt to reconnect once if connection is aborted by remote end.
+        - **remote_disconnect_max_retries** (int): Maximum number of retry attempts after remote disconnect (default: 5).
+        - **remote_disconnect_retry_delay** (float): Initial delay in seconds before first retry attempt (default: 1).
+        - **remote_disconnect_max_delay** (float): Maximum delay cap in seconds between retry attempts (default: 30).
+        - **remote_disconnect_backoff_factor** (float): Multiplier for exponential backoff between retry attempts (default: 2).
+        - **async_polling_initial_delay** (float): Initial polling delay in seconds for async operations (default: 0.1).
+        - **async_polling_max_delay** (float): Maximum polling delay cap in seconds for async operations (default: 1.0).
+        - **async_polling_backoff_factor** (float): Multiplier for exponential backoff in async polling (default: 2).
         - **proxies** (dict): Dictionary of proxies, e.g., {'http': 'http://proxy.example.com:8080'}.
         - **ssl_context**: User-defined SSL context.
         - **cert** (str or tuple): Path to SSL client cert file or ('cert', 'key') pair.
