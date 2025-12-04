@@ -63,7 +63,7 @@ class TM1pyPermissionException(Exception):
     def __init__(self, function: str, required_permission: str):
         """
         :param function: Name of the function
-        :param permission: Name of Permission, e.g.
+        :param required_permission: Name of the required permission (e.g., 'admin', 'DataAdmin', 'SecurityAdmin', 'OperationsAdmin')
         """
         self.function = function
         self.required_permission = required_permission
