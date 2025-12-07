@@ -970,10 +970,7 @@ def build_dataframe_aggregate_intersections(df: "pd.DataFrame", sum_numeric_dupl
             df_n = aggregate_duplicate_intersections(df_n, dimension_headers, value_header)
             df = pd.concat([df_n, df_s])
 
-    cellset = CaseAndSpaceInsensitiveTuplesDict(
-        dict(zip(df.iloc[:, :-1].itertuples(index=False, name=None), df.iloc[:, -1].values))
-    )
-    return cellset
+    return df
 
 
 def aggregate_duplicate_intersections(df, dimension_headers, value_header):
