@@ -2,270 +2,270 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://tm1py.org/latest/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/getting-started/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/how-to-contribute/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/links/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/summary/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/exceptions/exceptions/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/annotation/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/application/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/axis/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/chore/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/chorefrequency/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/chorestarttime/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/choretask/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/cube/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/dimension/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/element/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/elementattribute/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/git/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/gitcommit/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/gitplan/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/gitproject/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/gitremote/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/hierarchy/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/mdxview/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/nativeview/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/process/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/processdebugbreakpoint/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/rules/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/sandbox/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/server/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/subset/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/tm1object/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/user/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/objects/view/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/annotationservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/applicationservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/auditlogservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/cellservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/choreservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/configurationservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/cubeservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/dimensionservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/elementservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/fileservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/gitservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/hierarchyservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/jobservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/loggerservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/manageservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/messagelogservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/monitoringservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/objectservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/powerbiservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/processservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/restservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/sandboxservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/securityservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/serverservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/sessionservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/subsetservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/threadservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/tm1service/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/transactionlogservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/userservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/services/viewservice/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/utils/mdxutils/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
     <url>
          <loc>https://tm1py.org/latest/reference/utils/utils/</loc>
-         <lastmod>2025-12-01</lastmod>
+         <lastmod>2025-12-09</lastmod>
     </url>
 </urlset>
