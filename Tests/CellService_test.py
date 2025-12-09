@@ -1412,7 +1412,7 @@ class TestCellService(unittest.TestCase):
         df = pd.DataFrame(
             {
                 self.dimension_names[0]: ["element 1", "element 1", "element 1", "element 1", "element 1"],
-                self.dimension_names[1]: ["element 2", "element 2", "element 2", "element 2", "element 2"],
+                self.dimension_names[1]: ["element 2", "element 2", "element 2", "element 2", "element 1"],
                 self.dimension_names[2]: ["Not Existing", "element 2", "element 3", "element 4", "Not Existing"],
                 "Value": [1, 2, 3, 4, 5],
             }
