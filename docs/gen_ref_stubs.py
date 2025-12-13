@@ -24,7 +24,7 @@ for category, path in categories.items():
 
 
 for category, entries in api_map.items():
-    for name, import_path in entries.items():
+    for name, import_path in sorted(entries.items()):
         filename = Path("reference") / category.lower() / f"{name.lower()}.md"
         with mkdocs_gen_files.open(filename, "w") as f:
             f.write(f"<!-- {name}-->\n\n")
