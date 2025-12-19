@@ -3,8 +3,8 @@ import random
 import string
 import unittest
 from pathlib import Path
-from uuid import uuid1
 
+from Tests.Utils import generate_test_uuid
 from TM1py.Objects import Annotation, Cube, Dimension, Element, Hierarchy
 from TM1py.Services import TM1Service
 
@@ -35,7 +35,7 @@ class TestAnnotationService(unittest.TestCase):
         Run before each test to create a cube with test annotations
         """
         # Build Dimensions
-        test_uuid = str(uuid1()).replace("-", "_")
+        test_uuid = generate_test_uuid()
         self.dimension_names = (
             "TM1py_tests_annotations_dimension1_" + test_uuid,
             "TM1py_tests_annotations_dimension2_" + test_uuid,

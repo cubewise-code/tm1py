@@ -1,7 +1,22 @@
 import functools
+from uuid import uuid1
 
 from TM1py.Services.RestService import AuthenticationMode
 from TM1py.Utils.Utils import verify_version
+
+
+def generate_test_uuid() -> str:
+    """
+    Generate a unique identifier for test objects.
+
+    Creates a UUID-based string suitable for appending to TM1 object names
+    to ensure test isolation and uniqueness.
+
+    :return: A unique identifier with hyphens replaced by underscores.
+    :rtype: str
+    """
+    test_uuid = str(uuid1()).replace("-", "_")
+    return test_uuid
 
 
 def skip_if_no_pandas(func):
