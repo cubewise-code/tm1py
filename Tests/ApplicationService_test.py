@@ -34,7 +34,7 @@ from TM1py.Objects.Application import (
     ViewApplication,
 )
 
-from .Utils import skip_if_version_lower_than, verify_version
+from .Utils import generate_test_uuid, skip_if_version_lower_than, verify_version
 
 
 class TestApplicationService(unittest.TestCase):
@@ -45,18 +45,23 @@ class TestApplicationService(unittest.TestCase):
         Establishes a connection to TM1 and creates TM1 objects to use across all tests
         """
 
+        cls.class_uuid = generate_test_uuid()
+
         cls.prefix = "TM1py_Tests_Applications_"
-        cls.tm1py_app_folder = cls.prefix + "RootFolder"
-        cls.application_name = cls.prefix + "Application"
-        cls.cube_name = cls.prefix + "Cube"
-        cls.view_name = cls.prefix + "View"
-        cls.subset_name = cls.prefix + "Subset"
-        cls.process_name = cls.prefix + "Process"
-        cls.chore_name = cls.prefix + "Chore"
-        cls.folder_name = cls.prefix + "Folder"
-        cls.link_name = cls.prefix + "Link"
-        cls.document_name = cls.prefix + "Document"
-        cls.dimension_names = [cls.prefix + "Dimension1", cls.prefix + "Dimension2", cls.prefix + "Dimension3"]
+        cls.tm1py_app_folder = cls.prefix + "RootFolder_" + cls.class_uuid
+        cls.cube_name = cls.prefix + "Cube_" + cls.class_uuid
+        cls.view_name = cls.prefix + "View_" + cls.class_uuid
+        cls.subset_name = cls.prefix + "Subset_" + cls.class_uuid
+        cls.process_name = cls.prefix + "Process_" + cls.class_uuid
+        cls.chore_name = cls.prefix + "Chore_" + cls.class_uuid
+        cls.folder_name = cls.prefix + "Folder_" + cls.class_uuid
+        cls.link_name = cls.prefix + "Link_" + cls.class_uuid
+        cls.document_name = cls.prefix + "Document_" + cls.class_uuid
+        cls.dimension_names = [
+            cls.prefix + "Dimension1_" + cls.class_uuid,
+            cls.prefix + "Dimension2_" + cls.class_uuid,
+            cls.prefix + "Dimension3_" + cls.class_uuid,
+        ]
 
         cls.rename_suffix = "_New"
 
@@ -165,6 +170,10 @@ class TestApplicationService(unittest.TestCase):
             cls.tm1.applications.create(application=app, private=False)
         else:
             cls.tm1.applications.create(application=app, private=False)
+
+    def setUp(self) -> None:
+        test_uuid = generate_test_uuid()
+        self.application_name = self.prefix + "Application_" + test_uuid
 
     @classmethod
     def tearDownClass(cls) -> None:
