@@ -2,11 +2,14 @@ import configparser
 import copy
 import unittest
 from pathlib import Path
-from uuid import uuid1
 
 from mdxpy import MdxBuilder
 
-from Tests.Utils import skip_if_no_pandas, skip_if_version_lower_than
+from Tests.Utils import (
+    generate_test_uuid,
+    skip_if_no_pandas,
+    skip_if_version_lower_than,
+)
 from TM1py.Exceptions import TM1pyException, TM1pyRestException
 from TM1py.Objects import Dimension, Element, ElementAttribute, Hierarchy
 from TM1py.Services import TM1Service
@@ -27,7 +30,7 @@ class TestElementService(unittest.TestCase):
         cls.tm1 = TM1Service(**cls.config["tm1srv01"])
 
     def setUp(self):
-        dimension_uuid = str(uuid1()).replace("-", "_")
+        dimension_uuid = generate_test_uuid()
         prefix = "TM1py_unittest_element"
         pure_dimension_name = f"{prefix}_dimension_{dimension_uuid}"
 
