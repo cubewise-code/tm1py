@@ -2,20 +2,13 @@ import configparser
 import unittest
 from pathlib import Path
 
+from Tests.Utils import generate_test_uuid
 from TM1py.Objects import Dimension, Element, ElementAttribute, Hierarchy, Subset
 from TM1py.Services import TM1Service
 
 
 class TestSubsetService(unittest.TestCase):
     tm1: TM1Service
-
-    prefix = "TM1py_Tests_Subset_"
-    dimension_name = prefix + "Dimension"
-    subset_name_static = prefix + "static"
-    subset_name_dynamic = prefix + "dynamic"
-    unfriendly_dimension_name = prefix + "Dimension#%AD"
-    unfriendly_subset_name = prefix + "Subset#%AD"
-    unfriendly_element_name = prefix + "Element#%AD"
 
     @classmethod
     def setUpClass(cls):
@@ -29,6 +22,14 @@ class TestSubsetService(unittest.TestCase):
         cls.tm1 = TM1Service(**cls.config["tm1srv01"])
 
         # Define Names
+        test_uuid = generate_test_uuid()
+        cls.prefix = "TM1py_Tests_Subset_"
+        cls.dimension_name = cls.prefix + "Dimension_" + test_uuid
+        cls.subset_name_static = cls.prefix + "static_" + test_uuid
+        cls.subset_name_dynamic = cls.prefix + "dynamic_" + test_uuid
+        cls.unfriendly_dimension_name = cls.prefix + "Dimension#%AD_" + test_uuid
+        cls.unfriendly_subset_name = cls.prefix + "Subset#%AD_" + test_uuid
+        cls.unfriendly_element_name = cls.prefix + "Element#%AD_" + test_uuid
 
     def setUp(self):
         # Instantiate Subsets
