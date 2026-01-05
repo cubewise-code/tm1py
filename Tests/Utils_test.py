@@ -150,6 +150,34 @@ class TestUtilsMethods(unittest.TestCase):
 
         pd._testing.assert_frame_equal(expected_df, df, check_column_type=False)
 
+    def test_build_dataframe_from_csv_shaped(self):
+        raw_csv = "Region~Product~Measure~Value\r\n" "r1~p1~Revenue~1.0\r\n" "r1~p2~Revenue~3.0\r\n" "r2~p2~Revenue~4.0"
+        df = build_dataframe_from_csv(raw_csv, dtype={"Revenue": float}, shaped=True)
+
+        expected_df = pd.DataFrame(
+            {
+                "Region":  ["r1", "r1", "r2"],
+                "Product": ["p1", "p2", "p2"],
+                "Revenue": [1.00000, 3.00000, 4.00000],
+            }
+        )
+
+        pd._testing.assert_frame_equal(expected_df, df, check_column_type=False)
+
+    def test_build_dataframe_from_csv_shaped_with_duplicates(self):
+        raw_csv = "Region~Product~Measure~Value\r\n" "r1~p1~Revenue~1.0\r\n" "r1~p1~Revenue~1.0\r\n" "r2~p2~Revenue~4.0"
+        df = build_dataframe_from_csv(raw_csv, dtype={"Revenue": float}, shaped=True)
+
+        expected_df = pd.DataFrame(
+            {
+                "Region":  ["r1", "r1", "r2"],
+                "Product": ["p1", "p1", "p2"],
+                "Revenue": [1.00000, 1.00000, 4.00000],
+            }
+        )
+
+        pd._testing.assert_frame_equal(expected_df, df, check_column_type=False)
+
     def test_build_dataframe_from_csv_with_none_element_and_none_value(self):
         raw_csv = "d1~d2~Value\r\n" "e1~e1~None\r\n" "e1~e2~2.0\r\n" "None~e1~3.0\r\n" "None~e2~4.0"
         df = build_dataframe_from_csv(raw_csv)

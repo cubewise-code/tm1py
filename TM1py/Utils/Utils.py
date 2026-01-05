@@ -617,14 +617,23 @@ def build_dataframe_from_csv(
         return df
 
     # due to csv creation logic, last column is bottom dimension from the column selection
-    df = df.pivot_table(
-        index=tuple(df.columns[:-2]),
-        aggfunc="sum",
-        columns=df.columns[-2],
-        values=df.columns[-1],
-        dropna=True,
-        sort=False,
-    ).reset_index()
+    idx_cols = list(df.columns[:-2])
+    col_col = df.columns[-2]
+    val_col = df.columns[-1]
+
+    # create a unique row id within each (idx_cols + col_col) group
+    df["_dup"] = df.groupby(idx_cols + [col_col]).cumcount()
+
+    df = (
+        df.pivot(
+            index=idx_cols + ["_dup"],
+            columns=col_col,
+            values=val_col,
+        )
+        .dropna(how="all")
+        .reset_index()
+        .drop(columns="_dup")
+    )
 
     # drop title on index
     return df.rename_axis(None, axis=1)
