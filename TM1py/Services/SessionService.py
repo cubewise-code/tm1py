@@ -35,7 +35,7 @@ class SessionService(ObjectService):
         return response.json()["value"]
 
     def get_threads_for_current(self, exclude_idle: bool = True, **kwargs):
-        url = "/ActiveSession/Threads?$filter=Function ne 'GET /ActiveSession/Threads'"
+        url = "/ActiveSession/Threads?$filter=Function ne 'GET /ActiveSession/Threads' and Function ne 'GET /api/v1/ActiveSession/Threads'"
         if exclude_idle:
             url += " and State ne 'Idle'"
 
