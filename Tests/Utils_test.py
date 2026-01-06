@@ -150,6 +150,25 @@ class TestUtilsMethods(unittest.TestCase):
 
         pd._testing.assert_frame_equal(expected_df, df, check_column_type=False)
 
+    def test_build_dataframe_from_csv_shaped_numbers_and_strings(self):
+        raw_csv = "Region~Product~Measure~Value\r\n" "r1~p1~Revenue~1.0\r\n" "r1~p2~Revenue~3.0\r\n" "r1~p1~Comment~Great Product\r\n" "r1~p2~Comment~"
+        df = build_dataframe_from_csv(raw_csv, dtype={"Revenue": float}, shaped=True)
+
+        expected_df = pd.DataFrame(
+            {
+                "Region":  ["r1", "r1"],
+                "Product": ["p1", "p2"],
+                "Comment": ["Great Product", ""],
+                "Revenue": [1.00000, 3.00000],
+            }
+        )
+
+        # explicit conversion for exact comparison
+        expected_df["Revenue"] = expected_df["Revenue"].astype(float)
+        df["Revenue"] = df["Revenue"].astype(float)
+
+        pd._testing.assert_frame_equal(expected_df, df)
+
     def test_build_dataframe_from_csv_shaped(self):
         raw_csv = "Region~Product~Measure~Value\r\n" "r1~p1~Revenue~1.0\r\n" "r1~p2~Revenue~3.0\r\n" "r2~p2~Revenue~4.0"
         df = build_dataframe_from_csv(raw_csv, dtype={"Revenue": float}, shaped=True)

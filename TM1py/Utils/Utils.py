@@ -623,14 +623,13 @@ def build_dataframe_from_csv(
 
     # create a unique row id within each (idx_cols + col_col) group
     df["_dup"] = df.groupby(idx_cols + [col_col]).cumcount()
-
     df = (
         df.pivot(
             index=idx_cols + ["_dup"],
             columns=col_col,
             values=val_col,
         )
-        .dropna(how="all")
+        .fillna(0)
         .reset_index()
         .drop(columns="_dup")
     )
