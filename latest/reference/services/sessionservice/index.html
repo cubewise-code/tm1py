@@ -2888,7 +2888,7 @@
 <span class="normal"><a href="#__codelineno-0-41">41</a></span>
 <span class="normal"><a href="#__codelineno-0-42">42</a></span>
 <span class="normal"><a href="#__codelineno-0-43">43</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-37" name="__codelineno-0-37"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_threads_for_current</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exclude_idle</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<a id="__codelineno-0-38" name="__codelineno-0-38"></a>    <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;/ActiveSession/Threads?$filter=Function ne &#39;GET /ActiveSession/Threads&#39;&quot;</span>
+<a id="__codelineno-0-38" name="__codelineno-0-38"></a>    <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;/ActiveSession/Threads?$filter=Function ne &#39;GET /ActiveSession/Threads&#39; and Function ne &#39;GET /api/v1/ActiveSession/Threads&#39;&quot;</span>
 <a id="__codelineno-0-39" name="__codelineno-0-39"></a>    <span class="k">if</span> <span class="n">exclude_idle</span><span class="p">:</span>
 <a id="__codelineno-0-40" name="__codelineno-0-40"></a>        <span class="n">url</span> <span class="o">+=</span> <span class="s2">&quot; and State ne &#39;Idle&#39;&quot;</span>
 <a id="__codelineno-0-41" name="__codelineno-0-41"></a>
