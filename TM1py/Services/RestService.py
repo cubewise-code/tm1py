@@ -371,7 +371,7 @@ class RestService:
         """
         # Add async header
         http_headers = kwargs.get("headers", dict())
-        http_headers.update({"Prefer": "respond-async"})
+        http_headers.update({"Prefer": "respond-async,wait=55"})
         kwargs["headers"] = http_headers
 
         # Make initial request
@@ -386,17 +386,19 @@ class RestService:
 
         self.verify_response(response=response)
 
+        if response.status_code != 202:
+            return response
+
         # Handle async response
-        if "Location" in response.headers and "'" in response.headers.get("Location", ""):
-            async_id = response.headers.get("Location").split("'")[1]
-            if return_async_id:
-                return async_id
+        async_id = response.headers.get("Location").split("'")[1]
+        if return_async_id:
+            return async_id
 
-            # Poll for async result
-            response = self._poll_async_response(async_id, timeout, cancel_at_timeout, method, url)
+        # Poll for async result
+        response = self._poll_async_response(async_id, timeout, cancel_at_timeout, method, url)
 
-            # Transform response if needed
-            response = self._transform_async_response(response)
+        # Transform response if needed
+        response = self._transform_async_response(response)
 
         return response
 
