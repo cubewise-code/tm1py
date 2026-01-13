@@ -80,6 +80,8 @@ class TestElementService(unittest.TestCase):
         self.tm1.cubes.cells.write_value("1989/90", self.attribute_cube_name, ("1990", "Financial Year"))
         self.tm1.cubes.cells.write_value("1990/91", self.attribute_cube_name, ("1991", "Financial Year"))
         self.tm1.cubes.cells.write_value("1991/92", self.attribute_cube_name, ("1992", "Financial Year"))
+        self.tm1.cubes.cells.write_value("All Years", self.attribute_cube_name, ("Total Years", "Financial Year"))
+        self.tm1.cubes.cells.write_value("All Consolidations", self.attribute_cube_name, ("All Consolidations", "Financial Year"))
 
         self.create_or_update_dimension_with_hierarchies()
 
@@ -560,6 +562,48 @@ class TestElementService(unittest.TestCase):
     def test_get_elements_dataframe_element_type_column_use_blob(self):
         self.run_test_get_elements_dataframe_element_type_column(True)
 
+    def run_test_get_elements_dataframe_parent_attribute(self, use_blob):
+        df = self.tm1.elements.get_elements_dataframe(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            elements=["1989", "1990"],
+            skip_consolidations=True,
+            attributes=["Next Year", "Previous Year"],
+            attribute_column_prefix="Attribute ",
+            skip_parents=False,
+            level_names=None,
+            parent_attribute="Financial Year",
+            skip_weights=False,
+            use_blob=use_blob,
+        )
+
+        expected_columns = (
+            self.dimension_name,
+            "Type",
+            "Attribute Next Year",
+            "Attribute Previous Year",
+            "level001_Weight",
+            "level000_Weight",
+            "level001",
+            "level000",
+        )
+
+        self.assertEqual((2, 8), df.shape)
+        self.assertEqual(expected_columns, tuple(df.columns))
+        row = df.loc[df[self.dimension_name] == "1989"]
+        self.assertEqual(
+            ("1989", "Numeric", "", "1988", "1.000000", "1.000000", "All Years", "All Consolidations"),
+            tuple(row.values[0]),
+        )
+
+    @skip_if_no_pandas
+    def test_get_elements_dataframe_parent_attribute(self):
+        self.run_test_get_elements_dataframe_parent_attribute(False)
+
+    @skip_if_no_pandas
+    def test_get_elements_dataframe_parent_attribute(self):
+        self.run_test_get_elements_dataframe_parent_attribute(True)
+
     def run_test_get_elements_dataframe_not_elements(self, use_blob: bool):
         df = self.tm1.elements.get_elements_dataframe(
             dimension_name=self.dimension_name,
@@ -589,6 +633,14 @@ class TestElementService(unittest.TestCase):
         )
 
         self.assertTrue(df.equals(reference_df))
+
+    @skip_if_no_pandas
+    def test_get_elements_dataframe_not_elements(self):
+        self.run_test_get_elements_dataframe_not_elements(use_blob=False)
+
+    @skip_if_no_pandas
+    def test_get_elements_dataframe_use_blob_not_elements(self):
+        self.run_test_get_elements_dataframe_not_elements(use_blob=True)
 
     @skip_if_no_pandas
     def test_get_elements_dataframe_attribute_same_name(self):
@@ -661,13 +713,7 @@ class TestElementService(unittest.TestCase):
 
         self.assertTrue(df.equals(reference_df))
 
-    @skip_if_no_pandas
-    def test_get_elements_dataframe_not_elements(self):
-        self.run_test_get_elements_dataframe_not_elements(use_blob=False)
 
-    @skip_if_no_pandas
-    def test_get_elements_dataframe_use_blob_not_elements(self):
-        self.run_test_get_elements_dataframe_not_elements(use_blob=True)
 
     def test_get_element_names(self):
         element_names = self.tm1.dimensions.hierarchies.elements.get_element_names(
@@ -831,6 +877,7 @@ class TestElementService(unittest.TestCase):
             "1989/90",
             "1990/91",
             "1991/92",
+            "All Years",
             "Total Years",
             "All Consolidations",
             *self.years,
