@@ -383,38 +383,29 @@ class ElementService(ObjectService):
             depth = 0
             for calculated_name, level_name in levels_dict.items():
                 depth += 1
-                name_or_attribute = f"Properties('{parent_attribute}')" if parent_attribute else "NAME"
-                if not verify_version(required_version="12", version=self.version):
-                    member = f"""
-                    MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{calculated_name}] 
-                    AS [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * depth}{name_or_attribute}
-                    """
-                else:
-                    member = f"""
-                    MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{calculated_name}] 
-                    AS [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * depth}PROPERTIES('{name_or_attribute}')
-                    """
+
+                # Deliberately adding a trailing space to Properties after the attribute name
+                # to ensure the attribute "name" is accessed instead of the built-in NAME property
+                # when the original attribute is called "Name" (this behavior is relevant starting from v12 )
+                name_or_attribute = f"Properties('{parent_attribute} ')" if parent_attribute else "NAME"
+
+                member = f"""
+                MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{calculated_name}] 
+                AS [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * depth}{name_or_attribute}
+                """
                 calculated_members_definition.append(member)
 
                 parent_members.append(f"[{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{calculated_name}]")
 
                 if not skip_weights:
-                    if not verify_version(required_version="12", version=self.version):
-                        member_weight = f"""
-                        MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_name}_Weight] 
-                        AS IIF(
-                        [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * (depth - 1)}Properties('MEMBER_WEIGHT') = '',
-                        0,
-                        [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * (depth - 1)}Properties('MEMBER_WEIGHT'))
-                        """
-                    else:
-                        member_weight = f"""
-                        MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_name}_Weight]
-                        AS IIF(
-                        [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * ( depth - 1)}Properties('MEMBER_WEIGHT') = '',
-                        0,
-                        [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * ( depth - 1)}Properties('MEMBER_WEIGHT'))
-                        """
+                    member_weight = f"""
+                    MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_name}_Weight] 
+                    AS IIF(
+                    [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * (depth - 1)}Properties('MEMBER_WEIGHT') = '',
+                    0,
+                    [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * (depth - 1)}Properties('MEMBER_WEIGHT'))
+                    """
+
                     calculated_members_definition.append(member_weight)
 
                     weight_members.append(f"[{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_name}_Weight]")
@@ -517,7 +508,7 @@ class ElementService(ObjectService):
 
         # format the columns
         df_data[cols_to_format] = df_data[cols_to_format].apply(pd.to_numeric)
-        df_data[cols_to_format] = df_data[cols_to_format].applymap(lambda x: "{:.6f}".format(x))
+        df_data[cols_to_format] = df_data[cols_to_format].apply(lambda col: col.map(lambda x: f"{x:.6f}"))
 
         # override colum types
         element_attributes = self.get_element_attributes(dimension_name, hierarchy_name)
