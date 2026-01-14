@@ -45,6 +45,7 @@ setup(
         "dev": [
             "pytest",
             "pytest-xdist",
+            "responses",
             "python-dateutil",
             "black",
             "ruff",
