@@ -601,7 +601,7 @@ class TestElementService(unittest.TestCase):
         self.run_test_get_elements_dataframe_parent_attribute(False)
 
     @skip_if_no_pandas
-    def test_get_elements_dataframe_parent_attribute(self):
+    def test_get_elements_dataframe_parent_attribute_use_blob(self):
         self.run_test_get_elements_dataframe_parent_attribute(True)
 
     def run_test_get_elements_dataframe_not_elements(self, use_blob: bool):
