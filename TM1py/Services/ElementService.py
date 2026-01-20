@@ -136,32 +136,74 @@ class ElementService(ObjectService):
         use_ti: bool = False,
         use_blob: bool = False,
         remove_blob: bool = True,
+        skip_invalid_edges: bool = True,
         **kwargs,
     ):
+        """
+        Remove edges in TM1.
+
+        :param dimension_name: The name of the dimension.
+        :param hierarchy_name: The name of the hierarchy.
+        :param edges: A list of tuples representing the edges to remove, where each tuple contains a parent and a child.
+        :param use_ti: A boolean indicating whether to use a TI process to delete edges (default: False).
+        :param use_blob: A boolean indicating whether to use a blob file to delete edges (default: False).
+        :param remove_blob: A boolean indicating whether to remove the parent-child file after use (default: True).
+        :param skip_invalid_edges: A boolean indicating whether to skip invalid edges (default: True).
+        """
         if use_ti:
-            return self.delete_edges_use_ti(dimension_name, hierarchy_name, edges, **kwargs)
+            return self.delete_edges_use_ti(dimension_name, hierarchy_name, edges, skip_invalid_edges, **kwargs)
 
         if use_blob:
-            return self.delete_edges_use_blob(dimension_name, hierarchy_name, edges, remove_blob, **kwargs)
+            return self.delete_edges_use_blob(
+                dimension_name, hierarchy_name, edges, remove_blob, skip_invalid_edges, **kwargs
+            )
 
         h_service = self._get_hierarchy_service()
         h = h_service.get(dimension_name, hierarchy_name, **kwargs)
         for edge in edges:
+            if edge not in h.edges and not skip_invalid_edges:
+                raise TM1pyException(f"Edge {edge} does not exist in hierarchy [{dimension_name}].[{hierarchy_name}]")
             h.remove_edge(parent=edge[0], component=edge[1])
         h_service.update(h, **kwargs)
 
-    def delete_edges_use_ti(self, dimension_name: str, hierarchy_name: str, edges: List[str] = None, **kwargs):
+    def delete_edges_use_ti(
+        self,
+        dimension_name: str,
+        hierarchy_name: str,
+        edges: List[str] = None,
+        skip_invalid_edges: bool = True,
+        **kwargs,
+    ):
+        """
+        Remove edges in TM1 via an unbound TI process.
+        :param dimension_name: The name of the dimension.
+        :param hierarchy_name: The name of the hierarchy.
+        :param edges: A list of tuples representing the edges to remove, where each tuple contains a parent and a child.
+        :param skip_invalid_edges: A boolean indicating whether to skip invalid edges (default: True).
+        """
         if not edges:
             return
 
         def escape_single_quote(text):
             return text.replace("'", "''")
 
-        statements = [
-            f"HierarchyElementComponentDelete('{dimension_name}', '{hierarchy_name}', "
-            f"'{escape_single_quote(parent)}', '{escape_single_quote(child)}');"
-            for (parent, child) in edges
-        ]
+        statements = []
+        for parent, child in edges:
+            parent = escape_single_quote(parent)
+            child = escape_single_quote(child)
+            if skip_invalid_edges:
+                statements.extend(
+                    [
+                        f"IF(ElementIsParent('{dimension_name}','{hierarchy_name}','{parent}','{child}')=1);",
+                        f"HierarchyElementComponentDelete('{dimension_name}','{hierarchy_name}','{parent}','{child}');",
+                        f"ENDIF;",
+                    ]
+                )
+
+            else:
+                statements.append(
+                    f"HierarchyElementComponentDelete('{dimension_name}', '{hierarchy_name}', '{parent}', '{child}');"
+                )
 
         unbound_process_name = self.suggest_unique_object_name()
 
@@ -174,7 +216,13 @@ class ElementService(ObjectService):
     @require_data_admin
     @require_ops_admin
     def delete_edges_use_blob(
-        self, dimension_name: str, hierarchy_name: str, edges: List[str] = None, remove_blob: bool = True, **kwargs
+        self,
+        dimension_name: str,
+        hierarchy_name: str,
+        edges: List[str] = None,
+        remove_blob: bool = True,
+        skip_invalid_edges: bool = True,
+        **kwargs,
     ):
         """
         Remove edges in TM1 via an unbound TI process having an uploaded CSV as the data source.
@@ -183,6 +231,7 @@ class ElementService(ObjectService):
         :param hierarchy_name: The name of the hierarchy.
         :param edges: A list of tuples representing the edges to remove, where each tuple contains a parent and a child.
         :param remove_blob: A boolean indicating whether to remove the parent-child file after use (default: True).
+        :param skip_invalid_edges: A boolean indicating whether to skip invalid edges (default: True).
         :param kwargs: Additional arguments for the process execution.
         :return: None
         """
@@ -209,6 +258,7 @@ class ElementService(ObjectService):
                 hierarchy_name=hierarchy_name,
                 process_name=unique_name,
                 blob_filename=file_name,
+                skip_invalid_edges=skip_invalid_edges,
             )
 
             success, status, log_file = process_service.execute_process_with_return(process=process, **kwargs)
@@ -223,7 +273,12 @@ class ElementService(ObjectService):
                 file_service.delete(file_name=file_name)
 
     def _build_unwind_hierarchy_edges_from_blob_process(
-        self, dimension_name: str, hierarchy_name: str, process_name: str, blob_filename: str
+        self,
+        dimension_name: str,
+        hierarchy_name: str,
+        process_name: str,
+        blob_filename: str,
+        skip_invalid_edges: bool = True,
     ) -> Process:
 
         # v11 automatically adds blb file extensions to documents created via the contents api
@@ -251,7 +306,15 @@ class ElementService(ObjectService):
         hierarchyupdate_process.add_variable(name=child_variable, variable_type="String")
 
         # Write the statement for delete component in hierarchy
-        delete_component = f"\rHierarchyElementComponentDelete('{dimension_name}', '{hierarchy_name}', {parent_variable}, {child_variable});"
+        if skip_invalid_edges:
+            delete_component = (
+                f"\r"
+                f"IF(ElementIsParent('{dimension_name}','{hierarchy_name}',{parent_variable},{child_variable})=1);"
+                f"HierarchyElementComponentDelete('{dimension_name}','{hierarchy_name}',{parent_variable},{child_variable});"
+                f"ENDIF;"
+            )
+        else:
+            delete_component = f"HierarchyElementComponentDelete('{dimension_name}','{hierarchy_name}',{parent_variable},{child_variable});"
 
         # Define Metadata section
         metadata_statement = delete_component
@@ -1091,7 +1154,7 @@ class ElementService(ObjectService):
                     component_name = sub_tree["Component"]["Name"]
                 else:
                     component_name = sub_tree["ComponentName"]
-                edges[sub_tree["ParentName"],component_name]  = sub_tree["Weight"]
+                edges[sub_tree["ParentName"], component_name] = sub_tree["Weight"]
 
                 if "Edges" not in sub_tree["Component"]:
                     continue
