@@ -5,14 +5,14 @@ from pathlib import Path
 
 from mdxpy import MdxBuilder
 
+from TM1py.Exceptions import TM1pyException, TM1pyRestException, TM1pyWritePartialFailureException
+from TM1py.Objects import Dimension, Element, ElementAttribute, Hierarchy
+from TM1py.Services import TM1Service
 from Tests.Utils import (
     generate_test_uuid,
     skip_if_no_pandas,
     skip_if_version_lower_than,
 )
-from TM1py.Exceptions import TM1pyException, TM1pyRestException
-from TM1py.Objects import Dimension, Element, ElementAttribute, Hierarchy
-from TM1py.Services import TM1Service
 
 
 class TestElementService(unittest.TestCase):
@@ -81,7 +81,9 @@ class TestElementService(unittest.TestCase):
         self.tm1.cubes.cells.write_value("1990/91", self.attribute_cube_name, ("1991", "Financial Year"))
         self.tm1.cubes.cells.write_value("1991/92", self.attribute_cube_name, ("1992", "Financial Year"))
         self.tm1.cubes.cells.write_value("All Years", self.attribute_cube_name, ("Total Years", "Financial Year"))
-        self.tm1.cubes.cells.write_value("All Consolidations", self.attribute_cube_name, ("All Consolidations", "Financial Year"))
+        self.tm1.cubes.cells.write_value(
+            "All Consolidations", self.attribute_cube_name, ("All Consolidations", "Financial Year")
+        )
 
         self.create_or_update_dimension_with_hierarchies()
 
@@ -713,8 +715,6 @@ class TestElementService(unittest.TestCase):
 
         self.assertTrue(df.equals(reference_df))
 
-
-
     def test_get_element_names(self):
         element_names = self.tm1.dimensions.hierarchies.elements.get_element_names(
             self.dimension_name, self.hierarchy_name
@@ -1278,6 +1278,92 @@ class TestElementService(unittest.TestCase):
         edges = self.tm1.elements.get_edges(self.dimension_name, self.dimension_name)
         self.assertNotIn(("Total Years", "1989"), edges)
         self.assertNotIn(("Total Years", "1990"), edges)
+
+    @skip_if_version_lower_than(version="11.4")
+    def test_delete_edges_use_ti_skip_invalid_edges_true(self):
+        self.tm1.elements.delete_edges(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            edges=[("Every Year", "1989"), ("Total Years", "1989"), ("Total Years", "1990")],
+            skip_invalid_edges=True,
+        )
+
+        edges = self.tm1.elements.get_edges(self.dimension_name, self.dimension_name)
+        self.assertNotIn(("Total Years", "1989"), edges)
+        self.assertNotIn(("Total Years", "1990"), edges)
+
+    @skip_if_version_lower_than(version="11.4")
+    def test_delete_edges_skip_invalid_edges_false(self):
+        with self.assertRaises(TM1pyException):
+            self.tm1.elements.delete_edges(
+                dimension_name=self.dimension_name,
+                hierarchy_name=self.hierarchy_name,
+                edges=[("Every Year", "1989")],
+                skip_invalid_edges=False,
+            )
+
+    @skip_if_version_lower_than(version="11.4")
+    def test_delete_edges_use_blob(self):
+        self.tm1.elements.delete_edges(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            edges=[("Total Years", "1989"), ("Total Years", "1990")],
+            use_blob=True,
+        )
+
+        edges = self.tm1.elements.get_edges(self.dimension_name, self.dimension_name)
+        self.assertNotIn(("Total Years", "1989"), edges)
+        self.assertNotIn(("Total Years", "1990"), edges)
+
+    @skip_if_version_lower_than(version="11.4")
+    def test_delete_edges_use_blob_skip_invalid_edges_true(self):
+        self.tm1.elements.delete_edges(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            edges=[("Every Year", "1989"), ("Total Years", "1989"), ("Total Years", "1990")],
+            use_blob=True,
+            skip_invalid_edges=True,
+        )
+
+        edges = self.tm1.elements.get_edges(self.dimension_name, self.dimension_name)
+        self.assertNotIn(("Total Years", "1989"), edges)
+        self.assertNotIn(("Total Years", "1990"), edges)
+
+    @skip_if_version_lower_than(version="11.4")
+    def test_delete_edges_use_blob_skip_invalid_edges_false(self):
+        with self.assertRaises(TM1pyWritePartialFailureException):
+            self.tm1.elements.delete_edges(
+                dimension_name=self.dimension_name,
+                hierarchy_name=self.hierarchy_name,
+                edges=[("Every Year", "1989")],
+                use_blob=True,
+                skip_invalid_edges=False,
+            )
+
+    @skip_if_version_lower_than(version="11.4")
+    def test_delete_edges_use_ti_skip_invalid_edges_true(self):
+        self.tm1.elements.delete_edges(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            edges=[("Every Year", "1989"), ("Total Years", "1989"), ("Total Years", "1990")],
+            use_ti=True,
+            skip_invalid_edges=True,
+        )
+
+        edges = self.tm1.elements.get_edges(self.dimension_name, self.dimension_name)
+        self.assertNotIn(("Total Years", "1989"), edges)
+        self.assertNotIn(("Total Years", "1990"), edges)
+
+    @skip_if_version_lower_than(version="11.4")
+    def test_delete_edges_use_ti_skip_invalid_edges_false(self):
+        with self.assertRaises(TM1pyException):
+            self.tm1.elements.delete_edges(
+                dimension_name=self.dimension_name,
+                hierarchy_name=self.hierarchy_name,
+                edges=[("Every Year", "1989")],
+                use_ti=True,
+                skip_invalid_edges=False,
+            )
 
     def test_remove_edge_parent_not_existing(self):
         with self.assertRaises(TM1pyRestException):
