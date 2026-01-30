@@ -22,9 +22,11 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Natural Language :: English",
 ]
-requires-python = ">=3.6"
+requires-python = ">=3.7"
 dependencies = [
     "ijson",
     "requests",
@@ -45,7 +47,10 @@ dev = [
 
 [project.urls]
 Homepage = "https://github.com/cubewise-code/tm1py"
-Download = "https://github.com/Cubewise-code/TM1py/tarball/2.2.0"
+Download = "https://github.com/cubewise-code/tm1py/releases/latest"
+
+[tool.setuptools.packages.find]
+include = ["TM1py*"]
 
 [tool.black]
 line-length = 120
