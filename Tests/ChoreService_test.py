@@ -478,7 +478,6 @@ class TestChoreService(unittest.TestCase):
         task1, task2 = self.tasks[2], c._tasks[1]
         self.assertEqual(task1, task2)
 
-
     def test_activate(self):
         chore = self.tm1.chores.get(self.chore_name1)
         if chore.active:

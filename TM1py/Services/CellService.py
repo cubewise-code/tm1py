@@ -586,9 +586,7 @@ class CellService(ObjectService):
         SELECT
         {{ {rows} }} ON 0
         FROM [{cube}]
-        """.format(
-            rows="}*{".join(unique_element_names), cube=cube
-        )
+        """.format(rows="}*{".join(unique_element_names), cube=cube)
         cellset_id = self.create_cellset(mdx=mdx, sandbox_name=sandbox_name, **kwargs)
 
         payload = {
@@ -622,9 +620,7 @@ class CellService(ObjectService):
         SELECT
         {{ {rows} }} ON 0
         FROM [{cube}]
-        """.format(
-            rows="}*{".join(unique_element_names), cube=cube
-        )
+        """.format(rows="}*{".join(unique_element_names), cube=cube)
         cellset_id = self.create_cellset(mdx=mdx, sandbox_name=sandbox_name, **kwargs)
 
         payload = {"BeginOrdinal": 0, "Value": "C", "ReferenceCell@odata.bind": list()}

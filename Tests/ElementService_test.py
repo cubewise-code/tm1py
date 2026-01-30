@@ -81,7 +81,9 @@ class TestElementService(unittest.TestCase):
         self.tm1.cubes.cells.write_value("1990/91", self.attribute_cube_name, ("1991", "Financial Year"))
         self.tm1.cubes.cells.write_value("1991/92", self.attribute_cube_name, ("1992", "Financial Year"))
         self.tm1.cubes.cells.write_value("All Years", self.attribute_cube_name, ("Total Years", "Financial Year"))
-        self.tm1.cubes.cells.write_value("All Consolidations", self.attribute_cube_name, ("All Consolidations", "Financial Year"))
+        self.tm1.cubes.cells.write_value(
+            "All Consolidations", self.attribute_cube_name, ("All Consolidations", "Financial Year")
+        )
 
         self.create_or_update_dimension_with_hierarchies()
 
@@ -712,8 +714,6 @@ class TestElementService(unittest.TestCase):
         )
 
         self.assertTrue(df.equals(reference_df))
-
-
 
     def test_get_element_names(self):
         element_names = self.tm1.dimensions.hierarchies.elements.get_element_names(

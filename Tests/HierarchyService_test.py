@@ -1305,7 +1305,7 @@ class TestHierarchyService(unittest.TestCase):
                 element_column=self.region_dimension_name,
                 element_type_column="ElementType",
                 unwind_all=True,
-                verify_edges=True
+                verify_edges=True,
             )
 
     def test_update_or_create_hierarchy_from_dataframe_circular_references(self):
@@ -1337,7 +1337,7 @@ class TestHierarchyService(unittest.TestCase):
                 element_column=self.region_dimension_name,
                 element_type_column="ElementType",
                 unwind_all=True,
-                verify_edges=True
+                verify_edges=True,
             )
 
     def test_update_or_create_hierarchy_from_dataframe_no_weight_columns(self):

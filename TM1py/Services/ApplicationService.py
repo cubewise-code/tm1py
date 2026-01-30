@@ -92,8 +92,7 @@ class ApplicationService(ObjectService):
 
         return len(segments)  # All segments are public
 
-    def _resolve_path(self, path: str, private: bool = False, use_cache: bool = False,
-                      **kwargs) -> Tuple[str, bool]:
+    def _resolve_path(self, path: str, private: bool = False, use_cache: bool = False, **kwargs) -> Tuple[str, bool]:
         """Resolve application path, handling mixed public/private folder hierarchies.
 
         For public access (private=False), returns direct URL without probing.
@@ -210,8 +209,13 @@ class ApplicationService(ObjectService):
         return [application["Name"] for application in response.json()["value"]]
 
     def get(
-        self, path: str, application_type: Union[str, ApplicationTypes], name: str, private: bool = False,
-        use_cache: bool = False, **kwargs
+        self,
+        path: str,
+        application_type: Union[str, ApplicationTypes],
+        name: str,
+        private: bool = False,
+        use_cache: bool = False,
+        **kwargs,
     ) -> Application:
         """Retrieve Planning Analytics Application
 
@@ -294,8 +298,9 @@ class ApplicationService(ObjectService):
                 view_name=response.json()["View"]["Name"],
             )
 
-    def get_document(self, path: str, name: str, private: bool = False, use_cache: bool = False,
-                     **kwargs) -> DocumentApplication:
+    def get_document(
+        self, path: str, name: str, private: bool = False, use_cache: bool = False, **kwargs
+    ) -> DocumentApplication:
         """Get Excel Application from TM1 Server in binary format. Can be dumped to file.
 
         Automatically handles mixed public/private folder hierarchies.
@@ -406,8 +411,13 @@ class ApplicationService(ObjectService):
         data = {"Name": new_application_name}
         return self._rest.POST(url, data=json.dumps(data), **kwargs)
 
-    def create(self, application: Union[Application, DocumentApplication], private: bool = False,
-               use_cache: bool = False, **kwargs) -> Response:
+    def create(
+        self,
+        application: Union[Application, DocumentApplication],
+        private: bool = False,
+        use_cache: bool = False,
+        **kwargs,
+    ) -> Response:
         """Create Planning Analytics application
 
         Automatically handles mixed public/private folder hierarchies.
@@ -435,8 +445,13 @@ class ApplicationService(ObjectService):
 
         return response
 
-    def update(self, application: Union[Application, DocumentApplication], private: bool = False,
-               use_cache: bool = False, **kwargs) -> Response:
+    def update(
+        self,
+        application: Union[Application, DocumentApplication],
+        private: bool = False,
+        use_cache: bool = False,
+        **kwargs,
+    ) -> Response:
         """Update Planning Analytics application
 
         Automatically handles mixed public/private folder hierarchies.
@@ -455,7 +470,7 @@ class ApplicationService(ObjectService):
             url = format_url(
                 base_url + "/" + contents + "('{name}{extension}')/Document/Content",
                 name=application.name,
-                extension="" if verify_version("12", self.version) else ".blob"
+                extension="" if verify_version("12", self.version) else ".blob",
             )
             response = self._rest.PATCH(url=url, data=application.content, headers=self.binary_http_header, **kwargs)
         else:
@@ -465,8 +480,11 @@ class ApplicationService(ObjectService):
         return response
 
     def update_or_create(
-        self, application: Union[Application, DocumentApplication], private: bool = False,
-        use_cache: bool = False, **kwargs
+        self,
+        application: Union[Application, DocumentApplication],
+        private: bool = False,
+        use_cache: bool = False,
+        **kwargs,
     ) -> Response:
         """Update or create Planning Analytics application
 
@@ -504,23 +522,42 @@ class ApplicationService(ObjectService):
         :param use_cache: boolean - whether to cache discovered private boundaries
         :return: Response
         """
-        if self.exists(path=path, application_type=ApplicationTypes.DOCUMENT, name=name, private=private,
-                       use_cache=use_cache, **kwargs):
+        if self.exists(
+            path=path,
+            application_type=ApplicationTypes.DOCUMENT,
+            name=name,
+            private=private,
+            use_cache=use_cache,
+            **kwargs,
+        ):
             response = self.update_document_from_file(
-                path_to_file=path_to_file, application_path=path, application_name=name, private=private,
-                use_cache=use_cache, **kwargs
+                path_to_file=path_to_file,
+                application_path=path,
+                application_name=name,
+                private=private,
+                use_cache=use_cache,
+                **kwargs,
             )
         else:
             response = self.create_document_from_file(
-                path_to_file=path_to_file, application_path=path, application_name=name, private=private,
-                use_cache=use_cache, **kwargs
+                path_to_file=path_to_file,
+                application_path=path,
+                application_name=name,
+                private=private,
+                use_cache=use_cache,
+                **kwargs,
             )
 
         return response
 
     def exists(
-        self, path: str, application_type: Union[str, ApplicationTypes], name: str, private: bool = False,
-        use_cache: bool = False, **kwargs
+        self,
+        path: str,
+        application_type: Union[str, ApplicationTypes],
+        name: str,
+        private: bool = False,
+        use_cache: bool = False,
+        **kwargs,
     ) -> bool:
         """Check if application exists
 
@@ -592,8 +629,13 @@ class ApplicationService(ObjectService):
         return self._exists(url, **kwargs)
 
     def create_document_from_file(
-        self, path_to_file: str, application_path: str, application_name: str, private: bool = False,
-        use_cache: bool = False, **kwargs
+        self,
+        path_to_file: str,
+        application_path: str,
+        application_name: str,
+        private: bool = False,
+        use_cache: bool = False,
+        **kwargs,
     ) -> Response:
         """Create DocumentApplication in TM1 from local file
 
@@ -611,8 +653,13 @@ class ApplicationService(ObjectService):
             return self.create(application=application, private=private, use_cache=use_cache, **kwargs)
 
     def update_document_from_file(
-        self, path_to_file: str, application_path: str, application_name: str, private: bool = False,
-        use_cache: bool = False, **kwargs
+        self,
+        path_to_file: str,
+        application_path: str,
+        application_name: str,
+        private: bool = False,
+        use_cache: bool = False,
+        **kwargs,
     ) -> Response:
         """Update DocumentApplication in TM1 from local file
 
@@ -686,7 +733,7 @@ class ApplicationService(ObjectService):
         flat: bool,
         in_private_context: bool,
         results: List[Dict],
-        **kwargs
+        **kwargs,
     ) -> List[Dict]:
         """Discover items at a specific path, handling both public and private contents.
 
@@ -713,7 +760,7 @@ class ApplicationService(ObjectService):
                 flat=flat,
                 results=results,
                 items=items,
-                **kwargs
+                **kwargs,
             )
         else:
             # Public context - get public contents
@@ -728,7 +775,7 @@ class ApplicationService(ObjectService):
                 flat=flat,
                 results=results,
                 items=items,
-                **kwargs
+                **kwargs,
             )
 
             # Also get private contents if requested (private items in a public folder)
@@ -744,7 +791,7 @@ class ApplicationService(ObjectService):
                     flat=flat,
                     results=results,
                     items=items,
-                    **kwargs
+                    **kwargs,
                 )
 
         return items if not flat else results
@@ -760,7 +807,7 @@ class ApplicationService(ObjectService):
         flat: bool,
         results: List[Dict],
         items: List[Dict],
-        **kwargs
+        **kwargs,
     ):
         """Process raw items from API and handle recursion.
 
@@ -789,7 +836,7 @@ class ApplicationService(ObjectService):
                 "id": item_id,
                 "name": item_name,
                 "path": item_path,
-                "is_private": is_private or in_private_context
+                "is_private": is_private or in_private_context,
             }
 
             # Handle recursion for folders
@@ -803,7 +850,7 @@ class ApplicationService(ObjectService):
                     flat=flat,
                     in_private_context=new_private_context,
                     results=results,
-                    **kwargs
+                    **kwargs,
                 )
                 if not flat:
                     item["children"] = children
@@ -814,12 +861,7 @@ class ApplicationService(ObjectService):
                 items.append(item)
 
     def discover(
-        self,
-        path: str = "",
-        include_private: bool = False,
-        recursive: bool = False,
-        flat: bool = False,
-        **kwargs
+        self, path: str = "", include_private: bool = False, recursive: bool = False, flat: bool = False, **kwargs
     ) -> List[Dict]:
         """Discover applications in the Applications folder.
 
@@ -850,7 +892,7 @@ class ApplicationService(ObjectService):
             flat=flat,
             in_private_context=in_private_context,
             results=results,
-            **kwargs
+            **kwargs,
         )
 
         return results if flat else items
