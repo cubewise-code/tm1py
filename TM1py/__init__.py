@@ -77,6 +77,7 @@ from TM1py.Utils import Utils
 # Version is managed in pyproject.toml
 try:
     from importlib.metadata import version
+
     __version__ = version("TM1py")
 except Exception:
     # Fallback for development installations

@@ -1091,7 +1091,7 @@ class ElementService(ObjectService):
                     component_name = sub_tree["Component"]["Name"]
                 else:
                     component_name = sub_tree["ComponentName"]
-                edges[sub_tree["ParentName"],component_name]  = sub_tree["Weight"]
+                edges[sub_tree["ParentName"], component_name] = sub_tree["Weight"]
 
                 if "Edges" not in sub_tree["Component"]:
                     continue
