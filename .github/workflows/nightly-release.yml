@@ -137,8 +137,11 @@ jobs:
           FOUND_RELEASE_LABEL=false
 
           for COMMIT in $COMMITS; do
-            # Get PR number from commit message
-            PR_NUM=$(git log --format=%s -n 1 $COMMIT | grep -oP '#\K[0-9]+' | head -1)
+            # Get PR number(s) associated with this commit (works with rebase & merge)
+            PR_NUM=$(gh api \
+              -H "Accept: application/vnd.github+json" \
+              repos/${{ github.repository }}/commits/$COMMIT/pulls \
+              --jq '.[0].number' 2>/dev/null || echo "")
 
             if [ -n "$PR_NUM" ]; then
               echo "Checking PR #$PR_NUM for release labels..."
