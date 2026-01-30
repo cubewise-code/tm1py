@@ -8,7 +8,7 @@ from TM1py.Objects import Element, Subset
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.ProcessService import ProcessService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import format_url, case_and_space_insensitive_equals
+from TM1py.Utils import case_and_space_insensitive_equals, format_url
 
 
 class SubsetService(ObjectService):

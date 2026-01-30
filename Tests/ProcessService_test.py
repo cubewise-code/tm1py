@@ -290,7 +290,7 @@ class TestProcessService(unittest.TestCase):
         self.tm1.processes.update_or_create(p_bad)
         errors = self.tm1.processes.compile(p_bad.name)
         self.assertTrue(len(errors) == 1)
-        self.assertIn('dimsize', errors[0]["Message"])
+        self.assertIn("dimsize", errors[0]["Message"])
         self.tm1.processes.delete(p_bad.name)
 
     @skip_if_version_lower_than(version="11.4")
@@ -373,7 +373,7 @@ class TestProcessService(unittest.TestCase):
 
         errors = self.tm1.processes.compile_process(p_bad)
         self.assertTrue(len(errors) == 1)
-        self.assertIn('dimsize', errors[0]["Message"])
+        self.assertIn("dimsize", errors[0]["Message"])
 
     def test_get_process(self):
         p_ascii_orig = copy.deepcopy(self.p_ascii)

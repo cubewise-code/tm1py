@@ -136,7 +136,7 @@ class RestService:
         - **ssl_context**: User-defined SSL context.
         - **cert** (str|tuple): (Optional) If string, path to SSL client cert file (.pem). If tuple, ('cert', 'key') pair.
 
-        :param kwargs: See description above for all supported arguments	
+        :param kwargs: See description above for all supported arguments
         """
         # store kwargs for future use e.g. re_connect on 401 session timeout
         self._kwargs = kwargs
@@ -456,12 +456,11 @@ class RestService:
             # Calculate delay with exponential backoff: delay * backoff_factor^(attempt-1), capped at max_delay
             current_delay = min(
                 self._remote_disconnect_retry_delay * (self._remote_disconnect_backoff_factor ** (attempt - 1)),
-                self._remote_disconnect_max_delay
+                self._remote_disconnect_max_delay,
             )
 
             warnings.warn(
-                f"Retry attempt {attempt}/{self._remote_disconnect_max_retries} "
-                f"after {current_delay:.1f}s delay..."
+                f"Retry attempt {attempt}/{self._remote_disconnect_max_retries} " f"after {current_delay:.1f}s delay..."
             )
 
             time.sleep(current_delay)
@@ -506,15 +505,11 @@ class RestService:
                 # Re-raise TM1 exceptions as-is
                 raise
             except Exception as retry_error:
-                warnings.warn(
-                    f"Retry attempt {attempt}/{self._remote_disconnect_max_retries} failed: {retry_error}"
-                )
+                warnings.warn(f"Retry attempt {attempt}/{self._remote_disconnect_max_retries} failed: {retry_error}")
                 continue
 
         # All retries exhausted
-        warnings.warn(
-            f"All {self._remote_disconnect_max_retries} retry attempts failed after remote disconnect"
-        )
+        warnings.warn(f"All {self._remote_disconnect_max_retries} retry attempts failed after remote disconnect")
         raise original_error
 
     def connect(self):
