@@ -11,7 +11,6 @@ import math
 from collections import defaultdict
 from typing import Dict, Iterable, List, Optional, Tuple
 
-
 from requests import Response
 
 from TM1py.Exceptions import TM1pyRestException
@@ -93,9 +92,7 @@ class HierarchyService(ObjectService):
                 explore_relationships(node, [node])
 
         if cycles:
-            raise ValueError(
-                f"Circular reference{'s' if len(cycles) > 1 else ''} found in edges: {cycles}"
-            )
+            raise ValueError(f"Circular reference{'s' if len(cycles) > 1 else ''} found in edges: {cycles}")
 
     @staticmethod
     def _validate_alias_uniqueness(df: "pd.DataFrame"):
