@@ -2,12 +2,13 @@ name: Nightly Release
 
 on:
   schedule:
-    # Run at 4 AM CET (3 AM UTC in winter, 2 AM UTC in summer)
-    # Using 2 AM UTC to be safe for CET/CEST transitions
+    # Run at 02:00 UTC (approximately 3–4 AM CET/CEST depending on DST)
+    # Using a fixed 02:00 UTC time to be safe across CET/CEST transitions
     - cron: '0 2 * * *'
   workflow_dispatch:  # Allow manual trigger for testing
 
 permissions:
+  issues: write
   contents: write
   pull-requests: read
 
@@ -259,17 +260,18 @@ jobs:
 
       - name: Create and push tag
         run: |
+          git fetch origin --tags
           git tag ${{ needs.determine-version.outputs.new_version }}
           git push origin ${{ needs.determine-version.outputs.new_version }}
 
       - name: Create GitHub Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ needs.determine-version.outputs.new_version }}
-          release_name: Release ${{ needs.determine-version.outputs.new_version }}
+          name: Release ${{ needs.determine-version.outputs.new_version }}
           body: |
             ${{ needs.determine-version.outputs.changelog }}
 
@@ -338,8 +340,8 @@ jobs:
           echo "Or use 'skip-release' label to explicitly skip a PR"
 
   notify-on-failure:
-    needs: [run-tests, determine-version, create-release, publish-to-pypi]
-    if: failure()
+    needs: [run-tests, determine-version]
+    if: ${{ always() && failure() }}
     runs-on: ubuntu-latest
     steps:
       - name: Create issue on failure
