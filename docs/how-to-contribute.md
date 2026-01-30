@@ -196,8 +196,15 @@ Imports should be organized by Ruff/isort:
 Example:
 
 ```python
+# Standard library imports
+from pathlib import Path
+from typing import List
 
+# Third-party imports
+import pandas as pd
 
+# Local application imports
+from TM1py import TM1Service
 ```
 
 ## Testing

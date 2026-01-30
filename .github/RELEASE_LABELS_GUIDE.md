@@ -214,5 +214,3 @@ gh pr edit 123 --remove-label "release:patch"
 
 See the full documentation:
 - [CONTRIBUTING.md](../../CONTRIBUTING.md)
-- [RELEASE_SETUP_GUIDE.md](../../RELEASE_SETUP_GUIDE.md)
-- [RELEASE_AUTOMATION_PROPOSAL.md](../../RELEASE_AUTOMATION_PROPOSAL.md)
