@@ -201,7 +201,7 @@ class SubsetService(ObjectService):
         return self._rest.DELETE(url=url, **kwargs)
 
     def get_element_names(
-        self, dimension_name: str, hierarchy_name: str, subset: Union[str, Subset], private: bool = False, **kwargs
+        self, dimension_name: str, hierarchy_name: str, subset: Union[str, Subset] = None, private: bool = False, **kwargs
     ) -> List[str]:
         """
         Retrieve element names from a static or dynamic subset.
@@ -213,8 +213,14 @@ class SubsetService(ObjectService):
         :param kwargs: Additional arguments.
         :return: List of element names.
         """
+        # backward compatibility for subset_name
+        if "subset_name" in kwargs:
+            if subset:
+                raise ValueError("Only one parameter 'subset' or 'subset_name' may be provided.")
+            subset = kwargs.pop("subset_name")
+
         if isinstance(subset, str):
-            subset = self.get(subset, dimension_name, hierarchy_name, private=private, **kwargs)
+            subset = self.get(subset, dimension_name, hierarchy_name, private, **kwargs)
         elif not isinstance(subset, Subset):
             raise ValueError(f"subset argument must be of type 'str' or 'Subset', not '{type(subset)}'.")
 
