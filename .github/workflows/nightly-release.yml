@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        environment: ["tm1-12", "tm1-11-cloud"]
+        environment: ["tm1-12-cloud", "tm1-11-cloud"]
     environment: ${{ matrix.environment }}
     steps:
       - name: Checkout code
