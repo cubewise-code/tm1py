@@ -215,10 +215,12 @@ class SubsetService(ObjectService):
         """
         # backward compatibility for subset_name
         if "subset_name" in kwargs:
-            subset = kwargs["subset_name"]
+            if subset:
+                raise ValueError("Only one parameter 'subset' or 'subset_name' may be provided.")
+            subset = kwargs.pop("subset_name")
 
         if isinstance(subset, str):
-            subset = self.get(subset, dimension_name, hierarchy_name, private=private, **kwargs)
+            subset = self.get(subset, dimension_name, hierarchy_name, private, **kwargs)
         elif not isinstance(subset, Subset):
             raise ValueError(f"subset argument must be of type 'str' or 'Subset', not '{type(subset)}'.")
 
