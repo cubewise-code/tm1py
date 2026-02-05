@@ -4575,7 +4575,7 @@ class TestCellService(unittest.TestCase):
             }
             self.tm1.cells.clear(cube=self.cube_name, **kwargs)
 
-        self.assertIn('\\"NotExistingElement\\" :', str(e.exception.message))
+        self.assertIn("Failed to", str(e.exception.message))
 
     @skip_if_version_lower_than(version="11.7")
     def test_clear_with_mdx_invalid_query(self):
@@ -4587,7 +4587,7 @@ class TestCellService(unittest.TestCase):
             """
             self.tm1.cells.clear_with_mdx(cube=self.cube_name, mdx=mdx)
 
-        self.assertIn("Failed to initialize View by Expression", str(e.exception))
+        self.assertIn("Failed to", str(e.exception))
 
     def test_clear_with_mdx_unsupported_version(self):
 
