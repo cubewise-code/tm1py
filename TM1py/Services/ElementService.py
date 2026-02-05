@@ -552,9 +552,16 @@ class ElementService(ObjectService):
 
             df_data.iloc[:, -len(level_columns) :] = df_data.iloc[:, -len(level_columns) :].fillna("")
             if not skip_weights:
-                df_data.iloc[:, -len(level_columns) * 2 : -len(level_names)] = df_data.iloc[
-                    :, -len(level_columns) * 2 : -len(level_names)
-                ].fillna(0)
+                expected_weight_cols = {f"{lvl}_Weight" for lvl in level_columns}
+                weight_cols = [c for c in df_data.columns if c in expected_weight_cols]
+
+                if weight_cols:
+                    df_data[weight_cols] = (
+                        df_data[weight_cols]
+                        .apply(pd.to_numeric, errors="coerce")
+                        .fillna(0.0)
+                        .apply(lambda col: col.map(lambda x: f"{x:.6f}"))
+                    )
 
         return pd.merge(df, df_data, on=dimension_name).drop_duplicates()
 

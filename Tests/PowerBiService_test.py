@@ -210,14 +210,23 @@ class TestPowerBiService(unittest.TestCase):
             cube=self.cube_name,
             where="[" + self.dimension_names[2] + "].[Element1]",
         )
+
         df = self.tm1.power_bi.execute_mdx(mdx)
 
         self.assertEqual(len(df), 2)
-
         self.assertEqual(tuple(df.columns), (self.dimension_names[0], "Element 1", "Element 2"))
 
         element1 = df.loc[df[self.dimension_names[0]] == "Element 1"]
-        self.assertEqual(tuple(element1.values[0]), ("Element 1", "1.0", None))
+        self.assertEqual(len(element1), 1)
+
+        row = element1.iloc[0]
+
+        # Explicit field-by-field assertions
+        self.assertEqual(row[self.dimension_names[0]], "Element 1")
+        self.assertEqual(row["Element 1"], "1.0")
+
+        # Accept None, nan, pd.NA
+        self.assertTrue(pd.isna(row["Element 2"]))
 
     @skip_if_no_pandas
     def test_execute_native_view(self):
@@ -249,11 +258,18 @@ class TestPowerBiService(unittest.TestCase):
         df = self.tm1.power_bi.execute_view(self.cube_name, self.mdx_view_name, private=False)
 
         self.assertEqual(len(df), 2)
-
         self.assertEqual(tuple(df.columns), (self.dimension_names[0], "Element 1", "Element 2"))
 
         element1 = df.loc[df[self.dimension_names[0]] == "Element 1"]
-        self.assertEqual(tuple(element1.values[0]), ("Element 1", "1.0", None))
+        self.assertEqual(len(element1), 1)
+
+        row = element1.iloc[0]
+
+        self.assertEqual(row[self.dimension_names[0]], "Element 1")
+        self.assertEqual(row["Element 1"], "1.0")
+
+        # Accept None, np.nan, pd.NA, etc.
+        self.assertTrue(pd.isna(row["Element 2"]))
 
     @skip_if_no_pandas
     def test_execute_mdx_use_blob(self):
