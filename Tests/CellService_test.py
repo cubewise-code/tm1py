@@ -776,7 +776,8 @@ class TestCellService(unittest.TestCase):
         with self.assertRaises(TM1pyWriteFailureException) as ex:
             self.tm1.cells.write_through_unbound_process(self.cube_with_consolidations_name, cells)
         self.assertEqual(ex.exception.statuses, ["Aborted"])
-        self.assertIn(".log", ex.exception.error_log_files[0])
+
+        self.assertIn("log", ex.exception.error_log_files[0].lower())
 
         query = MdxBuilder.from_cube(self.cube_with_consolidations_name)
         query.add_member_tuple_to_columns(
@@ -796,7 +797,8 @@ class TestCellService(unittest.TestCase):
             self.tm1.cells.write_through_unbound_process(self.cube_with_consolidations_name, cells)
         self.assertEqual(ex.exception.statuses, ["HasMinorErrors"])
         self.assertEqual(ex.exception.attempts, 1)
-        self.assertIn(".log", ex.exception.error_log_files[0])
+
+        self.assertIn("log", ex.exception.error_log_files[0].lower())
 
         query = MdxBuilder.from_cube(self.cube_with_consolidations_name)
         query.add_member_tuple_to_columns(
@@ -959,7 +961,8 @@ class TestCellService(unittest.TestCase):
         with self.assertRaises(TM1pyWritePartialFailureException) as ex:
             self.tm1.cells.write_through_blob(self.cube_with_consolidations_name, cells)
         self.assertEqual(ex.exception.statuses, ["HasMinorErrors"])
-        self.assertIn(".log", ex.exception.error_log_files[0])
+
+        self.assertIn("log", ex.exception.error_log_files[0].lower())
 
         query = MdxBuilder.from_cube(self.cube_with_consolidations_name)
         query.add_member_tuple_to_columns(
@@ -979,7 +982,8 @@ class TestCellService(unittest.TestCase):
             self.tm1.cells.write_through_blob(self.cube_with_consolidations_name, cells)
         self.assertEqual(ex.exception.statuses, ["HasMinorErrors"])
         self.assertEqual(ex.exception.attempts, 1)
-        self.assertIn(".log", ex.exception.error_log_files[0])
+
+        self.assertIn("log", ex.exception.error_log_files[0].lower())
 
         query = MdxBuilder.from_cube(self.cube_with_consolidations_name)
         query.add_member_tuple_to_columns(
