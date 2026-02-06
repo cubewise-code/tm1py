@@ -371,7 +371,11 @@ class RestService:
         """
         # Add async header
         http_headers = kwargs.get("headers", dict())
-        http_headers.update({"Prefer": "respond-async,wait=55"})
+        # if return_async_id is explicitly requested, we don't add wait time to Prefer header
+        if not return_async_id:
+            http_headers.update({"Prefer": "respond-async,wait=55"})
+        else:
+            http_headers.update({"Prefer": "respond-async"})
         kwargs["headers"] = http_headers
 
         # Make initial request
