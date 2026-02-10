@@ -201,7 +201,12 @@ class SubsetService(ObjectService):
         return self._rest.DELETE(url=url, **kwargs)
 
     def get_element_names(
-        self, dimension_name: str, hierarchy_name: str, subset: Union[str, Subset] = None, private: bool = False, **kwargs
+        self,
+        dimension_name: str,
+        hierarchy_name: str,
+        subset: Union[str, Subset] = None,
+        private: bool = False,
+        **kwargs,
     ) -> List[str]:
         """
         Retrieve element names from a static or dynamic subset.
