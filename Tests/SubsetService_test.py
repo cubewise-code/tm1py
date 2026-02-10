@@ -388,29 +388,36 @@ class TestSubsetService(unittest.TestCase):
 
     def test_get_element_names_arg_combination(self):
         element_names = self.tm1.subsets.get_element_names(
-            dimension_name=self.dimension_name, hierarchy_name=self.dimension_name, subset=self.subset_name_static,
-            private=False
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.dimension_name,
+            subset=self.subset_name_static,
+            private=False,
         )
         self.assertEqual(self.static_subset.elements, element_names)
 
         element_names = self.tm1.subsets.get_element_names(
-            dimension_name=self.dimension_name, hierarchy_name=self.dimension_name, subset=self.static_subset,
-            private=False
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.dimension_name,
+            subset=self.static_subset,
+            private=False,
         )
         self.assertEqual(self.static_subset.elements, element_names)
 
         element_names = self.tm1.subsets.get_element_names(
-            dimension_name=self.dimension_name, hierarchy_name=self.dimension_name, subset_name=self.subset_name_static,
-            private=False
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.dimension_name,
+            subset_name=self.subset_name_static,
+            private=False,
         )
         self.assertEqual(self.static_subset.elements, element_names)
 
         with self.assertRaisesRegex(ValueError, "Only one parameter 'subset' or 'subset_name' may be provided."):
             element_names = self.tm1.subsets.get_element_names(
-                dimension_name=self.dimension_name, hierarchy_name=self.dimension_name,
+                dimension_name=self.dimension_name,
+                hierarchy_name=self.dimension_name,
                 subset=self.subset_name_static,
                 subset_name=self.subset_name_static,
-                private=False
+                private=False,
             )
 
     def test_create_subset_with_url_unfriendly_characters_in_name(self):
