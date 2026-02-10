@@ -5243,7 +5243,15 @@ https://www.ibm.com/developerworks/community/forums/html/topic?id=75f2b99e-6961-
             </td>
             <td>
               <div class="doc-md-description">
-                <p>pd.DataFrame the data frame. Example: |    | Region  | ElementType | Alias:a     | Currency:s | population:n | level001 | level000 | level001_weight | level000_weight | |---:|:--------|:------------|:------------|:-----------|-------------:|:---------|:---------|----------------:|----------------:| |  0 | France  | Numeric     | Frankreich  | EUR        |     60000000 | Europe   | World    |               1 |               1 | |  1 | Belgium | Numeric     | Schweiz     | CHF        |      9000000 | Europe   | World    |               1 |               1 | |  2 | Germany | Numeric     | Deutschland | EUR        |     84000000 | Europe   | World    |               1 |               1 |  Names for the parent columns (level001, level000) are not configurable and <code>level000</code> is the top node. All columns except for the element_column, element_type_colums and parent columns are attribute columns. On attribute columns, you specify the type as a suffix. If no type is provided string attributes are created</p>
+                <p>pd.DataFrame the data frame. Example:
+|    | Region  | ElementType | Alias:a     | Currency:s | population:n | level001 | level000 | level001_weight | level000_weight |
+|---:|:--------|:------------|:------------|:-----------|-------------:|:---------|:---------|----------------:|----------------:|
+|  0 | France  | Numeric     | Frankreich  | EUR        |     60000000 | Europe   | World    |               1 |               1 |
+|  1 | Belgium | Numeric     | Schweiz     | CHF        |      9000000 | Europe   | World    |               1 |               1 |
+|  2 | Germany | Numeric     | Deutschland | EUR        |     84000000 | Europe   | World    |               1 |               1 |</p>
+<p>Names for the parent columns (level001, level000) are not configurable and <code>level000</code> is the top node.
+All columns except for the element_column, element_type_colums and parent columns are attribute columns.
+On attribute columns, you specify the type as a suffix. If no type is provided string attributes are created</p>
               </div>
             </td>
             <td>
@@ -5259,7 +5267,9 @@ https://www.ibm.com/developerworks/community/forums/html/topic?id=75f2b99e-6961-
             </td>
             <td>
               <div class="doc-md-description">
-                <p>str The column name in the df which specifies which element is which type. If None, all will be considered N level.</p>
+                <p>str
+The column name in the df which specifies which element is which type.
+If None, all will be considered N level.</p>
               </div>
             </td>
             <td>
@@ -5275,7 +5285,8 @@ https://www.ibm.com/developerworks/community/forums/html/topic?id=75f2b99e-6961-
             </td>
             <td>
               <div class="doc-md-description">
-                <p>str The column name of the element ID. If None, assumes first column is the element ID.</p>
+                <p>str
+The column name of the element ID. If None, assumes first column is the element ID.</p>
               </div>
             </td>
             <td>
@@ -5323,7 +5334,8 @@ https://www.ibm.com/developerworks/community/forums/html/topic?id=75f2b99e-6961-
             </td>
             <td>
               <div class="doc-md-description">
-                <p>bool Unwind hierarch before creating new edges</p>
+                <p>bool
+Unwind hierarch before creating new edges</p>
               </div>
             </td>
             <td>
@@ -5339,7 +5351,9 @@ https://www.ibm.com/developerworks/community/forums/html/topic?id=75f2b99e-6961-
             </td>
             <td>
               <div class="doc-md-description">
-                <p>list Unwind a list of specific consolidations in the hierarchy before creating new edges, if unwind_all is true, this list is ignored</p>
+                <p>list
+Unwind a list of specific consolidations in the hierarchy before creating new edges,
+if unwind_all is true, this list is ignored</p>
               </div>
             </td>
             <td>
@@ -5355,7 +5369,9 @@ https://www.ibm.com/developerworks/community/forums/html/topic?id=75f2b99e-6961-
             </td>
             <td>
               <div class="doc-md-description">
-                <p>bool If True, function will delete and recreate attributes when a type change is requested. By default, function will not delete attributes.</p>
+                <p>bool
+If True, function will delete and recreate attributes when a type change is requested.
+By default, function will not delete attributes.</p>
               </div>
             </td>
             <td>
@@ -5371,7 +5387,10 @@ https://www.ibm.com/developerworks/community/forums/html/topic?id=75f2b99e-6961-
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Dict Pass a Tuple with 4 values for: <code>CompSortType</code>, <code>CompSortSense</code>, <code>ElSortType</code>, <code>ElSortSense</code> to control sort order as in IBM docs: https://www.ibm.com/docs/en/planning-analytics/2.0.0?topic=hmtf-hierarchysortorder-1</p>
+                <p>Dict
+Pass a Tuple with 4 values for: <code>CompSortType</code>, <code>CompSortSense</code>, <code>ElSortType</code>, <code>ElSortSense</code> to control
+sort order as in IBM docs:
+https://www.ibm.com/docs/en/planning-analytics/2.0.0?topic=hmtf-hierarchysortorder-1</p>
               </div>
             </td>
             <td>
@@ -5387,7 +5406,9 @@ https://www.ibm.com/developerworks/community/forums/html/topic?id=75f2b99e-6961-
             </td>
             <td>
               <div class="doc-md-description">
-                <p>bool If True, function will delete c elements that will have no children and will have no parents post update. By default, function will not delete orphaned consolidations.</p>
+                <p>bool
+If True, function will delete c elements that will have no children and will have no parents post update.
+By default, function will not delete orphaned consolidations.</p>
               </div>
             </td>
             <td>

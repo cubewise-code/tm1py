@@ -4877,7 +4877,13 @@
             </td>
             <td>
               <div class="doc-md-description">
-                <p>string "Hierarchy1::Element1 &amp;&amp; Hierarchy2::Element4, Element9, Element2" - Dimensions are not specified! They are derived from the position. - The , separates the element-selections - If more than one hierarchy is selected per dimension &amp;&amp; splits the elementselections - If no Hierarchy is specified. Default Hierarchy will be addressed or Iterable [Element1, Element2, Element3]</p>
+                <p>string "Hierarchy1::Element1 &amp;&amp; Hierarchy2::Element4, Element9, Element2"
+    - Dimensions are not specified! They are derived from the position.
+    - The , separates the element-selections
+    - If more than one hierarchy is selected per dimension &amp;&amp; splits the elementselections
+    - If no Hierarchy is specified. Default Hierarchy will be addressed
+or
+Iterable [Element1, Element2, Element3]</p>
               </div>
             </td>
             <td>
@@ -5492,7 +5498,8 @@ Spaces in the dimension name (e.g., "Sales Region") must be omitted in the keywo
             </td>
             <td>
               <div class="doc-md-description">
-                <p>str The name of the TM1 cube.</p>
+                <p>str
+The name of the TM1 cube.</p>
               </div>
             </td>
             <td>
@@ -5508,7 +5515,9 @@ Spaces in the dimension name (e.g., "Sales Region") must be omitted in the keywo
             </td>
             <td>
               <div class="doc-md-description">
-                <p>pd.DataFrame The DataFrame containing distinct values over cube dimensions. Columns in the DataFrame should correspond to cube dimensions.</p>
+                <p>pd.DataFrame
+The DataFrame containing distinct values over cube dimensions.
+Columns in the DataFrame should correspond to cube dimensions.</p>
               </div>
             </td>
             <td>
@@ -5524,7 +5533,9 @@ Spaces in the dimension name (e.g., "Sales Region") must be omitted in the keywo
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Dict, optional A dictionary mapping the DataFrame columns to one or many hierarchies within the given dimension. If not provided, assumes that the dimensions have just one hierarchy.</p>
+                <p>Dict, optional
+A dictionary mapping the DataFrame columns to one or many hierarchies within the given dimension.
+If not provided, assumes that the dimensions have just one hierarchy.</p>
               </div>
             </td>
             <td>
@@ -5549,7 +5560,8 @@ Spaces in the dimension name (e.g., "Sales Region") must be omitted in the keywo
             </td>
             <td>
               <div class="doc-md-description">
-                <p>None The function clears data in the specified TM1 cube.</p>
+                <p>None
+The function clears data in the specified TM1 cube.</p>
               </div>
             </td>
           </tr>
@@ -5572,7 +5584,8 @@ Spaces in the dimension name (e.g., "Sales Region") must be omitted in the keywo
             </td>
             <td>
               <div class="doc-md-description">
-                <p>If there are unmatched dimensions in the DataFrame or if specified dimensions do not exist in the TM1 cube.</p>
+                <p>If there are unmatched dimensions in the DataFrame or if specified dimensions
+do not exist in the TM1 cube.</p>
               </div>
             </td>
           </tr>
@@ -7688,7 +7701,8 @@ Only return number of cells in the cellset. FAST!</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>provide all csv output settings through standard library csv.Dialect If not provided dialect is created based on line_separator and value_separator arguments.</p>
+                <p>provide all csv output settings through standard library csv.Dialect
+If not provided dialect is created based on line_separator and value_separator arguments.</p>
               </div>
             </td>
             <td>
@@ -7768,7 +7782,8 @@ Only return number of cells in the cellset. FAST!</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>use iterative json parsing to reduce memory consumption significantly. Comes at a cost of 3-5% performance.</p>
+                <p>use iterative json parsing to reduce memory consumption significantly.
+Comes at a cost of 3-5% performance.</p>
               </div>
             </td>
             <td>
@@ -8223,7 +8238,8 @@ This is necessary to assure column order is in line with cube view in TM1</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>use iterative json parsing to reduce memory consumption significantly. Comes at a cost of 3-5% performance.</p>
+                <p>use iterative json parsing to reduce memory consumption significantly.
+Comes at a cost of 3-5% performance.</p>
               </div>
             </td>
             <td>
@@ -12180,7 +12196,8 @@ Only return number of cells in the cellset. FAST!</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>provide all csv output settings through standard library csv.Dialect If not provided dialect is created based on line_separator and value_separator arguments.</p>
+                <p>provide all csv output settings through standard library csv.Dialect
+If not provided dialect is created based on line_separator and value_separator arguments.</p>
               </div>
             </td>
             <td>
@@ -12244,7 +12261,8 @@ Only return number of cells in the cellset. FAST!</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>use iterative json parsing to reduce memory consumption significantly. Comes at a cost of 3-5% performance.</p>
+                <p>use iterative json parsing to reduce memory consumption significantly.
+Comes at a cost of 3-5% performance.</p>
               </div>
             </td>
             <td>
@@ -12292,7 +12310,9 @@ Only return number of cells in the cellset. FAST!</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Tuple of dimension names on all axes as 3 lists: Titles, Rows, Columns. Allows function to skip retrieval of cellset composition. E.g.: arranged_axes=(["Year"], ["Region","Product"], ["Period", "Version"])</p>
+                <p>Tuple of dimension names on all axes as 3 lists: Titles, Rows, Columns.
+Allows function to skip retrieval of cellset composition.
+E.g.: arranged_axes=(["Year"], ["Region","Product"], ["Period", "Version"])</p>
               </div>
             </td>
             <td>
@@ -12747,7 +12767,8 @@ https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html<
             </td>
             <td>
               <div class="doc-md-description">
-                <p>use iterative json parsing to reduce memory consumption significantly. Comes at a cost of 3-5% performance.</p>
+                <p>use iterative json parsing to reduce memory consumption significantly.
+Comes at a cost of 3-5% performance.</p>
               </div>
             </td>
             <td>
@@ -12795,7 +12816,10 @@ https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html<
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Tuple of dimension names on all axes as 3 lists: Titles, Rows, Columns. Allows function to skip retrieval of cellset composition in use_blob mode. E.g.: axes=(["Year"], ["Region","Product"], ["Period", "Version"]) :param mdx_headers: boolean, fully qualified hierarchy name as header instead of simple dimension name</p>
+                <p>Tuple of dimension names on all axes as 3 lists: Titles, Rows, Columns.
+Allows function to skip retrieval of cellset composition in use_blob mode.
+E.g.: axes=(["Year"], ["Region","Product"], ["Period", "Version"])
+:param mdx_headers: boolean, fully qualified hierarchy name as header instead of simple dimension name</p>
               </div>
             </td>
             <td>
@@ -17689,7 +17713,8 @@ Example 'cells' return format:
             </td>
             <td>
               <div class="doc-md-description">
-                <p>provide all csv output settings through standard library csv.Dialect If not provided dialect is created based on line_separator and value_separator arguments.</p>
+                <p>provide all csv output settings through standard library csv.Dialect
+If not provided dialect is created based on line_separator and value_separator arguments.</p>
               </div>
             </td>
             <td>
@@ -18116,7 +18141,8 @@ Example 'cells' return format:
             </td>
             <td>
               <div class="doc-md-description">
-                <p>provide all csv output settings through standard library csv.Dialect If not provided dialect is created based on line_separator and value_separator arguments.</p>
+                <p>provide all csv output settings through standard library csv.Dialect
+If not provided dialect is created based on line_separator and value_separator arguments.</p>
               </div>
             </td>
             <td>
@@ -18780,7 +18806,8 @@ Example 'cells' return format:
             </td>
             <td>
               <div class="doc-md-description">
-                <p>use iterative json parsing to reduce memory consumption significantly. Comes at a cost of 3-5% performance.</p>
+                <p>use iterative json parsing to reduce memory consumption significantly.
+Comes at a cost of 3-5% performance.</p>
               </div>
             </td>
             <td>
@@ -21788,7 +21815,16 @@ Read More: https://www.ibm.com/docs/en/planning-analytics/2.0.0?topic=data-cells
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Describes the Dimension-Hierarchy-Element arrangement - Example: "Hierarchy1::Element1 &amp;&amp; Hierarchy2::Element4, Element9, Element2" - Dimensions are not specified! They are derived from the position. - The , separates the element-selections - If more than one hierarchy is selected per dimension &amp;&amp; splits the elementselections - If no Hierarchy is specified. Default Hierarchy will be addressed or Iterable of type mdxpy.Member or similar - Dimension names must be provided in this case! Example: [(Dimension1, Element1), (Dimension2, Element2), (Dimension3, Element3)] - Hierarchys can be included. Example: [(Dimension1, Hierarchy1, Element1), (Dimension1, Hierarchy2, Element2), (Dimension2, Element3)]</p>
+                <p>Describes the Dimension-Hierarchy-Element arrangement
+    - Example: "Hierarchy1::Element1 &amp;&amp; Hierarchy2::Element4, Element9, Element2"
+    - Dimensions are not specified! They are derived from the position.
+    - The , separates the element-selections
+    - If more than one hierarchy is selected per dimension &amp;&amp; splits the elementselections
+    - If no Hierarchy is specified. Default Hierarchy will be addressed
+or
+Iterable of type mdxpy.Member or similar
+    - Dimension names must be provided in this case! Example: [(Dimension1, Element1), (Dimension2, Element2), (Dimension3, Element3)]
+    - Hierarchys can be included. Example: [(Dimension1, Hierarchy1, Element1), (Dimension1, Hierarchy2, Element2), (Dimension2, Element3)]</p>
               </div>
             </td>
             <td>
@@ -22115,7 +22151,8 @@ Read More: https://www.ibm.com/docs/en/planning-analytics/2.0.0?topic=data-cells
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Set of coordinates where each element is provided in the correct dimension order. [('2024', 'Actual', 'London', 'P02), ('2024', 'Forecast', 'Berlin', 'P03)]</p>
+                <p>Set of coordinates where each element is provided in the correct dimension order.
+[('2024', 'Actual', 'London', 'P02), ('2024', 'Forecast', 'Berlin', 'P03)]</p>
               </div>
             </td>
             <td>
@@ -22701,7 +22738,13 @@ Read More: https://www.ibm.com/docs/en/planning-analytics/2.0.0?topic=data-cells
             </td>
             <td>
               <div class="doc-md-description">
-                <p>string "Hierarchy1::Element1 &amp;&amp; Hierarchy2::Element4, Element9, Element2" - Dimensions are not specified! They are derived from the position. - The , separates the element-selections - If more than one hierarchy is selected per dimension &amp;&amp; splits the elementselections - If no Hierarchy is specified. Default Hierarchy will be addressed or Iterable [Element1, Element2, Element3]</p>
+                <p>string "Hierarchy1::Element1 &amp;&amp; Hierarchy2::Element4, Element9, Element2"
+    - Dimensions are not specified! They are derived from the position.
+    - The , separates the element-selections
+    - If more than one hierarchy is selected per dimension &amp;&amp; splits the elementselections
+    - If no Hierarchy is specified. Default Hierarchy will be addressed
+or
+Iterable [Element1, Element2, Element3]</p>
               </div>
             </td>
             <td>
@@ -23014,7 +23057,13 @@ Read More: https://www.ibm.com/docs/en/planning-analytics/2.0.0?topic=data-cells
             </td>
             <td>
               <div class="doc-md-description">
-                <p>string "Hierarchy1::Element1 &amp;&amp; Hierarchy2::Element4, Element9, Element2" - Dimensions are not specified! They are derived from the position. - The , separates the element-selections - If more than one hierarchy is selected per dimension &amp;&amp; splits the elementselections - If no Hierarchy is specified. Default Hierarchy will be addressed or Iterable [Element1, Element2, Element3]</p>
+                <p>string "Hierarchy1::Element1 &amp;&amp; Hierarchy2::Element4, Element9, Element2"
+    - Dimensions are not specified! They are derived from the position.
+    - The , separates the element-selections
+    - If more than one hierarchy is selected per dimension &amp;&amp; splits the elementselections
+    - If no Hierarchy is specified. Default Hierarchy will be addressed
+or
+Iterable [Element1, Element2, Element3]</p>
               </div>
             </td>
             <td>
@@ -23690,7 +23739,8 @@ Spreading through spreading shortcuts is not supported!</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>max precision when writhing through unbound process. Necessary when dealing with large numbers to avoid "number too long" TI syntax error.</p>
+                <p>max precision when writhing through unbound process.
+Necessary when dealing with large numbers to avoid "number too long" TI syntax error.</p>
               </div>
             </td>
             <td>
@@ -23722,7 +23772,9 @@ Spreading through spreading shortcuts is not supported!</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>dictionary of measure elements and their types to improve performance when <code>use_ti</code> is <code>True</code>. When all written values are numeric you can pass a default dict with default key 'Numeric'</p>
+                <p>dictionary of measure elements and their types to improve
+performance when <code>use_ti</code> is <code>True</code>.
+When all written values are numeric you can pass a default dict with default key 'Numeric'</p>
               </div>
             </td>
             <td>
@@ -24183,7 +24235,8 @@ Spreading through spreading shortcuts is not supported!</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>max precision when writhing through unbound process. Necessary to decrease when dealing with large numbers to avoid "number too long" TI syntax error.</p>
+                <p>max precision when writhing through unbound process.
+Necessary to decrease when dealing with large numbers to avoid "number too long" TI syntax error.</p>
               </div>
             </td>
             <td>
@@ -24199,7 +24252,8 @@ Spreading through spreading shortcuts is not supported!</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>dictionary of measure elements and their types to improve performance when <code>use_ti</code> is <code>True</code>.</p>
+                <p>dictionary of measure elements and their types to improve
+performance when <code>use_ti</code> is <code>True</code>.</p>
               </div>
             </td>
             <td>
@@ -24629,7 +24683,8 @@ Column names are not relevant.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>max precision when writhing through unbound process. Necessary when dealing with large numbers to avoid "number too long" TI syntax error</p>
+                <p>max precision when writhing through unbound process.
+Necessary when dealing with large numbers to avoid "number too long" TI syntax error</p>
               </div>
             </td>
             <td>
@@ -24661,7 +24716,9 @@ Column names are not relevant.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>dictionary of measure elements and their types to improve performance when <code>use_ti</code> is <code>True</code>. When all written values are numeric you can pass a default dict with default key 'Numeric'</p>
+                <p>dictionary of measure elements and their types to improve
+performance when <code>use_ti</code> is <code>True</code>.
+When all written values are numeric you can pass a default dict with default key 'Numeric'</p>
               </div>
             </td>
             <td>
@@ -24757,7 +24814,8 @@ Column names are not relevant.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>bool indicating whether the column order of the dataframe should automatically be inferred and mapped to the dimension order in the cube.</p>
+                <p>bool indicating whether the column order of the dataframe should automatically be
+inferred and mapped to the dimension order in the cube.</p>
               </div>
             </td>
             <td>
@@ -25956,7 +26014,8 @@ Column names are not relevant.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>pass dictionary of measure elements and their types to improve performance. When all written values are numeric you can pass a defaultdict with default key: 'Numeric'</p>
+                <p>pass dictionary of measure elements and their types to improve performance.
+When all written values are numeric you can pass a defaultdict with default key: 'Numeric'</p>
               </div>
             </td>
             <td>
