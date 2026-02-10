@@ -412,7 +412,7 @@ class TestSubsetService(unittest.TestCase):
         self.assertEqual(self.static_subset.elements, element_names)
 
         with self.assertRaisesRegex(ValueError, "Only one parameter 'subset' or 'subset_name' may be provided."):
-            element_names = self.tm1.subsets.get_element_names(
+            self.tm1.subsets.get_element_names(
                 dimension_name=self.dimension_name,
                 hierarchy_name=self.dimension_name,
                 subset=self.subset_name_static,
