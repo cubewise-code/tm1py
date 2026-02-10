@@ -1,5 +1,5 @@
 <h1 align="center">
-<img src="Images/Logo.svg" style="width: 70%; height: 70%; text-align: center"/>
+<img src="https://raw.githubusercontent.com/cubewise-code/tm1py/master/Images/Logo.svg" style="width: 70%; height: 70%; text-align: center"/>
 
 ![PyPI - License](https://img.shields.io/pypi/l/TM1py)
 ![PyPI - Version](https://img.shields.io/pypi/v/TM1py)
