@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "TM1py"
-version = "2.2.1"
+version = "2.2.2"
 description = "A python module for TM1."
 readme = "README.md"
 license = {text = "MIT"}
