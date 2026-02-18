@@ -1187,7 +1187,7 @@ class ElementService(ObjectService):
          to return, can be None or empty
         :param element_properties: list of element properties (e.g., Name, UniqueName, Type, Level, Index,
         Attributes/Color) to return, can be empty
-        :return: dictionary of members, unique names, weights, types, and parents
+        :return: dictionary of members, unique names, weights, types, and parents or async id when return_async_id is True
         """
 
         top = f"$top={top_records};" if top_records else ""
