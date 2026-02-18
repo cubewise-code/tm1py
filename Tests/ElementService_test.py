@@ -1166,6 +1166,14 @@ class TestElementService(unittest.TestCase):
 
         self.assertEqual(members, [[{"Name": "1990"}]])
 
+    def test_execute_set_mdx_return_async_id(self):
+        mdx = f"{{[{self.dimension_name}].[1990]}}"
+        async_id = self.tm1.elements.execute_set_mdx(
+            mdx=mdx, member_properties=["Name"], element_properties=None, parent_properties=None, return_async_id=True
+        )
+
+        self.assertGreater(len(async_id), 5)
+
     def test_execute_set_mdx_attribute_with_space(self):
         mdx = f"{{[{self.dimension_name}].[1990]}}"
         members = self.tm1.elements.execute_set_mdx(
