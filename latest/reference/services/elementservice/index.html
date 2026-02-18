@@ -4129,10 +4129,7 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ElementService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1268">1268</a></span>
-<span class="normal"><a href="#__codelineno-0-1269">1269</a></span>
-<span class="normal"><a href="#__codelineno-0-1270">1270</a></span>
-<span class="normal"><a href="#__codelineno-0-1271">1271</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1271">1271</a></span>
 <span class="normal"><a href="#__codelineno-0-1272">1272</a></span>
 <span class="normal"><a href="#__codelineno-0-1273">1273</a></span>
 <span class="normal"><a href="#__codelineno-0-1274">1274</a></span>
@@ -4148,26 +4145,29 @@
 <span class="normal"><a href="#__codelineno-0-1284">1284</a></span>
 <span class="normal"><a href="#__codelineno-0-1285">1285</a></span>
 <span class="normal"><a href="#__codelineno-0-1286">1286</a></span>
-<span class="normal"><a href="#__codelineno-0-1287">1287</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1268" name="__codelineno-0-1268"></a><span class="k">def</span><span class="w"> </span><span class="nf">add_edges</span><span class="p">(</span>
-<a id="__codelineno-0-1269" name="__codelineno-0-1269"></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-<a id="__codelineno-0-1270" name="__codelineno-0-1270"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
-<a id="__codelineno-0-1271" name="__codelineno-0-1271"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Add Edges to hierarchy. Fails if one edge already exists.</span>
-<a id="__codelineno-0-1272" name="__codelineno-0-1272"></a>
-<a id="__codelineno-0-1273" name="__codelineno-0-1273"></a><span class="sd">    :param dimension_name:</span>
-<a id="__codelineno-0-1274" name="__codelineno-0-1274"></a><span class="sd">    :param hierarchy_name:</span>
-<a id="__codelineno-0-1275" name="__codelineno-0-1275"></a><span class="sd">    :param edges:</span>
-<a id="__codelineno-0-1276" name="__codelineno-0-1276"></a><span class="sd">    :return:</span>
-<a id="__codelineno-0-1277" name="__codelineno-0-1277"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-1278" name="__codelineno-0-1278"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">hierarchy_name</span><span class="p">:</span>
-<a id="__codelineno-0-1279" name="__codelineno-0-1279"></a>        <span class="n">hierarchy_name</span> <span class="o">=</span> <span class="n">dimension_name</span>
-<a id="__codelineno-0-1280" name="__codelineno-0-1280"></a>
-<a id="__codelineno-0-1281" name="__codelineno-0-1281"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span><span class="s2">&quot;/Dimensions(&#39;</span><span class="si">{}</span><span class="s2">&#39;)/Hierarchies(&#39;</span><span class="si">{}</span><span class="s2">&#39;)/Edges&quot;</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">)</span>
-<a id="__codelineno-0-1282" name="__codelineno-0-1282"></a>    <span class="n">body</span> <span class="o">=</span> <span class="p">[</span>
-<a id="__codelineno-0-1283" name="__codelineno-0-1283"></a>        <span class="p">{</span><span class="s2">&quot;ParentName&quot;</span><span class="p">:</span> <span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;ComponentName&quot;</span><span class="p">:</span> <span class="n">component</span><span class="p">,</span> <span class="s2">&quot;Weight&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">weight</span><span class="p">)}</span>
-<a id="__codelineno-0-1284" name="__codelineno-0-1284"></a>        <span class="k">for</span> <span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">component</span><span class="p">),</span> <span class="n">weight</span> <span class="ow">in</span> <span class="n">edges</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-<a id="__codelineno-0-1285" name="__codelineno-0-1285"></a>    <span class="p">]</span>
-<a id="__codelineno-0-1286" name="__codelineno-0-1286"></a>
-<a id="__codelineno-0-1287" name="__codelineno-0-1287"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">POST</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">body</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="normal"><a href="#__codelineno-0-1287">1287</a></span>
+<span class="normal"><a href="#__codelineno-0-1288">1288</a></span>
+<span class="normal"><a href="#__codelineno-0-1289">1289</a></span>
+<span class="normal"><a href="#__codelineno-0-1290">1290</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1271" name="__codelineno-0-1271"></a><span class="k">def</span><span class="w"> </span><span class="nf">add_edges</span><span class="p">(</span>
+<a id="__codelineno-0-1272" name="__codelineno-0-1272"></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+<a id="__codelineno-0-1273" name="__codelineno-0-1273"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
+<a id="__codelineno-0-1274" name="__codelineno-0-1274"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Add Edges to hierarchy. Fails if one edge already exists.</span>
+<a id="__codelineno-0-1275" name="__codelineno-0-1275"></a>
+<a id="__codelineno-0-1276" name="__codelineno-0-1276"></a><span class="sd">    :param dimension_name:</span>
+<a id="__codelineno-0-1277" name="__codelineno-0-1277"></a><span class="sd">    :param hierarchy_name:</span>
+<a id="__codelineno-0-1278" name="__codelineno-0-1278"></a><span class="sd">    :param edges:</span>
+<a id="__codelineno-0-1279" name="__codelineno-0-1279"></a><span class="sd">    :return:</span>
+<a id="__codelineno-0-1280" name="__codelineno-0-1280"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-1281" name="__codelineno-0-1281"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">hierarchy_name</span><span class="p">:</span>
+<a id="__codelineno-0-1282" name="__codelineno-0-1282"></a>        <span class="n">hierarchy_name</span> <span class="o">=</span> <span class="n">dimension_name</span>
+<a id="__codelineno-0-1283" name="__codelineno-0-1283"></a>
+<a id="__codelineno-0-1284" name="__codelineno-0-1284"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span><span class="s2">&quot;/Dimensions(&#39;</span><span class="si">{}</span><span class="s2">&#39;)/Hierarchies(&#39;</span><span class="si">{}</span><span class="s2">&#39;)/Edges&quot;</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">)</span>
+<a id="__codelineno-0-1285" name="__codelineno-0-1285"></a>    <span class="n">body</span> <span class="o">=</span> <span class="p">[</span>
+<a id="__codelineno-0-1286" name="__codelineno-0-1286"></a>        <span class="p">{</span><span class="s2">&quot;ParentName&quot;</span><span class="p">:</span> <span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;ComponentName&quot;</span><span class="p">:</span> <span class="n">component</span><span class="p">,</span> <span class="s2">&quot;Weight&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">weight</span><span class="p">)}</span>
+<a id="__codelineno-0-1287" name="__codelineno-0-1287"></a>        <span class="k">for</span> <span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">component</span><span class="p">),</span> <span class="n">weight</span> <span class="ow">in</span> <span class="n">edges</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+<a id="__codelineno-0-1288" name="__codelineno-0-1288"></a>    <span class="p">]</span>
+<a id="__codelineno-0-1289" name="__codelineno-0-1289"></a>
+<a id="__codelineno-0-1290" name="__codelineno-0-1290"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">POST</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">body</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4275,10 +4275,7 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ElementService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1302">1302</a></span>
-<span class="normal"><a href="#__codelineno-0-1303">1303</a></span>
-<span class="normal"><a href="#__codelineno-0-1304">1304</a></span>
-<span class="normal"><a href="#__codelineno-0-1305">1305</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1305">1305</a></span>
 <span class="normal"><a href="#__codelineno-0-1306">1306</a></span>
 <span class="normal"><a href="#__codelineno-0-1307">1307</a></span>
 <span class="normal"><a href="#__codelineno-0-1308">1308</a></span>
@@ -4288,20 +4285,23 @@
 <span class="normal"><a href="#__codelineno-0-1312">1312</a></span>
 <span class="normal"><a href="#__codelineno-0-1313">1313</a></span>
 <span class="normal"><a href="#__codelineno-0-1314">1314</a></span>
-<span class="normal"><a href="#__codelineno-0-1315">1315</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1302" name="__codelineno-0-1302"></a><span class="k">def</span><span class="w"> </span><span class="nf">add_element_attributes</span><span class="p">(</span>
-<a id="__codelineno-0-1303" name="__codelineno-0-1303"></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">element_attributes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ElementAttribute</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span>
-<a id="__codelineno-0-1304" name="__codelineno-0-1304"></a><span class="p">):</span>
-<a id="__codelineno-0-1305" name="__codelineno-0-1305"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Add element attributes to hierarchy. Fails if one element attribute already exists.</span>
-<a id="__codelineno-0-1306" name="__codelineno-0-1306"></a>
-<a id="__codelineno-0-1307" name="__codelineno-0-1307"></a><span class="sd">    :param dimension_name:</span>
-<a id="__codelineno-0-1308" name="__codelineno-0-1308"></a><span class="sd">    :param hierarchy_name:</span>
-<a id="__codelineno-0-1309" name="__codelineno-0-1309"></a><span class="sd">    :param element_attributes:</span>
-<a id="__codelineno-0-1310" name="__codelineno-0-1310"></a><span class="sd">    :return:</span>
-<a id="__codelineno-0-1311" name="__codelineno-0-1311"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-1312" name="__codelineno-0-1312"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span><span class="s2">&quot;/Dimensions(&#39;</span><span class="si">{}</span><span class="s2">&#39;)/Hierarchies(&#39;</span><span class="si">{}</span><span class="s2">&#39;)/ElementAttributes&quot;</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">)</span>
-<a id="__codelineno-0-1313" name="__codelineno-0-1313"></a>    <span class="n">body</span> <span class="o">=</span> <span class="p">[</span><span class="n">element_attribute</span><span class="o">.</span><span class="n">body_as_dict</span> <span class="k">for</span> <span class="n">element_attribute</span> <span class="ow">in</span> <span class="n">element_attributes</span><span class="p">]</span>
-<a id="__codelineno-0-1314" name="__codelineno-0-1314"></a>
-<a id="__codelineno-0-1315" name="__codelineno-0-1315"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">POST</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">body</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="normal"><a href="#__codelineno-0-1315">1315</a></span>
+<span class="normal"><a href="#__codelineno-0-1316">1316</a></span>
+<span class="normal"><a href="#__codelineno-0-1317">1317</a></span>
+<span class="normal"><a href="#__codelineno-0-1318">1318</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1305" name="__codelineno-0-1305"></a><span class="k">def</span><span class="w"> </span><span class="nf">add_element_attributes</span><span class="p">(</span>
+<a id="__codelineno-0-1306" name="__codelineno-0-1306"></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">element_attributes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ElementAttribute</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span>
+<a id="__codelineno-0-1307" name="__codelineno-0-1307"></a><span class="p">):</span>
+<a id="__codelineno-0-1308" name="__codelineno-0-1308"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Add element attributes to hierarchy. Fails if one element attribute already exists.</span>
+<a id="__codelineno-0-1309" name="__codelineno-0-1309"></a>
+<a id="__codelineno-0-1310" name="__codelineno-0-1310"></a><span class="sd">    :param dimension_name:</span>
+<a id="__codelineno-0-1311" name="__codelineno-0-1311"></a><span class="sd">    :param hierarchy_name:</span>
+<a id="__codelineno-0-1312" name="__codelineno-0-1312"></a><span class="sd">    :param element_attributes:</span>
+<a id="__codelineno-0-1313" name="__codelineno-0-1313"></a><span class="sd">    :return:</span>
+<a id="__codelineno-0-1314" name="__codelineno-0-1314"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-1315" name="__codelineno-0-1315"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span><span class="s2">&quot;/Dimensions(&#39;</span><span class="si">{}</span><span class="s2">&#39;)/Hierarchies(&#39;</span><span class="si">{}</span><span class="s2">&#39;)/ElementAttributes&quot;</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">)</span>
+<a id="__codelineno-0-1316" name="__codelineno-0-1316"></a>    <span class="n">body</span> <span class="o">=</span> <span class="p">[</span><span class="n">element_attribute</span><span class="o">.</span><span class="n">body_as_dict</span> <span class="k">for</span> <span class="n">element_attribute</span> <span class="ow">in</span> <span class="n">element_attributes</span><span class="p">]</span>
+<a id="__codelineno-0-1317" name="__codelineno-0-1317"></a>
+<a id="__codelineno-0-1318" name="__codelineno-0-1318"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">POST</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">body</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4409,10 +4409,7 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ElementService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1289">1289</a></span>
-<span class="normal"><a href="#__codelineno-0-1290">1290</a></span>
-<span class="normal"><a href="#__codelineno-0-1291">1291</a></span>
-<span class="normal"><a href="#__codelineno-0-1292">1292</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1292">1292</a></span>
 <span class="normal"><a href="#__codelineno-0-1293">1293</a></span>
 <span class="normal"><a href="#__codelineno-0-1294">1294</a></span>
 <span class="normal"><a href="#__codelineno-0-1295">1295</a></span>
@@ -4420,18 +4417,21 @@
 <span class="normal"><a href="#__codelineno-0-1297">1297</a></span>
 <span class="normal"><a href="#__codelineno-0-1298">1298</a></span>
 <span class="normal"><a href="#__codelineno-0-1299">1299</a></span>
-<span class="normal"><a href="#__codelineno-0-1300">1300</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1289" name="__codelineno-0-1289"></a><span class="k">def</span><span class="w"> </span><span class="nf">add_elements</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">elements</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Element</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<a id="__codelineno-0-1290" name="__codelineno-0-1290"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Add elements to hierarchy. Fails if one element already exists.</span>
-<a id="__codelineno-0-1291" name="__codelineno-0-1291"></a>
-<a id="__codelineno-0-1292" name="__codelineno-0-1292"></a><span class="sd">    :param dimension_name:</span>
-<a id="__codelineno-0-1293" name="__codelineno-0-1293"></a><span class="sd">    :param hierarchy_name:</span>
-<a id="__codelineno-0-1294" name="__codelineno-0-1294"></a><span class="sd">    :param elements:</span>
-<a id="__codelineno-0-1295" name="__codelineno-0-1295"></a><span class="sd">    :return:</span>
-<a id="__codelineno-0-1296" name="__codelineno-0-1296"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-1297" name="__codelineno-0-1297"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span><span class="s2">&quot;/Dimensions(&#39;</span><span class="si">{}</span><span class="s2">&#39;)/Hierarchies(&#39;</span><span class="si">{}</span><span class="s2">&#39;)/Elements&quot;</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">)</span>
-<a id="__codelineno-0-1298" name="__codelineno-0-1298"></a>    <span class="n">body</span> <span class="o">=</span> <span class="p">[</span><span class="n">element</span><span class="o">.</span><span class="n">body_as_dict</span> <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">]</span>
-<a id="__codelineno-0-1299" name="__codelineno-0-1299"></a>
-<a id="__codelineno-0-1300" name="__codelineno-0-1300"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">POST</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">body</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="normal"><a href="#__codelineno-0-1300">1300</a></span>
+<span class="normal"><a href="#__codelineno-0-1301">1301</a></span>
+<span class="normal"><a href="#__codelineno-0-1302">1302</a></span>
+<span class="normal"><a href="#__codelineno-0-1303">1303</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1292" name="__codelineno-0-1292"></a><span class="k">def</span><span class="w"> </span><span class="nf">add_elements</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">elements</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Element</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="__codelineno-0-1293" name="__codelineno-0-1293"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Add elements to hierarchy. Fails if one element already exists.</span>
+<a id="__codelineno-0-1294" name="__codelineno-0-1294"></a>
+<a id="__codelineno-0-1295" name="__codelineno-0-1295"></a><span class="sd">    :param dimension_name:</span>
+<a id="__codelineno-0-1296" name="__codelineno-0-1296"></a><span class="sd">    :param hierarchy_name:</span>
+<a id="__codelineno-0-1297" name="__codelineno-0-1297"></a><span class="sd">    :param elements:</span>
+<a id="__codelineno-0-1298" name="__codelineno-0-1298"></a><span class="sd">    :return:</span>
+<a id="__codelineno-0-1299" name="__codelineno-0-1299"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-1300" name="__codelineno-0-1300"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span><span class="s2">&quot;/Dimensions(&#39;</span><span class="si">{}</span><span class="s2">&#39;)/Hierarchies(&#39;</span><span class="si">{}</span><span class="s2">&#39;)/Elements&quot;</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">)</span>
+<a id="__codelineno-0-1301" name="__codelineno-0-1301"></a>    <span class="n">body</span> <span class="o">=</span> <span class="p">[</span><span class="n">element</span><span class="o">.</span><span class="n">body_as_dict</span> <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">]</span>
+<a id="__codelineno-0-1302" name="__codelineno-0-1302"></a>
+<a id="__codelineno-0-1303" name="__codelineno-0-1303"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">POST</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">body</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -5284,10 +5284,7 @@ and 'TM1DrillDownMember' for users without admin permissions</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ElementService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1393">1393</a></span>
-<span class="normal"><a href="#__codelineno-0-1394">1394</a></span>
-<span class="normal"><a href="#__codelineno-0-1395">1395</a></span>
-<span class="normal"><a href="#__codelineno-0-1396">1396</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1396">1396</a></span>
 <span class="normal"><a href="#__codelineno-0-1397">1397</a></span>
 <span class="normal"><a href="#__codelineno-0-1398">1398</a></span>
 <span class="normal"><a href="#__codelineno-0-1399">1399</a></span>
@@ -5343,66 +5340,69 @@ and 'TM1DrillDownMember' for users without admin permissions</p>
 <span class="normal"><a href="#__codelineno-0-1449">1449</a></span>
 <span class="normal"><a href="#__codelineno-0-1450">1450</a></span>
 <span class="normal"><a href="#__codelineno-0-1451">1451</a></span>
-<span class="normal"><a href="#__codelineno-0-1452">1452</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1393" name="__codelineno-0-1393"></a><span class="k">def</span><span class="w"> </span><span class="nf">element_is_ancestor</span><span class="p">(</span>
-<a id="__codelineno-0-1394" name="__codelineno-0-1394"></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">ancestor_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-0-1395" name="__codelineno-0-1395"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<a id="__codelineno-0-1396" name="__codelineno-0-1396"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Element is Ancestor</span>
-<a id="__codelineno-0-1397" name="__codelineno-0-1397"></a>
-<a id="__codelineno-0-1398" name="__codelineno-0-1398"></a><span class="sd">    :Note, unlike the related function in TM1 (`ELISANC` or `ElementIsAncestor`), this function will return False</span>
-<a id="__codelineno-0-1399" name="__codelineno-0-1399"></a><span class="sd">    if an invalid element is passed; but will raise an exception if an invalid dimension, or hierarchy is passed</span>
+<span class="normal"><a href="#__codelineno-0-1452">1452</a></span>
+<span class="normal"><a href="#__codelineno-0-1453">1453</a></span>
+<span class="normal"><a href="#__codelineno-0-1454">1454</a></span>
+<span class="normal"><a href="#__codelineno-0-1455">1455</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1396" name="__codelineno-0-1396"></a><span class="k">def</span><span class="w"> </span><span class="nf">element_is_ancestor</span><span class="p">(</span>
+<a id="__codelineno-0-1397" name="__codelineno-0-1397"></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">ancestor_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-0-1398" name="__codelineno-0-1398"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<a id="__codelineno-0-1399" name="__codelineno-0-1399"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Element is Ancestor</span>
 <a id="__codelineno-0-1400" name="__codelineno-0-1400"></a>
-<a id="__codelineno-0-1401" name="__codelineno-0-1401"></a><span class="sd">    For `method` you can pass 3 three values</span>
-<a id="__codelineno-0-1402" name="__codelineno-0-1402"></a><span class="sd">    value `TI` performs best, but requires admin permissions</span>
-<a id="__codelineno-0-1403" name="__codelineno-0-1403"></a><span class="sd">    Value &#39;TM1DrillDownMember&#39; performs well when element is a leaf.</span>
-<a id="__codelineno-0-1404" name="__codelineno-0-1404"></a><span class="sd">    Value &#39;Descendants&#39; performs well when `ancestor_name` and `element_name` are Consolidations.</span>
-<a id="__codelineno-0-1405" name="__codelineno-0-1405"></a>
-<a id="__codelineno-0-1406" name="__codelineno-0-1406"></a><span class="sd">    If no value is passed, function defaults to &#39;TI&#39; for user with admin permissions</span>
-<a id="__codelineno-0-1407" name="__codelineno-0-1407"></a><span class="sd">    and &#39;TM1DrillDownMember&#39; for users without admin permissions</span>
-<a id="__codelineno-0-1408" name="__codelineno-0-1408"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-1409" name="__codelineno-0-1409"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">method</span><span class="p">:</span>
-<a id="__codelineno-0-1410" name="__codelineno-0-1410"></a>        <span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;TI&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_admin</span> <span class="k">else</span> <span class="s2">&quot;TM1DrillDownMember&quot;</span>
-<a id="__codelineno-0-1411" name="__codelineno-0-1411"></a>
-<a id="__codelineno-0-1412" name="__codelineno-0-1412"></a>    <span class="k">if</span> <span class="n">method</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;TI&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-1413" name="__codelineno-0-1413"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_element_is_ancestor_ti</span><span class="p">(</span><span class="n">dimension_name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">,</span> <span class="n">element_name</span><span class="p">,</span> <span class="n">ancestor_name</span><span class="p">):</span>
-<a id="__codelineno-0-1414" name="__codelineno-0-1414"></a>            <span class="k">return</span> <span class="kc">True</span>
-<a id="__codelineno-0-1415" name="__codelineno-0-1415"></a>
-<a id="__codelineno-0-1416" name="__codelineno-0-1416"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hierarchy_exists</span><span class="p">(</span><span class="n">dimension_name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">):</span>
-<a id="__codelineno-0-1417" name="__codelineno-0-1417"></a>            <span class="k">return</span> <span class="kc">False</span>
+<a id="__codelineno-0-1401" name="__codelineno-0-1401"></a><span class="sd">    :Note, unlike the related function in TM1 (`ELISANC` or `ElementIsAncestor`), this function will return False</span>
+<a id="__codelineno-0-1402" name="__codelineno-0-1402"></a><span class="sd">    if an invalid element is passed; but will raise an exception if an invalid dimension, or hierarchy is passed</span>
+<a id="__codelineno-0-1403" name="__codelineno-0-1403"></a>
+<a id="__codelineno-0-1404" name="__codelineno-0-1404"></a><span class="sd">    For `method` you can pass 3 three values</span>
+<a id="__codelineno-0-1405" name="__codelineno-0-1405"></a><span class="sd">    value `TI` performs best, but requires admin permissions</span>
+<a id="__codelineno-0-1406" name="__codelineno-0-1406"></a><span class="sd">    Value &#39;TM1DrillDownMember&#39; performs well when element is a leaf.</span>
+<a id="__codelineno-0-1407" name="__codelineno-0-1407"></a><span class="sd">    Value &#39;Descendants&#39; performs well when `ancestor_name` and `element_name` are Consolidations.</span>
+<a id="__codelineno-0-1408" name="__codelineno-0-1408"></a>
+<a id="__codelineno-0-1409" name="__codelineno-0-1409"></a><span class="sd">    If no value is passed, function defaults to &#39;TI&#39; for user with admin permissions</span>
+<a id="__codelineno-0-1410" name="__codelineno-0-1410"></a><span class="sd">    and &#39;TM1DrillDownMember&#39; for users without admin permissions</span>
+<a id="__codelineno-0-1411" name="__codelineno-0-1411"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-1412" name="__codelineno-0-1412"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">method</span><span class="p">:</span>
+<a id="__codelineno-0-1413" name="__codelineno-0-1413"></a>        <span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;TI&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_admin</span> <span class="k">else</span> <span class="s2">&quot;TM1DrillDownMember&quot;</span>
+<a id="__codelineno-0-1414" name="__codelineno-0-1414"></a>
+<a id="__codelineno-0-1415" name="__codelineno-0-1415"></a>    <span class="k">if</span> <span class="n">method</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;TI&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-1416" name="__codelineno-0-1416"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_element_is_ancestor_ti</span><span class="p">(</span><span class="n">dimension_name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">,</span> <span class="n">element_name</span><span class="p">,</span> <span class="n">ancestor_name</span><span class="p">):</span>
+<a id="__codelineno-0-1417" name="__codelineno-0-1417"></a>            <span class="k">return</span> <span class="kc">True</span>
 <a id="__codelineno-0-1418" name="__codelineno-0-1418"></a>
-<a id="__codelineno-0-1419" name="__codelineno-0-1419"></a>        <span class="k">raise</span> <span class="n">TM1pyException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Hierarchy: &#39;</span><span class="si">{</span><span class="n">hierarchy_name</span><span class="si">}</span><span class="s2">&#39; does not exist in dimension: &#39;</span><span class="si">{</span><span class="n">dimension_name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-1420" name="__codelineno-0-1420"></a>
-<a id="__codelineno-0-1421" name="__codelineno-0-1421"></a>    <span class="c1"># make sure DESCENDANTS behaves like default TM1DrillDownMember</span>
-<a id="__codelineno-0-1422" name="__codelineno-0-1422"></a>    <span class="k">if</span> <span class="n">method</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="n">MDXDrillMethod</span><span class="o">.</span><span class="n">DESCENDANTS</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
-<a id="__codelineno-0-1423" name="__codelineno-0-1423"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dimension_name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">,</span> <span class="n">element_name</span><span class="p">):</span>
-<a id="__codelineno-0-1424" name="__codelineno-0-1424"></a>
-<a id="__codelineno-0-1425" name="__codelineno-0-1425"></a>            <span class="c1"># case dimension or hierarchy doesn&#39;t exist</span>
-<a id="__codelineno-0-1426" name="__codelineno-0-1426"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">hierarchy_exists</span><span class="p">(</span><span class="n">dimension_name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">):</span>
-<a id="__codelineno-0-1427" name="__codelineno-0-1427"></a>                <span class="k">raise</span> <span class="n">TM1pyException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Hierarchy &#39;</span><span class="si">{</span><span class="n">hierarchy_name</span><span class="si">}</span><span class="s2">&#39; does not exist in dimension &#39;</span><span class="si">{</span><span class="n">dimension_name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-1428" name="__codelineno-0-1428"></a>
-<a id="__codelineno-0-1429" name="__codelineno-0-1429"></a>            <span class="c1"># case element or ancestor doesn&#39;t exist</span>
-<a id="__codelineno-0-1430" name="__codelineno-0-1430"></a>            <span class="k">return</span> <span class="kc">False</span>
+<a id="__codelineno-0-1419" name="__codelineno-0-1419"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hierarchy_exists</span><span class="p">(</span><span class="n">dimension_name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">):</span>
+<a id="__codelineno-0-1420" name="__codelineno-0-1420"></a>            <span class="k">return</span> <span class="kc">False</span>
+<a id="__codelineno-0-1421" name="__codelineno-0-1421"></a>
+<a id="__codelineno-0-1422" name="__codelineno-0-1422"></a>        <span class="k">raise</span> <span class="n">TM1pyException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Hierarchy: &#39;</span><span class="si">{</span><span class="n">hierarchy_name</span><span class="si">}</span><span class="s2">&#39; does not exist in dimension: &#39;</span><span class="si">{</span><span class="n">dimension_name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-1423" name="__codelineno-0-1423"></a>
+<a id="__codelineno-0-1424" name="__codelineno-0-1424"></a>    <span class="c1"># make sure DESCENDANTS behaves like default TM1DrillDownMember</span>
+<a id="__codelineno-0-1425" name="__codelineno-0-1425"></a>    <span class="k">if</span> <span class="n">method</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="n">MDXDrillMethod</span><span class="o">.</span><span class="n">DESCENDANTS</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+<a id="__codelineno-0-1426" name="__codelineno-0-1426"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dimension_name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">,</span> <span class="n">element_name</span><span class="p">):</span>
+<a id="__codelineno-0-1427" name="__codelineno-0-1427"></a>
+<a id="__codelineno-0-1428" name="__codelineno-0-1428"></a>            <span class="c1"># case dimension or hierarchy doesn&#39;t exist</span>
+<a id="__codelineno-0-1429" name="__codelineno-0-1429"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">hierarchy_exists</span><span class="p">(</span><span class="n">dimension_name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">):</span>
+<a id="__codelineno-0-1430" name="__codelineno-0-1430"></a>                <span class="k">raise</span> <span class="n">TM1pyException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Hierarchy &#39;</span><span class="si">{</span><span class="n">hierarchy_name</span><span class="si">}</span><span class="s2">&#39; does not exist in dimension &#39;</span><span class="si">{</span><span class="n">dimension_name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-1431" name="__codelineno-0-1431"></a>
-<a id="__codelineno-0-1432" name="__codelineno-0-1432"></a>    <span class="k">if</span> <span class="n">method</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;TM1DRILLDOWNMEMBER&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-1433" name="__codelineno-0-1433"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dimension_name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">,</span> <span class="n">element_name</span><span class="p">):</span>
+<a id="__codelineno-0-1432" name="__codelineno-0-1432"></a>            <span class="c1"># case element or ancestor doesn&#39;t exist</span>
+<a id="__codelineno-0-1433" name="__codelineno-0-1433"></a>            <span class="k">return</span> <span class="kc">False</span>
 <a id="__codelineno-0-1434" name="__codelineno-0-1434"></a>
-<a id="__codelineno-0-1435" name="__codelineno-0-1435"></a>            <span class="c1"># case dimension or hierarchy doesn&#39;t exist</span>
-<a id="__codelineno-0-1436" name="__codelineno-0-1436"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">hierarchy_exists</span><span class="p">(</span><span class="n">dimension_name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">):</span>
-<a id="__codelineno-0-1437" name="__codelineno-0-1437"></a>                <span class="k">raise</span> <span class="n">TM1pyException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Hierarchy &#39;</span><span class="si">{</span><span class="n">hierarchy_name</span><span class="si">}</span><span class="s2">&#39; does not exist in dimension &#39;</span><span class="si">{</span><span class="n">dimension_name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-1438" name="__codelineno-0-1438"></a>
-<a id="__codelineno-0-1439" name="__codelineno-0-1439"></a>            <span class="c1"># case element or ancestor doesn&#39;t exist</span>
-<a id="__codelineno-0-1440" name="__codelineno-0-1440"></a>            <span class="k">return</span> <span class="kc">False</span>
+<a id="__codelineno-0-1435" name="__codelineno-0-1435"></a>    <span class="k">if</span> <span class="n">method</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;TM1DRILLDOWNMEMBER&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-1436" name="__codelineno-0-1436"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dimension_name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">,</span> <span class="n">element_name</span><span class="p">):</span>
+<a id="__codelineno-0-1437" name="__codelineno-0-1437"></a>
+<a id="__codelineno-0-1438" name="__codelineno-0-1438"></a>            <span class="c1"># case dimension or hierarchy doesn&#39;t exist</span>
+<a id="__codelineno-0-1439" name="__codelineno-0-1439"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">hierarchy_exists</span><span class="p">(</span><span class="n">dimension_name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">):</span>
+<a id="__codelineno-0-1440" name="__codelineno-0-1440"></a>                <span class="k">raise</span> <span class="n">TM1pyException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Hierarchy &#39;</span><span class="si">{</span><span class="n">hierarchy_name</span><span class="si">}</span><span class="s2">&#39; does not exist in dimension &#39;</span><span class="si">{</span><span class="n">dimension_name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-1441" name="__codelineno-0-1441"></a>
-<a id="__codelineno-0-1442" name="__codelineno-0-1442"></a>    <span class="n">mdx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_drill_intersection_mdx</span><span class="p">(</span>
-<a id="__codelineno-0-1443" name="__codelineno-0-1443"></a>        <span class="n">dimension_name</span><span class="o">=</span><span class="n">dimension_name</span><span class="p">,</span>
-<a id="__codelineno-0-1444" name="__codelineno-0-1444"></a>        <span class="n">hierarchy_name</span><span class="o">=</span><span class="n">hierarchy_name</span><span class="p">,</span>
-<a id="__codelineno-0-1445" name="__codelineno-0-1445"></a>        <span class="n">first_element_name</span><span class="o">=</span><span class="n">ancestor_name</span><span class="p">,</span>
-<a id="__codelineno-0-1446" name="__codelineno-0-1446"></a>        <span class="n">second_element_name</span><span class="o">=</span><span class="n">element_name</span><span class="p">,</span>
-<a id="__codelineno-0-1447" name="__codelineno-0-1447"></a>        <span class="n">mdx_method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span>
-<a id="__codelineno-0-1448" name="__codelineno-0-1448"></a>        <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-1449" name="__codelineno-0-1449"></a>    <span class="p">)</span>
-<a id="__codelineno-0-1450" name="__codelineno-0-1450"></a>
-<a id="__codelineno-0-1451" name="__codelineno-0-1451"></a>    <span class="n">cardinality</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_mdx_set_cardinality</span><span class="p">(</span><span class="n">mdx</span><span class="p">)</span>
-<a id="__codelineno-0-1452" name="__codelineno-0-1452"></a>    <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">cardinality</span><span class="p">)</span>
+<a id="__codelineno-0-1442" name="__codelineno-0-1442"></a>            <span class="c1"># case element or ancestor doesn&#39;t exist</span>
+<a id="__codelineno-0-1443" name="__codelineno-0-1443"></a>            <span class="k">return</span> <span class="kc">False</span>
+<a id="__codelineno-0-1444" name="__codelineno-0-1444"></a>
+<a id="__codelineno-0-1445" name="__codelineno-0-1445"></a>    <span class="n">mdx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_drill_intersection_mdx</span><span class="p">(</span>
+<a id="__codelineno-0-1446" name="__codelineno-0-1446"></a>        <span class="n">dimension_name</span><span class="o">=</span><span class="n">dimension_name</span><span class="p">,</span>
+<a id="__codelineno-0-1447" name="__codelineno-0-1447"></a>        <span class="n">hierarchy_name</span><span class="o">=</span><span class="n">hierarchy_name</span><span class="p">,</span>
+<a id="__codelineno-0-1448" name="__codelineno-0-1448"></a>        <span class="n">first_element_name</span><span class="o">=</span><span class="n">ancestor_name</span><span class="p">,</span>
+<a id="__codelineno-0-1449" name="__codelineno-0-1449"></a>        <span class="n">second_element_name</span><span class="o">=</span><span class="n">element_name</span><span class="p">,</span>
+<a id="__codelineno-0-1450" name="__codelineno-0-1450"></a>        <span class="n">mdx_method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span>
+<a id="__codelineno-0-1451" name="__codelineno-0-1451"></a>        <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-1452" name="__codelineno-0-1452"></a>    <span class="p">)</span>
+<a id="__codelineno-0-1453" name="__codelineno-0-1453"></a>
+<a id="__codelineno-0-1454" name="__codelineno-0-1454"></a>    <span class="n">cardinality</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_mdx_set_cardinality</span><span class="p">(</span><span class="n">mdx</span><span class="p">)</span>
+<a id="__codelineno-0-1455" name="__codelineno-0-1455"></a>    <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">cardinality</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -5428,10 +5428,7 @@ and 'TM1DrillDownMember' for users without admin permissions</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ElementService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1375">1375</a></span>
-<span class="normal"><a href="#__codelineno-0-1376">1376</a></span>
-<span class="normal"><a href="#__codelineno-0-1377">1377</a></span>
-<span class="normal"><a href="#__codelineno-0-1378">1378</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1378">1378</a></span>
 <span class="normal"><a href="#__codelineno-0-1379">1379</a></span>
 <span class="normal"><a href="#__codelineno-0-1380">1380</a></span>
 <span class="normal"><a href="#__codelineno-0-1381">1381</a></span>
@@ -5444,23 +5441,26 @@ and 'TM1DrillDownMember' for users without admin permissions</p>
 <span class="normal"><a href="#__codelineno-0-1388">1388</a></span>
 <span class="normal"><a href="#__codelineno-0-1389">1389</a></span>
 <span class="normal"><a href="#__codelineno-0-1390">1390</a></span>
-<span class="normal"><a href="#__codelineno-0-1391">1391</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1375" name="__codelineno-0-1375"></a><span class="k">def</span><span class="w"> </span><span class="nf">element_is_parent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">parent_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<a id="__codelineno-0-1376" name="__codelineno-0-1376"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Element is Parent</span>
-<a id="__codelineno-0-1377" name="__codelineno-0-1377"></a><span class="sd">    :Note, unlike the related function in TM1 (ELISPAR or ElementIsParent), this function will return False</span>
-<a id="__codelineno-0-1378" name="__codelineno-0-1378"></a><span class="sd">    :if an invalid element is passed;</span>
-<a id="__codelineno-0-1379" name="__codelineno-0-1379"></a><span class="sd">    :but will raise an exception if an invalid dimension, or hierarchy is passed</span>
-<a id="__codelineno-0-1380" name="__codelineno-0-1380"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-1381" name="__codelineno-0-1381"></a>    <span class="n">mdx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_drill_intersection_mdx</span><span class="p">(</span>
-<a id="__codelineno-0-1382" name="__codelineno-0-1382"></a>        <span class="n">dimension_name</span><span class="o">=</span><span class="n">dimension_name</span><span class="p">,</span>
-<a id="__codelineno-0-1383" name="__codelineno-0-1383"></a>        <span class="n">hierarchy_name</span><span class="o">=</span><span class="n">hierarchy_name</span><span class="p">,</span>
-<a id="__codelineno-0-1384" name="__codelineno-0-1384"></a>        <span class="n">first_element_name</span><span class="o">=</span><span class="n">parent_name</span><span class="p">,</span>
-<a id="__codelineno-0-1385" name="__codelineno-0-1385"></a>        <span class="n">second_element_name</span><span class="o">=</span><span class="n">element_name</span><span class="p">,</span>
-<a id="__codelineno-0-1386" name="__codelineno-0-1386"></a>        <span class="n">mdx_method</span><span class="o">=</span><span class="s2">&quot;TM1DrillDownMember&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1387" name="__codelineno-0-1387"></a>        <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-<a id="__codelineno-0-1388" name="__codelineno-0-1388"></a>    <span class="p">)</span>
-<a id="__codelineno-0-1389" name="__codelineno-0-1389"></a>
-<a id="__codelineno-0-1390" name="__codelineno-0-1390"></a>    <span class="n">cardinality</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_mdx_set_cardinality</span><span class="p">(</span><span class="n">mdx</span><span class="p">)</span>
-<a id="__codelineno-0-1391" name="__codelineno-0-1391"></a>    <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">cardinality</span><span class="p">)</span>
+<span class="normal"><a href="#__codelineno-0-1391">1391</a></span>
+<span class="normal"><a href="#__codelineno-0-1392">1392</a></span>
+<span class="normal"><a href="#__codelineno-0-1393">1393</a></span>
+<span class="normal"><a href="#__codelineno-0-1394">1394</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1378" name="__codelineno-0-1378"></a><span class="k">def</span><span class="w"> </span><span class="nf">element_is_parent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">parent_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<a id="__codelineno-0-1379" name="__codelineno-0-1379"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Element is Parent</span>
+<a id="__codelineno-0-1380" name="__codelineno-0-1380"></a><span class="sd">    :Note, unlike the related function in TM1 (ELISPAR or ElementIsParent), this function will return False</span>
+<a id="__codelineno-0-1381" name="__codelineno-0-1381"></a><span class="sd">    :if an invalid element is passed;</span>
+<a id="__codelineno-0-1382" name="__codelineno-0-1382"></a><span class="sd">    :but will raise an exception if an invalid dimension, or hierarchy is passed</span>
+<a id="__codelineno-0-1383" name="__codelineno-0-1383"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-1384" name="__codelineno-0-1384"></a>    <span class="n">mdx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_drill_intersection_mdx</span><span class="p">(</span>
+<a id="__codelineno-0-1385" name="__codelineno-0-1385"></a>        <span class="n">dimension_name</span><span class="o">=</span><span class="n">dimension_name</span><span class="p">,</span>
+<a id="__codelineno-0-1386" name="__codelineno-0-1386"></a>        <span class="n">hierarchy_name</span><span class="o">=</span><span class="n">hierarchy_name</span><span class="p">,</span>
+<a id="__codelineno-0-1387" name="__codelineno-0-1387"></a>        <span class="n">first_element_name</span><span class="o">=</span><span class="n">parent_name</span><span class="p">,</span>
+<a id="__codelineno-0-1388" name="__codelineno-0-1388"></a>        <span class="n">second_element_name</span><span class="o">=</span><span class="n">element_name</span><span class="p">,</span>
+<a id="__codelineno-0-1389" name="__codelineno-0-1389"></a>        <span class="n">mdx_method</span><span class="o">=</span><span class="s2">&quot;TM1DrillDownMember&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1390" name="__codelineno-0-1390"></a>        <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-0-1391" name="__codelineno-0-1391"></a>    <span class="p">)</span>
+<a id="__codelineno-0-1392" name="__codelineno-0-1392"></a>
+<a id="__codelineno-0-1393" name="__codelineno-0-1393"></a>    <span class="n">cardinality</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_mdx_set_cardinality</span><span class="p">(</span><span class="n">mdx</span><span class="p">)</span>
+<a id="__codelineno-0-1394" name="__codelineno-0-1394"></a>    <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">cardinality</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -5862,7 +5862,7 @@ Attributes/Color) to return, can be empty</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>dictionary of members, unique names, weights, types, and parents</p>
+                <p>dictionary of members, unique names, weights, types, and parents or async id when return_async_id is True</p>
               </div>
             </td>
           </tr>
@@ -5946,7 +5946,10 @@ Attributes/Color) to return, can be empty</p>
 <span class="normal"><a href="#__codelineno-0-1242">1242</a></span>
 <span class="normal"><a href="#__codelineno-0-1243">1243</a></span>
 <span class="normal"><a href="#__codelineno-0-1244">1244</a></span>
-<span class="normal"><a href="#__codelineno-0-1245">1245</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1171" name="__codelineno-0-1171"></a><span class="k">def</span><span class="w"> </span><span class="nf">execute_set_mdx</span><span class="p">(</span>
+<span class="normal"><a href="#__codelineno-0-1245">1245</a></span>
+<span class="normal"><a href="#__codelineno-0-1246">1246</a></span>
+<span class="normal"><a href="#__codelineno-0-1247">1247</a></span>
+<span class="normal"><a href="#__codelineno-0-1248">1248</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1171" name="__codelineno-0-1171"></a><span class="k">def</span><span class="w"> </span><span class="nf">execute_set_mdx</span><span class="p">(</span>
 <a id="__codelineno-0-1172" name="__codelineno-0-1172"></a>    <span class="bp">self</span><span class="p">,</span>
 <a id="__codelineno-0-1173" name="__codelineno-0-1173"></a>    <span class="n">mdx</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
 <a id="__codelineno-0-1174" name="__codelineno-0-1174"></a>    <span class="n">top_records</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -5965,7 +5968,7 @@ Attributes/Color) to return, can be empty</p>
 <a id="__codelineno-0-1187" name="__codelineno-0-1187"></a><span class="sd">     to return, can be None or empty</span>
 <a id="__codelineno-0-1188" name="__codelineno-0-1188"></a><span class="sd">    :param element_properties: list of element properties (e.g., Name, UniqueName, Type, Level, Index,</span>
 <a id="__codelineno-0-1189" name="__codelineno-0-1189"></a><span class="sd">    Attributes/Color) to return, can be empty</span>
-<a id="__codelineno-0-1190" name="__codelineno-0-1190"></a><span class="sd">    :return: dictionary of members, unique names, weights, types, and parents</span>
+<a id="__codelineno-0-1190" name="__codelineno-0-1190"></a><span class="sd">    :return: dictionary of members, unique names, weights, types, and parents or async id when return_async_id is True</span>
 <a id="__codelineno-0-1191" name="__codelineno-0-1191"></a><span class="sd">    &quot;&quot;&quot;</span>
 <a id="__codelineno-0-1192" name="__codelineno-0-1192"></a>
 <a id="__codelineno-0-1193" name="__codelineno-0-1193"></a>    <span class="n">top</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;$top=</span><span class="si">{</span><span class="n">top_records</span><span class="si">}</span><span class="s2">;&quot;</span> <span class="k">if</span> <span class="n">top_records</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
@@ -6019,8 +6022,11 @@ Attributes/Color) to return, can be empty</p>
 <a id="__codelineno-0-1241" name="__codelineno-0-1241"></a>
 <a id="__codelineno-0-1242" name="__codelineno-0-1242"></a>    <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;MDX&quot;</span><span class="p">:</span> <span class="n">mdx</span><span class="p">}</span>
 <a id="__codelineno-0-1243" name="__codelineno-0-1243"></a>    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">POST</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<a id="__codelineno-0-1244" name="__codelineno-0-1244"></a>    <span class="n">raw_dict</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
-<a id="__codelineno-0-1245" name="__codelineno-0-1245"></a>    <span class="k">return</span> <span class="p">[</span><span class="n">tuples</span><span class="p">[</span><span class="s2">&quot;Members&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">tuples</span> <span class="ow">in</span> <span class="n">raw_dict</span><span class="p">[</span><span class="s2">&quot;Tuples&quot;</span><span class="p">]]</span>
+<a id="__codelineno-0-1244" name="__codelineno-0-1244"></a>    <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;return_async_id&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+<a id="__codelineno-0-1245" name="__codelineno-0-1245"></a>        <span class="k">return</span> <span class="n">response</span>
+<a id="__codelineno-0-1246" name="__codelineno-0-1246"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-1247" name="__codelineno-0-1247"></a>        <span class="n">raw_dict</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+<a id="__codelineno-0-1248" name="__codelineno-0-1248"></a>        <span class="k">return</span> <span class="p">[</span><span class="n">tuples</span><span class="p">[</span><span class="s2">&quot;Members&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">tuples</span> <span class="ow">in</span> <span class="n">raw_dict</span><span class="p">[</span><span class="s2">&quot;Tuples&quot;</span><span class="p">]]</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -7642,11 +7648,11 @@ Attributes/Color) to return, can be empty</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ElementService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1338">1338</a></span>
-<span class="normal"><a href="#__codelineno-0-1339">1339</a></span>
-<span class="normal"><a href="#__codelineno-0-1340">1340</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1338" name="__codelineno-0-1338"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_element_principal_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-0-1339" name="__codelineno-0-1339"></a>    <span class="n">element</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">dimension_name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">,</span> <span class="n">element_name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<a id="__codelineno-0-1340" name="__codelineno-0-1340"></a>    <span class="k">return</span> <span class="n">element</span><span class="o">.</span><span class="n">name</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1341">1341</a></span>
+<span class="normal"><a href="#__codelineno-0-1342">1342</a></span>
+<span class="normal"><a href="#__codelineno-0-1343">1343</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1341" name="__codelineno-0-1341"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_element_principal_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-0-1342" name="__codelineno-0-1342"></a>    <span class="n">element</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">dimension_name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">,</span> <span class="n">element_name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="__codelineno-0-1343" name="__codelineno-0-1343"></a>    <span class="k">return</span> <span class="n">element</span><span class="o">.</span><span class="n">name</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -9895,27 +9901,27 @@ Attributes/Color) to return, can be empty</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ElementService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1317">1317</a></span>
-<span class="normal"><a href="#__codelineno-0-1318">1318</a></span>
-<span class="normal"><a href="#__codelineno-0-1319">1319</a></span>
-<span class="normal"><a href="#__codelineno-0-1320">1320</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1320">1320</a></span>
 <span class="normal"><a href="#__codelineno-0-1321">1321</a></span>
 <span class="normal"><a href="#__codelineno-0-1322">1322</a></span>
 <span class="normal"><a href="#__codelineno-0-1323">1323</a></span>
 <span class="normal"><a href="#__codelineno-0-1324">1324</a></span>
 <span class="normal"><a href="#__codelineno-0-1325">1325</a></span>
 <span class="normal"><a href="#__codelineno-0-1326">1326</a></span>
-<span class="normal"><a href="#__codelineno-0-1327">1327</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1317" name="__codelineno-0-1317"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_parents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<a id="__codelineno-0-1318" name="__codelineno-0-1318"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span>
-<a id="__codelineno-0-1319" name="__codelineno-0-1319"></a>        <span class="s2">&quot;/Dimensions(&#39;</span><span class="si">{dimension_name}</span><span class="s2">&#39;)/Hierarchies(&#39;</span><span class="si">{hierarchy_name}</span><span class="s2">&#39;)/Elements(&#39;</span><span class="si">{element_name}</span><span class="s2">&#39;)/Parents&quot;</span>
-<a id="__codelineno-0-1320" name="__codelineno-0-1320"></a>        <span class="s2">&quot;?$select=Name&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1321" name="__codelineno-0-1321"></a>        <span class="n">dimension_name</span><span class="o">=</span><span class="n">dimension_name</span><span class="p">,</span>
-<a id="__codelineno-0-1322" name="__codelineno-0-1322"></a>        <span class="n">hierarchy_name</span><span class="o">=</span><span class="n">hierarchy_name</span><span class="p">,</span>
-<a id="__codelineno-0-1323" name="__codelineno-0-1323"></a>        <span class="n">element_name</span><span class="o">=</span><span class="n">element_name</span><span class="p">,</span>
-<a id="__codelineno-0-1324" name="__codelineno-0-1324"></a>    <span class="p">)</span>
-<a id="__codelineno-0-1325" name="__codelineno-0-1325"></a>    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">GET</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<a id="__codelineno-0-1326" name="__codelineno-0-1326"></a>
-<a id="__codelineno-0-1327" name="__codelineno-0-1327"></a>    <span class="k">return</span> <span class="p">[</span><span class="n">record</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;value&quot;</span><span class="p">]]</span>
+<span class="normal"><a href="#__codelineno-0-1327">1327</a></span>
+<span class="normal"><a href="#__codelineno-0-1328">1328</a></span>
+<span class="normal"><a href="#__codelineno-0-1329">1329</a></span>
+<span class="normal"><a href="#__codelineno-0-1330">1330</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1320" name="__codelineno-0-1320"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_parents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<a id="__codelineno-0-1321" name="__codelineno-0-1321"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span>
+<a id="__codelineno-0-1322" name="__codelineno-0-1322"></a>        <span class="s2">&quot;/Dimensions(&#39;</span><span class="si">{dimension_name}</span><span class="s2">&#39;)/Hierarchies(&#39;</span><span class="si">{hierarchy_name}</span><span class="s2">&#39;)/Elements(&#39;</span><span class="si">{element_name}</span><span class="s2">&#39;)/Parents&quot;</span>
+<a id="__codelineno-0-1323" name="__codelineno-0-1323"></a>        <span class="s2">&quot;?$select=Name&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1324" name="__codelineno-0-1324"></a>        <span class="n">dimension_name</span><span class="o">=</span><span class="n">dimension_name</span><span class="p">,</span>
+<a id="__codelineno-0-1325" name="__codelineno-0-1325"></a>        <span class="n">hierarchy_name</span><span class="o">=</span><span class="n">hierarchy_name</span><span class="p">,</span>
+<a id="__codelineno-0-1326" name="__codelineno-0-1326"></a>        <span class="n">element_name</span><span class="o">=</span><span class="n">element_name</span><span class="p">,</span>
+<a id="__codelineno-0-1327" name="__codelineno-0-1327"></a>    <span class="p">)</span>
+<a id="__codelineno-0-1328" name="__codelineno-0-1328"></a>    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">GET</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="__codelineno-0-1329" name="__codelineno-0-1329"></a>
+<a id="__codelineno-0-1330" name="__codelineno-0-1330"></a>    <span class="k">return</span> <span class="p">[</span><span class="n">record</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;value&quot;</span><span class="p">]]</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -9936,21 +9942,21 @@ Attributes/Color) to return, can be empty</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ElementService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1329">1329</a></span>
-<span class="normal"><a href="#__codelineno-0-1330">1330</a></span>
-<span class="normal"><a href="#__codelineno-0-1331">1331</a></span>
-<span class="normal"><a href="#__codelineno-0-1332">1332</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1332">1332</a></span>
 <span class="normal"><a href="#__codelineno-0-1333">1333</a></span>
 <span class="normal"><a href="#__codelineno-0-1334">1334</a></span>
 <span class="normal"><a href="#__codelineno-0-1335">1335</a></span>
-<span class="normal"><a href="#__codelineno-0-1336">1336</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1329" name="__codelineno-0-1329"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_parents_of_all_elements</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
-<a id="__codelineno-0-1330" name="__codelineno-0-1330"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span>
-<a id="__codelineno-0-1331" name="__codelineno-0-1331"></a>        <span class="sa">f</span><span class="s2">&quot;/Dimensions(&#39;</span><span class="si">{</span><span class="n">dimension_name</span><span class="si">}</span><span class="s2">&#39;)/Hierarchies(&#39;</span><span class="si">{</span><span class="n">hierarchy_name</span><span class="si">}</span><span class="s2">&#39;)/Elements?$select=Name&quot;</span>
-<a id="__codelineno-0-1332" name="__codelineno-0-1332"></a>        <span class="sa">f</span><span class="s2">&quot;&amp;$expand=Parents($select=Name)&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1333" name="__codelineno-0-1333"></a>    <span class="p">)</span>
-<a id="__codelineno-0-1334" name="__codelineno-0-1334"></a>    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">GET</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<a id="__codelineno-0-1335" name="__codelineno-0-1335"></a>
-<a id="__codelineno-0-1336" name="__codelineno-0-1336"></a>    <span class="k">return</span> <span class="p">{</span><span class="n">child</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]:</span> <span class="p">[</span><span class="n">parent</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="n">child</span><span class="p">[</span><span class="s2">&quot;Parents&quot;</span><span class="p">]]</span> <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;value&quot;</span><span class="p">]}</span>
+<span class="normal"><a href="#__codelineno-0-1336">1336</a></span>
+<span class="normal"><a href="#__codelineno-0-1337">1337</a></span>
+<span class="normal"><a href="#__codelineno-0-1338">1338</a></span>
+<span class="normal"><a href="#__codelineno-0-1339">1339</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1332" name="__codelineno-0-1332"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_parents_of_all_elements</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<a id="__codelineno-0-1333" name="__codelineno-0-1333"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span>
+<a id="__codelineno-0-1334" name="__codelineno-0-1334"></a>        <span class="sa">f</span><span class="s2">&quot;/Dimensions(&#39;</span><span class="si">{</span><span class="n">dimension_name</span><span class="si">}</span><span class="s2">&#39;)/Hierarchies(&#39;</span><span class="si">{</span><span class="n">hierarchy_name</span><span class="si">}</span><span class="s2">&#39;)/Elements?$select=Name&quot;</span>
+<a id="__codelineno-0-1335" name="__codelineno-0-1335"></a>        <span class="sa">f</span><span class="s2">&quot;&amp;$expand=Parents($select=Name)&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1336" name="__codelineno-0-1336"></a>    <span class="p">)</span>
+<a id="__codelineno-0-1337" name="__codelineno-0-1337"></a>    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">GET</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="__codelineno-0-1338" name="__codelineno-0-1338"></a>
+<a id="__codelineno-0-1339" name="__codelineno-0-1339"></a>    <span class="k">return</span> <span class="p">{</span><span class="n">child</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]:</span> <span class="p">[</span><span class="n">parent</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="n">child</span><span class="p">[</span><span class="s2">&quot;Parents&quot;</span><span class="p">]]</span> <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;value&quot;</span><span class="p">]}</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -9971,13 +9977,13 @@ Attributes/Color) to return, can be empty</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ElementService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1466">1466</a></span>
-<span class="normal"><a href="#__codelineno-0-1467">1467</a></span>
-<span class="normal"><a href="#__codelineno-0-1468">1468</a></span>
-<span class="normal"><a href="#__codelineno-0-1469">1469</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1466" name="__codelineno-0-1466"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_process_service</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-0-1467" name="__codelineno-0-1467"></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">TM1py</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProcessService</span>
-<a id="__codelineno-0-1468" name="__codelineno-0-1468"></a>
-<a id="__codelineno-0-1469" name="__codelineno-0-1469"></a>    <span class="k">return</span> <span class="n">ProcessService</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1469">1469</a></span>
+<span class="normal"><a href="#__codelineno-0-1470">1470</a></span>
+<span class="normal"><a href="#__codelineno-0-1471">1471</a></span>
+<span class="normal"><a href="#__codelineno-0-1472">1472</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1469" name="__codelineno-0-1469"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_process_service</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="__codelineno-0-1470" name="__codelineno-0-1470"></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">TM1py</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProcessService</span>
+<a id="__codelineno-0-1471" name="__codelineno-0-1471"></a>
+<a id="__codelineno-0-1472" name="__codelineno-0-1472"></a>    <span class="k">return</span> <span class="n">ProcessService</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -10064,11 +10070,11 @@ Attributes/Color) to return, can be empty</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ElementService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1454">1454</a></span>
-<span class="normal"><a href="#__codelineno-0-1455">1455</a></span>
-<span class="normal"><a href="#__codelineno-0-1456">1456</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1454" name="__codelineno-0-1454"></a><span class="k">def</span><span class="w"> </span><span class="nf">hierarchy_exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">):</span>
-<a id="__codelineno-0-1455" name="__codelineno-0-1455"></a>    <span class="n">hierarchy_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hierarchy_service</span><span class="p">()</span>
-<a id="__codelineno-0-1456" name="__codelineno-0-1456"></a>    <span class="k">return</span> <span class="n">hierarchy_service</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dimension_name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1457">1457</a></span>
+<span class="normal"><a href="#__codelineno-0-1458">1458</a></span>
+<span class="normal"><a href="#__codelineno-0-1459">1459</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1457" name="__codelineno-0-1457"></a><span class="k">def</span><span class="w"> </span><span class="nf">hierarchy_exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">):</span>
+<a id="__codelineno-0-1458" name="__codelineno-0-1458"></a>    <span class="n">hierarchy_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_hierarchy_service</span><span class="p">()</span>
+<a id="__codelineno-0-1459" name="__codelineno-0-1459"></a>    <span class="k">return</span> <span class="n">hierarchy_service</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dimension_name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -10193,10 +10199,7 @@ Attributes/Color) to return, can be empty</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ElementService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1247">1247</a></span>
-<span class="normal"><a href="#__codelineno-0-1248">1248</a></span>
-<span class="normal"><a href="#__codelineno-0-1249">1249</a></span>
-<span class="normal"><a href="#__codelineno-0-1250">1250</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1250">1250</a></span>
 <span class="normal"><a href="#__codelineno-0-1251">1251</a></span>
 <span class="normal"><a href="#__codelineno-0-1252">1252</a></span>
 <span class="normal"><a href="#__codelineno-0-1253">1253</a></span>
@@ -10212,26 +10215,29 @@ Attributes/Color) to return, can be empty</p>
 <span class="normal"><a href="#__codelineno-0-1263">1263</a></span>
 <span class="normal"><a href="#__codelineno-0-1264">1264</a></span>
 <span class="normal"><a href="#__codelineno-0-1265">1265</a></span>
-<span class="normal"><a href="#__codelineno-0-1266">1266</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1247" name="__codelineno-0-1247"></a><span class="k">def</span><span class="w"> </span><span class="nf">remove_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">parent</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">component</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
-<a id="__codelineno-0-1248" name="__codelineno-0-1248"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove one edge from hierarchy. Fails if parent or child element doesn&#39;t exist.</span>
-<a id="__codelineno-0-1249" name="__codelineno-0-1249"></a>
-<a id="__codelineno-0-1250" name="__codelineno-0-1250"></a><span class="sd">    :param dimension_name:</span>
-<a id="__codelineno-0-1251" name="__codelineno-0-1251"></a><span class="sd">    :param hierarchy_name:</span>
-<a id="__codelineno-0-1252" name="__codelineno-0-1252"></a><span class="sd">    :param parent:</span>
-<a id="__codelineno-0-1253" name="__codelineno-0-1253"></a><span class="sd">    :param component:</span>
-<a id="__codelineno-0-1254" name="__codelineno-0-1254"></a><span class="sd">    :return:</span>
-<a id="__codelineno-0-1255" name="__codelineno-0-1255"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-1256" name="__codelineno-0-1256"></a>
-<a id="__codelineno-0-1257" name="__codelineno-0-1257"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span>
-<a id="__codelineno-0-1258" name="__codelineno-0-1258"></a>        <span class="s2">&quot;/Dimensions(&#39;</span><span class="si">{}</span><span class="s2">&#39;)/Hierarchies(&#39;</span><span class="si">{}</span><span class="s2">&#39;)/Elements(&#39;</span><span class="si">{}</span><span class="s2">&#39;)/Edges(ParentName=&#39;</span><span class="si">{}</span><span class="s2">&#39;,ComponentName=&#39;</span><span class="si">{}</span><span class="s2">&#39;)&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1259" name="__codelineno-0-1259"></a>        <span class="n">dimension_name</span><span class="p">,</span>
-<a id="__codelineno-0-1260" name="__codelineno-0-1260"></a>        <span class="n">hierarchy_name</span><span class="p">,</span>
-<a id="__codelineno-0-1261" name="__codelineno-0-1261"></a>        <span class="n">parent</span><span class="p">,</span>
-<a id="__codelineno-0-1262" name="__codelineno-0-1262"></a>        <span class="n">parent</span><span class="p">,</span>
-<a id="__codelineno-0-1263" name="__codelineno-0-1263"></a>        <span class="n">component</span><span class="p">,</span>
-<a id="__codelineno-0-1264" name="__codelineno-0-1264"></a>    <span class="p">)</span>
-<a id="__codelineno-0-1265" name="__codelineno-0-1265"></a>
-<a id="__codelineno-0-1266" name="__codelineno-0-1266"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">DELETE</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="normal"><a href="#__codelineno-0-1266">1266</a></span>
+<span class="normal"><a href="#__codelineno-0-1267">1267</a></span>
+<span class="normal"><a href="#__codelineno-0-1268">1268</a></span>
+<span class="normal"><a href="#__codelineno-0-1269">1269</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1250" name="__codelineno-0-1250"></a><span class="k">def</span><span class="w"> </span><span class="nf">remove_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">parent</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">component</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
+<a id="__codelineno-0-1251" name="__codelineno-0-1251"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove one edge from hierarchy. Fails if parent or child element doesn&#39;t exist.</span>
+<a id="__codelineno-0-1252" name="__codelineno-0-1252"></a>
+<a id="__codelineno-0-1253" name="__codelineno-0-1253"></a><span class="sd">    :param dimension_name:</span>
+<a id="__codelineno-0-1254" name="__codelineno-0-1254"></a><span class="sd">    :param hierarchy_name:</span>
+<a id="__codelineno-0-1255" name="__codelineno-0-1255"></a><span class="sd">    :param parent:</span>
+<a id="__codelineno-0-1256" name="__codelineno-0-1256"></a><span class="sd">    :param component:</span>
+<a id="__codelineno-0-1257" name="__codelineno-0-1257"></a><span class="sd">    :return:</span>
+<a id="__codelineno-0-1258" name="__codelineno-0-1258"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-1259" name="__codelineno-0-1259"></a>
+<a id="__codelineno-0-1260" name="__codelineno-0-1260"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span>
+<a id="__codelineno-0-1261" name="__codelineno-0-1261"></a>        <span class="s2">&quot;/Dimensions(&#39;</span><span class="si">{}</span><span class="s2">&#39;)/Hierarchies(&#39;</span><span class="si">{}</span><span class="s2">&#39;)/Elements(&#39;</span><span class="si">{}</span><span class="s2">&#39;)/Edges(ParentName=&#39;</span><span class="si">{}</span><span class="s2">&#39;,ComponentName=&#39;</span><span class="si">{}</span><span class="s2">&#39;)&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1262" name="__codelineno-0-1262"></a>        <span class="n">dimension_name</span><span class="p">,</span>
+<a id="__codelineno-0-1263" name="__codelineno-0-1263"></a>        <span class="n">hierarchy_name</span><span class="p">,</span>
+<a id="__codelineno-0-1264" name="__codelineno-0-1264"></a>        <span class="n">parent</span><span class="p">,</span>
+<a id="__codelineno-0-1265" name="__codelineno-0-1265"></a>        <span class="n">parent</span><span class="p">,</span>
+<a id="__codelineno-0-1266" name="__codelineno-0-1266"></a>        <span class="n">component</span><span class="p">,</span>
+<a id="__codelineno-0-1267" name="__codelineno-0-1267"></a>    <span class="p">)</span>
+<a id="__codelineno-0-1268" name="__codelineno-0-1268"></a>
+<a id="__codelineno-0-1269" name="__codelineno-0-1269"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">DELETE</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
