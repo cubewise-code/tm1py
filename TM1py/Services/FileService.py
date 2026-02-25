@@ -88,12 +88,14 @@ class FileService(ObjectService):
         Supports recursive creation (e.g., 'folderA/folderB/folderC')
 
         :param folder_name: folder name or path to nested folders
+        :return: None
         """
         path = Path(folder_name)
         folder_path = Path()
         for part in path.parts:
             folder_path = folder_path.joinpath(part)
-            self._create_folder(folder_name=folder_path, **kwargs)
+            if not self.exists(folder_path, **kwargs):
+                self._create_folder(folder_name=folder_path, **kwargs)
 
     def _construct_content_url(self, path: Path, exclude_path_end: bool = True, extension: str = "Contents") -> str:
         """Dynamically construct URL to use in FileService functions
