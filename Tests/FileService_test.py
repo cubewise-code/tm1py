@@ -254,6 +254,14 @@ class TestFileService(unittest.TestCase):
         self.assertIn(self.FOLDER_NAME1, result)
 
     @skip_if_version_lower_than(version="12")
+    def test_create_folder_idempotent(self):
+        self.tm1.files.create_folder(self.FOLDER_NAME1)
+        self.tm1.files.create_folder(self.FOLDER_NAME1)
+
+        result = self.tm1.files.get_all_names()
+        self.assertIn(self.FOLDER_NAME1, result)
+
+    @skip_if_version_lower_than(version="12")
     def test_create_folder_nested(self):
         self.tm1.files.create_folder(self.NESTED_FOLDER_PATH)
 
