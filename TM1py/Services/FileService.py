@@ -78,8 +78,22 @@ class FileService(ObjectService):
         path = Path(folder_name)
         url = self._construct_content_url(path, exclude_path_end=True, extension="Contents")
 
-        body = {"@odata.type": "#ibm.tm1.api.v1.Folder", "Name": folder_name.name}
+        body = {"@odata.type": "#ibm.tm1.api.v1.Folder", "Name": path.name}
         self._rest.POST(url, json.dumps(body), **kwargs)
+
+    @require_version(version="12")
+    def create_folder(self, folder_name: Union[str, Path], **kwargs):
+        """Create folder(s)
+
+        Supports recursive creation (e.g., 'folderA/folderB/folderC')
+
+        :param folder_name: folder name or path to nested folders
+        """
+        path = Path(folder_name)
+        folder_path = Path()
+        for part in path.parts:
+            folder_path = folder_path.joinpath(part)
+            self._create_folder(folder_name=folder_path, **kwargs)
 
     def _construct_content_url(self, path: Path, exclude_path_end: bool = True, extension: str = "Contents") -> str:
         """Dynamically construct URL to use in FileService functions
