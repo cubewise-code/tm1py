@@ -22,6 +22,9 @@ class TestFileService(unittest.TestCase):
     FILE_NAME1_IN_FOLDER = Path("TM1py") / "Tests" / FILE_NAME1
     FILE_NAME2_IN_FOLDER = Path("TM1py") / "Tests" / FILE_NAME2
 
+    FOLDER_NAME1 = "TM1py_unittest_folder1"
+    NESTED_FOLDER_PATH = Path("TM1py_unittest_folder2") / "subfolder_a" / "subfolder_b"
+
     def setUp(self) -> None:
         self.config = configparser.ConfigParser()
         self.config.read(Path(__file__).parent.joinpath("config.ini"))
@@ -46,6 +49,12 @@ class TestFileService(unittest.TestCase):
 
         if self.tm1.files.exists(self.FILE_NAME2_IN_FOLDER):
             self.tm1.files.delete(self.FILE_NAME2_IN_FOLDER)
+
+        if self.tm1.files.exists(self.FOLDER_NAME1):
+            self.tm1.files.delete(self.FOLDER_NAME1)
+
+        if self.tm1.files.exists(self.NESTED_FOLDER_PATH.parts[0]):
+            self.tm1.files.delete(self.NESTED_FOLDER_PATH.parts[0])
 
     def run_create_get(self, mpu, max_mb_per_part=None, max_workers=1):
         with open(Path(__file__).parent.joinpath("resources", "file.csv"), "rb") as original_file:
@@ -230,6 +239,27 @@ class TestFileService(unittest.TestCase):
                 "'Subfolder' feature of function 'FileService.delete' requires TM1 server version >= '12'",
             )
 
+    @skip_if_version_lower_than(version="12")
+    def test_create_folder_with_str(self):
+        self.tm1.files.create_folder(self.FOLDER_NAME1)
+
+        result = self.tm1.files.get_all_names()
+        self.assertIn(self.FOLDER_NAME1, result)
+
+    @skip_if_version_lower_than(version="12")
+    def test_create_folder_with_path(self):
+        self.tm1.files.create_folder(Path(self.FOLDER_NAME1))
+
+        result = self.tm1.files.get_all_names()
+        self.assertIn(self.FOLDER_NAME1, result)
+
+    @skip_if_version_lower_than(version="12")
+    def test_create_folder_nested(self):
+        self.tm1.files.create_folder(self.NESTED_FOLDER_PATH)
+
+        result = self.tm1.files.get_all_names(path=self.NESTED_FOLDER_PATH.parent)
+        self.assertIn(self.NESTED_FOLDER_PATH.name, result)
+
     def tearDown(self) -> None:
         if self.tm1.files.exists(self.FILE_NAME1):
             self.tm1.files.delete(self.FILE_NAME1)
@@ -241,4 +271,8 @@ class TestFileService(unittest.TestCase):
             self.tm1.files.delete(self.FILE_NAME1_IN_FOLDER)
         if self.tm1.files.exists(self.FILE_NAME2_IN_FOLDER):
             self.tm1.files.delete(self.FILE_NAME2_IN_FOLDER)
+        if self.tm1.files.exists(self.FOLDER_NAME1):
+            self.tm1.files.delete(self.FOLDER_NAME1)
+        if self.tm1.files.exists(self.NESTED_FOLDER_PATH.parts[0]):
+            self.tm1.files.delete(self.NESTED_FOLDER_PATH.parts[0])
         self.tm1.logout()
