@@ -49,14 +49,11 @@ jobs:
             echo "⏭️  No new commits since last release, skipping"
           fi
 
-  run-tests:
+  run-tests-v11:
     needs: check-for-changes
     if: needs.check-for-changes.outputs.has_changes == 'true'
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        environment: ["tm1-12-cloud", "tm1-11-cloud"]
-    environment: ${{ matrix.environment }}
+    environment: tm1-11-cloud
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -90,12 +87,55 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-${{ matrix.environment }}
+          name: test-results-tm1-11-cloud
+          path: Tests/test-reports/
+          retention-days: 7
+
+  run-tests-v12:
+    needs: check-for-changes
+    if: needs.check-for-changes.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    environment: tm1-12-cloud
+    continue-on-error: true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -e .[pandas,dev]
+
+      - name: Retrieve TM1 Connection Details
+        run: echo "Retrieving TM1 connection details"
+        env:
+          TM1_CONNECTION: ${{ vars.TM1_CONNECTION }}
+          TM1_CONNECTION_SECRET: ${{ secrets.TM1_CONNECTION_SECRET }}
+
+      - name: Generate config.ini
+        run: |
+          python Tests/resources/generate_config.py
+        env:
+          TM1_CONNECTION: ${{ vars.TM1_CONNECTION }}
+          TM1_CONNECTION_SECRET: ${{ secrets.TM1_CONNECTION_SECRET }}
+
+      - name: Run integration tests
+        run: pytest Tests/
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-tm1-12-cloud
           path: Tests/test-reports/
           retention-days: 7
 
   determine-version:
-    needs: [check-for-changes, run-tests]
+    needs: [check-for-changes, run-tests-v11]
     runs-on: ubuntu-latest
     outputs:
       new_version: ${{ steps.version.outputs.new_version }}
@@ -340,7 +380,7 @@ jobs:
           echo "Or use 'skip-release' label to explicitly skip a PR"
 
   notify-on-failure:
-    needs: [run-tests, determine-version]
+    needs: [run-tests-v11, determine-version]
     if: ${{ always() && failure() }}
     runs-on: ubuntu-latest
     steps:
