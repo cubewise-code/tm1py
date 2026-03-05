@@ -13,7 +13,7 @@ from TM1py.Utils import case_and_space_insensitive_equals
 class MDXView(View):
     """Abstraction on TM1 MDX view
 
-    IMPORTANT. MDXViews can't be seen through the old TM1 clients (Archict, Perspectives). They do exist though!
+    IMPORTANT. MDXViews can't be seen through the old TM1 clients (Architect, Perspectives). They do exist though!
     """
 
     def __init__(self, cube_name: str, view_name: str, MDX: str, properties: Optional[Dict] = None):
