@@ -70,25 +70,18 @@ class TestMDXView(unittest.TestCase):
 
     properties = {
         "Meta": {
-            "Aliases": {
-                "[d3].[d3]": "Default"
-            },
+            "Aliases": {"[d3].[d3]": "Default"},
             "ContextSets": {
-                "[d3].[d3]": {
-                    "Expression": "{TM1SubsetToSet([d3].[d3],\"Default\",\"public\")}"
-                },
-                "[d4].[d4]": {
-                    "IsPublic": True,
-                    "SubsetName": "Default"
-                }
+                "[d3].[d3]": {"Expression": '{TM1SubsetToSet([d3].[d3],"Default","public")}'},
+                "[d4].[d4]": {"IsPublic": True, "SubsetName": "Default"},
             },
             "ExpandAboves": {
                 "[d1].[d1]": False,
                 "[d2].[d2]": False,
                 "[d3].[d3]": False,
                 "[d4].[d4]": False,
-                "[d5].[d5]": False
-            }
+                "[d5].[d5]": False,
+            },
         }
     }
 
