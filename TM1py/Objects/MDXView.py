@@ -37,7 +37,7 @@ class MDXView(View):
     @MDX.setter
     def MDX(self, value: str):
         self._mdx = value
-        
+
     @property
     def properties(self) -> Dict:
         return self._properties
