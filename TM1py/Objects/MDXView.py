@@ -44,13 +44,6 @@ class MDXView(View):
 
     @properties.setter
     def properties(self, value: Optional[Dict]) -> None:
-        if value is not None:
-            warnings.warn(
-                "The 'properties' parameter is experimental and relies on undocumented IBM TM1 REST API fields. "
-                "Behaviour may change or break without notice across TM1 versions.",
-                UserWarning,
-                stacklevel=2,
-            )
         self._properties = value or {}
 
     @property
