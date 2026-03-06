@@ -3,7 +3,6 @@
 import collections
 import json
 import re
-import warnings
 from typing import Dict, Optional
 
 from TM1py.Objects.View import View
