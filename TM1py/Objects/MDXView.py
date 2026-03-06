@@ -12,12 +12,14 @@ from TM1py.Utils import case_and_space_insensitive_equals
 class MDXView(View):
     """Abstraction on TM1 MDX view
 
-    IMPORTANT. MDXViews can't be seen through the old TM1 clients (Archict, Perspectives). They do exist though!
+    IMPORTANT. MDXViews can't be seen through the old TM1 clients (Architect, Perspectives). They do exist though!
     """
 
-    def __init__(self, cube_name: str, view_name: str, MDX: str):
+    def __init__(self, cube_name: str, view_name: str, MDX: str, properties: Optional[Dict] = None):
         View.__init__(self, cube_name, view_name)
         self._mdx = MDX
+        self._properties = {}
+        self.properties = properties
 
     @property
     def mdx(self):
@@ -34,6 +36,14 @@ class MDXView(View):
     @MDX.setter
     def MDX(self, value: str):
         self._mdx = value
+
+    @property
+    def properties(self) -> Dict:
+        return self._properties
+
+    @properties.setter
+    def properties(self, value: Optional[Dict]) -> None:
+        self._properties = value or {}
 
     @property
     def body(self) -> str:
@@ -81,4 +91,5 @@ class MDXView(View):
         mdx_view_as_dict["@odata.type"] = "ibm.tm1.api.v1.MDXView"
         mdx_view_as_dict["Name"] = self._name
         mdx_view_as_dict["MDX"] = self._mdx
+        mdx_view_as_dict.update(self._properties)
         return json.dumps(mdx_view_as_dict, ensure_ascii=False)
