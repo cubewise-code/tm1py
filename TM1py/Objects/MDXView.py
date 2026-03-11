@@ -3,7 +3,6 @@
 import collections
 import json
 import re
-import warnings
 from typing import Dict, Optional
 
 from TM1py.Objects.View import View
@@ -37,20 +36,13 @@ class MDXView(View):
     @MDX.setter
     def MDX(self, value: str):
         self._mdx = value
-        
+
     @property
     def properties(self) -> Dict:
         return self._properties
 
     @properties.setter
     def properties(self, value: Optional[Dict]) -> None:
-        if value is not None:
-            warnings.warn(
-                "The 'properties' parameter is experimental and relies on undocumented IBM TM1 REST API fields. "
-                "Behaviour may change or break without notice across TM1 versions.",
-                UserWarning,
-                stacklevel=2,
-            )
         self._properties = value or {}
 
     @property
