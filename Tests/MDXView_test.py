@@ -1,6 +1,5 @@
 import json
 import unittest
-import warnings
 
 from TM1py import MDXView
 
@@ -70,25 +69,18 @@ class TestMDXView(unittest.TestCase):
 
     properties = {
         "Meta": {
-            "Aliases": {
-                "[d3].[d3]": "Default"
-            },
+            "Aliases": {"[d3].[d3]": "Default"},
             "ContextSets": {
-                "[d3].[d3]": {
-                    "Expression": "{TM1SubsetToSet([d3].[d3],\"Default\",\"public\")}"
-                },
-                "[d4].[d4]": {
-                    "IsPublic": True,
-                    "SubsetName": "Default"
-                }
+                "[d3].[d3]": {"Expression": '{TM1SubsetToSet([d3].[d3],"Default","public")}'},
+                "[d4].[d4]": {"IsPublic": True, "SubsetName": "Default"},
             },
             "ExpandAboves": {
                 "[d1].[d1]": False,
                 "[d2].[d2]": False,
                 "[d3].[d3]": False,
                 "[d4].[d4]": False,
-                "[d5].[d5]": False
-            }
+                "[d5].[d5]": False,
+            },
         }
     }
 
@@ -96,51 +88,31 @@ class TestMDXView(unittest.TestCase):
         self.assertEqual({}, self.view.properties)
 
     def test_properties_none_resets_to_empty_dict(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", UserWarning)
-            self.view.properties = self.properties
+        self.view.properties = self.properties
         self.view.properties = None
         self.assertEqual({}, self.view.properties)
 
-    def test_properties_setter_raises_user_warning(self):
-        with self.assertWarns(UserWarning):
-            self.view.properties = self.properties
-
-    def test_properties_no_warning_when_none(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", UserWarning)
-            # Should not raise when setting None
-            self.view.properties = None
-
     def test_properties_meta_included_in_body(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", UserWarning)
-            self.view.properties = self.properties
+        self.view.properties = self.properties
         body = json.loads(self.view.body)
         self.assertIn("Meta", body)
         self.assertEqual(self.properties["Meta"], body["Meta"])
 
     def test_properties_meta_aliases_in_body(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", UserWarning)
-            self.view.properties = self.properties
+        self.view.properties = self.properties
         body = json.loads(self.view.body)
         self.assertIn("Aliases", body["Meta"])
         self.assertEqual({"[d3].[d3]": "Default"}, body["Meta"]["Aliases"])
 
     def test_properties_meta_context_sets_in_body(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", UserWarning)
-            self.view.properties = self.properties
+        self.view.properties = self.properties
         body = json.loads(self.view.body)
         self.assertIn("ContextSets", body["Meta"])
         self.assertIn("[d3].[d3]", body["Meta"]["ContextSets"])
         self.assertIn("[d4].[d4]", body["Meta"]["ContextSets"])
 
     def test_properties_meta_expand_aboves_in_body(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", UserWarning)
-            self.view.properties = self.properties
+        self.view.properties = self.properties
         body = json.loads(self.view.body)
         self.assertIn("ExpandAboves", body["Meta"])
         self.assertTrue(all(v is False for v in body["Meta"]["ExpandAboves"].values()))
@@ -150,11 +122,10 @@ class TestMDXView(unittest.TestCase):
         self.assertNotIn("Meta", body)
 
     def test_properties_set_via_constructor(self):
-        with self.assertWarns(UserWarning):
-            view = MDXView(
-                cube_name=self.cube_name,
-                view_name=self.view_name,
-                MDX=self.mdx,
-                properties=self.properties,
-            )
+        view = MDXView(
+            cube_name=self.cube_name,
+            view_name=self.view_name,
+            MDX=self.mdx,
+            properties=self.properties,
+        )
         self.assertEqual(self.properties, view.properties)
