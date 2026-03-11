@@ -401,7 +401,7 @@ class TestViewService(unittest.TestCase):
             self.tm1.views.delete(cube_name=self.cube_name, view_name=self.mdx_view_name, private=private)
 
     @classmethod
-    def teardown_class(cls):
+    def tearDownClass(cls):
         cls.tm1.cubes.delete(cls.cube_name)
         for dimension_name in cls.dimension_names:
             cls.tm1.dimensions.delete(dimension_name)
