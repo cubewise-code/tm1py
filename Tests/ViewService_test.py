@@ -24,6 +24,7 @@ class TestViewService(unittest.TestCase):
     subset_name = "TM1py_Tests_View_Subset"
     native_view_name = "TM1py_Tests_Native_View"
     mdx_view_name = "TM1py_Tests_Mdx_View"
+    mdx_view_with_properties_name = "TM1py_Tests_Mdx_View_With_Properties"
 
     @classmethod
     def setUpClass(cls):
@@ -237,7 +238,6 @@ class TestViewService(unittest.TestCase):
             self.assertNotEqual(sum_mdx_original, sum_mdx_updated)
 
     def test_create_mdx_view_with_properties(self):
-        view_name = "TM1py_Tests_Mdx_View_With_Properties"
         mdx = (
             "SELECT "
             "NON EMPTY{{[{dim0}].Members}} ON 0, "
@@ -261,15 +261,15 @@ class TestViewService(unittest.TestCase):
         }
         mdx_view = MDXView(
             cube_name=self.cube_name,
-            view_name=view_name,
+            view_name=self.mdx_view_with_properties_name,
             MDX=mdx,
             properties=properties,
         )
         self.tm1.views.create(view=mdx_view, private=False)
-        self.assertTrue(self.tm1.views.exists(cube_name=self.cube_name, view_name=view_name, private=False))
-        retrieved = self.tm1.views.get_mdx_view(cube_name=self.cube_name, view_name=view_name, private=False)
+        self.assertTrue(self.tm1.views.exists(cube_name=self.cube_name, view_name=self.mdx_view_with_properties_name, private=False))
+        retrieved = self.tm1.views.get_mdx_view(cube_name=self.cube_name, view_name=self.mdx_view_with_properties_name, private=False)
         self.assertIsInstance(retrieved, MDXView)
-        self.assertEqual(view_name, retrieved.name)
+        self.assertEqual(self.mdx_view_with_properties_name, retrieved.name)
         self.assertEqual(mdx, retrieved.MDX)
 
     def test_update_mdx_view_with_properties(self):
