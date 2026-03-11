@@ -267,8 +267,14 @@ class TestViewService(unittest.TestCase):
                 properties=properties,
             )
             self.tm1.views.create(view=mdx_view, private=private)
-            self.assertTrue(self.tm1.views.exists(cube_name=self.cube_name, view_name=self.mdx_view_with_properties_name, private=private))
-            retrieved = self.tm1.views.get_mdx_view(cube_name=self.cube_name, view_name=self.mdx_view_with_properties_name, private=private)
+            self.assertTrue(
+                self.tm1.views.exists(
+                    cube_name=self.cube_name, view_name=self.mdx_view_with_properties_name, private=private
+                )
+            )
+            retrieved = self.tm1.views.get_mdx_view(
+                cube_name=self.cube_name, view_name=self.mdx_view_with_properties_name, private=private
+            )
             self.assertEqual(properties, retrieved.properties)
             self.assertIsInstance(retrieved, MDXView)
             self.assertEqual(self.mdx_view_with_properties_name, retrieved.name)
@@ -276,7 +282,9 @@ class TestViewService(unittest.TestCase):
 
     def test_update_mdx_view_with_properties(self):
         for private in (True, False):
-            mdx_view = self.tm1.views.get_mdx_view(cube_name=self.cube_name, view_name=self.mdx_view_with_properties_name, private=private)
+            mdx_view = self.tm1.views.get_mdx_view(
+                cube_name=self.cube_name, view_name=self.mdx_view_with_properties_name, private=private
+            )
             properties = {
                 "Meta": {
                     "ExpandAboves": {
@@ -289,7 +297,9 @@ class TestViewService(unittest.TestCase):
             mdx_view.properties = properties
             # update should not raise
             self.tm1.views.update(view=mdx_view, private=private)
-            retrieved = self.tm1.views.get_mdx_view(cube_name=self.cube_name, view_name=self.mdx_view_with_properties_name, private=private)
+            retrieved = self.tm1.views.get_mdx_view(
+                cube_name=self.cube_name, view_name=self.mdx_view_with_properties_name, private=private
+            )
             self.assertEqual(properties, retrieved.properties)
             self.assertIsInstance(retrieved, MDXView)
             self.assertEqual(self.mdx_view_with_properties_name, retrieved.name)

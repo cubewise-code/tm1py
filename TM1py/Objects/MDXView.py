@@ -80,7 +80,16 @@ class MDXView(View):
 
     @classmethod
     def from_dict(cls, view_as_dict: Dict, cube_name: str = None) -> "MDXView":
-        _excluded_keys = {"@odata.type", "@odata.context", "@odata.etag", "Name", "MDX", "Cube", "Attributes", "LocalizedAttributes"}
+        _excluded_keys = {
+            "@odata.type",
+            "@odata.context",
+            "@odata.etag",
+            "Name",
+            "MDX",
+            "Cube",
+            "Attributes",
+            "LocalizedAttributes",
+        }
         return cls(
             cube_name=view_as_dict["Cube"]["Name"] if not cube_name else cube_name,
             view_name=view_as_dict["Name"],
