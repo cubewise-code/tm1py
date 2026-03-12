@@ -7,7 +7,7 @@ from requests import Response
 
 from TM1py.Exceptions.Exceptions import TM1pyRestException
 from TM1py.Objects import View
-from TM1py.Objects.MDXView import MDXView, MDX_VIEW_EXCLUDED_KEYS
+from TM1py.Objects.MDXView import MDX_VIEW_EXCLUDED_KEYS, MDXView
 from TM1py.Objects.NativeView import NativeView
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
