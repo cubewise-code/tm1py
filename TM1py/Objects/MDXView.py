@@ -15,11 +15,11 @@ class MDXView(View):
     IMPORTANT. MDXViews can't be seen through the old TM1 clients (Architect, Perspectives). They do exist though!
     """
 
-    def __init__(self, cube_name: str, view_name: str, MDX: str, properties: Optional[Dict] = None):
+    def __init__(self, cube_name: str, view_name: str, MDX: str, dynamic_properties: Optional[Dict] = None):
         View.__init__(self, cube_name, view_name)
         self._mdx = MDX
-        self._properties = {}
-        self.properties = properties
+        self._dynamic_properties = {}
+        self.dynamic_properties = dynamic_properties
 
     @property
     def mdx(self):
@@ -38,12 +38,12 @@ class MDXView(View):
         self._mdx = value
 
     @property
-    def properties(self) -> Dict:
-        return self._properties
+    def dynamic_properties(self) -> Dict:
+        return self._dynamic_properties
 
-    @properties.setter
-    def properties(self, value: Optional[Dict]) -> None:
-        self._properties = value or {}
+    @dynamic_properties.setter
+    def dynamic_properties(self, value: Optional[Dict]) -> None:
+        self._dynamic_properties = value or {}
 
     @property
     def body(self) -> str:
@@ -94,7 +94,7 @@ class MDXView(View):
             cube_name=view_as_dict["Cube"]["Name"] if not cube_name else cube_name,
             view_name=view_as_dict["Name"],
             MDX=view_as_dict["MDX"],
-            properties={k: v for k, v in view_as_dict.items() if k not in _excluded_keys},
+            dynamic_properties={k: v for k, v in view_as_dict.items() if k not in _excluded_keys},
         )
 
     def construct_body(self) -> str:
@@ -102,5 +102,5 @@ class MDXView(View):
         mdx_view_as_dict["@odata.type"] = "ibm.tm1.api.v1.MDXView"
         mdx_view_as_dict["Name"] = self._name
         mdx_view_as_dict["MDX"] = self._mdx
-        mdx_view_as_dict.update(self._properties)
+        mdx_view_as_dict.update(self._dynamic_properties)
         return json.dumps(mdx_view_as_dict, ensure_ascii=False)

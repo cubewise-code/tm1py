@@ -67,7 +67,7 @@ class TestMDXView(unittest.TestCase):
             self.view.substitute_title(dimension="d6", hierarchy="d6", element="e2")
             print(error)
 
-    properties = {
+    dynamic_properties = {
         "Meta": {
             "Aliases": {"[d3].[d3]": "Default"},
             "ContextSets": {
@@ -84,48 +84,48 @@ class TestMDXView(unittest.TestCase):
         }
     }
 
-    def test_properties_default_is_empty_dict(self):
-        self.assertEqual({}, self.view.properties)
+    def test_dynamic_properties_default_is_empty_dict(self):
+        self.assertEqual({}, self.view.dynamic_properties)
 
-    def test_properties_none_resets_to_empty_dict(self):
-        self.view.properties = self.properties
-        self.view.properties = None
-        self.assertEqual({}, self.view.properties)
+    def test_dynamic_properties_none_resets_to_empty_dict(self):
+        self.view.dynamic_properties = self.dynamic_properties
+        self.view.dynamic_properties = None
+        self.assertEqual({}, self.view.dynamic_properties)
 
-    def test_properties_meta_included_in_body(self):
-        self.view.properties = self.properties
+    def test_dynamic_properties_meta_included_in_body(self):
+        self.view.dynamic_properties = self.dynamic_properties
         body = json.loads(self.view.body)
         self.assertIn("Meta", body)
-        self.assertEqual(self.properties["Meta"], body["Meta"])
+        self.assertEqual(self.dynamic_properties["Meta"], body["Meta"])
 
-    def test_properties_meta_aliases_in_body(self):
-        self.view.properties = self.properties
+    def test_dynamic_properties_meta_aliases_in_body(self):
+        self.view.dynamic_properties = self.dynamic_properties
         body = json.loads(self.view.body)
         self.assertIn("Aliases", body["Meta"])
         self.assertEqual({"[d3].[d3]": "Default"}, body["Meta"]["Aliases"])
 
-    def test_properties_meta_context_sets_in_body(self):
-        self.view.properties = self.properties
+    def test_dynamic_properties_meta_context_sets_in_body(self):
+        self.view.dynamic_properties = self.dynamic_properties
         body = json.loads(self.view.body)
         self.assertIn("ContextSets", body["Meta"])
         self.assertIn("[d3].[d3]", body["Meta"]["ContextSets"])
         self.assertIn("[d4].[d4]", body["Meta"]["ContextSets"])
 
-    def test_properties_meta_expand_aboves_in_body(self):
-        self.view.properties = self.properties
+    def test_dynamic_properties_meta_expand_aboves_in_body(self):
+        self.view.dynamic_properties = self.dynamic_properties
         body = json.loads(self.view.body)
         self.assertIn("ExpandAboves", body["Meta"])
         self.assertTrue(all(v is False for v in body["Meta"]["ExpandAboves"].values()))
 
-    def test_properties_not_in_body_when_empty(self):
+    def test_dynamic_properties_not_in_body_when_empty(self):
         body = json.loads(self.view.body)
         self.assertNotIn("Meta", body)
 
-    def test_properties_set_via_constructor(self):
+    def test_dynamic_properties_set_via_constructor(self):
         view = MDXView(
             cube_name=self.cube_name,
             view_name=self.view_name,
             MDX=self.mdx,
-            properties=self.properties,
+            dynamic_properties=self.dynamic_properties,
         )
-        self.assertEqual(self.properties, view.properties)
+        self.assertEqual(self.dynamic_properties, view.dynamic_properties)

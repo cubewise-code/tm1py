@@ -65,8 +65,21 @@ class ViewService(ObjectService):
         url = format_url("/Cubes('{}')/{}('{}')?$expand=*", cube_name, view_type, view_name)
         response = self._rest.GET(url, **kwargs)
         view_as_dict = response.json()
+        _excluded_keys = {
+            "@odata.type",
+            "@odata.context",
+            "@odata.etag",
+            "Name",
+            "MDX",
+            "Cube",
+            "Attributes",
+            "LocalizedAttributes",
+        }
+        dynamic_properties = {k: v for k, v in view_as_dict.items() if k not in _excluded_keys}
         if "MDX" in view_as_dict:
-            return MDXView(cube_name=cube_name, view_name=view_name, MDX=view_as_dict["MDX"])
+            return MDXView(
+                cube_name=cube_name, view_name=view_name, MDX=view_as_dict["MDX"], dynamic_properties=dynamic_properties
+            )
         else:
             return self.get_native_view(cube_name=cube_name, view_name=view_name, private=private)
 
