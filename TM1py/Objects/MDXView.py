@@ -8,6 +8,19 @@ from typing import Dict, Optional
 from TM1py.Objects.View import View
 from TM1py.Utils import case_and_space_insensitive_equals
 
+MDX_VIEW_EXCLUDED_KEYS = frozenset(
+    {
+        "@odata.type",
+        "@odata.context",
+        "@odata.etag",
+        "Name",
+        "MDX",
+        "Cube",
+        "Attributes",
+        "LocalizedAttributes",
+    }
+)
+
 
 class MDXView(View):
     """Abstraction on TM1 MDX view
@@ -80,21 +93,11 @@ class MDXView(View):
 
     @classmethod
     def from_dict(cls, view_as_dict: Dict, cube_name: str = None) -> "MDXView":
-        _excluded_keys = {
-            "@odata.type",
-            "@odata.context",
-            "@odata.etag",
-            "Name",
-            "MDX",
-            "Cube",
-            "Attributes",
-            "LocalizedAttributes",
-        }
         return cls(
             cube_name=view_as_dict["Cube"]["Name"] if not cube_name else cube_name,
             view_name=view_as_dict["Name"],
             MDX=view_as_dict["MDX"],
-            dynamic_properties={k: v for k, v in view_as_dict.items() if k not in _excluded_keys},
+            dynamic_properties={k: v for k, v in view_as_dict.items() if k not in MDX_VIEW_EXCLUDED_KEYS},
         )
 
     def construct_body(self) -> str:
@@ -102,5 +105,5 @@ class MDXView(View):
         mdx_view_as_dict["@odata.type"] = "ibm.tm1.api.v1.MDXView"
         mdx_view_as_dict["Name"] = self._name
         mdx_view_as_dict["MDX"] = self._mdx
-        mdx_view_as_dict.update(self._dynamic_properties)
+        mdx_view_as_dict.update({k: v for k, v in self._dynamic_properties.items() if k not in MDX_VIEW_EXCLUDED_KEYS})
         return json.dumps(mdx_view_as_dict, ensure_ascii=False)
