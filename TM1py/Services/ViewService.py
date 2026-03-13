@@ -7,7 +7,7 @@ from requests import Response
 
 from TM1py.Exceptions.Exceptions import TM1pyRestException
 from TM1py.Objects import View
-from TM1py.Objects.MDXView import MDX_VIEW_EXCLUDED_KEYS, MDXView
+from TM1py.Objects.MDXView import MDXView
 from TM1py.Objects.NativeView import NativeView
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
@@ -65,7 +65,7 @@ class ViewService(ObjectService):
         url = format_url("/Cubes('{}')/{}('{}')?$expand=*", cube_name, view_type, view_name)
         response = self._rest.GET(url, **kwargs)
         view_as_dict = response.json()
-        dynamic_properties = {k: v for k, v in view_as_dict.items() if k not in MDX_VIEW_EXCLUDED_KEYS}
+        dynamic_properties = MDXView._filter_dynamic_properties(view_as_dict)
         if "MDX" in view_as_dict:
             return MDXView(
                 cube_name=cube_name, view_name=view_name, MDX=view_as_dict["MDX"], dynamic_properties=dynamic_properties
