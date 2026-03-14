@@ -25,6 +25,7 @@ class TestViewService(unittest.TestCase):
     native_view_name = "TM1py_Tests_Native_View"
     mdx_view_name = "TM1py_Tests_Mdx_View"
     mdx_view_with_dynamic_properties_name = "TM1py_Tests_Mdx_View_With_dynamic_properties"
+    native_view_with_dynamic_properties_name = "TM1py_Tests_Native_View_With_dynamic_properties"
 
     @classmethod
     def setUpClass(cls):
@@ -403,6 +404,64 @@ class TestViewService(unittest.TestCase):
 
             self.assertTrue(
                 self.tm1.views.is_mdx_view(cube_name=self.cube_name, view_name=self.mdx_view_name, private=private)
+            )
+
+    def test_create_native_view_with_dynamic_properties(self):
+        for private in (True, False):
+            dynamic_properties = {
+                "Meta": {
+                    "ExpandAboves": {
+                        f"[{self.dimension_names[0]}].[{self.dimension_names[0]}]": False,
+                        f"[{self.dimension_names[1]}].[{self.dimension_names[1]}]": False,
+                        f"[{self.dimension_names[2]}].[{self.dimension_names[2]}]": False,
+                    }
+                }
+            }
+            native_view = NativeView(
+                cube_name=self.cube_name,
+                view_name=self.native_view_with_dynamic_properties_name,
+                suppress_empty_columns=True,
+                suppress_empty_rows=True,
+                dynamic_properties=dynamic_properties,
+            )
+            subset = AnonymousSubset(
+                dimension_name=self.dimension_names[0],
+                hierarchy_name=self.dimension_names[0],
+                elements=["Element 1", "Element 2", "Element 3"],
+            )
+            native_view.add_column(dimension_name=self.dimension_names[0], subset=subset)
+            subset = AnonymousSubset(
+                dimension_name=self.dimension_names[1],
+                hierarchy_name=self.dimension_names[1],
+                elements=["Element 1"],
+            )
+            native_view.add_title(dimension_name=self.dimension_names[1], subset=subset, selection="Element 1")
+            subset = AnonymousSubset(
+                dimension_name=self.dimension_names[2],
+                hierarchy_name=self.dimension_names[2],
+                elements=["Element 1", "Element 2"],
+            )
+            native_view.add_row(dimension_name=self.dimension_names[2], subset=subset)
+            self.tm1.views.create(view=native_view, private=private)
+            self.assertTrue(
+                self.tm1.views.exists(
+                    cube_name=self.cube_name,
+                    view_name=self.native_view_with_dynamic_properties_name,
+                    private=private,
+                )
+            )
+            retrieved = self.tm1.views.get_native_view(
+                cube_name=self.cube_name,
+                view_name=self.native_view_with_dynamic_properties_name,
+                private=private,
+            )
+            self.assertEqual(dynamic_properties, retrieved.dynamic_properties)
+            self.assertIsInstance(retrieved, NativeView)
+            self.assertEqual(self.native_view_with_dynamic_properties_name, retrieved.name)
+            self.tm1.views.delete(
+                cube_name=self.cube_name,
+                view_name=self.native_view_with_dynamic_properties_name,
+                private=private,
             )
 
     def tearDown(self):
