@@ -65,11 +65,8 @@ class ViewService(ObjectService):
         url = format_url("/Cubes('{}')/{}('{}')?$expand=*", cube_name, view_type, view_name)
         response = self._rest.GET(url, **kwargs)
         view_as_dict = response.json()
-        dynamic_properties = MDXView._filter_dynamic_properties(view_as_dict)
         if "MDX" in view_as_dict:
-            return MDXView(
-                cube_name=cube_name, view_name=view_name, MDX=view_as_dict["MDX"], dynamic_properties=dynamic_properties
-            )
+            return MDXView.from_dict(view_as_dict)
         else:
             return self.get_native_view(cube_name=cube_name, view_name=view_name, private=private)
 
