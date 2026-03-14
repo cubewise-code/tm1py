@@ -6,17 +6,36 @@ from typing import Dict, Iterable, List, Optional, Union
 from mdxpy import MdxBuilder, MdxHierarchySet, Member
 
 from TM1py.Objects.Axis import ViewAxisSelection, ViewTitleSelection
+from TM1py.Objects.DynamicPropertiesMixin import DynamicPropertiesMixin
 from TM1py.Objects.Subset import AnonymousSubset, Subset
 from TM1py.Objects.View import View
 from TM1py.Utils import case_and_space_insensitive_equals, read_object_name_from_url
 
 
-class NativeView(View):
+class NativeView(DynamicPropertiesMixin, View):
     """Abstraction of TM1 NativeView (classic cube view)
 
     :Notes:
         Complete, functional and tested
     """
+
+    _DYNAMIC_PROPERTIES_EXCLUDED_KEYS = frozenset(
+        {
+            "@odata.type",
+            "@odata.context",
+            "@odata.etag",
+            "Name",
+            "Columns",
+            "Rows",
+            "Titles",
+            "SuppressEmptyColumns",
+            "SuppressEmptyRows",
+            "FormatString",
+            "Cube",
+            "Attributes",
+            "LocalizedAttributes",
+        }
+    )
 
     def __init__(
         self,
@@ -28,6 +47,7 @@ class NativeView(View):
         titles: Optional[Iterable[ViewTitleSelection]] = None,
         columns: Optional[Iterable[ViewAxisSelection]] = None,
         rows: Optional[Iterable[ViewAxisSelection]] = None,
+        dynamic_properties: Optional[Dict] = None,
     ):
         super().__init__(cube_name, view_name)
         self._suppress_empty_columns = suppress_empty_columns
@@ -36,6 +56,8 @@ class NativeView(View):
         self._titles = list(titles) if titles else []
         self._columns = list(columns) if columns else []
         self._rows = list(rows) if rows else []
+        self._dynamic_properties = {}
+        self.dynamic_properties = dynamic_properties
 
     @property
     def body(self) -> str:
@@ -270,6 +292,7 @@ class NativeView(View):
             titles=titles,
             columns=columns,
             rows=rows,
+            dynamic_properties=cls._filter_dynamic_properties(view_as_dict),
         )
 
     @classmethod
@@ -314,8 +337,12 @@ class NativeView(View):
             + str(self._suppress_empty_rows).lower()
             + ',"FormatString": "'
             + self._format_string
-            + '"}'
+            + '"'
         )
+        dynamic_props = self._filter_dynamic_properties(self._dynamic_properties)
+        if dynamic_props:
+            bottom_json += "," + json.dumps(dynamic_props, ensure_ascii=False)[1:-1]
+        bottom_json += "}"
         return "".join(
             [
                 top_json,
