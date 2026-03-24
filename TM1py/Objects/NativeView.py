@@ -303,29 +303,19 @@ class NativeView(View):
 
         :return: string, the valid JSON
         """
-        top_json = '{"@odata.type": "ibm.tm1.api.v1.NativeView","Name": "' + self._name + '",'
-        columns_json = ",".join([column.body for column in self._columns])
-        rows_json = ",".join([row.body for row in self._rows])
-        titles_json = ",".join([title.body for title in self._titles])
-        bottom_json = (
-            '"SuppressEmptyColumns": '
-            + str(self._suppress_empty_columns).lower()
-            + ',"SuppressEmptyRows":'
-            + str(self._suppress_empty_rows).lower()
-            + ',"FormatString": "'
-            + self._format_string
-            + '"}'
-        )
-        return "".join(
-            [
-                top_json,
-                '"Columns":[',
-                columns_json,
-                '],"Rows":[',
-                rows_json,
-                '],"Titles":[',
-                titles_json,
-                "],",
-                bottom_json,
-            ]
-        )
+        body = {
+            "@odata.type": "ibm.tm1.api.v1.NativeView",
+            "Name": self._name,
+            "Columns": [json.loads(column.body) for column in self._columns],
+            "Rows": [json.loads(row.body) for row in self._rows],
+            "Titles": [json.loads(title.body) for title in self._titles],
+            "SuppressEmptyColumns": self._suppress_empty_columns,
+            "SuppressEmptyRows": self._suppress_empty_rows,
+            "FormatString": self._format_string,
+        }
+
+        dynamic_props = self._filter_dynamic_properties(self._dynamic_properties)
+        if dynamic_props:
+            body.update(dynamic_props)
+
+        return json.dumps(body, ensure_ascii=False)
