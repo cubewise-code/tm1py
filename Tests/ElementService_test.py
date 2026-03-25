@@ -1292,7 +1292,7 @@ class TestElementService(unittest.TestCase):
         self.assertNotIn(("Total Years", "1990"), edges)
 
     @skip_if_version_lower_than(version="11.4")
-    def test_delete_edges_use_ti_skip_invalid_edges_true(self):
+    def test_delete_edges_skip_invalid_edges_true(self):
         self.tm1.elements.delete_edges(
             dimension_name=self.dimension_name,
             hierarchy_name=self.hierarchy_name,
