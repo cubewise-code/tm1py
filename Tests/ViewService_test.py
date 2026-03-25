@@ -74,6 +74,12 @@ class TestViewService(unittest.TestCase):
             element2 = "Element " + str(random.randint(1, 1000))
             element3 = "Element " + str(random.randint(1, 1000))
             cellset[(element1, element2, element3)] = random.randint(1, 1000)
+
+        # Add one deterministic cell for the native view update test.
+        # Before the update, the view includes all members from dimension 0, so this value is visible.
+        # After the update, dimension 0 is restricted to Elements 1-5, so Element 6 drops out.
+        # That guarantees a different result even if the randomly generated data contains no matches.
+        cellset[("Element 6", "Element 123", "Element 1")] = 999999
         cls.tm1.cells.write_values(cls.cube_name, cellset)
 
     def setUp(self):
