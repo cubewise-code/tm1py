@@ -196,7 +196,7 @@ class ElementService(ObjectService):
                     [
                         f"IF(ElementIsParent('{dimension_name}','{hierarchy_name}','{parent}','{child}')=1);",
                         f"HierarchyElementComponentDelete('{dimension_name}','{hierarchy_name}','{parent}','{child}');",
-                        f"ENDIF;",
+                        "ENDIF;",
                     ]
                 )
 
