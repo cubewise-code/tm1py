@@ -5,14 +5,18 @@ from pathlib import Path
 
 from mdxpy import MdxBuilder
 
-from TM1py.Exceptions import TM1pyException, TM1pyRestException, TM1pyWritePartialFailureException
-from TM1py.Objects import Dimension, Element, ElementAttribute, Hierarchy
-from TM1py.Services import TM1Service
 from Tests.Utils import (
     generate_test_uuid,
     skip_if_no_pandas,
     skip_if_version_lower_than,
 )
+from TM1py.Exceptions import (
+    TM1pyException,
+    TM1pyRestException,
+    TM1pyWritePartialFailureException,
+)
+from TM1py.Objects import Dimension, Element, ElementAttribute, Hierarchy
+from TM1py.Services import TM1Service
 
 
 class TestElementService(unittest.TestCase):
@@ -1349,7 +1353,7 @@ class TestElementService(unittest.TestCase):
             )
 
     @skip_if_version_lower_than(version="11.4")
-    def test_delete_edges_use_ti_skip_invalid_edges_true(self):
+    def test_delete_edges_use_ti_and_skip_invalid_edges_true(self):
         self.tm1.elements.delete_edges(
             dimension_name=self.dimension_name,
             hierarchy_name=self.hierarchy_name,
