@@ -57,6 +57,7 @@ from TM1py.Services.HierarchyService import HierarchyService
 from TM1py.Services.JobService import JobService
 from TM1py.Services.ManageService import ManageService
 from TM1py.Services.MessageLogService import MessageLogService
+from TM1py.Services.MetricService import MetricService
 from TM1py.Services.MonitoringService import MonitoringService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.PowerBiService import PowerBiService
