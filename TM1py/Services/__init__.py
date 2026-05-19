@@ -27,6 +27,7 @@ from TM1py.Services.MessageLogService import MessageLogService
 from TM1py.Services.ConfigurationService import ConfigurationService
 from TM1py.Services.AuditLogService import AuditLogService
 from TM1py.Services.LoggerService import LoggerService
+from TM1py.Services.MetricService import MetricService
 
 from TM1py.Services.ServerService import ServerService
 from TM1py.Services.MonitoringService import MonitoringService

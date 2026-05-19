@@ -24,6 +24,7 @@ from TM1py.Services.FileService import FileService
 from TM1py.Services.JobService import JobService
 from TM1py.Services.LoggerService import LoggerService
 from TM1py.Services.MessageLogService import MessageLogService
+from TM1py.Services.MetricService import MetricService
 from TM1py.Services.MonitoringService import MonitoringService
 from TM1py.Services.PowerBiService import PowerBiService
 from TM1py.Services.ServerService import ServerService
@@ -119,6 +120,7 @@ class TM1Service:
         self.message_logs = MessageLogService(self._tm1_rest)
         self.configuration = ConfigurationService(self._tm1_rest)
         self.audit_logs = AuditLogService(self._tm1_rest)
+        self.metrics = MetricService(self._tm1_rest)
 
         # higher level modules
         self.power_bi = PowerBiService(self._tm1_rest)
