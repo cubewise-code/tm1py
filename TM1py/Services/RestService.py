@@ -602,8 +602,9 @@ class RestService:
         if self._address is not None:
             raise ValueError("Base URL and Address can not be specified at the same time")
 
+        self._base_url = self._base_url.rstrip("/")
         # v12 requires an auth URL be provided if a base URL is specified
-        elif "api/v1/Databases" in self._base_url:
+        if "api/v1/Databases" in self._base_url:
             if not self._auth_url:
                 raise ValueError(
                     "Auth_url missing, when connecting to planning analytics engine and using the "
