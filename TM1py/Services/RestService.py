@@ -257,7 +257,7 @@ class RestService:
             try:
                 return json.loads(proxies)
             except JSONDecodeError:
-                raise ValueError("Invalid JSON passed for argument 'proxies': %s", proxies)
+                raise ValueError(f"Invalid JSON passed for argument 'proxies': {proxies}")
 
         # handle invalid type
         raise ValueError("Argument of 'proxies' must be None, dictionary or JSON string")
@@ -1133,7 +1133,7 @@ class RestService:
         elif isinstance(value, str):
             return value.replace(" ", "").lower() == "true"
         else:
-            raise ValueError("Invalid argument: '" + value + "'. Must be to be of type 'bool' or 'str'")
+            raise ValueError("Invalid argument: '" + value + "'. Must be of type 'bool' or 'str'")
 
     @staticmethod
     def b64_decode_password(encrypted_password: str) -> str:
