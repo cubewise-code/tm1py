@@ -1786,5 +1786,284 @@ class TestElementServiceBlobProcessBuilders(unittest.TestCase):
         self.assertEqual(captured["edges"], {("Total", "Child1"): 1})
 
 
+class TestElementFiltering(unittest.TestCase):
+    """Tests for the element_type / name_pattern / level kwargs on
+    get_elements and get_element_names.
+
+    Fixture cleanup is registered via self.addCleanup(...) inside setUp,
+    so there is no tearDown method.
+    """
+
+    tm1: TM1Service
+
+    @classmethod
+    def setUpClass(cls):
+        cls.config = configparser.ConfigParser()
+        cls.config.read(Path(__file__).parent.joinpath("config.ini"))
+        cls.tm1 = TM1Service(**cls.config["tm1srv01"])
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tm1.logout()
+
+    def setUp(self):
+        """Create a fixture dimension with a known, predictable element set.
+
+        Level 0 (leaves):
+          Numeric:  'Numeric A', 'Numeric B', 'Numeric C', "O'Brien"
+          String:   'String A', 'String B'
+        Level 1 (consolidations):
+          'Region North' (parent of Numeric A, Numeric B)
+          'Region South' (parent of Numeric C, "O'Brien")
+        Level 2 (top consolidation):
+          'Total Regions' (parent of both regions)
+        """
+        dimension_uuid = generate_test_uuid()
+        self.dimension_name = f"TM1py_unittest_filter_{dimension_uuid}"
+        self.hierarchy_name = self.dimension_name
+
+        d = Dimension(self.dimension_name)
+        h = Hierarchy(self.dimension_name, self.hierarchy_name)
+
+        h.add_element("Numeric A", "Numeric")
+        h.add_element("Numeric B", "Numeric")
+        h.add_element("Numeric C", "Numeric")
+        h.add_element("O'Brien", "Numeric")
+        h.add_element("String A", "String")
+        h.add_element("String B", "String")
+
+        h.add_element("Region North", "Consolidated")
+        h.add_element("Region South", "Consolidated")
+        h.add_element("Total Regions", "Consolidated")
+
+        h.add_edge("Region North", "Numeric A", 1)
+        h.add_edge("Region North", "Numeric B", 1)
+        h.add_edge("Region South", "Numeric C", 1)
+        h.add_edge("Region South", "O'Brien", 1)
+        h.add_edge("Total Regions", "Region North", 1)
+        h.add_edge("Total Regions", "Region South", 1)
+
+        d.add_hierarchy(h)
+        self.tm1.dimensions.update_or_create(d)
+        self.addCleanup(self._cleanup_dimension)
+
+    def _cleanup_dimension(self):
+        if self.tm1.dimensions.exists(self.dimension_name):
+            self.tm1.dimensions.delete(self.dimension_name)
+
+    def test_fixture_creates(self):
+        names = self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name)
+        self.assertEqual(
+            set(names),
+            {
+                "Numeric A",
+                "Numeric B",
+                "Numeric C",
+                "O'Brien",
+                "String A",
+                "String B",
+                "Region North",
+                "Region South",
+                "Total Regions",
+            },
+        )
+
+    # ------------------------------------------------------------------
+    # get_element_names: element_type filter
+    # ------------------------------------------------------------------
+
+    def test_names_element_type_numeric(self):
+        names = self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name, element_type="numeric")
+        self.assertEqual(set(names), {"Numeric A", "Numeric B", "Numeric C", "O'Brien"})
+
+    def test_names_element_type_string(self):
+        names = self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name, element_type="string")
+        self.assertEqual(set(names), {"String A", "String B"})
+
+    def test_names_element_type_consolidated(self):
+        names = self.tm1.elements.get_element_names(
+            self.dimension_name, self.hierarchy_name, element_type="consolidated"
+        )
+        self.assertEqual(set(names), {"Region North", "Region South", "Total Regions"})
+
+    def test_names_element_type_enum(self):
+        names = self.tm1.elements.get_element_names(
+            self.dimension_name, self.hierarchy_name, element_type=Element.Types.NUMERIC
+        )
+        self.assertEqual(set(names), {"Numeric A", "Numeric B", "Numeric C", "O'Brien"})
+
+    def test_names_element_type_list_numeric_and_consolidated(self):
+        """Stated use case: 'all non-string elements'."""
+        names = self.tm1.elements.get_element_names(
+            self.dimension_name,
+            self.hierarchy_name,
+            element_type=["numeric", "consolidated"],
+        )
+        self.assertEqual(
+            set(names),
+            {
+                "Numeric A",
+                "Numeric B",
+                "Numeric C",
+                "O'Brien",
+                "Region North",
+                "Region South",
+                "Total Regions",
+            },
+        )
+
+    # ------------------------------------------------------------------
+    # get_element_names: name_pattern filter
+    # ------------------------------------------------------------------
+
+    def test_names_pattern_exact(self):
+        names = self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name, name_pattern="Numeric A")
+        self.assertEqual(names, ["Numeric A"])
+
+    def test_names_pattern_startswith(self):
+        names = self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name, name_pattern="Numeric*")
+        self.assertEqual(set(names), {"Numeric A", "Numeric B", "Numeric C"})
+
+    def test_names_pattern_endswith(self):
+        names = self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name, name_pattern="*A")
+        # Numeric A, String A. Region North contains 'a' but does not endswith.
+        self.assertEqual(set(names), {"Numeric A", "String A"})
+
+    def test_names_pattern_contains(self):
+        # 'Total Regions' matches because after space-stripping the normalized name 'totalregions' contains 'region'.
+        names = self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name, name_pattern="*Region*")
+        self.assertEqual(set(names), {"Region North", "Region South", "Total Regions"})
+
+    def test_names_pattern_case_insensitive(self):
+        names = self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name, name_pattern="numeric*")
+        self.assertEqual(set(names), {"Numeric A", "Numeric B", "Numeric C"})
+
+    def test_names_pattern_space_insensitive(self):
+        # 'NumericA' (no space) should match 'Numeric A'
+        names = self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name, name_pattern="NumericA")
+        self.assertEqual(names, ["Numeric A"])
+
+    def test_names_pattern_with_quote(self):
+        names = self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name, name_pattern="*O'Brien*")
+        self.assertEqual(names, ["O'Brien"])
+
+    # ------------------------------------------------------------------
+    # get_element_names: level filter
+    # ------------------------------------------------------------------
+
+    def test_names_level_zero(self):
+        names = self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name, level=0)
+        self.assertEqual(
+            set(names),
+            {"Numeric A", "Numeric B", "Numeric C", "O'Brien", "String A", "String B"},
+        )
+
+    def test_names_level_one(self):
+        names = self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name, level=1)
+        self.assertEqual(set(names), {"Region North", "Region South"})
+
+    def test_names_level_two(self):
+        names = self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name, level=2)
+        self.assertEqual(names, ["Total Regions"])
+
+    # ------------------------------------------------------------------
+    # get_element_names: composed (AND)
+    # ------------------------------------------------------------------
+
+    def test_names_type_and_pattern(self):
+        # Numeric elements containing 'A'
+        names = self.tm1.elements.get_element_names(
+            self.dimension_name,
+            self.hierarchy_name,
+            element_type="numeric",
+            name_pattern="*A*",
+        )
+        self.assertEqual(set(names), {"Numeric A"})
+
+    def test_names_type_and_level(self):
+        # Consolidated at level 1
+        names = self.tm1.elements.get_element_names(
+            self.dimension_name,
+            self.hierarchy_name,
+            element_type="consolidated",
+            level=1,
+        )
+        self.assertEqual(set(names), {"Region North", "Region South"})
+
+    def test_names_all_three_composed(self):
+        # Numeric leaves whose normalized name ends in 'c'. After space-stripping
+        # and lowercasing, only "Numeric C" qualifies. ("Numeric A"/"Numeric B"
+        # also contain the letter 'c' from "numeric" so a *C* pattern would
+        # match all three; use endswith to single out "Numeric C".)
+        names = self.tm1.elements.get_element_names(
+            self.dimension_name,
+            self.hierarchy_name,
+            element_type="numeric",
+            name_pattern="*C",
+            level=0,
+        )
+        self.assertEqual(names, ["Numeric C"])
+
+    # ------------------------------------------------------------------
+    # get_element_names: no filter sanity check
+    # ------------------------------------------------------------------
+
+    def test_names_no_filter_returns_all(self):
+        names = self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name)
+        # 4 numeric + 2 string + 3 consolidated
+        self.assertEqual(len(names), 9)
+
+    # ------------------------------------------------------------------
+    # get_element_names: validation passthrough
+    # ------------------------------------------------------------------
+
+    def test_names_invalid_type_raises(self):
+        with self.assertRaises(ValueError):
+            self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name, element_type="bogus")
+
+    def test_names_question_mark_raises(self):
+        with self.assertRaises(ValueError):
+            self.tm1.elements.get_element_names(self.dimension_name, self.hierarchy_name, name_pattern="foo?bar")
+
+    # ------------------------------------------------------------------
+    # get_elements (returns List[Element])
+    # ------------------------------------------------------------------
+
+    def test_elements_type_numeric(self):
+        elements = self.tm1.elements.get_elements(self.dimension_name, self.hierarchy_name, element_type="numeric")
+        self.assertEqual(
+            {e.name for e in elements},
+            {"Numeric A", "Numeric B", "Numeric C", "O'Brien"},
+        )
+        self.assertTrue(all(e.element_type == Element.Types.NUMERIC for e in elements))
+
+    def test_elements_pattern_and_level(self):
+        elements = self.tm1.elements.get_elements(
+            self.dimension_name,
+            self.hierarchy_name,
+            name_pattern="Region*",
+            level=1,
+        )
+        self.assertEqual(
+            {e.name for e in elements},
+            {"Region North", "Region South"},
+        )
+
+    def test_elements_no_filter_returns_all_with_types(self):
+        elements = self.tm1.elements.get_elements(self.dimension_name, self.hierarchy_name)
+        self.assertEqual(len(elements), 9)
+        # Confirm we get the Type attribute populated (existing behavior preserved)
+        types = {e.element_type for e in elements}
+        self.assertEqual(
+            types,
+            {Element.Types.NUMERIC, Element.Types.STRING, Element.Types.CONSOLIDATED},
+        )
+
+    def test_elements_quote_escape(self):
+        elements = self.tm1.elements.get_elements(self.dimension_name, self.hierarchy_name, name_pattern="*O'Brien*")
+        self.assertEqual([e.name for e in elements], ["O'Brien"])
+        self.assertEqual(elements[0].element_type, Element.Types.NUMERIC)
+
+
 if __name__ == "__main__":
     unittest.main()

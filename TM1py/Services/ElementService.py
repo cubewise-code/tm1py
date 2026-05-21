@@ -352,10 +352,36 @@ class ElementService(ObjectService):
             if remove_blob:
                 file_service.delete(file_name=file_name)
 
-    def get_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[Element]:
+    def get_elements(
+        self,
+        dimension_name: str,
+        hierarchy_name: str,
+        element_type: Optional[Union[int, str, "Element.Types", Iterable]] = None,
+        name_pattern: Optional[str] = None,
+        level: Optional[int] = None,
+        **kwargs,
+    ) -> List[Element]:
+        """Get all elements as Element objects, optionally filtered.
+
+        :param dimension_name: Name of the dimension.
+        :param hierarchy_name: Name of the hierarchy.
+        :param element_type: Restrict to elements of the given type(s). Accepts an
+            ``Element.Types`` enum value, a string ('numeric'/'string'/'consolidated',
+            case-insensitive), an int (1/2/3), or an iterable of any of those (OR-combined).
+        :param name_pattern: Restrict to elements whose name matches the glob pattern.
+            Supports ``*`` wildcard (use ``foo*``, ``*foo``, ``*foo*``, or exact ``foo``).
+            ``?`` is not supported. Matching is case- and space-insensitive.
+        :param level: Restrict to elements at the given hierarchy level (0 = leaf).
+        :return: List of Element objects.
+        """
         url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Elements?select=Name,Type", dimension_name, hierarchy_name
+            "/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name,Type",
+            dimension_name,
+            hierarchy_name,
         )
+        filter_clause = _build_elements_filter(element_type, name_pattern, level)
+        if filter_clause:
+            url += "&$filter=" + filter_clause
         response = self._rest.GET(url, **kwargs)
         return [Element.from_dict(element) for element in response.json()["value"]]
 
@@ -733,14 +759,36 @@ class ElementService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return [e["Name"] for e in response.json()["value"]]
 
-    def get_element_names(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
-        """Get all element names
+    def get_element_names(
+        self,
+        dimension_name: str,
+        hierarchy_name: str,
+        element_type: Optional[Union[int, str, "Element.Types", Iterable]] = None,
+        name_pattern: Optional[str] = None,
+        level: Optional[int] = None,
+        **kwargs,
+    ) -> List[str]:
+        """Get all element names, optionally filtered.
 
-        :param dimension_name:
-        :param hierarchy_name:
-        :return: Generator of element-names
+        :param dimension_name: Name of the dimension.
+        :param hierarchy_name: Name of the hierarchy.
+        :param element_type: Restrict to elements of the given type(s). Accepts an
+            ``Element.Types`` enum value, a string ('numeric'/'string'/'consolidated',
+            case-insensitive), an int (1/2/3), or an iterable of any of those (OR-combined).
+        :param name_pattern: Restrict to elements whose name matches the glob pattern.
+            Supports ``*`` wildcard (use ``foo*``, ``*foo``, ``*foo*``, or exact ``foo``).
+            ``?`` is not supported. Matching is case- and space-insensitive.
+        :param level: Restrict to elements at the given hierarchy level (0 = leaf).
+        :return: List of element names.
         """
-        url = format_url("/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name", dimension_name, hierarchy_name)
+        url = format_url(
+            "/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name",
+            dimension_name,
+            hierarchy_name,
+        )
+        filter_clause = _build_elements_filter(element_type, name_pattern, level)
+        if filter_clause:
+            url += "&$filter=" + filter_clause
         response = self._rest.GET(url, **kwargs)
         return [e["Name"] for e in response.json()["value"]]
 
@@ -1737,7 +1785,7 @@ class ElementService(ObjectService):
 _TYPE_NAME_TO_CODE = {"numeric": 1, "string": 2, "consolidated": 3}
 _VALID_TYPE_CODES = {1, 2, 3}
 _INVALID_ELEMENT_TYPE_MSG = (
-    "Invalid element_type {value!r}: expected 'numeric', 'string', " "'consolidated', Element.Types enum, or int 1/2/3"
+    "Invalid element_type {value!r}: expected 'numeric', 'string', 'consolidated', Element.Types enum, or int 1/2/3"
 )
 
 
