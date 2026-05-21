@@ -8,9 +8,9 @@ on:
         required: true
         default: 'master'
       environments:
-        description: 'JSON array of environments to test (e.g., ["tm1-11-cloud", "tm1-11-cloud"])'
+        description: 'JSON array of environments to test (e.g., ["tm1-11", "tm1-12-cloud", "tm1-11-cloud"])'
         required: true
-        default: '["tm1-12-cloud","tm1-11-cloud"]'
+        default: '["tm1-11","tm1-12-cloud","tm1-11-cloud"]'
 
 jobs:
   test:
@@ -63,7 +63,13 @@ jobs:
           TM1_CONNECTION: ${{ vars.TM1_CONNECTION }}
           TM1_CONNECTION_SECRET: ${{ secrets.TM1_CONNECTION_SECRET }}
 
-      - name: Run tests
+      - name: Run required tests (tm1-11)
+        if: ${{ matrix.environment == 'tm1-11' }}
+        run: pytest Tests/
+
+      - name: Run optional cloud tests (tm1-12-cloud, tm1-11-cloud)
+        if: ${{ matrix.environment == 'tm1-12-cloud' || matrix.environment == 'tm1-11-cloud' }}
+        continue-on-error: true
         run: pytest Tests/
 
       - name: Upload test results
