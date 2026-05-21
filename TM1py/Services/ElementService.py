@@ -402,6 +402,9 @@ class ElementService(ObjectService):
         allow_empty_alias: bool = True,
         attribute_suffix: bool = False,
         element_type_column: str = "Type",
+        element_type: Optional[Union[int, str, "Element.Types", Iterable]] = None,
+        name_pattern: Optional[str] = None,
+        level: Optional[int] = None,
         **kwargs,
     ) -> "pd.DataFrame":
         """
@@ -420,6 +423,16 @@ class ElementService(ObjectService):
         :param allow_empty_alias: False if empty alias values should be substituted with element names instead
         :param attribute_suffix: True if attribute columns should have ':a', ':s' or ':n' suffix
         :param element_type_column: The column name in the df which specifies which element is which type.
+        :param element_type: Restrict to elements of the given type(s). Accepts an
+            ``Element.Types`` enum value, a string ('numeric'/'string'/'consolidated',
+            case-insensitive), an int (1/2/3), or an iterable of any of those.
+            Only applied when ``elements`` is None. When explicitly set, overrides
+            ``skip_consolidations``.
+        :param name_pattern: Restrict to elements whose name matches the glob pattern
+            (``*`` wildcard, case- and space-insensitive). Only applied when ``elements``
+            is None.
+        :param level: Restrict to elements at the given hierarchy level (0 = leaf).
+            Only applied when ``elements`` is None.
         :return: pandas DataFrame
         """
 
@@ -438,10 +451,39 @@ class ElementService(ObjectService):
             unique_name = record[0][0]["UniqueName"]
             dimension_name, hierarchy_name, _ = dimension_hierarchy_element_tuple_from_unique_name(unique_name)
 
+        trio_filter_active = element_type is not None or name_pattern is not None or level is not None
         if elements is None or not any(elements):
-            elements = f"{{ [{dimension_name}].[{hierarchy_name}].Members }}"
-            if skip_consolidations:
-                elements = f"{{ Tm1FilterByLevel({elements}, 0) }}"
+            if trio_filter_active:
+                # Trio filter explicitly set. Resolve to a concrete element list via the
+                # filtered get_element_names path. The trio is authoritative and overrides
+                # skip_consolidations.
+                resolved = self.get_element_names(
+                    dimension_name=dimension_name,
+                    hierarchy_name=hierarchy_name,
+                    element_type=element_type,
+                    name_pattern=name_pattern,
+                    level=level,
+                )
+                if resolved:
+                    elements = (
+                        "{" + ",".join(f"[{dimension_name}].[{hierarchy_name}].[{member}]" for member in resolved) + "}"
+                    )
+                else:
+                    # Empty match. Filter the full Members set against an
+                    # unreachably high level so the MDX produces zero rows but the
+                    # downstream pipeline still emits the full column schema
+                    # (dimension name, attributes, levels, parents). A bare "{}"
+                    # axis would lose the dimension column and break the final
+                    # pd.merge on dimension_name.
+                    empty_set_level = 9999
+                    elements = (
+                        f"{{ Tm1FilterByLevel({{ [{dimension_name}].[{hierarchy_name}].Members }}, "
+                        f"{empty_set_level}) }}"
+                    )
+            else:
+                elements = f"{{ [{dimension_name}].[{hierarchy_name}].Members }}"
+                if skip_consolidations:
+                    elements = f"{{ Tm1FilterByLevel({elements}, 0) }}"
 
         if not isinstance(elements, str):
             if isinstance(elements, Iterable):
@@ -461,8 +503,13 @@ class ElementService(ObjectService):
             )
         ]
 
+        # When the trio filter is active, the resolved element list is authoritative.
+        # Fetch the full type lookup so consolidated members survive the inner-join below.
+        element_types_skip_consolidations = False if trio_filter_active else skip_consolidations
         element_types = self.get_element_types(
-            dimension_name=dimension_name, hierarchy_name=hierarchy_name, skip_consolidations=skip_consolidations
+            dimension_name=dimension_name,
+            hierarchy_name=hierarchy_name,
+            skip_consolidations=element_types_skip_consolidations,
         )
 
         df = pd.DataFrame(
@@ -838,43 +885,33 @@ class ElementService(ObjectService):
         return self.get_element_identifiers(dimension_name, hierarchy_name, mdx_elements, **kwargs)
 
     def get_elements_by_level(self, dimension_name: str, hierarchy_name: str, level: int, **kwargs) -> List[str]:
-        """Get all element names by level in a hierarchy
+        """Get all element names by level in a hierarchy.
 
         :param dimension_name: Name of the dimension
         :param hierarchy_name: Name of the hierarchy
         :param level: Level to filter
         :return: List of element names
         """
-        url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Level eq {}",
-            dimension_name,
-            hierarchy_name,
-            str(level),
-        )
-        response = self._rest.GET(url, **kwargs)
-        return [e["Name"] for e in response.json()["value"]]
+        return self.get_element_names(dimension_name, hierarchy_name, level=level, **kwargs)
 
     def get_elements_filtered_by_wildcard(
         self, dimension_name: str, hierarchy_name: str, wildcard: str, level: int = None, **kwargs
     ) -> List[str]:
-        """Get all element names filtered by wildcard (CaseAndSpaceInsensitive) and level in a hierarchy
+        """Get all element names filtered by wildcard (case- and space-insensitive contains) and optional level.
 
         :param dimension_name: Name of the dimension
         :param hierarchy_name: Name of the hierarchy
-        :param wildcard: wildcard to filter
-        :param level: Level to filter
+        :param wildcard: substring to match (case- and space-insensitive contains)
+        :param level: Optional level to filter
         :return: List of element names
         """
-        filter_elements = format_url("contains(tolower(replace(Name,' ','')),tolower(replace('{}',' ', '')))", wildcard)
-        if level is not None:
-            filter_elements = filter_elements + f" and Level eq {level}"
-        url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=" + filter_elements,
+        return self.get_element_names(
             dimension_name,
             hierarchy_name,
+            name_pattern=f"*{wildcard}*",
+            level=level,
+            **kwargs,
         )
-        response = self._rest.GET(url, **kwargs)
-        return [e["Name"] for e in response.json()["value"]]
 
     def get_all_element_identifiers(
         self, dimension_name: str, hierarchy_name: str, **kwargs
