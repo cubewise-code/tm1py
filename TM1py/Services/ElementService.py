@@ -1728,3 +1728,160 @@ class ElementService(ObjectService):
         from TM1py import CellService
 
         return CellService(self._rest)
+
+
+# ---------------------------------------------------------------------------
+# Filtering helpers (private, module-level)
+# ---------------------------------------------------------------------------
+
+_TYPE_NAME_TO_CODE = {"numeric": 1, "string": 2, "consolidated": 3}
+_VALID_TYPE_CODES = {1, 2, 3}
+_INVALID_ELEMENT_TYPE_MSG = (
+    "Invalid element_type {value!r}: expected 'numeric', 'string', " "'consolidated', Element.Types enum, or int 1/2/3"
+)
+
+
+def _coerce_one_element_type(value) -> int:
+    """Coerce a single element_type input to its OData type code (1, 2, or 3).
+
+    Accepts Element.Types enum, str (case-insensitive), or int in {1, 2, 3}.
+    Raises ValueError on anything else.
+    """
+    # Reject bool first: bool is a subclass of int in Python, but True/False
+    # are not valid type codes.
+    if isinstance(value, bool):
+        raise ValueError(_INVALID_ELEMENT_TYPE_MSG.format(value=value))
+    if isinstance(value, Element.Types):
+        return int(value.value)
+    if isinstance(value, str):
+        code = _TYPE_NAME_TO_CODE.get(value.lower())
+        if code is None:
+            raise ValueError(_INVALID_ELEMENT_TYPE_MSG.format(value=value))
+        return code
+    if isinstance(value, int) and value in _VALID_TYPE_CODES:
+        return value
+    raise ValueError(_INVALID_ELEMENT_TYPE_MSG.format(value=value))
+
+
+def _coerce_element_types(value) -> List[int]:
+    """Normalize element_type input to a deduplicated list of OData type codes.
+
+    :param value: Element.Types enum, str ('numeric'/'string'/'consolidated', case-insensitive),
+        int in {1, 2, 3}, an iterable of any of those, or None.
+    :return: Deduplicated list of OData type codes (e.g. [1, 3]), preserving first-seen order.
+        Returns [] when value is None.
+    :raises ValueError: on unknown values or empty iterables.
+    """
+    if value is None:
+        return []
+
+    # Single-value path (these come BEFORE the iterable check because str is iterable)
+    if isinstance(value, (Element.Types, str, int)):
+        return [_coerce_one_element_type(value)]
+
+    # Iterable path
+    try:
+        items = list(value)
+    except TypeError:
+        raise ValueError(_INVALID_ELEMENT_TYPE_MSG.format(value=value))
+    if not items:
+        raise ValueError("element_type list cannot be empty (pass None to skip the filter)")
+
+    seen, out = set(), []
+    for item in items:
+        code = _coerce_one_element_type(item)
+        if code not in seen:
+            seen.add(code)
+            out.append(code)
+    return out
+
+
+def _odata_str_literal(s: str) -> str:
+    """Wrap a string in single quotes, doubling embedded single quotes per OData spec."""
+    return "'" + s.replace("'", "''") + "'"
+
+
+def _normalize_for_match(s: str) -> str:
+    """Lowercase and strip spaces; mirrors what we apply to the Name property server-side."""
+    return s.replace(" ", "").lower()
+
+
+def _pattern_to_odata(pattern: str) -> str:
+    """Translate a glob pattern (with '*' wildcards) to an OData filter fragment
+    that matches case- and space-insensitively against the Name property.
+
+    Supports '*' only. '?' raises ValueError (caller responsibility to validate)."""
+    name_expr = "tolower(replace(Name,' ',''))"
+
+    leading_anchor = not pattern.startswith("*")
+    trailing_anchor = not pattern.endswith("*")
+    inner = [s for s in pattern.split("*") if s != ""]
+
+    if not inner:
+        # Pattern was '*' or '**': matches everything. Emit a tautology.
+        return f"{name_expr} eq {name_expr}"
+
+    inner_lits = [_odata_str_literal(_normalize_for_match(s)) for s in inner]
+
+    # Single inner segment, both anchored: exact match
+    if len(inner) == 1 and leading_anchor and trailing_anchor:
+        return f"{name_expr} eq {inner_lits[0]}"
+
+    parts = []
+    for i, lit in enumerate(inner_lits):
+        is_first = i == 0
+        is_last = i == len(inner_lits) - 1
+        if is_first and leading_anchor:
+            parts.append(f"startswith({name_expr},{lit})")
+        elif is_last and trailing_anchor:
+            parts.append(f"endswith({name_expr},{lit})")
+        else:
+            parts.append(f"contains({name_expr},{lit})")
+    return " and ".join(parts)
+
+
+def _build_elements_filter(
+    element_type: Optional[Union[int, str, Element.Types, Iterable]],
+    name_pattern: Optional[str],
+    level: Optional[int],
+) -> str:
+    """Build an OData $filter clause (without the leading '$filter=') from the optional
+    type / pattern / level filters.
+
+    :param element_type: see _coerce_element_types
+    :param name_pattern: glob with '*' wildcard, case- and space-insensitive. Supports exact,
+        'foo*', '*foo', '*foo*', and multi-segment (e.g. '*eu*region*'). '?' is not supported.
+    :param level: hierarchy level (>= 0). 0 is the leaf level.
+    :return: OData filter clause string, or '' if all three args are None.
+    :raises ValueError: on invalid type/pattern/level values.
+    :raises TypeError: when name_pattern is not str or level is not int.
+    """
+    clauses: List[str] = []
+
+    # Type clause
+    type_codes = _coerce_element_types(element_type)
+    if type_codes:
+        if len(type_codes) == 1:
+            clauses.append(f"Type eq {type_codes[0]}")
+        else:
+            clauses.append("(" + " or ".join(f"Type eq {c}" for c in type_codes) + ")")
+
+    # Pattern clause
+    if name_pattern is not None:
+        if not isinstance(name_pattern, str):
+            raise TypeError(f"name_pattern must be str, got {type(name_pattern).__name__}")
+        if name_pattern == "":
+            raise ValueError("name_pattern cannot be empty (pass None to skip the filter)")
+        if "?" in name_pattern:
+            raise ValueError("'?' wildcard not supported in name_pattern, only '*'")
+        clauses.append(_pattern_to_odata(name_pattern))
+
+    # Level clause
+    if level is not None:
+        if isinstance(level, bool) or not isinstance(level, int):
+            raise TypeError(f"level must be int, got {type(level).__name__}")
+        if level < 0:
+            raise ValueError("level must be >= 0")
+        clauses.append(f"Level eq {level}")
+
+    return " and ".join(clauses)
