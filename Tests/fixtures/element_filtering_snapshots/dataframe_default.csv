@@ -1,0 +1,7 @@
+TM1py_snapshot_fixture,Type,Description,level001_Weight,level000_Weight,level001,level000
+String A,String,,0.000000,0.000000,,
+String B,String,,0.000000,0.000000,,
+Numeric A,Numeric,,1.000000,1.000000,Region North,Total Regions
+Numeric B,Numeric,,1.000000,1.000000,Region North,Total Regions
+Numeric C,Numeric,,1.000000,1.000000,Region South,Total Regions
+O'Brien,Numeric,,1.000000,1.000000,Region South,Total Regions

@@ -1,0 +1,9 @@
+{
+  "wildcard": "numeric",
+  "level": 0,
+  "result": [
+    "Numeric A",
+    "Numeric B",
+    "Numeric C"
+  ]
+}

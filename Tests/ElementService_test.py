@@ -1,5 +1,6 @@
 import configparser
 import copy
+import json
 import unittest
 from pathlib import Path
 
@@ -1843,6 +1844,10 @@ class TestElementFiltering(unittest.TestCase):
         h.add_edge("Total Regions", "Region North", 1)
         h.add_edge("Total Regions", "Region South", 1)
 
+        # Add a placeholder attribute so the }ElementAttributes_<dim> cube is
+        # created. get_elements_dataframe requires this cube to exist.
+        h.add_element_attribute("Description", "String")
+
         d.add_hierarchy(h)
         self.tm1.dimensions.update_or_create(d)
         self.addCleanup(self._cleanup_dimension)
@@ -2063,6 +2068,156 @@ class TestElementFiltering(unittest.TestCase):
         elements = self.tm1.elements.get_elements(self.dimension_name, self.hierarchy_name, name_pattern="*O'Brien*")
         self.assertEqual([e.name for e in elements], ["O'Brien"])
         self.assertEqual(elements[0].element_type, Element.Types.NUMERIC)
+
+    # ------------------------------------------------------------------
+    # Regression: verify behavior of typed methods is preserved after they
+    # are refactored to delegate to get_element_names. Snapshots in
+    # Tests/fixtures/element_filtering_snapshots/ were generated against
+    # master before the refactor.
+    # ------------------------------------------------------------------
+
+    SNAPSHOT_DIR = Path(__file__).parent / "fixtures" / "element_filtering_snapshots"
+
+    def _load_snapshot(self, name):
+        path = self.SNAPSHOT_DIR / name
+        if not path.exists():
+            self.fail(
+                f"Snapshot '{name}' not found at {self.SNAPSHOT_DIR}. "
+                f"Regenerate by re-running the snapshot generator from the plan's "
+                f"Phase 3 / Task 3.1."
+            )
+        with open(path) as f:
+            return json.load(f)
+
+    def test_regression_by_level_0(self):
+        actual = self.tm1.elements.get_elements_by_level(self.dimension_name, self.hierarchy_name, level=0)
+        expected = self._load_snapshot("by_level_0.json")
+        self.assertEqual(sorted(actual), expected)
+
+    def test_regression_by_level_1(self):
+        actual = self.tm1.elements.get_elements_by_level(self.dimension_name, self.hierarchy_name, level=1)
+        expected = self._load_snapshot("by_level_1.json")
+        self.assertEqual(sorted(actual), expected)
+
+    def test_regression_by_level_2(self):
+        actual = self.tm1.elements.get_elements_by_level(self.dimension_name, self.hierarchy_name, level=2)
+        expected = self._load_snapshot("by_level_2.json")
+        self.assertEqual(sorted(actual), expected)
+
+    def test_regression_wildcard_cases(self):
+        """Verify get_elements_filtered_by_wildcard preserves case+space-insensitive contains."""
+        for i in range(5):
+            snap = self._load_snapshot(f"wildcard_{i}.json")
+            actual = self.tm1.elements.get_elements_filtered_by_wildcard(
+                self.dimension_name,
+                self.hierarchy_name,
+                wildcard=snap["wildcard"],
+                level=snap["level"],
+            )
+            self.assertEqual(
+                sorted(actual),
+                snap["result"],
+                msg=(
+                    f"wildcard_{i}: wildcard={snap['wildcard']!r} level={snap['level']}, "
+                    f"got {sorted(actual)!r}, expected {snap['result']!r}"
+                ),
+            )
+
+    # ------------------------------------------------------------------
+    # get_elements_dataframe with trio kwargs
+    # ------------------------------------------------------------------
+
+    @skip_if_no_pandas
+    def test_dataframe_element_type_numeric(self):
+        df = self.tm1.elements.get_elements_dataframe(
+            self.dimension_name,
+            self.hierarchy_name,
+            element_type="numeric",
+            skip_consolidations=False,
+        )
+        names = set(df[self.dimension_name].tolist())
+        self.assertEqual(names, {"Numeric A", "Numeric B", "Numeric C", "O'Brien"})
+
+    @skip_if_no_pandas
+    def test_dataframe_pattern(self):
+        df = self.tm1.elements.get_elements_dataframe(
+            self.dimension_name,
+            self.hierarchy_name,
+            name_pattern="Region*",
+        )
+        names = set(df[self.dimension_name].tolist())
+        self.assertEqual(names, {"Region North", "Region South"})
+
+    @skip_if_no_pandas
+    def test_dataframe_level(self):
+        df = self.tm1.elements.get_elements_dataframe(
+            self.dimension_name,
+            self.hierarchy_name,
+            level=0,
+            skip_consolidations=False,
+        )
+        names = set(df[self.dimension_name].tolist())
+        self.assertEqual(
+            names,
+            {"Numeric A", "Numeric B", "Numeric C", "O'Brien", "String A", "String B"},
+        )
+
+    @skip_if_no_pandas
+    def test_dataframe_trio_composed(self):
+        df = self.tm1.elements.get_elements_dataframe(
+            self.dimension_name,
+            self.hierarchy_name,
+            element_type="numeric",
+            name_pattern="*A*",
+            level=0,
+        )
+        names = set(df[self.dimension_name].tolist())
+        self.assertEqual(names, {"Numeric A"})
+
+    @skip_if_no_pandas
+    def test_dataframe_element_type_overrides_skip_consolidations(self):
+        """When element_type is explicitly set, skip_consolidations is ignored
+        (documented in docstring)."""
+        df = self.tm1.elements.get_elements_dataframe(
+            self.dimension_name,
+            self.hierarchy_name,
+            element_type=["numeric", "consolidated"],
+            skip_consolidations=True,  # would normally drop consolidations
+        )
+        names = set(df[self.dimension_name].tolist())
+        # Consolidations should be present despite skip_consolidations=True
+        self.assertIn("Region North", names)
+        self.assertIn("Region South", names)
+        self.assertIn("Total Regions", names)
+
+    @skip_if_no_pandas
+    def test_dataframe_regression_no_filter(self):
+        """Without trio kwargs, get_elements_dataframe matches the snapshot from master."""
+        import pandas as pd
+
+        snapshot = pd.read_csv(self.SNAPSHOT_DIR / "dataframe_default.csv")
+        df = self.tm1.elements.get_elements_dataframe(self.dimension_name, self.hierarchy_name)
+        # Snapshot's first column is the snapshot's dimension name; the test's
+        # df uses a different dimension name. Compare row sets on element name + type.
+        snap_first = snapshot.columns[0]
+        df_first = df.columns[0]
+        snap_rows = sorted(zip(snapshot[snap_first].tolist(), snapshot["Type"].tolist()))
+        df_rows = sorted(zip(df[df_first].tolist(), df["Type"].tolist()))
+        self.assertEqual(snap_rows, df_rows)
+
+    @skip_if_no_pandas
+    def test_dataframe_trio_empty_match_preserves_schema(self):
+        """When the trio filter matches zero elements, the returned DataFrame must
+        still carry the full column schema (attributes, levels, parents) so callers
+        relying on df['<attr>'] don't see KeyError."""
+        df_full = self.tm1.elements.get_elements_dataframe(self.dimension_name, self.hierarchy_name)
+        df_empty = self.tm1.elements.get_elements_dataframe(
+            self.dimension_name,
+            self.hierarchy_name,
+            name_pattern="NonExistentNameThatMatchesNothing*",
+        )
+        self.assertEqual(list(df_full.columns), list(df_empty.columns))
+        self.assertEqual(len(df_empty), 0)
 
 
 if __name__ == "__main__":
