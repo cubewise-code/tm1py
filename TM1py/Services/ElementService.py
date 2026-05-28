@@ -1394,8 +1394,8 @@ class ElementService(ObjectService):
 
     def get_parents_of_all_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> Dict[str, List[str]]:
         url = format_url(
-            f"/Dimensions('{dimension_name}')/Hierarchies('{hierarchy_name}')/Elements?$select=Name"
-            f"&$expand=Parents($select=Name)",
+            "/Dimensions('{dimension_name}')/Hierarchies('{hierarchy_name}')/Elements?$select=Name"
+            "&$expand=Parents($select=Name)",dimension_name = dimension_name,hierarchy_name = hierarchy_name,
         )
         response = self._rest.GET(url=url, **kwargs)
 
