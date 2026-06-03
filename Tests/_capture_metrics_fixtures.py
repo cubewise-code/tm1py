@@ -63,8 +63,8 @@ def capture_v11(tm1: TM1Service):
     dump("v11_stats_cube_dimensions.json", schemas)
     dump("v11_stats_members.json", members)
 
-    # Real raw cellsets via the EXACT MDX the builder (Module B) produces.
-    from TM1py.Metrics.mdx import build_v11_mdx
+    # Real raw cellsets via the EXACT MDX the builder produces.
+    from TM1py.Services.MetricService import build_v11_mdx
 
     builds = {
         "v11_by_cube_cellset_raw.json": build_v11_mdx("by_cube"),
@@ -93,7 +93,7 @@ def capture_v11(tm1: TM1Service):
 def capture_v12(tm1: TM1Service):
     print(f"v12 version: {tm1.version}")
     # raw, unshaped Metrics() payload (drives the v12 shaper tests)
-    from TM1py.Metrics.odata_filter import build_metrics_url
+    from TM1py.Services.MetricService import build_metrics_url
 
     raw = tm1._tm1_rest.GET(build_metrics_url()).json().get("value", [])
     dump("v12_metrics_raw.json", raw)
