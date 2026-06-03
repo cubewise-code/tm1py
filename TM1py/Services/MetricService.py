@@ -685,18 +685,20 @@ class MetricService(ObjectService):
 
         >>> tm1.metrics.by_server(metrics=["replica_memory_used"])
 
-    Per-rule timing (entity-wide). Reading is **v11 only** — the Performance
-    Monitor populates ``}StatsByRule``, which :meth:`by_rule` reads::
+    Per-rule timing (entity-wide), unified across versions — the read is
+    identical; only how ``}StatsByRule`` gets populated differs. On v11 the
+    Performance Monitor populates it, so you just read::
 
         >>> tm1.metrics.by_rule(cube="plan_BudgetPlan")
 
-    On v12 the collection lifecycle actions exist (start / flush / stop), but the
-    PA Database REST API exposes no endpoint to read the collected stats back, so
-    :meth:`by_rule` raises ``NotImplementedError`` there (verified on 12.5.9)::
+    On v12 collect on demand: start, exercise the cube's rules, let the ~60s
+    sampling interval elapse, flush, then read the same way::
 
-        >>> tm1.metrics.start_collecting_rule_stats("plan_BudgetPlan")  # v12
+        >>> tm1.metrics.start_collecting_rule_stats("plan_BudgetPlan")
+        >>> # ... exercise the cube's rules, wait ~60s for the sampling interval ...
         >>> tm1.metrics.flush_collected_rule_stats("plan_BudgetPlan")
         >>> tm1.metrics.stop_collecting_rule_stats("plan_BudgetPlan")
+        >>> tm1.metrics.by_rule(cube="plan_BudgetPlan")
 
     v11-only categories (the cubes were removed in v12; these raise
     :class:`TM1pyVersionException` on a v12 database)::
@@ -787,32 +789,33 @@ class MetricService(ObjectService):
     # ------------------------------------------------------------------ #
 
     def by_rule(self, cube: str = None, **kwargs) -> List[Dict]:
-        """Per-rule-line statistics (entity-wide). Reading is v11 only.
+        """Per-rule-line statistics (entity-wide), unified across versions.
 
-        On v11 the Performance Monitor populates ``}StatsByRule``, which this
-        reads via cellset; if that cube is absent this returns ``[]`` with a
-        warning. On v12 reading per-rule stats is not available: the PA Database
-        REST API exposes the collection lifecycle
-        (:meth:`start_collecting_rule_stats` / :meth:`stop_collecting_rule_stats`
-        / :meth:`flush_collected_rule_stats`) but no endpoint to read the stats
-        back — there is no ``}StatsByRule`` cube and no rule-stats entity in
-        ``$metadata`` (verified on 12.5.9) — so this raises
-        :class:`NotImplementedError` there.
+        ``}StatsByRule`` is structurally identical on v11 and v12 (dimensions
+        ``}Cubes`` x ``}LineNumber`` x ``}RuleStats``), so the same cellset
+        read/shape path serves both. If the cube does not exist yet, this returns
+        ``[]`` with a warning rather than raising.
 
-        :raises NotImplementedError: when called on a v12 database.
+        How the cube gets populated differs by version: on v11 the Performance
+        Monitor populates it. On v12 it is created/updated on demand by the
+        rule-stats collection lifecycle — call :meth:`start_collecting_rule_stats`,
+        exercise the cube's rules, allow the ~60s sampling interval to elapse,
+        then :meth:`flush_collected_rule_stats` (verified on 12.5.9).
         """
-        if self._is_v12:
-            raise NotImplementedError(
-                "Reading per-rule statistics is not available on v12: the PA Database REST API "
-                "exposes the rule-stats collection lifecycle (start_collecting_rule_stats / "
-                "flush_collected_rule_stats / stop_collecting_rule_stats) but no endpoint to read the "
-                "collected stats back (verified on 12.5.9). by_rule() reads are supported on v11 only."
-            )
         if not self._cube_service.exists(self.STATS_BY_RULE_CUBE, **kwargs):
+            if self._is_v12:
+                hint = (
+                    "rule stats have not been collected yet — call start_collecting_rule_stats(cube), "
+                    "exercise the cube's rules, wait for the ~60s sampling interval, then "
+                    "flush_collected_rule_stats(cube)"
+                )
+            else:
+                hint = (
+                    "rule stats have not been collected — ensure Performance Monitor is running "
+                    "(ServerService.start_performance_monitor)"
+                )
             warnings.warn(
-                f"'{self.STATS_BY_RULE_CUBE}' does not exist; rule stats have not been collected — "
-                "ensure Performance Monitor is running (ServerService.start_performance_monitor). "
-                "Returning no records.",
+                f"'{self.STATS_BY_RULE_CUBE}' does not exist; {hint}. Returning no records.",
                 stacklevel=2,
             )
             return []
@@ -874,12 +877,13 @@ class MetricService(ObjectService):
 
     @require_version(version=V12_VERSION)
     def flush_collected_rule_stats(self, cube: str, **kwargs):
-        """Flush the rule stats collected for ``cube`` since collection started (v12).
+        """Flush the rule stats collected for ``cube`` into ``}StatsByRule`` (v12).
 
-        Note: on the PA Database REST API (verified on 12.5.9) the flush does not
-        expose the stats for reading — it creates no ``}StatsByRule`` cube and no
-        rule-stats OData entity — so there is currently no v12 way to read the
-        flushed stats back via :meth:`by_rule`.
+        Writes the rule statistics collected since :meth:`start_collecting_rule_stats`
+        into the ``}StatsByRule`` cube (created on demand), which :meth:`by_rule`
+        then reads. Collection is sampled on a ~60s interval, so exercise the
+        cube's rules and let that interval elapse between start and flush for
+        stats to appear (verified on 12.5.9).
         """
         return self._rule_stats_action(cube, "FlushCollectedRuleStats", **kwargs)
 

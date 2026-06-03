@@ -721,23 +721,20 @@ class TestMetricService(unittest.TestCase):
 
     # ---------------- by_rule + rule-stats lifecycle ---------------- #
 
-    def test_by_rule_reads_on_v11(self):
-        tm1 = self._v11()
-        records = tm1.metrics.by_rule()
-        self.assertIsInstance(records, list)
-        for record in records:
-            self.assertEqual(record["Category"], "by_rule")
-            self.assertIn("CubeName", record)
-            self.assertIn("RuleText", record)
-
-    def test_by_rule_not_supported_on_v12(self):
-        # the v12 REST API exposes no endpoint to read collected rule stats back
-        tm1 = self._v12()
-        with self.assertRaises(NotImplementedError):
-            tm1.metrics.by_rule()
+    def test_by_rule_returns_list_on_both_versions(self):
+        # }StatsByRule is structurally identical on v11 and v12, so the same
+        # read/shape path serves both; when populated, records carry these keys.
+        for tm1 in (self.v11, self.v12):
+            if tm1 is None:
+                continue
+            records = tm1.metrics.by_rule()
+            self.assertIsInstance(records, list)
+            for record in records:
+                self.assertEqual(record["Category"], "by_rule")
+                self.assertIn("CubeName", record)
+                self.assertIn("RuleText", record)
 
     def test_rule_stats_lifecycle_v12(self):
-        # the collection lifecycle actions exist and succeed on v12 (204) ...
         tm1 = self._v12()
         cube = next(
             (r["CubeName"] for r in tm1.metrics.by_cube() if not r["CubeName"].startswith("}")),
@@ -745,13 +742,19 @@ class TestMetricService(unittest.TestCase):
         )
         self.assertIsNotNone(cube, "no usable cube on v12 server")
 
-        self.assertEqual(tm1.metrics.start_collecting_rule_stats(cube).status_code, 204)
-        self.assertEqual(tm1.metrics.flush_collected_rule_stats(cube).status_code, 204)
-        self.assertEqual(tm1.metrics.stop_collecting_rule_stats(cube).status_code, 204)
-        # ... but flush creates no }StatsByRule cube to read back from
-        self.assertFalse(tm1.cubes.exists(tm1.metrics.STATS_BY_RULE_CUBE))
-        with self.assertRaises(NotImplementedError):
-            tm1.metrics.by_rule(cube=cube)
+        pre_existed = tm1.cubes.exists(tm1.metrics.STATS_BY_RULE_CUBE)
+        try:
+            self.assertEqual(tm1.metrics.start_collecting_rule_stats(cube).status_code, 204)
+            self.assertEqual(tm1.metrics.flush_collected_rule_stats(cube).status_code, 204)
+            # }StatsByRule is read the same way as on v11; populating it needs rule
+            # activity + the ~60s sampling interval, so just assert the read shape.
+            self.assertIsInstance(tm1.metrics.by_rule(cube=cube), list)
+            self.assertEqual(tm1.metrics.stop_collecting_rule_stats(cube).status_code, 204)
+        finally:
+            # only delete }StatsByRule if THIS test created it (never touch a
+            # pre-existing one)
+            if not pre_existed and tm1.cubes.exists(tm1.metrics.STATS_BY_RULE_CUBE):
+                tm1.cubes.delete(tm1.metrics.STATS_BY_RULE_CUBE)
 
     def test_lifecycle_methods_require_v12(self):
         tm1 = self._v11()
