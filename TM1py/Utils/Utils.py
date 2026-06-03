@@ -7,6 +7,7 @@ import math
 import re
 import ssl
 import urllib.parse as urlparse
+from datetime import datetime
 from enum import Enum, unique
 from io import StringIO
 from typing import (
@@ -1817,6 +1818,18 @@ def reorder_with_priority(
     result += sorted(remaining) if sort_remaining else remaining
     return result
 
+
+def datetime_to_iso(dt: datetime) -> str:
+    """
+    Convert datetime → ISO 8601 UTC format used by TM1 Metrics API
+    """
+
+    if not isinstance(dt, datetime):
+        raise TypeError(
+            f"Expected datetime, got {type(dt)}"
+        )
+
+    return dt.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
 class HTTPAdapterWithSocketOptions(HTTPAdapter):
     def __init__(self, *args, **kwargs):

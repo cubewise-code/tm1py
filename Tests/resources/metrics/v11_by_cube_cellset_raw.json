@@ -1,0 +1,472 @@
+{
+  "@odata.context": "$metadata#Cellsets(Cube(Name,Dimensions+(Name)),Axes(Tuples+(Members+(Name,UniqueName))),Cells(Value))/$entity",
+  "ID": "36Lf2TUEAIBqAAAg",
+  "Cube": {
+    "Name": "}StatsByCube",
+    "Dimensions": [
+      {
+        "Name": "}StatsStatsByCube"
+      },
+      {
+        "Name": "}PerfCubes"
+      },
+      {
+        "Name": "}TimeIntervals"
+      }
+    ]
+  },
+  "Axes": [
+    {
+      "Ordinal": 0,
+      "Cardinality": 12,
+      "Tuples": [
+        {
+          "Ordinal": 0,
+          "Members": [
+            {
+              "Name": "Total Memory Used",
+              "UniqueName": "[}StatsStatsByCube].[}StatsStatsByCube].[Total Memory Used]"
+            }
+          ]
+        },
+        {
+          "Ordinal": 1,
+          "Members": [
+            {
+              "Name": "Memory Used for Input Data",
+              "UniqueName": "[}StatsStatsByCube].[}StatsStatsByCube].[Memory Used for Input Data]"
+            }
+          ]
+        },
+        {
+          "Ordinal": 2,
+          "Members": [
+            {
+              "Name": "Memory Used for Feeders",
+              "UniqueName": "[}StatsStatsByCube].[}StatsStatsByCube].[Memory Used for Feeders]"
+            }
+          ]
+        },
+        {
+          "Ordinal": 3,
+          "Members": [
+            {
+              "Name": "Number of Fed Cells",
+              "UniqueName": "[}StatsStatsByCube].[}StatsStatsByCube].[Number of Fed Cells]"
+            }
+          ]
+        },
+        {
+          "Ordinal": 4,
+          "Members": [
+            {
+              "Name": "Number of Populated Numeric Cells",
+              "UniqueName": "[}StatsStatsByCube].[}StatsStatsByCube].[Number of Populated Numeric Cells]"
+            }
+          ]
+        },
+        {
+          "Ordinal": 5,
+          "Members": [
+            {
+              "Name": "Number of Populated String Cells",
+              "UniqueName": "[}StatsStatsByCube].[}StatsStatsByCube].[Number of Populated String Cells]"
+            }
+          ]
+        },
+        {
+          "Ordinal": 6,
+          "Members": [
+            {
+              "Name": "Memory Used for Views",
+              "UniqueName": "[}StatsStatsByCube].[}StatsStatsByCube].[Memory Used for Views]"
+            }
+          ]
+        },
+        {
+          "Ordinal": 7,
+          "Members": [
+            {
+              "Name": "Number of Stored Views",
+              "UniqueName": "[}StatsStatsByCube].[}StatsStatsByCube].[Number of Stored Views]"
+            }
+          ]
+        },
+        {
+          "Ordinal": 8,
+          "Members": [
+            {
+              "Name": "Number of Stored Calculated Cells",
+              "UniqueName": "[}StatsStatsByCube].[}StatsStatsByCube].[Number of Stored Calculated Cells]"
+            }
+          ]
+        },
+        {
+          "Ordinal": 9,
+          "Members": [
+            {
+              "Name": "Memory Used for Calculations",
+              "UniqueName": "[}StatsStatsByCube].[}StatsStatsByCube].[Memory Used for Calculations]"
+            }
+          ]
+        },
+        {
+          "Ordinal": 10,
+          "Members": [
+            {
+              "Name": "Rule calculation cache miss rate",
+              "UniqueName": "[}StatsStatsByCube].[}StatsStatsByCube].[Rule calculation cache miss rate]"
+            }
+          ]
+        },
+        {
+          "Ordinal": 11,
+          "Members": [
+            {
+              "Name": "Steps of Average Calculation",
+              "UniqueName": "[}StatsStatsByCube].[}StatsStatsByCube].[Steps of Average Calculation]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Ordinal": 1,
+      "Cardinality": 7,
+      "Tuples": [
+        {
+          "Ordinal": 0,
+          "Members": [
+            {
+              "Name": "plan_BudgetPlan",
+              "UniqueName": "[}PerfCubes].[}PerfCubes].[plan_BudgetPlan]"
+            }
+          ]
+        },
+        {
+          "Ordinal": 1,
+          "Members": [
+            {
+              "Name": "plan_BudgetPlanLineItem",
+              "UniqueName": "[}PerfCubes].[}PerfCubes].[plan_BudgetPlanLineItem]"
+            }
+          ]
+        },
+        {
+          "Ordinal": 2,
+          "Members": [
+            {
+              "Name": "plan_Control",
+              "UniqueName": "[}PerfCubes].[}PerfCubes].[plan_Control]"
+            }
+          ]
+        },
+        {
+          "Ordinal": 3,
+          "Members": [
+            {
+              "Name": "plan_ExchangeRate",
+              "UniqueName": "[}PerfCubes].[}PerfCubes].[plan_ExchangeRate]"
+            }
+          ]
+        },
+        {
+          "Ordinal": 4,
+          "Members": [
+            {
+              "Name": "plan_Report",
+              "UniqueName": "[}PerfCubes].[}PerfCubes].[plan_Report]"
+            }
+          ]
+        },
+        {
+          "Ordinal": 5,
+          "Members": [
+            {
+              "Name": "rushti",
+              "UniqueName": "[}PerfCubes].[}PerfCubes].[rushti]"
+            }
+          ]
+        },
+        {
+          "Ordinal": 6,
+          "Members": [
+            {
+              "Name": "rushti_test",
+              "UniqueName": "[}PerfCubes].[}PerfCubes].[rushti_test]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Ordinal": 2,
+      "Cardinality": 1,
+      "Tuples": [
+        {
+          "Ordinal": 0,
+          "Members": [
+            {
+              "Name": "LATEST",
+              "UniqueName": "[}TimeIntervals].[}TimeIntervals].[LATEST]"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "Cells": [
+    {
+      "Value": 8385536
+    },
+    {
+      "Value": 5729344
+    },
+    {
+      "Value": 2656192
+    },
+    {
+      "Value": 318768
+    },
+    {
+      "Value": 93584
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": 62464
+    },
+    {
+      "Value": 55952
+    },
+    {
+      "Value": 6512
+    },
+    {
+      "Value": 705
+    },
+    {
+      "Value": 141
+    },
+    {
+      "Value": 3
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": 19456
+    },
+    {
+      "Value": 19456
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": 2
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": 33792
+    },
+    {
+      "Value": 33560
+    },
+    {
+      "Value": 232
+    },
+    {
+      "Value": 900
+    },
+    {
+      "Value": 900
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": 8385536
+    },
+    {
+      "Value": 1561080
+    },
+    {
+      "Value": 6824456
+    },
+    {
+      "Value": 1460040
+    },
+    {
+      "Value": 56155
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": 33792
+    },
+    {
+      "Value": 33792
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": 131
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": 33792
+    },
+    {
+      "Value": 33792
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": 53
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": null
+    }
+  ]
+}

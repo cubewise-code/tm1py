@@ -1,0 +1,312 @@
+[
+  {
+    "Name": "cube_memory_used",
+    "Value": 36,
+    "Unit": "KB",
+    "Timestamp": "2026-05-08T00:02:24.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": "Caster Standard Sample monthly"
+  },
+  {
+    "Name": "cube_memory_used",
+    "Value": 20,
+    "Unit": "KB",
+    "Timestamp": "2026-05-08T00:02:24.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": "TM1py_tests_annotations_04d17a88_3c75_11f1_898a_7ced8dc9ffa9"
+  },
+  {
+    "Name": "cube_memory_used",
+    "Value": 28,
+    "Unit": "KB",
+    "Timestamp": "2026-05-29T15:32:09.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": "rushti"
+  },
+  {
+    "Name": "cube_memory_used",
+    "Value": 28,
+    "Unit": "KB",
+    "Timestamp": "2026-05-20T12:38:16.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": "rushti_test"
+  },
+  {
+    "Name": "cube_memory_used_for_cell_values",
+    "Value": 36840,
+    "Unit": "B",
+    "Timestamp": "2026-05-08T00:02:24.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": "Caster Standard Sample monthly"
+  },
+  {
+    "Name": "cube_memory_used_for_cell_values",
+    "Value": 20480,
+    "Unit": "B",
+    "Timestamp": "2026-05-08T00:02:24.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": "TM1py_tests_annotations_04d17a88_3c75_11f1_898a_7ced8dc9ffa9"
+  },
+  {
+    "Name": "cube_memory_used_for_cell_values",
+    "Value": 28672,
+    "Unit": "B",
+    "Timestamp": "2026-05-29T15:32:09.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": "rushti"
+  },
+  {
+    "Name": "cube_memory_used_for_cell_values",
+    "Value": 28672,
+    "Unit": "B",
+    "Timestamp": "2026-05-20T12:38:16.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": "rushti_test"
+  },
+  {
+    "Name": "cube_memory_used_for_feeder_flags",
+    "Value": 24,
+    "Unit": "B",
+    "Timestamp": "2026-05-08T00:02:24.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": "Caster Standard Sample monthly"
+  },
+  {
+    "Name": "cube_memory_used_for_feeder_flags",
+    "Value": 0,
+    "Unit": "B",
+    "Timestamp": "2026-05-08T00:02:24.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": "TM1py_tests_annotations_04d17a88_3c75_11f1_898a_7ced8dc9ffa9"
+  },
+  {
+    "Name": "cube_memory_used_for_feeder_flags",
+    "Value": 0,
+    "Unit": "B",
+    "Timestamp": "2026-05-29T15:32:03.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": "rushti"
+  },
+  {
+    "Name": "cube_memory_used_for_feeder_flags",
+    "Value": 0,
+    "Unit": "B",
+    "Timestamp": "2026-05-20T12:38:02.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": "rushti_test"
+  },
+  {
+    "Name": "cube_num_fed_cells",
+    "Value": 216,
+    "Unit": "#",
+    "Timestamp": "2026-05-08T00:02:24.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": "Caster Standard Sample monthly"
+  },
+  {
+    "Name": "cube_num_fed_cells",
+    "Value": 0,
+    "Unit": "#",
+    "Timestamp": "2026-05-08T00:02:24.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": "TM1py_tests_annotations_04d17a88_3c75_11f1_898a_7ced8dc9ffa9"
+  },
+  {
+    "Name": "cube_num_fed_cells",
+    "Value": 0,
+    "Unit": "#",
+    "Timestamp": "2026-05-29T15:32:03.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": "rushti"
+  },
+  {
+    "Name": "cube_num_fed_cells",
+    "Value": 0,
+    "Unit": "#",
+    "Timestamp": "2026-05-20T12:38:02.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": "rushti_test"
+  },
+  {
+    "Name": "cube_num_populated_numeric_cells",
+    "Value": 218,
+    "Unit": "#",
+    "Timestamp": "2026-05-08T00:02:24.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": "Caster Standard Sample monthly"
+  },
+  {
+    "Name": "cube_num_populated_numeric_cells",
+    "Value": 0,
+    "Unit": "#",
+    "Timestamp": "2026-05-08T00:02:24.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": "TM1py_tests_annotations_04d17a88_3c75_11f1_898a_7ced8dc9ffa9"
+  },
+  {
+    "Name": "cube_num_populated_numeric_cells",
+    "Value": 0,
+    "Unit": "#",
+    "Timestamp": "2026-05-29T15:32:03.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": "rushti"
+  },
+  {
+    "Name": "cube_num_populated_numeric_cells",
+    "Value": 0,
+    "Unit": "#",
+    "Timestamp": "2026-05-20T12:38:02.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": "rushti_test"
+  },
+  {
+    "Name": "cube_num_populated_string_cells",
+    "Value": 0,
+    "Unit": "#",
+    "Timestamp": "2026-05-08T00:02:24.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": "Caster Standard Sample monthly"
+  },
+  {
+    "Name": "cube_num_populated_string_cells",
+    "Value": 0,
+    "Unit": "#",
+    "Timestamp": "2026-05-08T00:02:24.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": "TM1py_tests_annotations_04d17a88_3c75_11f1_898a_7ced8dc9ffa9"
+  },
+  {
+    "Name": "cube_num_populated_string_cells",
+    "Value": 63,
+    "Unit": "#",
+    "Timestamp": "2026-05-29T15:32:33.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": "rushti"
+  },
+  {
+    "Name": "cube_num_populated_string_cells",
+    "Value": 53,
+    "Unit": "#",
+    "Timestamp": "2026-05-20T12:38:08.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": "rushti_test"
+  },
+  {
+    "Name": "replica_cpu_available",
+    "Value": 58,
+    "Unit": "%",
+    "Timestamp": "2026-06-02T21:14:22.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": null
+  },
+  {
+    "Name": "replica_cpu_limit",
+    "Value": 500,
+    "Unit": "millicore",
+    "Timestamp": "2026-05-08T00:02:27.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": null
+  },
+  {
+    "Name": "replica_cpu_used",
+    "Value": 214,
+    "Unit": "millicore",
+    "Timestamp": "2026-06-02T21:14:22.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": null
+  },
+  {
+    "Name": "replica_memory_available",
+    "Value": 36,
+    "Unit": "%",
+    "Timestamp": "2026-06-02T19:02:01.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": null
+  },
+  {
+    "Name": "replica_memory_limit",
+    "Value": 1999,
+    "Unit": "MB",
+    "Timestamp": "2026-05-08T00:02:27.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": null
+  },
+  {
+    "Name": "replica_memory_used",
+    "Value": 1269,
+    "Unit": "MB",
+    "Timestamp": "2026-06-02T21:13:21.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": null
+  },
+  {
+    "Name": "replica_storage_used",
+    "Value": 609,
+    "Unit": "MB",
+    "Timestamp": "2026-06-02T09:28:51.000Z",
+    "ReplicaID": 0,
+    "DatabaseID": "tm1-i-cnf2opo00ahfnf68csag-d-d0983028hiip69ob9e6g",
+    "DatabaseName": "cw-v12-test",
+    "CubeName": null
+  }
+]
