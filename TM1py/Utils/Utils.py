@@ -1825,11 +1825,10 @@ def datetime_to_iso(dt: datetime) -> str:
     """
 
     if not isinstance(dt, datetime):
-        raise TypeError(
-            f"Expected datetime, got {type(dt)}"
-        )
+        raise TypeError(f"Expected datetime, got {type(dt)}")
 
     return dt.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
 
 class HTTPAdapterWithSocketOptions(HTTPAdapter):
     def __init__(self, *args, **kwargs):
