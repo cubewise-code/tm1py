@@ -1,0 +1,88 @@
+{
+  "@odata.context": "$metadata#Cellsets(Cube(Name,Dimensions+(Name)),Axes(Tuples+(Members+(Name,UniqueName))),Cells(Value))/$entity",
+  "ID": "36Lf2TUEAIBsAAAg",
+  "Cube": {
+    "Name": "}StatsForServer",
+    "Dimensions": [
+      {
+        "Name": "}StatsStatsForServer"
+      },
+      {
+        "Name": "}TimeIntervals"
+      }
+    ]
+  },
+  "Axes": [
+    {
+      "Ordinal": 0,
+      "Cardinality": 4,
+      "Tuples": [
+        {
+          "Ordinal": 0,
+          "Members": [
+            {
+              "Name": "Memory Used",
+              "UniqueName": "[}StatsStatsForServer].[}StatsStatsForServer].[Memory Used]"
+            }
+          ]
+        },
+        {
+          "Ordinal": 1,
+          "Members": [
+            {
+              "Name": "Number of Connected Clients",
+              "UniqueName": "[}StatsStatsForServer].[}StatsStatsForServer].[Number of Connected Clients]"
+            }
+          ]
+        },
+        {
+          "Ordinal": 2,
+          "Members": [
+            {
+              "Name": "Number of Active Threads",
+              "UniqueName": "[}StatsStatsForServer].[}StatsStatsForServer].[Number of Active Threads]"
+            }
+          ]
+        },
+        {
+          "Ordinal": 3,
+          "Members": [
+            {
+              "Name": "Memory In Garbage",
+              "UniqueName": "[}StatsStatsForServer].[}StatsStatsForServer].[Memory In Garbage]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Ordinal": 1,
+      "Cardinality": 1,
+      "Tuples": [
+        {
+          "Ordinal": 0,
+          "Members": [
+            {
+              "Name": "LATEST",
+              "UniqueName": "[}TimeIntervals].[}TimeIntervals].[LATEST]"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "Cells": [
+    {
+      "Value": 164735389
+    },
+    {
+      "Value": 2
+    },
+    {
+      "Value": null
+    },
+    {
+      "Value": 19740672
+    }
+  ]
+}

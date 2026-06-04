@@ -24,18 +24,25 @@ class TM1pyTimeout(Exception):
 class TM1pyVersionException(Exception):
     """Exception for usage of a feature requiring a higher TM1 server version."""
 
-    def __init__(self, function: str, required_version, feature: str = None):
+    def __init__(self, function: str, required_version, feature: str = None, max_version=None):
         """
         :param function: Name of the function
-        :param required_version: Required TM1 server version
+        :param required_version: Required (minimum) TM1 server version
         :param feature: Optional feature name
+        :param max_version: Optional exclusive upper bound; when set, the feature
+            requires a server version *below* this (e.g. a v11-only feature with
+            ``max_version='12.0.0'``).
         """
         self.function = function
         self.required_version = required_version
         self.feature = feature
+        self.max_version = max_version
 
     def __str__(self):
-        require_string = f"requires TM1 server version >= '{self.required_version}'"
+        if self.max_version:
+            require_string = f"requires TM1 server version < '{self.max_version}'"
+        else:
+            require_string = f"requires TM1 server version >= '{self.required_version}'"
         if self.feature:
             return f"'{self.feature}' feature of function '{self.function}' {require_string}"
         else:

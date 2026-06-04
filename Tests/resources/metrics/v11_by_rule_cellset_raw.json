@@ -1,0 +1,31 @@
+{
+  "@odata.context": "$metadata#Cellsets(Cube(Name,Dimensions+(Name)),Axes(Tuples+(Members+(Name,UniqueName))),Cells(Value))/$entity",
+  "ID": "36Lf2TUEAIBAAAAg",
+  "Cube": {
+    "Name": "}StatsByRule",
+    "Dimensions": [
+      {
+        "Name": "}Cubes"
+      },
+      {
+        "Name": "}LineNumber"
+      },
+      {
+        "Name": "}RuleStats"
+      }
+    ]
+  },
+  "Axes": [
+    {
+      "Ordinal": 0,
+      "Cardinality": 0,
+      "Tuples": []
+    },
+    {
+      "Ordinal": 1,
+      "Cardinality": 0,
+      "Tuples": []
+    }
+  ],
+  "Cells": []
+}
