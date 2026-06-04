@@ -31,7 +31,7 @@ except ImportError:
 import itertools
 import warnings
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 from TM1py.Exceptions.Exceptions import TM1pyVersionException
 from TM1py.Services.CellService import CellService
@@ -42,11 +42,15 @@ from TM1py.Utils.Utils import (
     CaseAndSpaceInsensitiveDict,
     build_url_friendly_object_name,
     datetime_to_iso,
+    deprecated_in_version,
     format_url,
     require_pandas,
     require_version,
     verify_version,
 )
+
+if TYPE_CHECKING:
+    from TM1py.Services.ServerService import ServerService
 
 V12_VERSION = "12.0.0"
 
@@ -687,8 +691,11 @@ class MetricService(ObjectService):
 
     Per-rule timing (entity-wide), unified across versions — the read is
     identical; only how ``}StatsByRule`` gets populated differs. On v11 the
-    Performance Monitor populates it, so you just read::
+    Performance Monitor populates it, so ensure it is running, then read::
 
+        >>> tm1.metrics.get_performance_monitor_state()
+        False
+        >>> tm1.metrics.start_performance_monitor()
         >>> tm1.metrics.by_rule(cube="plan_BudgetPlan")
 
     On v12 collect on demand: start, exercise the cube's rules, let the ~60s
@@ -715,6 +722,7 @@ class MetricService(ObjectService):
         super().__init__(rest)
         self._cells = None
         self._cubes = None
+        self._servers = None
 
     @property
     def _cell_service(self) -> CellService:
@@ -727,6 +735,14 @@ class MetricService(ObjectService):
         if self._cubes is None:
             self._cubes = CubeService(self._rest)
         return self._cubes
+
+    @property
+    def _server_service(self) -> "ServerService":
+        if self._servers is None:
+            from TM1py.Services.ServerService import ServerService
+
+            self._servers = ServerService(self._rest)
+        return self._servers
 
     @property
     def _is_v12(self) -> bool:
@@ -811,8 +827,8 @@ class MetricService(ObjectService):
                 )
             else:
                 hint = (
-                    "rule stats have not been collected — ensure Performance Monitor is running "
-                    "(ServerService.start_performance_monitor)"
+                    "rule stats have not been collected — ensure the Performance Monitor is running "
+                    "(start_performance_monitor)"
                 )
             warnings.warn(
                 f"'{self.STATS_BY_RULE_CUBE}' does not exist; {hint}. Returning no records.",
@@ -860,6 +876,39 @@ class MetricService(ObjectService):
     @require_pandas
     def by_cube_by_client_as_dataframe(self, *args, **kwargs) -> "pd.DataFrame":
         return pd.DataFrame.from_records(self.by_cube_by_client(*args, **kwargs))
+
+    # ------------------------------------------------------------------ #
+    # performance monitor (v11-only: populates the }Stats* cubes while it runs)
+    # ------------------------------------------------------------------ #
+
+    @deprecated_in_version(version="12.0.0")
+    def start_performance_monitor(self):
+        """Turn the Performance Monitor on (v11 only).
+
+        While it runs, TM1 populates the ``}Stats*`` cubes that :meth:`by_cube`,
+        :meth:`by_server`, and :meth:`by_rule` read on v11. ``PerformanceMonitorOn``
+        is a v11-only setting, so this raises :class:`TM1pyVersionDeprecationException`
+        on v12. Delegates to :meth:`ServerService.start_performance_monitor`.
+        """
+        return self._server_service.start_performance_monitor()
+
+    @deprecated_in_version(version="12.0.0")
+    def stop_performance_monitor(self):
+        """Turn the Performance Monitor off (v11 only).
+
+        Raises :class:`TM1pyVersionDeprecationException` on v12. Delegates to
+        :meth:`ServerService.stop_performance_monitor`.
+        """
+        return self._server_service.stop_performance_monitor()
+
+    @deprecated_in_version(version="12.0.0")
+    def get_performance_monitor_state(self) -> bool:
+        """Return whether the Performance Monitor is currently active (v11 only).
+
+        Raises :class:`TM1pyVersionDeprecationException` on v12. Delegates to
+        :meth:`ServerService.get_performance_monitor_state`.
+        """
+        return self._server_service.get_performance_monitor_state()
 
     # ------------------------------------------------------------------ #
     # v12 rule-stats collection lifecycle (cube-bound actions)

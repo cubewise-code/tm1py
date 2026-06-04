@@ -19,7 +19,10 @@ from datetime import datetime
 from pathlib import Path
 
 from TM1py import TM1Service
-from TM1py.Exceptions.Exceptions import TM1pyVersionException
+from TM1py.Exceptions.Exceptions import (
+    TM1pyVersionDeprecationException,
+    TM1pyVersionException,
+)
 from TM1py.Services.MetricService import (
     ALL_TIME_INTERVALS,
     CATEGORY_BY_CUBE,
@@ -760,6 +763,42 @@ class TestMetricService(unittest.TestCase):
         tm1 = self._v11()
         with self.assertRaises(TM1pyVersionException):
             tm1.metrics.start_collecting_rule_stats("plan_BudgetPlan")
+
+    # ---------------- performance monitor ---------------- #
+
+    def test_performance_monitor_toggle_v11(self):
+        # the metrics service mirrors the ServerService controls; toggling round-
+        # trips and the state getter reflects each change. Restore the original
+        # state so the suite leaves the server as it found it.
+        tm1 = self._v11()
+        original = tm1.metrics.get_performance_monitor_state()
+        self.assertIsInstance(original, bool)
+        try:
+            tm1.metrics.start_performance_monitor()
+            self.assertTrue(tm1.metrics.get_performance_monitor_state())
+            tm1.metrics.stop_performance_monitor()
+            self.assertFalse(tm1.metrics.get_performance_monitor_state())
+        finally:
+            if original:
+                tm1.metrics.start_performance_monitor()
+            else:
+                tm1.metrics.stop_performance_monitor()
+
+    def test_performance_monitor_delegates_to_server_service(self):
+        # metrics and server services must agree on the current state
+        tm1 = self._v11()
+        self.assertEqual(
+            tm1.metrics.get_performance_monitor_state(),
+            tm1.server.get_performance_monitor_state(),
+        )
+
+    def test_performance_monitor_methods_deprecated_on_v12(self):
+        # PerformanceMonitorOn is a v11-only setting; the controls must refuse v12
+        tm1 = self._v12()
+        for method in ("start_performance_monitor", "stop_performance_monitor", "get_performance_monitor_state"):
+            with self.subTest(method=method):
+                with self.assertRaises(TM1pyVersionDeprecationException):
+                    getattr(tm1.metrics, method)()
 
 
 if __name__ == "__main__":
