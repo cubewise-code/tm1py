@@ -1,5 +1,6 @@
 import configparser
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 try:
@@ -725,6 +726,37 @@ class TestUtilsMethods(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.tm1.logout()
+
+
+class TestDatetimeToIso(unittest.TestCase):
+    """Server-free tests for Utils.datetime_to_iso (TM1 Metrics API timestamps)."""
+
+    def test_naive_datetime_assumed_utc(self):
+        self.assertEqual(
+            Utils.datetime_to_iso(datetime(2026, 5, 8, 0, 2, 24)),
+            "2026-05-08T00:02:24.000Z",
+        )
+
+    def test_sub_second_precision_preserved_to_milliseconds(self):
+        # 123_456 microseconds -> 123 milliseconds (truncated, not rounded)
+        self.assertEqual(
+            Utils.datetime_to_iso(datetime(2026, 5, 8, 0, 2, 24, 123_456)),
+            "2026-05-08T00:02:24.123Z",
+        )
+
+    def test_aware_datetime_converted_to_utc(self):
+        # a tz-aware datetime is normalized to UTC before formatting
+        tz_plus_2 = timezone(timedelta(hours=2))
+        aware = datetime(2026, 5, 8, 12, 0, 0, tzinfo=tz_plus_2)
+        self.assertEqual(Utils.datetime_to_iso(aware), "2026-05-08T10:00:00.000Z")
+
+    def test_utc_aware_datetime_unchanged(self):
+        aware = datetime(2026, 5, 8, 10, 0, 0, tzinfo=timezone.utc)
+        self.assertEqual(Utils.datetime_to_iso(aware), "2026-05-08T10:00:00.000Z")
+
+    def test_non_datetime_raises_typeerror(self):
+        with self.assertRaises(TypeError):
+            Utils.datetime_to_iso("2026-05-08")
 
 
 if __name__ == "__main__":

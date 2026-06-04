@@ -17,6 +17,7 @@ import json
 import unittest
 from datetime import datetime
 from pathlib import Path
+from unittest.mock import MagicMock
 
 from TM1py import TM1Service
 from TM1py.Exceptions.Exceptions import (
@@ -29,6 +30,7 @@ from TM1py.Services.MetricService import (
     CATEGORY_BY_SERVER,
     UNIT_BYTES,
     UNIT_COUNT,
+    MetricService,
     build_metrics_url,
     build_v11_mdx,
     normalize_v11_measure,
@@ -110,6 +112,13 @@ class TestMetricVocabulary(unittest.TestCase):
     def test_unknown_measure_raises(self):
         with self.assertRaises(KeyError):
             normalize_v11_measure(CATEGORY_BY_CUBE, "Some Future Measure")
+
+    def test_unknown_measure_error_names_measure_and_category(self):
+        with self.assertRaises(KeyError) as cm:
+            normalize_v11_measure(CATEGORY_BY_CUBE, "Some Future Measure")
+        message = str(cm.exception)
+        self.assertIn("Some Future Measure", message)
+        self.assertIn("by_cube", message)
 
     def test_unknown_category_raises(self):
         with self.assertRaises(KeyError):
@@ -455,6 +464,42 @@ class TestV11GaugeShaper(unittest.TestCase):
         empty = {"Axes": [{"Ordinal": 0, "Tuples": []}, {"Ordinal": 1, "Tuples": []}], "Cells": []}
         self.assertEqual(shape_v11_gauge_records(empty, category="by_cube"), [])
 
+    def test_truncated_cells_warns_and_reads_missing_as_none(self):
+        # a Cells array shorter than the axes imply is a malformed/truncated
+        # response: warn, and read the missing cell as None rather than crashing.
+        cellset = {
+            "Axes": [
+                _axis(
+                    0,
+                    [
+                        [_member("}StatsStatsForServer", "Memory Used")],
+                        [_member("}StatsStatsForServer", "Number of Connected Clients")],
+                    ],
+                ),
+                _axis(1, [[_member("}TimeIntervals", "LATEST")]]),
+            ],
+            "Cells": [{"Value": 123}],  # only 1 of the 2 expected cells
+        }
+        with self.assertWarns(UserWarning):
+            records = shape_v11_gauge_records(cellset, category="by_server")
+        by_metric = {r["Metric"]: r for r in records}
+        self.assertEqual(by_metric["replica_memory_used"]["Value"], 123)
+        self.assertIsNone(by_metric["replica_num_connected_clients"]["Value"])
+
+    def test_missing_measure_dimension_raises_with_context(self):
+        # a cellset tuple lacking the measure dimension -> contextual KeyError
+        # (names the missing dimension), not a bare KeyError.
+        cellset = {
+            "Axes": [
+                _axis(0, [[_member("}PerfCubes", "Sales")]]),
+                _axis(1, [[_member("}TimeIntervals", "LATEST")]]),
+            ],
+            "Cells": [{"Value": 1}],
+        }
+        with self.assertRaises(KeyError) as cm:
+            shape_v11_gauge_records(cellset, category="by_cube")
+        self.assertIn("}StatsStatsByCube", str(cm.exception))
+
 
 # ====================================================================== #
 # unit tests — v11 entity record shaper
@@ -595,6 +640,219 @@ class TestV11EntityShaperByCubeByClient(unittest.TestCase):
         self.assertEqual(records[1]["ElapseTimeMs"], 12)
 
 
+class TestV11EntityShaperByProcessAndChore(unittest.TestCase):
+    """by_process / by_chore entity-wide shaping.
+
+    }StatsByProcess and }StatsByChore share the }StatsByProcess *measure*
+    dimension (the alias at ENTITY_MEASURE_COLUMNS[by_chore]); only the entity
+    dimension differs (}Processes -> ProcessName, }Chores -> ChoreName). Both
+    carry a LATEST }TimeIntervals slicer axis.
+    """
+
+    PROCESS_MEASURES = [
+        "Current State",
+        "Completion Status",
+        "Client Name",
+        "Last Start Time",
+        "Last End Time",
+        "Last Duration",
+        "Next Activation Time",
+        "Current Process",
+    ]
+    VALUES = [
+        "Idle",
+        "NormalCompletion",
+        "admin",
+        "2026-05-08T10:00:00",
+        "2026-05-08T10:01:00",
+        "60",
+        "2026-05-09T10:00:00",
+        "",
+    ]
+
+    def _cellset(self, entity_dim, entity_name):
+        # measure dimension is }StatsByProcess for BOTH process and chore
+        measures = _axis(0, [[_member("}StatsByProcess", m)] for m in self.PROCESS_MEASURES])
+        rows = _axis(1, [[_member(entity_dim, entity_name)]])
+        time = _axis(2, [[_member("}TimeIntervals", "LATEST")]])
+        cells = [{"Value": v} for v in self.VALUES]
+        return {"Axes": [measures, rows, time], "Cells": cells}
+
+    def test_by_process_wide_record(self):
+        records = shape_v11_entity_records(self._cellset("}Processes", "load.actuals"), category="by_process")
+        self.assertEqual(
+            records,
+            [
+                {
+                    "Category": "by_process",
+                    "ProcessName": "load.actuals",
+                    "ReplicaID": 0,
+                    "TimeInterval": "LATEST",
+                    "CurrentState": "Idle",
+                    "CompletionStatus": "NormalCompletion",
+                    "ClientName": "admin",
+                    "LastStartTime": "2026-05-08T10:00:00",
+                    "LastEndTime": "2026-05-08T10:01:00",
+                    "LastDuration": "60",
+                    "NextActivationTime": "2026-05-09T10:00:00",
+                    "CurrentProcess": "",
+                }
+            ],
+        )
+
+    def test_by_chore_reuses_process_measure_dimension_with_chore_column(self):
+        records = shape_v11_entity_records(self._cellset("}Chores", "nightly.load"), category="by_chore")
+        self.assertEqual(len(records), 1)
+        record = records[0]
+        self.assertEqual(record["Category"], "by_chore")
+        self.assertEqual(record["ChoreName"], "nightly.load")
+        self.assertNotIn("ProcessName", record)
+        # the }StatsByProcess measures resolve to the same columns as by_process
+        self.assertEqual(record["CurrentState"], "Idle")
+        self.assertEqual(record["CompletionStatus"], "NormalCompletion")
+
+
+class TestV11EntityShaperByClient(unittest.TestCase):
+    """by_client entity-wide shaping. }StatsByClient measure dim }StatsStatsByClient."""
+
+    CLIENT_MEASURES = [
+        "Message Count",
+        "Message Bytes",
+        "Request Count",
+        "Elapse Time (ms)",
+        "Bytes/Message",
+    ]
+
+    def _cellset(self):
+        measures = _axis(0, [[_member("}StatsStatsByClient", m)] for m in self.CLIENT_MEASURES])
+        rows = _axis(1, [[_member("}PerfClients", "admin")]])
+        time = _axis(2, [[_member("}TimeIntervals", "LATEST")]])
+        cells = [{"Value": v} for v in [100, 2048, 50, 12, 20]]
+        return {"Axes": [measures, rows, time], "Cells": cells}
+
+    def test_by_client_wide_record(self):
+        records = shape_v11_entity_records(self._cellset(), category="by_client")
+        self.assertEqual(
+            records,
+            [
+                {
+                    "Category": "by_client",
+                    "ClientName": "admin",
+                    "ReplicaID": 0,
+                    "TimeInterval": "LATEST",
+                    "MessageCount": 100,
+                    "MessageBytes": 2048,
+                    "RequestCount": 50,
+                    "ElapseTimeMs": 12,
+                    "BytesPerMessage": 20,
+                }
+            ],
+        )
+
+
+# ====================================================================== #
+# unit tests — MetricService dispatch / filtering (mocked REST, server-free)
+# ====================================================================== #
+
+
+def _mock_service(version):
+    """A MetricService wired to a MagicMock REST layer (no live server)."""
+    rest = MagicMock()
+    rest.version = version
+    return rest, MetricService(rest)
+
+
+class TestMetricServiceDispatch(unittest.TestCase):
+    # ---------------- version dispatch (G1) ---------------- #
+
+    def test_by_cube_v12_hits_metrics_endpoint_not_mdx(self):
+        rest, svc = _mock_service("12.5.0")
+        rest.GET.return_value.json.return_value = {"value": _load("v12_metrics_raw.json")}
+        records = svc.by_cube()
+        self.assertEqual(rest.GET.call_args[0][0], "/Metrics()")
+        self.assertTrue(records)
+        self.assertTrue(all(r["Metric"].startswith("cube_") for r in records))
+
+    def test_by_cube_v11_builds_mdx_against_stats_cube_not_metrics(self):
+        rest, svc = _mock_service("11.8.0")
+        svc._read_cellset = MagicMock(return_value=_load("v11_by_cube_cellset_raw.json"))
+        records = svc.by_cube()
+        rest.GET.assert_not_called()
+        self.assertIn("}StatsByCube", svc._read_cellset.call_args[0][0])
+        self.assertTrue(records)
+        self.assertTrue(all(r["Metric"].startswith("cube_") for r in records))
+
+    def test_by_server_dispatch_on_both_versions(self):
+        rest12, svc12 = _mock_service("12.5.0")
+        rest12.GET.return_value.json.return_value = {"value": _load("v12_metrics_raw.json")}
+        self.assertTrue(all(r["Metric"].startswith("replica_") for r in svc12.by_server()))
+        self.assertEqual(rest12.GET.call_args[0][0], "/Metrics()")
+
+        rest11, svc11 = _mock_service("11.8.0")
+        svc11._read_cellset = MagicMock(return_value=_load("v11_by_server_cellset_raw.json"))
+        self.assertTrue(all(r["Metric"].startswith("replica_") for r in svc11.by_server()))
+        rest11.GET.assert_not_called()
+
+    # ---------------- metrics= filtering (G2) ---------------- #
+
+    def test_v12_metrics_filter_uses_canonical_name_in_url(self):
+        rest, svc = _mock_service("12.5.0")
+        rest.GET.return_value.json.return_value = {"value": []}
+        svc.by_cube(metrics=["cube_memory_used"])
+        self.assertIn("Name eq 'cube_memory_used'", rest.GET.call_args[0][0])
+
+    def test_v11_metrics_filter_matches_canonical_metric_not_native_name(self):
+        rest, svc = _mock_service("11.8.0")
+        svc._read_cellset = MagicMock(return_value=_load("v11_by_cube_cellset_raw.json"))
+        # filtering by canonical Metric keeps only those records...
+        filtered = svc.by_cube(metrics=["cube_memory_used"])
+        self.assertTrue(filtered)
+        self.assertTrue(all(r["Metric"] == "cube_memory_used" for r in filtered))
+        # ...and filtering by a NativeName matches nothing (filter is on Metric)
+        self.assertEqual(svc.by_cube(metrics=["Total Memory Used"]), [])
+
+    # ---------------- since (v12-only Timestamp filter) ---------------- #
+
+    def test_since_rejected_on_v11(self):
+        _, svc = _mock_service("11.8.0")
+        with self.assertRaises(TM1pyVersionException):
+            svc.by_cube(since=datetime(2026, 5, 8))
+        with self.assertRaises(TM1pyVersionException):
+            svc.by_server(since=datetime(2026, 5, 8))
+
+    def test_since_adds_timestamp_filter_on_v12(self):
+        rest, svc = _mock_service("12.5.0")
+        rest.GET.return_value.json.return_value = {"value": []}
+        svc.by_cube(since=datetime(2026, 5, 8, 0, 2, 24))
+        self.assertIn("Timestamp gt 2026-05-08T00:02:24.000Z", rest.GET.call_args[0][0])
+
+    def test_time_interval_rejected_on_v12(self):
+        rest, svc = _mock_service("12.5.0")
+        rest.GET.return_value.json.return_value = {"value": []}
+        with self.assertRaises(TM1pyVersionException):
+            svc.by_cube(time_interval="0M05")
+        with self.assertRaises(TM1pyVersionException):
+            svc.by_server(time_interval="0M05")
+
+    # ---------------- by_rule missing }StatsByRule (G3) ---------------- #
+
+    def test_by_rule_missing_cube_warns_with_perfmon_hint_on_v11(self):
+        _, svc = _mock_service("11.8.0")
+        svc._cubes = MagicMock()
+        svc._cubes.exists.return_value = False
+        with self.assertWarns(UserWarning) as cm:
+            self.assertEqual(svc.by_rule(), [])
+        self.assertIn("start_performance_monitor", str(cm.warning))
+
+    def test_by_rule_missing_cube_warns_with_collection_hint_on_v12(self):
+        _, svc = _mock_service("12.5.0")
+        svc._cubes = MagicMock()
+        svc._cubes.exists.return_value = False
+        with self.assertWarns(UserWarning) as cm:
+            self.assertEqual(svc.by_rule(), [])
+        self.assertIn("start_collecting_rule_stats", str(cm.warning))
+
+
 # ====================================================================== #
 # integration tests — MetricService against live servers
 # ====================================================================== #
@@ -721,6 +979,20 @@ class TestMetricService(unittest.TestCase):
             tm1.metrics.by_cube(time_interval="0M05")
         with self.assertRaises(TM1pyVersionException):
             tm1.metrics.by_server(time_interval="0M05")
+
+    def test_since_raises_on_v11(self):
+        tm1 = self._v11()
+        with self.assertRaises(TM1pyVersionException):
+            tm1.metrics.by_cube(since=datetime(2026, 1, 1))
+        with self.assertRaises(TM1pyVersionException):
+            tm1.metrics.by_server(since=datetime(2026, 1, 1))
+
+    def test_since_filters_to_recent_metrics_on_v12(self):
+        # a far-future `since` filters everything out; the unfiltered read has
+        # rows. Asserts the Timestamp filter reaches the server and is applied.
+        tm1 = self._v12()
+        self.assertTrue(tm1.metrics.by_cube(), "expected unfiltered cube metrics")
+        self.assertEqual(tm1.metrics.by_cube(since=datetime(2999, 1, 1)), [])
 
     # ---------------- by_rule + rule-stats lifecycle ---------------- #
 

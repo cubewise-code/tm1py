@@ -7,7 +7,7 @@ import math
 import re
 import ssl
 import urllib.parse as urlparse
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum, unique
 from io import StringIO
 from typing import (
@@ -1820,14 +1820,20 @@ def reorder_with_priority(
 
 
 def datetime_to_iso(dt: datetime) -> str:
-    """
-    Convert datetime → ISO 8601 UTC format used by TM1 Metrics API
+    """Convert datetime → ISO 8601 UTC format used by TM1 Metrics API.
+
+    A timezone-aware datetime is converted to UTC before formatting; a naive
+    datetime is assumed to already be in UTC. Sub-second precision is preserved
+    to milliseconds (the resolution the TM1 Metrics API reports).
     """
 
     if not isinstance(dt, datetime):
         raise TypeError(f"Expected datetime, got {type(dt)}")
 
-    return dt.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(timezone.utc)
+
+    return dt.strftime("%Y-%m-%dT%H:%M:%S") + f".{dt.microsecond // 1000:03d}Z"
 
 
 class HTTPAdapterWithSocketOptions(HTTPAdapter):

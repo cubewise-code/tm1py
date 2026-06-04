@@ -197,7 +197,10 @@ def normalize_v11_measure(category: str, native_name: str) -> Tuple[str, str, Op
     except KeyError:
         raise KeyError(f"Unknown gauge Stats Category: '{category}'")
 
-    metric, unit = lookup[native_name]
+    try:
+        metric, unit = lookup[native_name]
+    except KeyError:
+        raise KeyError(f"Unknown v11 measure '{native_name}' for gauge Stats Category '{category}'")
     return metric, native_name, unit
 
 
@@ -535,6 +538,26 @@ def _cell_index(coord: Tuple[int, ...], sizes: List[int]) -> int:
     return index
 
 
+def _warn_if_truncated(category: str, sizes: List[int], cells: List[Dict]) -> None:
+    """Warn when a v11 cellset has fewer ``Cells`` than its axes imply.
+
+    The ``}Stats*`` queries are dense — ``len(Cells)`` should equal the product
+    of the axis cardinalities. A shorter array means a truncated/malformed
+    server response; the shapers read the missing cells as ``None``, so surface
+    it rather than letting it pass silently. (Empty axes are handled separately
+    and legitimately yield no records.)
+    """
+    expected = 1
+    for size in sizes:
+        expected *= size
+    if len(cells) < expected:
+        warnings.warn(
+            f"v11 '{category}' cellset returned {len(cells)} cells but its axes {sizes} "
+            f"imply {expected}; the response looks truncated — missing cells are read as None.",
+            stacklevel=3,
+        )
+
+
 def shape_v11_gauge_records(cellset: Dict, category: str) -> List[Dict]:
     """Shape a raw v11 ``}Stats*`` cellset into gauge-long records for ``category``.
 
@@ -565,6 +588,7 @@ def shape_v11_gauge_records(cellset: Dict, category: str) -> List[Dict]:
 
     axis_tuples = _axis_tuples_by_dimension(axes)
     cells = cellset.get("Cells", [])
+    _warn_if_truncated(category, sizes, cells)
 
     records: List[Dict] = []
     for coord in itertools.product(*(range(size) for size in sizes)):
@@ -574,6 +598,11 @@ def shape_v11_gauge_records(cellset: Dict, category: str) -> List[Dict]:
         for axis_i, member_i in enumerate(coord):
             dims.update(axis_tuples[axis_i][member_i])
 
+        if measure_dim not in dims:
+            raise KeyError(
+                f"measure dimension '{measure_dim}' missing from a '{category}' cellset tuple; "
+                f"got dimensions {sorted(dims)}"
+            )
         metric, native_name, unit = normalize_v11_measure(category, dims[measure_dim])
         value = cells[index].get("Value") if index < len(cells) else None
 
@@ -614,6 +643,7 @@ def shape_v11_entity_records(cellset: Dict, category: str) -> List[Dict]:
 
     axis_tuples = _axis_tuples_by_dimension(axes)
     cells = cellset.get("Cells", [])
+    _warn_if_truncated(category, sizes, cells)
 
     records: Dict[tuple, Dict] = {}
     for coord in itertools.product(*(range(size) for size in sizes)):
@@ -714,6 +744,14 @@ class MetricService(ObjectService):
         >>> tm1.metrics.by_chore()
         >>> tm1.metrics.by_client()
         >>> tm1.metrics.by_cube_by_client(cube="plan_BudgetPlan")
+
+    Two version-error flavours are used deliberately. Version-gated *reads* —
+    the v11-only categories above and the v11-only ``time_interval`` / v12-only
+    ``since`` arguments — raise :class:`TM1pyVersionException` (the underlying
+    source simply does not exist on the other version). The Performance Monitor
+    *controls* (:meth:`start_performance_monitor` etc.) raise
+    :class:`TM1pyVersionDeprecationException`, mirroring the deprecated
+    :class:`ServerService` methods they delegate to.
     """
 
     STATS_BY_RULE_CUBE = "}StatsByRule"
@@ -757,6 +795,7 @@ class MetricService(ObjectService):
         cube: str = None,
         metrics: List[str] = None,
         time_interval: str = None,
+        since: datetime = None,
         include_control: bool = False,
         **kwargs,
     ) -> List[Dict]:
@@ -764,6 +803,15 @@ class MetricService(ObjectService):
 
         ``}``-control cubes and the synthetic ``Cubes Total`` row are excluded
         by default; ``include_control=True`` adds ``}``-cubes (v11 only).
+
+        :param time_interval: v11-only rolling-window selector (see
+            :meth:`build_v11_mdx`); passing it on v12 raises
+            :class:`TM1pyVersionException`.
+        :param since: v12-only — return only metrics whose ``Timestamp`` is
+            strictly after this ``datetime`` (``Metrics()`` has no per-metric
+            timestamp on v11); passing it on v11 raises
+            :class:`TM1pyVersionException`. A tz-aware datetime is converted to
+            UTC; a naive one is assumed UTC.
         """
         if self._is_v12:
             self._reject_time_interval(time_interval, "by_cube")
@@ -772,7 +820,8 @@ class MetricService(ObjectService):
                     "include_control has no effect on v12: Metrics() never reports '}'-control cubes.",
                     stacklevel=2,
                 )
-            return self._gauge_v12(CATEGORY_BY_CUBE, cube=cube, metrics=metrics, **kwargs)
+            return self._gauge_v12(CATEGORY_BY_CUBE, cube=cube, metrics=metrics, since=since, **kwargs)
+        self._reject_since(since, "by_cube")
         return self._gauge_v11(
             CATEGORY_BY_CUBE,
             cube=cube,
@@ -786,14 +835,22 @@ class MetricService(ObjectService):
     def by_cube_as_dataframe(self, *args, **kwargs) -> "pd.DataFrame":
         return pd.DataFrame.from_records(self.by_cube(*args, **kwargs))
 
-    def by_server(self, metrics: List[str] = None, time_interval: str = None, **kwargs) -> List[Dict]:
+    def by_server(
+        self, metrics: List[str] = None, time_interval: str = None, since: datetime = None, **kwargs
+    ) -> List[Dict]:
         """Server/replica-level metrics (gauge-long), unified across versions.
 
         Always one row per replica with a ``ReplicaID`` column (v11 -> ``0``).
+
+        :param time_interval: v11-only rolling-window selector; passing it on
+            v12 raises :class:`TM1pyVersionException`.
+        :param since: v12-only ``Timestamp gt`` filter (see :meth:`by_cube`);
+            passing it on v11 raises :class:`TM1pyVersionException`.
         """
         if self._is_v12:
             self._reject_time_interval(time_interval, "by_server")
-            return self._gauge_v12(CATEGORY_BY_SERVER, cube=None, metrics=metrics, **kwargs)
+            return self._gauge_v12(CATEGORY_BY_SERVER, cube=None, metrics=metrics, since=since, **kwargs)
+        self._reject_since(since, "by_server")
         return self._gauge_v11(CATEGORY_BY_SERVER, cube=None, metrics=metrics, time_interval=time_interval, **kwargs)
 
     @require_pandas
@@ -842,7 +899,11 @@ class MetricService(ObjectService):
         return pd.DataFrame.from_records(self.by_rule(*args, **kwargs))
 
     def by_process(self, **kwargs) -> List[Dict]:
-        """Per-process execution statistics (entity-wide). v11 only."""
+        """Per-process execution statistics (entity-wide). v11 only.
+
+        :raises TM1pyVersionException: on v12 (the ``}StatsByProcess`` cube was
+            removed; no v12 source exists).
+        """
         self._require_v11(CATEGORY_BY_PROCESS)
         return self._entity_v11(CATEGORY_BY_PROCESS, **kwargs)
 
@@ -851,7 +912,11 @@ class MetricService(ObjectService):
         return pd.DataFrame.from_records(self.by_process(*args, **kwargs))
 
     def by_chore(self, **kwargs) -> List[Dict]:
-        """Per-chore execution statistics (entity-wide). v11 only."""
+        """Per-chore execution statistics (entity-wide). v11 only.
+
+        :raises TM1pyVersionException: on v12 (the ``}StatsByChore`` cube was
+            removed; no v12 source exists).
+        """
         self._require_v11(CATEGORY_BY_CHORE)
         return self._entity_v11(CATEGORY_BY_CHORE, **kwargs)
 
@@ -860,7 +925,11 @@ class MetricService(ObjectService):
         return pd.DataFrame.from_records(self.by_chore(*args, **kwargs))
 
     def by_client(self, **kwargs) -> List[Dict]:
-        """Per-client request/message statistics (entity-wide). v11 only."""
+        """Per-client request/message statistics (entity-wide). v11 only.
+
+        :raises TM1pyVersionException: on v12 (the ``}StatsByClient`` cube was
+            removed; no v12 source exists).
+        """
         self._require_v11(CATEGORY_BY_CLIENT)
         return self._entity_v11(CATEGORY_BY_CLIENT, **kwargs)
 
@@ -869,7 +938,11 @@ class MetricService(ObjectService):
         return pd.DataFrame.from_records(self.by_client(*args, **kwargs))
 
     def by_cube_by_client(self, cube: str = None, **kwargs) -> List[Dict]:
-        """Per-cube-per-client access statistics (entity-wide). v11 only."""
+        """Per-cube-per-client access statistics (entity-wide). v11 only.
+
+        :raises TM1pyVersionException: on v12 (the ``}StatsByCubeByClient`` cube
+            was removed; no v12 source exists).
+        """
         self._require_v11(CATEGORY_BY_CUBE_BY_CLIENT)
         return self._entity_v11(CATEGORY_BY_CUBE_BY_CLIENT, cube=cube, **kwargs)
 
@@ -944,8 +1017,10 @@ class MetricService(ObjectService):
     # version-specific readers
     # ------------------------------------------------------------------ #
 
-    def _gauge_v12(self, category: str, cube: str = None, metrics: List[str] = None, **kwargs) -> List[Dict]:
-        url = build_metrics_url(cube_name=cube, metrics=metrics)
+    def _gauge_v12(
+        self, category: str, cube: str = None, metrics: List[str] = None, since: datetime = None, **kwargs
+    ) -> List[Dict]:
+        url = build_metrics_url(cube_name=cube, metrics=metrics, timestamp=since)
         raw = self._rest.GET(url, **kwargs).json().get("value", [])
         return shape_v12_gauge_records(raw, category)
 
@@ -986,22 +1061,45 @@ class MetricService(ObjectService):
     # ------------------------------------------------------------------ #
 
     def _require_v11(self, function: str) -> None:
-        """v11-only categories have no v12 source; raise a clear version error."""
+        """v11-only categories have no v12 source; raise a clear version error.
+
+        Raises :class:`TM1pyVersionException` with ``max_version=V12_VERSION``
+        (the feature requires a server *below* v12), so ``required_version`` is
+        left unset.
+        """
         if self._is_v12:
             raise TM1pyVersionException(
                 function=function,
-                required_version=V12_VERSION,
+                required_version=None,
                 max_version=V12_VERSION,
                 feature=f"'{function}' is a v11-only Stats Category (no v12 source exists)",
             )
 
     @staticmethod
     def _reject_time_interval(time_interval, function: str) -> None:
-        """``time_interval`` is a v11-only rolling-window concept; reject it on v12."""
+        """``time_interval`` is a v11-only rolling-window concept; reject it on v12.
+
+        Raises :class:`TM1pyVersionException` with ``max_version=V12_VERSION``.
+        """
         if time_interval is not None:
             raise TM1pyVersionException(
                 function=f"{function}(time_interval=...)",
-                required_version=V12_VERSION,
+                required_version=None,
                 max_version=V12_VERSION,
                 feature="time_interval (v11 rolling window) is not available on v12",
+            )
+
+    @staticmethod
+    def _reject_since(since, function: str) -> None:
+        """``since`` filters the v12 ``Metrics()`` ``Timestamp``; reject it on v11.
+
+        v11 ``}Stats*`` cubes have no per-metric timestamp, so ``since`` requires
+        a v12 server. Raises :class:`TM1pyVersionException` with
+        ``required_version=V12_VERSION``.
+        """
+        if since is not None:
+            raise TM1pyVersionException(
+                function=f"{function}(since=...)",
+                required_version=V12_VERSION,
+                feature="since (v12 Metrics() Timestamp filter) is not available on v11",
             )
