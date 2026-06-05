@@ -344,7 +344,7 @@ class ElementService(ObjectService):
         use_blob: bool = False,
         allow_empty_alias: bool = True,
         attribute_suffix: bool = False,
-        element_type_column: str = "Type",
+        element_type_column: str = "ElementType",
         **kwargs,
     ) -> "pd.DataFrame":
         """
