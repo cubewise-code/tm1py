@@ -20,7 +20,7 @@ from requests.adapters import HTTPAdapter
 from requests.auth import HTTPBasicAuth
 from urllib3._collections import HTTPHeaderDict
 
-from TM1py.Exceptions.Exceptions import TM1pyTimeout, TM1pyVersionDeprecationException
+from TM1py.Exceptions.Exceptions import TM1pyTimeout, TM1pyVersionDeprecationException, TM1pyNetworkException
 from TM1py.Utils import (
     CaseAndSpaceInsensitiveSet,
     HTTPAdapterWithSocketOptions,
@@ -1152,9 +1152,21 @@ class RestService:
         :Exceptions:
             TM1pyException, raises TM1pyException when Code is not 200, 204 etc.
         """
+              
         if not response.ok:
+            content_type = response.headers.get("Content-Type", "")
+            if "text/html" in content_type or response.text.lstrip().startswith("<!DOCTYPE"):
+                raise TM1pyNetworkException(
+                    response.text,
+                    status_code=response.status_code,
+                    reason=response.reason,
+                    headers=response.headers
+                )
             raise TM1pyRestException(
-                response.text, status_code=response.status_code, reason=response.reason, headers=response.headers
+                response.text,
+                status_code=response.status_code,
+                reason=response.reason,
+                headers=response.headers
             )
 
     @staticmethod
