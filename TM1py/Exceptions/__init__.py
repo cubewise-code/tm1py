@@ -7,4 +7,5 @@ from TM1py.Exceptions.Exceptions import (
     TM1pyVersionException,
     TM1pyWriteFailureException,
     TM1pyWritePartialFailureException,
+    TM1pyNetworkException, 
 )

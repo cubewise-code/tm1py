@@ -192,11 +192,14 @@ class TM1pyNetworkException(TM1pyException):
         self._status_code = status_code
         self._reason = reason
         self._headers = headers
-        self._ray_id = self._extract_cloudflare_ray_id(response)
+        self._ray_id = self._extract_cloudflare_ray_id(response, headers)        
 
     @staticmethod
-    def _extract_cloudflare_ray_id(text: str) -> str:
+    def _extract_cloudflare_ray_id(text: str, headers: Mapping) -> str:
         """Extract Cloudflare Ray ID from an HTML block page, if present."""
+        ray_id = headers.get("CF-RAY", "")
+        if ray_id:
+            return ray_id
         match = re.search(r"Ray ID[:\s]+([a-f0-9]+)", text, re.IGNORECASE)
         return match.group(1) if match else None
 
