@@ -34,7 +34,12 @@ except ImportError:
 
 import http.client as http_client
 
-from TM1py.Exceptions import TM1pyTimeout, TM1pyVersionDeprecationException, TM1pyNetworkException, TM1pyRestException
+from TM1py.Exceptions import (
+    TM1pyNetworkException,
+    TM1pyRestException,
+    TM1pyTimeout,
+    TM1pyVersionDeprecationException,
+)
 
 
 class AuthenticationMode(Enum):
@@ -1151,10 +1156,10 @@ class RestService:
         :Exceptions:
             TM1pyException, raises TM1pyException when Code is not 200, 204 etc.
         """
-              
         if not response.ok:
             content_type = response.headers.get("Content-Type", "")
-            if "text/html" in content_type.lower() or response.text.lstrip().startswith("<!DOCTYPE"):
+            body_start = response.text.lstrip().lower()
+            if "text/html" in content_type.lower() or body_start.startswith(("<!doctype", "<html")):
                 raise TM1pyNetworkException(
                     response.text,
                     status_code=response.status_code,

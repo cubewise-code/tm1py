@@ -2,10 +2,14 @@
 
 import unittest
 
-from TM1py.Exceptions.Exceptions import TM1pyException, TM1pyNetworkException, TM1pyRestException
 from requests import Response
-from TM1py.Services.RestService import RestService
 
+from TM1py.Exceptions.Exceptions import (
+    TM1pyException,
+    TM1pyNetworkException,
+    TM1pyRestException,
+)
+from TM1py.Services.RestService import RestService
 
 CLOUDFLARE_HTML_WITH_RAY_ID = """<!DOCTYPE html>
 <html>
@@ -207,9 +211,58 @@ class TestNetworkException(unittest.TestCase):
         response._content = CLOUDFLARE_HTML_WITH_RAY_ID.encode("utf-8")
         response.headers = {"Content-Type": "text/html"}
         response.reason = "Forbidden"
-        
+
         with self.assertRaises(TM1pyNetworkException):
             RestService.verify_response(response)
+
+    def test_verify_response_raises_network_exception_for_html_body_without_html_content_type(self):
+        """HTML body detected via the <!DOCTYPE signature even when Content-Type is not text/html."""
+        response = Response()
+        response.status_code = 502
+        response._content = GENERIC_HTML_NO_RAY_ID.encode("utf-8")
+        response.headers = {"Content-Type": "application/octet-stream"}
+        response.reason = "Bad Gateway"
+
+        with self.assertRaises(TM1pyNetworkException):
+            RestService.verify_response(response)
+
+    def test_verify_response_raises_network_exception_for_html_content_type_without_doctype(self):
+        """text/html Content-Type (with charset) detected even when the body has no <!DOCTYPE prefix."""
+        response = Response()
+        response.status_code = 403
+        response._content = b"<html><body>blocked</body></html>"
+        response.headers = {"Content-Type": "text/html; charset=utf-8"}
+        response.reason = "Forbidden"
+
+        with self.assertRaises(TM1pyNetworkException):
+            RestService.verify_response(response)
+
+    def test_verify_response_raises_rest_exception_for_json_error(self):
+        """Genuine TM1 REST errors (JSON, non-HTML) must still raise TM1pyRestException."""
+        response = Response()
+        response.status_code = 400
+        response._content = b'{"error":{"message":"Invalid MDX statement"}}'
+        response.headers = {"Content-Type": "application/json"}
+        response.reason = "Bad Request"
+
+        with self.assertRaises(TM1pyRestException):
+            RestService.verify_response(response)
+
+        try:
+            RestService.verify_response(response)
+        except TM1pyRestException as exc:
+            self.assertNotIsInstance(exc, TM1pyNetworkException)
+
+    def test_verify_response_does_not_raise_for_ok_response(self):
+        """A successful response must pass through without raising, even with an HTML-ish body."""
+        response = Response()
+        response.status_code = 200
+        response._content = b"<!DOCTYPE html><html></html>"
+        response.headers = {"Content-Type": "text/html"}
+        response.reason = "OK"
+
+        self.assertIsNone(RestService.verify_response(response))
+
 
 if __name__ == "__main__":
     unittest.main()

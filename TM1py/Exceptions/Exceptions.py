@@ -2,7 +2,7 @@
 
 # TM1py Exceptions are defined here
 import re
-from typing import List, Mapping
+from typing import List, Mapping, Optional
 
 
 class TM1pyTimeout(Exception):
@@ -173,12 +173,17 @@ class TM1pyRestException(TM1pyException):
             self.message, self._status_code, self._reason, self._headers
         )
 
+
 class TM1pyNetworkException(TM1pyException):
     """Exception for network/upstream errors where the request never reached TM1.
 
     Raised when a non-JSON response is received (e.g. an HTML block page from
     Cloudflare or another WAF/proxy), indicating the issue is infrastructure-level
     rather than a TM1 REST API error.
+
+    Intentionally does NOT subclass TM1pyRestException so that existing
+    `except TM1pyRestException` handlers do not swallow infrastructure-level
+    failures. Both remain siblings under TM1pyException.
     """
 
     def __init__(self, response: str, status_code: int, reason: str, headers: Mapping):
@@ -192,10 +197,10 @@ class TM1pyNetworkException(TM1pyException):
         self._status_code = status_code
         self._reason = reason
         self._headers = headers
-        self._ray_id = self._extract_cloudflare_ray_id(response, headers)        
+        self._ray_id = self._extract_cloudflare_ray_id(response, headers)
 
     @staticmethod
-    def _extract_cloudflare_ray_id(text: str, headers: Mapping) -> str:
+    def _extract_cloudflare_ray_id(text: str, headers: Mapping) -> Optional[str]:
         """Extract Cloudflare Ray ID from an HTML block page, if present."""
         ray_id = headers.get("CF-RAY", "")
         if ray_id:
@@ -224,7 +229,7 @@ class TM1pyNetworkException(TM1pyException):
         return self._headers
 
     @property
-    def ray_id(self):
+    def ray_id(self) -> Optional[str]:
         """Cloudflare Ray ID if the block page contained one, else None."""
         return self._ray_id
 
