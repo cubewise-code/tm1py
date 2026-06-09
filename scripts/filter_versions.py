@@ -53,6 +53,16 @@ def select_visible(parsed, groups):
 def main():
     path = sys.argv[1] if len(sys.argv) > 1 else "versions.json"
     versions = load_versions(path)
+    
+    # In case of first run case as no versions exist yet
+    if not versions:
+        output = {
+            "visible": [],
+            "hidden": []
+        }
+        print(json.dumps(output, indent=2))
+        return
+
     parsed, groups = group_versions(versions)
     visible = select_visible(parsed, groups)
     visible_strings = [f"v{v.public}" for v in visible]
