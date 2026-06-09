@@ -31,11 +31,16 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Fetch gh-pages branch (if exists)
-        run: git fetch origin gh-pages:gh-pages || echo "gh-pages does not exist yet"  
-
+        run: git fetch origin gh-pages:gh-pages || echo "gh-pages does not exist yet" 
+      
       - name: Extract versions.json
         run: |
-          git show origin/gh-pages:versions.json > versions.json          
+          if git show origin/gh-pages:versions.json > versions.json 2>/dev/null; then
+            echo "Extracted versions.json from gh-pages"
+          else
+            echo '{"versions": []}' > versions.json
+            echo "Created empty versions.json because gh-pages does not exist yet"
+          fi
 
       - name: Filter versions
         run: |
