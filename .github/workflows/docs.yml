@@ -31,33 +31,31 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Fetch gh-pages branch (if exists)
-        run: git fetch origin gh-pages:gh-pages || echo "gh-pages does not exist yet"
+        run: git fetch origin gh-pages:gh-pages || echo "gh-pages does not exist yet"  
 
-      - name: Deploy documentation
+      - name: Extract versions.json
         run: |
-          if [[ "${GITHUB_REF}" == refs/heads/master ]]; then
-            echo "→ Deploying latest"
-            mike deploy latest --push --update-aliases
-            mike set-default latest --push
-          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            VERSION="${GITHUB_REF#refs/tags/}"
-            echo "→ Deploying version $VERSION"
-            mike deploy "$VERSION" --push --update-aliases
-            mike set-default --push stable
-          fi
+          git show origin/gh-pages:versions.json > versions.json          
 
-      - name: Copy and commit CNAME file (if exists)
+      - name: Filter versions
         run: |
-          git checkout gh-pages
-          if git checkout master -- docs/CNAME 2>/dev/null; then
-            mv docs/CNAME .
-            git add CNAME
-            if ! git diff --cached --quiet; then
-              git commit -m "Update CNAME file"
-              git push origin gh-pages
-            else
-              echo "No changes to commit for CNAME"
-            fi
-          else
-            echo "No CNAME file found in master branch"
-          fi
+          python scripts/filter_versions.py versions.json > version_filter_output.json
+
+      - name: Deploy visible versions
+        run: |
+          for v in $(jq -r '.visible[]' version_filter_output.json); do
+            mike deploy --push $v
+          done
+    
+      - name: Deploy hidden versions
+        run: |
+          for v in $(jq -r '.hidden[]' version_filter_output.json); do
+            mike deploy --push --hidden $v
+          done
+
+      - name: Set default version
+        run: |
+          latest=$(jq -r '.visible[0]' version_filter_output.json)
+          mike set-default --push $latest    
+ 
+
