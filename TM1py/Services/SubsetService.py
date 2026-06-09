@@ -214,11 +214,12 @@ class SubsetService(ObjectService):
         :param dimension_name: Name of the dimension.
         :param hierarchy_name: Name of the hierarchy.
         :param subset: Subset name (str) or Subset object.
+        :param subset_name: (legacy) subset name, supported for backwards compatibility.
         :param private: Whether the subset is private.
         :param kwargs: Additional arguments.
         :return: List of element names.
         """
-        # backward compatibility for subset_name
+        # backward compatibility for legacy 'subset_name' parameter (Issue #1302)
         if "subset_name" in kwargs:
             if subset is not None:
                 raise ValueError("Only one parameter 'subset' or 'subset_name' may be provided.")
