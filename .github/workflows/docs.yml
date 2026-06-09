@@ -61,6 +61,11 @@ jobs:
       - name: Set default version
         run: |
           latest=$(jq -r '.visible[0]' version_filter_output.json)
-          mike set-default --push $latest    
+          if [ "$latest" = "null" ] || [ -z "$latest" ]; then
+            echo "No visible versions found — skipping set-default"
+          else
+            mike set-default --push "$latest"
+          fi
+
  
 
