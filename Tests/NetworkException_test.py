@@ -46,9 +46,10 @@ GENERIC_HTML_NO_RAY_ID = """<!DOCTYPE html>
 
 SAMPLE_HEADERS = {"Content-Type": "text/html", "Connection": "keep-alive"}
 
+
 class TestNetworkException(unittest.TestCase):
 
-    # Instantiation & properties                                
+    # Instantiation & properties
     def test_status_code_property(self):
         exc = TM1pyNetworkException(
             response=GENERIC_HTML_NO_RAY_ID,
@@ -112,8 +113,7 @@ class TestNetworkException(unittest.TestCase):
         self.assertIn("9ef02047ab37aac9", result)
         self.assertIn("Cloudflare Ray ID", result)
 
-
-    # Ray ID extraction                                            
+    # Ray ID extraction
     def test_ray_id_extracted_with_colon_format(self):
         exc = TM1pyNetworkException(
             response=CLOUDFLARE_HTML_COLON_FORMAT,
@@ -159,8 +159,7 @@ class TestNetworkException(unittest.TestCase):
         )
         self.assertIsNone(exc.ray_id)
 
-
-    # Inheritance test         
+    # Inheritance test
     def test_is_instance_of_tm1py_exception(self):
         exc = TM1pyNetworkException(
             response=GENERIC_HTML_NO_RAY_ID,

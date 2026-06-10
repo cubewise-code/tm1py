@@ -1161,16 +1161,10 @@ class RestService:
             body_start = response.text.lstrip().lower()
             if "text/html" in content_type.lower() or body_start.startswith(("<!doctype", "<html")):
                 raise TM1pyNetworkException(
-                    response.text,
-                    status_code=response.status_code,
-                    reason=response.reason,
-                    headers=response.headers
+                    response.text, status_code=response.status_code, reason=response.reason, headers=response.headers
                 )
             raise TM1pyRestException(
-                response.text,
-                status_code=response.status_code,
-                reason=response.reason,
-                headers=response.headers
+                response.text, status_code=response.status_code, reason=response.reason, headers=response.headers
             )
 
     @staticmethod
