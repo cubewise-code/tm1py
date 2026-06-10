@@ -101,13 +101,15 @@ class CubeService(ObjectService):
 
         return int(self._rest.GET(url=format_url("/Cubes/$count"), **kwargs).text)
 
+    @require_version(version="11.8.018")
     def get_measure_dimension(self, cube_name: str, **kwargs) -> str:
         """Get the measures dimension of a cube.
 
-        Reads the cube's MeasuresDimension navigation property (available on both v11
-        and v12). When no measures dimension is explicitly assigned, TM1 treats the
-        last dimension of the cube as the measures dimension, so that is returned as
-        a fallback.
+        Reads the cube's MeasuresDimension navigation property. This property is
+        available from v11.8.018 onwards (and on v12); earlier versions do not expose
+        it. When no measures dimension is explicitly assigned, TM1 treats the last
+        dimension of the cube as the measures dimension, so that is returned as a
+        fallback.
 
         :param cube_name:
         :return: name of the measures dimension
@@ -118,11 +120,13 @@ class CubeService(ObjectService):
             return self.get_dimension_names(cube_name=cube_name, **kwargs)[-1]
         return response.json()["Name"]
 
+    @require_version(version="11.8.018")
     def get_time_dimension(self, cube_name: str, **kwargs) -> Optional[str]:
         """Get the time dimension of a cube.
 
-        Reads the cube's TimeDimension navigation property (available on both v11 and
-        v12). Returns None when no time dimension is assigned to the cube.
+        Reads the cube's TimeDimension navigation property. This property is available
+        from v11.8.018 onwards (and on v12); earlier versions do not expose it. Returns
+        None when no time dimension is assigned to the cube.
 
         :param cube_name:
         :return: name of the time dimension, or None if not assigned
@@ -134,10 +138,12 @@ class CubeService(ObjectService):
         return response.json()["Name"]
 
     @require_data_admin
+    @require_version(version="11.8.018")
     def set_measure_dimension(self, cube_name: str, dimension_name: str, **kwargs) -> Response:
         """Set the measures dimension of a cube.
 
         Binds the cube's MeasuresDimension navigation property to the given dimension.
+        This property is available from v11.8.018 onwards (and on v12).
 
         :param cube_name:
         :param dimension_name: must be one of the cube's dimensions
@@ -149,10 +155,12 @@ class CubeService(ObjectService):
         return self._rest.PATCH(url=url, data=json.dumps(payload), **kwargs)
 
     @require_data_admin
+    @require_version(version="11.8.018")
     def set_time_dimension(self, cube_name: str, dimension_name: str, **kwargs) -> Response:
         """Set the time dimension of a cube.
 
         Binds the cube's TimeDimension navigation property to the given dimension.
+        This property is available from v11.8.018 onwards (and on v12).
 
         :param cube_name:
         :param dimension_name: must be one of the cube's dimensions
