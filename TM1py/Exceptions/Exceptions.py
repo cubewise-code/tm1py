@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 # TM1py Exceptions are defined here
-from typing import List, Mapping
+import re
+from typing import List, Mapping, Optional
 
 
 class TM1pyTimeout(Exception):
@@ -171,6 +172,75 @@ class TM1pyRestException(TM1pyException):
         return "Text: '{}' - Status Code: {} - Reason: '{}' - Headers: {}".format(
             self.message, self._status_code, self._reason, self._headers
         )
+
+
+class TM1pyNetworkException(TM1pyException):
+    """Exception for network/upstream errors where the request never reached TM1.
+
+    Raised when a non-JSON response is received (e.g. an HTML block page from
+    Cloudflare or another WAF/proxy), indicating the issue is infrastructure-level
+    rather than a TM1 REST API error.
+
+    Intentionally does NOT subclass TM1pyRestException so that existing
+    `except TM1pyRestException` handlers do not swallow infrastructure-level
+    failures. Both remain siblings under TM1pyException.
+    """
+
+    def __init__(self, response: str, status_code: int, reason: str, headers: Mapping):
+        """
+        :param response: Response text (e.g. raw HTML from a block page)
+        :param status_code: HTTP status code
+        :param reason: Reason phrase
+        :param headers: HTTP headers
+        """
+        super().__init__(response)
+        self._status_code = status_code
+        self._reason = reason
+        self._headers = headers
+        self._ray_id = self._extract_cloudflare_ray_id(response, headers)
+
+    @staticmethod
+    def _extract_cloudflare_ray_id(text: str, headers: Mapping) -> Optional[str]:
+        """Extract Cloudflare Ray ID from an HTML block page, if present."""
+        ray_id = headers.get("CF-RAY", "")
+        if ray_id:
+            return ray_id
+        match = re.search(r"Ray ID[:\s]+([a-f0-9]+)", text, re.IGNORECASE)
+        return match.group(1) if match else None
+
+    @property
+    def status_code(self) -> int:
+        """HTTP status code."""
+        return self._status_code
+
+    @property
+    def reason(self) -> str:
+        """Reason phrase."""
+        return self._reason
+
+    @property
+    def response(self) -> str:
+        """Response text."""
+        return self.message
+
+    @property
+    def headers(self) -> Mapping:
+        """HTTP headers."""
+        return self._headers
+
+    @property
+    def ray_id(self) -> Optional[str]:
+        """Cloudflare Ray ID if the block page contained one, else None."""
+        return self._ray_id
+
+    def __str__(self) -> str:
+        msg = (
+            f"Network/upstream error — request was likely blocked before reaching TM1. "
+            f"Status Code: {self._status_code} - Reason: '{self._reason}'"
+        )
+        if self._ray_id:
+            msg += f" - Cloudflare Ray ID: {self._ray_id}"
+        return msg
 
 
 class TM1pyWriteFailureException(TM1pyException):

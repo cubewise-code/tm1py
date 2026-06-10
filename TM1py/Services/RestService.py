@@ -20,7 +20,6 @@ from requests.adapters import HTTPAdapter
 from requests.auth import HTTPBasicAuth
 from urllib3._collections import HTTPHeaderDict
 
-from TM1py.Exceptions.Exceptions import TM1pyTimeout, TM1pyVersionDeprecationException
 from TM1py.Utils import (
     CaseAndSpaceInsensitiveSet,
     HTTPAdapterWithSocketOptions,
@@ -35,7 +34,12 @@ except ImportError:
 
 import http.client as http_client
 
-from TM1py.Exceptions import TM1pyRestException
+from TM1py.Exceptions import (
+    TM1pyNetworkException,
+    TM1pyRestException,
+    TM1pyTimeout,
+    TM1pyVersionDeprecationException,
+)
 
 
 class AuthenticationMode(Enum):
@@ -507,7 +511,7 @@ class RestService:
             except TM1pyTimeout:
                 # Re-raise timeout exceptions as-is
                 raise
-            except TM1pyRestException:
+            except (TM1pyRestException, TM1pyNetworkException):
                 # Re-raise TM1 exceptions as-is
                 raise
             except Exception as retry_error:
@@ -1153,6 +1157,12 @@ class RestService:
             TM1pyException, raises TM1pyException when Code is not 200, 204 etc.
         """
         if not response.ok:
+            content_type = response.headers.get("Content-Type", "")
+            body_start = response.text.lstrip().lower()
+            if "text/html" in content_type.lower() or body_start.startswith(("<!doctype", "<html")):
+                raise TM1pyNetworkException(
+                    response.text, status_code=response.status_code, reason=response.reason, headers=response.headers
+                )
             raise TM1pyRestException(
                 response.text, status_code=response.status_code, reason=response.reason, headers=response.headers
             )
