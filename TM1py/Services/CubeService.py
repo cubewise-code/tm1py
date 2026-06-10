@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import random
-from typing import Dict, Iterable, List, Union
+from typing import Dict, Iterable, List, Optional, Union
 
 from requests import Response
 
@@ -101,10 +101,81 @@ class CubeService(ObjectService):
 
         return int(self._rest.GET(url=format_url("/Cubes/$count"), **kwargs).text)
 
+    @require_version(version="11.8.018")
     def get_measure_dimension(self, cube_name: str, **kwargs) -> str:
-        url = format_url("/Cubes('{}')/Dimensions?$select=Name", cube_name)
+        """Get the measures dimension of a cube.
+
+        Reads the cube's MeasuresDimension navigation property. This property is
+        available from v11.8.018 onwards (and on v12); earlier versions do not expose
+        it. When no measures dimension is explicitly assigned, TM1 treats the last
+        dimension of the cube as the measures dimension, so that is returned as a
+        fallback.
+
+        :param cube_name:
+        :return: name of the measures dimension
+        """
+        url = format_url("/Cubes('{}')/MeasuresDimension?$select=Name", cube_name)
         response = self._rest.GET(url, **kwargs)
-        return response.json()["value"][-1]["Name"]
+        if response.status_code == 204 or not response.text:
+            return self.get_dimension_names(cube_name=cube_name, **kwargs)[-1]
+        return response.json()["Name"]
+
+    @require_version(version="11.8.018")
+    def get_time_dimension(self, cube_name: str, **kwargs) -> Optional[str]:
+        """Get the time dimension of a cube.
+
+        Reads the cube's TimeDimension navigation property. This property is available
+        from v11.8.018 onwards (and on v12); earlier versions do not expose it. Returns
+        None when no time dimension is assigned to the cube.
+
+        :param cube_name:
+        :return: name of the time dimension, or None if not assigned
+        """
+        url = format_url("/Cubes('{}')/TimeDimension?$select=Name", cube_name)
+        response = self._rest.GET(url, **kwargs)
+        if response.status_code == 204 or not response.text:
+            return None
+        return response.json()["Name"]
+
+    @require_data_admin
+    @require_version(version="11.8.018")
+    def set_measure_dimension(self, cube_name: str, dimension_name: str, **kwargs) -> Response:
+        """Set the measures dimension of a cube.
+
+        Binds the cube's MeasuresDimension navigation property to the given dimension.
+        This property is available from v11.8.018 onwards (and on v12).
+
+        :param cube_name:
+        :param dimension_name: must be one of the cube's dimensions
+        :return: response
+        """
+        self._validate_dimension_in_cube(cube_name=cube_name, dimension_name=dimension_name, **kwargs)
+        url = format_url("/Cubes('{}')", cube_name)
+        payload = {"MeasuresDimension@odata.bind": format_url("Dimensions('{}')", dimension_name)}
+        return self._rest.PATCH(url=url, data=json.dumps(payload), **kwargs)
+
+    @require_data_admin
+    @require_version(version="11.8.018")
+    def set_time_dimension(self, cube_name: str, dimension_name: str, **kwargs) -> Response:
+        """Set the time dimension of a cube.
+
+        Binds the cube's TimeDimension navigation property to the given dimension.
+        This property is available from v11.8.018 onwards (and on v12).
+
+        :param cube_name:
+        :param dimension_name: must be one of the cube's dimensions
+        :return: response
+        """
+        self._validate_dimension_in_cube(cube_name=cube_name, dimension_name=dimension_name, **kwargs)
+        url = format_url("/Cubes('{}')", cube_name)
+        payload = {"TimeDimension@odata.bind": format_url("Dimensions('{}')", dimension_name)}
+        return self._rest.PATCH(url=url, data=json.dumps(payload), **kwargs)
+
+    def _validate_dimension_in_cube(self, cube_name: str, dimension_name: str, **kwargs) -> None:
+        """Raise ValueError if dimension_name is not a dimension of the cube"""
+        dimension_names = self.get_dimension_names(cube_name=cube_name, **kwargs)
+        if not any(case_and_space_insensitive_equals(dimension_name, dim) for dim in dimension_names):
+            raise ValueError(f"'{dimension_name}' is not a dimension of cube '{cube_name}'")
 
     def update(self, cube: Cube, **kwargs) -> Response:
         """Update existing cube on TM1 Server

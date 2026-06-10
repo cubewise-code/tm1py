@@ -337,6 +337,31 @@ class TestCubeService(unittest.TestCase):
 
         self.assertEqual(self.dimension_names[-1], measure_dimension)
 
+    def test_set_and_get_measure_dimension(self):
+        # assign a non-last dimension as the measures dimension
+        self.tm1.cubes.set_measure_dimension(self.cube_name, self.dimension_names[0])
+
+        measure_dimension = self.tm1.cubes.get_measure_dimension(self.cube_name)
+        self.assertEqual(self.dimension_names[0], measure_dimension)
+
+    def test_set_measure_dimension_invalid_dimension(self):
+        with self.assertRaises(ValueError):
+            self.tm1.cubes.set_measure_dimension(self.cube_name, "Not_A_Dimension_Of_The_Cube")
+
+    def test_get_time_dimension_not_set(self):
+        time_dimension = self.tm1.cubes.get_time_dimension(self.cube_name)
+        self.assertIsNone(time_dimension)
+
+    def test_set_and_get_time_dimension(self):
+        self.tm1.cubes.set_time_dimension(self.cube_name, self.dimension_names[1])
+
+        time_dimension = self.tm1.cubes.get_time_dimension(self.cube_name)
+        self.assertEqual(self.dimension_names[1], time_dimension)
+
+    def test_set_time_dimension_invalid_dimension(self):
+        with self.assertRaises(ValueError):
+            self.tm1.cubes.set_time_dimension(self.cube_name, "Not_A_Dimension_Of_The_Cube")
+
     def tearDown(self):
         self.tm1.cubes.delete(self.cube_name)
         if self.tm1.cubes.exists(self.cube_name_to_delete):
