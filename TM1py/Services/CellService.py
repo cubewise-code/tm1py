@@ -772,10 +772,17 @@ class CellService(ObjectService):
                     ).filter_by_level(0)
 
                 elif isinstance(hierarchies, Iterable):
+                    # Build a union across all hierarchies so every hierarchy
+                    # contributes to the MDX crossjoin instead of the last one
+                    # overwriting all previous entries (issue #1068).
+                    combined: Optional["MdxHierarchySet"] = None
                     for hierarchy in hierarchies:
-                        mdx_selections[dimension] = MdxHierarchySet.tm1_subset_all(
+                        hset = MdxHierarchySet.tm1_subset_all(
                             dimension=dimension, hierarchy=hierarchy
                         ).filter_by_level(0)
+                        combined = hset if combined is None else combined.union(hset)
+                    if combined is not None:
+                        mdx_selections[dimension] = combined
 
                 else:
                     raise ValueError(f"Unexpected value type for key '{dimension}' in dimension_mapping")
@@ -3123,7 +3130,7 @@ class CellService(ObjectService):
 
     @require_pandas
     def execute_mdx_dataframe_pivot(
-        self, mdx: str, dropna: bool = False, fill_value: bool = None, sandbox_name: str = None
+        self, mdx: str, dropna: bool = False, fill_value: bool = None, sandbox_name: str = None, **kwargs
     ) -> "pd.DataFrame":
         """Execute MDX Query to get a pandas pivot data frame in the shape as specified in the Query
 
@@ -3131,11 +3138,12 @@ class CellService(ObjectService):
         :param dropna:
         :param fill_value:
         :param sandbox_name: str
+        :param kwargs: Additional keyword arguments forwarded to extract_cellset_dataframe_pivot
         :return:
         """
         cellset_id = self.create_cellset(mdx=mdx, sandbox_name=sandbox_name)
         return self.extract_cellset_dataframe_pivot(
-            cellset_id=cellset_id, dropna=dropna, fill_value=fill_value, sandbox_name=sandbox_name
+            cellset_id=cellset_id, dropna=dropna, fill_value=fill_value, sandbox_name=sandbox_name, **kwargs
         )
 
     def execute_mdx_cellcount(self, mdx: str, sandbox_name: str = None, **kwargs) -> int:
