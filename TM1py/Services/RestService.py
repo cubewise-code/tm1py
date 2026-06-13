@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import gzip
 import json
 import re
 import socket
@@ -135,6 +136,9 @@ class RestService:
         - **proxies** (dict): Dictionary with proxies, e.g. {'http': 'http://proxy.example.com:8080', 'https': 'http://secureproxy.example.com:8090'}.
         - **ssl_context**: User-defined SSL context.
         - **cert** (str|tuple): (Optional) If string, path to SSL client cert file (.pem). If tuple, ('cert', 'key') pair.
+        - **compress_request_body** (bool): Gzip-compress request bodies at the transport seam. Opt-in. Default: False.
+        - **gzip_min_bytes** (int): Minimum (encoded) request body size in bytes to compress. Default: 1024.
+        - **gzip_compress_level** (int): Gzip compression level, 1 (fastest) to 9 (smallest). Default: 6.
 
         :param kwargs: See description above for all supported arguments
         """
@@ -172,6 +176,10 @@ class RestService:
         self._async_polling_initial_delay = float(kwargs.get("async_polling_initial_delay", 0.1))
         self._async_polling_max_delay = float(kwargs.get("async_polling_max_delay", 1.0))
         self._async_polling_backoff_factor = float(kwargs.get("async_polling_backoff_factor", 2))
+        # gzip compression of the request body (opt-in)
+        self._compress_request_body = self.translate_to_boolean(kwargs.get("compress_request_body", False))
+        self._gzip_min_bytes = int(kwargs.get("gzip_min_bytes", 1024))
+        self._gzip_compress_level = int(kwargs.get("gzip_compress_level", 6))
         # is retrieved on demand and then cached
         self._sandboxing_disabled = None
         # optional verbose logging to stdout
@@ -280,6 +288,11 @@ class RestService:
         Execute a request to TM1 REST API
         """
         url, data = self._url_and_body(url=url, data=data, encoding=encoding)
+
+        # Compress the request body once, before any retry path, so that the sync, async and
+        # reconnect/retry code paths all re-send the same compressed bytes (no double-compression).
+        if self._compress_request_body:
+            data, kwargs["headers"] = self._maybe_compress_body(data, kwargs.get("headers") or {})
 
         timeout = timeout if timeout else self._timeout
 
@@ -1030,6 +1043,43 @@ class RestService:
         if isinstance(data, str):
             data = data.encode(encoding)
         return url, data
+
+    def _maybe_compress_body(self, data: Union[bytes, BytesIO], headers: Dict) -> Tuple[Union[bytes, BytesIO], Dict]:
+        """Gzip-compress the request body at the transport seam.
+
+        Called exactly once per request (from `request`, before any retry path) so the sync,
+        async and reconnect/retry code paths all re-send the same compressed bytes. Returns the
+        (possibly compressed) body together with the (possibly updated) headers.
+
+        The body is left untouched - and no `Content-Encoding` header is added - when the body
+        is empty or smaller than `gzip_min_bytes`, or when a `Content-Encoding` header is already
+        present (so a caller can pre-encode a body or opt a single request out). Compressing the
+        body and stamping the header are a single atomic decision.
+        """
+        # Normalize the body to bytes for the size check and compression. `_url_and_body` already
+        # encodes str -> bytes; bytes and BytesIO bodies (binary uploads) pass through to here.
+        if isinstance(data, BytesIO):
+            # getvalue() does not consume the stream, so the original `data` stays usable
+            raw = data.getvalue()
+        elif isinstance(data, (bytes, bytearray)):
+            raw = bytes(data)
+        else:
+            return data, headers
+
+        # skip empty / tiny bodies: gzip framing overhead outweighs the benefit
+        if not raw or len(raw) < self._gzip_min_bytes:
+            return data, headers
+
+        # never double-encode an already-encoded body
+        if any(key.lower() == "content-encoding" for key in headers):
+            return data, headers
+
+        compressed = gzip.compress(raw, compresslevel=self._gzip_compress_level)
+        # build a fresh headers dict; never mutate self._headers or the caller's dict.
+        # drop any stale Content-Length so the transport recomputes it from the compressed bytes.
+        new_headers = {key: value for key, value in headers.items() if key.lower() != "content-length"}
+        new_headers["Content-Encoding"] = "gzip"
+        return compressed, new_headers
 
     def is_connected(self) -> bool:
         """Check if Connection to TM1 Server is established.

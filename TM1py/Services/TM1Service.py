@@ -91,6 +91,9 @@ class TM1Service:
         - **proxies** (dict): Dictionary of proxies, e.g., {'http': 'http://proxy.example.com:8080'}.
         - **ssl_context**: User-defined SSL context.
         - **cert** (str or tuple): Path to SSL client cert file or ('cert', 'key') pair.
+        - **compress_request_body** (bool): Gzip-compress request bodies at the transport seam. Opt-in. Default: False.
+        - **gzip_min_bytes** (int): Minimum (encoded) request body size in bytes to compress. Default: 1024.
+        - **gzip_compress_level** (int): Gzip compression level, 1 (fastest) to 9 (smallest). Default: 6.
 
         :param kwargs: See description above for all supported arguments
 
