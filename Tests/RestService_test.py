@@ -1,8 +1,12 @@
 import configparser
+import gzip
 import unittest
+import uuid
+from io import BytesIO
 from pathlib import Path
 
 from TM1py import TM1Service
+from TM1py.Objects import Process
 from TM1py.Services.RestService import RestService
 
 
@@ -207,6 +211,186 @@ class TestRestService(unittest.TestCase):
             '{"error":{"code":"278","message":"\'dummy\' ' "can not be found in collection of type 'Process'.\"}}",
         )
 
+    def test_live_request_body_compression_roundtrip(self):
+        """End-to-end: a gzip-compressed request body is accepted by the live server and
+        round-trips correctly. Creates a process with a body well above the default threshold,
+        reads it back, and confirms our marker survived server-side decompression."""
+        config = dict(self.config["tm1srv01"])
+        config["compress_request_body"] = "True"
+        config["gzip_min_bytes"] = "1"
+
+        process_name = "TM1py_Tests_gzip_" + str(uuid.uuid4()).replace("-", "")
+        marker = "sMarker = '" + process_name + "';"
+        # build a prolog comfortably larger than the default 1024-byte threshold
+        prolog = marker + "\r\n" + "\r\n".join(f"sFiller{i} = '{i}';" for i in range(300))
+
+        with TM1Service(**config) as tm1:
+            self.assertTrue(tm1._tm1_rest._compress_request_body)
+            process = Process(name=process_name, datasource_type="None", prolog_procedure=prolog)
+            try:
+                tm1.processes.create(process)
+                retrieved = tm1.processes.get(process_name)
+                self.assertEqual(process_name, retrieved.name)
+                self.assertIn(marker, retrieved.prolog_procedure)
+            finally:
+                if tm1.processes.exists(process_name):
+                    tm1.processes.delete(process_name)
+
     @classmethod
     def tearDownClass(cls):
         cls.tm1.logout()
+
+
+class _FakeResponse:
+    """Minimal stand-in for a requests.Response used by the seam-level unit tests."""
+
+    def __init__(self, status_code: int, headers: dict = None, text: str = ""):
+        self.status_code = status_code
+        self.ok = 200 <= status_code < 300
+        self.headers = headers or {}
+        self.text = text
+        self.reason = "OK" if self.ok else "ERROR"
+        self.encoding = None
+        self.content = text.encode("utf-8") if isinstance(text, str) else text
+
+
+class _RecordingSession:
+    """Captures the (data, headers) handed to the transport so tests can assert on the wire bytes."""
+
+    def __init__(self, responses):
+        self._responses = list(responses)
+        self.calls = []
+
+    def request(self, method, url, data=None, verify=None, timeout=None, **kwargs):
+        self.calls.append({"method": method, "url": url, "data": data, "headers": kwargs.get("headers")})
+        return self._responses.pop(0)
+
+    def close(self):
+        pass
+
+
+class TestRequestBodyCompressionHelper(unittest.TestCase):
+    """Unit tests for RestService._maybe_compress_body (no server connection)."""
+
+    @staticmethod
+    def _rest(min_bytes: int = 1024, level: int = 6) -> RestService:
+        rest = object.__new__(RestService)
+        rest._compress_request_body = True
+        rest._gzip_min_bytes = min_bytes
+        rest._gzip_compress_level = level
+        return rest
+
+    def test_compress_roundtrip_sets_header(self):
+        rest = self._rest(min_bytes=1)
+        body = b'{"value": "' + b"x" * 2000 + b'"}'
+        data, headers = rest._maybe_compress_body(body, {"Content-Type": "application/json"})
+        self.assertEqual(headers["Content-Encoding"], "gzip")
+        self.assertEqual(headers["Content-Type"], "application/json")
+        self.assertEqual(gzip.decompress(data), body)
+        self.assertLess(len(data), len(body))
+
+    def test_below_threshold_not_compressed(self):
+        rest = self._rest(min_bytes=1024)
+        body = b'{"a": 1}'
+        data, headers = rest._maybe_compress_body(body, {"Content-Type": "application/json"})
+        self.assertEqual(data, body)
+        self.assertNotIn("Content-Encoding", headers)
+
+    def test_empty_body_not_compressed(self):
+        rest = self._rest(min_bytes=1)
+        data, headers = rest._maybe_compress_body(b"", {})
+        self.assertEqual(data, b"")
+        self.assertNotIn("Content-Encoding", headers)
+
+    def test_bytes_path_compressed(self):
+        rest = self._rest(min_bytes=1)
+        body = b"binary-content-" + b"\x00\x01\x02" * 1000
+        data, headers = rest._maybe_compress_body(body, {})
+        self.assertEqual(headers["Content-Encoding"], "gzip")
+        self.assertEqual(gzip.decompress(data), body)
+
+    def test_bytesio_path_compressed_and_not_consumed(self):
+        rest = self._rest(min_bytes=1)
+        raw = b"stream-content-" + b"abc" * 1000
+        stream = BytesIO(raw)
+        data, headers = rest._maybe_compress_body(stream, {})
+        self.assertEqual(headers["Content-Encoding"], "gzip")
+        self.assertEqual(gzip.decompress(data), raw)
+        # the original BytesIO must remain intact (getvalue does not consume it)
+        self.assertEqual(stream.getvalue(), raw)
+
+    def test_preexisting_content_encoding_not_recompressed(self):
+        rest = self._rest(min_bytes=1)
+        already = gzip.compress(b"x" * 2000)
+        data, headers = rest._maybe_compress_body(already, {"Content-Encoding": "gzip"})
+        self.assertEqual(data, already)
+        # body is returned untouched - not gzipped a second time
+        self.assertEqual(gzip.decompress(data), b"x" * 2000)
+
+    def test_preexisting_content_encoding_case_insensitive(self):
+        rest = self._rest(min_bytes=1)
+        body = b"y" * 2000
+        data, headers = rest._maybe_compress_body(body, {"content-encoding": "identity"})
+        self.assertEqual(data, body)
+
+    def test_content_length_dropped_on_compression(self):
+        rest = self._rest(min_bytes=1)
+        body = b"z" * 2000
+        data, headers = rest._maybe_compress_body(body, {"Content-Length": "2000", "Content-Type": "text/plain"})
+        self.assertEqual(headers["Content-Encoding"], "gzip")
+        self.assertNotIn("Content-Length", headers)
+        self.assertEqual(headers["Content-Type"], "text/plain")
+
+
+class TestRequestBodyCompressionSeam(unittest.TestCase):
+    """Tests that compression is applied once at request() and survives the retry path."""
+
+    @staticmethod
+    def _rest(responses, compress=True, min_bytes=1) -> RestService:
+        rest = object.__new__(RestService)
+        rest._base_url = "https://tm1.example/api/v1"
+        rest._headers = {"Content-Type": "application/json; charset=utf-8"}
+        rest._compress_request_body = compress
+        rest._gzip_min_bytes = min_bytes
+        rest._gzip_compress_level = 6
+        rest._timeout = None
+        rest._cancel_at_timeout = False
+        rest._async_requests_mode = False
+        rest._re_connect_on_session_timeout = True
+        rest._verify = False
+        rest._s = _RecordingSession(responses)
+        rest.connect = lambda: None
+        return rest
+
+    def test_post_stamps_content_encoding_and_compresses(self):
+        rest = self._rest([_FakeResponse(200)])
+        body = '{"value": "' + "x" * 2000 + '"}'
+        rest.POST(url="/Cubes", data=body)
+
+        self.assertEqual(len(rest._s.calls), 1)
+        call = rest._s.calls[0]
+        self.assertEqual(call["headers"]["Content-Encoding"], "gzip")
+        self.assertEqual(gzip.decompress(call["data"]), body.encode("utf-8"))
+
+    def test_default_off_sends_raw_body(self):
+        rest = self._rest([_FakeResponse(200)], compress=False)
+        body = '{"value": "' + "x" * 2000 + '"}'
+        rest.POST(url="/Cubes", data=body)
+
+        call = rest._s.calls[0]
+        self.assertNotIn("Content-Encoding", call["headers"])
+        self.assertEqual(call["data"], body.encode("utf-8"))
+
+    def test_retry_after_401_not_double_compressed(self):
+        rest = self._rest([_FakeResponse(401), _FakeResponse(200)])
+        body = '{"value": "' + "x" * 2000 + '"}'
+        rest.POST(url="/Cubes", data=body)
+
+        # initial send + one retry after reconnect
+        self.assertEqual(len(rest._s.calls), 2)
+        first, second = rest._s.calls
+        # both sends carry the identical, single-member gzip body and exactly one Content-Encoding
+        self.assertEqual(first["data"], second["data"])
+        self.assertEqual(gzip.decompress(second["data"]), body.encode("utf-8"))
+        self.assertEqual(first["headers"]["Content-Encoding"], "gzip")
+        self.assertEqual(second["headers"]["Content-Encoding"], "gzip")
