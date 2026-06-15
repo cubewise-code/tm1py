@@ -2,6 +2,7 @@ import configparser
 import copy
 import unittest
 from pathlib import Path
+from unittest.mock import MagicMock
 
 from mdxpy import MdxBuilder
 
@@ -16,7 +17,7 @@ from TM1py.Exceptions import (
     TM1pyWritePartialFailureException,
 )
 from TM1py.Objects import Dimension, Element, ElementAttribute, Hierarchy
-from TM1py.Services import TM1Service
+from TM1py.Services import TM1Service, ElementService
 
 
 class TestElementService(unittest.TestCase):
@@ -1609,6 +1610,30 @@ class TestElementService(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.tm1.logout()
+
+
+class TestElementServiceUrlBuilding(unittest.TestCase):
+    """URL construction unit tests. Do not require a running TM1 server;
+    the REST service is mocked to verify URL building in isolation."""
+
+    def test_get_parents_of_all_elements_with_closing_brace_in_name(self):
+        # regression: dimension/hierarchy names may contain a closing brace
+        # (e.g. TM1 control objects like "}APQ Time Second"). URL construction
+        # must not raise "Single '}' encountered in format string".
+        element_service = ElementService.__new__(ElementService)
+        element_service._rest = MagicMock()
+        element_service._rest.GET.return_value.json.return_value = {"value": []}
+
+        dimension_name = "}APQ Time Second"
+        result = element_service.get_parents_of_all_elements(
+            dimension_name=dimension_name, hierarchy_name=dimension_name
+        )
+
+        self.assertEqual({}, result)
+        element_service._rest.GET.assert_called_once_with(
+            url="/Dimensions('}APQ Time Second')/Hierarchies('}APQ Time Second')"
+            "/Elements?$select=Name&$expand=Parents($select=Name)"
+        )
 
 
 if __name__ == "__main__":
