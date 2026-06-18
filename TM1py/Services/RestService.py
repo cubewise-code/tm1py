@@ -184,6 +184,8 @@ class RestService:
         self._compress_request_body = self.translate_to_boolean(kwargs.get("compress_request_body", False))
         self._gzip_min_bytes = max(0, int(kwargs.get("gzip_min_bytes", 1024)))
         self._gzip_compress_level = int(kwargs.get("gzip_compress_level", 6))
+        # validate the level up front: an out-of-range value otherwise raises a zlib.error deep
+        # inside gzip.compress at request time, which is harder to trace back to this kwarg.
         if not 1 <= self._gzip_compress_level <= 9:
             raise ValueError("'gzip_compress_level' must be an int between 1 and 9")
         # is retrieved on demand and then cached
@@ -1065,8 +1067,12 @@ class RestService:
         # Normalize the body to bytes for the size check and compression. `_url_and_body` already
         # encodes str -> bytes; bytes and BytesIO bodies (binary uploads) pass through to here.
         if isinstance(data, BytesIO):
-            # getvalue() does not consume the stream, so the original `data` stays usable
-            raw = data.getvalue()
+            # read from the stream's current position to EOF - exactly what the transport would
+            # upload for the uncompressed body - then restore the pointer so the original `data`
+            # stays usable (a caller may have intentionally seeked it).
+            pos = data.tell()
+            raw = data.read()
+            data.seek(pos)
         elif isinstance(data, (bytes, bytearray)):
             raw = bytes(data)
         else:

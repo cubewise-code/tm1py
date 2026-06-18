@@ -316,8 +316,23 @@ class TestRequestBodyCompressionHelper(unittest.TestCase):
         data, headers = rest._maybe_compress_body(stream, {})
         self.assertEqual(headers["Content-Encoding"], "gzip")
         self.assertEqual(gzip.decompress(data), raw)
-        # the original BytesIO must remain intact (getvalue does not consume it)
+        # the original BytesIO must remain intact (reading it does not consume it)
         self.assertEqual(stream.getvalue(), raw)
+
+    def test_bytesio_path_reads_from_current_position(self):
+        # a caller may hand in a partially-read stream; we must compress exactly what the
+        # transport would otherwise upload (current position -> EOF) and leave the pointer put
+        rest = self._rest(min_bytes=1)
+        raw = b"header-to-skip-" + b"payload" * 1000
+        offset = len(b"header-to-skip-")
+        stream = BytesIO(raw)
+        stream.seek(offset)
+        data, headers = rest._maybe_compress_body(stream, {})
+        self.assertEqual(headers["Content-Encoding"], "gzip")
+        # only the bytes from the current position onward are compressed
+        self.assertEqual(gzip.decompress(data), raw[offset:])
+        # the stream pointer is restored so the original stays usable
+        self.assertEqual(stream.tell(), offset)
 
     def test_preexisting_content_encoding_not_recompressed(self):
         rest = self._rest(min_bytes=1)
@@ -394,3 +409,17 @@ class TestRequestBodyCompressionSeam(unittest.TestCase):
         self.assertEqual(gzip.decompress(second["data"]), body.encode("utf-8"))
         self.assertEqual(first["headers"]["Content-Encoding"], "gzip")
         self.assertEqual(second["headers"]["Content-Encoding"], "gzip")
+
+
+class TestRequestBodyCompressionInitValidation(unittest.TestCase):
+    """gzip_compress_level is validated at construction, before any network call."""
+
+    def test_out_of_range_level_raises_value_error(self):
+        # values outside 1..9 would otherwise raise a zlib.error deep inside gzip.compress
+        # at request time; we fail fast in __init__ with a clear message instead. The check
+        # runs before connect(), so no live server is required.
+        for level in (0, 10, -1):
+            with self.subTest(level=level):
+                with self.assertRaises(ValueError) as ctx:
+                    RestService(gzip_compress_level=level)
+                self.assertIn("gzip_compress_level", str(ctx.exception))
