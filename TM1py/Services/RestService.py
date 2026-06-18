@@ -182,8 +182,10 @@ class RestService:
         self._async_polling_backoff_factor = float(kwargs.get("async_polling_backoff_factor", 2))
         # gzip compression of the request body (opt-in)
         self._compress_request_body = self.translate_to_boolean(kwargs.get("compress_request_body", False))
-        self._gzip_min_bytes = int(kwargs.get("gzip_min_bytes", 1024))
+        self._gzip_min_bytes = max(0, int(kwargs.get("gzip_min_bytes", 1024)))
         self._gzip_compress_level = int(kwargs.get("gzip_compress_level", 6))
+        if not 1 <= self._gzip_compress_level <= 9:
+            raise ValueError("'gzip_compress_level' must be an int between 1 and 9")
         # is retrieved on demand and then cached
         self._sandboxing_disabled = None
         # optional verbose logging to stdout
