@@ -2,7 +2,6 @@ import configparser
 import copy
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock
 
 from mdxpy import MdxBuilder
 
@@ -17,7 +16,7 @@ from TM1py.Exceptions import (
     TM1pyWritePartialFailureException,
 )
 from TM1py.Objects import Dimension, Element, ElementAttribute, Hierarchy
-from TM1py.Services import TM1Service, ElementService
+from TM1py.Services import TM1Service
 
 
 class TestElementService(unittest.TestCase):
@@ -1607,33 +1606,38 @@ class TestElementService(unittest.TestCase):
                 method="TI",
             )
 
+    def test_get_parents_of_all_elements_with_closing_brace_in_dimension_name(self):
+        # regression: control dimensions (names starting with "}", e.g.
+        # "}APQ Time Second") must not break URL construction in
+        # get_parents_of_all_elements (formerly raised
+        # "Single '}' encountered in format string").
+        dimension_name = "}TM1py_unittest_close_brace_" + generate_test_uuid()
+        hierarchy_name = dimension_name
+
+        dimension = Dimension(dimension_name)
+        hierarchy = Hierarchy(dimension_name, hierarchy_name)
+        hierarchy.add_element("Total", "Consolidated")
+        hierarchy.add_element("Child1", "Numeric")
+        hierarchy.add_element("Child2", "Numeric")
+        hierarchy.add_edge("Total", "Child1", 1)
+        hierarchy.add_edge("Total", "Child2", 1)
+        dimension.add_hierarchy(hierarchy)
+        self.tm1.dimensions.update_or_create(dimension)
+
+        try:
+            parents = self.tm1.elements.get_parents_of_all_elements(
+                dimension_name=dimension_name, hierarchy_name=hierarchy_name
+            )
+        finally:
+            self.tm1.dimensions.delete(dimension_name)
+
+        self.assertEqual(["Total"], parents["Child1"])
+        self.assertEqual(["Total"], parents["Child2"])
+        self.assertEqual([], parents["Total"])
+
     @classmethod
     def tearDownClass(cls):
         cls.tm1.logout()
-
-
-class TestElementServiceUrlBuilding(unittest.TestCase):
-    """URL construction unit tests. Do not require a running TM1 server;
-    the REST service is mocked to verify URL building in isolation."""
-
-    def test_get_parents_of_all_elements_with_closing_brace_in_name(self):
-        # regression: dimension/hierarchy names may contain a closing brace
-        # (e.g. TM1 control objects like "}APQ Time Second"). URL construction
-        # must not raise "Single '}' encountered in format string".
-        element_service = ElementService.__new__(ElementService)
-        element_service._rest = MagicMock()
-        element_service._rest.GET.return_value.json.return_value = {"value": []}
-
-        dimension_name = "}APQ Time Second"
-        result = element_service.get_parents_of_all_elements(
-            dimension_name=dimension_name, hierarchy_name=dimension_name
-        )
-
-        self.assertEqual({}, result)
-        element_service._rest.GET.assert_called_once_with(
-            url="/Dimensions('}APQ Time Second')/Hierarchies('}APQ Time Second')"
-            "/Elements?$select=Name&$expand=Parents($select=Name)"
-        )
 
 
 if __name__ == "__main__":
