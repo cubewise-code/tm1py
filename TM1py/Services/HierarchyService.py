@@ -636,11 +636,12 @@ class HierarchyService(ObjectService):
             new_elements[element_name] = Element.Types.CONSOLIDATED
 
         if new_elements:
-            # add these elements to hierarchy in tm1
+            # add these elements to hierarchy in tm1 (blob path for admins scales to large sets)
             self.elements.add_elements(
                 dimension_name=dimension_name,
                 hierarchy_name=hierarchy_name,
                 elements=(Element(element_name, element_type) for element_name, element_type in new_elements.items()),
+                use_blob=self.is_admin,
             )
 
         # define the attribute columns in df. Applies to all elements in df, not only new ones.
@@ -782,7 +783,12 @@ class HierarchyService(ObjectService):
                 (k, v): w for (k, v), w in edges.items() if (k, v) not in current_edges or w != current_edges[(k, v)]
             }
             if new_edges:
-                self.elements.add_edges(dimension_name=dimension_name, hierarchy_name=hierarchy_name, edges=new_edges)
+                self.elements.add_edges(
+                    dimension_name=dimension_name,
+                    hierarchy_name=hierarchy_name,
+                    edges=new_edges,
+                    use_blob=self.is_admin,
+                )
 
         if hierarchy_sort_order:
             self._implement_hierarchy_sort_order(dimension_name, hierarchy_name, hierarchy_sort_order)

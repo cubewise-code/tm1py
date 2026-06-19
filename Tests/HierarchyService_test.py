@@ -991,6 +991,54 @@ class TestHierarchyService(unittest.TestCase):
         )
         self._verify_region_dimension(hierarchy)
 
+    def test_update_or_create_hierarchy_from_dataframe_bulk_with_many_consolidations(self):
+        # builds many leaves + multiple consolidations; for admins this drives the blob-based
+        # element/edge add path end to end
+        columns = [
+            self.region_dimension_name,
+            "ElementType",
+            "level001",
+            "level000",
+            "level001_weight",
+            "level000_weight",
+        ]
+        regions = [f"Region {i:02d}" for i in range(10)]
+        data = []
+        for i in range(100):
+            region = regions[i % len(regions)]
+            data.append([f"Country {i:03d}", "Numeric", region, "World", 1, 1])
+        for region in regions:
+            data.append([region, "Consolidated", "", "", 0, 0])
+        data.append(["World", "Consolidated", "", "", 0, 0])
+        df = DataFrame(data=data, columns=columns)
+
+        self.tm1.hierarchies.update_or_create_hierarchy_from_dataframe(
+            dimension_name=self.region_dimension_name,
+            hierarchy_name=self.region_dimension_name,
+            df=df,
+            element_column=self.region_dimension_name,
+            element_type_column="ElementType",
+            unwind_all=True,
+        )
+
+        hierarchy = self.tm1.hierarchies.get(
+            dimension_name=self.region_dimension_name, hierarchy_name=self.region_dimension_name
+        )
+
+        # 100 leaves + 10 region consolidations + World
+        self.assertEqual(111, len(hierarchy.elements))
+        elements_by_name = {element.name: element for element in hierarchy.elements.values()}
+        self.assertEqual(Element.Types.NUMERIC, elements_by_name["Country 000"].element_type)
+        self.assertEqual(Element.Types.NUMERIC, elements_by_name["Country 099"].element_type)
+        for region in regions:
+            self.assertEqual(Element.Types.CONSOLIDATED, elements_by_name[region].element_type)
+        self.assertEqual(Element.Types.CONSOLIDATED, elements_by_name["World"].element_type)
+
+        # 100 country->region edges + 10 region->World edges
+        self.assertEqual(110, len(hierarchy.edges))
+        self.assertEqual(1, hierarchy.edges["Region 00", "Country 000"])
+        self.assertEqual(1, hierarchy.edges["World", "Region 00"])
+
     def test_update_or_create_hierarchy_from_dataframe_with_wrong_case_in_level_column(self):
         # create with correct case first
         columns = [
