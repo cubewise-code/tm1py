@@ -17,6 +17,7 @@ from TM1py.Exceptions import (
 )
 from TM1py.Objects import Dimension, Element, ElementAttribute, Hierarchy
 from TM1py.Services import TM1Service
+from TM1py.Services.ElementService import ElementService
 
 
 class TestElementService(unittest.TestCase):
@@ -1129,6 +1130,71 @@ class TestElementService(unittest.TestCase):
             element = Element(self.years[0], "Numeric")
             self.tm1.elements.add_elements(self.dimension_name, self.dimension_name, [element])
 
+    @skip_if_version_lower_than(version="11.4")
+    def test_add_elements_use_blob(self):
+        elements = [Element("Element1", "Numeric"), Element("Element2", "String")]
+        self.tm1.elements.add_elements(self.dimension_name, self.hierarchy_name, elements, use_blob=True)
+
+        for element in elements:
+            self.assertEqual(element, self.tm1.elements.get(self.dimension_name, self.hierarchy_name, element.name))
+
+    @skip_if_version_lower_than(version="11.4")
+    def test_add_elements_use_blob_with_consolidations(self):
+        elements = [
+            Element("Leaf1", "Numeric"),
+            Element("Leaf2", "Numeric"),
+            Element("Cons A", "Consolidated"),
+            Element("Cons B", "Consolidated"),
+        ]
+        self.tm1.elements.add_elements(self.dimension_name, self.hierarchy_name, elements, use_blob=True)
+
+        for element in elements:
+            self.assertEqual(element, self.tm1.elements.get(self.dimension_name, self.hierarchy_name, element.name))
+
+    @skip_if_version_lower_than(version="11.4")
+    def test_add_edges_use_blob(self):
+        # add new leaves first, then wire them under an existing consolidation via blob
+        self.tm1.elements.add_elements(
+            self.dimension_name,
+            self.hierarchy_name,
+            [Element("2050", "Numeric"), Element("2051", "Numeric")],
+            use_blob=True,
+        )
+        self.tm1.elements.add_edges(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            edges={("Total Years", "2050"): 1, ("Total Years", "2051"): 1},
+            use_blob=True,
+        )
+
+        edges = self.tm1.elements.get_edges(self.dimension_name, self.hierarchy_name)
+        self.assertEqual(edges[("Total Years", "2050")], 1)
+        self.assertEqual(edges[("Total Years", "2051")], 1)
+
+    @skip_if_version_lower_than(version="11.4")
+    def test_add_elements_and_edges_use_blob_build_consolidation(self):
+        # build a fresh consolidation with leaves entirely via blob (elements first, then edges)
+        self.tm1.elements.add_elements(
+            self.dimension_name,
+            self.hierarchy_name,
+            [Element("New Cons", "Consolidated"), Element("Child A", "Numeric"), Element("Child B", "Numeric")],
+            use_blob=True,
+        )
+        self.tm1.elements.add_edges(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.hierarchy_name,
+            edges={("New Cons", "Child A"): 1, ("New Cons", "Child B"): 2},
+            use_blob=True,
+        )
+
+        self.assertEqual(
+            Element.Types.CONSOLIDATED,
+            self.tm1.elements.get(self.dimension_name, self.hierarchy_name, "New Cons").element_type,
+        )
+        edges = self.tm1.elements.get_edges(self.dimension_name, self.hierarchy_name)
+        self.assertEqual(edges[("New Cons", "Child A")], 1)
+        self.assertEqual(edges[("New Cons", "Child B")], 2)
+
     def test_add_element_attributes_single(self):
         element_attribute = ElementAttribute(name="Attribute1", attribute_type="String")
         self.tm1.elements.add_element_attributes(self.dimension_name, self.dimension_name, [element_attribute])
@@ -1638,6 +1704,86 @@ class TestElementService(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.tm1.logout()
+
+
+class _FakeRest:
+    """Minimal stand-in for RestService exposing just the version (no server connection)."""
+
+    def __init__(self, version: str):
+        self.version = version
+
+
+class TestElementServiceBlobProcessBuilders(unittest.TestCase):
+    """Unit tests for the blob-based element/edge helpers (no server connection)."""
+
+    @staticmethod
+    def _element_service(version: str = "12.0.0") -> ElementService:
+        service = object.__new__(ElementService)
+        service._rest = _FakeRest(version)
+        return service
+
+    def test_blob_datasource_process_sets_utf8_and_variables(self):
+        service = self._element_service("12.0.0")
+        process = service._build_blob_datasource_process(
+            process_name="p", blob_filename="f.csv", variables=[("vA", "String"), ("vN", "Numeric")]
+        )
+        self.assertIn("SetInputCharacterSet('TM1CS_UTF8')", process.prolog_procedure)
+        self.assertEqual(process.datasource_data_source_name_for_server, "f.csv")
+        names_and_types = {v["Name"]: v["Type"] for v in process.variables}
+        self.assertEqual(names_and_types, {"vA": "String", "vN": "Numeric"})
+
+    def test_blob_datasource_process_appends_blb_on_v11(self):
+        service = self._element_service("11.8.0")
+        process = service._build_blob_datasource_process(process_name="p", blob_filename="f.csv", variables=[])
+        # v11 auto-appends a .blb extension to documents created via the contents api
+        self.assertEqual(process.datasource_data_source_name_for_server, "f.csv.blb")
+
+    def test_build_add_elements_process(self):
+        service = self._element_service("12.0.0")
+        process = service._build_add_elements_from_blob_process("Dim", "Dim", "p", "f.csv")
+        self.assertEqual([v["Name"] for v in process.variables], ["vElement", "vType"])
+        self.assertTrue(all(v["Type"] == "String" for v in process.variables))
+        self.assertIn("HierarchyElementInsert('Dim','Dim','',vElement,vType);", process.metadata_procedure)
+
+    def test_build_add_edges_process_has_numeric_weight(self):
+        service = self._element_service("12.0.0")
+        process = service._build_add_edges_from_blob_process("Dim", "Dim", "p", "f.csv")
+        names_and_types = {v["Name"]: v["Type"] for v in process.variables}
+        self.assertEqual(names_and_types, {"vParent": "String", "vChild": "String", "vWeight": "Numeric"})
+        self.assertIn("HierarchyElementComponentAdd('Dim','Dim',vParent,vChild,vWeight);", process.metadata_procedure)
+
+    def test_refactored_delete_edges_process_preserves_skip_invalid_guard(self):
+        service = self._element_service("12.0.0")
+        process = service._build_unwind_hierarchy_edges_from_blob_process(
+            dimension_name="Dim",
+            hierarchy_name="Dim",
+            process_name="p",
+            blob_filename="f.csv",
+            skip_invalid_edges=True,
+        )
+        self.assertEqual([v["Name"] for v in process.variables], ["vParent", "vChild"])
+        self.assertIn("ElementIsParent('Dim','Dim',vParent,vChild)", process.metadata_procedure)
+        self.assertIn("HierarchyElementComponentDelete('Dim','Dim',vParent,vChild);", process.metadata_procedure)
+
+    def test_add_elements_dispatches_to_blob(self):
+        service = self._element_service("12.0.0")
+        captured = {}
+        service.add_elements_use_blob = lambda **kwargs: captured.update(kwargs) or "BLOB"
+        result = service.add_elements("Dim", "Dim", [Element("e", "Numeric")], use_blob=True)
+        self.assertEqual(result, "BLOB")
+        self.assertEqual(captured["dimension_name"], "Dim")
+        self.assertEqual(captured["hierarchy_name"], "Dim")
+        self.assertTrue(captured["remove_blob"])
+
+    def test_add_edges_dispatches_to_blob(self):
+        service = self._element_service("12.0.0")
+        captured = {}
+        service.add_edges_use_blob = lambda **kwargs: captured.update(kwargs) or "BLOB"
+        result = service.add_edges("Dim", edges={("Total", "Child1"): 1}, use_blob=True)
+        self.assertEqual(result, "BLOB")
+        # hierarchy_name defaults to the dimension name before dispatch
+        self.assertEqual(captured["hierarchy_name"], "Dim")
+        self.assertEqual(captured["edges"], {("Total", "Child1"): 1})
 
 
 if __name__ == "__main__":
