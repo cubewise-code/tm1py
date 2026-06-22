@@ -320,7 +320,10 @@ class ElementService(ObjectService):
         :param remove_blob: Whether to delete the staged blob after execution (default: True).
         :return: None
         """
-        rows = list(rows)
+        # callers typically pass a materialized list/tuple; only consume an iterator/generator
+        # (which we must materialize to test for emptiness) to avoid doubling memory on large builds
+        if not isinstance(rows, (list, tuple)):
+            rows = list(rows)
         if not rows:
             return
 
@@ -1367,7 +1370,7 @@ class ElementService(ObjectService):
         use_blob: bool = False,
         remove_blob: bool = True,
         **kwargs,
-    ) -> Response:
+    ) -> Optional[Response]:
         """Add Edges to hierarchy. Fails if one edge already exists.
 
         :param dimension_name:
@@ -1400,6 +1403,7 @@ class ElementService(ObjectService):
 
     @require_data_admin
     @require_ops_admin
+    @require_version(version="11.4")
     def add_edges_use_blob(
         self,
         dimension_name: str,
@@ -1459,7 +1463,7 @@ class ElementService(ObjectService):
         use_blob: bool = False,
         remove_blob: bool = True,
         **kwargs,
-    ):
+    ) -> Optional[Response]:
         """Add elements to hierarchy. Fails if one element already exists.
 
         :param dimension_name:
@@ -1486,6 +1490,7 @@ class ElementService(ObjectService):
 
     @require_data_admin
     @require_ops_admin
+    @require_version(version="11.4")
     def add_elements_use_blob(
         self,
         dimension_name: str,
