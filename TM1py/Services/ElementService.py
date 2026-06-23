@@ -36,6 +36,7 @@ from TM1py.Utils import (
     CaseAndSpaceInsensitiveSet,
     CaseAndSpaceInsensitiveTuplesDict,
     build_element_unique_names,
+    build_url_friendly_object_name,
     dimension_hierarchy_element_tuple_from_unique_name,
     format_url,
     require_data_admin,
@@ -463,6 +464,7 @@ class ElementService(ObjectService):
                     element_type=element_type,
                     name_pattern=name_pattern,
                     level=level,
+                    **kwargs,
                 )
                 if resolved:
                     elements = (
@@ -1882,8 +1884,16 @@ def _coerce_element_types(value) -> List[int]:
 
 
 def _odata_str_literal(s: str) -> str:
-    """Wrap a string in single quotes, doubling embedded single quotes per OData spec."""
-    return "'" + s.replace("'", "''") + "'"
+    """Wrap a string in single quotes for use inside an OData $filter clause that
+    will be appended raw to a URL query string.
+
+    Doubles embedded single quotes per the OData spec AND percent-encodes
+    URL-reserved characters ('%', '#', '?', '&') so that user-supplied values
+    containing those chars don't corrupt the query string. Delegates the escaping
+    to ``build_url_friendly_object_name`` to stay aligned with the rest of the
+    codebase's URL-construction convention.
+    """
+    return "'" + build_url_friendly_object_name(s) + "'"
 
 
 def _normalize_for_match(s: str) -> str:

@@ -1,7 +1,13 @@
 import unittest
+from unittest.mock import MagicMock, patch
 
 from TM1py.Objects import Element
-from TM1py.Services.ElementService import _build_elements_filter, _coerce_element_types
+from TM1py.Services.ElementService import (
+    ElementService,
+    _build_elements_filter,
+    _coerce_element_types,
+    _odata_str_literal,
+)
 
 
 class TestCoerceElementTypes(unittest.TestCase):
@@ -225,6 +231,75 @@ class TestBuildElementsFilter(unittest.TestCase):
         # bool is a subclass of int in Python; reject anyway since it's meaningless here
         with self.assertRaisesRegex(TypeError, "level must be int"):
             _build_elements_filter(None, None, True)
+
+
+class TestOdataStrLiteralUrlSafety(unittest.TestCase):
+    """The filter clause is concatenated raw into the URL query string
+    (url += '&$filter=' + clause), so any string literal inside it must
+    percent-encode URL-reserved characters (&, %, #, ?) — not just escape
+    OData single quotes. Otherwise an element name like 'Sales & Marketing'
+    would prematurely terminate $filter and corrupt the query."""
+
+    NAME_EXPR = "tolower(replace(Name,' ',''))"
+
+    def test_literal_url_escapes_ampersand(self):
+        self.assertEqual(_odata_str_literal("a&b"), "'a%26b'")
+
+    def test_literal_url_escapes_percent(self):
+        self.assertEqual(_odata_str_literal("a%b"), "'a%25b'")
+
+    def test_literal_url_escapes_hash(self):
+        self.assertEqual(_odata_str_literal("a#b"), "'a%23b'")
+
+    def test_literal_url_escapes_question_mark(self):
+        self.assertEqual(_odata_str_literal("a?b"), "'a%3Fb'")
+
+    def test_literal_still_escapes_single_quote(self):
+        # OData spec requires doubling embedded single quotes; the URL fix
+        # must not regress this.
+        self.assertEqual(_odata_str_literal("O'Brien"), "'O''Brien'")
+
+    def test_pattern_with_ampersand_produces_url_safe_filter(self):
+        # The bug: 'Sales & Marketing' would emit a raw '&' that splits the
+        # query string at &$filter= and creates a phantom '$filter' param.
+        result = _build_elements_filter(None, "*Sales & Marketing*", None)
+        self.assertNotIn("&", result)
+        self.assertIn("%26", result)
+        self.assertEqual(result, f"contains({self.NAME_EXPR},'sales%26marketing')")
+
+
+class TestGetElementsDataFrameForwardsKwargs(unittest.TestCase):
+    """Regression: in the trio-filter branch of get_elements_dataframe, the
+    internal call to get_element_names previously dropped **kwargs, silently
+    discarding request-level options (timeout, cancel_at_timeout,
+    async_requests_mode) that the rest of the method forwards consistently."""
+
+    def test_trio_path_forwards_kwargs_to_get_element_names(self):
+        service = ElementService.__new__(ElementService)
+        service._rest = MagicMock()
+
+        sentinel = RuntimeError("__stop__")
+        recorded = {}
+
+        def fake_get_element_names(*args, **kwargs):
+            recorded["kwargs"] = kwargs
+            raise sentinel
+
+        with patch.object(service, "get_element_names", side_effect=fake_get_element_names):
+            with self.assertRaises(RuntimeError) as ctx:
+                service.get_elements_dataframe(
+                    dimension_name="d",
+                    hierarchy_name="h",
+                    name_pattern="foo*",
+                    timeout=42,
+                    cancel_at_timeout=True,
+                    async_requests_mode=True,
+                )
+            self.assertIs(ctx.exception, sentinel)
+
+        self.assertEqual(recorded["kwargs"].get("timeout"), 42)
+        self.assertEqual(recorded["kwargs"].get("cancel_at_timeout"), True)
+        self.assertEqual(recorded["kwargs"].get("async_requests_mode"), True)
 
 
 if __name__ == "__main__":
