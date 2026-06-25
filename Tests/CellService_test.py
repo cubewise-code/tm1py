@@ -3254,6 +3254,23 @@ class TestCellService(unittest.TestCase):
         self.assertEqual(pivot.shape, (7, 5 * 5))
 
     @skip_if_no_pandas
+    def test_execute_mdx_dataframe_pivot_with_kwargs(self):
+        mdx = (
+            MdxBuilder.from_cube(self.cube_name)
+            .add_hierarchy_set_to_row_axis(
+                MdxHierarchySet.all_members(self.dimension_names[0], self.dimension_names[0]).head(2)
+            )
+            .add_hierarchy_set_to_column_axis(
+                MdxHierarchySet.all_members(self.dimension_names[1], self.dimension_names[1]).head(2)
+            )
+            .where(Member.of(self.dimension_names[2], "Element1"))
+            .to_mdx()
+        )
+
+        pivot = self.tm1.cells.execute_mdx_dataframe_pivot(mdx=mdx, cell_properties=["Value"])
+        self.assertEqual(pivot.shape, (2, 2))
+
+    @skip_if_no_pandas
     def test_execute_mdx_dataframe_use_blob(self):
         mdx = (
             MdxBuilder.from_cube(self.cube_name)
@@ -4661,6 +4678,38 @@ class TestCellService(unittest.TestCase):
             df=pd.DataFrame(data),
             dimension_mapping={
                 self.dimension_names[0]: self.dimension_names[0],
+                self.dimension_names[1]: self.dimension_names[1],
+                self.dimension_names[2]: self.dimension_names[2],
+            },
+        )
+
+        mdx = (
+            MdxBuilder.from_cube(self.cube_name)
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.member(Member.of(self.dimension_names[0], "Element17")))
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(self.dimension_names[1], "Element21")))
+            .where(Member.of(self.dimension_names[2], "Element15"))
+            .to_mdx()
+        )
+
+        value = self.tm1.cells.execute_mdx_values(mdx=mdx)[0]
+        self.assertEqual(value, None)
+
+    @skip_if_version_lower_than(version="11.7")
+    def test_clear_with_dataframe_multiple_hierarchies(self):
+        cells = {("Element17", "Element21", "Element15"): 1}
+        self.tm1.cells.write_values(self.cube_name, cells)
+
+        data = {
+            self.dimension_names[0]: ["Element17"],
+            self.dimension_names[1]: ["Element21"],
+            self.dimension_names[2]: ["Element15"],
+        }
+
+        self.tm1.cells.clear_with_dataframe(
+            cube=self.cube_name,
+            df=pd.DataFrame(data),
+            dimension_mapping={
+                self.dimension_names[0]: [self.dimension_names[0]],
                 self.dimension_names[1]: self.dimension_names[1],
                 self.dimension_names[2]: self.dimension_names[2],
             },
