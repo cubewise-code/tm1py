@@ -46,7 +46,11 @@ class ProcessService(ObjectService):
             "DataSource/usesUnicode,"
             "DataSource/subset,"
             "DataSource/jsonRootPointer,"
-            "DataSource/jsonVariableMapping",
+            "DataSource/jsonVariableMapping,"
+            "DataSource/flightLocation,"
+            "DataSource/flightDescriptorType,"
+            "DataSource/flightDescriptor,"
+            "DataSource/flightAuth",
             name_process,
         )
 
@@ -78,7 +82,11 @@ class ProcessService(ObjectService):
             "DataSource/usesUnicode,"
             "DataSource/subset,"
             "DataSource/jsonRootPointer,"
-            "DataSource/jsonVariableMapping{}".format(model_process_filter if skip_control_processes else "")
+            "DataSource/jsonVariableMapping,"
+            "DataSource/flightLocation,"
+            "DataSource/flightDescriptorType,"
+            "DataSource/flightDescriptor,"
+            "DataSource/flightAuth{}".format(model_process_filter if skip_control_processes else "")
         )
 
         response = self._rest.GET(url, **kwargs)
