@@ -31,33 +31,48 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Fetch gh-pages branch (if exists)
-        run: git fetch origin gh-pages:gh-pages || echo "gh-pages does not exist yet"
-
-      - name: Deploy documentation
+        run: git fetch origin gh-pages:gh-pages || echo "gh-pages does not exist yet" 
+      
+      - name: Extract versions.json
         run: |
-          if [[ "${GITHUB_REF}" == refs/heads/master ]]; then
-            echo "→ Deploying latest"
-            mike deploy latest --push --update-aliases
-            mike set-default latest --push
-          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            VERSION="${GITHUB_REF#refs/tags/}"
-            echo "→ Deploying version $VERSION"
-            mike deploy "$VERSION" --push --update-aliases
-            mike set-default --push stable
-          fi
-
-      - name: Copy and commit CNAME file (if exists)
-        run: |
-          git checkout gh-pages
-          if git checkout master -- docs/CNAME 2>/dev/null; then
-            mv docs/CNAME .
-            git add CNAME
-            if ! git diff --cached --quiet; then
-              git commit -m "Update CNAME file"
-              git push origin gh-pages
-            else
-              echo "No changes to commit for CNAME"
-            fi
+          if git show origin/gh-pages:versions.json > versions.json 2>/dev/null; then
+            echo "Extracted versions.json from gh-pages"
           else
-            echo "No CNAME file found in master branch"
+            echo '{"versions": []}' > versions.json
+            echo "Created empty versions.json because gh-pages does not exist yet"
           fi
+
+      - name: Filter versions
+        run: |
+          python scripts/filter_versions.py versions.json > version_filter_output.json
+
+      - name: Deploy version from tag (if tag triggered)
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          version="v${GITHUB_REF#refs/tags/}"
+          echo "Deploying version from tag: $version"
+          mike deploy --push "$version"
+    
+      - name: Deploy visible versions
+        run: |
+          for v in $(jq -r '.visible[]' version_filter_output.json); do
+            mike deploy --push $v
+          done
+    
+      - name: Deploy hidden versions
+        run: |
+          for v in $(jq -r '.hidden[]' version_filter_output.json); do
+            mike deploy --push --hidden $v
+          done
+
+      - name: Set default version
+        run: |
+          latest=$(jq -r '.visible[0]' version_filter_output.json)
+          if [ "$latest" = "null" ] || [ -z "$latest" ]; then
+            echo "No visible versions found — skipping set-default"
+          else
+            mike set-default --push "$latest"
+          fi
+
+ 
+

@@ -21,6 +21,7 @@ nav:
   - How to Contribute: how-to-contribute.md
   - Links: links.md
   - API Reference: reference/
+  - Archive: archive.md
 
 exclude_docs: |
   README.md
