@@ -2971,6 +2971,58 @@ class CellService(ObjectService):
         return result_dataframe
 
     @require_pandas
+    def execute_mdx_dataframes_async(
+        self,
+        mdx_list: List[Union[str, MdxBuilder]],
+        max_workers: int = 8,
+        top: int = None,
+        skip: int = None,
+        skip_zeros: bool = True,
+        skip_consolidated_cells: bool = False,
+        skip_rule_derived_cells: bool = False,
+        sandbox_name: str = None,
+        include_attributes: bool = False,
+        use_iterative_json: bool = False,
+        use_compact_json: bool = False,
+        use_blob: bool = False,
+        shaped: bool = False,
+        mdx_headers: bool = False,
+        **kwargs,
+    ) -> list[pd.DataFrame]:
+
+        def _execute_mdx_dataframe(mdx: Union[str, MdxBuilder]):
+            return self.execute_mdx_dataframe(
+                mdx=mdx,
+                top=top,
+                skip=skip,
+                skip_zeros=skip_zeros,
+                skip_consolidated_cells=skip_consolidated_cells,
+                skip_rule_derived_cells=skip_rule_derived_cells,
+                sandbox_name=sandbox_name,
+                include_attributes=include_attributes,
+                use_iterative_json=use_iterative_json,
+                use_compact_json=use_compact_json,
+                use_blob=use_blob,
+                shaped=shaped,
+                mdx_headers=mdx_headers,
+                **kwargs,
+            )
+
+        async def _exec_mdx_dataframe_async():
+            loop = asyncio.get_event_loop()
+            result_list = []
+            with ThreadPoolExecutor(max_workers) as executor:
+                futures = [loop.run_in_executor(executor, _execute_mdx_dataframe, mdx) for mdx in mdx_list]
+                for future in futures:
+                    result = await future
+                    result_list.append(result)
+            return result_list
+
+        result_dataframes = asyncio.run(_exec_mdx_dataframe_async())
+
+        return result_dataframes
+
+    @require_pandas
     def execute_mdx_dataframe_shaped(
         self,
         mdx: str,
