@@ -1036,7 +1036,7 @@ class RestService:
         finally:
             # If the TM1 REST API is routed through a reverse proxy that alters the expected URL,
             # we explicitly re-set the 'TM1SessionId' cookie to maintain session continuity.
-            session_id = self._s.cookies.pop("TM1SessionId", None)
+            session_id = self._pop_cookie("TM1SessionId")
             if session_id is not None:
                 self._s.cookies.set("TM1SessionId", session_id)
 
@@ -1176,13 +1176,44 @@ class RestService:
 
         return self._sandboxing_disabled
 
+    def _get_cookie(self, name: str) -> str:
+        """Read a cookie by name, tolerating duplicates across domain/path scopes.
+
+        `RequestsCookieJar.__getitem__` raises CookieConflictError when the jar holds
+        the same name under more than one scope. That happens routinely against TM1:
+        `_start_session` re-sets 'TM1SessionId' unscoped, and the server's own
+        Set-Cookie is scoped to its domain and path. Prefer the most specific scope,
+        which is the one the server most recently issued.
+        """
+        matches = [cookie for cookie in self._s.cookies if cookie.name == name]
+        if not matches:
+            raise KeyError(name)
+
+        matches.sort(key=lambda cookie: (bool(cookie.domain), len(cookie.path or "")))
+        return matches[-1].value
+
+    def _pop_cookie(self, name: str) -> Optional[str]:
+        """Remove every cookie called `name` (any scope) and return the preferred value.
+
+        Mirrors `cookies.pop(name, None)` but is duplicate-safe, and clears the stale
+        scoped copies so the jar cannot accumulate conflicting entries.
+        """
+        try:
+            value = self._get_cookie(name)
+        except KeyError:
+            return None
+
+        for cookie in [c for c in self._s.cookies if c.name == name]:
+            self._s.cookies.clear(cookie.domain, cookie.path, cookie.name)
+        return value
+
     @property
     def session_id(self) -> str:
         try:
-            return self._s.cookies["TM1SessionId"]
+            return self._get_cookie("TM1SessionId")
         # case v12
         except KeyError:
-            return self._s.cookies["paSession"]
+            return self._get_cookie("paSession")
 
     @staticmethod
     def translate_to_boolean(value) -> bool:
