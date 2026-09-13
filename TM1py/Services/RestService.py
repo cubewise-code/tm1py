@@ -1189,7 +1189,10 @@ class RestService:
         if not matches:
             raise KeyError(name)
 
-        matches.sort(key=lambda cookie: (bool(cookie.domain), len(cookie.path or "")))
+        # Domain-bearing beats domain-less, then longer path wins (RFC 6265 s5.4
+        # precedence). Domain breaks the remaining tie so the result never depends
+        # on jar insertion order.
+        matches.sort(key=lambda cookie: (bool(cookie.domain), len(cookie.path or ""), cookie.domain or ""))
         return matches[-1].value
 
     def _pop_cookie(self, name: str) -> Optional[str]:
