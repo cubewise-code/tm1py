@@ -197,15 +197,25 @@ class CubeService(ObjectService):
 
         return self.create(cube=cube, **kwargs)
 
-    def check_rules(self, cube_name: str, **kwargs) -> Response:
-        """Check rules syntax for existing cube on TM1 Server
+    def check_rules(self, cube_name: str, rules: Optional[Union[str, Rules]] = None, **kwargs) -> List[Dict]:
+        """Check rules syntax for a cube on TM1 Server
 
         :param cube_name: name of a cube
-        :return: response
+        :param rules: optional rules content to check without applying it to the cube
+        :return: rule validation errors
         """
         url = format_url("/Cubes('{}')/tm1.CheckRules", cube_name)
 
-        response = self._rest.POST(url, **kwargs)
+        if rules is None:
+            response = self._rest.POST(url, **kwargs)
+        else:
+            if isinstance(rules, str):
+                rules = Rules(rules=rules)
+            if not isinstance(rules, Rules):
+                raise ValueError("rules must be type str or Rules")
+
+            response = self._rest.POST(url, data=rules.body, **kwargs)
+
         errors = response.json()["value"]
         return errors
 
