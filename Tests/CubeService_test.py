@@ -254,6 +254,48 @@ class TestCubeService(unittest.TestCase):
         errors = self.tm1.cubes.check_rules(cube_name=self.cube_name)
         self.assertEqual(1, len(errors))
 
+    def test_check_supplied_rules_without_errors(self):
+        rules = "SKIPCHECK;"
+
+        errors = self.tm1.cubes.check_rules(cube_name=self.cube_name, rules=rules)
+
+        self.assertEqual(0, len(errors))
+
+    def test_check_supplied_rules_with_errors(self):
+        rules = "SKIPCHECK"
+
+        errors = self.tm1.cubes.check_rules(cube_name=self.cube_name, rules=rules)
+
+        self.assertEqual(1, len(errors))
+
+    def test_check_supplied_invalid_rules_returns_api_validation_error(self):
+        rules = "['Element'] = N: 1"  # Missing semicolon
+
+        errors = self.tm1.cubes.check_rules(cube_name=self.cube_name, rules=rules)
+
+        self.assertEqual(1, len(errors))
+        self.assertEqual(1, errors[0]["LineNumber"])
+        self.assertIn("Element", errors[0]["Message"])
+        self.assertTrue(errors[0]["Message"])
+
+    def test_check_supplied_rules_does_not_update_cube(self):
+        rules = "SKIPCHECK;"
+
+        self.tm1.cubes.check_rules(cube_name=self.cube_name, rules=rules)
+
+        cube = self.tm1.cubes.get(cube_name=self.cube_name)
+        self.assertFalse(cube.has_rules)
+
+    def test_check_supplied_rules_object(self):
+        errors = self.tm1.cubes.check_rules(cube_name=self.cube_name, rules=Rules("SKIPCHECK;"))
+
+        self.assertEqual(0, len(errors))
+
+    def test_check_supplied_rules_typing_error(self):
+        self.assertRaises(
+            ValueError, lambda: self.tm1.cubes.check_rules(cube_name=self.cube_name, rules=["SKIPCHECK;"])
+        )
+
     def test_update_or_create_rules_str_happy_case(self):
         """
         Check if the rules: str will be updated or created on cube
