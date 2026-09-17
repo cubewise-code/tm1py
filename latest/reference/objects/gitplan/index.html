@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../img/favicon_tm1py_centered_64x64.png">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -2938,11 +2938,11 @@
 <span class="normal"><a href="#__codelineno-0-16">16</a></span>
 <span class="normal"><a href="#__codelineno-0-17">17</a></span>
 <span class="normal"><a href="#__codelineno-0-18">18</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">plan_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">branch</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize GitPlan object</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="w">    </span><span class="sd">"""Initialize GitPlan object</span>
 <a id="__codelineno-0-12" name="__codelineno-0-12"></a><span class="sd">    :param plan_id: id of the Plan</span>
 <a id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="sd">    :param branch: current branch</span>
 <a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="sd">    :param force: force git context reset</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="sd">    """</span>
 <a id="__codelineno-0-16" name="__codelineno-0-16"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_plan_id</span> <span class="o">=</span> <span class="n">plan_id</span>
 <a id="__codelineno-0-17" name="__codelineno-0-17"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_branch</span> <span class="o">=</span> <span class="n">branch</span>
 <a id="__codelineno-0-18" name="__codelineno-0-18"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_force</span> <span class="o">=</span> <span class="n">force</span>
@@ -3166,13 +3166,13 @@
 <span class="normal"><a href="#__codelineno-0-91">91</a></span>
 <span class="normal"><a href="#__codelineno-0-92">92</a></span>
 <span class="normal"><a href="#__codelineno-0-93">93</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-82" name="__codelineno-0-82"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">plan_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">branch</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">commit</span><span class="p">:</span> <span class="n">GitCommit</span><span class="p">,</span> <span class="n">operations</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
-<a id="__codelineno-0-83" name="__codelineno-0-83"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize GitPushPlan object</span>
+<a id="__codelineno-0-83" name="__codelineno-0-83"></a><span class="w">    </span><span class="sd">"""Initialize GitPushPlan object</span>
 <a id="__codelineno-0-84" name="__codelineno-0-84"></a><span class="sd">    :param plan_id: id of the PullPlan</span>
 <a id="__codelineno-0-85" name="__codelineno-0-85"></a><span class="sd">    :param branch: current branch to base the pullplan on</span>
 <a id="__codelineno-0-86" name="__codelineno-0-86"></a><span class="sd">    :param force: force git context reset</span>
 <a id="__codelineno-0-87" name="__codelineno-0-87"></a><span class="sd">    :param commit: GitCommit of the commit to pull</span>
 <a id="__codelineno-0-88" name="__codelineno-0-88"></a><span class="sd">    :param operations: list of changes made upon pulling</span>
-<a id="__codelineno-0-89" name="__codelineno-0-89"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-89" name="__codelineno-0-89"></a><span class="sd">    """</span>
 <a id="__codelineno-0-90" name="__codelineno-0-90"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_commit</span> <span class="o">=</span> <span class="n">commit</span>
 <a id="__codelineno-0-91" name="__codelineno-0-91"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_operations</span> <span class="o">=</span> <span class="n">operations</span>
 <a id="__codelineno-0-92" name="__codelineno-0-92"></a>
@@ -3431,7 +3431,7 @@
 <a id="__codelineno-0-43" name="__codelineno-0-43"></a>    <span class="n">parent_commit</span><span class="p">:</span> <span class="n">GitCommit</span><span class="p">,</span>
 <a id="__codelineno-0-44" name="__codelineno-0-44"></a>    <span class="n">source_files</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
 <a id="__codelineno-0-45" name="__codelineno-0-45"></a><span class="p">):</span>
-<a id="__codelineno-0-46" name="__codelineno-0-46"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize GitPushPlan object</span>
+<a id="__codelineno-0-46" name="__codelineno-0-46"></a><span class="w">    </span><span class="sd">"""Initialize GitPushPlan object</span>
 <a id="__codelineno-0-47" name="__codelineno-0-47"></a><span class="sd">    :param plan_id: id of the PushPlan</span>
 <a id="__codelineno-0-48" name="__codelineno-0-48"></a><span class="sd">    :param branch: current branch to base the pushplan on</span>
 <a id="__codelineno-0-49" name="__codelineno-0-49"></a><span class="sd">    :param force: force git context reset</span>
@@ -3439,7 +3439,7 @@
 <a id="__codelineno-0-51" name="__codelineno-0-51"></a><span class="sd">    :param new_commit: GitCommit of the new commit</span>
 <a id="__codelineno-0-52" name="__codelineno-0-52"></a><span class="sd">    :param parent_commit: The current commit in the branch</span>
 <a id="__codelineno-0-53" name="__codelineno-0-53"></a><span class="sd">    :param source_files: list of included files in the push</span>
-<a id="__codelineno-0-54" name="__codelineno-0-54"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-54" name="__codelineno-0-54"></a><span class="sd">    """</span>
 <a id="__codelineno-0-55" name="__codelineno-0-55"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_new_branch</span> <span class="o">=</span> <span class="n">new_branch</span>
 <a id="__codelineno-0-56" name="__codelineno-0-56"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_new_commit</span> <span class="o">=</span> <span class="n">new_commit</span>
 <a id="__codelineno-0-57" name="__codelineno-0-57"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_parent_commit</span> <span class="o">=</span> <span class="n">parent_commit</span>
@@ -3626,7 +3626,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

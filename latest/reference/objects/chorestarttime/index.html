@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../img/favicon_tm1py_centered_64x64.png">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -2899,7 +2899,7 @@
 <span class="normal"><a href="#__codelineno-0-18">18</a></span>
 <span class="normal"><a href="#__codelineno-0-19">19</a></span>
 <span class="normal"><a href="#__codelineno-0-20">20</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-9" name="__codelineno-0-9"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">year</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">month</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">day</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">hour</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">minute</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">second</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">tz</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="w">    </span><span class="sd">"""</span>
 <a id="__codelineno-0-11" name="__codelineno-0-11"></a>
 <a id="__codelineno-0-12" name="__codelineno-0-12"></a><span class="sd">    :param year: year</span>
 <a id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="sd">    :param month: month</span>
@@ -2907,7 +2907,7 @@
 <a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="sd">    :param hour: hour or None</span>
 <a id="__codelineno-0-16" name="__codelineno-0-16"></a><span class="sd">    :param minute: minute or None</span>
 <a id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="sd">    :param second: second or None</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18"></a><span class="sd">    """</span>
 <a id="__codelineno-0-19" name="__codelineno-0-19"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="p">),</span> <span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">(</span><span class="n">hour</span><span class="p">,</span> <span class="n">minute</span><span class="p">,</span> <span class="n">second</span><span class="p">))</span>
 <a id="__codelineno-0-20" name="__codelineno-0-20"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">tz</span> <span class="o">=</span> <span class="n">tz</span>
 </code></pre></div></td></tr></table></div>
@@ -3076,14 +3076,14 @@
 <span class="normal"><a href="#__codelineno-0-45">45</a></span>
 <span class="normal"><a href="#__codelineno-0-46">46</a></span>
 <span class="normal"><a href="#__codelineno-0-47">47</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="nd">@classmethod</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="k">def</span><span class="w"> </span><span class="nf">from_string</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">start_time_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;ChoreStartTime&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="k">def</span><span class="w"> </span><span class="nf">from_string</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">start_time_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"ChoreStartTime"</span><span class="p">:</span>
 <a id="__codelineno-0-24" name="__codelineno-0-24"></a>    <span class="c1"># extract optional tz info (e.g., +01:00) from string end</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25"></a>    <span class="k">if</span> <span class="s2">&quot;+&quot;</span> <span class="ow">in</span> <span class="n">start_time_string</span><span class="p">:</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26"></a>        <span class="c1"># case &quot;2020-11-05T08:00:01+01:00&quot;,</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27"></a>        <span class="n">tz</span> <span class="o">=</span> <span class="s2">&quot;+&quot;</span> <span class="o">+</span> <span class="n">start_time_string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;+&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
-<a id="__codelineno-0-28" name="__codelineno-0-28"></a>    <span class="k">elif</span> <span class="n">start_time_string</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
-<a id="__codelineno-0-29" name="__codelineno-0-29"></a>        <span class="c1"># case: &quot;2020-11-05T08:00:01-01:00&quot;,</span>
-<a id="__codelineno-0-30" name="__codelineno-0-30"></a>        <span class="n">tz</span> <span class="o">=</span> <span class="s2">&quot;-&quot;</span> <span class="o">+</span> <span class="n">start_time_string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25"></a>    <span class="k">if</span> <span class="s2">"+"</span> <span class="ow">in</span> <span class="n">start_time_string</span><span class="p">:</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26"></a>        <span class="c1"># case "2020-11-05T08:00:01+01:00",</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27"></a>        <span class="n">tz</span> <span class="o">=</span> <span class="s2">"+"</span> <span class="o">+</span> <span class="n">start_time_string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"+"</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28"></a>    <span class="k">elif</span> <span class="n">start_time_string</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">"-"</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29"></a>        <span class="c1"># case: "2020-11-05T08:00:01-01:00",</span>
+<a id="__codelineno-0-30" name="__codelineno-0-30"></a>        <span class="n">tz</span> <span class="o">=</span> <span class="s2">"-"</span> <span class="o">+</span> <span class="n">start_time_string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"-"</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 <a id="__codelineno-0-31" name="__codelineno-0-31"></a>    <span class="k">else</span><span class="p">:</span>
 <a id="__codelineno-0-32" name="__codelineno-0-32"></a>        <span class="n">tz</span> <span class="o">=</span> <span class="kc">None</span>
 <a id="__codelineno-0-33" name="__codelineno-0-33"></a>
@@ -3098,7 +3098,7 @@
 <a id="__codelineno-0-42" name="__codelineno-0-42"></a>        <span class="n">day</span><span class="o">=</span><span class="n">format_time</span><span class="p">(</span><span class="n">start_time_string</span><span class="p">[</span><span class="mi">8</span><span class="p">:</span><span class="mi">10</span><span class="p">]),</span>
 <a id="__codelineno-0-43" name="__codelineno-0-43"></a>        <span class="n">hour</span><span class="o">=</span><span class="n">format_time</span><span class="p">(</span><span class="n">start_time_string</span><span class="p">[</span><span class="mi">11</span><span class="p">:</span><span class="mi">13</span><span class="p">]),</span>
 <a id="__codelineno-0-44" name="__codelineno-0-44"></a>        <span class="n">minute</span><span class="o">=</span><span class="n">format_time</span><span class="p">(</span><span class="n">start_time_string</span><span class="p">[</span><span class="mi">14</span><span class="p">:</span><span class="mi">16</span><span class="p">]),</span>
-<a id="__codelineno-0-45" name="__codelineno-0-45"></a>        <span class="n">second</span><span class="o">=</span><span class="n">format_time</span><span class="p">(</span><span class="mi">0</span> <span class="k">if</span> <span class="n">start_time_string</span><span class="p">[</span><span class="mi">16</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;:&quot;</span> <span class="k">else</span> <span class="n">start_time_string</span><span class="p">[</span><span class="mi">17</span><span class="p">:</span><span class="mi">19</span><span class="p">]),</span>
+<a id="__codelineno-0-45" name="__codelineno-0-45"></a>        <span class="n">second</span><span class="o">=</span><span class="n">format_time</span><span class="p">(</span><span class="mi">0</span> <span class="k">if</span> <span class="n">start_time_string</span><span class="p">[</span><span class="mi">16</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">":"</span> <span class="k">else</span> <span class="n">start_time_string</span><span class="p">[</span><span class="mi">17</span><span class="p">:</span><span class="mi">19</span><span class="p">]),</span>
 <a id="__codelineno-0-46" name="__codelineno-0-46"></a>        <span class="n">tz</span><span class="o">=</span><span class="n">tz</span><span class="p">,</span>
 <a id="__codelineno-0-47" name="__codelineno-0-47"></a>    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -3273,7 +3273,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

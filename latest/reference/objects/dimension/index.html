@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../img/favicon_tm1py_centered_64x64.png">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -3034,15 +3034,15 @@
 <span class="normal"><a href="#__codelineno-0-25">25</a></span>
 <span class="normal"><a href="#__codelineno-0-26">26</a></span>
 <span class="normal"><a href="#__codelineno-0-27">27</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-18" name="__codelineno-0-18"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hierarchies</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Hierarchy</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstraction of TM1 Dimension</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="w">    </span><span class="sd">"""Abstraction of TM1 Dimension</span>
 <a id="__codelineno-0-20" name="__codelineno-0-20"></a>
 <a id="__codelineno-0-21" name="__codelineno-0-21"></a>
 <a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="sd">    :param name: Name of the dimension</span>
 <a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="sd">    :param hierarchies: List of TM1py.Objects.Hierarchy instances</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="sd">    """</span>
 <a id="__codelineno-0-25" name="__codelineno-0-25"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
 <a id="__codelineno-0-26" name="__codelineno-0-26"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_hierarchies</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">hierarchies</span><span class="p">)</span> <span class="k">if</span> <span class="n">hierarchies</span> <span class="k">else</span> <span class="p">[]</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_attributes</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Caption&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">}</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_attributes</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"Caption"</span><span class="p">:</span> <span class="n">name</span><span class="p">}</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -3311,7 +3311,7 @@
 <span class="normal"><a href="#__codelineno-0-106">106</a></span>
 <span class="normal"><a href="#__codelineno-0-107">107</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-104" name="__codelineno-0-104"></a><span class="k">def</span><span class="w"> </span><span class="nf">add_hierarchy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hierarchy</span><span class="p">:</span> <span class="n">Hierarchy</span><span class="p">):</span>
 <a id="__codelineno-0-105" name="__codelineno-0-105"></a>    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_hierarchy</span><span class="p">(</span><span class="n">hierarchy</span><span class="o">.</span><span class="n">name</span><span class="p">):</span>
-<a id="__codelineno-0-106" name="__codelineno-0-106"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Hierarchy: </span><span class="si">{}</span><span class="s2"> already exists in dimension: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">hierarchy</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+<a id="__codelineno-0-106" name="__codelineno-0-106"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Hierarchy: </span><span class="si">{}</span><span class="s2"> already exists in dimension: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">hierarchy</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
 <a id="__codelineno-0-107" name="__codelineno-0-107"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_hierarchies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hierarchy</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -3375,12 +3375,12 @@
 <span class="normal"><a href="#__codelineno-0-40">40</a></span>
 <span class="normal"><a href="#__codelineno-0-41">41</a></span>
 <span class="normal"><a href="#__codelineno-0-42">42</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-34" name="__codelineno-0-34"></a><span class="nd">@classmethod</span>
-<a id="__codelineno-0-35" name="__codelineno-0-35"></a><span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dimension_as_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Dimension&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-35" name="__codelineno-0-35"></a><span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dimension_as_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Dimension"</span><span class="p">:</span>
 <a id="__codelineno-0-36" name="__codelineno-0-36"></a>    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
-<a id="__codelineno-0-37" name="__codelineno-0-37"></a>        <span class="n">name</span><span class="o">=</span><span class="n">dimension_as_dict</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-37" name="__codelineno-0-37"></a>        <span class="n">name</span><span class="o">=</span><span class="n">dimension_as_dict</span><span class="p">[</span><span class="s2">"Name"</span><span class="p">],</span>
 <a id="__codelineno-0-38" name="__codelineno-0-38"></a>        <span class="n">hierarchies</span><span class="o">=</span><span class="p">[</span>
-<a id="__codelineno-0-39" name="__codelineno-0-39"></a>            <span class="n">Hierarchy</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">hierarchy</span><span class="p">,</span> <span class="n">dimension_name</span><span class="o">=</span><span class="n">dimension_as_dict</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">])</span>
-<a id="__codelineno-0-40" name="__codelineno-0-40"></a>            <span class="k">for</span> <span class="n">hierarchy</span> <span class="ow">in</span> <span class="n">dimension_as_dict</span><span class="p">[</span><span class="s2">&quot;Hierarchies&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-39" name="__codelineno-0-39"></a>            <span class="n">Hierarchy</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">hierarchy</span><span class="p">,</span> <span class="n">dimension_name</span><span class="o">=</span><span class="n">dimension_as_dict</span><span class="p">[</span><span class="s2">"Name"</span><span class="p">])</span>
+<a id="__codelineno-0-40" name="__codelineno-0-40"></a>            <span class="k">for</span> <span class="n">hierarchy</span> <span class="ow">in</span> <span class="n">dimension_as_dict</span><span class="p">[</span><span class="s2">"Hierarchies"</span><span class="p">]</span>
 <a id="__codelineno-0-41" name="__codelineno-0-41"></a>        <span class="p">],</span>
 <a id="__codelineno-0-42" name="__codelineno-0-42"></a>    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -3411,7 +3411,7 @@
 <span class="normal"><a href="#__codelineno-0-30">30</a></span>
 <span class="normal"><a href="#__codelineno-0-31">31</a></span>
 <span class="normal"><a href="#__codelineno-0-32">32</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-29" name="__codelineno-0-29"></a><span class="nd">@classmethod</span>
-<a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="k">def</span><span class="w"> </span><span class="nf">from_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dimension_as_json</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Dimension&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="k">def</span><span class="w"> </span><span class="nf">from_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dimension_as_json</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Dimension"</span><span class="p">:</span>
 <a id="__codelineno-0-31" name="__codelineno-0-31"></a>    <span class="n">dimension_as_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">dimension_as_json</span><span class="p">)</span>
 <a id="__codelineno-0-32" name="__codelineno-0-32"></a>    <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">dimension_as_dict</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -3442,7 +3442,7 @@
 <a id="__codelineno-0-99" name="__codelineno-0-99"></a>    <span class="k">for</span> <span class="n">hierarchy</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hierarchies</span><span class="p">:</span>
 <a id="__codelineno-0-100" name="__codelineno-0-100"></a>        <span class="k">if</span> <span class="n">case_and_space_insensitive_equals</span><span class="p">(</span><span class="n">hierarchy</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">):</span>
 <a id="__codelineno-0-101" name="__codelineno-0-101"></a>            <span class="k">return</span> <span class="n">hierarchy</span>
-<a id="__codelineno-0-102" name="__codelineno-0-102"></a>    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Hierarchy: </span><span class="si">{}</span><span class="s2"> not found in dimension: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">hierarchy_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+<a id="__codelineno-0-102" name="__codelineno-0-102"></a>    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Hierarchy: </span><span class="si">{}</span><span class="s2"> not found in dimension: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">hierarchy_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3471,8 +3471,8 @@
 <span class="normal"><a href="#__codelineno-0-114">114</a></span>
 <span class="normal"><a href="#__codelineno-0-115">115</a></span>
 <span class="normal"><a href="#__codelineno-0-116">116</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-109" name="__codelineno-0-109"></a><span class="k">def</span><span class="w"> </span><span class="nf">remove_hierarchy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<a id="__codelineno-0-110" name="__codelineno-0-110"></a>    <span class="k">if</span> <span class="n">case_and_space_insensitive_equals</span><span class="p">(</span><span class="n">hierarchy_name</span><span class="p">,</span> <span class="s2">&quot;leaves&quot;</span><span class="p">):</span>
-<a id="__codelineno-0-111" name="__codelineno-0-111"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;Leaves&#39; hierarchy must not be removed from dimension&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-110" name="__codelineno-0-110"></a>    <span class="k">if</span> <span class="n">case_and_space_insensitive_equals</span><span class="p">(</span><span class="n">hierarchy_name</span><span class="p">,</span> <span class="s2">"leaves"</span><span class="p">):</span>
+<a id="__codelineno-0-111" name="__codelineno-0-111"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"'Leaves' hierarchy must not be removed from dimension"</span><span class="p">)</span>
 <a id="__codelineno-0-112" name="__codelineno-0-112"></a>
 <a id="__codelineno-0-113" name="__codelineno-0-113"></a>    <span class="k">for</span> <span class="n">num</span><span class="p">,</span> <span class="n">hierarchy</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_hierarchies</span><span class="p">):</span>
 <a id="__codelineno-0-114" name="__codelineno-0-114"></a>        <span class="k">if</span> <span class="n">case_and_space_insensitive_equals</span><span class="p">(</span><span class="n">hierarchy</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">hierarchy_name</span><span class="p">):</span>
@@ -3568,7 +3568,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

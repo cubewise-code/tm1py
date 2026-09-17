@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../img/favicon_tm1py_centered_64x64.png">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -3806,7 +3806,7 @@
 
 
 <h2 id="TM1py.Objects.Application.ApplicationType" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">ApplicationType</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;ApplicationType&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">,</span> <span class="s1">&#39;suffix&#39;</span><span class="p">,</span> <span class="s1">&#39;odata_type&#39;</span><span class="p">])</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">ApplicationType</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">'ApplicationType'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'value'</span><span class="p">,</span> <span class="s1">'suffix'</span><span class="p">,</span> <span class="s1">'odata_type'</span><span class="p">])</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
@@ -3963,7 +3963,7 @@
 
 
 <h3 id="TM1py.Objects.Application.Application.name" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="p">[:(</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">application_type</span><span class="o">.</span><span class="n">suffix</span><span class="p">))]</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="p">[:</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">application_type</span><span class="o">.</span><span class="n">suffix</span><span class="p">)]</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
@@ -4049,7 +4049,7 @@
 
 
 <h3 id="TM1py.Objects.Application.ApplicationTypes.CHORE" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">CHORE</span> <span class="o">=</span> <span class="n">ApplicationType</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;.chore&#39;</span><span class="p">,</span> <span class="s1">&#39;tm1.ChoreReference&#39;</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">CHORE</span> <span class="o">=</span> <span class="n">ApplicationType</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'.chore'</span><span class="p">,</span> <span class="s1">'tm1.ChoreReference'</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
@@ -4070,7 +4070,7 @@
 
 
 <h3 id="TM1py.Objects.Application.ApplicationTypes.CUBE" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">CUBE</span> <span class="o">=</span> <span class="n">ApplicationType</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;.cube&#39;</span><span class="p">,</span> <span class="s1">&#39;tm1.CubeReference&#39;</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">CUBE</span> <span class="o">=</span> <span class="n">ApplicationType</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s1">'.cube'</span><span class="p">,</span> <span class="s1">'tm1.CubeReference'</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
@@ -4091,7 +4091,7 @@
 
 
 <h3 id="TM1py.Objects.Application.ApplicationTypes.DIMENSION" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">DIMENSION</span> <span class="o">=</span> <span class="n">ApplicationType</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;.dimension&#39;</span><span class="p">,</span> <span class="s1">&#39;tm1.DimensionReference&#39;</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">DIMENSION</span> <span class="o">=</span> <span class="n">ApplicationType</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s1">'.dimension'</span><span class="p">,</span> <span class="s1">'tm1.DimensionReference'</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
@@ -4112,7 +4112,7 @@
 
 
 <h3 id="TM1py.Objects.Application.ApplicationTypes.DOCUMENT" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">DOCUMENT</span> <span class="o">=</span> <span class="n">ApplicationType</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;.blob&#39;</span><span class="p">,</span> <span class="s1">&#39;#ibm.tm1.api.v1.Document&#39;</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">DOCUMENT</span> <span class="o">=</span> <span class="n">ApplicationType</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s1">'.blob'</span><span class="p">,</span> <span class="s1">'#ibm.tm1.api.v1.Document'</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
@@ -4133,7 +4133,7 @@
 
 
 <h3 id="TM1py.Objects.Application.ApplicationTypes.FOLDER" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">FOLDER</span> <span class="o">=</span> <span class="n">ApplicationType</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;#ibm.tm1.api.v1.Folder&#39;</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">FOLDER</span> <span class="o">=</span> <span class="n">ApplicationType</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="s1">''</span><span class="p">,</span> <span class="s1">'#ibm.tm1.api.v1.Folder'</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
@@ -4154,7 +4154,7 @@
 
 
 <h3 id="TM1py.Objects.Application.ApplicationTypes.LINK" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">LINK</span> <span class="o">=</span> <span class="n">ApplicationType</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="s1">&#39;.extr&#39;</span><span class="p">,</span> <span class="s1">&#39;#ibm.tm1.api.v1.Link&#39;</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">LINK</span> <span class="o">=</span> <span class="n">ApplicationType</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="s1">'.extr'</span><span class="p">,</span> <span class="s1">'#ibm.tm1.api.v1.Link'</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
@@ -4175,7 +4175,7 @@
 
 
 <h3 id="TM1py.Objects.Application.ApplicationTypes.PROCESS" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">PROCESS</span> <span class="o">=</span> <span class="n">ApplicationType</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="s1">&#39;.process&#39;</span><span class="p">,</span> <span class="s1">&#39;tm1.ProcessReference&#39;</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">PROCESS</span> <span class="o">=</span> <span class="n">ApplicationType</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="s1">'.process'</span><span class="p">,</span> <span class="s1">'tm1.ProcessReference'</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
@@ -4196,7 +4196,7 @@
 
 
 <h3 id="TM1py.Objects.Application.ApplicationTypes.SUBSET" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">SUBSET</span> <span class="o">=</span> <span class="n">ApplicationType</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s1">&#39;.subset&#39;</span><span class="p">,</span> <span class="s1">&#39;tm1.SubsetReference&#39;</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">SUBSET</span> <span class="o">=</span> <span class="n">ApplicationType</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s1">'.subset'</span><span class="p">,</span> <span class="s1">'tm1.SubsetReference'</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
@@ -4217,7 +4217,7 @@
 
 
 <h3 id="TM1py.Objects.Application.ApplicationTypes.VIEW" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">VIEW</span> <span class="o">=</span> <span class="n">ApplicationType</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="s1">&#39;.view&#39;</span><span class="p">,</span> <span class="s1">&#39;tm1.ViewReference&#39;</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">VIEW</span> <span class="o">=</span> <span class="n">ApplicationType</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="s1">'.view'</span><span class="p">,</span> <span class="s1">'tm1.ViewReference'</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
@@ -4781,12 +4781,12 @@
 <span class="normal"><a href="#__codelineno-0-125">125</a></span>
 <span class="normal"><a href="#__codelineno-0-126">126</a></span>
 <span class="normal"><a href="#__codelineno-0-127">127</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-120" name="__codelineno-0-120"></a><span class="k">def</span><span class="w"> </span><span class="nf">to_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_to_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<a id="__codelineno-0-121" name="__codelineno-0-121"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-121" name="__codelineno-0-121"></a><span class="w">    </span><span class="sd">"""</span>
 <a id="__codelineno-0-122" name="__codelineno-0-122"></a>
 <a id="__codelineno-0-123" name="__codelineno-0-123"></a><span class="sd">    :param path_to_file: path to newly to create file including the extension (e.g., xlsx, xlsm)</span>
 <a id="__codelineno-0-124" name="__codelineno-0-124"></a><span class="sd">    :return:</span>
-<a id="__codelineno-0-125" name="__codelineno-0-125"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-126" name="__codelineno-0-126"></a>    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_to_file</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+<a id="__codelineno-0-125" name="__codelineno-0-125"></a><span class="sd">    """</span>
+<a id="__codelineno-0-126" name="__codelineno-0-126"></a>    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_to_file</span><span class="p">,</span> <span class="s2">"wb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
 <a id="__codelineno-0-127" name="__codelineno-0-127"></a>        <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -4811,7 +4811,7 @@
               <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-116">116</a></span>
 <span class="normal"><a href="#__codelineno-0-117">117</a></span>
 <span class="normal"><a href="#__codelineno-0-118">118</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-116" name="__codelineno-0-116"></a><span class="k">def</span><span class="w"> </span><span class="nf">to_xlsx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_to_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<a id="__codelineno-0-117" name="__codelineno-0-117"></a>    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Function &#39;to_xlsx&#39; is deprecated. Use &#39;to_file&#39; instead&quot;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<a id="__codelineno-0-117" name="__codelineno-0-117"></a>    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">"Function 'to_xlsx' is deprecated. Use 'to_file' instead"</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 <a id="__codelineno-0-118" name="__codelineno-0-118"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="n">path_to_file</span><span class="o">=</span><span class="n">path_to_file</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -5397,7 +5397,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

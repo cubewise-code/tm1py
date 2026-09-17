@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../img/favicon_tm1py_centered_64x64.png">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -3631,7 +3631,7 @@
 <span class="normal"><a href="#__codelineno-0-131">131</a></span>
 <span class="normal"><a href="#__codelineno-0-132">132</a></span>
 <span class="normal"><a href="#__codelineno-0-133">133</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-44" name="__codelineno-0-44"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<a id="__codelineno-0-45" name="__codelineno-0-45"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Initiate the TM1Service</span>
+<a id="__codelineno-0-45" name="__codelineno-0-45"></a><span class="w">    </span><span class="sd">"""Initiate the TM1Service</span>
 <a id="__codelineno-0-46" name="__codelineno-0-46"></a>
 <a id="__codelineno-0-47" name="__codelineno-0-47"></a><span class="sd">    Supported kwargs arguments:</span>
 <a id="__codelineno-0-48" name="__codelineno-0-48"></a>
@@ -3647,15 +3647,15 @@
 <a id="__codelineno-0-58" name="__codelineno-0-58"></a><span class="sd">    - **decode_b64** (bool): Whether the password argument is Base64 encoded.</span>
 <a id="__codelineno-0-59" name="__codelineno-0-59"></a><span class="sd">    - **namespace** (str): Optional CAM namespace.</span>
 <a id="__codelineno-0-60" name="__codelineno-0-60"></a><span class="sd">    - **cam_passport** (str): The CAM passport.</span>
-<a id="__codelineno-0-61" name="__codelineno-0-61"></a><span class="sd">    - **session_id** (str): TM1SessionId, e.g., &quot;q7O6e1w49AixeuLVxJ1GZg&quot;.</span>
+<a id="__codelineno-0-61" name="__codelineno-0-61"></a><span class="sd">    - **session_id** (str): TM1SessionId, e.g., "q7O6e1w49AixeuLVxJ1GZg".</span>
 <a id="__codelineno-0-62" name="__codelineno-0-62"></a><span class="sd">    - **application_client_id** (str): Planning Analytics engine (v12) named application client ID.</span>
 <a id="__codelineno-0-63" name="__codelineno-0-63"></a><span class="sd">    - **application_client_secret** (str): Planning Analytics engine (v12) named application secret.</span>
 <a id="__codelineno-0-64" name="__codelineno-0-64"></a><span class="sd">    - **api_key** (str): Planning Analytics engine (v12) API Key.</span>
-<a id="__codelineno-0-65" name="__codelineno-0-65"></a><span class="sd">    - **iam_url** (str): IBM Cloud IAM URL. Default: &quot;https://iam.cloud.ibm.com&quot;.</span>
+<a id="__codelineno-0-65" name="__codelineno-0-65"></a><span class="sd">    - **iam_url** (str): IBM Cloud IAM URL. Default: "https://iam.cloud.ibm.com".</span>
 <a id="__codelineno-0-66" name="__codelineno-0-66"></a><span class="sd">    - **pa_url** (str): Planning Analytics engine (v12) PA URL.</span>
 <a id="__codelineno-0-67" name="__codelineno-0-67"></a><span class="sd">    - **cpd_url** (str): Cloud Pak for Data URL (aka ZEN).</span>
 <a id="__codelineno-0-68" name="__codelineno-0-68"></a><span class="sd">    - **tenant** (str): Planning Analytics engine (v12) tenant.</span>
-<a id="__codelineno-0-69" name="__codelineno-0-69"></a><span class="sd">    - **session_context** (str): Name of the application. Controls &quot;Context&quot; column in Arc/TM1top.</span>
+<a id="__codelineno-0-69" name="__codelineno-0-69"></a><span class="sd">    - **session_context** (str): Name of the application. Controls "Context" column in Arc/TM1top.</span>
 <a id="__codelineno-0-70" name="__codelineno-0-70"></a><span class="sd">    - **verify** (bool or str): Path to .cer file or boolean for SSL verification.</span>
 <a id="__codelineno-0-71" name="__codelineno-0-71"></a><span class="sd">    - **logging** (bool): Enable or disable verbose HTTP logging.</span>
 <a id="__codelineno-0-72" name="__codelineno-0-72"></a><span class="sd">    - **timeout** (float): Number of seconds to wait for a response.</span>
@@ -3678,16 +3678,16 @@
 <a id="__codelineno-0-89" name="__codelineno-0-89"></a><span class="sd">    - **async_polling_initial_delay** (float): Initial polling delay in seconds for async operations (default: 0.1).</span>
 <a id="__codelineno-0-90" name="__codelineno-0-90"></a><span class="sd">    - **async_polling_max_delay** (float): Maximum polling delay cap in seconds for async operations (default: 1.0).</span>
 <a id="__codelineno-0-91" name="__codelineno-0-91"></a><span class="sd">    - **async_polling_backoff_factor** (float): Multiplier for exponential backoff in async polling (default: 2).</span>
-<a id="__codelineno-0-92" name="__codelineno-0-92"></a><span class="sd">    - **proxies** (dict): Dictionary of proxies, e.g., {&#39;http&#39;: &#39;http://proxy.example.com:8080&#39;}.</span>
+<a id="__codelineno-0-92" name="__codelineno-0-92"></a><span class="sd">    - **proxies** (dict): Dictionary of proxies, e.g., {'http': 'http://proxy.example.com:8080'}.</span>
 <a id="__codelineno-0-93" name="__codelineno-0-93"></a><span class="sd">    - **ssl_context**: User-defined SSL context.</span>
-<a id="__codelineno-0-94" name="__codelineno-0-94"></a><span class="sd">    - **cert** (str or tuple): Path to SSL client cert file or (&#39;cert&#39;, &#39;key&#39;) pair.</span>
+<a id="__codelineno-0-94" name="__codelineno-0-94"></a><span class="sd">    - **cert** (str or tuple): Path to SSL client cert file or ('cert', 'key') pair.</span>
 <a id="__codelineno-0-95" name="__codelineno-0-95"></a><span class="sd">    - **compress_request_body** (bool): Gzip-compress request bodies at the transport seam. Opt-in. Default: False.</span>
 <a id="__codelineno-0-96" name="__codelineno-0-96"></a><span class="sd">    - **gzip_min_bytes** (int): Minimum (encoded) request body size in bytes to compress. Default: 1024.</span>
 <a id="__codelineno-0-97" name="__codelineno-0-97"></a><span class="sd">    - **gzip_compress_level** (int): Gzip compression level, 1 (fastest) to 9 (smallest). Default: 6.</span>
 <a id="__codelineno-0-98" name="__codelineno-0-98"></a>
 <a id="__codelineno-0-99" name="__codelineno-0-99"></a><span class="sd">    :param kwargs: See description above for all supported arguments</span>
 <a id="__codelineno-0-100" name="__codelineno-0-100"></a>
-<a id="__codelineno-0-101" name="__codelineno-0-101"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-101" name="__codelineno-0-101"></a><span class="sd">    """</span>
 <a id="__codelineno-0-102" name="__codelineno-0-102"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_tm1_rest</span> <span class="o">=</span> <span class="n">RestService</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 <a id="__codelineno-0-103" name="__codelineno-0-103"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">annotations</span> <span class="o">=</span> <span class="n">AnnotationService</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tm1_rest</span><span class="p">)</span>
 <a id="__codelineno-0-104" name="__codelineno-0-104"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="n">CellService</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tm1_rest</span><span class="p">)</span>
@@ -4421,7 +4421,7 @@
 <a id="__codelineno-0-142" name="__codelineno-0-142"></a>    <span class="k">try</span><span class="p">:</span>
 <a id="__codelineno-0-143" name="__codelineno-0-143"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">logout</span><span class="p">()</span>
 <a id="__codelineno-0-144" name="__codelineno-0-144"></a>    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-<a id="__codelineno-0-145" name="__codelineno-0-145"></a>        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Logout Failed due to Exception: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-145" name="__codelineno-0-145"></a>        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Logout Failed due to Exception: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4520,7 +4520,7 @@
 <span class="normal"><a href="#__codelineno-0-181">181</a></span>
 <span class="normal"><a href="#__codelineno-0-182">182</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-179" name="__codelineno-0-179"></a><span class="nd">@classmethod</span>
 <a id="__codelineno-0-180" name="__codelineno-0-180"></a><span class="k">def</span><span class="w"> </span><span class="nf">restore_from_file</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
-<a id="__codelineno-0-181" name="__codelineno-0-181"></a>    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+<a id="__codelineno-0-181" name="__codelineno-0-181"></a>    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="s2">"rb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
 <a id="__codelineno-0-182" name="__codelineno-0-182"></a>        <span class="k">return</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -4545,7 +4545,7 @@
               <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-175">175</a></span>
 <span class="normal"><a href="#__codelineno-0-176">176</a></span>
 <span class="normal"><a href="#__codelineno-0-177">177</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-175" name="__codelineno-0-175"></a><span class="k">def</span><span class="w"> </span><span class="nf">save_to_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
-<a id="__codelineno-0-176" name="__codelineno-0-176"></a>    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+<a id="__codelineno-0-176" name="__codelineno-0-176"></a>    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="s2">"wb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
 <a id="__codelineno-0-177" name="__codelineno-0-177"></a>        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -4637,7 +4637,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../img/favicon_tm1py_centered_64x64.png">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -3009,7 +3009,7 @@
 
 
 <h3 id="TM1py.Objects.Element.Element.ELEMENT_ATTRIBUTES_PREFIX" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">ELEMENT_ATTRIBUTES_PREFIX</span> <span class="o">=</span> <span class="s1">&#39;}ElementAttributes_&#39;</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">ELEMENT_ATTRIBUTES_PREFIX</span> <span class="o">=</span> <span class="s1">'}ElementAttributes_'</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
@@ -3323,7 +3323,7 @@
 <span class="normal"><a href="#__codelineno-0-104">104</a></span>
 <span class="normal"><a href="#__codelineno-0-105">105</a></span>
 <span class="normal"><a href="#__codelineno-0-106">106</a></span>
-<span class="normal"><a href="#__codelineno-0-107">107</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-100" name="__codelineno-0-100"></a><span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">&quot;Element&quot;</span><span class="p">):</span>
+<span class="normal"><a href="#__codelineno-0-107">107</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-100" name="__codelineno-0-100"></a><span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">"Element"</span><span class="p">):</span>
 <a id="__codelineno-0-101" name="__codelineno-0-101"></a>    <span class="k">return</span> <span class="nb">all</span><span class="p">(</span>
 <a id="__codelineno-0-102" name="__codelineno-0-102"></a>        <span class="p">[</span>
 <a id="__codelineno-0-103" name="__codelineno-0-103"></a>            <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Element</span><span class="p">),</span>
@@ -3387,13 +3387,13 @@
 <span class="normal"><a href="#__codelineno-0-54">54</a></span>
 <span class="normal"><a href="#__codelineno-0-55">55</a></span>
 <span class="normal"><a href="#__codelineno-0-56">56</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-48" name="__codelineno-0-48"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-49" name="__codelineno-0-49"></a><span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="n">element_as_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Element&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-49" name="__codelineno-0-49"></a><span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="n">element_as_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Element"</span><span class="p">:</span>
 <a id="__codelineno-0-50" name="__codelineno-0-50"></a>    <span class="k">return</span> <span class="n">Element</span><span class="p">(</span>
-<a id="__codelineno-0-51" name="__codelineno-0-51"></a>        <span class="n">name</span><span class="o">=</span><span class="n">element_as_dict</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">],</span>
-<a id="__codelineno-0-52" name="__codelineno-0-52"></a>        <span class="n">unique_name</span><span class="o">=</span><span class="n">element_as_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;UniqueName&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
-<a id="__codelineno-0-53" name="__codelineno-0-53"></a>        <span class="n">index</span><span class="o">=</span><span class="n">element_as_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Index&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
-<a id="__codelineno-0-54" name="__codelineno-0-54"></a>        <span class="n">element_type</span><span class="o">=</span><span class="n">element_as_dict</span><span class="p">[</span><span class="s2">&quot;Type&quot;</span><span class="p">],</span>
-<a id="__codelineno-0-55" name="__codelineno-0-55"></a>        <span class="n">attributes</span><span class="o">=</span><span class="n">element_as_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Attributes&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+<a id="__codelineno-0-51" name="__codelineno-0-51"></a>        <span class="n">name</span><span class="o">=</span><span class="n">element_as_dict</span><span class="p">[</span><span class="s2">"Name"</span><span class="p">],</span>
+<a id="__codelineno-0-52" name="__codelineno-0-52"></a>        <span class="n">unique_name</span><span class="o">=</span><span class="n">element_as_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"UniqueName"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+<a id="__codelineno-0-53" name="__codelineno-0-53"></a>        <span class="n">index</span><span class="o">=</span><span class="n">element_as_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"Index"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+<a id="__codelineno-0-54" name="__codelineno-0-54"></a>        <span class="n">element_type</span><span class="o">=</span><span class="n">element_as_dict</span><span class="p">[</span><span class="s2">"Type"</span><span class="p">],</span>
+<a id="__codelineno-0-55" name="__codelineno-0-55"></a>        <span class="n">attributes</span><span class="o">=</span><span class="n">element_as_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"Attributes"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
 <a id="__codelineno-0-56" name="__codelineno-0-56"></a>    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -3485,7 +3485,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

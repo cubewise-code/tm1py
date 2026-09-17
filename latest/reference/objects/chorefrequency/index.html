@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../img/favicon_tm1py_centered_64x64.png">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -2940,10 +2940,10 @@
 <span class="normal"><a href="#__codelineno-0-59">59</a></span>
 <span class="normal"><a href="#__codelineno-0-60">60</a></span>
 <span class="normal"><a href="#__codelineno-0-61">61</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-50" name="__codelineno-0-50"></a><span class="nd">@classmethod</span>
-<a id="__codelineno-0-51" name="__codelineno-0-51"></a><span class="k">def</span><span class="w"> </span><span class="nf">from_string</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">frequency_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;ChoreFrequency&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-52" name="__codelineno-0-52"></a>    <span class="n">pos_dt</span> <span class="o">=</span> <span class="n">frequency_string</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;DT&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-<a id="__codelineno-0-53" name="__codelineno-0-53"></a>    <span class="n">pos_h</span> <span class="o">=</span> <span class="n">frequency_string</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="n">pos_dt</span><span class="p">)</span>
-<a id="__codelineno-0-54" name="__codelineno-0-54"></a>    <span class="n">pos_m</span> <span class="o">=</span> <span class="n">frequency_string</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="n">pos_h</span><span class="p">)</span>
+<a id="__codelineno-0-51" name="__codelineno-0-51"></a><span class="k">def</span><span class="w"> </span><span class="nf">from_string</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">frequency_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"ChoreFrequency"</span><span class="p">:</span>
+<a id="__codelineno-0-52" name="__codelineno-0-52"></a>    <span class="n">pos_dt</span> <span class="o">=</span> <span class="n">frequency_string</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">"DT"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<a id="__codelineno-0-53" name="__codelineno-0-53"></a>    <span class="n">pos_h</span> <span class="o">=</span> <span class="n">frequency_string</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">"H"</span><span class="p">,</span> <span class="n">pos_dt</span><span class="p">)</span>
+<a id="__codelineno-0-54" name="__codelineno-0-54"></a>    <span class="n">pos_m</span> <span class="o">=</span> <span class="n">frequency_string</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">"M"</span><span class="p">,</span> <span class="n">pos_h</span><span class="p">)</span>
 <a id="__codelineno-0-55" name="__codelineno-0-55"></a>    <span class="n">pos_s</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">frequency_string</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
 <a id="__codelineno-0-56" name="__codelineno-0-56"></a>    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
 <a id="__codelineno-0-57" name="__codelineno-0-57"></a>        <span class="n">days</span><span class="o">=</span><span class="n">frequency_string</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">pos_dt</span><span class="p">],</span>
@@ -3041,7 +3041,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

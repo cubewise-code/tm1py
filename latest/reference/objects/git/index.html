@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../img/favicon_tm1py_centered_64x64.png">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -2885,7 +2885,7 @@
 <span class="normal"><a href="#__codelineno-0-28">28</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 <a id="__codelineno-0-12" name="__codelineno-0-12"></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">deployment</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">deployed_commit</span><span class="p">:</span> <span class="n">GitCommit</span><span class="p">,</span> <span class="n">remote</span><span class="p">:</span> <span class="n">GitRemote</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span>
 <a id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="p">):</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize GIT object</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="w">    </span><span class="sd">"""Initialize GIT object</span>
 <a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="sd">    :param url: file or http(s) path to GIT repository</span>
 <a id="__codelineno-0-16" name="__codelineno-0-16"></a><span class="sd">    :param deployment: name of selected deployment group</span>
 <a id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="sd">    :param force: whether or not Git context was forced</span>
@@ -2893,7 +2893,7 @@
 <a id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="sd">    :param remote: GitRemote object of the current remote</span>
 <a id="__codelineno-0-20" name="__codelineno-0-20"></a><span class="sd">    :param config: Dictionary containing git configuration parameters</span>
 <a id="__codelineno-0-21" name="__codelineno-0-21"></a>
-<a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="sd">    """</span>
 <a id="__codelineno-0-23" name="__codelineno-0-23"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_url</span> <span class="o">=</span> <span class="n">url</span>
 <a id="__codelineno-0-24" name="__codelineno-0-24"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_deployment</span> <span class="o">=</span> <span class="n">deployment</span>
 <a id="__codelineno-0-25" name="__codelineno-0-25"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_force</span> <span class="o">=</span> <span class="n">force</span>
@@ -3077,23 +3077,23 @@
 <span class="normal"><a href="#__codelineno-0-74">74</a></span>
 <span class="normal"><a href="#__codelineno-0-75">75</a></span>
 <span class="normal"><a href="#__codelineno-0-76">76</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-54" name="__codelineno-0-54"></a><span class="nd">@classmethod</span>
-<a id="__codelineno-0-55" name="__codelineno-0-55"></a><span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">json_response</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Git&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-55" name="__codelineno-0-55"></a><span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">json_response</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Git"</span><span class="p">:</span>
 <a id="__codelineno-0-56" name="__codelineno-0-56"></a>    <span class="n">deployed_commit</span> <span class="o">=</span> <span class="n">GitCommit</span><span class="p">(</span>
-<a id="__codelineno-0-57" name="__codelineno-0-57"></a>        <span class="n">commit_id</span><span class="o">=</span><span class="n">json_response</span><span class="p">[</span><span class="s2">&quot;DeployedCommit&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ID&quot;</span><span class="p">),</span>
-<a id="__codelineno-0-58" name="__codelineno-0-58"></a>        <span class="n">summary</span><span class="o">=</span><span class="n">json_response</span><span class="p">[</span><span class="s2">&quot;DeployedCommit&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Summary&quot;</span><span class="p">),</span>
-<a id="__codelineno-0-59" name="__codelineno-0-59"></a>        <span class="n">author</span><span class="o">=</span><span class="n">json_response</span><span class="p">[</span><span class="s2">&quot;DeployedCommit&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Author&quot;</span><span class="p">),</span>
+<a id="__codelineno-0-57" name="__codelineno-0-57"></a>        <span class="n">commit_id</span><span class="o">=</span><span class="n">json_response</span><span class="p">[</span><span class="s2">"DeployedCommit"</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ID"</span><span class="p">),</span>
+<a id="__codelineno-0-58" name="__codelineno-0-58"></a>        <span class="n">summary</span><span class="o">=</span><span class="n">json_response</span><span class="p">[</span><span class="s2">"DeployedCommit"</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"Summary"</span><span class="p">),</span>
+<a id="__codelineno-0-59" name="__codelineno-0-59"></a>        <span class="n">author</span><span class="o">=</span><span class="n">json_response</span><span class="p">[</span><span class="s2">"DeployedCommit"</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"Author"</span><span class="p">),</span>
 <a id="__codelineno-0-60" name="__codelineno-0-60"></a>    <span class="p">)</span>
 <a id="__codelineno-0-61" name="__codelineno-0-61"></a>
 <a id="__codelineno-0-62" name="__codelineno-0-62"></a>    <span class="n">remote</span> <span class="o">=</span> <span class="n">GitRemote</span><span class="p">(</span>
-<a id="__codelineno-0-63" name="__codelineno-0-63"></a>        <span class="n">connected</span><span class="o">=</span><span class="n">json_response</span><span class="p">[</span><span class="s2">&quot;Remote&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Connected&quot;</span><span class="p">),</span>
-<a id="__codelineno-0-64" name="__codelineno-0-64"></a>        <span class="n">branches</span><span class="o">=</span><span class="n">json_response</span><span class="p">[</span><span class="s2">&quot;Remote&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Branches&quot;</span><span class="p">),</span>
-<a id="__codelineno-0-65" name="__codelineno-0-65"></a>        <span class="n">tags</span><span class="o">=</span><span class="n">json_response</span><span class="p">[</span><span class="s2">&quot;Remote&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Tags&quot;</span><span class="p">),</span>
+<a id="__codelineno-0-63" name="__codelineno-0-63"></a>        <span class="n">connected</span><span class="o">=</span><span class="n">json_response</span><span class="p">[</span><span class="s2">"Remote"</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"Connected"</span><span class="p">),</span>
+<a id="__codelineno-0-64" name="__codelineno-0-64"></a>        <span class="n">branches</span><span class="o">=</span><span class="n">json_response</span><span class="p">[</span><span class="s2">"Remote"</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"Branches"</span><span class="p">),</span>
+<a id="__codelineno-0-65" name="__codelineno-0-65"></a>        <span class="n">tags</span><span class="o">=</span><span class="n">json_response</span><span class="p">[</span><span class="s2">"Remote"</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"Tags"</span><span class="p">),</span>
 <a id="__codelineno-0-66" name="__codelineno-0-66"></a>    <span class="p">)</span>
 <a id="__codelineno-0-67" name="__codelineno-0-67"></a>
 <a id="__codelineno-0-68" name="__codelineno-0-68"></a>    <span class="n">git</span> <span class="o">=</span> <span class="n">Git</span><span class="p">(</span>
-<a id="__codelineno-0-69" name="__codelineno-0-69"></a>        <span class="n">url</span><span class="o">=</span><span class="n">json_response</span><span class="p">[</span><span class="s2">&quot;URL&quot;</span><span class="p">],</span>
-<a id="__codelineno-0-70" name="__codelineno-0-70"></a>        <span class="n">deployment</span><span class="o">=</span><span class="n">json_response</span><span class="p">[</span><span class="s2">&quot;Deployment&quot;</span><span class="p">],</span>
-<a id="__codelineno-0-71" name="__codelineno-0-71"></a>        <span class="n">force</span><span class="o">=</span><span class="n">json_response</span><span class="p">[</span><span class="s2">&quot;Deployment&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-69" name="__codelineno-0-69"></a>        <span class="n">url</span><span class="o">=</span><span class="n">json_response</span><span class="p">[</span><span class="s2">"URL"</span><span class="p">],</span>
+<a id="__codelineno-0-70" name="__codelineno-0-70"></a>        <span class="n">deployment</span><span class="o">=</span><span class="n">json_response</span><span class="p">[</span><span class="s2">"Deployment"</span><span class="p">],</span>
+<a id="__codelineno-0-71" name="__codelineno-0-71"></a>        <span class="n">force</span><span class="o">=</span><span class="n">json_response</span><span class="p">[</span><span class="s2">"Deployment"</span><span class="p">],</span>
 <a id="__codelineno-0-72" name="__codelineno-0-72"></a>        <span class="n">deployed_commit</span><span class="o">=</span><span class="n">deployed_commit</span><span class="p">,</span>
 <a id="__codelineno-0-73" name="__codelineno-0-73"></a>        <span class="n">remote</span><span class="o">=</span><span class="n">remote</span><span class="p">,</span>
 <a id="__codelineno-0-74" name="__codelineno-0-74"></a>    <span class="p">)</span>
@@ -3189,7 +3189,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>
