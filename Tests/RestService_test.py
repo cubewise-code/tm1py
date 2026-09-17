@@ -496,7 +496,7 @@ class TestGetQueryParameters(unittest.TestCase):
         params = {"$select": None, "$top": 0}
         with patch.object(self.rest, "request", wraps=self.rest.request) as request:
             self.rest.GET("/Cubes?$select=Name", params=params)
-            self.assertEqual(request.call_args[1]["params"], {"$top": 0})
+            self.assertEqual(request.call_args[1]["params"], "%24top=0")
         self.assertEqual(self._query(self.send.call_args[0][0]), [("$select", "Name"), ("$top", "0")])
         self.assertEqual(params, {"$select": None, "$top": 0})
 
@@ -561,12 +561,32 @@ class TestGetQueryParameters(unittest.TestCase):
         self.assertEqual(self._query(prepared), [("$select", "Name"), ("tag", "A+B&C%"), ("$filter", expression)])
         self.assertEqual(params, {"$filter": expression})
 
-    def test_values_keep_requests_encoding_semantics(self):
+    def test_values_use_odata_boolean_literals(self):
         self.rest.GET("/Cubes", params={"tag": ["one", "two"], "enabled": False, "number": 1.5})
         self.assertEqual(
             self._query(self.send.call_args[0][0]),
-            [("tag", "one"), ("tag", "two"), ("enabled", "False"), ("number", "1.5")],
+            [("tag", "one"), ("tag", "two"), ("enabled", "false"), ("number", "1.5")],
         )
+
+    def test_spaces_use_percent_encoding_and_literal_plus_is_preserved(self):
+        params = {"$orderby": "Name desc", "$filter": "Name eq 'A+B C'"}
+        self.rest.GET("/Cubes?$select=Name", params=params)
+        query = urlsplit(self.send.call_args[0][0].url).query
+        self.assertIn("Name%20desc", query)
+        self.assertIn("A%2BB%20C", query)
+        self.assertNotIn("+", query)
+
+    def test_boolean_count_and_sequence_values_do_not_mutate_input(self):
+        for value, literal in ((True, "true"), (False, "false")):
+            with self.subTest(value=value):
+                params = {"$count": value, "flags": [True, None, False], "$top": 0}
+                self.rest.GET("/Cubes", params=params)
+                self.assertEqual(
+                    self._query(self.send.call_args[0][0]),
+                    [("$count", literal), ("flags", "true"), ("flags", "false"), ("$top", "0")],
+                )
+                self.assertIs(params["$count"], value)
+                self.assertEqual(params["flags"], [True, None, False])
 
     def test_unrelated_kwargs_remain_ignored(self):
         self.rest.GET("/Cubes", params={"$top": 10}, unrelated_option=True)

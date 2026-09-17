@@ -13,7 +13,7 @@ from http.cookies import SimpleCookie
 from io import BytesIO
 from json import JSONDecodeError
 from typing import Dict, Optional, Tuple, Union
-from urllib.parse import unquote_plus, urlsplit
+from urllib.parse import quote, unquote_plus, urlencode, urlsplit
 
 import requests
 import urllib3
@@ -716,7 +716,8 @@ class RestService:
         :param cancel_at_timeout: Abort operation in TM1 when timeout is reached
         :param encoding:
         :param params: Additional query parameters as a dictionary with string keys. Use full names such as
-            $filter and unencoded values; requests handles URL encoding. Entries with a None value are omitted.
+            $filter and unencoded values; spaces are encoded as %20 for TM1. None values are omitted.
+            Python booleans are serialized as lowercase true/false.
             OData lists such as $select must be comma-separated strings. Names are compared case-sensitively.
         :raises TypeError: If params is not a dictionary or contains non-string keys.
         :raises ValueError: If an additional parameter already occurs in the URL, even with the same value.
@@ -733,7 +734,7 @@ class RestService:
         the service method's response processing. Existing OData expressions are not merged or replaced.
         """
         params = self._prepare_get_params(url, params)
-        request_kwargs = {"params": params} if params else {}
+        request_kwargs = {"params": urlencode(params, doseq=True, quote_via=quote)} if params else {}
 
         return self.request(
             method="get",
@@ -768,7 +769,18 @@ class RestService:
         conflicts = params.keys() & existing_names
         if conflicts:
             raise ValueError("Query parameters already present in URL: " + ", ".join(sorted(conflicts)))
-        return params
+
+        def normalize(value):
+            return str(value).lower() if isinstance(value, bool) else value
+
+        return {
+            key: (
+                [normalize(item) for item in value if item is not None]
+                if isinstance(value, (list, tuple))
+                else normalize(value)
+            )
+            for key, value in params.items()
+        }
 
     def POST(
         self,
