@@ -4043,9 +4043,9 @@
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>TM1py/Services/RestService.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1460">1460</a></span>
-<span class="normal"><a href="#__codelineno-0-1461">1461</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1460" name="__codelineno-0-1460"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
-<a id="__codelineno-0-1461" name="__codelineno-0-1461"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">handle</span> <span class="o">=</span> <span class="n">BytesIO</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1494">1494</a></span>
+<span class="normal"><a href="#__codelineno-0-1495">1495</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1494" name="__codelineno-0-1494"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
+<a id="__codelineno-0-1495" name="__codelineno-0-1495"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">handle</span> <span class="o">=</span> <span class="n">BytesIO</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -4096,9 +4096,9 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/RestService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1463">1463</a></span>
-<span class="normal"><a href="#__codelineno-0-1464">1464</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1463" name="__codelineno-0-1463"></a><span class="k">def</span><span class="w"> </span><span class="nf">makefile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BytesIO</span><span class="p">:</span>
-<a id="__codelineno-0-1464" name="__codelineno-0-1464"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1497">1497</a></span>
+<span class="normal"><a href="#__codelineno-0-1498">1498</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1497" name="__codelineno-0-1497"></a><span class="k">def</span><span class="w"> </span><span class="nf">makefile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BytesIO</span><span class="p">:</span>
+<a id="__codelineno-0-1498" name="__codelineno-0-1498"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6126,25 +6126,25 @@ Based on requests module</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/RestService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1299">1299</a></span>
-<span class="normal"><a href="#__codelineno-0-1300">1300</a></span>
-<span class="normal"><a href="#__codelineno-0-1301">1301</a></span>
-<span class="normal"><a href="#__codelineno-0-1302">1302</a></span>
-<span class="normal"><a href="#__codelineno-0-1303">1303</a></span>
-<span class="normal"><a href="#__codelineno-0-1304">1304</a></span>
-<span class="normal"><a href="#__codelineno-0-1305">1305</a></span>
-<span class="normal"><a href="#__codelineno-0-1306">1306</a></span>
-<span class="normal"><a href="#__codelineno-0-1307">1307</a></span>
-<span class="normal"><a href="#__codelineno-0-1308">1308</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1299" name="__codelineno-0-1299"></a><span class="k">def</span><span class="w"> </span><span class="nf">add_compact_json_header</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-0-1300" name="__codelineno-0-1300"></a>    <span class="n">original_header</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_http_header</span><span class="p">(</span><span class="s2">"Accept"</span><span class="p">)</span>
-<a id="__codelineno-0-1301" name="__codelineno-0-1301"></a>    <span class="n">parts</span> <span class="o">=</span> <span class="n">original_header</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">";"</span><span class="p">)</span>
-<a id="__codelineno-0-1302" name="__codelineno-0-1302"></a>
-<a id="__codelineno-0-1303" name="__codelineno-0-1303"></a>    <span class="c1"># Point of insertion is important. Needs to come after application/json</span>
-<a id="__codelineno-0-1304" name="__codelineno-0-1304"></a>    <span class="n">parts</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">"tm1.compact=v0"</span><span class="p">)</span>
-<a id="__codelineno-0-1305" name="__codelineno-0-1305"></a>    <span class="n">modified_header</span> <span class="o">=</span> <span class="s2">";"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span>
-<a id="__codelineno-0-1306" name="__codelineno-0-1306"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">add_http_header</span><span class="p">(</span><span class="s2">"Accept"</span><span class="p">,</span> <span class="n">modified_header</span><span class="p">)</span>
-<a id="__codelineno-0-1307" name="__codelineno-0-1307"></a>
-<a id="__codelineno-0-1308" name="__codelineno-0-1308"></a>    <span class="k">return</span> <span class="n">original_header</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1333">1333</a></span>
+<span class="normal"><a href="#__codelineno-0-1334">1334</a></span>
+<span class="normal"><a href="#__codelineno-0-1335">1335</a></span>
+<span class="normal"><a href="#__codelineno-0-1336">1336</a></span>
+<span class="normal"><a href="#__codelineno-0-1337">1337</a></span>
+<span class="normal"><a href="#__codelineno-0-1338">1338</a></span>
+<span class="normal"><a href="#__codelineno-0-1339">1339</a></span>
+<span class="normal"><a href="#__codelineno-0-1340">1340</a></span>
+<span class="normal"><a href="#__codelineno-0-1341">1341</a></span>
+<span class="normal"><a href="#__codelineno-0-1342">1342</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1333" name="__codelineno-0-1333"></a><span class="k">def</span><span class="w"> </span><span class="nf">add_compact_json_header</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-0-1334" name="__codelineno-0-1334"></a>    <span class="n">original_header</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_http_header</span><span class="p">(</span><span class="s2">"Accept"</span><span class="p">)</span>
+<a id="__codelineno-0-1335" name="__codelineno-0-1335"></a>    <span class="n">parts</span> <span class="o">=</span> <span class="n">original_header</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">";"</span><span class="p">)</span>
+<a id="__codelineno-0-1336" name="__codelineno-0-1336"></a>
+<a id="__codelineno-0-1337" name="__codelineno-0-1337"></a>    <span class="c1"># Point of insertion is important. Needs to come after application/json</span>
+<a id="__codelineno-0-1338" name="__codelineno-0-1338"></a>    <span class="n">parts</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">"tm1.compact=v0"</span><span class="p">)</span>
+<a id="__codelineno-0-1339" name="__codelineno-0-1339"></a>    <span class="n">modified_header</span> <span class="o">=</span> <span class="s2">";"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span>
+<a id="__codelineno-0-1340" name="__codelineno-0-1340"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">add_http_header</span><span class="p">(</span><span class="s2">"Accept"</span><span class="p">,</span> <span class="n">modified_header</span><span class="p">)</span>
+<a id="__codelineno-0-1341" name="__codelineno-0-1341"></a>
+<a id="__codelineno-0-1342" name="__codelineno-0-1342"></a>    <span class="k">return</span> <span class="n">original_header</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6165,9 +6165,9 @@ Based on requests module</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/RestService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1292">1292</a></span>
-<span class="normal"><a href="#__codelineno-0-1293">1293</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1292" name="__codelineno-0-1292"></a><span class="k">def</span><span class="w"> </span><span class="nf">add_http_header</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<a id="__codelineno-0-1293" name="__codelineno-0-1293"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_headers</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1326">1326</a></span>
+<span class="normal"><a href="#__codelineno-0-1327">1327</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1326" name="__codelineno-0-1326"></a><span class="k">def</span><span class="w"> </span><span class="nf">add_http_header</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<a id="__codelineno-0-1327" name="__codelineno-0-1327"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_headers</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6248,19 +6248,19 @@ Based on requests module</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/RestService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1200">1200</a></span>
-<span class="normal"><a href="#__codelineno-0-1201">1201</a></span>
-<span class="normal"><a href="#__codelineno-0-1202">1202</a></span>
-<span class="normal"><a href="#__codelineno-0-1203">1203</a></span>
-<span class="normal"><a href="#__codelineno-0-1204">1204</a></span>
-<span class="normal"><a href="#__codelineno-0-1205">1205</a></span>
-<span class="normal"><a href="#__codelineno-0-1206">1206</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1200" name="__codelineno-0-1200"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-1201" name="__codelineno-0-1201"></a><span class="k">def</span><span class="w"> </span><span class="nf">b64_decode_password</span><span class="p">(</span><span class="n">encrypted_password</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-0-1202" name="__codelineno-0-1202"></a><span class="w">    </span><span class="sd">"""b64 decoding</span>
-<a id="__codelineno-0-1203" name="__codelineno-0-1203"></a><span class="sd">    :param encrypted_password: encrypted password with b64</span>
-<a id="__codelineno-0-1204" name="__codelineno-0-1204"></a><span class="sd">    :return: password in plain text</span>
-<a id="__codelineno-0-1205" name="__codelineno-0-1205"></a><span class="sd">    """</span>
-<a id="__codelineno-0-1206" name="__codelineno-0-1206"></a>    <span class="k">return</span> <span class="n">b64decode</span><span class="p">(</span><span class="n">encrypted_password</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">"UTF-8"</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1234">1234</a></span>
+<span class="normal"><a href="#__codelineno-0-1235">1235</a></span>
+<span class="normal"><a href="#__codelineno-0-1236">1236</a></span>
+<span class="normal"><a href="#__codelineno-0-1237">1237</a></span>
+<span class="normal"><a href="#__codelineno-0-1238">1238</a></span>
+<span class="normal"><a href="#__codelineno-0-1239">1239</a></span>
+<span class="normal"><a href="#__codelineno-0-1240">1240</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1234" name="__codelineno-0-1234"></a><span class="nd">@staticmethod</span>
+<a id="__codelineno-0-1235" name="__codelineno-0-1235"></a><span class="k">def</span><span class="w"> </span><span class="nf">b64_decode_password</span><span class="p">(</span><span class="n">encrypted_password</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-0-1236" name="__codelineno-0-1236"></a><span class="w">    </span><span class="sd">"""b64 decoding</span>
+<a id="__codelineno-0-1237" name="__codelineno-0-1237"></a><span class="sd">    :param encrypted_password: encrypted password with b64</span>
+<a id="__codelineno-0-1238" name="__codelineno-0-1238"></a><span class="sd">    :return: password in plain text</span>
+<a id="__codelineno-0-1239" name="__codelineno-0-1239"></a><span class="sd">    """</span>
+<a id="__codelineno-0-1240" name="__codelineno-0-1240"></a>    <span class="k">return</span> <span class="n">b64decode</span><span class="p">(</span><span class="n">encrypted_password</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">"UTF-8"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6285,25 +6285,25 @@ Based on requests module</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/RestService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1358">1358</a></span>
-<span class="normal"><a href="#__codelineno-0-1359">1359</a></span>
-<span class="normal"><a href="#__codelineno-0-1360">1360</a></span>
-<span class="normal"><a href="#__codelineno-0-1361">1361</a></span>
-<span class="normal"><a href="#__codelineno-0-1362">1362</a></span>
-<span class="normal"><a href="#__codelineno-0-1363">1363</a></span>
-<span class="normal"><a href="#__codelineno-0-1364">1364</a></span>
-<span class="normal"><a href="#__codelineno-0-1365">1365</a></span>
-<span class="normal"><a href="#__codelineno-0-1366">1366</a></span>
-<span class="normal"><a href="#__codelineno-0-1367">1367</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1358" name="__codelineno-0-1358"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-1359" name="__codelineno-0-1359"></a><span class="k">def</span><span class="w"> </span><span class="nf">build_response_from_binary_response</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
-<a id="__codelineno-0-1360" name="__codelineno-0-1360"></a>    <span class="n">urllib_response</span> <span class="o">=</span> <span class="n">RestService</span><span class="o">.</span><span class="n">urllib3_response_from_bytes</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-<a id="__codelineno-0-1361" name="__codelineno-0-1361"></a>
-<a id="__codelineno-0-1362" name="__codelineno-0-1362"></a>    <span class="n">adapter</span> <span class="o">=</span> <span class="n">HTTPAdapter</span><span class="p">()</span>
-<a id="__codelineno-0-1363" name="__codelineno-0-1363"></a>    <span class="n">requests_response</span> <span class="o">=</span> <span class="n">adapter</span><span class="o">.</span><span class="n">build_response</span><span class="p">(</span><span class="n">requests</span><span class="o">.</span><span class="n">PreparedRequest</span><span class="p">(),</span> <span class="n">urllib_response</span><span class="p">)</span>
-<a id="__codelineno-0-1364" name="__codelineno-0-1364"></a>    <span class="c1"># actual content of response needs to be set explicitly</span>
-<a id="__codelineno-0-1365" name="__codelineno-0-1365"></a>    <span class="n">requests_response</span><span class="o">.</span><span class="n">_content</span> <span class="o">=</span> <span class="n">urllib_response</span><span class="o">.</span><span class="n">data</span>
-<a id="__codelineno-0-1366" name="__codelineno-0-1366"></a>
-<a id="__codelineno-0-1367" name="__codelineno-0-1367"></a>    <span class="k">return</span> <span class="n">requests_response</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1392">1392</a></span>
+<span class="normal"><a href="#__codelineno-0-1393">1393</a></span>
+<span class="normal"><a href="#__codelineno-0-1394">1394</a></span>
+<span class="normal"><a href="#__codelineno-0-1395">1395</a></span>
+<span class="normal"><a href="#__codelineno-0-1396">1396</a></span>
+<span class="normal"><a href="#__codelineno-0-1397">1397</a></span>
+<span class="normal"><a href="#__codelineno-0-1398">1398</a></span>
+<span class="normal"><a href="#__codelineno-0-1399">1399</a></span>
+<span class="normal"><a href="#__codelineno-0-1400">1400</a></span>
+<span class="normal"><a href="#__codelineno-0-1401">1401</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1392" name="__codelineno-0-1392"></a><span class="nd">@staticmethod</span>
+<a id="__codelineno-0-1393" name="__codelineno-0-1393"></a><span class="k">def</span><span class="w"> </span><span class="nf">build_response_from_binary_response</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
+<a id="__codelineno-0-1394" name="__codelineno-0-1394"></a>    <span class="n">urllib_response</span> <span class="o">=</span> <span class="n">RestService</span><span class="o">.</span><span class="n">urllib3_response_from_bytes</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<a id="__codelineno-0-1395" name="__codelineno-0-1395"></a>
+<a id="__codelineno-0-1396" name="__codelineno-0-1396"></a>    <span class="n">adapter</span> <span class="o">=</span> <span class="n">HTTPAdapter</span><span class="p">()</span>
+<a id="__codelineno-0-1397" name="__codelineno-0-1397"></a>    <span class="n">requests_response</span> <span class="o">=</span> <span class="n">adapter</span><span class="o">.</span><span class="n">build_response</span><span class="p">(</span><span class="n">requests</span><span class="o">.</span><span class="n">PreparedRequest</span><span class="p">(),</span> <span class="n">urllib_response</span><span class="p">)</span>
+<a id="__codelineno-0-1398" name="__codelineno-0-1398"></a>    <span class="c1"># actual content of response needs to be set explicitly</span>
+<a id="__codelineno-0-1399" name="__codelineno-0-1399"></a>    <span class="n">requests_response</span><span class="o">.</span><span class="n">_content</span> <span class="o">=</span> <span class="n">urllib_response</span><span class="o">.</span><span class="n">data</span>
+<a id="__codelineno-0-1400" name="__codelineno-0-1400"></a>
+<a id="__codelineno-0-1401" name="__codelineno-0-1401"></a>    <span class="k">return</span> <span class="n">requests_response</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6324,15 +6324,15 @@ Based on requests module</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/RestService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1315">1315</a></span>
-<span class="normal"><a href="#__codelineno-0-1316">1316</a></span>
-<span class="normal"><a href="#__codelineno-0-1317">1317</a></span>
-<span class="normal"><a href="#__codelineno-0-1318">1318</a></span>
-<span class="normal"><a href="#__codelineno-0-1319">1319</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1315" name="__codelineno-0-1315"></a><span class="k">def</span><span class="w"> </span><span class="nf">cancel_async_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">async_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<a id="__codelineno-0-1316" name="__codelineno-0-1316"></a>    <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"/_async('</span><span class="si">{</span><span class="n">async_id</span><span class="si">}</span><span class="s2">')"</span>
-<a id="__codelineno-0-1317" name="__codelineno-0-1317"></a>    <span class="c1"># Use DELETE method which includes reconnect logic, but force sync mode</span>
-<a id="__codelineno-0-1318" name="__codelineno-0-1318"></a>    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">DELETE</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">async_requests_mode</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<a id="__codelineno-0-1319" name="__codelineno-0-1319"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">verify_response</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1349">1349</a></span>
+<span class="normal"><a href="#__codelineno-0-1350">1350</a></span>
+<span class="normal"><a href="#__codelineno-0-1351">1351</a></span>
+<span class="normal"><a href="#__codelineno-0-1352">1352</a></span>
+<span class="normal"><a href="#__codelineno-0-1353">1353</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1349" name="__codelineno-0-1349"></a><span class="k">def</span><span class="w"> </span><span class="nf">cancel_async_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">async_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="__codelineno-0-1350" name="__codelineno-0-1350"></a>    <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"/_async('</span><span class="si">{</span><span class="n">async_id</span><span class="si">}</span><span class="s2">')"</span>
+<a id="__codelineno-0-1351" name="__codelineno-0-1351"></a>    <span class="c1"># Use DELETE method which includes reconnect logic, but force sync mode</span>
+<a id="__codelineno-0-1352" name="__codelineno-0-1352"></a>    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">DELETE</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">async_requests_mode</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="__codelineno-0-1353" name="__codelineno-0-1353"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">verify_response</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6353,23 +6353,23 @@ Based on requests module</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/RestService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1321">1321</a></span>
-<span class="normal"><a href="#__codelineno-0-1322">1322</a></span>
-<span class="normal"><a href="#__codelineno-0-1323">1323</a></span>
-<span class="normal"><a href="#__codelineno-0-1324">1324</a></span>
-<span class="normal"><a href="#__codelineno-0-1325">1325</a></span>
-<span class="normal"><a href="#__codelineno-0-1326">1326</a></span>
-<span class="normal"><a href="#__codelineno-0-1327">1327</a></span>
-<span class="normal"><a href="#__codelineno-0-1328">1328</a></span>
-<span class="normal"><a href="#__codelineno-0-1329">1329</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1321" name="__codelineno-0-1321"></a><span class="k">def</span><span class="w"> </span><span class="nf">cancel_running_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-0-1322" name="__codelineno-0-1322"></a>    <span class="n">monitoring_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_monitoring_service</span><span class="p">()</span>
-<a id="__codelineno-0-1323" name="__codelineno-0-1323"></a>    <span class="n">threads</span> <span class="o">=</span> <span class="n">monitoring_service</span><span class="o">.</span><span class="n">get_active_session_threads</span><span class="p">(</span><span class="n">exclude_idle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<a id="__codelineno-0-1324" name="__codelineno-0-1324"></a>
-<a id="__codelineno-0-1325" name="__codelineno-0-1325"></a>    <span class="c1"># if more than one thread is running in session, operation can not be identified unambiguously</span>
-<a id="__codelineno-0-1326" name="__codelineno-0-1326"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">threads</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-<a id="__codelineno-0-1327" name="__codelineno-0-1327"></a>        <span class="k">return</span>
-<a id="__codelineno-0-1328" name="__codelineno-0-1328"></a>
-<a id="__codelineno-0-1329" name="__codelineno-0-1329"></a>    <span class="n">monitoring_service</span><span class="o">.</span><span class="n">cancel_thread</span><span class="p">(</span><span class="n">threads</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"ID"</span><span class="p">])</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1355">1355</a></span>
+<span class="normal"><a href="#__codelineno-0-1356">1356</a></span>
+<span class="normal"><a href="#__codelineno-0-1357">1357</a></span>
+<span class="normal"><a href="#__codelineno-0-1358">1358</a></span>
+<span class="normal"><a href="#__codelineno-0-1359">1359</a></span>
+<span class="normal"><a href="#__codelineno-0-1360">1360</a></span>
+<span class="normal"><a href="#__codelineno-0-1361">1361</a></span>
+<span class="normal"><a href="#__codelineno-0-1362">1362</a></span>
+<span class="normal"><a href="#__codelineno-0-1363">1363</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1355" name="__codelineno-0-1355"></a><span class="k">def</span><span class="w"> </span><span class="nf">cancel_running_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="__codelineno-0-1356" name="__codelineno-0-1356"></a>    <span class="n">monitoring_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_monitoring_service</span><span class="p">()</span>
+<a id="__codelineno-0-1357" name="__codelineno-0-1357"></a>    <span class="n">threads</span> <span class="o">=</span> <span class="n">monitoring_service</span><span class="o">.</span><span class="n">get_active_session_threads</span><span class="p">(</span><span class="n">exclude_idle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-0-1358" name="__codelineno-0-1358"></a>
+<a id="__codelineno-0-1359" name="__codelineno-0-1359"></a>    <span class="c1"># if more than one thread is running in session, operation can not be identified unambiguously</span>
+<a id="__codelineno-0-1360" name="__codelineno-0-1360"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">threads</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+<a id="__codelineno-0-1361" name="__codelineno-0-1361"></a>        <span class="k">return</span>
+<a id="__codelineno-0-1362" name="__codelineno-0-1362"></a>
+<a id="__codelineno-0-1363" name="__codelineno-0-1363"></a>    <span class="n">monitoring_service</span><span class="o">.</span><span class="n">cancel_thread</span><span class="p">(</span><span class="n">threads</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"ID"</span><span class="p">])</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6453,13 +6453,13 @@ Based on requests module</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/RestService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1284">1284</a></span>
-<span class="normal"><a href="#__codelineno-0-1285">1285</a></span>
-<span class="normal"><a href="#__codelineno-0-1286">1286</a></span>
-<span class="normal"><a href="#__codelineno-0-1287">1287</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1284" name="__codelineno-0-1284"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-1285" name="__codelineno-0-1285"></a><span class="k">def</span><span class="w"> </span><span class="nf">disable_http_warnings</span><span class="p">():</span>
-<a id="__codelineno-0-1286" name="__codelineno-0-1286"></a>    <span class="c1"># disable HTTP verification warnings from requests library</span>
-<a id="__codelineno-0-1287" name="__codelineno-0-1287"></a>    <span class="n">requests</span><span class="o">.</span><span class="n">packages</span><span class="o">.</span><span class="n">urllib3</span><span class="o">.</span><span class="n">disable_warnings</span><span class="p">()</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1318">1318</a></span>
+<span class="normal"><a href="#__codelineno-0-1319">1319</a></span>
+<span class="normal"><a href="#__codelineno-0-1320">1320</a></span>
+<span class="normal"><a href="#__codelineno-0-1321">1321</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1318" name="__codelineno-0-1318"></a><span class="nd">@staticmethod</span>
+<a id="__codelineno-0-1319" name="__codelineno-0-1319"></a><span class="k">def</span><span class="w"> </span><span class="nf">disable_http_warnings</span><span class="p">():</span>
+<a id="__codelineno-0-1320" name="__codelineno-0-1320"></a>    <span class="c1"># disable HTTP verification warnings from requests library</span>
+<a id="__codelineno-0-1321" name="__codelineno-0-1321"></a>    <span class="n">requests</span><span class="o">.</span><span class="n">packages</span><span class="o">.</span><span class="n">urllib3</span><span class="o">.</span><span class="n">disable_warnings</span><span class="p">()</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6540,9 +6540,9 @@ Based on requests module</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/RestService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1289">1289</a></span>
-<span class="normal"><a href="#__codelineno-0-1290">1290</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1289" name="__codelineno-0-1289"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_http_header</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-0-1290" name="__codelineno-0-1290"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_headers</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1323">1323</a></span>
+<span class="normal"><a href="#__codelineno-0-1324">1324</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1323" name="__codelineno-0-1323"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_http_header</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-0-1324" name="__codelineno-0-1324"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_headers</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6563,13 +6563,13 @@ Based on requests module</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/RestService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1331">1331</a></span>
-<span class="normal"><a href="#__codelineno-0-1332">1332</a></span>
-<span class="normal"><a href="#__codelineno-0-1333">1333</a></span>
-<span class="normal"><a href="#__codelineno-0-1334">1334</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1331" name="__codelineno-0-1331"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_monitoring_service</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-0-1332" name="__codelineno-0-1332"></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">TM1py.Services</span><span class="w"> </span><span class="kn">import</span> <span class="n">MonitoringService</span>
-<a id="__codelineno-0-1333" name="__codelineno-0-1333"></a>
-<a id="__codelineno-0-1334" name="__codelineno-0-1334"></a>    <span class="k">return</span> <span class="n">MonitoringService</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1365">1365</a></span>
+<span class="normal"><a href="#__codelineno-0-1366">1366</a></span>
+<span class="normal"><a href="#__codelineno-0-1367">1367</a></span>
+<span class="normal"><a href="#__codelineno-0-1368">1368</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1365" name="__codelineno-0-1365"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_monitoring_service</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="__codelineno-0-1366" name="__codelineno-0-1366"></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">TM1py.Services</span><span class="w"> </span><span class="kn">import</span> <span class="n">MonitoringService</span>
+<a id="__codelineno-0-1367" name="__codelineno-0-1367"></a>
+<a id="__codelineno-0-1368" name="__codelineno-0-1368"></a>    <span class="k">return</span> <span class="n">MonitoringService</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6709,11 +6709,11 @@ Based on requests module</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/RestService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1295">1295</a></span>
-<span class="normal"><a href="#__codelineno-0-1296">1296</a></span>
-<span class="normal"><a href="#__codelineno-0-1297">1297</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1295" name="__codelineno-0-1295"></a><span class="k">def</span><span class="w"> </span><span class="nf">remove_http_header</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<a id="__codelineno-0-1296" name="__codelineno-0-1296"></a>    <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_headers</span><span class="p">:</span>
-<a id="__codelineno-0-1297" name="__codelineno-0-1297"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_headers</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1329">1329</a></span>
+<span class="normal"><a href="#__codelineno-0-1330">1330</a></span>
+<span class="normal"><a href="#__codelineno-0-1331">1331</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1329" name="__codelineno-0-1329"></a><span class="k">def</span><span class="w"> </span><span class="nf">remove_http_header</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<a id="__codelineno-0-1330" name="__codelineno-0-1330"></a>    <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_headers</span><span class="p">:</span>
+<a id="__codelineno-0-1331" name="__codelineno-0-1331"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_headers</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6935,13 +6935,13 @@ Based on requests module</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/RestService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1310">1310</a></span>
-<span class="normal"><a href="#__codelineno-0-1311">1311</a></span>
-<span class="normal"><a href="#__codelineno-0-1312">1312</a></span>
-<span class="normal"><a href="#__codelineno-0-1313">1313</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1310" name="__codelineno-0-1310"></a><span class="k">def</span><span class="w"> </span><span class="nf">retrieve_async_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">async_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
-<a id="__codelineno-0-1311" name="__codelineno-0-1311"></a>    <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"/_async('</span><span class="si">{</span><span class="n">async_id</span><span class="si">}</span><span class="s2">')"</span>
-<a id="__codelineno-0-1312" name="__codelineno-0-1312"></a>    <span class="c1"># Use GET method which includes reconnect logic, but force sync mode</span>
-<a id="__codelineno-0-1313" name="__codelineno-0-1313"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">GET</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">async_requests_mode</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1344">1344</a></span>
+<span class="normal"><a href="#__codelineno-0-1345">1345</a></span>
+<span class="normal"><a href="#__codelineno-0-1346">1346</a></span>
+<span class="normal"><a href="#__codelineno-0-1347">1347</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1344" name="__codelineno-0-1344"></a><span class="k">def</span><span class="w"> </span><span class="nf">retrieve_async_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">async_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
+<a id="__codelineno-0-1345" name="__codelineno-0-1345"></a>    <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"/_async('</span><span class="si">{</span><span class="n">async_id</span><span class="si">}</span><span class="s2">')"</span>
+<a id="__codelineno-0-1346" name="__codelineno-0-1346"></a>    <span class="c1"># Use GET method which includes reconnect logic, but force sync mode</span>
+<a id="__codelineno-0-1347" name="__codelineno-0-1347"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">GET</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">async_requests_mode</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -7048,29 +7048,29 @@ Based on requests module</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/RestService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1187">1187</a></span>
-<span class="normal"><a href="#__codelineno-0-1188">1188</a></span>
-<span class="normal"><a href="#__codelineno-0-1189">1189</a></span>
-<span class="normal"><a href="#__codelineno-0-1190">1190</a></span>
-<span class="normal"><a href="#__codelineno-0-1191">1191</a></span>
-<span class="normal"><a href="#__codelineno-0-1192">1192</a></span>
-<span class="normal"><a href="#__codelineno-0-1193">1193</a></span>
-<span class="normal"><a href="#__codelineno-0-1194">1194</a></span>
-<span class="normal"><a href="#__codelineno-0-1195">1195</a></span>
-<span class="normal"><a href="#__codelineno-0-1196">1196</a></span>
-<span class="normal"><a href="#__codelineno-0-1197">1197</a></span>
-<span class="normal"><a href="#__codelineno-0-1198">1198</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1187" name="__codelineno-0-1187"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-1188" name="__codelineno-0-1188"></a><span class="k">def</span><span class="w"> </span><span class="nf">translate_to_boolean</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<a id="__codelineno-0-1189" name="__codelineno-0-1189"></a><span class="w">    </span><span class="sd">"""Takes a boolean or string (eg. true, True, FALSE, etc.) value and returns (boolean) True or False</span>
-<a id="__codelineno-0-1190" name="__codelineno-0-1190"></a><span class="sd">    :param value: True, 'true', 'false' or 'False' ...</span>
-<a id="__codelineno-0-1191" name="__codelineno-0-1191"></a><span class="sd">    :return:</span>
-<a id="__codelineno-0-1192" name="__codelineno-0-1192"></a><span class="sd">    """</span>
-<a id="__codelineno-0-1193" name="__codelineno-0-1193"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-<a id="__codelineno-0-1194" name="__codelineno-0-1194"></a>        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-<a id="__codelineno-0-1195" name="__codelineno-0-1195"></a>    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-<a id="__codelineno-0-1196" name="__codelineno-0-1196"></a>        <span class="k">return</span> <span class="n">value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">" "</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"true"</span>
-<a id="__codelineno-0-1197" name="__codelineno-0-1197"></a>    <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-1198" name="__codelineno-0-1198"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Invalid argument: '"</span> <span class="o">+</span> <span class="n">value</span> <span class="o">+</span> <span class="s2">"'. Must be to be of type 'bool' or 'str'"</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1221">1221</a></span>
+<span class="normal"><a href="#__codelineno-0-1222">1222</a></span>
+<span class="normal"><a href="#__codelineno-0-1223">1223</a></span>
+<span class="normal"><a href="#__codelineno-0-1224">1224</a></span>
+<span class="normal"><a href="#__codelineno-0-1225">1225</a></span>
+<span class="normal"><a href="#__codelineno-0-1226">1226</a></span>
+<span class="normal"><a href="#__codelineno-0-1227">1227</a></span>
+<span class="normal"><a href="#__codelineno-0-1228">1228</a></span>
+<span class="normal"><a href="#__codelineno-0-1229">1229</a></span>
+<span class="normal"><a href="#__codelineno-0-1230">1230</a></span>
+<span class="normal"><a href="#__codelineno-0-1231">1231</a></span>
+<span class="normal"><a href="#__codelineno-0-1232">1232</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1221" name="__codelineno-0-1221"></a><span class="nd">@staticmethod</span>
+<a id="__codelineno-0-1222" name="__codelineno-0-1222"></a><span class="k">def</span><span class="w"> </span><span class="nf">translate_to_boolean</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<a id="__codelineno-0-1223" name="__codelineno-0-1223"></a><span class="w">    </span><span class="sd">"""Takes a boolean or string (eg. true, True, FALSE, etc.) value and returns (boolean) True or False</span>
+<a id="__codelineno-0-1224" name="__codelineno-0-1224"></a><span class="sd">    :param value: True, 'true', 'false' or 'False' ...</span>
+<a id="__codelineno-0-1225" name="__codelineno-0-1225"></a><span class="sd">    :return:</span>
+<a id="__codelineno-0-1226" name="__codelineno-0-1226"></a><span class="sd">    """</span>
+<a id="__codelineno-0-1227" name="__codelineno-0-1227"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+<a id="__codelineno-0-1228" name="__codelineno-0-1228"></a>        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<a id="__codelineno-0-1229" name="__codelineno-0-1229"></a>    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+<a id="__codelineno-0-1230" name="__codelineno-0-1230"></a>        <span class="k">return</span> <span class="n">value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">" "</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"true"</span>
+<a id="__codelineno-0-1231" name="__codelineno-0-1231"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-1232" name="__codelineno-0-1232"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Invalid argument: '"</span> <span class="o">+</span> <span class="n">value</span> <span class="o">+</span> <span class="s2">"'. Must be to be of type 'bool' or 'str'"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -7097,47 +7097,47 @@ Based on requests module</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/RestService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1336">1336</a></span>
-<span class="normal"><a href="#__codelineno-0-1337">1337</a></span>
-<span class="normal"><a href="#__codelineno-0-1338">1338</a></span>
-<span class="normal"><a href="#__codelineno-0-1339">1339</a></span>
-<span class="normal"><a href="#__codelineno-0-1340">1340</a></span>
-<span class="normal"><a href="#__codelineno-0-1341">1341</a></span>
-<span class="normal"><a href="#__codelineno-0-1342">1342</a></span>
-<span class="normal"><a href="#__codelineno-0-1343">1343</a></span>
-<span class="normal"><a href="#__codelineno-0-1344">1344</a></span>
-<span class="normal"><a href="#__codelineno-0-1345">1345</a></span>
-<span class="normal"><a href="#__codelineno-0-1346">1346</a></span>
-<span class="normal"><a href="#__codelineno-0-1347">1347</a></span>
-<span class="normal"><a href="#__codelineno-0-1348">1348</a></span>
-<span class="normal"><a href="#__codelineno-0-1349">1349</a></span>
-<span class="normal"><a href="#__codelineno-0-1350">1350</a></span>
-<span class="normal"><a href="#__codelineno-0-1351">1351</a></span>
-<span class="normal"><a href="#__codelineno-0-1352">1352</a></span>
-<span class="normal"><a href="#__codelineno-0-1353">1353</a></span>
-<span class="normal"><a href="#__codelineno-0-1354">1354</a></span>
-<span class="normal"><a href="#__codelineno-0-1355">1355</a></span>
-<span class="normal"><a href="#__codelineno-0-1356">1356</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1336" name="__codelineno-0-1336"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-1337" name="__codelineno-0-1337"></a><span class="k">def</span><span class="w"> </span><span class="nf">urllib3_response_from_bytes</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HTTPResponse</span><span class="p">:</span>
-<a id="__codelineno-0-1338" name="__codelineno-0-1338"></a><span class="w">    </span><span class="sd">"""Build urllib3.HTTPResponse based on raw bytes string"""</span>
-<a id="__codelineno-0-1339" name="__codelineno-0-1339"></a>    <span class="n">sock</span> <span class="o">=</span> <span class="n">BytesIOSocket</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-<a id="__codelineno-0-1340" name="__codelineno-0-1340"></a>
-<a id="__codelineno-0-1341" name="__codelineno-0-1341"></a>    <span class="n">response</span> <span class="o">=</span> <span class="n">HTTPResponse</span><span class="p">(</span><span class="n">sock</span><span class="p">)</span>
-<a id="__codelineno-0-1342" name="__codelineno-0-1342"></a>    <span class="n">response</span><span class="o">.</span><span class="n">begin</span><span class="p">()</span>
-<a id="__codelineno-0-1343" name="__codelineno-0-1343"></a>
-<a id="__codelineno-0-1344" name="__codelineno-0-1344"></a>    <span class="n">headers</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">msg</span>
-<a id="__codelineno-0-1345" name="__codelineno-0-1345"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">headers</span><span class="p">,</span> <span class="n">HTTPHeaderDict</span><span class="p">):</span>
-<a id="__codelineno-0-1346" name="__codelineno-0-1346"></a>        <span class="n">headers</span> <span class="o">=</span> <span class="n">HTTPHeaderDict</span><span class="p">(</span><span class="n">headers</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
-<a id="__codelineno-0-1347" name="__codelineno-0-1347"></a>
-<a id="__codelineno-0-1348" name="__codelineno-0-1348"></a>    <span class="n">urllib3_http_response</span> <span class="o">=</span> <span class="n">urllib3</span><span class="o">.</span><span class="n">HTTPResponse</span><span class="p">(</span>
-<a id="__codelineno-0-1349" name="__codelineno-0-1349"></a>        <span class="n">body</span><span class="o">=</span><span class="n">response</span><span class="p">,</span>
-<a id="__codelineno-0-1350" name="__codelineno-0-1350"></a>        <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
-<a id="__codelineno-0-1351" name="__codelineno-0-1351"></a>        <span class="n">status</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">status</span><span class="p">,</span>
-<a id="__codelineno-0-1352" name="__codelineno-0-1352"></a>        <span class="n">version</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">version</span><span class="p">,</span>
-<a id="__codelineno-0-1353" name="__codelineno-0-1353"></a>        <span class="n">reason</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">reason</span><span class="p">,</span>
-<a id="__codelineno-0-1354" name="__codelineno-0-1354"></a>        <span class="n">original_response</span><span class="o">=</span><span class="n">response</span><span class="p">,</span>
-<a id="__codelineno-0-1355" name="__codelineno-0-1355"></a>    <span class="p">)</span>
-<a id="__codelineno-0-1356" name="__codelineno-0-1356"></a>    <span class="k">return</span> <span class="n">urllib3_http_response</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1370">1370</a></span>
+<span class="normal"><a href="#__codelineno-0-1371">1371</a></span>
+<span class="normal"><a href="#__codelineno-0-1372">1372</a></span>
+<span class="normal"><a href="#__codelineno-0-1373">1373</a></span>
+<span class="normal"><a href="#__codelineno-0-1374">1374</a></span>
+<span class="normal"><a href="#__codelineno-0-1375">1375</a></span>
+<span class="normal"><a href="#__codelineno-0-1376">1376</a></span>
+<span class="normal"><a href="#__codelineno-0-1377">1377</a></span>
+<span class="normal"><a href="#__codelineno-0-1378">1378</a></span>
+<span class="normal"><a href="#__codelineno-0-1379">1379</a></span>
+<span class="normal"><a href="#__codelineno-0-1380">1380</a></span>
+<span class="normal"><a href="#__codelineno-0-1381">1381</a></span>
+<span class="normal"><a href="#__codelineno-0-1382">1382</a></span>
+<span class="normal"><a href="#__codelineno-0-1383">1383</a></span>
+<span class="normal"><a href="#__codelineno-0-1384">1384</a></span>
+<span class="normal"><a href="#__codelineno-0-1385">1385</a></span>
+<span class="normal"><a href="#__codelineno-0-1386">1386</a></span>
+<span class="normal"><a href="#__codelineno-0-1387">1387</a></span>
+<span class="normal"><a href="#__codelineno-0-1388">1388</a></span>
+<span class="normal"><a href="#__codelineno-0-1389">1389</a></span>
+<span class="normal"><a href="#__codelineno-0-1390">1390</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1370" name="__codelineno-0-1370"></a><span class="nd">@staticmethod</span>
+<a id="__codelineno-0-1371" name="__codelineno-0-1371"></a><span class="k">def</span><span class="w"> </span><span class="nf">urllib3_response_from_bytes</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HTTPResponse</span><span class="p">:</span>
+<a id="__codelineno-0-1372" name="__codelineno-0-1372"></a><span class="w">    </span><span class="sd">"""Build urllib3.HTTPResponse based on raw bytes string"""</span>
+<a id="__codelineno-0-1373" name="__codelineno-0-1373"></a>    <span class="n">sock</span> <span class="o">=</span> <span class="n">BytesIOSocket</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<a id="__codelineno-0-1374" name="__codelineno-0-1374"></a>
+<a id="__codelineno-0-1375" name="__codelineno-0-1375"></a>    <span class="n">response</span> <span class="o">=</span> <span class="n">HTTPResponse</span><span class="p">(</span><span class="n">sock</span><span class="p">)</span>
+<a id="__codelineno-0-1376" name="__codelineno-0-1376"></a>    <span class="n">response</span><span class="o">.</span><span class="n">begin</span><span class="p">()</span>
+<a id="__codelineno-0-1377" name="__codelineno-0-1377"></a>
+<a id="__codelineno-0-1378" name="__codelineno-0-1378"></a>    <span class="n">headers</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">msg</span>
+<a id="__codelineno-0-1379" name="__codelineno-0-1379"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">headers</span><span class="p">,</span> <span class="n">HTTPHeaderDict</span><span class="p">):</span>
+<a id="__codelineno-0-1380" name="__codelineno-0-1380"></a>        <span class="n">headers</span> <span class="o">=</span> <span class="n">HTTPHeaderDict</span><span class="p">(</span><span class="n">headers</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+<a id="__codelineno-0-1381" name="__codelineno-0-1381"></a>
+<a id="__codelineno-0-1382" name="__codelineno-0-1382"></a>    <span class="n">urllib3_http_response</span> <span class="o">=</span> <span class="n">urllib3</span><span class="o">.</span><span class="n">HTTPResponse</span><span class="p">(</span>
+<a id="__codelineno-0-1383" name="__codelineno-0-1383"></a>        <span class="n">body</span><span class="o">=</span><span class="n">response</span><span class="p">,</span>
+<a id="__codelineno-0-1384" name="__codelineno-0-1384"></a>        <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
+<a id="__codelineno-0-1385" name="__codelineno-0-1385"></a>        <span class="n">status</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">status</span><span class="p">,</span>
+<a id="__codelineno-0-1386" name="__codelineno-0-1386"></a>        <span class="n">version</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">version</span><span class="p">,</span>
+<a id="__codelineno-0-1387" name="__codelineno-0-1387"></a>        <span class="n">reason</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">reason</span><span class="p">,</span>
+<a id="__codelineno-0-1388" name="__codelineno-0-1388"></a>        <span class="n">original_response</span><span class="o">=</span><span class="n">response</span><span class="p">,</span>
+<a id="__codelineno-0-1389" name="__codelineno-0-1389"></a>    <span class="p">)</span>
+<a id="__codelineno-0-1390" name="__codelineno-0-1390"></a>    <span class="k">return</span> <span class="n">urllib3_http_response</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -7169,43 +7169,43 @@ Based on requests module</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/RestService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1208">1208</a></span>
-<span class="normal"><a href="#__codelineno-0-1209">1209</a></span>
-<span class="normal"><a href="#__codelineno-0-1210">1210</a></span>
-<span class="normal"><a href="#__codelineno-0-1211">1211</a></span>
-<span class="normal"><a href="#__codelineno-0-1212">1212</a></span>
-<span class="normal"><a href="#__codelineno-0-1213">1213</a></span>
-<span class="normal"><a href="#__codelineno-0-1214">1214</a></span>
-<span class="normal"><a href="#__codelineno-0-1215">1215</a></span>
-<span class="normal"><a href="#__codelineno-0-1216">1216</a></span>
-<span class="normal"><a href="#__codelineno-0-1217">1217</a></span>
-<span class="normal"><a href="#__codelineno-0-1218">1218</a></span>
-<span class="normal"><a href="#__codelineno-0-1219">1219</a></span>
-<span class="normal"><a href="#__codelineno-0-1220">1220</a></span>
-<span class="normal"><a href="#__codelineno-0-1221">1221</a></span>
-<span class="normal"><a href="#__codelineno-0-1222">1222</a></span>
-<span class="normal"><a href="#__codelineno-0-1223">1223</a></span>
-<span class="normal"><a href="#__codelineno-0-1224">1224</a></span>
-<span class="normal"><a href="#__codelineno-0-1225">1225</a></span>
-<span class="normal"><a href="#__codelineno-0-1226">1226</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1208" name="__codelineno-0-1208"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-1209" name="__codelineno-0-1209"></a><span class="k">def</span><span class="w"> </span><span class="nf">verify_response</span><span class="p">(</span><span class="n">response</span><span class="p">:</span> <span class="n">Response</span><span class="p">):</span>
-<a id="__codelineno-0-1210" name="__codelineno-0-1210"></a><span class="w">    </span><span class="sd">"""check if Status Code is OK</span>
-<a id="__codelineno-0-1211" name="__codelineno-0-1211"></a><span class="sd">    :Parameters:</span>
-<a id="__codelineno-0-1212" name="__codelineno-0-1212"></a><span class="sd">        `response`: String</span>
-<a id="__codelineno-0-1213" name="__codelineno-0-1213"></a><span class="sd">            the response that is returned from a method call</span>
-<a id="__codelineno-0-1214" name="__codelineno-0-1214"></a><span class="sd">    :Exceptions:</span>
-<a id="__codelineno-0-1215" name="__codelineno-0-1215"></a><span class="sd">        TM1pyException, raises TM1pyException when Code is not 200, 204 etc.</span>
-<a id="__codelineno-0-1216" name="__codelineno-0-1216"></a><span class="sd">    """</span>
-<a id="__codelineno-0-1217" name="__codelineno-0-1217"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
-<a id="__codelineno-0-1218" name="__codelineno-0-1218"></a>        <span class="n">content_type</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"Content-Type"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
-<a id="__codelineno-0-1219" name="__codelineno-0-1219"></a>        <span class="n">body_start</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">lstrip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-<a id="__codelineno-0-1220" name="__codelineno-0-1220"></a>        <span class="k">if</span> <span class="s2">"text/html"</span> <span class="ow">in</span> <span class="n">content_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">or</span> <span class="n">body_start</span><span class="o">.</span><span class="n">startswith</span><span class="p">((</span><span class="s2">"&lt;!doctype"</span><span class="p">,</span> <span class="s2">"&lt;html"</span><span class="p">)):</span>
-<a id="__codelineno-0-1221" name="__codelineno-0-1221"></a>            <span class="k">raise</span> <span class="n">TM1pyNetworkException</span><span class="p">(</span>
-<a id="__codelineno-0-1222" name="__codelineno-0-1222"></a>                <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">reason</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">headers</span>
-<a id="__codelineno-0-1223" name="__codelineno-0-1223"></a>            <span class="p">)</span>
-<a id="__codelineno-0-1224" name="__codelineno-0-1224"></a>        <span class="k">raise</span> <span class="n">TM1pyRestException</span><span class="p">(</span>
-<a id="__codelineno-0-1225" name="__codelineno-0-1225"></a>            <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">reason</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">headers</span>
-<a id="__codelineno-0-1226" name="__codelineno-0-1226"></a>        <span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1242">1242</a></span>
+<span class="normal"><a href="#__codelineno-0-1243">1243</a></span>
+<span class="normal"><a href="#__codelineno-0-1244">1244</a></span>
+<span class="normal"><a href="#__codelineno-0-1245">1245</a></span>
+<span class="normal"><a href="#__codelineno-0-1246">1246</a></span>
+<span class="normal"><a href="#__codelineno-0-1247">1247</a></span>
+<span class="normal"><a href="#__codelineno-0-1248">1248</a></span>
+<span class="normal"><a href="#__codelineno-0-1249">1249</a></span>
+<span class="normal"><a href="#__codelineno-0-1250">1250</a></span>
+<span class="normal"><a href="#__codelineno-0-1251">1251</a></span>
+<span class="normal"><a href="#__codelineno-0-1252">1252</a></span>
+<span class="normal"><a href="#__codelineno-0-1253">1253</a></span>
+<span class="normal"><a href="#__codelineno-0-1254">1254</a></span>
+<span class="normal"><a href="#__codelineno-0-1255">1255</a></span>
+<span class="normal"><a href="#__codelineno-0-1256">1256</a></span>
+<span class="normal"><a href="#__codelineno-0-1257">1257</a></span>
+<span class="normal"><a href="#__codelineno-0-1258">1258</a></span>
+<span class="normal"><a href="#__codelineno-0-1259">1259</a></span>
+<span class="normal"><a href="#__codelineno-0-1260">1260</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1242" name="__codelineno-0-1242"></a><span class="nd">@staticmethod</span>
+<a id="__codelineno-0-1243" name="__codelineno-0-1243"></a><span class="k">def</span><span class="w"> </span><span class="nf">verify_response</span><span class="p">(</span><span class="n">response</span><span class="p">:</span> <span class="n">Response</span><span class="p">):</span>
+<a id="__codelineno-0-1244" name="__codelineno-0-1244"></a><span class="w">    </span><span class="sd">"""check if Status Code is OK</span>
+<a id="__codelineno-0-1245" name="__codelineno-0-1245"></a><span class="sd">    :Parameters:</span>
+<a id="__codelineno-0-1246" name="__codelineno-0-1246"></a><span class="sd">        `response`: String</span>
+<a id="__codelineno-0-1247" name="__codelineno-0-1247"></a><span class="sd">            the response that is returned from a method call</span>
+<a id="__codelineno-0-1248" name="__codelineno-0-1248"></a><span class="sd">    :Exceptions:</span>
+<a id="__codelineno-0-1249" name="__codelineno-0-1249"></a><span class="sd">        TM1pyException, raises TM1pyException when Code is not 200, 204 etc.</span>
+<a id="__codelineno-0-1250" name="__codelineno-0-1250"></a><span class="sd">    """</span>
+<a id="__codelineno-0-1251" name="__codelineno-0-1251"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+<a id="__codelineno-0-1252" name="__codelineno-0-1252"></a>        <span class="n">content_type</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"Content-Type"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+<a id="__codelineno-0-1253" name="__codelineno-0-1253"></a>        <span class="n">body_start</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">lstrip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+<a id="__codelineno-0-1254" name="__codelineno-0-1254"></a>        <span class="k">if</span> <span class="s2">"text/html"</span> <span class="ow">in</span> <span class="n">content_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">or</span> <span class="n">body_start</span><span class="o">.</span><span class="n">startswith</span><span class="p">((</span><span class="s2">"&lt;!doctype"</span><span class="p">,</span> <span class="s2">"&lt;html"</span><span class="p">)):</span>
+<a id="__codelineno-0-1255" name="__codelineno-0-1255"></a>            <span class="k">raise</span> <span class="n">TM1pyNetworkException</span><span class="p">(</span>
+<a id="__codelineno-0-1256" name="__codelineno-0-1256"></a>                <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">reason</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">headers</span>
+<a id="__codelineno-0-1257" name="__codelineno-0-1257"></a>            <span class="p">)</span>
+<a id="__codelineno-0-1258" name="__codelineno-0-1258"></a>        <span class="k">raise</span> <span class="n">TM1pyRestException</span><span class="p">(</span>
+<a id="__codelineno-0-1259" name="__codelineno-0-1259"></a>            <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">reason</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">headers</span>
+<a id="__codelineno-0-1260" name="__codelineno-0-1260"></a>        <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -7234,53 +7234,53 @@ Based on requests module</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/RestService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1369">1369</a></span>
-<span class="normal"><a href="#__codelineno-0-1370">1370</a></span>
-<span class="normal"><a href="#__codelineno-0-1371">1371</a></span>
-<span class="normal"><a href="#__codelineno-0-1372">1372</a></span>
-<span class="normal"><a href="#__codelineno-0-1373">1373</a></span>
-<span class="normal"><a href="#__codelineno-0-1374">1374</a></span>
-<span class="normal"><a href="#__codelineno-0-1375">1375</a></span>
-<span class="normal"><a href="#__codelineno-0-1376">1376</a></span>
-<span class="normal"><a href="#__codelineno-0-1377">1377</a></span>
-<span class="normal"><a href="#__codelineno-0-1378">1378</a></span>
-<span class="normal"><a href="#__codelineno-0-1379">1379</a></span>
-<span class="normal"><a href="#__codelineno-0-1380">1380</a></span>
-<span class="normal"><a href="#__codelineno-0-1381">1381</a></span>
-<span class="normal"><a href="#__codelineno-0-1382">1382</a></span>
-<span class="normal"><a href="#__codelineno-0-1383">1383</a></span>
-<span class="normal"><a href="#__codelineno-0-1384">1384</a></span>
-<span class="normal"><a href="#__codelineno-0-1385">1385</a></span>
-<span class="normal"><a href="#__codelineno-0-1386">1386</a></span>
-<span class="normal"><a href="#__codelineno-0-1387">1387</a></span>
-<span class="normal"><a href="#__codelineno-0-1388">1388</a></span>
-<span class="normal"><a href="#__codelineno-0-1389">1389</a></span>
-<span class="normal"><a href="#__codelineno-0-1390">1390</a></span>
-<span class="normal"><a href="#__codelineno-0-1391">1391</a></span>
-<span class="normal"><a href="#__codelineno-0-1392">1392</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1369" name="__codelineno-0-1369"></a><span class="k">def</span><span class="w"> </span><span class="nf">wait_time_generator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
-<a id="__codelineno-0-1370" name="__codelineno-0-1370"></a><span class="w">    </span><span class="sd">"""</span>
-<a id="__codelineno-0-1371" name="__codelineno-0-1371"></a><span class="sd">    Generate wait times for async polling with capped exponential backoff.</span>
-<a id="__codelineno-0-1372" name="__codelineno-0-1372"></a>
-<a id="__codelineno-0-1373" name="__codelineno-0-1373"></a><span class="sd">    Uses configurable parameters:</span>
-<a id="__codelineno-0-1374" name="__codelineno-0-1374"></a><span class="sd">    - async_polling_initial_delay: Starting delay</span>
-<a id="__codelineno-0-1375" name="__codelineno-0-1375"></a><span class="sd">    - async_polling_max_delay: Maximum delay cap</span>
-<a id="__codelineno-0-1376" name="__codelineno-0-1376"></a><span class="sd">    - async_polling_backoff_factor: Multiplier for each iteration</span>
-<a id="__codelineno-0-1377" name="__codelineno-0-1377"></a>
-<a id="__codelineno-0-1378" name="__codelineno-0-1378"></a><span class="sd">    Default behavior (0.1s initial, 1.0s max, 2x factor) produces:</span>
-<a id="__codelineno-0-1379" name="__codelineno-0-1379"></a><span class="sd">    0.1s -&gt; 0.2s -&gt; 0.4s -&gt; 0.8s -&gt; 1.0s -&gt; 1.0s -&gt; ...</span>
-<a id="__codelineno-0-1380" name="__codelineno-0-1380"></a><span class="sd">    """</span>
-<a id="__codelineno-0-1381" name="__codelineno-0-1381"></a>    <span class="n">delay</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_async_polling_initial_delay</span>
-<a id="__codelineno-0-1382" name="__codelineno-0-1382"></a>    <span class="n">elapsed</span> <span class="o">=</span> <span class="mf">0.0</span>
-<a id="__codelineno-0-1383" name="__codelineno-0-1383"></a>
-<a id="__codelineno-0-1384" name="__codelineno-0-1384"></a>    <span class="k">if</span> <span class="n">timeout</span><span class="p">:</span>
-<a id="__codelineno-0-1385" name="__codelineno-0-1385"></a>        <span class="k">while</span> <span class="n">elapsed</span> <span class="o">&lt;</span> <span class="n">timeout</span><span class="p">:</span>
-<a id="__codelineno-0-1386" name="__codelineno-0-1386"></a>            <span class="k">yield</span> <span class="n">delay</span>
-<a id="__codelineno-0-1387" name="__codelineno-0-1387"></a>            <span class="n">elapsed</span> <span class="o">+=</span> <span class="n">delay</span>
-<a id="__codelineno-0-1388" name="__codelineno-0-1388"></a>            <span class="n">delay</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">delay</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_async_polling_backoff_factor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_async_polling_max_delay</span><span class="p">)</span>
-<a id="__codelineno-0-1389" name="__codelineno-0-1389"></a>    <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-1390" name="__codelineno-0-1390"></a>        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-<a id="__codelineno-0-1391" name="__codelineno-0-1391"></a>            <span class="k">yield</span> <span class="n">delay</span>
-<a id="__codelineno-0-1392" name="__codelineno-0-1392"></a>            <span class="n">delay</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">delay</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_async_polling_backoff_factor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_async_polling_max_delay</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1403">1403</a></span>
+<span class="normal"><a href="#__codelineno-0-1404">1404</a></span>
+<span class="normal"><a href="#__codelineno-0-1405">1405</a></span>
+<span class="normal"><a href="#__codelineno-0-1406">1406</a></span>
+<span class="normal"><a href="#__codelineno-0-1407">1407</a></span>
+<span class="normal"><a href="#__codelineno-0-1408">1408</a></span>
+<span class="normal"><a href="#__codelineno-0-1409">1409</a></span>
+<span class="normal"><a href="#__codelineno-0-1410">1410</a></span>
+<span class="normal"><a href="#__codelineno-0-1411">1411</a></span>
+<span class="normal"><a href="#__codelineno-0-1412">1412</a></span>
+<span class="normal"><a href="#__codelineno-0-1413">1413</a></span>
+<span class="normal"><a href="#__codelineno-0-1414">1414</a></span>
+<span class="normal"><a href="#__codelineno-0-1415">1415</a></span>
+<span class="normal"><a href="#__codelineno-0-1416">1416</a></span>
+<span class="normal"><a href="#__codelineno-0-1417">1417</a></span>
+<span class="normal"><a href="#__codelineno-0-1418">1418</a></span>
+<span class="normal"><a href="#__codelineno-0-1419">1419</a></span>
+<span class="normal"><a href="#__codelineno-0-1420">1420</a></span>
+<span class="normal"><a href="#__codelineno-0-1421">1421</a></span>
+<span class="normal"><a href="#__codelineno-0-1422">1422</a></span>
+<span class="normal"><a href="#__codelineno-0-1423">1423</a></span>
+<span class="normal"><a href="#__codelineno-0-1424">1424</a></span>
+<span class="normal"><a href="#__codelineno-0-1425">1425</a></span>
+<span class="normal"><a href="#__codelineno-0-1426">1426</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1403" name="__codelineno-0-1403"></a><span class="k">def</span><span class="w"> </span><span class="nf">wait_time_generator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<a id="__codelineno-0-1404" name="__codelineno-0-1404"></a><span class="w">    </span><span class="sd">"""</span>
+<a id="__codelineno-0-1405" name="__codelineno-0-1405"></a><span class="sd">    Generate wait times for async polling with capped exponential backoff.</span>
+<a id="__codelineno-0-1406" name="__codelineno-0-1406"></a>
+<a id="__codelineno-0-1407" name="__codelineno-0-1407"></a><span class="sd">    Uses configurable parameters:</span>
+<a id="__codelineno-0-1408" name="__codelineno-0-1408"></a><span class="sd">    - async_polling_initial_delay: Starting delay</span>
+<a id="__codelineno-0-1409" name="__codelineno-0-1409"></a><span class="sd">    - async_polling_max_delay: Maximum delay cap</span>
+<a id="__codelineno-0-1410" name="__codelineno-0-1410"></a><span class="sd">    - async_polling_backoff_factor: Multiplier for each iteration</span>
+<a id="__codelineno-0-1411" name="__codelineno-0-1411"></a>
+<a id="__codelineno-0-1412" name="__codelineno-0-1412"></a><span class="sd">    Default behavior (0.1s initial, 1.0s max, 2x factor) produces:</span>
+<a id="__codelineno-0-1413" name="__codelineno-0-1413"></a><span class="sd">    0.1s -&gt; 0.2s -&gt; 0.4s -&gt; 0.8s -&gt; 1.0s -&gt; 1.0s -&gt; ...</span>
+<a id="__codelineno-0-1414" name="__codelineno-0-1414"></a><span class="sd">    """</span>
+<a id="__codelineno-0-1415" name="__codelineno-0-1415"></a>    <span class="n">delay</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_async_polling_initial_delay</span>
+<a id="__codelineno-0-1416" name="__codelineno-0-1416"></a>    <span class="n">elapsed</span> <span class="o">=</span> <span class="mf">0.0</span>
+<a id="__codelineno-0-1417" name="__codelineno-0-1417"></a>
+<a id="__codelineno-0-1418" name="__codelineno-0-1418"></a>    <span class="k">if</span> <span class="n">timeout</span><span class="p">:</span>
+<a id="__codelineno-0-1419" name="__codelineno-0-1419"></a>        <span class="k">while</span> <span class="n">elapsed</span> <span class="o">&lt;</span> <span class="n">timeout</span><span class="p">:</span>
+<a id="__codelineno-0-1420" name="__codelineno-0-1420"></a>            <span class="k">yield</span> <span class="n">delay</span>
+<a id="__codelineno-0-1421" name="__codelineno-0-1421"></a>            <span class="n">elapsed</span> <span class="o">+=</span> <span class="n">delay</span>
+<a id="__codelineno-0-1422" name="__codelineno-0-1422"></a>            <span class="n">delay</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">delay</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_async_polling_backoff_factor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_async_polling_max_delay</span><span class="p">)</span>
+<a id="__codelineno-0-1423" name="__codelineno-0-1423"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-1424" name="__codelineno-0-1424"></a>        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+<a id="__codelineno-0-1425" name="__codelineno-0-1425"></a>            <span class="k">yield</span> <span class="n">delay</span>
+<a id="__codelineno-0-1426" name="__codelineno-0-1426"></a>            <span class="n">delay</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">delay</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_async_polling_backoff_factor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_async_polling_max_delay</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
