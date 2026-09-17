@@ -4,9 +4,14 @@ import unittest
 import uuid
 from io import BytesIO
 from pathlib import Path
+from unittest.mock import Mock, patch
+from urllib.parse import unquote_plus, urlsplit
+
+from requests import ConnectionError, Response, Session
 
 from TM1py import TM1Service
 from TM1py.Objects import Process
+from TM1py.Services.CubeService import CubeService
 from TM1py.Services.RestService import RestService
 
 
@@ -423,3 +428,207 @@ class TestRequestBodyCompressionInitValidation(unittest.TestCase):
                 with self.assertRaises(ValueError) as ctx:
                     RestService(gzip_compress_level=level)
                 self.assertIn("gzip_compress_level", str(ctx.exception))
+
+
+class TestGetQueryParameters(unittest.TestCase):
+    """Exercise real request preparation without a TM1 server or network access."""
+
+    def setUp(self):
+        self.rest = object.__new__(RestService)
+        self.rest._base_url = "https://tm1.example/api/v1"
+        self.rest._headers = dict(RestService.HEADERS)
+        self.rest._compress_request_body = False
+        self.rest._timeout = 60
+        self.rest._cancel_at_timeout = False
+        self.rest._async_requests_mode = False
+        self.rest._re_connect_on_session_timeout = True
+        self.rest._re_connect_on_remote_disconnect = True
+        self.rest._remote_disconnect_max_retries = 1
+        self.rest._remote_disconnect_retry_delay = 0
+        self.rest._remote_disconnect_max_delay = 0
+        self.rest._remote_disconnect_backoff_factor = 2
+        self.rest._verify = True
+        self.rest._s = Session()
+        self.rest._s.trust_env = False
+        self.addCleanup(self.rest._s.close)
+        self.send = Mock(return_value=self._response())
+        self.rest._s.send = self.send
+        self.rest.connect = Mock()
+        self.rest._manage_http_adapter = Mock()
+
+    @staticmethod
+    def _response(status=200, headers=None, body=b'{"value": [{"Name": "Sales"}]}'):
+        response = Response()
+        response.status_code = status
+        response.headers.update(headers or {})
+        response._content = body
+        response._content_consumed = True
+        return response
+
+    @staticmethod
+    def _query(request):
+        # Decode after separating outer options; ';' belongs to nested OData expressions.
+        return [
+            tuple(unquote_plus(part) for part in option.partition("=")[::2])
+            for option in urlsplit(request.url).query.split("&")
+            if option
+        ]
+
+    def test_add_params_with_and_without_existing_query(self):
+        for url in ("/Cubes", "/Cubes?$select=Name", "/api/v1/Cubes?$select=Name"):
+            with self.subTest(url=url):
+                params = {"$top": 0, "$orderby": "Name"}
+                self.rest.GET(url, params=params)
+                request = self.send.call_args[0][0]
+                expected = [] if "?" not in url else [("$select", "Name")]
+                self.assertEqual(self._query(request), expected + [("$top", "0"), ("$orderby", "Name")])
+                self.assertEqual(urlsplit(request.url).path, "/api/v1/Cubes")
+                self.assertEqual(params, {"$top": 0, "$orderby": "Name"})
+
+    def test_no_effective_params_preserves_request_arguments(self):
+        for params in (None, {}, {"$select": None}):
+            with self.subTest(params=params), patch.object(self.rest, "request", wraps=self.rest.request) as request:
+                self.rest.GET("/Cubes?$select=Name", params=params)
+                self.assertNotIn("params", request.call_args[1])
+                self.assertEqual(self._query(self.send.call_args[0][0]), [("$select", "Name")])
+
+    def test_none_values_are_omitted_before_conflict_check(self):
+        params = {"$select": None, "$top": 0}
+        with patch.object(self.rest, "request", wraps=self.rest.request) as request:
+            self.rest.GET("/Cubes?$select=Name", params=params)
+            self.assertEqual(request.call_args[1]["params"], {"$top": 0})
+        self.assertEqual(self._query(self.send.call_args[0][0]), [("$select", "Name"), ("$top", "0")])
+        self.assertEqual(params, {"$select": None, "$top": 0})
+
+    def test_invalid_params_fail_before_http_request(self):
+        for params in ("", "$top=10", [], [("$top", 10)], 0, False, {1: "Name"}, {1: None}):
+            with self.subTest(params=params):
+                with self.assertRaisesRegex(TypeError, "dictionary with string keys"):
+                    self.rest.GET("/Cubes", params=params)
+        self.send.assert_not_called()
+
+    def test_conflicts_fail_before_http_request(self):
+        cases = (
+            ("/Cubes?$select=Name", "$select", "Name"),
+            ("/Cubes?%24select=Name", "$select", "Rules"),
+            ("/Cubes?$select=", "$select", "Name"),
+            ("/Cubes?$count", "$count", "true"),
+            ("/Cubes?$select=Name&$select=Rules", "$select", "Name"),
+            ("/Cubes?custom+name=value", "custom name", "value"),
+        )
+        for url, name, value in cases:
+            with self.subTest(url=url):
+                params = {name: value, "$top": 10}
+                with self.assertRaises(ValueError) as error:
+                    self.rest.GET(url, params=params)
+                self.assertIn(name, str(error.exception))
+                self.assertEqual(params, {name: value, "$top": 10})
+        self.send.assert_not_called()
+
+    def test_error_reports_all_conflicting_names(self):
+        with self.assertRaises(ValueError) as error:
+            self.rest.GET("/Cubes?$top=1&$select=Name", params={"$top": 2, "$select": "Rules"})
+        self.assertEqual(str(error.exception), "Query parameters already present in URL: $select, $top")
+        self.send.assert_not_called()
+
+    def test_nested_expand_is_preserved_and_inner_options_do_not_conflict(self):
+        expand = "Dimensions($filter=Name ne 'x';$select=Name;$expand=Hierarchies($select=Name))"
+        url = "/Cubes?$expand=" + expand
+        self.rest.GET(url, params={"$select": "Name", "$filter": "Name eq 'Sales'"})
+        self.assertEqual(
+            self._query(self.send.call_args[0][0]),
+            [("$expand", expand), ("$select", "Name"), ("$filter", "Name eq 'Sales'")],
+        )
+        with self.assertRaises(ValueError):
+            self.rest.GET(url, params={"$expand": expand})
+        self.assertEqual(self.send.call_count, 1)
+
+    def test_names_are_case_sensitive_and_not_prefixed(self):
+        self.rest.GET("/Cubes?$select=Name", params={"$SELECT": "Rules", "top": 1})
+        self.assertEqual(
+            self._query(self.send.call_args[0][0]), [("$select", "Name"), ("$SELECT", "Rules"), ("top", "1")]
+        )
+
+    def test_encoding_roundtrip_preserves_existing_query_and_object_name(self):
+        expression = "Name eq 'Größe A&B + 50% O''Brien?#'"
+        url = "/Cubes('A%26B%25%23%3F')/Dimensions?%24select=Name&tag=A%2BB%26C%25"
+        params = {"$filter": expression}
+        with patch.object(self.rest, "request", wraps=self.rest.request) as request:
+            self.rest.GET(url, params=params)
+            self.assertEqual(request.call_args[1]["url"], url)
+        prepared = self.send.call_args[0][0]
+        self.assertEqual(urlsplit(prepared.url).path, "/api/v1/Cubes('A%26B%25%23%3F')/Dimensions")
+        self.assertEqual(self._query(prepared), [("$select", "Name"), ("tag", "A+B&C%"), ("$filter", expression)])
+        self.assertEqual(params, {"$filter": expression})
+
+    def test_values_keep_requests_encoding_semantics(self):
+        self.rest.GET("/Cubes", params={"tag": ["one", "two"], "enabled": False, "number": 1.5})
+        self.assertEqual(
+            self._query(self.send.call_args[0][0]),
+            [("tag", "one"), ("tag", "two"), ("enabled", "False"), ("number", "1.5")],
+        )
+
+    def test_unrelated_kwargs_remain_ignored(self):
+        self.rest.GET("/Cubes", params={"$top": 10}, unrelated_option=True)
+        self.assertEqual(self._query(self.send.call_args[0][0]), [("$top", "10")])
+        self.assertNotIn("unrelated_option", self.send.call_args[1])
+
+    def test_other_http_methods_do_not_gain_params_support(self):
+        for method in (self.rest.POST, self.rest.PATCH, self.rest.PUT, self.rest.DELETE):
+            with self.subTest(method=method.__name__):
+                method("/Cubes", params={"$top": 10})
+                self.assertEqual(self._query(self.send.call_args[0][0]), [])
+
+    def test_params_survive_session_timeout_sync_and_async(self):
+        for async_mode in (False, True):
+            with self.subTest(async_mode=async_mode):
+                self.send.reset_mock()
+                self.rest.connect.reset_mock()
+                self.send.side_effect = [self._response(401), self._response()]
+                self.rest.GET("/Cubes?$select=Name", params={"$top": 10}, async_requests_mode=async_mode)
+                self.rest.connect.assert_called_once_with()
+                self.assertEqual(self.send.call_count, 2)
+                for call in self.send.call_args_list:
+                    self.assertEqual(self._query(call[0][0]), [("$select", "Name"), ("$top", "10")])
+
+    def test_params_survive_remote_disconnect_sync_and_async(self):
+        for async_mode in (False, True):
+            with self.subTest(async_mode=async_mode):
+                self.send.reset_mock()
+                self.send.side_effect = [ConnectionError("RemoteDisconnected"), self._response()]
+                with patch("TM1py.Services.RestService.time.sleep"), self.assertWarns(UserWarning):
+                    self.rest.GET("/Cubes?$select=Name", params={"$top": 10}, async_requests_mode=async_mode)
+                self.assertEqual(self.send.call_count, 2)
+                for call in self.send.call_args_list:
+                    self.assertEqual(self._query(call[0][0]), [("$select", "Name"), ("$top", "10")])
+
+    def test_async_polling_does_not_receive_original_params(self):
+        self.send.side_effect = [
+            self._response(202, {"Location": "/api/v1/_async('job')"}),
+            self._response(),
+        ]
+        with patch.object(self.rest, "wait_time_generator", return_value=iter([0])):
+            self.rest.GET("/Cubes?$select=Name", params={"$top": 10}, async_requests_mode=True)
+        self.assertEqual(self.send.call_count, 2)
+        start, poll = (call[0][0] for call in self.send.call_args_list)
+        self.assertEqual(self._query(start), [("$select", "Name"), ("$top", "10")])
+        self.assertIn("respond-async", start.headers["Prefer"])
+        self.assertEqual(self._query(poll), [])
+        self.assertIn("_async('job')", poll.url)
+        self.assertNotIn("Prefer", poll.headers)
+
+    def test_return_async_id_sends_params_without_polling(self):
+        self.send.return_value = self._response(202, {"Location": "/api/v1/_async('job')"})
+        self.assertEqual(self.rest.GET("/Cubes", params={"$top": 10}, return_async_id=True), "job")
+        self.send.assert_called_once()
+        self.assertEqual(self._query(self.send.call_args[0][0]), [("$top", "10")])
+
+    def test_cube_service_forwards_params_and_processes_response(self):
+        cubes = object.__new__(CubeService)
+        cubes._rest = self.rest
+        params = {"$top": 10, "$orderby": "Name"}
+        self.assertEqual(cubes.get_all_names(params=params), ["Sales"])
+        self.assertEqual(
+            self._query(self.send.call_args[0][0]), [("$select", "Name"), ("$top", "10"), ("$orderby", "Name")]
+        )
+        self.assertEqual(params, {"$top": 10, "$orderby": "Name"})
