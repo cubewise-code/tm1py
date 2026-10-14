@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import json
-from typing import Iterable, List
+from typing import Iterable, List, Optional
 
 from requests import Response
 
@@ -160,25 +160,33 @@ class SecurityService(ObjectService):
         :return: List of strings
         """
         user_name = self.determine_actual_user_name(user_name, **kwargs)
+        return self._get_groups_of_actual_user(user_name, **kwargs)
+
+    def _get_groups_of_actual_user(self, user_name: str, **kwargs) -> List[str]:
+        """Get the groups of a user whose name has already been resolved to its actual casing"""
         url = format_url("/Users('{}')/Groups", user_name)
         response = self._rest.GET(url, **kwargs)
         return [group["Name"] for group in response.json()["value"]]
 
     @require_security_admin
-    def add_user_to_groups(self, user_name: str, groups: Iterable[str], **kwargs) -> Response:
+    def add_user_to_groups(self, user_name: str, groups: Iterable[str], **kwargs) -> Optional[Response]:
         """Add user to groups in TM1 Server. Existing group memberships of the user are preserved.
 
         :param user_name: name of user
         :param groups: iterable of groups
-        :return: response
+        :return: response, or None if the user is already a member of all requested groups
         """
         user_name = self.determine_actual_user_name(user_name, **kwargs)
         # Depending on the TM1 version, PATCH with Groups@odata.bind either appends to or replaces
         # the user's group collection. Binding the full union behaves the same under both semantics.
-        all_groups = CaseAndSpaceInsensitiveSet(self.get_groups(user_name, **kwargs))
+        all_groups = CaseAndSpaceInsensitiveSet(self._get_groups_of_actual_user(user_name, **kwargs))
+        new_groups = CaseAndSpaceInsensitiveSet()
         for group in groups:
             if group not in all_groups:
-                all_groups.add(self.determine_actual_group_name(group, **kwargs))
+                new_groups.add(self.determine_actual_group_name(group, **kwargs))
+        if not new_groups:
+            return None
+        all_groups.update(new_groups)
 
         url = format_url("/Users('{}')", user_name)
         body = {
