@@ -2766,9 +2766,9 @@
 
 
         <p>Abstraction of a Chore Task</p>
-<p>A Chore task always conistst of
-- The step integer ID: it's order in the execution plan.
-  1 to n, where n is the last Process in the Chore
+<p>A Chore task always consists of
+- The step integer ID: its order in the execution plan.
+  0-based: 0 to n-1, where n is the number of Processes in the Chore
 - The name of the process to execute
 - The parameters for the process</p>
 
@@ -2795,7 +2795,7 @@
             </td>
             <td>
               <div class="doc-md-description">
-                <p>step in the execution order of the Chores' processes. 1 to n, where n the number of processes</p>
+                <p>step in the execution order of the Chore's processes. 0-based: 0 to n-1, where n is the number of processes</p>
               </div>
             </td>
             <td>
@@ -2870,7 +2870,7 @@
 <span class="normal"><a href="#__codelineno-0-37">37</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">process_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">parameters</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]):</span>
 <a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="w">    </span><span class="sd">"""</span>
 <a id="__codelineno-0-24" name="__codelineno-0-24"></a>
-<a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="sd">    :param step: step in the execution order of the Chores' processes. 1 to n, where n the number of processes</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="sd">    :param step: step in the execution order of the Chore's processes. 0-based: 0 to n-1, where n is the number of processes</span>
 <a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="sd">    :param process_name: name of the process</span>
 <a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="sd">    :param parameters: list of dictionaries with 'Name' and 'Value' property:</span>
 <a id="__codelineno-0-28" name="__codelineno-0-28"></a><span class="sd">                        [{</span>
