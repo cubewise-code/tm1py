@@ -42,9 +42,9 @@ Design notes:
   are unaffected, so it never needs per-server configuration.
 * The client secret is a parameter, not fetched here. The caller reads it (e.g. from
   ``keyring``) or passes ``None`` for a public client.
-* Refresh-token caching is pluggable and defaults to in-memory. Pass
-  ``KeyringTokenCache`` (needs the optional ``keyring`` package) or your own
-  ``TokenCache`` to keep the refresh token between processes.
+* Refresh-token caching defaults to in-memory. Pass ``cache="keyring"`` (needs the
+  optional ``keyring`` package) to keep the refresh token in the OS credential store
+  between processes, or your own ``TokenCache`` for any other store.
 * Standard library only, apart from ``requests`` for the token calls and the
   optional ``keyring``.
 """
@@ -55,12 +55,13 @@ import base64
 import hashlib
 import http.server
 import os
+import re
 import secrets
 import socket
 import threading
 import time
 import webbrowser
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import requests
@@ -114,6 +115,10 @@ class KeyringTokenCache(TokenCache):
     token goes to Credential Manager, on macOS to Keychain.
 
     ``keyring`` is an optional dependency: ``pip install TM1py[keyring]``.
+
+    ``PawOAuthSession(cache="keyring")`` creates one with a key derived from the
+    session's token endpoint, client ID and scope. Construct it yourself only to choose
+    the key or service name.
     """
 
     DEFAULT_SERVICE = "TM1py.PawOAuth"
@@ -230,7 +235,7 @@ class PawOAuthSession:
         redirect_uri: str,
         client_secret: Optional[str] = None,
         scope: str = DEFAULT_SCOPE,
-        cache: Optional[TokenCache] = None,
+        cache: Union[str, TokenCache, None] = "in_memory",
         timeout: int = 30,
     ) -> None:
         """Create a session.
@@ -244,9 +249,19 @@ class PawOAuthSession:
         :param client_secret: The client secret, or None for a public client. The caller
             supplies this (e.g. from keyring); it is never read from storage here.
         :param scope: OAuth scope.
-        :param cache: A TokenCache for the refresh token. Defaults to in-memory only.
+        :param cache: Where the refresh token is kept between sign-ins:
+
+            * ``"in_memory"`` (default, also ``None``): this process only, so a new
+              process opens the browser again.
+            * ``"keyring"``: the operating system's credential store, so later processes
+              refresh silently. Needs the optional ``keyring`` package. The entry is keyed
+              on the token endpoint, client ID and scope (see ``KeyringTokenCache``);
+              the client secret is never part of the key.
+            * A ``TokenCache`` instance, for any other store or a custom keyring key.
         :param timeout: Seconds to wait for each token HTTP request.
-        :raises ValueError: If a required value is missing or the redirect is not a loopback URL.
+        :raises ValueError: If a required value is missing, the redirect is not a loopback
+            URL, or ``cache`` is an unknown name.
+        :raises ImportError: If ``cache="keyring"`` and ``keyring`` is not installed.
         """
         for name, value in (
             ("auth_url", auth_url),
@@ -273,12 +288,34 @@ class PawOAuthSession:
         self._client_secret = client_secret
         self._redirect_uri = redirect_uri
         self._scope = scope
-        self._cache = cache or InMemoryTokenCache()
+        self._cache = self._resolve_cache(cache)
         self._timeout = timeout
 
         self._lock = threading.Lock()
         self._access_token: Optional[str] = None
         self._expires_at: float = 0.0
+
+    def _resolve_cache(self, cache: Union[str, TokenCache, None]) -> TokenCache:
+        if cache is None or cache == "in_memory":
+            return InMemoryTokenCache()
+        if cache == "keyring":
+            return KeyringTokenCache(self._default_cache_key())
+        if isinstance(cache, str):
+            raise ValueError(f"cache must be 'in_memory', 'keyring' or a TokenCache, not {cache!r}")
+        return cache
+
+    def _default_cache_key(self) -> str:
+        """A keyring key identifying this sign-in: token endpoint, client ID and scope.
+
+        Readable but restricted to characters every keyring backend accepts, with a short
+        hash of the exact values so two sign-ins that differ only in replaced characters
+        still get separate entries. The client secret is deliberately left out: key names
+        are visible in the credential store, and a rotated secret should keep the entry.
+        """
+        identity = "\n".join((self._token_url, self._client_id, self._scope))
+        digest = hashlib.sha256(identity.encode("utf-8")).hexdigest()[:12]
+        readable = "_".join((urlparse(self._token_url).netloc, self._client_id, self._scope))
+        return f"{re.sub(r'[^A-Za-z0-9._-]', '_', readable)}-{digest}"
 
     # -- public API ---------------------------------------------------------------
 
