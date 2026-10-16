@@ -107,6 +107,7 @@ class RestService:
         - **namespace** (str): Optional CAM namespace.
         - **cam_passport** (str): The CAM passport.
         - **session_id** (str): TM1SessionId, e.g. q7O6e1w49AixeuLVxJ1GZg.
+        - **access_token** (str|callable): Bearer token, or a zero-argument callable returning one. A callable is invoked on every connect and reconnect, so a caller that refreshes tokens (e.g. an OAuth client) supplies a fresh token after a session timeout.
         - **application_client_id** (str): Planning Analytics Engine (v12) named application client ID created via manage service.
         - **application_client_secret** (str): Planning Analytics Engine (v12) named application secret created via manage service.
         - **api_key** (str): Planning Analytics Engine (v12) API Key from https://cloud.ibm.com/iam/apikeys.
@@ -143,7 +144,7 @@ class RestService:
         - **compress_request_body** (bool): Gzip-compress request bodies at the transport seam. Opt-in. Default: False.
         - **gzip_min_bytes** (int): Minimum (encoded) request body size in bytes to compress. Default: 1024.
         - **gzip_compress_level** (int): Gzip compression level, 1 (fastest) to 9 (smallest). Default: 6.
-        - **keep_authorization_header** (bool): Send the Authorization header on every request, not only the first. Default: False
+        - **keep_authorization_header** (bool): Keep sending the Authorization header after the session starts, instead of relying on the session cookie alone. Only for token-based gateways that validate the token on every request, such as Planning Analytics Workspace's OAuth route. Default: False.
 
         :param kwargs: See description above for all supported arguments
         """
@@ -173,6 +174,7 @@ class RestService:
         self._connection_pool_size = int(kwargs.get("connection_pool_size", self.DEFAULT_CONNECTION_POOL_SIZE))
         self._pool_connections = int(kwargs.get("pool_connections", self.DEFAULT_POOL_CONNECTIONS))
         self._re_connect_on_session_timeout = kwargs.get("re_connect_on_session_timeout", True)
+        self._keep_authorization_header = self.translate_to_boolean(kwargs.get("keep_authorization_header", False))
         self._re_connect_on_remote_disconnect = kwargs.get("re_connect_on_remote_disconnect", True)
         self._remote_disconnect_max_retries = int(kwargs.get("remote_disconnect_max_retries", 5))
         self._remote_disconnect_retry_delay = float(kwargs.get("remote_disconnect_retry_delay", 1))
@@ -185,7 +187,6 @@ class RestService:
         self._compress_request_body = self.translate_to_boolean(kwargs.get("compress_request_body", False))
         self._gzip_min_bytes = max(0, int(kwargs.get("gzip_min_bytes", 1024)))
         self._gzip_compress_level = int(kwargs.get("gzip_compress_level", 6))
-        self._keep_authorization_header = kwargs.get("keep_authorization_header", False)
         # validate the level up front: an out-of-range value otherwise raises a zlib.error deep
         # inside gzip.compress at request time, which is harder to trace back to this kwarg.
         if not 1 <= self._gzip_compress_level <= 9:
@@ -920,6 +921,21 @@ class RestService:
         else:
             return None
 
+    def _resolve_access_token(self):
+        """Return the current access token.
+
+        Supports ``access_token`` being either a plain string or a zero-argument
+        callable. A callable is invoked on every connect and reconnect, so a caller
+        that refreshes tokens (e.g. an OAuth session) can supply a fresh token when
+        TM1py re-establishes a timed-out session, rather than reusing a stale one.
+        """
+        access_token = self._kwargs.get("access_token")
+        if callable(access_token):
+            access_token = access_token()
+        if not access_token:
+            raise ValueError("'access_token' did not resolve to a non-empty token")
+        return access_token
+
     def _start_session(
         self,
         user: str,
@@ -961,7 +977,7 @@ class RestService:
             self.add_http_header("Authorization", "Bearer " + access_token)
 
         elif self._auth_mode == AuthenticationMode.ACCESS_TOKEN:
-            self.add_http_header("Authorization", "Bearer " + self._kwargs.get("access_token"))
+            self.add_http_header("Authorization", "Bearer " + self._resolve_access_token())
 
         # v11 authorization (Basic, CAM) through Headers
         else:
@@ -1043,7 +1059,9 @@ class RestService:
                 self._s.cookies.set("TM1SessionId", session_id)
 
             # After we have session cookie, drop the Authorization Header, unless the
-            # server authenticates every request (an OAuth gateway, such as PAW's).
+            # server authenticates every request rather than only the session-start
+            # request (e.g. an OAuth gateway such as Planning Analytics Workspace's
+            # /api/.../tm1/<database> route). keep_authorization_header leaves it on.
             if not self._keep_authorization_header:
                 self.remove_http_header("Authorization")
 
