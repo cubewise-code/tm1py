@@ -151,11 +151,13 @@ pip install TM1py[keyring]
 ```
 
 ```python
-from TM1py.Utils.PawOAuth import KeyringTokenCache, PawOAuthSession
-
 oauth = PawOAuthSession(
     ...,  # as above
-    cache=KeyringTokenCache("my-env"),  # one key per environment and OAuth client
+    cache="keyring",  # default: "in_memory"
 )
 oauth.login()  # silent refresh if the stored token still works, browser otherwise
 ```
+
+The entry is keyed on the token endpoint, client ID and scope, so each environment and OAuth client gets its own.
+To choose the key yourself, pass `cache=KeyringTokenCache("my-key")` instead. Any other store can be used by passing
+your own `TokenCache` subclass.

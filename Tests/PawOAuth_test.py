@@ -325,6 +325,78 @@ class TestKeyringMissing(unittest.TestCase):
             with self.assertRaisesRegex(ImportError, r"TM1py\[keyring\]"):
                 KeyringTokenCache("env-a")
 
+    def test_cache_keyring_option_without_package(self):
+        with patch.dict(sys.modules, {"keyring": None}):
+            with self.assertRaisesRegex(ImportError, r"TM1py\[keyring\]"):
+                _session(cache="keyring")
+
+
+class TestCacheOption(unittest.TestCase):
+    def setUp(self):
+        patcher = patch.dict(sys.modules, _fake_keyring())
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_in_memory_is_the_default(self):
+        self.assertIsInstance(_session()._cache, InMemoryTokenCache)
+        self.assertIsInstance(_session(cache="in_memory")._cache, InMemoryTokenCache)
+        self.assertIsInstance(_session(cache=None)._cache, InMemoryTokenCache)
+
+    def test_custom_token_cache_is_used_as_is(self):
+        cache = InMemoryTokenCache()
+        self.assertIs(_session(cache=cache)._cache, cache)
+
+    def test_unknown_name_rejected(self):
+        with self.assertRaisesRegex(ValueError, "in_memory"):
+            _session(cache="memory")
+
+    def test_keyring_key_is_derived_from_session_and_safe(self):
+        cache = _session(cache="keyring")._cache
+
+        self.assertIsInstance(cache, KeyringTokenCache)
+        self.assertRegex(cache._key, r"^paw\.example\.com_cid_v0userContext-[0-9a-f]{12}$")
+
+    def test_keyring_key_excludes_client_secret(self):
+        with_secret = _session(cache="keyring", client_secret="s3cret")._cache._key
+        without_secret = _session(cache="keyring")._cache._key
+
+        self.assertEqual(with_secret, without_secret)
+        self.assertNotIn("s3cret", with_secret)
+
+    def test_keyring_key_differs_per_client_scope_and_host(self):
+        def key(**overrides):
+            kwargs = dict(
+                auth_url="https://paw.example.com/oauth2/authorize",
+                token_url="https://paw.example.com/oauth2/token",
+                client_id="cid",
+                redirect_uri="http://127.0.0.1:8080/callback",
+                cache="keyring",
+            )
+            kwargs.update(overrides)
+            return PawOAuthSession(**kwargs)._cache._key
+
+        keys = {
+            key(),
+            key(client_id="other"),
+            key(scope="other"),
+            key(token_url="https://other.example.com/oauth2/token"),
+            # same once unsafe characters are replaced, so only the hash keeps them apart
+            key(client_id="a b"),
+            key(client_id="a/b"),
+        }
+        self.assertEqual(len(keys), 6)
+
+    def test_keyring_cache_survives_into_a_new_session(self):
+        """cache="keyring" in a later process finds the token the first one stored."""
+        first = _session("http://127.0.0.1:8080/callback", cache="keyring")
+        with patch.object(
+            PawOAuth.requests, "post", return_value=_token_response(access_token="a", refresh_token="r1")
+        ):
+            first._exchange_code("abc", "verifier")
+
+        second = _session("http://127.0.0.1:8080/callback", cache="keyring")
+        self.assertEqual(second._cache.load_refresh_token(), "r1")
+
 
 if __name__ == "__main__":
     unittest.main()
