@@ -103,3 +103,52 @@ params = {
 with TM1Service(**params) as tm1:
     print(tm1.server.get_product_version())
 ```
+
+## Additional GET query parameters
+
+Pass a `params` dictionary to service methods that forward keyword arguments to
+`RestService.GET`. For example, with a connected `tm1` instance:
+
+```python
+names = tm1.cubes.get_all_names(
+    params={"$top": 10, "$orderby": "Name"}
+)
+```
+
+This keeps the method's existing `$select=Name` option and adds `$top` and
+`$orderby`. For a direct request, use the REST service:
+
+```python
+response = tm1._tm1_rest.GET(
+    "/Cubes",
+    params={"$select": "Name", "$filter": "Name eq 'Sales'", "$top": 10},
+)
+cubes = response.json()["value"]
+```
+
+Use full parameter names, including the `$` for OData system options. Supply
+unencoded values; `requests` handles URL encoding. Write OData lists as
+comma-separated strings, such as `{"$select": "Name,Rules"}`, and OData boolean
+literals as strings, such as `{"$count": "true"}`. Other value encoding follows
+`requests.params`. The dictionary must have string keys and is not modified.
+Entries with a `None` value are omitted; `$top=0` is retained.
+
+A parameter that is already present in the URL raises `ValueError` before the
+HTTP request, even if its value is identical:
+
+```python
+# Raises ValueError because get_all_names already requests $select=Name:
+tm1.cubes.get_all_names(params={"$select": "Name"})
+```
+
+Names are compared case-sensitively after decoding existing URL parameter names,
+so `%24select` also conflicts with `$select`. Existing filters and expansions
+are neither merged nor replaced. Options inside a nested `$expand` do not
+conflict with options at the outer query level.
+
+This support is limited to GET. Service methods expose it through their existing
+keyword-argument forwarding; a method with multiple internal GET requests may
+apply the parameters to each request. Choose options supported by the endpoint
+that preserve the response fields needed by the service method. The original
+parameters are retained for retries and the initial async request; async polling
+does not inherit them.

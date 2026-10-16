@@ -13,6 +13,7 @@ from http.cookies import SimpleCookie
 from io import BytesIO
 from json import JSONDecodeError
 from typing import Dict, Optional, Tuple, Union
+from urllib.parse import quote, unquote_plus, urlencode, urlsplit
 
 import requests
 import urllib3
@@ -702,6 +703,7 @@ class RestService:
         encoding: str = "utf-8",
         idempotent: bool = True,
         verify_response: bool = True,
+        params: Optional[Dict] = None,
         **kwargs,
     ):
         """Perform a GET request against TM1 instance
@@ -713,8 +715,26 @@ class RestService:
         :param timeout: Number of seconds that the client will wait to receive the first byte.
         :param cancel_at_timeout: Abort operation in TM1 when timeout is reached
         :param encoding:
+        :param params: Additional query parameters as a dictionary with string keys. Use full names such as
+            $filter and unencoded values; spaces are encoded as %20 for TM1. None values are omitted.
+            Python booleans are serialized as lowercase true/false.
+            OData lists such as $select must be comma-separated strings. Names are compared case-sensitively.
+        :raises TypeError: If params is not a dictionary or contains non-string keys.
+        :raises ValueError: If an additional parameter already occurs in the URL, even with the same value.
         :return: response object or async_id
+
+        Examples::
+
+            rest.GET("/Cubes", params={"$select": "Name", "$top": 10})
+            tm1.cubes.get_all_names(params={"$top": 10, "$orderby": "Name"})
+            rest.GET("/Cubes?$select=Name", params={"$select": "Name"})  # raises ValueError
+
+        Service methods support params where they forward keyword arguments to GET. A method with multiple GET
+        requests may apply them to each request. Parameters must suit the endpoint and preserve fields needed by
+        the service method's response processing. Existing OData expressions are not merged or replaced.
         """
+        params = self._prepare_get_params(url, params)
+        request_kwargs = {"params": urlencode(params, doseq=True, quote_via=quote)} if params else {}
 
         return self.request(
             method="get",
@@ -728,7 +748,39 @@ class RestService:
             encoding=encoding,
             idempotent=idempotent,
             verify_response=verify_response,
+            **request_kwargs,
         )
+
+    @staticmethod
+    def _prepare_get_params(url: str, params: Optional[Dict]) -> Dict:
+        """Copy additional GET parameters and reject names already present in the URL."""
+        if params is None:
+            return {}
+        if not isinstance(params, dict) or any(not isinstance(key, str) for key in params):
+            raise TypeError("params must be a dictionary with string keys")
+
+        params = {key: value for key, value in params.items() if value is not None}
+        if not params:
+            return params
+
+        # Split only on '&': older Python versions also treat ';' as a query separator in parse_qsl,
+        # but OData uses semicolons inside nested $expand expressions.
+        existing_names = {unquote_plus(option.partition("=")[0]) for option in urlsplit(url).query.split("&") if option}
+        conflicts = params.keys() & existing_names
+        if conflicts:
+            raise ValueError("Query parameters already present in URL: " + ", ".join(sorted(conflicts)))
+
+        def normalize(value):
+            return str(value).lower() if isinstance(value, bool) else value
+
+        return {
+            key: (
+                [normalize(item) for item in value if item is not None]
+                if isinstance(value, (list, tuple))
+                else normalize(value)
+            )
+            for key, value in params.items()
+        }
 
     def POST(
         self,
