@@ -125,8 +125,19 @@ oauth = PawOAuthSession(
 oauth.login()  # opens the browser once
 
 with TM1Service(
-        base_url="https://<paw-host>/api/v1/tm1/<DatabaseName>",
+        base_url="https://<paw-host>/api/v1/tm1/<DatabaseName>",  # TM1 11; see below for TM1 12
         access_token=oauth.access_token,  # the method itself, not its result
         keep_authorization_header=True) as tm1:
     print(tm1.server.get_product_version())
 ```
+
+The `base_url` must be PAW's API route, which accepts the bearer token:
+
+| Environment | `<paw-host>` | `base_url` |
+|---|---|---|
+| TM1 11 on IBM Cloud | `<env>.planning-analytics.cloud.ibm.com` | `https://<paw-host>/api/v1/tm1/<DatabaseName>` |
+| TM1 12 PAaaS | `<region>.planninganalytics.saas.ibm.com` | `https://<paw-host>/api/<TenantId>/v0/tm1/<DatabaseName>` |
+
+On TM1 11, `/tm1/api/<DatabaseName>` is TM1's own REST endpoint and only accepts CAM authentication, so it rejects
+the token. `keep_authorization_header=True` is required on both: the gateway checks the token on every request,
+not only when the session starts.

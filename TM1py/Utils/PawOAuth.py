@@ -12,8 +12,8 @@ Typical use::
     from TM1py.Utils.PawOAuth import PawOAuthSession
 
     oauth = PawOAuthSession(
-        auth_url="https://paw.example.com/oauth2/authorize",
-        token_url="https://paw.example.com/oauth2/token",
+        auth_url="https://<host>/oauth2/authorize",
+        token_url="https://<host>/oauth2/token",
         client_id="<client id>",
         client_secret=keyring.get_password("paw", "client_secret"),  # caller supplies
         redirect_uri="http://127.0.0.1:8080/callback",
@@ -21,11 +21,20 @@ Typical use::
     oauth.login()  # opens a browser once
 
     with TM1Service(
-        base_url="https://paw.example.com/api/v1/tm1/<database>",
+        base_url="https://<host>/api/v1/tm1/<database>",  # see base URLs below
         access_token=oauth.access_token,  # a callable: resolved on every (re)connect
         keep_authorization_header=True,  # the PAW gateway checks every request
     ) as tm1:
         print(tm1.whoami)
+
+``<host>`` is the host you sign in to PAW on. The ``base_url`` must be PAW's API
+route, which accepts the bearer token, not TM1's own REST endpoint:
+
+* TM1 11 on IBM Cloud (``<env>.planning-analytics.cloud.ibm.com``):
+  ``https://<host>/api/v1/tm1/<database>``. The ``/tm1/api/<database>`` route only
+  accepts CAM authentication.
+* TM1 12 Planning Analytics as a Service (``<region>.planninganalytics.saas.ibm.com``):
+  ``https://<host>/api/<tenant>/v0/tm1/<database>``.
 
 Design notes:
 
