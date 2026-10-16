@@ -6,7 +6,9 @@ It is deliberately kept outside ``RestService``: the flow is interactive (it ope
 browser), so the calling application decides when an interactive sign-in is
 acceptable, and TM1py itself stays usable headless.
 
-Typical use::
+Most callers don't need this module directly: ``TM1Service(base_url=...,
+use_paw_oauth=True, paw_client_id=..., paw_client_secret=...)`` creates and signs in
+a session from the ``base_url``. Use it directly for full control::
 
     from TM1py import TM1Service
     from TM1py.Utils.PawOAuth import PawOAuthSession
@@ -69,6 +71,8 @@ import requests
 __all__ = ["PawOAuthSession", "TokenCache", "InMemoryTokenCache", "KeyringTokenCache", "OAuthError"]
 
 DEFAULT_SCOPE = "v0userContext"
+# Must be registered on the PAW OAuth client; the listener binds to its port.
+DEFAULT_REDIRECT_URI = "http://127.0.0.1:8000/oauth/paw/callback"
 # Refresh a little before the token actually expires, to absorb clock skew and the
 # round-trip of the request the token is about to be used on.
 EXPIRY_SKEW_SECONDS = 60
@@ -232,7 +236,7 @@ class PawOAuthSession:
         auth_url: str,
         token_url: str,
         client_id: str,
-        redirect_uri: str,
+        redirect_uri: str = DEFAULT_REDIRECT_URI,
         client_secret: Optional[str] = None,
         scope: str = DEFAULT_SCOPE,
         cache: Union[str, TokenCache, None] = "in_memory",
@@ -243,9 +247,9 @@ class PawOAuthSession:
         :param auth_url: The deployment's /oauth2/authorize endpoint.
         :param token_url: The deployment's /oauth2/token endpoint.
         :param client_id: The OAuth client ID.
-        :param redirect_uri: A loopback redirect registered on the client, e.g.
-            "http://127.0.0.1:8080/callback". Its host must be 127.0.0.1 or [::1]
-            (not localhost); its port is where the temporary listener binds.
+        :param redirect_uri: A loopback redirect registered on the client. Defaults to
+            "http://127.0.0.1:8000/oauth/paw/callback". Its host must be 127.0.0.1 or
+            [::1] (not localhost); its port is where the temporary listener binds.
         :param client_secret: The client secret, or None for a public client. The caller
             supplies this (e.g. from keyring); it is never read from storage here.
         :param scope: OAuth scope.
@@ -316,6 +320,27 @@ class PawOAuthSession:
         digest = hashlib.sha256(identity.encode("utf-8")).hexdigest()[:12]
         readable = "_".join((urlparse(self._token_url).netloc, self._client_id, self._scope))
         return f"{re.sub(r'[^A-Za-z0-9._-]', '_', readable)}-{digest}"
+
+    @classmethod
+    def from_base_url(cls, base_url: str, client_id: str, **kwargs) -> "PawOAuthSession":
+        """Create a session for the PAW host that a TM1 ``base_url`` points at.
+
+        PAW serves its OAuth endpoints at ``/oauth2/authorize`` and ``/oauth2/token`` on
+        the same host as its TM1 API route, e.g. ``https://<host>/api/v1/tm1/<database>``
+        on TM1 11 cloud or ``https://<host>/api/<tenant>/v0/tm1/<database>`` on TM1 12.
+
+        :param base_url: The TM1 base URL, as passed to ``TM1Service``.
+        :param client_id: The OAuth client ID.
+        :param kwargs: Any other ``PawOAuthSession`` arguments.
+        :raises ValueError: If ``base_url`` has no scheme or host.
+        """
+        parsed = urlparse(base_url or "")
+        if not parsed.scheme or not parsed.netloc:
+            raise ValueError(f"Cannot derive PAW OAuth endpoints from base_url {base_url!r}")
+        origin = f"{parsed.scheme}://{parsed.netloc}"
+        return cls(
+            auth_url=f"{origin}/oauth2/authorize", token_url=f"{origin}/oauth2/token", client_id=client_id, **kwargs
+        )
 
     # -- public API ---------------------------------------------------------------
 

@@ -106,28 +106,20 @@ with TM1Service(**params) as tm1:
 
 ### Planning Analytics Workspace with OAuth sign-in
 
-`access_token` also accepts a zero-argument callable. TM1py calls it on every connect and reconnect, so a token
-that has expired is replaced after a session timeout. `PawOAuthSession` signs the user in through the browser
-once (OAuth authorization code with PKCE) and refreshes the token from then on. The redirect URI must be a
-loopback address (`127.0.0.1` or `[::1]`, not `localhost`) registered on the OAuth client.
+`use_paw_oauth` signs the user in to PAW through the browser (OAuth authorization code with PKCE) and connects
+through PAW's API route. The OAuth endpoints are derived from `base_url`, and the token is refreshed automatically
+from then on, including when TM1py reconnects after a session timeout.
 
 ```python
-from TM1py import TM1Service
-from TM1py.Utils.PawOAuth import PawOAuthSession
+import os
 
-oauth = PawOAuthSession(
-    auth_url="https://<paw-host>/oauth2/authorize",
-    token_url="https://<paw-host>/oauth2/token",
-    client_id="<ClientId>",
-    client_secret="<ClientSecret>",  # or None for a public client
-    redirect_uri="http://127.0.0.1:8080/callback",
-)
-oauth.login()  # opens the browser once
+from TM1py import TM1Service
 
 with TM1Service(
         base_url="https://<paw-host>/api/v1/tm1/<DatabaseName>",  # TM1 11; see below for TM1 12
-        access_token=oauth.access_token,  # the method itself, not its result
-        keep_authorization_header=True) as tm1:
+        use_paw_oauth=True,
+        paw_client_id="<ClientId>",
+        paw_client_secret=os.environ["PAW_CLIENT_SECRET"]) as tm1:  # omit for a public client
     print(tm1.server.get_product_version())
 ```
 
@@ -139,25 +131,56 @@ The `base_url` must be PAW's API route, which accepts the bearer token:
 | TM1 12 PAaaS | `<region>.planninganalytics.saas.ibm.com` | `https://<paw-host>/api/<TenantId>/v0/tm1/<DatabaseName>` |
 
 On TM1 11, `/tm1/api/<DatabaseName>` is TM1's own REST endpoint and only accepts CAM authentication, so it rejects
-the token. `keep_authorization_header=True` is required on both: the gateway checks the token on every request,
-not only when the session starts.
+the token. `use_paw_oauth` also turns on `keep_authorization_header`, because the gateway checks the token on every
+request, not only when the session starts.
 
-By default the refresh token is kept in memory, so every new process opens the browser again. To sign in once and
-refresh silently in later runs, keep it in the operating system's credential store (Windows Credential Manager,
-macOS Keychain) with the optional `keyring` package:
+The OAuth client must have `http://127.0.0.1:8000/oauth/paw/callback` registered as a redirect URI. To use another
+loopback address (`127.0.0.1` or `[::1]`, not `localhost`), for example if port 8000 is in use, pass
+`paw_redirect_uri`. `paw_client_id` is the PAW OAuth client; it is unrelated to `application_client_id`, which is a
+TM1 12 engine application client.
+
+#### Signing in once across runs
+
+With `use_paw_oauth=True` the refresh token is kept in memory, so every new process opens the browser again. To
+sign in once and refresh silently in later runs, keep it in the operating system's credential store (Windows
+Credential Manager, macOS Keychain) with the optional `keyring` package:
 
 ```bash
 pip install TM1py[keyring]
 ```
 
 ```python
-oauth = PawOAuthSession(
-    ...,  # as above
-    cache="keyring",  # default: "in_memory"
-)
-oauth.login()  # silent refresh if the stored token still works, browser otherwise
+with TM1Service(..., use_paw_oauth="keyring") as tm1:  # instead of True
+    ...
 ```
 
 The entry is keyed on the token endpoint, client ID and scope, so each environment and OAuth client gets its own.
-To choose the key yourself, pass `cache=KeyringTokenCache("my-key")` instead. Any other store can be used by passing
-your own `TokenCache` subclass.
+To choose the key yourself, pass `use_paw_oauth=KeyringTokenCache("my-key")`; any other store can be used by
+passing your own `TokenCache` subclass.
+
+#### Using `PawOAuthSession` directly
+
+`access_token` also accepts a zero-argument callable, which TM1py calls on every connect and reconnect. For full
+control over the sign-in, for example to sign in before creating several `TM1Service` instances, create the session
+yourself and pass its `access_token` method:
+
+```python
+import os
+
+from TM1py import TM1Service
+from TM1py.Utils.PawOAuth import PawOAuthSession
+
+oauth = PawOAuthSession.from_base_url(
+    "https://<paw-host>/api/v1/tm1/<DatabaseName>",
+    client_id="<ClientId>",
+    client_secret=os.environ["PAW_CLIENT_SECRET"],
+    cache="keyring",  # or "in_memory" (default), or a TokenCache
+)
+oauth.login()  # opens the browser, or refreshes silently from the cache
+
+with TM1Service(
+        base_url="https://<paw-host>/api/v1/tm1/<DatabaseName>",
+        access_token=oauth.access_token,  # the method itself, not its result
+        keep_authorization_header=True) as tm1:
+    print(tm1.server.get_product_version())
+```
