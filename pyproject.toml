@@ -37,6 +37,7 @@ dependencies = [
 
 [project.optional-dependencies]
 pandas = ["pandas"]
+keyring = ["keyring"]
 dev = [
     "pytest",
     "pytest-xdist",

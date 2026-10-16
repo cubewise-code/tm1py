@@ -107,6 +107,7 @@ class RestService:
         - **namespace** (str): Optional CAM namespace.
         - **cam_passport** (str): The CAM passport.
         - **session_id** (str): TM1SessionId, e.g. q7O6e1w49AixeuLVxJ1GZg.
+        - **access_token** (str|callable): Bearer token, or a zero-argument callable returning one. A callable is invoked on every connect and reconnect, so a caller that refreshes tokens (e.g. an OAuth client) supplies a fresh token after a session timeout.
         - **application_client_id** (str): Planning Analytics Engine (v12) named application client ID created via manage service.
         - **application_client_secret** (str): Planning Analytics Engine (v12) named application secret created via manage service.
         - **api_key** (str): Planning Analytics Engine (v12) API Key from https://cloud.ibm.com/iam/apikeys.
@@ -143,11 +144,18 @@ class RestService:
         - **compress_request_body** (bool): Gzip-compress request bodies at the transport seam. Opt-in. Default: False.
         - **gzip_min_bytes** (int): Minimum (encoded) request body size in bytes to compress. Default: 1024.
         - **gzip_compress_level** (int): Gzip compression level, 1 (fastest) to 9 (smallest). Default: 6.
+        - **keep_authorization_header** (bool): Keep sending the Authorization header after the session starts, instead of relying on the session cookie alone. Only for token-based gateways that validate the token on every request, such as Planning Analytics Workspace's OAuth route. Default: False.
+        - **use_paw_oauth** (bool|str|TokenCache): Sign in to Planning Analytics Workspace through the browser (OAuth with PKCE) and connect via PAW's API route given in base_url. True or 'in_memory' keeps the refresh token for this process only; 'keyring' keeps it in the OS credential store (needs the optional keyring package), so later runs sign in silently; a TokenCache instance uses that store. Implies keep_authorization_header=True. Default: False.
+        - **paw_client_id** (str): PAW OAuth client ID. Required with use_paw_oauth. Not the same as application_client_id, which is a TM1 12 engine application client.
+        - **paw_client_secret** (str): PAW OAuth client secret, or omit for a public client.
+        - **paw_redirect_uri** (str): Loopback redirect URI registered on the PAW OAuth client. Default: "http://127.0.0.1:8000/oauth/paw/callback".
 
         :param kwargs: See description above for all supported arguments
         """
         # store kwargs for future use e.g. re_connect on 401 session timeout
         self._kwargs = kwargs
+        # opt-in interactive PAW sign-in: supplies access_token before the auth mode is determined
+        self._paw_oauth = self._setup_paw_oauth()
 
         # core arguments for connection
         self._ssl = self.translate_to_boolean(kwargs.get("ssl", True))
@@ -172,6 +180,7 @@ class RestService:
         self._connection_pool_size = int(kwargs.get("connection_pool_size", self.DEFAULT_CONNECTION_POOL_SIZE))
         self._pool_connections = int(kwargs.get("pool_connections", self.DEFAULT_POOL_CONNECTIONS))
         self._re_connect_on_session_timeout = kwargs.get("re_connect_on_session_timeout", True)
+        self._keep_authorization_header = self.translate_to_boolean(kwargs.get("keep_authorization_header", False))
         self._re_connect_on_remote_disconnect = kwargs.get("re_connect_on_remote_disconnect", True)
         self._remote_disconnect_max_retries = int(kwargs.get("remote_disconnect_max_retries", 5))
         self._remote_disconnect_retry_delay = float(kwargs.get("remote_disconnect_retry_delay", 1))
@@ -918,6 +927,78 @@ class RestService:
         else:
             return None
 
+    def _setup_paw_oauth(self):
+        """Sign in to PAW through the browser when ``use_paw_oauth`` is set.
+
+        Derives the OAuth endpoints from ``base_url``, runs ``PawOAuthSession.login()``
+        (silent if a cached refresh token still works), and supplies the session's
+        ``access_token`` callable as ``access_token``, so the usual ACCESS_TOKEN mode and
+        reconnect handling apply. Returns None when ``use_paw_oauth`` is off.
+        """
+        cache = self._paw_oauth_cache(self._kwargs.get("use_paw_oauth"))
+        if cache is None:
+            return None
+        if self._kwargs.get("access_token"):
+            raise ValueError("'use_paw_oauth' and 'access_token' cannot be combined")
+        if not self._kwargs.get("base_url"):
+            raise ValueError("'use_paw_oauth' requires 'base_url', e.g. 'https://<paw-host>/api/v1/tm1/<database>'")
+        if not self._kwargs.get("paw_client_id"):
+            raise ValueError("'use_paw_oauth' requires 'paw_client_id'")
+
+        from TM1py.Utils.PawOAuth import DEFAULT_REDIRECT_URI, PawOAuthSession
+
+        oauth = PawOAuthSession.from_base_url(
+            self._kwargs["base_url"],
+            client_id=self._kwargs["paw_client_id"],
+            client_secret=self._kwargs.get("paw_client_secret"),
+            redirect_uri=self._kwargs.get("paw_redirect_uri") or DEFAULT_REDIRECT_URI,
+            cache=cache,
+        )
+        oauth.login()
+        self._kwargs["access_token"] = oauth.access_token
+        # the PAW gateway checks the token on every request, not only at session start
+        self._kwargs.setdefault("keep_authorization_header", True)
+        return oauth
+
+    @staticmethod
+    def _paw_oauth_cache(use_paw_oauth):
+        """Map ``use_paw_oauth`` to a PawOAuthSession cache, or None when it is off.
+
+        Accepts booleans and their config.ini spellings (True means "in_memory"), the cache
+        names "in_memory" and "keyring", or a TokenCache instance.
+        """
+        if use_paw_oauth is None or use_paw_oauth is False:
+            return None
+        if use_paw_oauth is True:
+            return "in_memory"
+        if isinstance(use_paw_oauth, str):
+            value = use_paw_oauth.replace(" ", "").lower()
+            if value in ("", "false"):
+                return None
+            if value == "true":
+                return "in_memory"
+            if value in ("in_memory", "keyring"):
+                return value
+            raise ValueError(
+                f"'use_paw_oauth' must be True, False, 'in_memory', 'keyring' or a TokenCache, not {use_paw_oauth!r}"
+            )
+        return use_paw_oauth
+
+    def _resolve_access_token(self):
+        """Return the current access token.
+
+        Supports ``access_token`` being either a plain string or a zero-argument
+        callable. A callable is invoked on every connect and reconnect, so a caller
+        that refreshes tokens (e.g. an OAuth session) can supply a fresh token when
+        TM1py re-establishes a timed-out session, rather than reusing a stale one.
+        """
+        access_token = self._kwargs.get("access_token")
+        if callable(access_token):
+            access_token = access_token()
+        if not access_token:
+            raise ValueError("'access_token' did not resolve to a non-empty token")
+        return access_token
+
     def _start_session(
         self,
         user: str,
@@ -959,7 +1040,7 @@ class RestService:
             self.add_http_header("Authorization", "Bearer " + access_token)
 
         elif self._auth_mode == AuthenticationMode.ACCESS_TOKEN:
-            self.add_http_header("Authorization", "Bearer " + self._kwargs.get("access_token"))
+            self.add_http_header("Authorization", "Bearer " + self._resolve_access_token())
 
         # v11 authorization (Basic, CAM) through Headers
         else:
@@ -1040,8 +1121,12 @@ class RestService:
             if session_id is not None:
                 self._s.cookies.set("TM1SessionId", session_id)
 
-            # After we have session cookie, drop the Authorization Header
-            self.remove_http_header("Authorization")
+            # After we have session cookie, drop the Authorization Header, unless the
+            # server authenticates every request rather than only the session-start
+            # request (e.g. an OAuth gateway such as Planning Analytics Workspace's
+            # /api/.../tm1/<database> route). keep_authorization_header leaves it on.
+            if not self._keep_authorization_header:
+                self.remove_http_header("Authorization")
 
     def _url_and_body(self, url: str, data: str, encoding: str = "utf-8") -> Tuple[str, bytes]:
         """create proper url and payload"""
