@@ -141,3 +141,21 @@ The `base_url` must be PAW's API route, which accepts the bearer token:
 On TM1 11, `/tm1/api/<DatabaseName>` is TM1's own REST endpoint and only accepts CAM authentication, so it rejects
 the token. `keep_authorization_header=True` is required on both: the gateway checks the token on every request,
 not only when the session starts.
+
+By default the refresh token is kept in memory, so every new process opens the browser again. To sign in once and
+refresh silently in later runs, keep it in the operating system's credential store (Windows Credential Manager,
+macOS Keychain) with the optional `keyring` package:
+
+```bash
+pip install TM1py[keyring]
+```
+
+```python
+from TM1py.Utils.PawOAuth import KeyringTokenCache, PawOAuthSession
+
+oauth = PawOAuthSession(
+    ...,  # as above
+    cache=KeyringTokenCache("my-env"),  # one key per environment and OAuth client
+)
+oauth.login()  # silent refresh if the stored token still works, browser otherwise
+```

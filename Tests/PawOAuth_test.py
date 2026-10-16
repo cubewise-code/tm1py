@@ -2,8 +2,10 @@ import base64
 import hashlib
 import json
 import socket
+import sys
 import threading
 import time
+import types
 import unittest
 import urllib.request
 from unittest.mock import patch
@@ -12,7 +14,43 @@ from urllib.parse import parse_qs, urlparse
 import requests
 
 from TM1py.Utils import PawOAuth
-from TM1py.Utils.PawOAuth import InMemoryTokenCache, OAuthError, PawOAuthSession
+from TM1py.Utils.PawOAuth import (
+    InMemoryTokenCache,
+    KeyringTokenCache,
+    OAuthError,
+    PawOAuthSession,
+)
+
+
+def _fake_keyring():
+    """An in-memory stand-in for the optional keyring package, with its real API shape."""
+    store = {}
+    errors = types.ModuleType("keyring.errors")
+
+    class PasswordDeleteError(Exception):
+        pass
+
+    errors.PasswordDeleteError = PasswordDeleteError
+    module = types.ModuleType("keyring")
+    module.errors = errors
+    module.store = store
+    module.get_password = lambda service, key: store.get((service, key))
+
+    def set_password(service, key, value):
+        # Windows Credential Manager's limit: 2560 bytes, i.e. 1280 UTF-16 characters
+        if len(value) > 1280:
+            raise OSError(1783, "CredWrite", "The stub received bad data.")
+        store[(service, key)] = value
+
+    module.set_password = set_password
+
+    def delete_password(service, key):
+        if (service, key) not in store:
+            raise PasswordDeleteError("not found")
+        del store[(service, key)]
+
+    module.delete_password = delete_password
+    return {"keyring": module, "keyring.errors": errors}
 
 
 def _free_port(host="127.0.0.1"):
@@ -209,6 +247,83 @@ class TestTokens(unittest.TestCase):
         with patch.object(PawOAuth.requests, "post", return_value=response):
             with self.assertRaises(OAuthError):
                 oauth._exchange_code("abc", "verifier")
+
+
+class TestKeyringTokenCache(unittest.TestCase):
+    def setUp(self):
+        self.modules = _fake_keyring()
+        patcher = patch.dict(sys.modules, self.modules)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_round_trip_and_clear(self):
+        cache = KeyringTokenCache("env-a")
+        self.assertIsNone(cache.load_refresh_token())
+
+        cache.save_refresh_token("r1")
+        self.assertEqual(cache.load_refresh_token(), "r1")
+
+        cache.save_refresh_token(None)
+        self.assertIsNone(cache.load_refresh_token())
+        self.assertEqual(self.modules["keyring"].store, {})
+
+    def test_token_longer_than_windows_limit_is_chunked(self):
+        token = "t" * 3500
+        cache = KeyringTokenCache("env-a")
+        cache.save_refresh_token(token)
+
+        self.assertEqual(cache.load_refresh_token(), token)
+        self.assertEqual(len(self.modules["keyring"].store), 1 + 4)  # count + 4 chunks
+
+    def test_shorter_token_removes_stale_chunks(self):
+        cache = KeyringTokenCache("env-a")
+        cache.save_refresh_token("t" * 3500)
+        cache.save_refresh_token("short")
+
+        self.assertEqual(cache.load_refresh_token(), "short")
+        self.assertEqual(len(self.modules["keyring"].store), 1 + 1)
+
+    def test_missing_chunk_reads_as_no_token(self):
+        cache = KeyringTokenCache("env-a")
+        cache.save_refresh_token("t" * 3500)
+        del self.modules["keyring"].store[(KeyringTokenCache.DEFAULT_SERVICE, "env-a#2")]
+
+        self.assertIsNone(cache.load_refresh_token())
+
+    def test_clearing_when_nothing_stored_is_quiet(self):
+        KeyringTokenCache("env-a").save_refresh_token(None)
+
+    def test_keys_are_separate(self):
+        KeyringTokenCache("env-a").save_refresh_token("a")
+        KeyringTokenCache("env-b").save_refresh_token("b")
+        self.assertEqual(KeyringTokenCache("env-a").load_refresh_token(), "a")
+        self.assertEqual(KeyringTokenCache("env-b").load_refresh_token(), "b")
+
+    def test_empty_key_rejected(self):
+        with self.assertRaises(ValueError):
+            KeyringTokenCache("")
+
+    def test_new_session_refreshes_silently_from_stored_token(self):
+        """The point of the cache: a later process signs in without the browser."""
+        KeyringTokenCache("env-a").save_refresh_token("stored")
+        oauth = _session(cache=KeyringTokenCache("env-a"))
+        response = _token_response(access_token="a1", refresh_token="rotated", expires_in=3600)
+
+        with patch.object(PawOAuth.requests, "post", return_value=response) as post, patch.object(
+            PawOAuth.webbrowser, "open"
+        ) as browser:
+            oauth.login()
+
+        browser.assert_not_called()
+        self.assertEqual(post.call_args[1]["data"]["refresh_token"], "stored")
+        self.assertEqual(KeyringTokenCache("env-a").load_refresh_token(), "rotated")
+
+
+class TestKeyringMissing(unittest.TestCase):
+    def test_clear_error_when_keyring_not_installed(self):
+        with patch.dict(sys.modules, {"keyring": None}):
+            with self.assertRaisesRegex(ImportError, r"TM1py\[keyring\]"):
+                KeyringTokenCache("env-a")
 
 
 if __name__ == "__main__":

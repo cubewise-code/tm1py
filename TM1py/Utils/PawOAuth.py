@@ -42,9 +42,11 @@ Design notes:
   are unaffected, so it never needs per-server configuration.
 * The client secret is a parameter, not fetched here. The caller reads it (e.g. from
   ``keyring``) or passes ``None`` for a public client.
-* Refresh-token caching is pluggable and defaults to in-memory. Pass a ``TokenCache``
-  to keep the refresh token between processes.
-* Standard library only, apart from ``requests`` for the token calls.
+* Refresh-token caching is pluggable and defaults to in-memory. Pass
+  ``KeyringTokenCache`` (needs the optional ``keyring`` package) or your own
+  ``TokenCache`` to keep the refresh token between processes.
+* Standard library only, apart from ``requests`` for the token calls and the
+  optional ``keyring``.
 """
 
 from __future__ import annotations
@@ -63,7 +65,7 @@ from urllib.parse import parse_qs, urlencode, urlparse
 
 import requests
 
-__all__ = ["PawOAuthSession", "TokenCache", "InMemoryTokenCache", "OAuthError"]
+__all__ = ["PawOAuthSession", "TokenCache", "InMemoryTokenCache", "KeyringTokenCache", "OAuthError"]
 
 DEFAULT_SCOPE = "v0userContext"
 # Refresh a little before the token actually expires, to absorb clock skew and the
@@ -102,6 +104,78 @@ class InMemoryTokenCache(TokenCache):
 
     def save_refresh_token(self, refresh_token: Optional[str]) -> None:
         self._refresh_token = refresh_token
+
+
+class KeyringTokenCache(TokenCache):
+    """Keeps the refresh token in the operating system's credential store via ``keyring``.
+
+    With this cache, ``login()`` refreshes silently in later processes instead of
+    opening the browser, until the refresh token expires or is revoked. On Windows the
+    token goes to Credential Manager, on macOS to Keychain.
+
+    ``keyring`` is an optional dependency: ``pip install TM1py[keyring]``.
+    """
+
+    DEFAULT_SERVICE = "TM1py.PawOAuth"
+    # Windows Credential Manager rejects values over 2560 bytes (1280 UTF-16 characters),
+    # and refresh tokens can be longer, so the token is stored in chunks: "<key>" holds
+    # the chunk count and "<key>#<n>" holds each chunk.
+    CHUNK_SIZE = 1000
+
+    def __init__(self, key: str, service: str = DEFAULT_SERVICE) -> None:
+        """
+        :param key: Identifies this sign-in among others in the store, e.g. one per
+            environment and client ("coffeeco-v11"). Tokens for different hosts or
+            clients must use different keys.
+        :param service: The keyring service name the token is stored under.
+        :raises ImportError: If ``keyring`` is not installed.
+        """
+        try:
+            import keyring
+            import keyring.errors
+        except ImportError as error:
+            raise ImportError(
+                "KeyringTokenCache requires the optional 'keyring' package: pip install TM1py[keyring]"
+            ) from error
+        if not key:
+            raise ValueError("key is required")
+        self._keyring = keyring
+        self._key = key
+        self._service = service
+
+    def load_refresh_token(self) -> Optional[str]:
+        count = self._chunk_count()
+        if count is None:
+            return None
+        chunks = [self._keyring.get_password(self._service, self._chunk_key(n)) for n in range(count)]
+        if any(chunk is None for chunk in chunks):
+            return None  # partially written or partially deleted: treat as no token
+        return "".join(chunks)
+
+    def save_refresh_token(self, refresh_token: Optional[str]) -> None:
+        self._clear()
+        if not refresh_token:
+            return
+        chunks = [refresh_token[i : i + self.CHUNK_SIZE] for i in range(0, len(refresh_token), self.CHUNK_SIZE)]
+        for n, chunk in enumerate(chunks):
+            self._keyring.set_password(self._service, self._chunk_key(n), chunk)
+        # Written last, so an interrupted save never points at missing chunks.
+        self._keyring.set_password(self._service, self._key, str(len(chunks)))
+
+    def _chunk_key(self, n: int) -> str:
+        return f"{self._key}#{n}"
+
+    def _chunk_count(self) -> Optional[int]:
+        count = self._keyring.get_password(self._service, self._key)
+        return int(count) if count and count.isdigit() else None
+
+    def _clear(self) -> None:
+        count = self._chunk_count() or 0
+        for name in [self._key] + [self._chunk_key(n) for n in range(count)]:
+            try:
+                self._keyring.delete_password(self._service, name)
+            except self._keyring.errors.PasswordDeleteError:
+                pass  # nothing stored
 
 
 class _RedirectHandler(http.server.BaseHTTPRequestHandler):
