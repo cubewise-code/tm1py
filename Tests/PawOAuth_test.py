@@ -1,0 +1,402 @@
+import base64
+import hashlib
+import json
+import socket
+import sys
+import threading
+import time
+import types
+import unittest
+import urllib.request
+from unittest.mock import patch
+from urllib.parse import parse_qs, urlparse
+
+import requests
+
+from TM1py.Utils import PawOAuth
+from TM1py.Utils.PawOAuth import (
+    InMemoryTokenCache,
+    KeyringTokenCache,
+    OAuthError,
+    PawOAuthSession,
+)
+
+
+def _fake_keyring():
+    """An in-memory stand-in for the optional keyring package, with its real API shape."""
+    store = {}
+    errors = types.ModuleType("keyring.errors")
+
+    class PasswordDeleteError(Exception):
+        pass
+
+    errors.PasswordDeleteError = PasswordDeleteError
+    module = types.ModuleType("keyring")
+    module.errors = errors
+    module.store = store
+    module.get_password = lambda service, key: store.get((service, key))
+
+    def set_password(service, key, value):
+        # Windows Credential Manager's limit: 2560 bytes, i.e. 1280 UTF-16 characters
+        if len(value) > 1280:
+            raise OSError(1783, "CredWrite", "The stub received bad data.")
+        store[(service, key)] = value
+
+    module.set_password = set_password
+
+    def delete_password(service, key):
+        if (service, key) not in store:
+            raise PasswordDeleteError("not found")
+        del store[(service, key)]
+
+    module.delete_password = delete_password
+    return {"keyring": module, "keyring.errors": errors}
+
+
+def _free_port(host="127.0.0.1"):
+    family = socket.AF_INET6 if ":" in host else socket.AF_INET
+    with socket.socket(family) as s:
+        s.bind((host, 0))
+        return s.getsockname()[1]
+
+
+def _ipv6_available():
+    try:
+        _free_port("::1")
+        return True
+    except OSError:
+        return False
+
+
+def _session(redirect_uri=None, **kwargs):
+    redirect_uri = redirect_uri or f"http://127.0.0.1:{_free_port()}/callback"
+    return PawOAuthSession(
+        auth_url="https://paw.example.com/oauth2/authorize",
+        token_url="https://paw.example.com/oauth2/token",
+        client_id="cid",
+        redirect_uri=redirect_uri,
+        **kwargs,
+    )
+
+
+def _token_response(status=200, **body):
+    response = requests.Response()
+    response.status_code = status
+    response._content = json.dumps(body).encode("utf-8")
+    return response
+
+
+class _FakeBrowser:
+    """Stands in for webbrowser.open: follows the redirect back to the listener at once."""
+
+    def __init__(self, preconnect=False, query=None):
+        self.preconnect = preconnect
+        self.query = query
+
+    def __call__(self, url):
+        params = parse_qs(urlparse(url).query)
+        redirect = params["redirect_uri"][0]
+        query = self.query or f"code=abc&state={params['state'][0]}"
+        target = urlparse(redirect)
+
+        def follow():
+            idle = None
+            if self.preconnect:  # a speculative connection that never sends anything
+                idle = socket.create_connection((target.hostname, target.port))
+            urllib.request.urlopen(f"{redirect}?{query}", timeout=30).read()
+            if idle:
+                idle.close()
+
+        # No delay: the listener must already be bound when the browser opens.
+        threading.Thread(target=follow, daemon=True).start()
+        return True
+
+
+class TestRedirectValidation(unittest.TestCase):
+    def test_localhost_rejected(self):
+        with self.assertRaises(ValueError):
+            _session("http://localhost:8080/callback")
+
+    def test_https_rejected(self):
+        with self.assertRaises(ValueError):
+            _session("https://127.0.0.1:8080/callback")
+
+    def test_port_required(self):
+        with self.assertRaises(ValueError):
+            _session("http://127.0.0.1/callback")
+
+    def test_missing_client_id_rejected(self):
+        with self.assertRaises(ValueError):
+            PawOAuthSession("https://a", "https://t", "", "http://127.0.0.1:8080/callback")
+
+
+class TestRedirectListener(unittest.TestCase):
+    def _authorize(self, oauth, browser, listener_timeout=10):
+        with patch.object(PawOAuth.webbrowser, "open", browser):
+            return oauth._authorize(open_browser=True, listener_timeout=listener_timeout)
+
+    def test_instant_redirect_is_captured(self):
+        code, verifier = self._authorize(_session(), _FakeBrowser())
+        self.assertEqual(code, "abc")
+        self.assertTrue(verifier)
+
+    def test_idle_browser_connection_does_not_block_listener(self):
+        start = time.monotonic()
+        code, _ = self._authorize(_session(), _FakeBrowser(preconnect=True), listener_timeout=30)
+        self.assertEqual(code, "abc")
+        self.assertLess(time.monotonic() - start, 10)
+
+    @unittest.skipUnless(_ipv6_available(), "IPv6 loopback not available")
+    def test_ipv6_loopback(self):
+        oauth = _session(f"http://[::1]:{_free_port('::1')}/callback")
+        code, _ = self._authorize(oauth, _FakeBrowser())
+        self.assertEqual(code, "abc")
+
+    def test_port_in_use_raises_oauth_error(self):
+        with socket.socket() as busy:
+            busy.bind(("127.0.0.1", 0))
+            busy.listen()
+            port = busy.getsockname()[1]
+            with self.assertRaisesRegex(OAuthError, str(port)):
+                _session(f"http://127.0.0.1:{port}/callback")._open_listener()
+
+    def test_no_redirect_times_out(self):
+        with self.assertRaisesRegex(OAuthError, "No redirect received"):
+            self._authorize(_session(), lambda url: True, listener_timeout=2)
+
+    def test_state_mismatch_rejected(self):
+        with self.assertRaisesRegex(OAuthError, "State"):
+            self._authorize(_session(), _FakeBrowser(query="code=abc&state=forged"))
+
+    def test_authorization_error_reported(self):
+        with self.assertRaisesRegex(OAuthError, "access_denied"):
+            self._authorize(_session(), _FakeBrowser(query="error=access_denied"))
+
+
+class TestTokens(unittest.TestCase):
+    def test_pkce_challenge_matches_verifier(self):
+        verifier, challenge = PawOAuthSession._make_verifier_and_challenge()
+        expected = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode()
+        self.assertEqual(challenge, expected)
+        self.assertTrue(43 <= len(verifier) <= 128)
+
+    def test_access_token_without_login_raises(self):
+        with self.assertRaises(OAuthError):
+            _session().access_token()
+
+    def test_login_with_cached_refresh_token_skips_browser(self):
+        cache = InMemoryTokenCache()
+        cache.save_refresh_token("r1")
+        oauth = _session(cache=cache)
+        response = _token_response(access_token="a1", refresh_token="r2", expires_in=3600)
+
+        with patch.object(PawOAuth.requests, "post", return_value=response) as post, patch.object(
+            PawOAuth.webbrowser, "open"
+        ) as browser:
+            oauth.login()
+
+        browser.assert_not_called()
+        self.assertEqual(post.call_args[1]["data"]["grant_type"], "refresh_token")
+        self.assertEqual(oauth.access_token(), "a1")
+        self.assertEqual(cache.load_refresh_token(), "r2")
+
+    def test_expired_access_token_is_refreshed(self):
+        cache = InMemoryTokenCache()
+        cache.save_refresh_token("r1")
+        oauth = _session(cache=cache)
+        responses = [
+            _token_response(access_token="short", refresh_token="r2", expires_in=1),
+            _token_response(access_token="fresh", expires_in=3600),
+        ]
+
+        with patch.object(PawOAuth.requests, "post", side_effect=responses):
+            oauth.login()
+            # expires_in=1 is inside the refresh margin, so the next call refreshes
+            self.assertEqual(oauth.access_token(), "fresh")
+
+        self.assertEqual(cache.load_refresh_token(), "r2")
+
+    def test_public_client_sends_client_id_in_body(self):
+        oauth = _session()
+        with patch.object(PawOAuth.requests, "post", return_value=_token_response(access_token="a")) as post:
+            oauth._exchange_code("abc", "verifier")
+
+        self.assertIsNone(post.call_args[1]["auth"])
+        self.assertEqual(post.call_args[1]["data"]["client_id"], "cid")
+
+    def test_confidential_client_uses_basic_auth(self):
+        oauth = _session(client_secret="s3cret")
+        with patch.object(PawOAuth.requests, "post", return_value=_token_response(access_token="a")) as post:
+            oauth._exchange_code("abc", "verifier")
+
+        self.assertEqual(post.call_args[1]["auth"], ("cid", "s3cret"))
+        self.assertNotIn("client_id", post.call_args[1]["data"])
+
+    def test_token_error_raises_oauth_error(self):
+        oauth = _session()
+        response = _token_response(status=400, error="invalid_grant")
+        with patch.object(PawOAuth.requests, "post", return_value=response):
+            with self.assertRaisesRegex(OAuthError, "invalid_grant"):
+                oauth._exchange_code("abc", "verifier")
+
+    def test_non_object_json_raises_oauth_error(self):
+        oauth = _session()
+        response = requests.Response()
+        response.status_code = 200
+        response._content = b"[]"
+        with patch.object(PawOAuth.requests, "post", return_value=response):
+            with self.assertRaises(OAuthError):
+                oauth._exchange_code("abc", "verifier")
+
+
+class TestKeyringTokenCache(unittest.TestCase):
+    def setUp(self):
+        self.modules = _fake_keyring()
+        patcher = patch.dict(sys.modules, self.modules)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_round_trip_and_clear(self):
+        cache = KeyringTokenCache("env-a")
+        self.assertIsNone(cache.load_refresh_token())
+
+        cache.save_refresh_token("r1")
+        self.assertEqual(cache.load_refresh_token(), "r1")
+
+        cache.save_refresh_token(None)
+        self.assertIsNone(cache.load_refresh_token())
+        self.assertEqual(self.modules["keyring"].store, {})
+
+    def test_token_longer_than_windows_limit_is_chunked(self):
+        token = "t" * 3500
+        cache = KeyringTokenCache("env-a")
+        cache.save_refresh_token(token)
+
+        self.assertEqual(cache.load_refresh_token(), token)
+        self.assertEqual(len(self.modules["keyring"].store), 1 + 4)  # count + 4 chunks
+
+    def test_shorter_token_removes_stale_chunks(self):
+        cache = KeyringTokenCache("env-a")
+        cache.save_refresh_token("t" * 3500)
+        cache.save_refresh_token("short")
+
+        self.assertEqual(cache.load_refresh_token(), "short")
+        self.assertEqual(len(self.modules["keyring"].store), 1 + 1)
+
+    def test_missing_chunk_reads_as_no_token(self):
+        cache = KeyringTokenCache("env-a")
+        cache.save_refresh_token("t" * 3500)
+        del self.modules["keyring"].store[(KeyringTokenCache.DEFAULT_SERVICE, "env-a#2")]
+
+        self.assertIsNone(cache.load_refresh_token())
+
+    def test_clearing_when_nothing_stored_is_quiet(self):
+        KeyringTokenCache("env-a").save_refresh_token(None)
+
+    def test_keys_are_separate(self):
+        KeyringTokenCache("env-a").save_refresh_token("a")
+        KeyringTokenCache("env-b").save_refresh_token("b")
+        self.assertEqual(KeyringTokenCache("env-a").load_refresh_token(), "a")
+        self.assertEqual(KeyringTokenCache("env-b").load_refresh_token(), "b")
+
+    def test_empty_key_rejected(self):
+        with self.assertRaises(ValueError):
+            KeyringTokenCache("")
+
+    def test_new_session_refreshes_silently_from_stored_token(self):
+        """The point of the cache: a later process signs in without the browser."""
+        KeyringTokenCache("env-a").save_refresh_token("stored")
+        oauth = _session(cache=KeyringTokenCache("env-a"))
+        response = _token_response(access_token="a1", refresh_token="rotated", expires_in=3600)
+
+        with patch.object(PawOAuth.requests, "post", return_value=response) as post, patch.object(
+            PawOAuth.webbrowser, "open"
+        ) as browser:
+            oauth.login()
+
+        browser.assert_not_called()
+        self.assertEqual(post.call_args[1]["data"]["refresh_token"], "stored")
+        self.assertEqual(KeyringTokenCache("env-a").load_refresh_token(), "rotated")
+
+
+class TestKeyringMissing(unittest.TestCase):
+    def test_clear_error_when_keyring_not_installed(self):
+        with patch.dict(sys.modules, {"keyring": None}):
+            with self.assertRaisesRegex(ImportError, r"TM1py\[keyring\]"):
+                KeyringTokenCache("env-a")
+
+    def test_cache_keyring_option_without_package(self):
+        with patch.dict(sys.modules, {"keyring": None}):
+            with self.assertRaisesRegex(ImportError, r"TM1py\[keyring\]"):
+                _session(cache="keyring")
+
+
+class TestCacheOption(unittest.TestCase):
+    def setUp(self):
+        patcher = patch.dict(sys.modules, _fake_keyring())
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_in_memory_is_the_default(self):
+        self.assertIsInstance(_session()._cache, InMemoryTokenCache)
+        self.assertIsInstance(_session(cache="in_memory")._cache, InMemoryTokenCache)
+        self.assertIsInstance(_session(cache=None)._cache, InMemoryTokenCache)
+
+    def test_custom_token_cache_is_used_as_is(self):
+        cache = InMemoryTokenCache()
+        self.assertIs(_session(cache=cache)._cache, cache)
+
+    def test_unknown_name_rejected(self):
+        with self.assertRaisesRegex(ValueError, "in_memory"):
+            _session(cache="memory")
+
+    def test_keyring_key_is_derived_from_session_and_safe(self):
+        cache = _session(cache="keyring")._cache
+
+        self.assertIsInstance(cache, KeyringTokenCache)
+        self.assertRegex(cache._key, r"^paw\.example\.com_cid_v0userContext-[0-9a-f]{12}$")
+
+    def test_keyring_key_excludes_client_secret(self):
+        with_secret = _session(cache="keyring", client_secret="s3cret")._cache._key
+        without_secret = _session(cache="keyring")._cache._key
+
+        self.assertEqual(with_secret, without_secret)
+        self.assertNotIn("s3cret", with_secret)
+
+    def test_keyring_key_differs_per_client_scope_and_host(self):
+        def key(**overrides):
+            kwargs = dict(
+                auth_url="https://paw.example.com/oauth2/authorize",
+                token_url="https://paw.example.com/oauth2/token",
+                client_id="cid",
+                redirect_uri="http://127.0.0.1:8080/callback",
+                cache="keyring",
+            )
+            kwargs.update(overrides)
+            return PawOAuthSession(**kwargs)._cache._key
+
+        keys = {
+            key(),
+            key(client_id="other"),
+            key(scope="other"),
+            key(token_url="https://other.example.com/oauth2/token"),
+            # same once unsafe characters are replaced, so only the hash keeps them apart
+            key(client_id="a b"),
+            key(client_id="a/b"),
+        }
+        self.assertEqual(len(keys), 6)
+
+    def test_keyring_cache_survives_into_a_new_session(self):
+        """cache="keyring" in a later process finds the token the first one stored."""
+        first = _session("http://127.0.0.1:8080/callback", cache="keyring")
+        with patch.object(
+            PawOAuth.requests, "post", return_value=_token_response(access_token="a", refresh_token="r1")
+        ):
+            first._exchange_code("abc", "verifier")
+
+        second = _session("http://127.0.0.1:8080/callback", cache="keyring")
+        self.assertEqual(second._cache.load_refresh_token(), "r1")
+
+
+if __name__ == "__main__":
+    unittest.main()

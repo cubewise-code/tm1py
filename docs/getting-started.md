@@ -103,3 +103,61 @@ params = {
 with TM1Service(**params) as tm1:
     print(tm1.server.get_product_version())
 ```
+
+### Planning Analytics Workspace with OAuth sign-in
+
+`access_token` also accepts a zero-argument callable. TM1py calls it on every connect and reconnect, so a token
+that has expired is replaced after a session timeout. `PawOAuthSession` signs the user in through the browser
+once (OAuth authorization code with PKCE) and refreshes the token from then on. The redirect URI must be a
+loopback address (`127.0.0.1` or `[::1]`, not `localhost`) registered on the OAuth client.
+
+```python
+from TM1py import TM1Service
+from TM1py.Utils.PawOAuth import PawOAuthSession
+
+oauth = PawOAuthSession(
+    auth_url="https://<paw-host>/oauth2/authorize",
+    token_url="https://<paw-host>/oauth2/token",
+    client_id="<ClientId>",
+    client_secret="<ClientSecret>",  # or None for a public client
+    redirect_uri="http://127.0.0.1:8080/callback",
+)
+oauth.login()  # opens the browser once
+
+with TM1Service(
+        base_url="https://<paw-host>/api/v1/tm1/<DatabaseName>",  # TM1 11; see below for TM1 12
+        access_token=oauth.access_token,  # the method itself, not its result
+        keep_authorization_header=True) as tm1:
+    print(tm1.server.get_product_version())
+```
+
+The `base_url` must be PAW's API route, which accepts the bearer token:
+
+| Environment | `<paw-host>` | `base_url` |
+|---|---|---|
+| TM1 11 on IBM Cloud | `<env>.planning-analytics.cloud.ibm.com` | `https://<paw-host>/api/v1/tm1/<DatabaseName>` |
+| TM1 12 PAaaS | `<region>.planninganalytics.saas.ibm.com` | `https://<paw-host>/api/<TenantId>/v0/tm1/<DatabaseName>` |
+
+On TM1 11, `/tm1/api/<DatabaseName>` is TM1's own REST endpoint and only accepts CAM authentication, so it rejects
+the token. `keep_authorization_header=True` is required on both: the gateway checks the token on every request,
+not only when the session starts.
+
+By default the refresh token is kept in memory, so every new process opens the browser again. To sign in once and
+refresh silently in later runs, keep it in the operating system's credential store (Windows Credential Manager,
+macOS Keychain) with the optional `keyring` package:
+
+```bash
+pip install TM1py[keyring]
+```
+
+```python
+oauth = PawOAuthSession(
+    ...,  # as above
+    cache="keyring",  # default: "in_memory"
+)
+oauth.login()  # silent refresh if the stored token still works, browser otherwise
+```
+
+The entry is keyed on the token endpoint, client ID and scope, so each environment and OAuth client gets its own.
+To choose the key yourself, pass `cache=KeyringTokenCache("my-key")` instead. Any other store can be used by passing
+your own `TokenCache` subclass.
