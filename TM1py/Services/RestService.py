@@ -12,13 +12,13 @@ from http.client import HTTPResponse
 from http.cookies import SimpleCookie
 from io import BytesIO
 from json import JSONDecodeError
-from typing import Dict, Optional, Tuple, Union
+from typing import Callable, Dict, Optional, Tuple, Union
 
 import requests
 import urllib3
-from requests import ConnectionError, Response, Session, Timeout
+from requests import ConnectionError, PreparedRequest, Response, Session, Timeout
 from requests.adapters import HTTPAdapter
-from requests.auth import HTTPBasicAuth
+from requests.auth import AuthBase, HTTPBasicAuth
 from urllib3._collections import HTTPHeaderDict
 
 from TM1py.Utils import (
@@ -60,6 +60,26 @@ class AuthenticationMode(Enum):
         if self.value < 5:
             return False
         return True
+
+
+class BearerTokenAuth(AuthBase):
+    """Sets a bearer token from a token provider on every outgoing request.
+
+    Used when ``access_token`` is a zero-argument callable. Asking the provider on each request,
+    rather than once at session start, lets it refresh the token before it expires, without a
+    failed request or a new TM1 session. The provider must return a cached token cheaply while it
+    is valid and be thread-safe, since TM1py may send requests from several threads.
+    """
+
+    def __init__(self, token_provider: Callable[[], str]):
+        self._token_provider = token_provider
+
+    def __call__(self, request: PreparedRequest) -> PreparedRequest:
+        token = self._token_provider()
+        if not token:
+            raise ValueError("'access_token' callable did not return a token")
+        request.headers["Authorization"] = "Bearer " + token
+        return request
 
 
 class RestService:
@@ -107,6 +127,7 @@ class RestService:
         - **namespace** (str): Optional CAM namespace.
         - **cam_passport** (str): The CAM passport.
         - **session_id** (str): TM1SessionId, e.g. q7O6e1w49AixeuLVxJ1GZg.
+        - **access_token** (str|callable): Bearer token. A string is sent once to start the session. A zero-argument callable returning the token is called on every request instead, so a token provider (e.g. an OAuth client) can refresh the token mid-session; use this for token-authenticated routes such as Planning Analytics Workspace's /api/v1/tm1/<database>.
         - **application_client_id** (str): Planning Analytics Engine (v12) named application client ID created via manage service.
         - **application_client_secret** (str): Planning Analytics Engine (v12) named application secret created via manage service.
         - **api_key** (str): Planning Analytics Engine (v12) API Key from https://cloud.ibm.com/iam/apikeys.
@@ -959,7 +980,12 @@ class RestService:
             self.add_http_header("Authorization", "Bearer " + access_token)
 
         elif self._auth_mode == AuthenticationMode.ACCESS_TOKEN:
-            self.add_http_header("Authorization", "Bearer " + self._kwargs.get("access_token"))
+            access_token = self._kwargs.get("access_token")
+            if callable(access_token):
+                # resolved per request, so the header survives the session start and stays current
+                self._s.auth = BearerTokenAuth(access_token)
+            else:
+                self.add_http_header("Authorization", "Bearer " + access_token)
 
         # v11 authorization (Basic, CAM) through Headers
         else:
