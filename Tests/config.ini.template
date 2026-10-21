@@ -21,3 +21,15 @@ ssl=True
 user=admin
 password=apple
 async_requests_mode=True
+
+# Optional: a TM1 route that takes an OAuth bearer token, e.g. Planning Analytics Workspace's
+# (Tests/RestService_oauth_test.py, skipped without this section). Give either access_token
+# (valid about an hour; the refresh test is skipped) or the refresh settings below. The refresh
+# token file is rewritten on every run, because PAW replaces the refresh token on each refresh.
+# [oauth]
+# base_url=https://<PawHost>/api/v1/tm1/<DatabaseName>
+# access_token=
+# token_url=https://<PawHost>/oauth2/token
+# client_id=
+# client_secret=
+# refresh_token_file=
