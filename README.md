@@ -125,6 +125,31 @@ with TM1Service(**params) as tm1:
     print(tm1.server.get_product_version())
 ```
 
+> Accessing TM1 REST APIs through Planning Analytics Workspace
+
+PAW serves the TM1 REST API at `https://<PawHost>/api/v1/tm1/<DatabaseName>` and authenticates every request with an
+OAuth access token. `access_token` also accepts a function that returns the token. TM1py calls it before every request, so your code can
+refresh the token (e.g. a PAW OAuth access token) mid-session, without a failed request or a new TM1 session.
+Obtaining, refreshing and storing the token stay in your code; TM1py never opens a browser or stores tokens.
+
+``` python
+from TM1py import TM1Service
+
+
+def get_token() -> str:
+    # return a valid access token: a cached one while it is valid, a refreshed one when it is about to expire
+    return my_oauth_client.get_access_token()
+
+
+with TM1Service(
+        base_url="https://<PawHost>/api/v1/tm1/<DatabaseName>",
+        access_token=get_token) as tm1:  # the function itself, not get_token()
+    print(tm1.server.get_product_version())
+```
+
+The function is called on every request, possibly from several threads, so it should return a cached token quickly
+and be thread-safe. 
+
 Documentation
 =======================
 
