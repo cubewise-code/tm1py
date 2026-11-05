@@ -127,7 +127,7 @@ class RestService:
         - **namespace** (str): Optional CAM namespace.
         - **cam_passport** (str): The CAM passport.
         - **session_id** (str): TM1SessionId, e.g. q7O6e1w49AixeuLVxJ1GZg.
-        - **access_token** (str|callable): Bearer token. A string is sent once to start the session. A zero-argument callable returning the token is called on every request instead, so a token provider (e.g. an OAuth client) can refresh the token mid-session; use this for token-authenticated routes such as Planning Analytics Workspace's /api/v1/tm1/<database>.
+        - **access_token** (str|callable): Bearer token. A string is sent once to start the session. A zero-argument callable returning the token is called on every request instead, so a token provider (e.g. an OAuth client) can refresh the token mid-session; for Planning Analytics Workspace's /api/v1/tm1/<database> you must pass a callable, not a string, because PAW checks the token on every request. TM1Service.save_to_file pickles the service, so it fails if the callable cannot be pickled (e.g. a lambda, a nested function or an object holding a threading.Lock).
         - **application_client_id** (str): Planning Analytics Engine (v12) named application client ID created via manage service.
         - **application_client_secret** (str): Planning Analytics Engine (v12) named application secret created via manage service.
         - **api_key** (str): Planning Analytics Engine (v12) API Key from https://cloud.ibm.com/iam/apikeys.
@@ -241,6 +241,11 @@ class RestService:
 
         self._s = Session()
         self._manage_http_adapter()
+
+        # a callable access_token is resolved per request; installed here so it also applies
+        # when connect() reuses a session_id and skips _start_session
+        if callable(kwargs.get("access_token")):
+            self._s.auth = BearerTokenAuth(kwargs["access_token"])
 
         self._cert = kwargs.get("cert")
         self._s.cert = self._cert
@@ -981,10 +986,8 @@ class RestService:
 
         elif self._auth_mode == AuthenticationMode.ACCESS_TOKEN:
             access_token = self._kwargs.get("access_token")
-            if callable(access_token):
-                # resolved per request, so the header survives the session start and stays current
-                self._s.auth = BearerTokenAuth(access_token)
-            else:
+            # a callable token is sent by BearerTokenAuth, installed on the session in __init__
+            if not callable(access_token):
                 self.add_http_header("Authorization", "Bearer " + access_token)
 
         # v11 authorization (Basic, CAM) through Headers
