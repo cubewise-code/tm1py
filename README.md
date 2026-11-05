@@ -147,8 +147,14 @@ with TM1Service(
     print(tm1.server.get_product_version())
 ```
 
+For PAW you must pass a function, not a string. PAW checks the token on every request, and a string token is sent
+only once, when the session starts.
+
 The function is called on every request, possibly from several threads, so it should return a cached token quickly
-and be thread-safe. 
+and be thread-safe.
+
+`TM1Service.save_to_file` pickles the service. It fails if the function cannot be pickled, e.g. a lambda, a nested
+function or an object that holds a `threading.Lock`.
 
 Documentation
 =======================
