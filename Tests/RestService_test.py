@@ -593,10 +593,17 @@ class TestGetQueryParameters(unittest.TestCase):
         self.assertEqual(self._query(self.send.call_args[0][0]), [("$top", "10")])
         self.assertNotIn("unrelated_option", self.send.call_args[1])
 
-    def test_other_http_methods_do_not_gain_params_support(self):
+    def test_other_http_methods_reject_params(self):
         for method in (self.rest.POST, self.rest.PATCH, self.rest.PUT, self.rest.DELETE):
             with self.subTest(method=method.__name__):
-                method("/Cubes", params={"$top": 10})
+                with self.assertRaisesRegex(TypeError, "only supported for GET"):
+                    method("/Cubes", params={"$top": 10})
+        self.send.assert_not_called()
+
+    def test_other_http_methods_without_params_still_work(self):
+        for method in (self.rest.POST, self.rest.PATCH, self.rest.PUT, self.rest.DELETE):
+            with self.subTest(method=method.__name__):
+                method("/Cubes", unrelated_option=True)
                 self.assertEqual(self._query(self.send.call_args[0][0]), [])
 
     def test_params_survive_session_timeout_sync_and_async(self):
@@ -643,12 +650,26 @@ class TestGetQueryParameters(unittest.TestCase):
         self.send.assert_called_once()
         self.assertEqual(self._query(self.send.call_args[0][0]), [("$top", "10")])
 
-    def test_cube_service_forwards_params_and_processes_response(self):
+    def test_cube_service_dedicated_query_options_are_sent_encoded(self):
         cubes = object.__new__(CubeService)
         cubes._rest = self.rest
-        params = {"$top": 10, "$orderby": "Name"}
-        self.assertEqual(cubes.get_all_names(params=params), ["Sales"])
+        names = cubes.get_all_names(filter="startswith(Name,'S&P') eq true", top=10, order_by="Name desc")
+        self.assertEqual(names, ["Sales"])
         self.assertEqual(
-            self._query(self.send.call_args[0][0]), [("$select", "Name"), ("$top", "10"), ("$orderby", "Name")]
+            self._query(self.send.call_args[0][0]),
+            [
+                ("$select", "Name"),
+                ("$filter", "startswith(Name,'S&P') eq true"),
+                ("$top", "10"),
+                ("$orderby", "Name desc"),
+            ],
         )
-        self.assertEqual(params, {"$top": 10, "$orderby": "Name"})
+
+    def test_cube_service_dedicated_filter_is_combined_with_existing_filter(self):
+        cubes = object.__new__(CubeService)
+        cubes._rest = self.rest
+        cubes.get_all_names_with_rules(filter="Name eq 'A#B'")
+        self.assertEqual(
+            self._query(self.send.call_args[0][0]),
+            [("$select", "Name,Rules"), ("$filter", "(Rules ne null) and (Name eq 'A#B')")],
+        )
