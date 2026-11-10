@@ -28,12 +28,10 @@ jobs:
       - name: Run Ruff (linting)
         run: ruff check .
 
-      # Placeholder for future unit tests
-      # Uncomment when unit tests are available
-      # - name: Run unit tests
-      #   run: |
-      #     pip install -e .[dev]
-      #     pytest Tests/unit/ -v
+      - name: Run smoke tests
+        run: |
+          pip install -e .[dev]
+          pytest Tests/smoke/ -v
 
       - name: Validation Summary
         if: success()
@@ -41,4 +39,4 @@ jobs:
           echo "✅ All validation checks passed!"
           echo "- Code formatting (Black): PASSED"
           echo "- Linting (Ruff): PASSED"
-          # echo "- Unit tests: PASSED"
+          echo "- Smoke tests: PASSED"
