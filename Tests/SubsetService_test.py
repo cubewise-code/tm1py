@@ -2,20 +2,13 @@ import configparser
 import unittest
 from pathlib import Path
 
+from Tests.Utils import generate_test_uuid
 from TM1py.Objects import Dimension, Element, ElementAttribute, Hierarchy, Subset
 from TM1py.Services import TM1Service
 
 
 class TestSubsetService(unittest.TestCase):
     tm1: TM1Service
-
-    prefix = "TM1py_Tests_Subset_"
-    dimension_name = prefix + "Dimension"
-    subset_name_static = prefix + "static"
-    subset_name_dynamic = prefix + "dynamic"
-    unfriendly_dimension_name = prefix + "Dimension#%AD"
-    unfriendly_subset_name = prefix + "Subset#%AD"
-    unfriendly_element_name = prefix + "Element#%AD"
 
     @classmethod
     def setUpClass(cls):
@@ -29,6 +22,14 @@ class TestSubsetService(unittest.TestCase):
         cls.tm1 = TM1Service(**cls.config["tm1srv01"])
 
         # Define Names
+        test_uuid = generate_test_uuid()
+        cls.prefix = "TM1py_Tests_Subset_"
+        cls.dimension_name = cls.prefix + "Dimension_" + test_uuid
+        cls.subset_name_static = cls.prefix + "static_" + test_uuid
+        cls.subset_name_dynamic = cls.prefix + "dynamic_" + test_uuid
+        cls.unfriendly_dimension_name = cls.prefix + "Dimension#%AD_" + test_uuid
+        cls.unfriendly_subset_name = cls.prefix + "Subset#%AD_" + test_uuid
+        cls.unfriendly_element_name = cls.prefix + "Element#%AD_" + test_uuid
 
     def setUp(self):
         # Instantiate Subsets
@@ -384,6 +385,40 @@ class TestSubsetService(unittest.TestCase):
         )
 
         self.assertEqual(["USD", "EUR", "JPY", "CNY", "GBP", "NZD", "Dum'my"], element_names)
+
+    def test_get_element_names_arg_combination(self):
+        element_names = self.tm1.subsets.get_element_names(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.dimension_name,
+            subset=self.subset_name_static,
+            private=False,
+        )
+        self.assertEqual(self.static_subset.elements, element_names)
+
+        element_names = self.tm1.subsets.get_element_names(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.dimension_name,
+            subset=self.static_subset,
+            private=False,
+        )
+        self.assertEqual(self.static_subset.elements, element_names)
+
+        element_names = self.tm1.subsets.get_element_names(
+            dimension_name=self.dimension_name,
+            hierarchy_name=self.dimension_name,
+            subset_name=self.subset_name_static,
+            private=False,
+        )
+        self.assertEqual(self.static_subset.elements, element_names)
+
+        with self.assertRaisesRegex(ValueError, "Only one parameter 'subset' or 'subset_name' may be provided."):
+            self.tm1.subsets.get_element_names(
+                dimension_name=self.dimension_name,
+                hierarchy_name=self.dimension_name,
+                subset=self.subset_name_static,
+                subset_name=self.subset_name_static,
+                private=False,
+            )
 
     def test_create_subset_with_url_unfriendly_characters_in_name(self):
         subset = Subset(

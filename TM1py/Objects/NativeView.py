@@ -6,17 +6,36 @@ from typing import Dict, Iterable, List, Optional, Union
 from mdxpy import MdxBuilder, MdxHierarchySet, Member
 
 from TM1py.Objects.Axis import ViewAxisSelection, ViewTitleSelection
+from TM1py.Objects.DynamicPropertiesMixin import DynamicPropertiesMixin
 from TM1py.Objects.Subset import AnonymousSubset, Subset
 from TM1py.Objects.View import View
 from TM1py.Utils import case_and_space_insensitive_equals, read_object_name_from_url
 
 
-class NativeView(View):
+class NativeView(DynamicPropertiesMixin, View):
     """Abstraction of TM1 NativeView (classic cube view)
 
     :Notes:
         Complete, functional and tested
     """
+
+    _DYNAMIC_PROPERTIES_EXCLUDED_KEYS = frozenset(
+        {
+            "@odata.type",
+            "@odata.context",
+            "@odata.etag",
+            "Name",
+            "Columns",
+            "Rows",
+            "Titles",
+            "SuppressEmptyColumns",
+            "SuppressEmptyRows",
+            "FormatString",
+            "Cube",
+            "Attributes",
+            "LocalizedAttributes",
+        }
+    )
 
     def __init__(
         self,
@@ -28,6 +47,7 @@ class NativeView(View):
         titles: Optional[Iterable[ViewTitleSelection]] = None,
         columns: Optional[Iterable[ViewAxisSelection]] = None,
         rows: Optional[Iterable[ViewAxisSelection]] = None,
+        dynamic_properties: Optional[Dict] = None,
     ):
         super().__init__(cube_name, view_name)
         self._suppress_empty_columns = suppress_empty_columns
@@ -36,6 +56,8 @@ class NativeView(View):
         self._titles = list(titles) if titles else []
         self._columns = list(columns) if columns else []
         self._rows = list(rows) if rows else []
+        self._dynamic_properties = {}
+        self.dynamic_properties = dynamic_properties
 
     @property
     def body(self) -> str:
@@ -270,6 +292,7 @@ class NativeView(View):
             titles=titles,
             columns=columns,
             rows=rows,
+            dynamic_properties=cls._filter_dynamic_properties(view_as_dict),
         )
 
     @classmethod
@@ -303,29 +326,19 @@ class NativeView(View):
 
         :return: string, the valid JSON
         """
-        top_json = '{"@odata.type": "ibm.tm1.api.v1.NativeView","Name": "' + self._name + '",'
-        columns_json = ",".join([column.body for column in self._columns])
-        rows_json = ",".join([row.body for row in self._rows])
-        titles_json = ",".join([title.body for title in self._titles])
-        bottom_json = (
-            '"SuppressEmptyColumns": '
-            + str(self._suppress_empty_columns).lower()
-            + ',"SuppressEmptyRows":'
-            + str(self._suppress_empty_rows).lower()
-            + ',"FormatString": "'
-            + self._format_string
-            + '"}'
-        )
-        return "".join(
-            [
-                top_json,
-                '"Columns":[',
-                columns_json,
-                '],"Rows":[',
-                rows_json,
-                '],"Titles":[',
-                titles_json,
-                "],",
-                bottom_json,
-            ]
-        )
+        body = {
+            "@odata.type": "ibm.tm1.api.v1.NativeView",
+            "Name": self._name,
+            "Columns": [json.loads(column.body) for column in self._columns],
+            "Rows": [json.loads(row.body) for row in self._rows],
+            "Titles": [json.loads(title.body) for title in self._titles],
+            "SuppressEmptyColumns": self._suppress_empty_columns,
+            "SuppressEmptyRows": self._suppress_empty_rows,
+            "FormatString": self._format_string,
+        }
+
+        dynamic_props = self._filter_dynamic_properties(self._dynamic_properties)
+        if dynamic_props:
+            body.update(dynamic_props)
+
+        return json.dumps(body, ensure_ascii=False)

@@ -8,7 +8,7 @@ from TM1py.Objects import Element, Subset
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.ProcessService import ProcessService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import format_url, case_and_space_insensitive_equals
+from TM1py.Utils import case_and_space_insensitive_equals, format_url
 
 
 class SubsetService(ObjectService):
@@ -201,7 +201,12 @@ class SubsetService(ObjectService):
         return self._rest.DELETE(url=url, **kwargs)
 
     def get_element_names(
-        self, dimension_name: str, hierarchy_name: str, subset: Union[str, Subset], private: bool = False, **kwargs
+        self,
+        dimension_name: str,
+        hierarchy_name: str,
+        subset: Optional[Union[str, Subset]] = None,
+        private: bool = False,
+        **kwargs,
     ) -> List[str]:
         """
         Retrieve element names from a static or dynamic subset.
@@ -209,10 +214,17 @@ class SubsetService(ObjectService):
         :param dimension_name: Name of the dimension.
         :param hierarchy_name: Name of the hierarchy.
         :param subset: Subset name (str) or Subset object.
+        :param subset_name: (legacy) subset name, supported for backwards compatibility.
         :param private: Whether the subset is private.
         :param kwargs: Additional arguments.
         :return: List of element names.
         """
+        # backward compatibility for legacy 'subset_name' parameter (Issue #1302)
+        if "subset_name" in kwargs:
+            if subset is not None:
+                raise ValueError("Only one parameter 'subset' or 'subset_name' may be provided.")
+            subset = kwargs.pop("subset_name")
+
         if isinstance(subset, str):
             subset = self.get(subset, dimension_name, hierarchy_name, private=private, **kwargs)
         elif not isinstance(subset, Subset):

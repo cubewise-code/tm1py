@@ -11,7 +11,6 @@ import math
 from collections import defaultdict
 from typing import Dict, Iterable, List, Optional, Tuple
 
-
 from requests import Response
 
 from TM1py.Exceptions import TM1pyRestException
@@ -93,9 +92,7 @@ class HierarchyService(ObjectService):
                 explore_relationships(node, [node])
 
         if cycles:
-            raise ValueError(
-                f"Circular reference{'s' if len(cycles) > 1 else ''} found in edges: {cycles}"
-            )
+            raise ValueError(f"Circular reference{'s' if len(cycles) > 1 else ''} found in edges: {cycles}")
 
     @staticmethod
     def _validate_alias_uniqueness(df: "pd.DataFrame"):
@@ -597,6 +594,10 @@ class HierarchyService(ObjectService):
 
         hierarchy_exists = self.exists(dimension_name, hierarchy_name)
 
+        # the blob-based bulk add/delete paths need admin rights and the Contents API (TM1 >= 11.4);
+        # on older servers (or for non-admins) fall back to the REST paths to stay backward compatible
+        use_blob = self.is_admin and verify_version(required_version="11.4", version=self.version)
+
         if not hierarchy_exists:
             existing_element_identifiers = CaseAndSpaceInsensitiveSet()
         else:
@@ -639,11 +640,12 @@ class HierarchyService(ObjectService):
             new_elements[element_name] = Element.Types.CONSOLIDATED
 
         if new_elements:
-            # add these elements to hierarchy in tm1
+            # add these elements to hierarchy in tm1 (blob path for admins scales to large sets)
             self.elements.add_elements(
                 dimension_name=dimension_name,
                 hierarchy_name=hierarchy_name,
                 elements=(Element(element_name, element_type) for element_name, element_type in new_elements.items()),
+                use_blob=use_blob,
             )
 
         # define the attribute columns in df. Applies to all elements in df, not only new ones.
@@ -739,7 +741,7 @@ class HierarchyService(ObjectService):
                     dimension_name=dimension_name,
                     hierarchy_name=hierarchy_name,
                     edges=edges_to_delete,
-                    use_blob=self.is_admin,
+                    use_blob=use_blob,
                 )
 
         edges = CaseAndSpaceInsensitiveTuplesDict()
@@ -778,14 +780,19 @@ class HierarchyService(ObjectService):
                     dimension_name=dimension_name,
                     hierarchy_name=hierarchy_name,
                     edges=edges_to_delete.keys(),
-                    use_blob=self.is_admin,
+                    use_blob=use_blob,
                 )
 
             new_edges = {
                 (k, v): w for (k, v), w in edges.items() if (k, v) not in current_edges or w != current_edges[(k, v)]
             }
             if new_edges:
-                self.elements.add_edges(dimension_name=dimension_name, hierarchy_name=hierarchy_name, edges=new_edges)
+                self.elements.add_edges(
+                    dimension_name=dimension_name,
+                    hierarchy_name=hierarchy_name,
+                    edges=new_edges,
+                    use_blob=use_blob,
+                )
 
         if hierarchy_sort_order:
             self._implement_hierarchy_sort_order(dimension_name, hierarchy_name, hierarchy_sort_order)

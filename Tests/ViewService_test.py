@@ -24,6 +24,26 @@ class TestViewService(unittest.TestCase):
     subset_name = "TM1py_Tests_View_Subset"
     native_view_name = "TM1py_Tests_Native_View"
     mdx_view_name = "TM1py_Tests_Mdx_View"
+    mdx_view_with_dynamic_properties_name = "TM1py_Tests_Mdx_View_With_dynamic_properties"
+    native_view_with_dynamic_properties_name = "TM1py_Tests_Native_View_With_dynamic_properties"
+    all_view_names = [
+        native_view_name,
+        mdx_view_name,
+        mdx_view_with_dynamic_properties_name,
+        native_view_with_dynamic_properties_name,
+    ]
+
+    @classmethod
+    def build_dynamic_properties(cls, expanded: bool = False):
+        return {
+            "Meta": {
+                "ExpandAboves": {
+                    f"[{cls.dimension_names[0]}].[{cls.dimension_names[0]}]": expanded,
+                    f"[{cls.dimension_names[1]}].[{cls.dimension_names[1]}]": expanded,
+                    f"[{cls.dimension_names[2]}].[{cls.dimension_names[2]}]": expanded,
+                }
+            }
+        }
 
     @classmethod
     def setUpClass(cls):
@@ -54,6 +74,12 @@ class TestViewService(unittest.TestCase):
             element2 = "Element " + str(random.randint(1, 1000))
             element3 = "Element " + str(random.randint(1, 1000))
             cellset[(element1, element2, element3)] = random.randint(1, 1000)
+
+        # Add one deterministic cell for the native view update test.
+        # Before the update, the view includes all members from dimension 0, so this value is visible.
+        # After the update, dimension 0 is restricted to Elements 1-5, so Element 6 drops out.
+        # That guarantees a different result even if the randomly generated data contains no matches.
+        cellset[("Element 6", "Element 123", "Element 1")] = 999999
         cls.tm1.cells.write_values(cls.cube_name, cellset)
 
     def setUp(self):
@@ -98,9 +124,17 @@ class TestViewService(unittest.TestCase):
             nv_view = self.tm1.views.get_native_view(
                 cube_name=self.cube_name, view_name=self.native_view_name, private=private
             )
-            mdx = nv_view.MDX
-            mdx_view = MDXView(cube_name=self.cube_name, view_name=self.mdx_view_name, MDX=mdx)
+            self.mdx = nv_view.MDX
+            mdx_view = MDXView(cube_name=self.cube_name, view_name=self.mdx_view_name, MDX=self.mdx)
             # create mdx view on Server
+            self.tm1.views.create(view=mdx_view, private=private)
+
+            mdx_view = MDXView(
+                cube_name=self.cube_name,
+                view_name=self.mdx_view_with_dynamic_properties_name,
+                MDX=self.mdx,
+                dynamic_properties=self.build_dynamic_properties(),
+            )
             self.tm1.views.create(view=mdx_view, private=private)
 
     def test_view_exists(self):
@@ -236,6 +270,47 @@ class TestViewService(unittest.TestCase):
             sum_mdx_updated = sum([value["Value"] for value in data_mdx_updated.values() if value["Value"]])
             self.assertNotEqual(sum_mdx_original, sum_mdx_updated)
 
+    def test_create_mdx_view_with_dynamic_properties(self):
+        for private in (True, False):
+            self.assertTrue(
+                self.tm1.views.exists(
+                    cube_name=self.cube_name, view_name=self.mdx_view_with_dynamic_properties_name, private=private
+                )
+            )
+            retrieved = self.tm1.views.get_mdx_view(
+                cube_name=self.cube_name, view_name=self.mdx_view_with_dynamic_properties_name, private=private
+            )
+            self.assertEqual(self.build_dynamic_properties(), retrieved.dynamic_properties)
+            self.assertIsInstance(retrieved, MDXView)
+            self.assertEqual(self.mdx_view_with_dynamic_properties_name, retrieved.name)
+            self.assertEqual(self.mdx, retrieved.MDX)
+
+    def test_update_mdx_view_with_dynamic_properties(self):
+        for private in (True, False):
+            mdx_view = self.tm1.views.get_mdx_view(
+                cube_name=self.cube_name, view_name=self.mdx_view_with_dynamic_properties_name, private=private
+            )
+            dynamic_properties = self.build_dynamic_properties(expanded=True)
+            mdx_view.dynamic_properties = dynamic_properties
+            # update should not raise
+            self.tm1.views.update(view=mdx_view, private=private)
+            retrieved = self.tm1.views.get_mdx_view(
+                cube_name=self.cube_name, view_name=self.mdx_view_with_dynamic_properties_name, private=private
+            )
+            self.assertEqual(dynamic_properties, retrieved.dynamic_properties)
+            self.assertIsInstance(retrieved, MDXView)
+            self.assertEqual(self.mdx_view_with_dynamic_properties_name, retrieved.name)
+
+    def test_get_mdx_view_with_dynamic_properties(self):
+        for private in (True, False):
+            retrieved = self.tm1.views.get(
+                cube_name=self.cube_name, view_name=self.mdx_view_with_dynamic_properties_name, private=private
+            )
+            self.assertIsInstance(retrieved, MDXView)
+            self.assertNotEqual(retrieved.dynamic_properties, {})
+            self.assertIn("Meta", retrieved.dynamic_properties)
+            self.assertIn("ExpandAboves", retrieved.dynamic_properties["Meta"])
+
     def test_search_subset_in_native_views(self):
 
         private_views, public_views = self.tm1.views.search_subset_in_native_views(
@@ -327,13 +402,72 @@ class TestViewService(unittest.TestCase):
                 self.tm1.views.is_mdx_view(cube_name=self.cube_name, view_name=self.mdx_view_name, private=private)
             )
 
+    def test_create_native_view_with_dynamic_properties(self):
+        for private in (True, False):
+            dynamic_properties = {
+                "Meta": {
+                    "ExpandAboves": {
+                        f"[{self.dimension_names[0]}].[{self.dimension_names[0]}]": False,
+                        f"[{self.dimension_names[1]}].[{self.dimension_names[1]}]": False,
+                        f"[{self.dimension_names[2]}].[{self.dimension_names[2]}]": False,
+                    }
+                }
+            }
+            native_view = NativeView(
+                cube_name=self.cube_name,
+                view_name=self.native_view_with_dynamic_properties_name,
+                suppress_empty_columns=True,
+                suppress_empty_rows=True,
+                dynamic_properties=dynamic_properties,
+            )
+            subset = AnonymousSubset(
+                dimension_name=self.dimension_names[0],
+                hierarchy_name=self.dimension_names[0],
+                elements=["Element 1", "Element 2", "Element 3"],
+            )
+            native_view.add_column(dimension_name=self.dimension_names[0], subset=subset)
+            subset = AnonymousSubset(
+                dimension_name=self.dimension_names[1],
+                hierarchy_name=self.dimension_names[1],
+                elements=["Element 1"],
+            )
+            native_view.add_title(dimension_name=self.dimension_names[1], subset=subset, selection="Element 1")
+            subset = AnonymousSubset(
+                dimension_name=self.dimension_names[2],
+                hierarchy_name=self.dimension_names[2],
+                elements=["Element 1", "Element 2"],
+            )
+            native_view.add_row(dimension_name=self.dimension_names[2], subset=subset)
+            self.tm1.views.create(view=native_view, private=private)
+            self.assertTrue(
+                self.tm1.views.exists(
+                    cube_name=self.cube_name,
+                    view_name=self.native_view_with_dynamic_properties_name,
+                    private=private,
+                )
+            )
+            retrieved = self.tm1.views.get_native_view(
+                cube_name=self.cube_name,
+                view_name=self.native_view_with_dynamic_properties_name,
+                private=private,
+            )
+            self.assertEqual(dynamic_properties, retrieved.dynamic_properties)
+            self.assertIsInstance(retrieved, NativeView)
+            self.assertEqual(self.native_view_with_dynamic_properties_name, retrieved.name)
+            self.tm1.views.delete(
+                cube_name=self.cube_name,
+                view_name=self.native_view_with_dynamic_properties_name,
+                private=private,
+            )
+
     def tearDown(self):
         for private in (True, False):
-            self.tm1.views.delete(cube_name=self.cube_name, view_name=self.native_view_name, private=private)
-            self.tm1.views.delete(cube_name=self.cube_name, view_name=self.mdx_view_name, private=private)
+            for view_name in self.all_view_names:
+                if self.tm1.views.exists(cube_name=self.cube_name, view_name=view_name, private=private):
+                    self.tm1.views.delete(cube_name=self.cube_name, view_name=view_name, private=private)
 
     @classmethod
-    def teardown_class(cls):
+    def tearDownClass(cls):
         cls.tm1.cubes.delete(cls.cube_name)
         for dimension_name in cls.dimension_names:
             cls.tm1.dimensions.delete(dimension_name)

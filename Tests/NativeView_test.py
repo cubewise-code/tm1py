@@ -302,3 +302,86 @@ class TestNativeView(unittest.TestCase):
         self.assertEqual("d2", view.columns[0].dimension_name)
         self.assertEqual("d2", view.columns[0].hierarchy_name)
         self.assertEqual("{[d2].[e1],[d2].[e2]}", view.columns[0].subset.expression)
+
+    def test_dynamic_properties_default_is_empty_dict(self):
+        view = NativeView(
+            cube_name="c1",
+            view_name="v1",
+            columns=[ViewAxisSelection("d1", AnonymousSubset("d1", "d1", "{[d1].[e1]}"))],
+        )
+        self.assertEqual({}, view.dynamic_properties)
+
+    def test_dynamic_properties_set_via_constructor(self):
+        props = {"Meta": {"ExpandAboves": {"[d1].[d1]": False}}}
+        view = NativeView(
+            cube_name="c1",
+            view_name="v1",
+            columns=[ViewAxisSelection("d1", AnonymousSubset("d1", "d1", "{[d1].[e1]}"))],
+            dynamic_properties=props,
+        )
+        self.assertEqual(props, view.dynamic_properties)
+
+    def test_dynamic_properties_none_resets_to_empty_dict(self):
+        view = NativeView(
+            cube_name="c1",
+            view_name="v1",
+            columns=[ViewAxisSelection("d1", AnonymousSubset("d1", "d1", "{[d1].[e1]}"))],
+            dynamic_properties={"Meta": {"Flag": True}},
+        )
+        view.dynamic_properties = None
+        self.assertEqual({}, view.dynamic_properties)
+
+    def test_dynamic_properties_included_in_body(self):
+        props = {"Meta": {"ExpandAboves": {"[d1].[d1]": False}}}
+        view = NativeView(
+            cube_name="c1",
+            view_name="v1",
+            columns=[ViewAxisSelection("d1", AnonymousSubset("d1", "d1", "{[d1].[e1]}"))],
+            dynamic_properties=props,
+        )
+        body = json.loads(view.body)
+        self.assertIn("Meta", body)
+        self.assertEqual(props["Meta"], body["Meta"])
+
+    def test_dynamic_properties_not_in_body_when_empty(self):
+        view = NativeView(
+            cube_name="c1",
+            view_name="v1",
+            columns=[ViewAxisSelection("d1", AnonymousSubset("d1", "d1", "{[d1].[e1]}"))],
+        )
+        body = json.loads(view.body)
+        self.assertNotIn("Meta", body)
+
+    def test_dynamic_properties_from_dict(self):
+        view_dict = {
+            "@odata.type": "ibm.tm1.api.v1.NativeView",
+            "@odata.context": "../../$metadata#Cubes('c1')/Views/$entity",
+            "Name": "v1",
+            "Columns": [
+                {"Subset": {"Hierarchy@odata.bind": "Dimensions('d1')/Hierarchies('d1')", "Expression": "{[d1].[e1]}"}}
+            ],
+            "Rows": [],
+            "Titles": [],
+            "SuppressEmptyColumns": False,
+            "SuppressEmptyRows": False,
+            "FormatString": "0.#########",
+            "Meta": {"ExpandAboves": {"[d1].[d1]": False}},
+        }
+        view = NativeView.from_dict(view_dict, cube_name="c1")
+        self.assertIn("Meta", view.dynamic_properties)
+        self.assertNotIn("Name", view.dynamic_properties)
+        self.assertNotIn("Columns", view.dynamic_properties)
+        self.assertNotIn("SuppressEmptyColumns", view.dynamic_properties)
+
+    def test_dynamic_properties_roundtrip(self):
+        props = {"Meta": {"ExpandAboves": {"[d1].[d1]": False}}}
+        view = NativeView(
+            cube_name="c1",
+            view_name="v1",
+            columns=[ViewAxisSelection("d1", AnonymousSubset("d1", "d1", "{[d1].[e1]}"))],
+            dynamic_properties=props,
+        )
+        body = json.loads(view.body)
+        self.assertEqual(props["Meta"], body["Meta"])
+        self.assertEqual("ibm.tm1.api.v1.NativeView", body["@odata.type"])
+        self.assertEqual("v1", body["Name"])

@@ -1,0 +1,38 @@
+{
+  "}StatsByCube": [
+    "}StatsStatsByCube",
+    "}PerfCubes",
+    "}TimeIntervals"
+  ],
+  "}StatsForServer": [
+    "}StatsStatsForServer",
+    "}TimeIntervals"
+  ],
+  "}StatsByRule": [
+    "}Cubes",
+    "}LineNumber",
+    "}RuleStats"
+  ],
+  "}StatsByClient": [
+    "}StatsStatsByClient",
+    "}PerfClients",
+    "}TimeIntervals"
+  ],
+  "}StatsByCubeByClient": [
+    "}PerfClients",
+    "}PerfCubes",
+    "}Cube Functions",
+    "}StatsStatsByCubeByClient",
+    "}TimeIntervals"
+  ],
+  "}StatsByChore": [
+    "}TimeIntervals",
+    "}Chores",
+    "}StatsByProcess"
+  ],
+  "}StatsByProcess": [
+    "}TimeIntervals",
+    "}Processes",
+    "}StatsByProcess"
+  ]
+}

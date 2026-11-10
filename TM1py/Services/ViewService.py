@@ -66,7 +66,7 @@ class ViewService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         view_as_dict = response.json()
         if "MDX" in view_as_dict:
-            return MDXView(cube_name=cube_name, view_name=view_name, MDX=view_as_dict["MDX"])
+            return MDXView.from_dict(view_as_dict)
         else:
             return self.get_native_view(cube_name=cube_name, view_name=view_name, private=private)
 

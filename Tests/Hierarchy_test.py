@@ -187,10 +187,15 @@ class TestHierarchy(unittest.TestCase):
 
         elements = hierarchy.get_descendants("Europe", recursive=True, leaves_only=True)
         self.assertEqual(
-            {Element("Germany", "Numeric"), Element("Austria", "Numeric"),
-             Element("Switzerland", "Numeric"), Element("France", "Numeric")},
-            elements)
-        
+            {
+                Element("Germany", "Numeric"),
+                Element("Austria", "Numeric"),
+                Element("Switzerland", "Numeric"),
+                Element("France", "Numeric"),
+            },
+            elements,
+        )
+
     def test_get_descendants_recursive_leaves_only_with_higher_level_consolidation(self):
         hierarchy = Hierarchy(
             name="NotRelevant",
@@ -205,7 +210,8 @@ class TestHierarchy(unittest.TestCase):
                 Element("CCC", "Numeric"),
                 Element("AAA", "Numeric"),
                 Element("AAB", "Numeric"),
-                Element("AAC", "Numeric")],
+                Element("AAC", "Numeric"),
+            ],
             edges={
                 ("Total", "A"): 1,
                 ("A", "AA"): 1,
@@ -216,12 +222,20 @@ class TestHierarchy(unittest.TestCase):
                 ("B", "BBC"): 1,
                 ("Total", "C"): 1,
                 ("C", "CCC"): 1,
-            })
+            },
+        )
 
         elements = hierarchy.get_descendants("Total", recursive=True, leaves_only=True)
         self.assertEqual(
-            {Element("BBC", "Numeric"), Element("CCC", "Numeric"), Element("AAA", "Numeric"), Element("AAB", "Numeric"), Element("AAC", "Numeric")},
-            elements)
+            {
+                Element("BBC", "Numeric"),
+                Element("CCC", "Numeric"),
+                Element("AAA", "Numeric"),
+                Element("AAB", "Numeric"),
+                Element("AAC", "Numeric"),
+            },
+            elements,
+        )
 
     def test_get_descendant_edges_recursive_false(self):
         hierarchy = Hierarchy(

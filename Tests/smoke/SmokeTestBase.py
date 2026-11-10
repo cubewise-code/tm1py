@@ -57,4 +57,4 @@ class SmokeTestBase(unittest.TestCase):
 
     def mock_get(self, path: str, body: str, status: int = 200):
         # Generic helper if you need other endpoints
-        self.rsps.add(responses.GET, f"{self.base_url}{path}", body=body, status=200)
+        self.rsps.add(responses.GET, f"{self.base_url}{path}", body=body, status=status)

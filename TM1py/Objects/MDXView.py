@@ -5,19 +5,35 @@ import json
 import re
 from typing import Dict, Optional
 
+from TM1py.Objects.DynamicPropertiesMixin import DynamicPropertiesMixin
 from TM1py.Objects.View import View
 from TM1py.Utils import case_and_space_insensitive_equals
 
 
-class MDXView(View):
+class MDXView(DynamicPropertiesMixin, View):
     """Abstraction on TM1 MDX view
 
-    IMPORTANT. MDXViews can't be seen through the old TM1 clients (Archict, Perspectives). They do exist though!
+    IMPORTANT. MDXViews can't be seen through the old TM1 clients (Architect, Perspectives). They do exist though!
     """
 
-    def __init__(self, cube_name: str, view_name: str, MDX: str):
+    _DYNAMIC_PROPERTIES_EXCLUDED_KEYS = frozenset(
+        {
+            "@odata.type",
+            "@odata.context",
+            "@odata.etag",
+            "Name",
+            "MDX",
+            "Cube",
+            "Attributes",
+            "LocalizedAttributes",
+        }
+    )
+
+    def __init__(self, cube_name: str, view_name: str, MDX: str, dynamic_properties: Optional[Dict] = None):
         View.__init__(self, cube_name, view_name)
         self._mdx = MDX
+        self._dynamic_properties = {}
+        self.dynamic_properties = dynamic_properties
 
     @property
     def mdx(self):
@@ -74,6 +90,7 @@ class MDXView(View):
             cube_name=view_as_dict["Cube"]["Name"] if not cube_name else cube_name,
             view_name=view_as_dict["Name"],
             MDX=view_as_dict["MDX"],
+            dynamic_properties=cls._filter_dynamic_properties(view_as_dict),
         )
 
     def construct_body(self) -> str:
@@ -81,4 +98,5 @@ class MDXView(View):
         mdx_view_as_dict["@odata.type"] = "ibm.tm1.api.v1.MDXView"
         mdx_view_as_dict["Name"] = self._name
         mdx_view_as_dict["MDX"] = self._mdx
+        mdx_view_as_dict.update(self._filter_dynamic_properties(self._dynamic_properties))
         return json.dumps(mdx_view_as_dict, ensure_ascii=False)
