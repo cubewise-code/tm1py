@@ -13,7 +13,7 @@ from TM1py.Objects.Process import Process
 from TM1py.Objects.ProcessDebugBreakpoint import ProcessDebugBreakpoint
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import format_url, require_data_admin
+from TM1py.Utils import add_odata_query_options, format_url, require_data_admin
 from TM1py.Utils.Utils import deprecated_in_version, require_version
 
 
@@ -53,10 +53,22 @@ class ProcessService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return Process.from_dict(response.json())
 
-    def get_all(self, skip_control_processes: bool = False, **kwargs) -> List[Process]:
+    def get_all(
+        self,
+        skip_control_processes: bool = False,
+        *,
+        filter: str = None,
+        top: int = None,
+        order_by: str = None,
+        **kwargs,
+    ) -> List[Process]:
         """Get all processes from TM1 Server
 
         :param skip_control_processes: bool, True to exclude processes that begin with "}" or "{"
+        :param filter: OData filter expression, e.g. "startswith(Name,'S')". Combined with ``and`` with filters
+            applied by the method itself.
+        :param top: maximum number of entries to return
+        :param order_by: OData orderby expression, e.g. "Name desc"
         :return: List, instances of the TM1py.Process
         """
         model_process_filter = "&$filter=startswith(Name,'}') eq false and startswith(Name,'{') eq false"
@@ -81,20 +93,34 @@ class ProcessService(ObjectService):
             "DataSource/jsonVariableMapping{}".format(model_process_filter if skip_control_processes else "")
         )
 
+        url = add_odata_query_options(url, filter=filter, top=top, order_by=order_by)
         response = self._rest.GET(url, **kwargs)
         response_as_dict = response.json()
         return [Process.from_dict(p) for p in response_as_dict["value"]]
 
-    def get_all_names(self, skip_control_processes: bool = False, **kwargs) -> List[str]:
+    def get_all_names(
+        self,
+        skip_control_processes: bool = False,
+        *,
+        filter: str = None,
+        top: int = None,
+        order_by: str = None,
+        **kwargs,
+    ) -> List[str]:
         """Get List with all process names from TM1 Server
 
         :param skip_control_processes: bool, True to exclude processes that begin with "}" or "{"
+        :param filter: OData filter expression, e.g. "startswith(Name,'S')". Combined with ``and`` with filters
+            applied by the method itself.
+        :param top: maximum number of entries to return
+        :param order_by: OData orderby expression, e.g. "Name desc"
         :Returns:
             List of Strings
         """
         model_process_filter = "&$filter=startswith(Name,'}') eq false and startswith(Name,'{') eq false"
         url = "/Processes?$select=Name{}".format(model_process_filter if skip_control_processes else "")
 
+        url = add_odata_query_options(url, filter=filter, top=top, order_by=order_by)
         response = self._rest.GET(url, **kwargs)
         processes = list(process["Name"] for process in response.json()["value"])
         return processes

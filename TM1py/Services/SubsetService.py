@@ -8,7 +8,11 @@ from TM1py.Objects import Element, Subset
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.ProcessService import ProcessService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import case_and_space_insensitive_equals, format_url
+from TM1py.Utils import (
+    add_odata_query_options,
+    case_and_space_insensitive_equals,
+    format_url,
+)
 
 
 class SubsetService(ObjectService):
@@ -61,19 +65,32 @@ class SubsetService(ObjectService):
         return Subset.from_dict(response.json())
 
     def get_all_names(
-        self, dimension_name: str, hierarchy_name: str = None, private: bool = False, **kwargs
+        self,
+        dimension_name: str,
+        hierarchy_name: str = None,
+        private: bool = False,
+        *,
+        filter: str = None,
+        top: int = None,
+        order_by: str = None,
+        **kwargs,
     ) -> List[str]:
         """get names of all private or public subsets in a hierarchy
 
         :param dimension_name:
         :param hierarchy_name:
         :param private: Boolean
+        :param filter: OData filter expression, e.g. "startswith(Name,'S')". Combined with ``and`` with filters
+            applied by the method itself.
+        :param top: maximum number of entries to return
+        :param order_by: OData orderby expression, e.g. "Name desc"
         :return: List of Strings
         """
         hierarchy_name = hierarchy_name if hierarchy_name else dimension_name
 
         subsets = "PrivateSubsets" if private else "Subsets"
         url = format_url("/Dimensions('{}')/Hierarchies('{}')/{}?$select=Name", dimension_name, hierarchy_name, subsets)
+        url = add_odata_query_options(url, filter=filter, top=top, order_by=order_by)
         response = self._rest.GET(url=url, **kwargs)
         subsets = response.json()["value"]
         return [subset["Name"] for subset in subsets]

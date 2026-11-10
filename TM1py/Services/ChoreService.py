@@ -10,7 +10,7 @@ from requests import Response
 from TM1py.Objects import Chore, ChoreTask
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import decohints, format_url
+from TM1py.Utils import add_odata_query_options, decohints, format_url
 
 
 @decohints
@@ -85,11 +85,16 @@ class ChoreService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return [Chore.from_dict(chore_as_dict) for chore_as_dict in response.json()["value"]]
 
-    def get_all_names(self, **kwargs) -> List[str]:
+    def get_all_names(self, *, filter: str = None, top: int = None, order_by: str = None, **kwargs) -> List[str]:
         """get a List of all Chores
+        :param filter: OData filter expression, e.g. "startswith(Name,'S')". Combined with ``and`` with filters
+            applied by the method itself.
+        :param top: maximum number of entries to return
+        :param order_by: OData orderby expression, e.g. "Name desc"
         :return: List of TM1py.Chore
         """
         url = "/Chores?$select=Name"
+        url = add_odata_query_options(url, filter=filter, top=top, order_by=order_by)
         response = self._rest.GET(url, **kwargs)
         return [chore["Name"] for chore in response.json()["value"]]
 

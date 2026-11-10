@@ -11,7 +11,7 @@ from TM1py.Objects.MDXView import MDXView
 from TM1py.Objects.NativeView import NativeView
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
-from TM1py.Utils import format_url
+from TM1py.Utils import add_odata_query_options, format_url
 
 
 class ViewService(ObjectService):
@@ -157,15 +157,21 @@ class ViewService(ObjectService):
                     public_views.append(view)
         return private_views, public_views
 
-    def get_all_names(self, cube_name: str, **kwargs) -> Tuple[List[str], List[str]]:
-        """
+    def get_all_names(
+        self, cube_name: str, *, filter: str = None, top: int = None, order_by: str = None, **kwargs
+    ) -> Tuple[List[str], List[str]]:
+        """Get names of all private and public views of a cube
 
         :param cube_name:
-        :return:
+        :param filter: OData filter expression, e.g. "startswith(Name,'S')". Applied to private and public views.
+        :param top: maximum number of entries to return, applied separately to private and public views
+        :param order_by: OData orderby expression, e.g. "Name desc"
+        :return: 2 Lists of view names: private views, public views
         """
         private_views, public_views = [], []
         for view_type in ("PrivateViews", "Views"):
             url = format_url("/Cubes('{}')/{}?$select=Name", cube_name, view_type)
+            url = add_odata_query_options(url, filter=filter, top=top, order_by=order_by)
             response = self._rest.GET(url, **kwargs)
             response_as_list = response.json()["value"]
 
