@@ -191,6 +191,22 @@ class TestSecurityService(unittest.TestCase):
         user = self.tm1.security.get_user(self.user_name)
         self.assertIn(self.group_name2, user.groups)
 
+    def test_add_user_to_groups_keeps_existing_groups(self):
+        self.assertIn(self.group_name1, self.tm1.security.get_groups(self.user_name))
+
+        self.tm1.security.add_user_to_groups(self.user_name, (self.group_name2,))
+
+        groups = CaseAndSpaceInsensitiveSet(self.tm1.security.get_groups(self.user_name))
+        self.assertIn(self.group_name1, groups)
+        self.assertIn(self.group_name2, groups)
+
+    def test_add_user_to_groups_already_member(self):
+        self.tm1.security.add_user_to_groups(self.user_name, (self.group_name1.upper(), self.group_name2))
+
+        groups = self.tm1.security.get_groups(self.user_name)
+        self.assertEqual(1, len([group for group in groups if group.lower() == self.group_name1.lower()]))
+        self.assertIn(self.group_name2, groups)
+
     def test_remove_user_from_group(self):
         self.tm1.security.remove_user_from_group(self.group_name1, self.user_name)
         user = self.tm1.security.get_user(self.user_name)

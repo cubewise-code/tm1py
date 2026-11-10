@@ -76,10 +76,12 @@ class TestManagerService(unittest.TestCase):
         cls.manager.delete_database(instance_name=cls.instance, database_name=cls.database)
         cls.manager.delete_instance(instance_name=cls.instance)
 
+    @pytest.mark.skip(reason="Not supported in PAaaS")
     def test_get_instance(self):
         instance = self.manager.get_instance(instance_name=self.instance)
         self.assertEqual(self.instance, instance.get("Name"))
 
+    @pytest.mark.skip(reason="Not supported in PAaaS")
     def test_get_database(self):
         database = self.manager.get_database(instance_name=self.instance, database_name=self.database)
         self.assertEqual(self.database, database.get("Name"))
@@ -104,6 +106,7 @@ class TestManagerService(unittest.TestCase):
 
         self.assertEqual(replicas, self.starting_replicas)
 
+    @pytest.mark.skip(reason="Not supported in PAaaS")
     def test_create_and_get_application(self):
 
         # Create Application and Store Credentials

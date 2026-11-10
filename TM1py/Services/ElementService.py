@@ -36,6 +36,7 @@ from TM1py.Utils import (
     CaseAndSpaceInsensitiveSet,
     CaseAndSpaceInsensitiveTuplesDict,
     build_element_unique_names,
+    build_url_friendly_object_name,
     dimension_hierarchy_element_tuple_from_unique_name,
     format_url,
     require_data_admin,
@@ -136,32 +137,74 @@ class ElementService(ObjectService):
         use_ti: bool = False,
         use_blob: bool = False,
         remove_blob: bool = True,
+        skip_invalid_edges: bool = True,
         **kwargs,
     ):
+        """
+        Remove edges in TM1.
+
+        :param dimension_name: The name of the dimension.
+        :param hierarchy_name: The name of the hierarchy.
+        :param edges: A list of tuples representing the edges to remove, where each tuple contains a parent and a child.
+        :param use_ti: A boolean indicating whether to use a TI process to delete edges (default: False).
+        :param use_blob: A boolean indicating whether to use a blob file to delete edges (default: False).
+        :param remove_blob: A boolean indicating whether to remove the parent-child file after use (default: True).
+        :param skip_invalid_edges: A boolean indicating whether to skip invalid edges (default: True).
+        """
         if use_ti:
-            return self.delete_edges_use_ti(dimension_name, hierarchy_name, edges, **kwargs)
+            return self.delete_edges_use_ti(dimension_name, hierarchy_name, edges, skip_invalid_edges, **kwargs)
 
         if use_blob:
-            return self.delete_edges_use_blob(dimension_name, hierarchy_name, edges, remove_blob, **kwargs)
+            return self.delete_edges_use_blob(
+                dimension_name, hierarchy_name, edges, remove_blob, skip_invalid_edges, **kwargs
+            )
 
         h_service = self._get_hierarchy_service()
         h = h_service.get(dimension_name, hierarchy_name, **kwargs)
         for edge in edges:
+            if edge not in h.edges and not skip_invalid_edges:
+                raise TM1pyException(f"Edge {edge} does not exist in hierarchy [{dimension_name}].[{hierarchy_name}]")
             h.remove_edge(parent=edge[0], component=edge[1])
         h_service.update(h, **kwargs)
 
-    def delete_edges_use_ti(self, dimension_name: str, hierarchy_name: str, edges: List[str] = None, **kwargs):
+    def delete_edges_use_ti(
+        self,
+        dimension_name: str,
+        hierarchy_name: str,
+        edges: List[str] = None,
+        skip_invalid_edges: bool = True,
+        **kwargs,
+    ):
+        """
+        Remove edges in TM1 via an unbound TI process.
+        :param dimension_name: The name of the dimension.
+        :param hierarchy_name: The name of the hierarchy.
+        :param edges: A list of tuples representing the edges to remove, where each tuple contains a parent and a child.
+        :param skip_invalid_edges: A boolean indicating whether to skip invalid edges (default: True).
+        """
         if not edges:
             return
 
         def escape_single_quote(text):
             return text.replace("'", "''")
 
-        statements = [
-            f"HierarchyElementComponentDelete('{dimension_name}', '{hierarchy_name}', "
-            f"'{escape_single_quote(parent)}', '{escape_single_quote(child)}');"
-            for (parent, child) in edges
-        ]
+        statements = []
+        for parent, child in edges:
+            parent = escape_single_quote(parent)
+            child = escape_single_quote(child)
+            if skip_invalid_edges:
+                statements.extend(
+                    [
+                        f"IF(ElementIsParent('{dimension_name}','{hierarchy_name}','{parent}','{child}')=1);",
+                        f"HierarchyElementComponentDelete('{dimension_name}','{hierarchy_name}','{parent}','{child}');",
+                        "ENDIF;",
+                    ]
+                )
+
+            else:
+                statements.append(
+                    f"HierarchyElementComponentDelete('{dimension_name}', '{hierarchy_name}', '{parent}', '{child}');"
+                )
 
         unbound_process_name = self.suggest_unique_object_name()
 
@@ -174,7 +217,13 @@ class ElementService(ObjectService):
     @require_data_admin
     @require_ops_admin
     def delete_edges_use_blob(
-        self, dimension_name: str, hierarchy_name: str, edges: List[str] = None, remove_blob: bool = True, **kwargs
+        self,
+        dimension_name: str,
+        hierarchy_name: str,
+        edges: List[str] = None,
+        remove_blob: bool = True,
+        skip_invalid_edges: bool = True,
+        **kwargs,
     ):
         """
         Remove edges in TM1 via an unbound TI process having an uploaded CSV as the data source.
@@ -183,53 +232,68 @@ class ElementService(ObjectService):
         :param hierarchy_name: The name of the hierarchy.
         :param edges: A list of tuples representing the edges to remove, where each tuple contains a parent and a child.
         :param remove_blob: A boolean indicating whether to remove the parent-child file after use (default: True).
+        :param skip_invalid_edges: A boolean indicating whether to skip invalid edges (default: True).
         :param kwargs: Additional arguments for the process execution.
         :return: None
         """
-        if not edges:
-            return
-
-        process_service = ProcessService(self._rest)
-        file_service = FileService(self._rest)
-
-        unique_name = self.suggest_unique_object_name()
-
-        # Transform cells to format that's consumable for TI
-        csv_content = StringIO()
-        csv_writer = csv.writer(csv_content, delimiter=",", quoting=csv.QUOTE_ALL)
-        csv_writer.writerows(list(edge) for edge in edges)
-
-        file_name = f"{unique_name}.csv"
-        file_service.create(file_name=file_name, file_content=csv_content.getvalue().encode("utf-8"), **kwargs)
-
-        try:
-            # Create and execute unbound TI process to delete edges using blob file
-            process = self._build_unwind_hierarchy_edges_from_blob_process(
+        return self._run_blob_process(
+            rows=[list(edge) for edge in edges] if edges else [],
+            build_process=lambda process_name, blob_filename: self._build_unwind_hierarchy_edges_from_blob_process(
                 dimension_name=dimension_name,
                 hierarchy_name=hierarchy_name,
-                process_name=unique_name,
-                blob_filename=file_name,
-            )
-
-            success, status, log_file = process_service.execute_process_with_return(process=process, **kwargs)
-            if not success:
-                if status in ["HasMinorErrors"]:
-                    raise TM1pyWritePartialFailureException([status], [log_file], 1)
-                else:
-                    raise TM1pyWriteFailureException([status], [log_file])
-
-        finally:
-            if remove_blob:
-                file_service.delete(file_name=file_name)
+                process_name=process_name,
+                blob_filename=blob_filename,
+                skip_invalid_edges=skip_invalid_edges,
+            ),
+            remove_blob=remove_blob,
+            **kwargs,
+        )
 
     def _build_unwind_hierarchy_edges_from_blob_process(
-        self, dimension_name: str, hierarchy_name: str, process_name: str, blob_filename: str
+        self,
+        dimension_name: str,
+        hierarchy_name: str,
+        process_name: str,
+        blob_filename: str,
+        skip_invalid_edges: bool = True,
     ) -> Process:
+        parent_variable = "vParent"
+        child_variable = "vChild"
+        process = self._build_blob_datasource_process(
+            process_name=process_name,
+            blob_filename=blob_filename,
+            variables=[(parent_variable, "String"), (child_variable, "String")],
+        )
 
-        # v11 automatically adds blb file extensions to documents created via the contents api
+        # Write the statement for delete component in hierarchy
+        if skip_invalid_edges:
+            delete_component = (
+                f"IF(ElementIsParent('{dimension_name}','{hierarchy_name}',{parent_variable},{child_variable})=1);"
+                f"HierarchyElementComponentDelete('{dimension_name}','{hierarchy_name}',{parent_variable},{child_variable});"
+                f"ENDIF;"
+            )
+        else:
+            delete_component = (
+                f"HierarchyElementComponentDelete('{dimension_name}','{hierarchy_name}',"
+                f"{parent_variable},{child_variable});"
+            )
+
+        process.metadata_procedure = delete_component
+        return process
+
+    def _build_blob_datasource_process(
+        self, process_name: str, blob_filename: str, variables: List[Tuple[str, str]]
+    ) -> Process:
+        """Build an unbound Process that reads the given CSV blob as an ASCII data source.
+
+        Declares `variables` (a list of (name, type) tuples, each type 'String' or 'Numeric') and
+        sets UTF-8 input encoding. The caller is responsible for the metadata / data procedure.
+        """
+        # v11 automatically adds a .blb file extension to documents created via the contents api
         if not verify_version(required_version="12", version=self.version):
             blob_filename += ".blb"
-        hierarchyupdate_process = Process(
+
+        process = Process(
             name=process_name,
             datasource_type="ASCII",
             datasource_ascii_header_records=0,
@@ -240,28 +304,85 @@ class ElementService(ObjectService):
             datasource_ascii_thousand_separator="",
             datasource_ascii_quote_character='"',
         )
+        process.prolog_procedure = "SetInputCharacterSet('TM1CS_UTF8');"
+        for variable_name, variable_type in variables:
+            process.add_variable(name=variable_name, variable_type=variable_type)
+        return process
 
-        # Define encoding in Prolog section
-        hierarchyupdate_process.prolog_procedure = """
-        SetInputCharacterSet('TM1CS_UTF8');
-         """
-        parent_variable = "vParent"
-        child_variable = "vChild"
-        hierarchyupdate_process.add_variable(name=parent_variable, variable_type="String")
-        hierarchyupdate_process.add_variable(name=child_variable, variable_type="String")
+    def _run_blob_process(self, rows: Iterable[Iterable], build_process, remove_blob: bool = True, **kwargs):
+        """Upload `rows` as a CSV blob and run an unbound TI process built from it.
 
-        # Write the statement for delete component in hierarchy
-        delete_component = f"\rHierarchyElementComponentDelete('{dimension_name}', '{hierarchy_name}', {parent_variable}, {child_variable});"
+        Shared plumbing for the blob-based element/edge operations: serialize the rows to a CSV,
+        stage it as a blob via the FileService, execute the process returned by `build_process`
+        (a callable taking the unique process name and the blob file name), then clean up the blob.
 
-        # Define Metadata section
-        metadata_statement = delete_component
-        hierarchyupdate_process.metadata_procedure = metadata_statement
-        return hierarchyupdate_process
+        :param rows: An iterable of rows (each an iterable of cell values) written to the CSV blob.
+        :param build_process: Callable (process_name, blob_filename) -> Process to execute.
+        :param remove_blob: Whether to delete the staged blob after execution (default: True).
+        :return: None
+        """
+        # callers typically pass a materialized list/tuple; only consume an iterator/generator
+        # (which we must materialize to test for emptiness) to avoid doubling memory on large builds
+        if not isinstance(rows, (list, tuple)):
+            rows = list(rows)
+        if not rows:
+            return
 
-    def get_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[Element]:
+        process_service = ProcessService(self._rest)
+        file_service = FileService(self._rest)
+
+        unique_name = self.suggest_unique_object_name()
+
+        # Transform rows into a CSV that's consumable as a TI data source
+        csv_content = StringIO()
+        csv_writer = csv.writer(csv_content, delimiter=",", quoting=csv.QUOTE_ALL)
+        csv_writer.writerows(rows)
+
+        file_name = f"{unique_name}.csv"
+        file_service.create(file_name=file_name, file_content=csv_content.getvalue().encode("utf-8"), **kwargs)
+
+        try:
+            process = build_process(unique_name, file_name)
+            success, status, log_file = process_service.execute_process_with_return(process=process, **kwargs)
+            if not success:
+                if status in ["HasMinorErrors"]:
+                    raise TM1pyWritePartialFailureException([status], [log_file], 1)
+                else:
+                    raise TM1pyWriteFailureException([status], [log_file])
+        finally:
+            if remove_blob:
+                file_service.delete(file_name=file_name)
+
+    def get_elements(
+        self,
+        dimension_name: str,
+        hierarchy_name: str,
+        element_type: Optional[Union[int, str, "Element.Types", Iterable]] = None,
+        name_pattern: Optional[str] = None,
+        level: Optional[int] = None,
+        **kwargs,
+    ) -> List[Element]:
+        """Get all elements as Element objects, optionally filtered.
+
+        :param dimension_name: Name of the dimension.
+        :param hierarchy_name: Name of the hierarchy.
+        :param element_type: Restrict to elements of the given type(s). Accepts an
+            ``Element.Types`` enum value, a string ('numeric'/'string'/'consolidated',
+            case-insensitive), an int (1/2/3), or an iterable of any of those (OR-combined).
+        :param name_pattern: Restrict to elements whose name matches the glob pattern.
+            Supports ``*`` wildcard (use ``foo*``, ``*foo``, ``*foo*``, or exact ``foo``).
+            ``?`` is not supported. Matching is case- and space-insensitive.
+        :param level: Restrict to elements at the given hierarchy level (0 = leaf).
+        :return: List of Element objects.
+        """
         url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Elements?select=Name,Type", dimension_name, hierarchy_name
+            "/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name,Type",
+            dimension_name,
+            hierarchy_name,
         )
+        filter_clause = _build_elements_filter(element_type, name_pattern, level)
+        if filter_clause:
+            url += "&$filter=" + filter_clause
         response = self._rest.GET(url, **kwargs)
         return [Element.from_dict(element) for element in response.json()["value"]]
 
@@ -282,6 +403,9 @@ class ElementService(ObjectService):
         allow_empty_alias: bool = True,
         attribute_suffix: bool = False,
         element_type_column: str = "Type",
+        element_type: Optional[Union[int, str, "Element.Types", Iterable]] = None,
+        name_pattern: Optional[str] = None,
+        level: Optional[int] = None,
         **kwargs,
     ) -> "pd.DataFrame":
         """
@@ -300,6 +424,16 @@ class ElementService(ObjectService):
         :param allow_empty_alias: False if empty alias values should be substituted with element names instead
         :param attribute_suffix: True if attribute columns should have ':a', ':s' or ':n' suffix
         :param element_type_column: The column name in the df which specifies which element is which type.
+        :param element_type: Restrict to elements of the given type(s). Accepts an
+            ``Element.Types`` enum value, a string ('numeric'/'string'/'consolidated',
+            case-insensitive), an int (1/2/3), or an iterable of any of those.
+            Only applied when ``elements`` is None. When explicitly set, overrides
+            ``skip_consolidations``.
+        :param name_pattern: Restrict to elements whose name matches the glob pattern
+            (``*`` wildcard, case- and space-insensitive). Only applied when ``elements``
+            is None.
+        :param level: Restrict to elements at the given hierarchy level (0 = leaf).
+            Only applied when ``elements`` is None.
         :return: pandas DataFrame
         """
 
@@ -318,10 +452,40 @@ class ElementService(ObjectService):
             unique_name = record[0][0]["UniqueName"]
             dimension_name, hierarchy_name, _ = dimension_hierarchy_element_tuple_from_unique_name(unique_name)
 
+        trio_filter_active = element_type is not None or name_pattern is not None or level is not None
         if elements is None or not any(elements):
-            elements = f"{{ [{dimension_name}].[{hierarchy_name}].Members }}"
-            if skip_consolidations:
-                elements = f"{{ Tm1FilterByLevel({elements}, 0) }}"
+            if trio_filter_active:
+                # Trio filter explicitly set. Resolve to a concrete element list via the
+                # filtered get_element_names path. The trio is authoritative and overrides
+                # skip_consolidations.
+                resolved = self.get_element_names(
+                    dimension_name=dimension_name,
+                    hierarchy_name=hierarchy_name,
+                    element_type=element_type,
+                    name_pattern=name_pattern,
+                    level=level,
+                    **kwargs,
+                )
+                if resolved:
+                    elements = (
+                        "{" + ",".join(f"[{dimension_name}].[{hierarchy_name}].[{member}]" for member in resolved) + "}"
+                    )
+                else:
+                    # Empty match. Filter the full Members set against an
+                    # unreachably high level so the MDX produces zero rows but the
+                    # downstream pipeline still emits the full column schema
+                    # (dimension name, attributes, levels, parents). A bare "{}"
+                    # axis would lose the dimension column and break the final
+                    # pd.merge on dimension_name.
+                    empty_set_level = 9999
+                    elements = (
+                        f"{{ Tm1FilterByLevel({{ [{dimension_name}].[{hierarchy_name}].Members }}, "
+                        f"{empty_set_level}) }}"
+                    )
+            else:
+                elements = f"{{ [{dimension_name}].[{hierarchy_name}].Members }}"
+                if skip_consolidations:
+                    elements = f"{{ Tm1FilterByLevel({elements}, 0) }}"
 
         if not isinstance(elements, str):
             if isinstance(elements, Iterable):
@@ -341,8 +505,13 @@ class ElementService(ObjectService):
             )
         ]
 
+        # When the trio filter is active, the resolved element list is authoritative.
+        # Fetch the full type lookup so consolidated members survive the inner-join below.
+        element_types_skip_consolidations = False if trio_filter_active else skip_consolidations
         element_types = self.get_element_types(
-            dimension_name=dimension_name, hierarchy_name=hierarchy_name, skip_consolidations=skip_consolidations
+            dimension_name=dimension_name,
+            hierarchy_name=hierarchy_name,
+            skip_consolidations=element_types_skip_consolidations,
         )
 
         df = pd.DataFrame(
@@ -383,38 +552,29 @@ class ElementService(ObjectService):
             depth = 0
             for calculated_name, level_name in levels_dict.items():
                 depth += 1
-                name_or_attribute = f"Properties('{parent_attribute}')" if parent_attribute else "NAME"
-                if not verify_version(required_version="12", version=self.version):
-                    member = f"""
-                    MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{calculated_name}] 
-                    AS [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * depth}{name_or_attribute}
-                    """
-                else:
-                    member = f"""
-                    MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{calculated_name}] 
-                    AS [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * depth}PROPERTIES('{name_or_attribute}')
-                    """
+
+                # Deliberately adding a trailing space to Properties after the attribute name
+                # to ensure the attribute "name" is accessed instead of the built-in NAME property
+                # when the original attribute is called "Name" (this behavior is relevant starting from v12 )
+                name_or_attribute = f"Properties('{parent_attribute} ')" if parent_attribute else "NAME"
+
+                member = f"""
+                MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{calculated_name}] 
+                AS [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * depth}{name_or_attribute}
+                """
                 calculated_members_definition.append(member)
 
                 parent_members.append(f"[{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{calculated_name}]")
 
                 if not skip_weights:
-                    if not verify_version(required_version="12", version=self.version):
-                        member_weight = f"""
-                        MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_name}_Weight] 
-                        AS IIF(
-                        [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * (depth - 1)}Properties('MEMBER_WEIGHT') = '',
-                        0,
-                        [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * (depth - 1)}Properties('MEMBER_WEIGHT'))
-                        """
-                    else:
-                        member_weight = f"""
-                        MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_name}_Weight]
-                        AS IIF(
-                        [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * ( depth - 1)}Properties('MEMBER_WEIGHT') = '',
-                        0,
-                        [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * ( depth - 1)}Properties('MEMBER_WEIGHT'))
-                        """
+                    member_weight = f"""
+                    MEMBER [{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_name}_Weight] 
+                    AS IIF(
+                    [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * (depth - 1)}Properties('MEMBER_WEIGHT') = '',
+                    0,
+                    [{dimension_name}].[{hierarchy_name}].CurrentMember.{'Parent.' * (depth - 1)}Properties('MEMBER_WEIGHT'))
+                    """
+
                     calculated_members_definition.append(member_weight)
 
                     weight_members.append(f"[{self.ELEMENT_ATTRIBUTES_PREFIX + dimension_name}].[{level_name}_Weight]")
@@ -517,7 +677,7 @@ class ElementService(ObjectService):
 
         # format the columns
         df_data[cols_to_format] = df_data[cols_to_format].apply(pd.to_numeric)
-        df_data[cols_to_format] = df_data[cols_to_format].applymap(lambda x: "{:.6f}".format(x))
+        df_data[cols_to_format] = df_data[cols_to_format].apply(lambda col: col.map(lambda x: f"{x:.6f}"))
 
         # override colum types
         element_attributes = self.get_element_attributes(dimension_name, hierarchy_name)
@@ -561,9 +721,16 @@ class ElementService(ObjectService):
 
             df_data.iloc[:, -len(level_columns) :] = df_data.iloc[:, -len(level_columns) :].fillna("")
             if not skip_weights:
-                df_data.iloc[:, -len(level_columns) * 2 : -len(level_names)] = df_data.iloc[
-                    :, -len(level_columns) * 2 : -len(level_names)
-                ].fillna(0)
+                expected_weight_cols = {f"{lvl}_Weight" for lvl in level_columns}
+                weight_cols = [c for c in df_data.columns if c in expected_weight_cols]
+
+                if weight_cols:
+                    df_data[weight_cols] = (
+                        df_data[weight_cols]
+                        .apply(pd.to_numeric, errors="coerce")
+                        .fillna(0.0)
+                        .apply(lambda col: col.map(lambda x: f"{x:.6f}"))
+                    )
 
         return pd.merge(df, df_data, on=dimension_name).drop_duplicates()
 
@@ -641,14 +808,36 @@ class ElementService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return [e["Name"] for e in response.json()["value"]]
 
-    def get_element_names(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
-        """Get all element names
+    def get_element_names(
+        self,
+        dimension_name: str,
+        hierarchy_name: str,
+        element_type: Optional[Union[int, str, "Element.Types", Iterable]] = None,
+        name_pattern: Optional[str] = None,
+        level: Optional[int] = None,
+        **kwargs,
+    ) -> List[str]:
+        """Get all element names, optionally filtered.
 
-        :param dimension_name:
-        :param hierarchy_name:
-        :return: Generator of element-names
+        :param dimension_name: Name of the dimension.
+        :param hierarchy_name: Name of the hierarchy.
+        :param element_type: Restrict to elements of the given type(s). Accepts an
+            ``Element.Types`` enum value, a string ('numeric'/'string'/'consolidated',
+            case-insensitive), an int (1/2/3), or an iterable of any of those (OR-combined).
+        :param name_pattern: Restrict to elements whose name matches the glob pattern.
+            Supports ``*`` wildcard (use ``foo*``, ``*foo``, ``*foo*``, or exact ``foo``).
+            ``?`` is not supported. Matching is case- and space-insensitive.
+        :param level: Restrict to elements at the given hierarchy level (0 = leaf).
+        :return: List of element names.
         """
-        url = format_url("/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name", dimension_name, hierarchy_name)
+        url = format_url(
+            "/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name",
+            dimension_name,
+            hierarchy_name,
+        )
+        filter_clause = _build_elements_filter(element_type, name_pattern, level)
+        if filter_clause:
+            url += "&$filter=" + filter_clause
         response = self._rest.GET(url, **kwargs)
         return [e["Name"] for e in response.json()["value"]]
 
@@ -698,43 +887,33 @@ class ElementService(ObjectService):
         return self.get_element_identifiers(dimension_name, hierarchy_name, mdx_elements, **kwargs)
 
     def get_elements_by_level(self, dimension_name: str, hierarchy_name: str, level: int, **kwargs) -> List[str]:
-        """Get all element names by level in a hierarchy
+        """Get all element names by level in a hierarchy.
 
         :param dimension_name: Name of the dimension
         :param hierarchy_name: Name of the hierarchy
         :param level: Level to filter
         :return: List of element names
         """
-        url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Level eq {}",
-            dimension_name,
-            hierarchy_name,
-            str(level),
-        )
-        response = self._rest.GET(url, **kwargs)
-        return [e["Name"] for e in response.json()["value"]]
+        return self.get_element_names(dimension_name, hierarchy_name, level=level, **kwargs)
 
     def get_elements_filtered_by_wildcard(
         self, dimension_name: str, hierarchy_name: str, wildcard: str, level: int = None, **kwargs
     ) -> List[str]:
-        """Get all element names filtered by wildcard (CaseAndSpaceInsensitive) and level in a hierarchy
+        """Get all element names filtered by wildcard (case- and space-insensitive contains) and optional level.
 
         :param dimension_name: Name of the dimension
         :param hierarchy_name: Name of the hierarchy
-        :param wildcard: wildcard to filter
-        :param level: Level to filter
+        :param wildcard: substring to match (case- and space-insensitive contains)
+        :param level: Optional level to filter
         :return: List of element names
         """
-        filter_elements = format_url("contains(tolower(replace(Name,' ','')),tolower(replace('{}',' ', '')))", wildcard)
-        if level is not None:
-            filter_elements = filter_elements + f" and Level eq {level}"
-        url = format_url(
-            "/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=" + filter_elements,
+        return self.get_element_names(
             dimension_name,
             hierarchy_name,
+            name_pattern=f"*{wildcard}*",
+            level=level,
+            **kwargs,
         )
-        response = self._rest.GET(url, **kwargs)
-        return [e["Name"] for e in response.json()["value"]]
 
     def get_all_element_identifiers(
         self, dimension_name: str, hierarchy_name: str, **kwargs
@@ -1100,7 +1279,7 @@ class ElementService(ObjectService):
                     component_name = sub_tree["Component"]["Name"]
                 else:
                     component_name = sub_tree["ComponentName"]
-                edges[sub_tree["ParentName"],component_name]  = sub_tree["Weight"]
+                edges[sub_tree["ParentName"], component_name] = sub_tree["Weight"]
 
                 if "Edges" not in sub_tree["Component"]:
                     continue
@@ -1189,7 +1368,7 @@ class ElementService(ObjectService):
          to return, can be None or empty
         :param element_properties: list of element properties (e.g., Name, UniqueName, Type, Level, Index,
         Attributes/Color) to return, can be empty
-        :return: dictionary of members, unique names, weights, types, and parents
+        :return: dictionary of members, unique names, weights, types, and parents or async id when return_async_id is True
         """
 
         top = f"$top={top_records};" if top_records else ""
@@ -1243,8 +1422,11 @@ class ElementService(ObjectService):
 
         payload = {"MDX": mdx}
         response = self._rest.POST(url, json.dumps(payload, ensure_ascii=False), **kwargs)
-        raw_dict = response.json()
-        return [tuples["Members"] for tuples in raw_dict["Tuples"]]
+        if kwargs.get("return_async_id", False):
+            return response
+        else:
+            raw_dict = response.json()
+            return [tuples["Members"] for tuples in raw_dict["Tuples"]]
 
     def remove_edge(self, dimension_name: str, hierarchy_name: str, parent: str, component: str, **kwargs) -> Response:
         """Remove one edge from hierarchy. Fails if parent or child element doesn't exist.
@@ -1268,17 +1450,35 @@ class ElementService(ObjectService):
         return self._rest.DELETE(url=url, **kwargs)
 
     def add_edges(
-        self, dimension_name: str, hierarchy_name: str = None, edges: Dict[Tuple[str, str], int] = None, **kwargs
-    ) -> Response:
+        self,
+        dimension_name: str,
+        hierarchy_name: str = None,
+        edges: Dict[Tuple[str, str], int] = None,
+        use_blob: bool = False,
+        remove_blob: bool = True,
+        **kwargs,
+    ) -> Optional[Response]:
         """Add Edges to hierarchy. Fails if one edge already exists.
 
         :param dimension_name:
         :param hierarchy_name:
-        :param edges:
+        :param edges: A dict mapping (parent, component) tuples to the edge weight.
+        :param use_blob: Add the edges via an uploaded CSV blob + unbound TI process. Requires admin
+            permissions. Better performance on large edge sets. Returns None instead of a Response.
+        :param remove_blob: Remove the staged blob file after use (only with use_blob=True, default: True).
         :return:
         """
         if not hierarchy_name:
             hierarchy_name = dimension_name
+
+        if use_blob:
+            return self.add_edges_use_blob(
+                dimension_name=dimension_name,
+                hierarchy_name=hierarchy_name,
+                edges=edges,
+                remove_blob=remove_blob,
+                **kwargs,
+            )
 
         url = format_url("/Dimensions('{}')/Hierarchies('{}')/Edges", dimension_name, hierarchy_name)
         body = [
@@ -1288,18 +1488,142 @@ class ElementService(ObjectService):
 
         return self._rest.POST(url=url, data=json.dumps(body), **kwargs)
 
-    def add_elements(self, dimension_name: str, hierarchy_name: str, elements: Iterable[Element], **kwargs):
+    @require_data_admin
+    @require_ops_admin
+    @require_version(version="11.4")
+    def add_edges_use_blob(
+        self,
+        dimension_name: str,
+        hierarchy_name: str = None,
+        edges: Dict[Tuple[str, str], int] = None,
+        remove_blob: bool = True,
+        **kwargs,
+    ):
+        """Add edges to a hierarchy via an unbound TI process having an uploaded CSV as the data source.
+
+        Mirrors `add_edges` but scales better to large edge sets. Edges that already exist surface as
+        minor errors (raised as TM1pyWritePartialFailureException).
+
+        :param dimension_name: The name of the dimension.
+        :param hierarchy_name: The name of the hierarchy. Defaults to the dimension name.
+        :param edges: A dict mapping (parent, component) tuples to the edge weight.
+        :param remove_blob: Remove the staged blob file after use (default: True).
+        :return: None
+        """
+        if not hierarchy_name:
+            hierarchy_name = dimension_name
+
+        return self._run_blob_process(
+            rows=[[parent, component, weight] for (parent, component), weight in edges.items()] if edges else [],
+            build_process=lambda process_name, blob_filename: self._build_add_edges_from_blob_process(
+                dimension_name=dimension_name,
+                hierarchy_name=hierarchy_name,
+                process_name=process_name,
+                blob_filename=blob_filename,
+            ),
+            remove_blob=remove_blob,
+            **kwargs,
+        )
+
+    def _build_add_edges_from_blob_process(
+        self, dimension_name: str, hierarchy_name: str, process_name: str, blob_filename: str
+    ) -> Process:
+        parent_variable = "vParent"
+        child_variable = "vChild"
+        weight_variable = "vWeight"
+        process = self._build_blob_datasource_process(
+            process_name=process_name,
+            blob_filename=blob_filename,
+            variables=[(parent_variable, "String"), (child_variable, "String"), (weight_variable, "Numeric")],
+        )
+        process.metadata_procedure = (
+            f"HierarchyElementComponentAdd('{dimension_name}','{hierarchy_name}',"
+            f"{parent_variable},{child_variable},{weight_variable});"
+        )
+        return process
+
+    def add_elements(
+        self,
+        dimension_name: str,
+        hierarchy_name: str,
+        elements: Iterable[Element],
+        use_blob: bool = False,
+        remove_blob: bool = True,
+        **kwargs,
+    ) -> Optional[Response]:
         """Add elements to hierarchy. Fails if one element already exists.
 
         :param dimension_name:
         :param hierarchy_name:
         :param elements:
+        :param use_blob: Add the elements via an uploaded CSV blob + unbound TI process. Requires admin
+            permissions. Better performance on large element sets. Returns None instead of a Response.
+        :param remove_blob: Remove the staged blob file after use (only with use_blob=True, default: True).
         :return:
         """
+        if use_blob:
+            return self.add_elements_use_blob(
+                dimension_name=dimension_name,
+                hierarchy_name=hierarchy_name,
+                elements=elements,
+                remove_blob=remove_blob,
+                **kwargs,
+            )
+
         url = format_url("/Dimensions('{}')/Hierarchies('{}')/Elements", dimension_name, hierarchy_name)
         body = [element.body_as_dict for element in elements]
 
         return self._rest.POST(url=url, data=json.dumps(body), **kwargs)
+
+    @require_data_admin
+    @require_ops_admin
+    @require_version(version="11.4")
+    def add_elements_use_blob(
+        self,
+        dimension_name: str,
+        hierarchy_name: str,
+        elements: Iterable[Element],
+        remove_blob: bool = True,
+        **kwargs,
+    ):
+        """Add elements to a hierarchy via an unbound TI process having an uploaded CSV as the data source.
+
+        Mirrors `add_elements` but scales better to large element sets. Elements that already exist
+        surface as minor errors (raised as TM1pyWritePartialFailureException).
+
+        :param dimension_name: The name of the dimension.
+        :param hierarchy_name: The name of the hierarchy.
+        :param elements: An iterable of Element objects to add.
+        :param remove_blob: Remove the staged blob file after use (default: True).
+        :return: None
+        """
+        return self._run_blob_process(
+            rows=[[element.name, str(element.element_type)[0]] for element in elements] if elements else [],
+            build_process=lambda process_name, blob_filename: self._build_add_elements_from_blob_process(
+                dimension_name=dimension_name,
+                hierarchy_name=hierarchy_name,
+                process_name=process_name,
+                blob_filename=blob_filename,
+            ),
+            remove_blob=remove_blob,
+            **kwargs,
+        )
+
+    def _build_add_elements_from_blob_process(
+        self, dimension_name: str, hierarchy_name: str, process_name: str, blob_filename: str
+    ) -> Process:
+        element_variable = "vElement"
+        type_variable = "vType"
+        process = self._build_blob_datasource_process(
+            process_name=process_name,
+            blob_filename=blob_filename,
+            variables=[(element_variable, "String"), (type_variable, "String")],
+        )
+        # empty insertion point -> elements are appended to the hierarchy
+        process.metadata_procedure = (
+            f"HierarchyElementInsert('{dimension_name}','{hierarchy_name}','',{element_variable},{type_variable});"
+        )
+        return process
 
     def add_element_attributes(
         self, dimension_name: str, hierarchy_name: str, element_attributes: List[ElementAttribute], **kwargs
@@ -1330,8 +1654,10 @@ class ElementService(ObjectService):
 
     def get_parents_of_all_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> Dict[str, List[str]]:
         url = format_url(
-            f"/Dimensions('{dimension_name}')/Hierarchies('{hierarchy_name}')/Elements?$select=Name"
-            f"&$expand=Parents($select=Name)",
+            "/Dimensions('{dimension_name}')/Hierarchies('{hierarchy_name}')/Elements?$select=Name"
+            "&$expand=Parents($select=Name)",
+            dimension_name=dimension_name,
+            hierarchy_name=hierarchy_name,
         )
         response = self._rest.GET(url=url, **kwargs)
 
@@ -1489,3 +1815,168 @@ class ElementService(ObjectService):
         from TM1py import CellService
 
         return CellService(self._rest)
+
+
+# ---------------------------------------------------------------------------
+# Filtering helpers (private, module-level)
+# ---------------------------------------------------------------------------
+
+_TYPE_NAME_TO_CODE = {"numeric": 1, "string": 2, "consolidated": 3}
+_VALID_TYPE_CODES = {1, 2, 3}
+_INVALID_ELEMENT_TYPE_MSG = (
+    "Invalid element_type {value!r}: expected 'numeric', 'string', 'consolidated', Element.Types enum, or int 1/2/3"
+)
+
+
+def _coerce_one_element_type(value) -> int:
+    """Coerce a single element_type input to its OData type code (1, 2, or 3).
+
+    Accepts Element.Types enum, str (case-insensitive), or int in {1, 2, 3}.
+    Raises ValueError on anything else.
+    """
+    # Reject bool first: bool is a subclass of int in Python, but True/False
+    # are not valid type codes.
+    if isinstance(value, bool):
+        raise ValueError(_INVALID_ELEMENT_TYPE_MSG.format(value=value))
+    if isinstance(value, Element.Types):
+        return int(value.value)
+    if isinstance(value, str):
+        code = _TYPE_NAME_TO_CODE.get(value.lower())
+        if code is None:
+            raise ValueError(_INVALID_ELEMENT_TYPE_MSG.format(value=value))
+        return code
+    if isinstance(value, int) and value in _VALID_TYPE_CODES:
+        return value
+    raise ValueError(_INVALID_ELEMENT_TYPE_MSG.format(value=value))
+
+
+def _coerce_element_types(value) -> List[int]:
+    """Normalize element_type input to a deduplicated list of OData type codes.
+
+    :param value: Element.Types enum, str ('numeric'/'string'/'consolidated', case-insensitive),
+        int in {1, 2, 3}, an iterable of any of those, or None.
+    :return: Deduplicated list of OData type codes (e.g. [1, 3]), preserving first-seen order.
+        Returns [] when value is None.
+    :raises ValueError: on unknown values or empty iterables.
+    """
+    if value is None:
+        return []
+
+    # Single-value path (these come BEFORE the iterable check because str is iterable)
+    if isinstance(value, (Element.Types, str, int)):
+        return [_coerce_one_element_type(value)]
+
+    # Iterable path
+    try:
+        items = list(value)
+    except TypeError:
+        raise ValueError(_INVALID_ELEMENT_TYPE_MSG.format(value=value))
+    if not items:
+        raise ValueError("element_type list cannot be empty (pass None to skip the filter)")
+
+    seen, out = set(), []
+    for item in items:
+        code = _coerce_one_element_type(item)
+        if code not in seen:
+            seen.add(code)
+            out.append(code)
+    return out
+
+
+def _odata_str_literal(s: str) -> str:
+    """Wrap a string in single quotes for use inside an OData $filter clause that
+    will be appended raw to a URL query string.
+
+    Doubles embedded single quotes per the OData spec AND percent-encodes
+    URL-reserved characters ('%', '#', '?', '&') so that user-supplied values
+    containing those chars don't corrupt the query string. Delegates the escaping
+    to ``build_url_friendly_object_name`` to stay aligned with the rest of the
+    codebase's URL-construction convention.
+    """
+    return "'" + build_url_friendly_object_name(s) + "'"
+
+
+def _normalize_for_match(s: str) -> str:
+    """Lowercase and strip spaces; mirrors what we apply to the Name property server-side."""
+    return s.replace(" ", "").lower()
+
+
+def _pattern_to_odata(pattern: str) -> str:
+    """Translate a glob pattern (with '*' wildcards) to an OData filter fragment
+    that matches case- and space-insensitively against the Name property.
+
+    Supports '*' only. '?' raises ValueError (caller responsibility to validate)."""
+    name_expr = "tolower(replace(Name,' ',''))"
+
+    leading_anchor = not pattern.startswith("*")
+    trailing_anchor = not pattern.endswith("*")
+    inner = [s for s in pattern.split("*") if s != ""]
+
+    if not inner:
+        # Pattern was '*' or '**': matches everything. Emit a tautology.
+        return f"{name_expr} eq {name_expr}"
+
+    inner_lits = [_odata_str_literal(_normalize_for_match(s)) for s in inner]
+
+    # Single inner segment, both anchored: exact match
+    if len(inner) == 1 and leading_anchor and trailing_anchor:
+        return f"{name_expr} eq {inner_lits[0]}"
+
+    parts = []
+    for i, lit in enumerate(inner_lits):
+        is_first = i == 0
+        is_last = i == len(inner_lits) - 1
+        if is_first and leading_anchor:
+            parts.append(f"startswith({name_expr},{lit})")
+        elif is_last and trailing_anchor:
+            parts.append(f"endswith({name_expr},{lit})")
+        else:
+            parts.append(f"contains({name_expr},{lit})")
+    return " and ".join(parts)
+
+
+def _build_elements_filter(
+    element_type: Optional[Union[int, str, Element.Types, Iterable]],
+    name_pattern: Optional[str],
+    level: Optional[int],
+) -> str:
+    """Build an OData $filter clause (without the leading '$filter=') from the optional
+    type / pattern / level filters.
+
+    :param element_type: see _coerce_element_types
+    :param name_pattern: glob with '*' wildcard, case- and space-insensitive. Supports exact,
+        'foo*', '*foo', '*foo*', and multi-segment (e.g. '*eu*region*'). '?' is not supported.
+    :param level: hierarchy level (>= 0). 0 is the leaf level.
+    :return: OData filter clause string, or '' if all three args are None.
+    :raises ValueError: on invalid type/pattern/level values.
+    :raises TypeError: when name_pattern is not str or level is not int.
+    """
+    clauses: List[str] = []
+
+    # Type clause
+    type_codes = _coerce_element_types(element_type)
+    if type_codes:
+        if len(type_codes) == 1:
+            clauses.append(f"Type eq {type_codes[0]}")
+        else:
+            clauses.append("(" + " or ".join(f"Type eq {c}" for c in type_codes) + ")")
+
+    # Pattern clause
+    if name_pattern is not None:
+        if not isinstance(name_pattern, str):
+            raise TypeError(f"name_pattern must be str, got {type(name_pattern).__name__}")
+        if name_pattern == "":
+            raise ValueError("name_pattern cannot be empty (pass None to skip the filter)")
+        if "?" in name_pattern:
+            raise ValueError("'?' wildcard not supported in name_pattern, only '*'")
+        clauses.append(_pattern_to_odata(name_pattern))
+
+    # Level clause
+    if level is not None:
+        if isinstance(level, bool) or not isinstance(level, int):
+            raise TypeError(f"level must be int, got {type(level).__name__}")
+        if level < 0:
+            raise ValueError("level must be >= 0")
+        clauses.append(f"Level eq {level}")
+
+    return " and ".join(clauses)

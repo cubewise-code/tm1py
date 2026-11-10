@@ -11,9 +11,9 @@ from TM1py.Utils import format_url
 class ChoreTask(TM1Object):
     """Abstraction of a Chore Task
 
-    A Chore task always conistst of
-    - The step integer ID: it's order in the execution plan.
-      1 to n, where n is the last Process in the Chore
+    A Chore task always consists of
+    - The step integer ID: its order in the execution plan.
+      0-based: 0 to n-1, where n is the number of Processes in the Chore
     - The name of the process to execute
     - The parameters for the process
 
@@ -22,7 +22,7 @@ class ChoreTask(TM1Object):
     def __init__(self, step: int, process_name: str, parameters: List[Dict[str, str]]):
         """
 
-        :param step: step in the execution order of the Chores' processes. 1 to n, where n the number of processes
+        :param step: step in the execution order of the Chore's processes. 0-based: 0 to n-1, where n is the number of processes
         :param process_name: name of the process
         :param parameters: list of dictionaries with 'Name' and 'Value' property:
                             [{

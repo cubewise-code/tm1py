@@ -1,5 +1,6 @@
 import configparser
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 try:
@@ -145,6 +146,59 @@ class TestUtilsMethods(unittest.TestCase):
                 "d1": ["e1", "e1", "e2", "e2"],
                 "d2": ["e1", "e2", "e1", "e2"],
                 "Value": [1.0, 2.0, 3.0, 4.0],
+            }
+        )
+
+        pd._testing.assert_frame_equal(expected_df, df, check_column_type=False)
+
+    def test_build_dataframe_from_csv_shaped_numbers_and_strings(self):
+        raw_csv = (
+            "Region~Product~Measure~Value\r\n"
+            "r1~p1~Revenue~1.0\r\n"
+            "r1~p2~Revenue~3.0\r\n"
+            "r1~p1~Comment~Great Product\r\n"
+            "r1~p2~Comment~"
+        )
+        df = build_dataframe_from_csv(raw_csv, dtype={"Revenue": float}, shaped=True)
+
+        expected_df = pd.DataFrame(
+            {
+                "Region": ["r1", "r1"],
+                "Product": ["p1", "p2"],
+                "Comment": ["Great Product", ""],
+                "Revenue": [1.00000, 3.00000],
+            }
+        )
+
+        # explicit conversion for exact comparison
+        expected_df["Revenue"] = expected_df["Revenue"].astype(float)
+        df["Revenue"] = df["Revenue"].astype(float)
+
+        pd._testing.assert_frame_equal(expected_df, df)
+
+    def test_build_dataframe_from_csv_shaped(self):
+        raw_csv = "Region~Product~Measure~Value\r\n" "r1~p1~Revenue~1.0\r\n" "r1~p2~Revenue~3.0\r\n" "r2~p2~Revenue~4.0"
+        df = build_dataframe_from_csv(raw_csv, dtype={"Revenue": float}, shaped=True)
+
+        expected_df = pd.DataFrame(
+            {
+                "Region": ["r1", "r1", "r2"],
+                "Product": ["p1", "p2", "p2"],
+                "Revenue": [1.00000, 3.00000, 4.00000],
+            }
+        )
+
+        pd._testing.assert_frame_equal(expected_df, df, check_column_type=False)
+
+    def test_build_dataframe_from_csv_shaped_with_duplicates(self):
+        raw_csv = "Region~Product~Measure~Value\r\n" "r1~p1~Revenue~1.0\r\n" "r1~p1~Revenue~1.0\r\n" "r2~p2~Revenue~4.0"
+        df = build_dataframe_from_csv(raw_csv, dtype={"Revenue": float}, shaped=True)
+
+        expected_df = pd.DataFrame(
+            {
+                "Region": ["r1", "r1", "r2"],
+                "Product": ["p1", "p1", "p2"],
+                "Revenue": [1.00000, 1.00000, 4.00000],
             }
         )
 
@@ -672,6 +726,37 @@ class TestUtilsMethods(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.tm1.logout()
+
+
+class TestDatetimeToIso(unittest.TestCase):
+    """Server-free tests for Utils.datetime_to_iso (TM1 Metrics API timestamps)."""
+
+    def test_naive_datetime_assumed_utc(self):
+        self.assertEqual(
+            Utils.datetime_to_iso(datetime(2026, 5, 8, 0, 2, 24)),
+            "2026-05-08T00:02:24.000Z",
+        )
+
+    def test_sub_second_precision_preserved_to_milliseconds(self):
+        # 123_456 microseconds -> 123 milliseconds (truncated, not rounded)
+        self.assertEqual(
+            Utils.datetime_to_iso(datetime(2026, 5, 8, 0, 2, 24, 123_456)),
+            "2026-05-08T00:02:24.123Z",
+        )
+
+    def test_aware_datetime_converted_to_utc(self):
+        # a tz-aware datetime is normalized to UTC before formatting
+        tz_plus_2 = timezone(timedelta(hours=2))
+        aware = datetime(2026, 5, 8, 12, 0, 0, tzinfo=tz_plus_2)
+        self.assertEqual(Utils.datetime_to_iso(aware), "2026-05-08T10:00:00.000Z")
+
+    def test_utc_aware_datetime_unchanged(self):
+        aware = datetime(2026, 5, 8, 10, 0, 0, tzinfo=timezone.utc)
+        self.assertEqual(Utils.datetime_to_iso(aware), "2026-05-08T10:00:00.000Z")
+
+    def test_non_datetime_raises_typeerror(self):
+        with self.assertRaises(TypeError):
+            Utils.datetime_to_iso("2026-05-08")
 
 
 if __name__ == "__main__":

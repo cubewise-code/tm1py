@@ -57,6 +57,7 @@ from TM1py.Services.HierarchyService import HierarchyService
 from TM1py.Services.JobService import JobService
 from TM1py.Services.ManageService import ManageService
 from TM1py.Services.MessageLogService import MessageLogService
+from TM1py.Services.MetricService import MetricService
 from TM1py.Services.MonitoringService import MonitoringService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.PowerBiService import PowerBiService
@@ -74,4 +75,11 @@ from TM1py.Services.UserService import UserService
 from TM1py.Services.ViewService import ViewService
 from TM1py.Utils import Utils
 
-__version__ = "2.2"
+# Version is managed in pyproject.toml
+try:
+    from importlib.metadata import version
+
+    __version__ = version("TM1py")
+except Exception:
+    # Fallback for development installations
+    __version__ = "2.2.0"

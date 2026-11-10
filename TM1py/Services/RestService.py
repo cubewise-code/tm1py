@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import gzip
 import json
 import re
 import socket
@@ -20,7 +21,6 @@ from requests.adapters import HTTPAdapter
 from requests.auth import HTTPBasicAuth
 from urllib3._collections import HTTPHeaderDict
 
-from TM1py.Exceptions.Exceptions import TM1pyTimeout, TM1pyVersionDeprecationException
 from TM1py.Utils import (
     CaseAndSpaceInsensitiveSet,
     HTTPAdapterWithSocketOptions,
@@ -35,7 +35,12 @@ except ImportError:
 
 import http.client as http_client
 
-from TM1py.Exceptions import TM1pyRestException
+from TM1py.Exceptions import (
+    TM1pyNetworkException,
+    TM1pyRestException,
+    TM1pyTimeout,
+    TM1pyVersionDeprecationException,
+)
 
 
 class AuthenticationMode(Enum):
@@ -135,8 +140,11 @@ class RestService:
         - **proxies** (dict): Dictionary with proxies, e.g. {'http': 'http://proxy.example.com:8080', 'https': 'http://secureproxy.example.com:8090'}.
         - **ssl_context**: User-defined SSL context.
         - **cert** (str|tuple): (Optional) If string, path to SSL client cert file (.pem). If tuple, ('cert', 'key') pair.
+        - **compress_request_body** (bool): Gzip-compress request bodies at the transport seam. Opt-in. Default: False.
+        - **gzip_min_bytes** (int): Minimum (encoded) request body size in bytes to compress. Default: 1024.
+        - **gzip_compress_level** (int): Gzip compression level, 1 (fastest) to 9 (smallest). Default: 6.
 
-        :param kwargs: See description above for all supported arguments	
+        :param kwargs: See description above for all supported arguments
         """
         # store kwargs for future use e.g. re_connect on 401 session timeout
         self._kwargs = kwargs
@@ -172,6 +180,14 @@ class RestService:
         self._async_polling_initial_delay = float(kwargs.get("async_polling_initial_delay", 0.1))
         self._async_polling_max_delay = float(kwargs.get("async_polling_max_delay", 1.0))
         self._async_polling_backoff_factor = float(kwargs.get("async_polling_backoff_factor", 2))
+        # gzip compression of the request body (opt-in)
+        self._compress_request_body = self.translate_to_boolean(kwargs.get("compress_request_body", False))
+        self._gzip_min_bytes = max(0, int(kwargs.get("gzip_min_bytes", 1024)))
+        self._gzip_compress_level = int(kwargs.get("gzip_compress_level", 6))
+        # validate the level up front: an out-of-range value otherwise raises a zlib.error deep
+        # inside gzip.compress at request time, which is harder to trace back to this kwarg.
+        if not 1 <= self._gzip_compress_level <= 9:
+            raise ValueError("'gzip_compress_level' must be an int between 1 and 9")
         # is retrieved on demand and then cached
         self._sandboxing_disabled = None
         # optional verbose logging to stdout
@@ -257,7 +273,7 @@ class RestService:
             try:
                 return json.loads(proxies)
             except JSONDecodeError:
-                raise ValueError("Invalid JSON passed for argument 'proxies': %s", proxies)
+                raise ValueError(f"Invalid JSON passed for argument 'proxies': {proxies}")
 
         # handle invalid type
         raise ValueError("Argument of 'proxies' must be None, dictionary or JSON string")
@@ -280,6 +296,11 @@ class RestService:
         Execute a request to TM1 REST API
         """
         url, data = self._url_and_body(url=url, data=data, encoding=encoding)
+
+        # Compress the request body once, before any retry path, so that the sync, async and
+        # reconnect/retry code paths all re-send the same compressed bytes (no double-compression).
+        if self._compress_request_body:
+            data, kwargs["headers"] = self._maybe_compress_body(data, kwargs.get("headers") or {})
 
         timeout = timeout if timeout else self._timeout
 
@@ -371,7 +392,11 @@ class RestService:
         """
         # Add async header
         http_headers = kwargs.get("headers", dict())
-        http_headers.update({"Prefer": "respond-async"})
+        # if return_async_id is explicitly requested, we don't add wait time to Prefer header
+        if not return_async_id:
+            http_headers.update({"Prefer": "respond-async,wait=55"})
+        else:
+            http_headers.update({"Prefer": "respond-async"})
         kwargs["headers"] = http_headers
 
         # Make initial request
@@ -386,17 +411,19 @@ class RestService:
 
         self.verify_response(response=response)
 
+        if response.status_code != 202:
+            return response
+
         # Handle async response
-        if "Location" in response.headers and "'" in response.headers.get("Location", ""):
-            async_id = response.headers.get("Location").split("'")[1]
-            if return_async_id:
-                return async_id
+        async_id = response.headers.get("Location").split("'")[1]
+        if return_async_id:
+            return async_id
 
-            # Poll for async result
-            response = self._poll_async_response(async_id, timeout, cancel_at_timeout, method, url)
+        # Poll for async result
+        response = self._poll_async_response(async_id, timeout, cancel_at_timeout, method, url)
 
-            # Transform response if needed
-            response = self._transform_async_response(response)
+        # Transform response if needed
+        response = self._transform_async_response(response)
 
         return response
 
@@ -456,12 +483,11 @@ class RestService:
             # Calculate delay with exponential backoff: delay * backoff_factor^(attempt-1), capped at max_delay
             current_delay = min(
                 self._remote_disconnect_retry_delay * (self._remote_disconnect_backoff_factor ** (attempt - 1)),
-                self._remote_disconnect_max_delay
+                self._remote_disconnect_max_delay,
             )
 
             warnings.warn(
-                f"Retry attempt {attempt}/{self._remote_disconnect_max_retries} "
-                f"after {current_delay:.1f}s delay..."
+                f"Retry attempt {attempt}/{self._remote_disconnect_max_retries} " f"after {current_delay:.1f}s delay..."
             )
 
             time.sleep(current_delay)
@@ -502,19 +528,15 @@ class RestService:
             except TM1pyTimeout:
                 # Re-raise timeout exceptions as-is
                 raise
-            except TM1pyRestException:
+            except (TM1pyRestException, TM1pyNetworkException):
                 # Re-raise TM1 exceptions as-is
                 raise
             except Exception as retry_error:
-                warnings.warn(
-                    f"Retry attempt {attempt}/{self._remote_disconnect_max_retries} failed: {retry_error}"
-                )
+                warnings.warn(f"Retry attempt {attempt}/{self._remote_disconnect_max_retries} failed: {retry_error}")
                 continue
 
         # All retries exhausted
-        warnings.warn(
-            f"All {self._remote_disconnect_max_retries} retry attempts failed after remote disconnect"
-        )
+        warnings.warn(f"All {self._remote_disconnect_max_retries} retry attempts failed after remote disconnect")
         raise original_error
 
     def connect(self):
@@ -601,8 +623,9 @@ class RestService:
         if self._address is not None:
             raise ValueError("Base URL and Address can not be specified at the same time")
 
+        self._base_url = self._base_url.rstrip("/")
         # v12 requires an auth URL be provided if a base URL is specified
-        elif "api/v1/Databases" in self._base_url:
+        if "api/v1/Databases" in self._base_url:
             if not self._auth_url:
                 raise ValueError(
                     "Auth_url missing, when connecting to planning analytics engine and using the "
@@ -1013,7 +1036,7 @@ class RestService:
         finally:
             # If the TM1 REST API is routed through a reverse proxy that alters the expected URL,
             # we explicitly re-set the 'TM1SessionId' cookie to maintain session continuity.
-            session_id = self._s.cookies.pop("TM1SessionId", None)
+            session_id = self._pop_cookie("TM1SessionId")
             if session_id is not None:
                 self._s.cookies.set("TM1SessionId", session_id)
 
@@ -1028,6 +1051,47 @@ class RestService:
         if isinstance(data, str):
             data = data.encode(encoding)
         return url, data
+
+    def _maybe_compress_body(self, data: Union[bytes, BytesIO], headers: Dict) -> Tuple[Union[bytes, BytesIO], Dict]:
+        """Gzip-compress the request body at the transport seam.
+
+        Called exactly once per request (from `request`, before any retry path) so the sync,
+        async and reconnect/retry code paths all re-send the same compressed bytes. Returns the
+        (possibly compressed) body together with the (possibly updated) headers.
+
+        The body is left untouched - and no `Content-Encoding` header is added - when the body
+        is empty or smaller than `gzip_min_bytes`, or when a `Content-Encoding` header is already
+        present (so a caller can pre-encode a body or opt a single request out). Compressing the
+        body and stamping the header are a single atomic decision.
+        """
+        # Normalize the body to bytes for the size check and compression. `_url_and_body` already
+        # encodes str -> bytes; bytes and BytesIO bodies (binary uploads) pass through to here.
+        if isinstance(data, BytesIO):
+            # read from the stream's current position to EOF - exactly what the transport would
+            # upload for the uncompressed body - then restore the pointer so the original `data`
+            # stays usable (a caller may have intentionally seeked it).
+            pos = data.tell()
+            raw = data.read()
+            data.seek(pos)
+        elif isinstance(data, (bytes, bytearray)):
+            raw = bytes(data)
+        else:
+            return data, headers
+
+        # skip empty / tiny bodies: gzip framing overhead outweighs the benefit
+        if not raw or len(raw) < self._gzip_min_bytes:
+            return data, headers
+
+        # never double-encode an already-encoded body
+        if any(key.lower() == "content-encoding" for key in headers):
+            return data, headers
+
+        compressed = gzip.compress(raw, compresslevel=self._gzip_compress_level)
+        # build a fresh headers dict; never mutate self._headers or the caller's dict.
+        # drop any stale Content-Length so the transport recomputes it from the compressed bytes.
+        new_headers = {key: value for key, value in headers.items() if key.lower() != "content-length"}
+        new_headers["Content-Encoding"] = "gzip"
+        return compressed, new_headers
 
     def is_connected(self) -> bool:
         """Check if Connection to TM1 Server is established.
@@ -1112,13 +1176,47 @@ class RestService:
 
         return self._sandboxing_disabled
 
+    def _get_cookie(self, name: str) -> str:
+        """Read a cookie by name, tolerating duplicates across domain/path scopes.
+
+        `RequestsCookieJar.__getitem__` raises CookieConflictError when the jar holds
+        the same name under more than one scope. That happens routinely against TM1:
+        `_start_session` re-sets 'TM1SessionId' unscoped, and the server's own
+        Set-Cookie is scoped to its domain and path. Prefer the most specific scope,
+        which is the one the server most recently issued.
+        """
+        matches = [cookie for cookie in self._s.cookies if cookie.name == name]
+        if not matches:
+            raise KeyError(name)
+
+        # Domain-bearing beats domain-less, then longer path wins (RFC 6265 s5.4
+        # precedence). Domain breaks the remaining tie so the result never depends
+        # on jar insertion order.
+        matches.sort(key=lambda cookie: (bool(cookie.domain), len(cookie.path or ""), cookie.domain or ""))
+        return matches[-1].value
+
+    def _pop_cookie(self, name: str) -> Optional[str]:
+        """Remove every cookie called `name` (any scope) and return the preferred value.
+
+        Mirrors `cookies.pop(name, None)` but is duplicate-safe, and clears the stale
+        scoped copies so the jar cannot accumulate conflicting entries.
+        """
+        try:
+            value = self._get_cookie(name)
+        except KeyError:
+            return None
+
+        for cookie in [c for c in self._s.cookies if c.name == name]:
+            self._s.cookies.clear(cookie.domain, cookie.path, cookie.name)
+        return value
+
     @property
     def session_id(self) -> str:
         try:
-            return self._s.cookies["TM1SessionId"]
+            return self._get_cookie("TM1SessionId")
         # case v12
         except KeyError:
-            return self._s.cookies["paSession"]
+            return self._get_cookie("paSession")
 
     @staticmethod
     def translate_to_boolean(value) -> bool:
@@ -1131,7 +1229,7 @@ class RestService:
         elif isinstance(value, str):
             return value.replace(" ", "").lower() == "true"
         else:
-            raise ValueError("Invalid argument: '" + value + "'. Must be to be of type 'bool' or 'str'")
+            raise ValueError("Invalid argument: '" + value + "'. Must be of type 'bool' or 'str'")
 
     @staticmethod
     def b64_decode_password(encrypted_password: str) -> str:
@@ -1151,6 +1249,12 @@ class RestService:
             TM1pyException, raises TM1pyException when Code is not 200, 204 etc.
         """
         if not response.ok:
+            content_type = response.headers.get("Content-Type", "")
+            body_start = response.text.lstrip().lower()
+            if "text/html" in content_type.lower() or body_start.startswith(("<!doctype", "<html")):
+                raise TM1pyNetworkException(
+                    response.text, status_code=response.status_code, reason=response.reason, headers=response.headers
+                )
             raise TM1pyRestException(
                 response.text, status_code=response.status_code, reason=response.reason, headers=response.headers
             )

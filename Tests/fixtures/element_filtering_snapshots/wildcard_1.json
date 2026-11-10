@@ -1,0 +1,9 @@
+{
+  "wildcard": "REGION",
+  "level": null,
+  "result": [
+    "Region North",
+    "Region South",
+    "Total Regions"
+  ]
+}

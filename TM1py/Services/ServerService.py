@@ -254,13 +254,27 @@ class ServerService(ObjectService):
         process_service = ProcessService(self._rest)
         return process_service.execute_ti_code(ti, **kwargs)
 
+    @deprecated_in_version(version="12.0.0")
     def start_performance_monitor(self):
         config = {"Administration": {"PerformanceMonitorOn": True}}
         self.configuration.update_static(config)
 
+    @deprecated_in_version(version="12.0.0")
     def stop_performance_monitor(self):
         config = {"Administration": {"PerformanceMonitorOn": False}}
         self.configuration.update_static(config)
+
+    @deprecated_in_version(version="12.0.0")
+    def get_performance_monitor_state(self) -> bool:
+        """Read whether the Performance Monitor is currently active.
+
+        The ``PerformanceMonitorOn`` parameter is a v11-only configuration
+        setting; this raises :class:`TM1pyVersionDeprecationException` on v12.
+
+        :return: True if ``PerformanceMonitorOn`` is enabled, otherwise False
+        """
+        config = self.get_active_configuration()
+        return bool(config.get("Administration", {}).get("PerformanceMonitorOn", False))
 
     def activate_audit_log(self):
         self.audit_logs.activate()

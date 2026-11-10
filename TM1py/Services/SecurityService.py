@@ -166,19 +166,24 @@ class SecurityService(ObjectService):
 
     @require_security_admin
     def add_user_to_groups(self, user_name: str, groups: Iterable[str], **kwargs) -> Response:
-        """
+        """Add user to groups in TM1 Server. Existing group memberships of the user are preserved.
 
         :param user_name: name of user
         :param groups: iterable of groups
         :return: response
         """
         user_name = self.determine_actual_user_name(user_name, **kwargs)
+        # Depending on the TM1 version, PATCH with Groups@odata.bind either appends to or replaces
+        # the user's group collection. Binding the full union behaves the same under both semantics.
+        all_groups = CaseAndSpaceInsensitiveSet(self.get_groups(user_name, **kwargs))
+        for group in groups:
+            if group not in all_groups:
+                all_groups.add(self.determine_actual_group_name(group, **kwargs))
+
         url = format_url("/Users('{}')", user_name)
         body = {
             "Name": user_name,
-            "Groups@odata.bind": [
-                format_url("Groups('{}')", self.determine_actual_group_name(group)) for group in groups
-            ],
+            "Groups@odata.bind": [format_url("Groups('{}')", group) for group in all_groups],
         }
         return self._rest.PATCH(url, json.dumps(body), **kwargs)
 
