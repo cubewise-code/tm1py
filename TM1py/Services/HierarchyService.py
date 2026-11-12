@@ -39,6 +39,9 @@ class HierarchyService(ObjectService):
     # https://www.ibm.com/developerworks/community/forums/html/topic?id=75f2b99e-6961-4c71-9364-1d5e1e083eff
     EDGES_WORKAROUND_VERSIONS = ("11.0.002", "11.0.003", "11.1.000")
 
+    # column holding the element type in hierarchy DataFrames
+    ELEMENT_TYPE_COLUMN = "ElementType"
+
     HIERARCHY_SORT_ORDER_ARGUMENTS = CaseAndSpaceInsensitiveDict(
         {
             "CompSortType": CaseAndSpaceInsensitiveSet(["ByInput", "ByName"]),
@@ -93,6 +96,28 @@ class HierarchyService(ObjectService):
 
         if cycles:
             raise ValueError(f"Circular reference{'s' if len(cycles) > 1 else ''} found in edges: {cycles}")
+
+    @staticmethod
+    def _identify_level_columns(columns: Iterable[str]) -> Tuple[List[str], List[str]]:
+        """Pick the parent (`levelXXX`) and weight (`levelXXX_weight`) columns, deepest level first
+
+        :return: tuple of level columns and level weight columns, e.g. (['level001', 'level000'], [...])
+        """
+        level_columns = []
+        level_weight_columns = []
+        # sort to assure right order of levels (e.g. Level003 -> level002 -> LEVEL001)
+        sorted_level_columns = sorted(
+            [col for col in columns if any(char.isdigit() for char in col)],  # Filter columns with digits
+            key=lambda x: int("".join(filter(str.isdigit, x))),  # Sort based on numeric part
+            reverse=True,  # Descending order
+        )
+        for column in sorted_level_columns:
+            if column.lower().startswith("level") and column[5:8].isdigit():
+                if len(column) == 8:  # "LevelXXX"
+                    level_columns.append(column)
+                elif len(column) == 15 and column.lower().endswith("_weight"):  # "LevelXXX_weight"
+                    level_weight_columns.append(column)
+        return level_columns, level_weight_columns
 
     @staticmethod
     def _validate_alias_uniqueness(df: "pd.DataFrame"):
@@ -467,6 +492,116 @@ class HierarchyService(ObjectService):
     @require_pandas
     @require_data_admin
     @require_ops_admin
+    @require_pandas
+    def get_hierarchy_dataframe(
+        self,
+        dimension_name: str,
+        hierarchy_name: str,
+        leaf_level: Optional[int] = None,
+        attributes: Iterable[str] = None,
+        skip_consolidations: bool = False,
+        use_blob: bool = False,
+        **kwargs,
+    ) -> "pd.DataFrame":
+        """Materialize a hierarchy as a DataFrame in the shape that `update_or_create_hierarchy_from_dataframe`
+        expects, so the hierarchy can be recreated as is, e.g. on another TM1 server:
+
+        df = tm1_source.hierarchies.get_hierarchy_dataframe("Product", "Product")
+        tm1_target.hierarchies.update_or_create_hierarchy_from_dataframe("Product", "Product", df)
+
+        Builds on `ElementService.get_elements_dataframe`, with these conventions:
+        the first column holds the element names, the `ElementType` column the element types,
+        attribute columns carry a type suffix (`:a`, `:s`, `:n`), and parent columns are named
+        `levelXXX` / `levelXXX_Weight` with `level000` being the top of each path.
+        An element with multiple parents has one row per path.
+
+        :param dimension_name: name of the dimension
+        :param hierarchy_name: name of the hierarchy
+        :param leaf_level: optional TM1 level (0 = leaves) to rebase the hierarchy to. Elements on that level
+            become the new (numeric) leaves and everything below them is removed. See `Hierarchy.rebase`.
+            E.g. 3 turns a hierarchy with SKUs as leaves and product families 3 levels higher
+            into a hierarchy with product families as leaves. Element names are kept.
+        :param attributes: selection of attributes. If None, retrieve all
+        :param skip_consolidations: only return rows for leaves (after rebasing, if `leaf_level` is passed).
+            Consolidations are still created from the parent columns, but their attribute values are not included
+        :param use_blob: faster retrieval for large hierarchies. Requires admin permissions
+        :return: pandas DataFrame
+        """
+        df = self.elements.get_elements_dataframe(
+            dimension_name=dimension_name,
+            hierarchy_name=hierarchy_name,
+            skip_consolidations=skip_consolidations and leaf_level is None,
+            attributes=attributes,
+            skip_parents=False,
+            skip_weights=False,
+            use_blob=use_blob,
+            attribute_suffix=False,
+            element_type_column=self.ELEMENT_TYPE_COLUMN,
+            **kwargs,
+        )
+        df = df.reset_index(drop=True)
+
+        # TM1 level names may be customized (e.g. 'Family', 'SKU'). Rename to the generic 'levelXXX' convention
+        tm1_level_names = self.elements.get_level_names(dimension_name, hierarchy_name, descending=True)[1:]
+        column_renaming = {}
+        for position, tm1_level_name in enumerate(tm1_level_names):
+            generic_name = f"level{str(len(tm1_level_names) - 1 - position).zfill(3)}"
+            column_renaming[tm1_level_name] = generic_name
+            column_renaming[f"{tm1_level_name}_Weight"] = f"{generic_name}_Weight"
+
+        # attribute types are encoded as column suffix
+        for element_attribute in self.elements.get_element_attributes(dimension_name, hierarchy_name):
+            if element_attribute.name in df.columns:
+                column_renaming[element_attribute.name] = (
+                    f"{element_attribute.name}:{element_attribute.attribute_type.lower()[0]}"
+                )
+        df = df.rename(columns=column_renaming)
+
+        if leaf_level is not None:
+            hierarchy = self.get(dimension_name, hierarchy_name, **kwargs)
+            hierarchy.rebase(leaf_level)
+            df = self._rebase_hierarchy_dataframe(df, hierarchy)
+            if skip_consolidations:
+                df = df[df[self.ELEMENT_TYPE_COLUMN] != str(Element.Types.CONSOLIDATED)].reset_index(drop=True)
+
+        return df
+
+    def _rebase_hierarchy_dataframe(self, df: "pd.DataFrame", hierarchy: Hierarchy) -> "pd.DataFrame":
+        """Reduce a hierarchy DataFrame to the elements and edges of an already rebased `hierarchy`"""
+        element_column = df.columns[0]
+        level_columns, level_weight_columns = self._identify_level_columns(df.columns)
+        empty_weight = f"{0:.6f}"
+
+        df = df[df[element_column].map(hierarchy.contains_element)].copy()
+        df[self.ELEMENT_TYPE_COLUMN] = [
+            str(hierarchy.get_element(element_name).element_type) for element_name in df[element_column]
+        ]
+
+        # level columns are ordered deepest first, so the first non-empty one holds the direct parent.
+        # Paths whose direct parent was cut away are cleared, which leaves the element without parent on that row
+        def has_valid_parent(row) -> bool:
+            for level_column in level_columns:
+                parent = row[level_column]
+                if isinstance(parent, str) and parent:
+                    return (parent, row[element_column]) in hierarchy.edges
+            return True
+
+        invalid_paths = ~df.apply(has_valid_parent, axis=1)
+        df.loc[invalid_paths, level_columns] = ""
+        df.loc[invalid_paths, level_weight_columns] = empty_weight
+
+        # drop rows that are left without parent if the element is still placed elsewhere
+        no_parent = (df[level_columns] == "").all(axis=1)
+        placed_elsewhere = df[element_column].isin(df.loc[~no_parent, element_column])
+        df = df[~(no_parent & placed_elsewhere)].drop_duplicates()
+
+        # the deepest levels are now unused
+        for level_column, level_weight_column in zip(level_columns, level_weight_columns):
+            if (df[level_column] == "").all():
+                df = df.drop(columns=[level_column, level_weight_column])
+
+        return df.reset_index(drop=True)
+
     def update_or_create_hierarchy_from_dataframe(
         self,
         dimension_name: str,
@@ -563,21 +698,7 @@ class HierarchyService(ObjectService):
                     f"but received: '{unwind_consolidations}' of type {type(unwind_consolidations).__name__}"
                 )
 
-        # identify and sort level columns
-        level_columns = []
-        level_weight_columns = []
-        # sort to assure right order of levels (e.g. Level003 -> level002 -> LEVEL001)
-        sorted_level_columns = sorted(
-            [col for col in df.columns if any(char.isdigit() for char in col)],  # Filter columns with digits
-            key=lambda x: int("".join(filter(str.isdigit, x))),  # Sort based on numeric part
-            reverse=True,  # Descending order
-        )
-        for column in sorted_level_columns:
-            if column.lower().startswith("level") and column[5:8].isdigit():
-                if len(column) == 8:  # "LevelXXX"
-                    level_columns.append(column)
-                elif len(column) == 15 and column.lower().endswith("_weight"):  # "LevelXXX_weight"
-                    level_weight_columns.append(column)
+        level_columns, level_weight_columns = self._identify_level_columns(df.columns)
 
         # case: no level weight columns. All weights are 1
         if len(level_weight_columns) == 0:

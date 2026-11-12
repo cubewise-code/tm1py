@@ -23,6 +23,9 @@ class TestHierarchyService(unittest.TestCase):
     alternative_region_dimension_name = prefix + "Alternative Region"
     alternative_region_hierarchy_name = prefix + "Alternative Region"
 
+    product_dimension_name = prefix + "Product"
+    product_copy_dimension_name = prefix + "Product Copy"
+
     @classmethod
     def setUpClass(cls):
         """
@@ -70,6 +73,10 @@ class TestHierarchyService(unittest.TestCase):
             cls.tm1.dimensions.delete(cls.region_dimension_name)
         with suppress(TM1pyRestException):
             cls.tm1.dimensions.delete(cls.alternative_region_dimension_name)
+        with suppress(TM1pyRestException):
+            cls.tm1.dimensions.delete(cls.product_dimension_name)
+        with suppress(TM1pyRestException):
+            cls.tm1.dimensions.delete(cls.product_copy_dimension_name)
 
     @classmethod
     def create_subset(cls):
@@ -1783,6 +1790,132 @@ class TestHierarchyService(unittest.TestCase):
                     "Descending",
                 ),
             )
+
+    def create_product_dimension(self):
+        """Total (3) -> Division (2) -> Family (1) -> SKU (0), plus a short branch and an alternate rollup"""
+        hierarchy = Hierarchy(self.product_dimension_name, self.product_dimension_name)
+        for name in ("Total", "Food", "Drinks", "Snacks", "Bakery", "Soda", "Misc", "Promo"):
+            hierarchy.add_element(name, "Consolidated")
+        for name in ("SKU1", "SKU2", "SKU3", "SKU4", "SKU9"):
+            hierarchy.add_element(name, "Numeric")
+        hierarchy.add_element("Comment", "String")
+        edges = {
+            ("Total", "Food"): 1,
+            ("Total", "Drinks"): 1,
+            ("Total", "Misc"): 1,
+            ("Total", "Promo"): 1,
+            ("Food", "Snacks"): 1,
+            ("Food", "Bakery"): 1,
+            ("Drinks", "Soda"): 1,
+            ("Snacks", "SKU1"): 1,
+            ("Snacks", "SKU2"): 2,
+            ("Bakery", "SKU3"): 1,
+            ("Soda", "SKU4"): -1,
+            ("Misc", "SKU9"): 1,
+            ("Promo", "SKU1"): 1,
+        }
+        for (parent, component), weight in edges.items():
+            hierarchy.add_edge(parent, component, weight)
+        hierarchy.add_element_attribute("Description", "Alias")
+        hierarchy.add_element_attribute("Code", "String")
+        hierarchy.add_element_attribute("Price", "Numeric")
+        self.tm1.dimensions.update_or_create(Dimension(self.product_dimension_name, [hierarchy]))
+
+        self.tm1.cells.write(
+            "}ElementAttributes_" + self.product_dimension_name,
+            {
+                ("SKU1", "Description"): "Salted Chips",
+                ("SKU1", "Code"): "S-001",
+                ("SKU1", "Price"): 2.5,
+                ("Snacks", "Description"): "All Snacks",
+                ("Snacks", "Code"): "F-SN",
+                ("Snacks", "Price"): 3,
+                ("Misc", "Code"): "F-MI",
+            },
+        )
+
+    def _normalized(self, df: DataFrame) -> DataFrame:
+        df = df.rename(columns={df.columns[0]: "Element"}).astype(str)
+        return df.sort_values(by=list(df.columns)).reset_index(drop=True)
+
+    def test_get_hierarchy_dataframe_shape(self):
+        self.create_product_dimension()
+
+        df = self.tm1.hierarchies.get_hierarchy_dataframe(self.product_dimension_name, self.product_dimension_name)
+
+        self.assertEqual(self.product_dimension_name, df.columns[0])
+        for column in (
+            "ElementType",
+            "Description:a",
+            "Code:s",
+            "Price:n",
+            "level000",
+            "level001",
+            "level002",
+            "level000_Weight",
+        ):
+            self.assertIn(column, df.columns)
+        # one row per path for elements with multiple parents
+        self.assertEqual(2, len(df[df[self.product_dimension_name] == "SKU1"]))
+        sku1 = df[(df[self.product_dimension_name] == "SKU1") & (df["level001"] == "Food")].iloc[0]
+        self.assertEqual(("Snacks", "Food", "Total"), (sku1["level002"], sku1["level001"], sku1["level000"]))
+        self.assertEqual("Salted Chips", sku1["Description:a"])
+        self.assertEqual(2.5, float(sku1["Price:n"]))
+
+    def test_get_hierarchy_dataframe_round_trip(self):
+        self.create_product_dimension()
+        df = self.tm1.hierarchies.get_hierarchy_dataframe(self.product_dimension_name, self.product_dimension_name)
+
+        self.tm1.hierarchies.update_or_create_hierarchy_from_dataframe(
+            self.product_copy_dimension_name, self.product_copy_dimension_name, df
+        )
+
+        source = self.tm1.hierarchies.get(self.product_dimension_name, self.product_dimension_name)
+        copy = self.tm1.hierarchies.get(self.product_copy_dimension_name, self.product_copy_dimension_name)
+        self.assertEqual({(e.name, e.element_type) for e in source}, {(e.name, e.element_type) for e in copy})
+        self.assertEqual(dict(source.edges.items()), dict(copy.edges.items()))
+        df_copy = self.tm1.hierarchies.get_hierarchy_dataframe(
+            self.product_copy_dimension_name, self.product_copy_dimension_name
+        )
+        pd.testing.assert_frame_equal(self._normalized(df), self._normalized(df_copy))
+
+    def test_get_hierarchy_dataframe_leaf_level(self):
+        self.create_product_dimension()
+
+        with self.assertWarns(UserWarning):
+            df = self.tm1.hierarchies.get_hierarchy_dataframe(
+                self.product_dimension_name, self.product_dimension_name, leaf_level=1
+            )
+        self.tm1.hierarchies.update_or_create_hierarchy_from_dataframe(
+            self.product_copy_dimension_name, self.product_copy_dimension_name, df
+        )
+
+        expected = self.tm1.hierarchies.get(self.product_dimension_name, self.product_dimension_name)
+        with self.assertWarns(UserWarning):
+            new_leaves = expected.rebase(leaf_level=1)
+        copy = self.tm1.hierarchies.get(self.product_copy_dimension_name, self.product_copy_dimension_name)
+        self.assertCountEqual(["Snacks", "Bakery", "Soda", "Misc", "Promo"], new_leaves)
+        self.assertEqual({(e.name, e.element_type) for e in expected}, {(e.name, e.element_type) for e in copy})
+        self.assertEqual(dict(expected.edges.items()), dict(copy.edges.items()))
+        self.assertNotIn("level002", df.columns)
+
+        attributes = self.tm1.elements.get_attribute_of_elements(
+            self.product_copy_dimension_name, self.product_copy_dimension_name, "Code", elements=["Snacks", "Misc"]
+        )
+        self.assertEqual({"Snacks": "F-SN", "Misc": "F-MI"}, attributes)
+
+    def test_get_hierarchy_dataframe_leaf_level_skip_consolidations(self):
+        self.create_product_dimension()
+
+        with self.assertWarns(UserWarning):
+            df = self.tm1.hierarchies.get_hierarchy_dataframe(
+                self.product_dimension_name, self.product_dimension_name, leaf_level=1, skip_consolidations=True
+            )
+
+        self.assertCountEqual(
+            ["Snacks", "Bakery", "Soda", "Misc", "Promo", "Comment"], df[self.product_dimension_name].tolist()
+        )
+        self.assertTrue((df[df["ElementType"] != "String"]["ElementType"] == "Numeric").all())
 
 
 if __name__ == "__main__":
