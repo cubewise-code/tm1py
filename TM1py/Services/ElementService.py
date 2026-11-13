@@ -35,6 +35,7 @@ from TM1py.Utils import (
     CaseAndSpaceInsensitiveDict,
     CaseAndSpaceInsensitiveSet,
     CaseAndSpaceInsensitiveTuplesDict,
+    add_odata_query_options,
     build_element_unique_names,
     build_url_friendly_object_name,
     dimension_hierarchy_element_tuple_from_unique_name,
@@ -360,6 +361,10 @@ class ElementService(ObjectService):
         element_type: Optional[Union[int, str, "Element.Types", Iterable]] = None,
         name_pattern: Optional[str] = None,
         level: Optional[int] = None,
+        *,
+        filter: str = None,
+        top: int = None,
+        order_by: str = None,
         **kwargs,
     ) -> List[Element]:
         """Get all elements as Element objects, optionally filtered.
@@ -373,6 +378,10 @@ class ElementService(ObjectService):
             Supports ``*`` wildcard (use ``foo*``, ``*foo``, ``*foo*``, or exact ``foo``).
             ``?`` is not supported. Matching is case- and space-insensitive.
         :param level: Restrict to elements at the given hierarchy level (0 = leaf).
+        :param filter: OData filter expression, e.g. "startswith(Name,'S')". Combined with ``and`` with filters
+            applied by the method itself.
+        :param top: maximum number of entries to return
+        :param order_by: OData orderby expression, e.g. "Name desc"
         :return: List of Element objects.
         """
         url = format_url(
@@ -383,6 +392,7 @@ class ElementService(ObjectService):
         filter_clause = _build_elements_filter(element_type, name_pattern, level)
         if filter_clause:
             url += "&$filter=" + filter_clause
+        url = add_odata_query_options(url, filter=filter, top=top, order_by=order_by)
         response = self._rest.GET(url, **kwargs)
         return [Element.from_dict(element) for element in response.json()["value"]]
 
@@ -744,35 +754,99 @@ class ElementService(ObjectService):
 
         return {(edge["ParentName"], edge["ComponentName"]): edge["Weight"] for edge in response.json()["value"]}
 
-    def get_leaf_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[Element]:
+    def get_leaf_elements(
+        self,
+        dimension_name: str,
+        hierarchy_name: str,
+        *,
+        filter: str = None,
+        top: int = None,
+        order_by: str = None,
+        **kwargs,
+    ) -> List[Element]:
+        """
+        :param filter: OData filter expression, e.g. "startswith(Name,'S')". Combined with ``and`` with filters
+            applied by the method itself.
+        :param top: maximum number of entries to return
+        :param order_by: OData orderby expression, e.g. "Name desc"
+        """
         url = format_url(
             "/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*&$filter=Type ne 3", dimension_name, hierarchy_name
         )
+        url = add_odata_query_options(url, filter=filter, top=top, order_by=order_by)
         response = self._rest.GET(url, **kwargs)
         return [Element.from_dict(element) for element in response.json()["value"]]
 
-    def get_leaf_element_names(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
+    def get_leaf_element_names(
+        self,
+        dimension_name: str,
+        hierarchy_name: str,
+        *,
+        filter: str = None,
+        top: int = None,
+        order_by: str = None,
+        **kwargs,
+    ) -> List[str]:
+        """
+        :param filter: OData filter expression, e.g. "startswith(Name,'S')". Combined with ``and`` with filters
+            applied by the method itself.
+        :param top: maximum number of entries to return
+        :param order_by: OData orderby expression, e.g. "Name desc"
+        """
         url = format_url(
             "/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Type ne 3",
             dimension_name,
             hierarchy_name,
         )
+        url = add_odata_query_options(url, filter=filter, top=top, order_by=order_by)
         response = self._rest.GET(url, **kwargs)
         return [e["Name"] for e in response.json()["value"]]
 
-    def get_consolidated_elements(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[Element]:
+    def get_consolidated_elements(
+        self,
+        dimension_name: str,
+        hierarchy_name: str,
+        *,
+        filter: str = None,
+        top: int = None,
+        order_by: str = None,
+        **kwargs,
+    ) -> List[Element]:
+        """
+        :param filter: OData filter expression, e.g. "startswith(Name,'S')". Combined with ``and`` with filters
+            applied by the method itself.
+        :param top: maximum number of entries to return
+        :param order_by: OData orderby expression, e.g. "Name desc"
+        """
         url = format_url(
             "/Dimensions('{}')/Hierarchies('{}')/Elements?$expand=*&$filter=Type eq 3", dimension_name, hierarchy_name
         )
+        url = add_odata_query_options(url, filter=filter, top=top, order_by=order_by)
         response = self._rest.GET(url, **kwargs)
         return [Element.from_dict(element) for element in response.json()["value"]]
 
-    def get_consolidated_element_names(self, dimension_name: str, hierarchy_name: str, **kwargs) -> List[str]:
+    def get_consolidated_element_names(
+        self,
+        dimension_name: str,
+        hierarchy_name: str,
+        *,
+        filter: str = None,
+        top: int = None,
+        order_by: str = None,
+        **kwargs,
+    ) -> List[str]:
+        """
+        :param filter: OData filter expression, e.g. "startswith(Name,'S')". Combined with ``and`` with filters
+            applied by the method itself.
+        :param top: maximum number of entries to return
+        :param order_by: OData orderby expression, e.g. "Name desc"
+        """
         url = format_url(
             "/Dimensions('{}')/Hierarchies('{}')/Elements?$select=Name&$filter=Type eq 3",
             dimension_name,
             hierarchy_name,
         )
+        url = add_odata_query_options(url, filter=filter, top=top, order_by=order_by)
         response = self._rest.GET(url, **kwargs)
         return [e["Name"] for e in response.json()["value"]]
 
@@ -815,6 +889,10 @@ class ElementService(ObjectService):
         element_type: Optional[Union[int, str, "Element.Types", Iterable]] = None,
         name_pattern: Optional[str] = None,
         level: Optional[int] = None,
+        *,
+        filter: str = None,
+        top: int = None,
+        order_by: str = None,
         **kwargs,
     ) -> List[str]:
         """Get all element names, optionally filtered.
@@ -828,6 +906,10 @@ class ElementService(ObjectService):
             Supports ``*`` wildcard (use ``foo*``, ``*foo``, ``*foo*``, or exact ``foo``).
             ``?`` is not supported. Matching is case- and space-insensitive.
         :param level: Restrict to elements at the given hierarchy level (0 = leaf).
+        :param filter: OData filter expression, e.g. "startswith(Name,'S')". Combined with ``and`` with filters
+            applied by the method itself.
+        :param top: maximum number of entries to return
+        :param order_by: OData orderby expression, e.g. "Name desc"
         :return: List of element names.
         """
         url = format_url(
@@ -838,6 +920,7 @@ class ElementService(ObjectService):
         filter_clause = _build_elements_filter(element_type, name_pattern, level)
         if filter_clause:
             url += "&$filter=" + filter_clause
+        url = add_odata_query_options(url, filter=filter, top=top, order_by=order_by)
         response = self._rest.GET(url, **kwargs)
         return [e["Name"] for e in response.json()["value"]]
 

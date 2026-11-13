@@ -103,3 +103,82 @@ params = {
 with TM1Service(**params) as tm1:
     print(tm1.server.get_product_version())
 ```
+
+## Filtering, limiting and sorting on the server
+
+Methods that return lists of names or objects accept the keyword-only
+arguments `filter`, `top` and `order_by`. They are sent to TM1 as the OData
+options `$filter`, `$top` and `$orderby`, so only the requested entries are
+transferred:
+
+```python
+names = tm1.cubes.get_all_names(
+    filter="startswith(Name,'Sales')",
+    top=10,
+    order_by="Name desc",
+)
+```
+
+`filter` and `order_by` are unencoded OData expressions; TM1py takes care of
+the URL encoding. `top` is a non-negative integer, `top=0` is retained.
+
+If a method already filters on its own, the supplied filter is combined with
+`and`, so both conditions apply:
+
+```python
+# processes that are no control processes AND start with 'Load'
+tm1.processes.get_all_names(skip_control_processes=True, filter="startswith(Name,'Load')")
+
+# consolidated elements on a level greater than 1
+tm1.elements.get_element_names("Region", "Region", element_type="consolidated", filter="Level gt 1")
+```
+
+The arguments are available on:
+
+| Service | Methods |
+|---|---|
+| `cubes` | `get_all_names`, `get_all_names_with_rules`, `get_all_names_without_rules` |
+| `dimensions` | `get_all_names` |
+| `hierarchies` | `get_all_names` |
+| `processes` | `get_all`, `get_all_names` |
+| `elements` | `get_elements`, `get_element_names`, `get_leaf_elements`, `get_leaf_element_names`, `get_consolidated_elements`, `get_consolidated_element_names` |
+| `chores` | `get_all_names` |
+| `subsets` | `get_all_names` |
+| `views` | `get_all_names` (applied to private and public views separately) |
+| `security` | `get_all_user_names`, `get_all_groups` |
+
+## Additional GET query parameters
+
+For other endpoints or query options, pass a `params` dictionary directly to
+`RestService.GET`:
+
+```python
+response = tm1._tm1_rest.GET(
+    "/Cubes",
+    params={"$select": "Name", "$filter": "Name eq 'Sales'", "$top": 10},
+)
+cubes = response.json()["value"]
+```
+
+Use full parameter names, including the `$` for OData system options. Supply
+unencoded values; spaces are encoded as `%20`. Write OData lists as
+comma-separated strings, such as `{"$select": "Name,Rules"}`. Python booleans
+are sent as lowercase `true`/`false`. The dictionary must have string keys and
+is not modified. Entries with a `None` value are omitted; `$top=0` is retained.
+
+A parameter that is already present in the URL raises `ValueError` before the
+HTTP request, even if its value is identical:
+
+```python
+# Raises ValueError because the URL already contains $select:
+tm1._tm1_rest.GET("/Cubes?$select=Name", params={"$select": "Name"})
+```
+
+Names are compared case-sensitively after decoding existing URL parameter names,
+so `%24select` also conflicts with `$select`. Existing filters and expansions
+are neither merged nor replaced. Options inside a nested `$expand` do not
+conflict with options at the outer query level.
+
+`params` is only supported for GET. `POST`, `PATCH`, `PUT` and `DELETE` raise a
+`TypeError` when `params` is passed. The original parameters are retained for
+retries and the initial async request; async polling does not inherit them.
