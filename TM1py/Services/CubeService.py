@@ -12,6 +12,7 @@ from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Services.ViewService import ViewService
 from TM1py.Utils import (
+    add_odata_query_options,
     case_and_space_insensitive_equals,
     format_url,
     require_data_admin,
@@ -254,35 +255,55 @@ class CubeService(ObjectService):
         url = format_url("/Cubes('{}')", cube_name)
         return self._exists(url, **kwargs)
 
-    def get_all_names(self, skip_control_cubes: bool = False, **kwargs) -> List[str]:
+    def get_all_names(
+        self, skip_control_cubes: bool = False, *, filter: str = None, top: int = None, order_by: str = None, **kwargs
+    ) -> List[str]:
         """Ask TM1 Server for list of all cube names
 
         :skip_control_cubes: bool, True will exclude control cubes from list
+        :param filter: OData filter expression, e.g. "startswith(Name,'S')". Combined with ``and`` with filters
+            applied by the method itself.
+        :param top: maximum number of entries to return
+        :param order_by: OData orderby expression, e.g. "Name desc"
         :return: List of Strings
         """
         url = format_url("/{}?$select=Name", "ModelCubes()" if skip_control_cubes else "Cubes")
 
+        url = add_odata_query_options(url, filter=filter, top=top, order_by=order_by)
         response = self._rest.GET(url, **kwargs)
         cubes = list(entry["Name"] for entry in response.json()["value"])
         return cubes
 
-    def get_all_names_with_rules(self, skip_control_cubes: bool = False, **kwargs) -> List[str]:
+    def get_all_names_with_rules(
+        self, skip_control_cubes: bool = False, *, filter: str = None, top: int = None, order_by: str = None, **kwargs
+    ) -> List[str]:
         """Ask TM1 Server for list of all cube names that have rules
 
         :skip_control_cubes: bool, True will exclude control cubes from list
+        :param filter: OData filter expression, e.g. "startswith(Name,'S')". Combined with ``and`` with filters
+            applied by the method itself.
+        :param top: maximum number of entries to return
+        :param order_by: OData orderby expression, e.g. "Name desc"
         :return: List of Strings
         """
         url = format_url(
             "/{}?$select=Name,Rules&$filter=Rules ne null", "ModelCubes()" if skip_control_cubes else "Cubes"
         )
 
+        url = add_odata_query_options(url, filter=filter, top=top, order_by=order_by)
         response = self._rest.GET(url, **kwargs)
         cubes = list(cube["Name"] for cube in response.json()["value"])
         return cubes
 
-    def get_all_names_without_rules(self, skip_control_cubes: bool = False, **kwargs) -> List[str]:
+    def get_all_names_without_rules(
+        self, skip_control_cubes: bool = False, *, filter: str = None, top: int = None, order_by: str = None, **kwargs
+    ) -> List[str]:
         """Ask TM1 Server for list of all cube names that do not have rules
         :skip_control_cubes: bool, True will exclude control cubes from list
+        :param filter: OData filter expression, e.g. "startswith(Name,'S')". Combined with ``and`` with filters
+            applied by the method itself.
+        :param top: maximum number of entries to return
+        :param order_by: OData orderby expression, e.g. "Name desc"
         :return: List of Strings
         """
 
@@ -290,6 +311,7 @@ class CubeService(ObjectService):
             "/{}?$select=Name,Rules&$filter=Rules eq null", "ModelCubes()" if skip_control_cubes else "Cubes"
         )
 
+        url = add_odata_query_options(url, filter=filter, top=top, order_by=order_by)
         response = self._rest.GET(url, **kwargs)
         cubes = list(cube["Name"] for cube in response.json()["value"])
         return cubes

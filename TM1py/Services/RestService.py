@@ -726,12 +726,11 @@ class RestService:
         Examples::
 
             rest.GET("/Cubes", params={"$select": "Name", "$top": 10})
-            tm1.cubes.get_all_names(params={"$top": 10, "$orderby": "Name"})
             rest.GET("/Cubes?$select=Name", params={"$select": "Name"})  # raises ValueError
 
-        Service methods support params where they forward keyword arguments to GET. A method with multiple GET
-        requests may apply them to each request. Parameters must suit the endpoint and preserve fields needed by
-        the service method's response processing. Existing OData expressions are not merged or replaced.
+        Existing OData expressions in the URL are not merged or replaced. Service methods that return lists
+        offer dedicated filter, top and order_by arguments instead, e.g.
+        tm1.cubes.get_all_names(filter="startswith(Name,'Sales')", top=10, order_by="Name").
         """
         params = self._prepare_get_params(url, params)
         request_kwargs = {"params": urlencode(params, doseq=True, quote_via=quote)} if params else {}
@@ -782,6 +781,12 @@ class RestService:
             for key, value in params.items()
         }
 
+    @staticmethod
+    def _reject_params(method: str, kwargs: Dict):
+        """Raise instead of silently dropping query parameters on requests that do not support them."""
+        if "params" in kwargs:
+            raise TypeError(f"params is only supported for GET requests, not for {method}")
+
     def POST(
         self,
         url: str,
@@ -807,6 +812,7 @@ class RestService:
         :param encoding:
         :return: response object or async_id
         """
+        self._reject_params("POST", kwargs)
 
         response = self.request(
             method="post",
@@ -849,6 +855,7 @@ class RestService:
         :param encoding:
         :return: response object or async_id
         """
+        self._reject_params("PATCH", kwargs)
 
         return self.request(
             method="patch",
@@ -889,6 +896,7 @@ class RestService:
         :param encoding:
         :return: response object or async_id
         """
+        self._reject_params("PUT", kwargs)
 
         return self.request(
             method="put",
@@ -929,6 +937,7 @@ class RestService:
         :param encoding:
         :return: response object or async_id
         """
+        self._reject_params("DELETE", kwargs)
 
         return self.request(
             method="delete",

@@ -14,6 +14,7 @@ from TM1py.Services.RestService import RestService
 from TM1py.Services.SubsetService import SubsetService
 from TM1py.Utils.Utils import (
     CaseAndSpaceInsensitiveSet,
+    add_odata_query_options,
     case_and_space_insensitive_equals,
     format_url,
 )
@@ -132,15 +133,22 @@ class DimensionService(ObjectService):
         url = format_url("/Dimensions('{}')", dimension_name)
         return self._exists(url, **kwargs)
 
-    def get_all_names(self, skip_control_dims: bool = False, **kwargs) -> List[str]:
+    def get_all_names(
+        self, skip_control_dims: bool = False, *, filter: str = None, top: int = None, order_by: str = None, **kwargs
+    ) -> List[str]:
         """Ask TM1 Server for list of all dimension names
 
         :skip_control_dims: bool, True to skip control dims
+        :param filter: OData filter expression, e.g. "startswith(Name,'S')". Combined with ``and`` with filters
+            applied by the method itself.
+        :param top: maximum number of entries to return
+        :param order_by: OData orderby expression, e.g. "Name desc"
         :Returns:
             List of Strings
         """
         url = format_url("/{}?$select=Name", "ModelDimensions()" if skip_control_dims else "Dimensions")
 
+        url = add_odata_query_options(url, filter=filter, top=top, order_by=order_by)
         response = self._rest.GET(url, **kwargs)
 
         dimension_names = list(entry["Name"] for entry in response.json()["value"])

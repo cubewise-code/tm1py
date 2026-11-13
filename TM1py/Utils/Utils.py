@@ -290,6 +290,62 @@ def format_url(url, *args: str, **kwargs: str) -> str:
     return url.format(*args, **kwargs)
 
 
+# characters that are kept as-is when encoding user supplied OData expressions
+_ODATA_SAFE_CHARS = "$'(),/:*@!"
+
+
+def add_odata_query_options(url: str, filter: str = None, top: int = None, order_by: str = None) -> str:
+    """Add the OData system query options $filter, $top and $orderby to a url
+
+    A $filter that is already part of the url is combined with the supplied filter: ``(existing) and (filter)``.
+    Options nested in an $expand clause are not affected.
+
+    :param url: url (with or without query string) as built by a service method
+    :param filter: OData filter expression, e.g. "startswith(Name,'Sales')". Unencoded.
+    :param top: maximum number of entities to return. Non-negative int. 0 is retained.
+    :param order_by: OData orderby expression, e.g. "Name desc". Unencoded.
+    :return: url including the additional query options
+    :raises TypeError: if an argument has the wrong type
+    :raises ValueError: if top is negative or $top / $orderby is already part of the url
+    """
+    if filter is not None and not isinstance(filter, str):
+        raise TypeError("filter must be a string")
+    if order_by is not None and not isinstance(order_by, str):
+        raise TypeError("order_by must be a string")
+    if top is not None:
+        if isinstance(top, bool) or not isinstance(top, int):
+            raise TypeError("top must be an int")
+        if top < 0:
+            raise ValueError("top must not be negative")
+
+    if not filter and top is None and not order_by:
+        return url
+
+    path, _, query = url.partition("?")
+    # split only on '&': OData uses ';' to separate options nested in $expand
+    options = [option for option in query.split("&") if option]
+    names = [unquote(option.partition("=")[0]) for option in options]
+
+    for name, value in (("$top", top), ("$orderby", order_by)):
+        if value not in (None, "") and name in names:
+            raise ValueError(f"Query option '{name}' is already part of the url")
+
+    if filter:
+        encoded_filter = urlparse.quote(filter, safe=_ODATA_SAFE_CHARS)
+        if "$filter" in names:
+            position = names.index("$filter")
+            name, _, existing_filter = options[position].partition("=")
+            options[position] = f"{name}=({existing_filter}) and ({encoded_filter})"
+        else:
+            options.append("$filter=" + encoded_filter)
+    if top is not None:
+        options.append(f"$top={top}")
+    if order_by:
+        options.append("$orderby=" + urlparse.quote(order_by, safe=_ODATA_SAFE_CHARS))
+
+    return path + "?" + "&".join(options)
+
+
 def abbreviate_mdx(mdx: str, size=100) -> str:
     if len(mdx) < size:
         return mdx

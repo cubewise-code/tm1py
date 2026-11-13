@@ -23,6 +23,7 @@ from TM1py.Utils.Utils import (
     CaseAndSpaceInsensitiveDict,
     CaseAndSpaceInsensitiveSet,
     CaseAndSpaceInsensitiveTuplesDict,
+    add_odata_query_options,
     case_and_space_insensitive_equals,
     format_url,
     require_data_admin,
@@ -146,13 +147,20 @@ class HierarchyService(ObjectService):
         response = self._rest.GET(url, **kwargs)
         return Hierarchy.from_dict(response.json())
 
-    def get_all_names(self, dimension_name: str, **kwargs) -> List[str]:
+    def get_all_names(
+        self, dimension_name: str, *, filter: str = None, top: int = None, order_by: str = None, **kwargs
+    ) -> List[str]:
         """get all names of existing Hierarchies in a dimension
 
         :param dimension_name:
+        :param filter: OData filter expression, e.g. "startswith(Name,'S')". Combined with ``and`` with filters
+            applied by the method itself.
+        :param top: maximum number of entries to return
+        :param order_by: OData orderby expression, e.g. "Name desc"
         :return:
         """
         url = format_url("/Dimensions('{}')/Hierarchies?$select=Name", dimension_name)
+        url = add_odata_query_options(url, filter=filter, top=top, order_by=order_by)
         response = self._rest.GET(url, **kwargs)
         return [hierarchy["Name"] for hierarchy in response.json()["value"]]
 

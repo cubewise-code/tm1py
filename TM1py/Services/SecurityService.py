@@ -10,6 +10,7 @@ from TM1py.Services.ObjectService import ObjectService
 from TM1py.Services.RestService import RestService
 from TM1py.Utils.Utils import (
     CaseAndSpaceInsensitiveSet,
+    add_odata_query_options,
     format_url,
     require_admin,
     require_security_admin,
@@ -119,12 +120,17 @@ class SecurityService(ObjectService):
         users = [User.from_dict(user) for user in response.json()["value"]]
         return users
 
-    def get_all_user_names(self, **kwargs):
+    def get_all_user_names(self, *, filter: str = None, top: int = None, order_by: str = None, **kwargs):
         """Get all user names from TM1 Server
 
+        :param filter: OData filter expression, e.g. "startswith(Name,'S')". Combined with ``and`` with filters
+            applied by the method itself.
+        :param top: maximum number of entries to return
+        :param order_by: OData orderby expression, e.g. "Name desc"
         :return: List of TM1py.User instances
         """
         url = "/Users?select=Name"
+        url = add_odata_query_options(url, filter=filter, top=top, order_by=order_by)
         response = self._rest.GET(url, **kwargs)
         users = [user["Name"] for user in response.json()["value"]]
         return users
@@ -195,12 +201,17 @@ class SecurityService(ObjectService):
         url = format_url("/Users('{}')/Groups?$id=Groups('{}')", user_name, group_name)
         return self._rest.DELETE(url, **kwargs)
 
-    def get_all_groups(self, **kwargs) -> List[str]:
+    def get_all_groups(self, *, filter: str = None, top: int = None, order_by: str = None, **kwargs) -> List[str]:
         """Get all groups from TM1 Server
 
+        :param filter: OData filter expression, e.g. "startswith(Name,'S')". Combined with ``and`` with filters
+            applied by the method itself.
+        :param top: maximum number of entries to return
+        :param order_by: OData orderby expression, e.g. "Name desc"
         :return: List of strings
         """
         url = "/Groups?$select=Name"
+        url = add_odata_query_options(url, filter=filter, top=top, order_by=order_by)
         response = self._rest.GET(url, **kwargs)
         groups = [entry["Name"] for entry in response.json()["value"]]
         return groups
