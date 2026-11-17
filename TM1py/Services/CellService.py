@@ -20,7 +20,9 @@ from requests import Response
 
 from TM1py.Exceptions.Exceptions import (
     TM1pyException,
+    TM1pyExportFailureException,
     TM1pyRestException,
+    TM1pyVersionException,
     TM1pyWriteFailureException,
     TM1pyWritePartialFailureException,
 )
@@ -1581,6 +1583,7 @@ class CellService(ObjectService):
         variable_hierarchies: List[str] = None,
         profile: CubeProfile = None,
         view_definition: Union[NativeView, str] = None,
+        aliases: Dict[str, str] = None,
     ) -> Process:
         """Build the unbound process that writes the cells of a view to a blob file.
 
@@ -1591,6 +1594,7 @@ class CellService(ObjectService):
         :param profile: facts about the cube. Only used with `lean_ti`
         :param view_definition: NativeView or MDX string the process builds as temporary view `view_name`.
         Requires `lean_ti`
+        :param aliases: {dimension: alias attribute} written instead of element names. Only used with `lean_ti`
         """
         if sandbox_name:
             self._assert_sandbox_exists(sandbox_name)
@@ -1630,9 +1634,278 @@ class CellService(ObjectService):
             skip=skip,
             sandbox_name=sandbox_name,
             view_definition=view_definition,
+            aliases=aliases or {},
         )
         layout = CsvLayout(delimiter=value_separator, quote_character=quote_character, header=header or ())
         return build_export_process(profile, layout, spec, lean=lean_ti)
+
+    @require_data_admin
+    def export_to_blob(
+        self,
+        mdx: Union[MdxBuilder, str] = None,
+        cube_name: str = None,
+        view_name: str = None,
+        use_native_view: bool = True,
+        skip_zeros: bool = True,
+        skip_consolidated_cells: bool = True,
+        skip_rule_derived_cells: bool = True,
+        include_header: bool = False,
+        aliases: Dict[str, str] = None,
+        sandbox_name: str = None,
+        **kwargs,
+    ) -> str:
+        """Export cells to a file in the file store with a generated TI process. The data doesn't pass through Python
+
+        The file has one line per cell: one column per cube dimension, in the cube's dimension order (dimensions in
+        the WHERE clause or not in the query included), then the value. It is UTF-8, comma separated, every field in
+        double quotes. On v11 it starts with a UTF-8 BOM; `FileService.transfer_from` leaves it out.
+
+        The view the process reads is built inside the process as a temporary object, so nothing is left on the
+        server. An MdxBuilder is read through a native view (faster) unless the query can't be expressed as one
+        (tuples, calculated members, alternate hierarchies, ...); then, and for an MDX string, through an MDX view.
+
+        :param mdx: the cells to export, as an MdxBuilder or an MDX string. Pass either this or a cube and view
+        :param cube_name: cube of an existing public view to export
+        :param view_name: existing public view to export. A native view's titles export their selected element
+        :param use_native_view: read an MdxBuilder through a native view when possible
+        :param skip_zeros: skip zero and empty cells
+        :param skip_consolidated_cells: skip consolidated cells
+        :param skip_rule_derived_cells: skip rule-derived cells
+        :param include_header: write a header line: the dimension names, then 'Value'
+        :param aliases: {dimension: alias attribute} to write alias values instead of element names. A blank alias
+        is written as the element name
+        :param sandbox_name: export from this sandbox
+        :return: name of the file in the file store
+        :raises ValueError: for an invalid source, an unknown alias dimension or attribute, or an unknown sandbox,
+        before anything runs on the server
+        :raises TM1pyExportFailureException: when the export process fails. Its partial file is removed
+        """
+        if (mdx is None) == (view_name is None) or (view_name is None) != (cube_name is None):
+            raise ValueError("Pass either 'mdx', or 'cube_name' and 'view_name'")
+        if sandbox_name:
+            self._assert_sandbox_exists(sandbox_name)
+
+        native_view, mdx_string = None, None
+        if isinstance(mdx, MdxBuilder):
+            cube = mdx.cube
+            mdx_string = mdx.to_mdx(skip_dimension_properties=True)
+            if use_native_view:
+                with suppress(NotImplementedError):
+                    native_view = NativeView.from_mdx_builder(mdx)
+        elif mdx is not None:
+            cube = Utils.get_cube(mdx)
+            mdx_string = drop_dimension_properties(mdx)
+        else:
+            cube = cube_name
+            view = ViewService(self._rest).get(cube_name, view_name, private=False, **kwargs)
+            if isinstance(view, NativeView):
+                native_view = view
+            else:
+                mdx_string = drop_dimension_properties(view.mdx)
+
+        cube_dimensions = self.get_dimension_names_for_writing(cube, **kwargs)
+        unique_name = self.suggest_unique_object_name()
+        file_name = f"{unique_name}.csv"
+
+        def build(definition: Union[NativeView, str]) -> Process:
+            if isinstance(definition, NativeView):
+                hierarchies = [(dimension, dimension) for dimension in cube_dimensions]
+            else:
+                hierarchies = self._mdx_view_data_source_hierarchies(mdx, definition, cube_dimensions, **kwargs)
+            hierarchy_unique_names = [
+                "[{}].[{}]".format(dimension.replace("]", "]]"), hierarchy.replace("]", "]]"))
+                for dimension, hierarchy in hierarchies
+            ]
+            return self._build_cube_to_blob_process(
+                cube=cube,
+                variables=[f"v{cube_dimensions.index(dimension) + 1}" for dimension, _ in hierarchies],
+                skip_variables=[],
+                top=None,
+                skip=None,
+                skip_zeros=skip_zeros,
+                skip_consolidated_cells=skip_consolidated_cells,
+                skip_rule_derived_cells=skip_rule_derived_cells,
+                value_separator=",",
+                process_name=unique_name,
+                view_name=unique_name,
+                file_name=file_name,
+                header=list(cube_dimensions) if include_header else None,
+                sandbox_name=sandbox_name,
+                lean_ti=True,
+                variable_hierarchies=hierarchy_unique_names,
+                profile=self._get_blob_cube_profile(
+                    cube, dimensions=cube_dimensions, hierarchies=hierarchy_unique_names, **kwargs
+                ),
+                view_definition=definition,
+                aliases=self._validate_blob_aliases(aliases, hierarchies, **kwargs),
+            )
+
+        process = None
+        if native_view is not None:
+            # TI's view functions only take a dimension's same-named hierarchy
+            with suppress(NotImplementedError):
+                process = build(native_view)
+        if process is None:
+            if mdx_string is None:
+                mdx_string = native_view.as_MDX
+            process = build(mdx_string)
+
+        # v11 only lists files created through the contents API
+        file_service = FileService(self._rest)
+        file_service.create(file_name=file_name, file_content=b"", **kwargs)
+        try:
+            success, status, error_log_file = ProcessService(self._rest).execute_process_with_return(process, **kwargs)
+        except BaseException:
+            with suppress(Exception):
+                file_service.delete(file_name)
+            raise
+        if not success:
+            with suppress(Exception):
+                file_service.delete(file_name)
+            raise TM1pyExportFailureException(status, error_log_file)
+        return file_name
+
+    def _mdx_view_data_source_hierarchies(
+        self, mdx: Union[MdxBuilder, str, None], mdx_string: str, cube_dimensions: List[str], **kwargs
+    ) -> List[Tuple[str, str]]:
+        """(dimension, hierarchy) per variable of an MDX view's data source, in data source order: the column
+        dimensions, then the row dimensions, then every other cube dimension in cube order."""
+        try:
+            _, titles, rows, columns = self._attempt_derive_cellset_composition_from_mdx(mdx)
+        except Exception:
+            cellset_id = self.create_cellset(mdx_string, **kwargs)
+            _, titles, rows, columns = self.extract_cellset_composition(cellset_id, delete_cellset=True, **kwargs)
+
+        by_key = {lower_and_drop_spaces(dimension): dimension for dimension in cube_dimensions}
+        hierarchies = {}
+        for name in columns + rows + titles:
+            dimension, hierarchy = self._split_hierarchy_unique_name(name)
+            dimension = by_key[lower_and_drop_spaces(dimension)]
+            hierarchies.setdefault(dimension, hierarchy)
+
+        axis_dimensions = [
+            by_key[lower_and_drop_spaces(self._split_hierarchy_unique_name(n)[0])] for n in columns + rows
+        ]
+        rest = [dimension for dimension in cube_dimensions if dimension not in axis_dimensions]
+        return [(dimension, hierarchies.get(dimension, dimension)) for dimension in axis_dimensions + rest]
+
+    def _validate_blob_aliases(
+        self, aliases: Optional[Dict[str, str]], hierarchies: List[Tuple[str, str]], **kwargs
+    ) -> Dict[str, str]:
+        """{dimension: alias attribute} with the cube's dimension names; ValueError for an unknown one"""
+        if not aliases:
+            return {}
+        hierarchy_by_key = {lower_and_drop_spaces(d): (d, h) for d, h in hierarchies}
+        element_service = self.get_element_service()
+        validated = {}
+        for dimension, attribute in aliases.items():
+            if lower_and_drop_spaces(dimension) not in hierarchy_by_key:
+                raise ValueError(f"Alias dimension '{dimension}' is not a dimension of the cube")
+            dimension, hierarchy = hierarchy_by_key[lower_and_drop_spaces(dimension)]
+            alias_attributes = element_service.get_alias_element_attributes(dimension, hierarchy, **kwargs)
+            if not any(case_and_space_insensitive_equals(attribute, a) for a in alias_attributes):
+                raise ValueError(f"'{attribute}' is not an alias attribute of '{dimension}:{hierarchy}'")
+            validated[dimension] = attribute
+        return validated
+
+    @require_data_admin
+    def load_from_blob(
+        self,
+        file_name: str,
+        cube_name: str = None,
+        process_name: str = None,
+        increment: bool = False,
+        skip_non_updateable: bool = False,
+        allow_spread: bool = False,
+        sandbox_name: str = None,
+        clear_view: str = None,
+        deactivate_transaction_log: bool = False,
+        remove_blob: bool = True,
+        file_parameter: str = "pFileName",
+        parameters: Dict[str, Any] = None,
+        dimensions: List[str] = None,
+        **kwargs,
+    ):
+        """Load a file from the file store, as written by `export_to_blob`, into a cube or with your own process
+
+        With `cube_name`, a generated TI process writes the file into the cube (columns in the cube's dimension
+        order, then the value). With `process_name`, your process runs once with the file's name in the parameter
+        `file_parameter`, as TI must use it (see `FileService.ti_file_name`), and with `parameters`. The file is
+        UTF-8 (on v11 it starts with a BOM unless it was copied with `FileService.transfer_from`): the process
+        should call `SetInputCharacterSet('TM1CS_UTF8');` in its prolog.
+
+        The file is removed after a successful load and kept after a failed one, for inspection.
+
+        :param file_name: name of the file in the file store
+        :param cube_name: cube to load into. Pass either this or `process_name`
+        :param process_name: an existing process to run. Pass either this or `cube_name`
+        :param increment: add to the cell values instead of replacing them
+        :param skip_non_updateable: skip cells that can't be updated (rule-derived or consolidated)
+        :param allow_spread: spread values written to consolidated cells
+        :param sandbox_name: load into this sandbox
+        :param clear_view: name of a public view on the cube to zero out before loading
+        :param deactivate_transaction_log: switch the cube's transaction logging off for the load and restore the
+        previous setting afterwards, also when the load fails (v11 only)
+        :param remove_blob: remove the file after a successful load
+        :param file_parameter: name of the process parameter that receives the file name
+        :param parameters: other parameters of the process
+        :param dimensions: the cube's dimension names in their natural order, if known (saves a request)
+        :raises TM1pyWriteFailureException: when the load fails
+        :raises TM1pyWritePartialFailureException: when the load finishes with minor errors
+        """
+        if (cube_name is None) == (process_name is None):
+            raise ValueError("Pass either 'cube_name' or 'process_name'")
+        process_service = ProcessService(self._rest)
+        file_service = FileService(self._rest)
+
+        if process_name is not None:
+            if not process_service.exists(process_name, **kwargs):
+                raise ValueError(f"Process '{process_name}' does not exist")
+            process_parameters = [p["Name"] for p in process_service.get(process_name, **kwargs).parameters]
+            if not any(case_and_space_insensitive_equals(file_parameter, p) for p in process_parameters):
+                raise ValueError(f"Process '{process_name}' has no parameter '{file_parameter}'")
+            success, status, log_file = process_service.execute_with_return(
+                process_name, **{**(parameters or {}), file_parameter: file_service.ti_file_name(file_name)}
+            )
+        else:
+            if deactivate_transaction_log and verify_version(required_version="12", version=self.version):
+                raise TM1pyVersionException(
+                    "load_from_blob", "11", feature="deactivate_transaction_log", max_version="12.0.0"
+                )
+            dimensions = dimensions or self.get_dimension_names_for_writing(cube_name, **kwargs)
+            process = self._build_blob_to_cube_process(
+                cube_name=cube_name,
+                process_name=self.suggest_unique_object_name(),
+                blob_filename=file_name,
+                dimensions=dimensions,
+                increment=increment,
+                skip_non_updateable=skip_non_updateable,
+                sandbox_name=sandbox_name,
+                allow_spread=allow_spread,
+                clear_view=clear_view,
+                lean_ti=True,
+                string_measures=self._get_blob_cube_profile(cube_name, dimensions=dimensions, **kwargs).string_measures,
+            )
+
+            logging_before = None
+            if deactivate_transaction_log:
+                logging_before = self.get_value(
+                    "}CubeProperties", [("}Cubes", cube_name), ("}CubeProperties", "LOGGING")]
+                )
+                self.write_value("NO", "}CubeProperties", (cube_name, "LOGGING"))
+            try:
+                success, status, log_file = process_service.execute_process_with_return(process=process, **kwargs)
+            finally:
+                if deactivate_transaction_log:
+                    self.write_value(logging_before or "", "}CubeProperties", (cube_name, "LOGGING"))
+
+        if not success:
+            if status == "HasMinorErrors":
+                raise TM1pyWritePartialFailureException([status], [log_file], 1)
+            raise TM1pyWriteFailureException([status], [log_file])
+
+        if remove_blob:
+            file_service.delete(file_name, **kwargs)
 
     def split_mdx(self, mdx: MdxBuilder, dimension: str, parts: int, **kwargs) -> List[MdxBuilder]:
         """Split a query into slices by one dimension, so the slices can be exported side by side
@@ -5329,7 +5602,7 @@ class CellService(ObjectService):
 
             success, status, error_log_file = process_service.execute_process_with_return(process, **kwargs)
             if not success:
-                raise RuntimeError(f"Failed writing to blob with TI. " f"Status: '{status}' log: '{error_log_file}'")
+                raise TM1pyExportFailureException(status, error_log_file)
 
             return file_service.get(file_name).decode("UTF-8-sig")
 
@@ -5467,7 +5740,7 @@ class CellService(ObjectService):
 
             success, status, error_log_file = process_service.execute_process_with_return(process, **kwargs)
             if not success:
-                raise RuntimeError(f"Failed writing to blob with TI. " f"Status: '{status}' log: '{error_log_file}'")
+                raise TM1pyExportFailureException(status, error_log_file)
 
             return file_service.get(file_name).decode("UTF-8-sig")
 

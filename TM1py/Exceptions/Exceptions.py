@@ -276,3 +276,21 @@ class TM1pyWritePartialFailureException(TM1pyException):
             f"Details: {self.error_log_files}"
         )
         super(TM1pyWritePartialFailureException, self).__init__(message)
+
+
+class TM1pyExportFailureException(TM1pyException, RuntimeError):
+    """Exception for a failed export of cube data to a file in the file store (blob).
+
+    Subclasses RuntimeError, which the blob read paths raised before, so existing handlers keep catching it.
+    """
+
+    def __init__(self, status: str, error_log_file: str):
+        """
+        :param status: status of the export process
+        :param error_log_file: name of the TI error log file
+        """
+        self.status = status
+        self.error_log_file = error_log_file
+
+        message = f"Failed writing to blob with TI. Status: '{status}' log: '{error_log_file}'"
+        super(TM1pyExportFailureException, self).__init__(message)
