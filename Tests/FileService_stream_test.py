@@ -8,8 +8,10 @@ import configparser
 import hashlib
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from TM1py import TM1Service
+from TM1py.Exceptions import TM1pyRestException
 from TM1py.Utils import verify_version
 
 BOM = b"\xef\xbb\xbf"
@@ -132,6 +134,35 @@ class TestFileServiceStream(unittest.TestCase):
         self.assertEqual(len(expected), sent)
         self.assertEqual(expected, self.tm1.files.get(TARGET_FILE))
         self.assertTrue(self.tm1.files.exists(SOURCE_FILE))
+
+    def test_transfer_from_retries_once_after_expired_session(self):
+        files = self.tm1.files
+        update_or_create = files.update_or_create
+        attempts = []
+
+        def expire_first_upload(file_name, file_content, **kwargs):
+            attempts.append(file_name)
+            if len(attempts) == 1:
+                # the streamed body is consumed, then the target answers 401
+                b"".join(file_content)
+                raise TM1pyRestException("session expired", 401, "Unauthorized", {})
+            return update_or_create(file_name, file_content, **kwargs)
+
+        with patch.object(files, "update_or_create", side_effect=expire_first_upload):
+            sent = files.transfer_from(files, SOURCE_FILE, target_file_name=TARGET_FILE)
+
+        expected = self.CONTENT[len(BOM) :]
+        self.assertEqual(2, len(attempts))
+        self.assertEqual(len(expected), sent)
+        self.assertEqual(expected, files.get(TARGET_FILE))
+
+    def test_transfer_from_does_not_retry_other_errors(self):
+        files = self.tm1.files
+        error = TM1pyRestException("bad request", 400, "Bad Request", {})
+        with patch.object(files, "update_or_create", side_effect=error) as upload:
+            with self.assertRaises(TM1pyRestException):
+                files.transfer_from(files, SOURCE_FILE, target_file_name=TARGET_FILE)
+        self.assertEqual(1, upload.call_count)
 
     def test_transfer_from_without_bom(self):
         content = self.CONTENT[len(BOM) :]

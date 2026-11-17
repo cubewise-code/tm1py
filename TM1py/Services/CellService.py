@@ -999,6 +999,7 @@ class CellService(ObjectService):
         sandbox_name: str = None,
         precision: int = None,
         measure_dimension_elements: Dict = None,
+        lean_ti: bool = False,
         **kwargs,
     ) -> Optional[str]:
         """Write asynchronously
@@ -1016,6 +1017,8 @@ class CellService(ObjectService):
         Necessary to decrease when dealing with large numbers to avoid "number too long" TI syntax error.
         :param measure_dimension_elements: dictionary of measure elements and their types to improve
         performance when `use_ti` is `True`.
+        :param lean_ti: generate TI that contains only the code this cube needs (faster). Default False keeps the
+        TI TM1py has always generated.
         :param kwargs:
         :return:
         """
@@ -1041,6 +1044,7 @@ class CellService(ObjectService):
                 sandbox_name=sandbox_name,
                 precision=precision,
                 measure_dimension_elements=measure_dimension_elements,
+                lean_ti=lean_ti,
                 **kwargs,
             )
 
@@ -1088,6 +1092,7 @@ class CellService(ObjectService):
         sandbox_name: str = None,
         deactivate_transaction_log: bool = False,
         reactivate_transaction_log: bool = False,
+        lean_ti: bool = False,
         **kwargs,
     ):
         """Write DataFrame into a cube using unbound TI processes in a multi-threading way. Requires admin permissions.
@@ -1103,6 +1108,8 @@ class CellService(ObjectService):
         :param sandbox_name: name of the sandbox or None
         :param deactivate_transaction_log:
         :param reactivate_transaction_log:
+        :param lean_ti: generate TI that contains only the code this cube needs (faster). Default False keeps the
+        TI TM1py has always generated.
         :return: the Future’s result or raise exception.
         """
         if not isinstance(data, pd.DataFrame):
@@ -1125,6 +1132,7 @@ class CellService(ObjectService):
                 increment=increment,
                 use_blob=True,
                 sandbox_name=sandbox_name,
+                lean_ti=lean_ti,
                 **kwargs,
             )
 
@@ -1834,6 +1842,9 @@ class CellService(ObjectService):
         UTF-8 (on v11 it starts with a BOM unless it was copied with `FileService.transfer_from`): the process
         should call `SetInputCharacterSet('TM1CS_UTF8');` in its prolog.
 
+        The generated load reads every line as a cell, so the file must have no header line: export it with
+        `include_header=False` (the default). A header is for your own process, which can skip it.
+
         The file is removed after a successful load and kept after a failed one, for inspection.
 
         :param file_name: name of the file in the file store
@@ -1850,6 +1861,7 @@ class CellService(ObjectService):
         :param file_parameter: name of the process parameter that receives the file name
         :param parameters: other parameters of the process
         :param dimensions: the cube's dimension names in their natural order, if known (saves a request)
+        :raises ValueError: for an invalid target, or a cube-only option passed with `process_name`
         :raises TM1pyWriteFailureException: when the load fails
         :raises TM1pyWritePartialFailureException: when the load finishes with minor errors
         """
@@ -1859,13 +1871,29 @@ class CellService(ObjectService):
         file_service = FileService(self._rest)
 
         if process_name is not None:
+            cube_only_options = {
+                "increment": increment,
+                "skip_non_updateable": skip_non_updateable,
+                "allow_spread": allow_spread,
+                "sandbox_name": sandbox_name,
+                "clear_view": clear_view,
+                "deactivate_transaction_log": deactivate_transaction_log,
+                "dimensions": dimensions,
+            }
+            passed = [name for name, value in cube_only_options.items() if value]
+            if passed:
+                raise ValueError(f"{', '.join(map(repr, passed))} only apply with 'cube_name', not 'process_name'")
             if not process_service.exists(process_name, **kwargs):
                 raise ValueError(f"Process '{process_name}' does not exist")
             process_parameters = [p["Name"] for p in process_service.get(process_name, **kwargs).parameters]
             if not any(case_and_space_insensitive_equals(file_parameter, p) for p in process_parameters):
                 raise ValueError(f"Process '{process_name}' has no parameter '{file_parameter}'")
+            # execute_with_return reads every other keyword argument as a process parameter
             success, status, log_file = process_service.execute_with_return(
-                process_name, **{**(parameters or {}), file_parameter: file_service.ti_file_name(file_name)}
+                process_name,
+                timeout=kwargs.get("timeout"),
+                cancel_at_timeout=kwargs.get("cancel_at_timeout", False),
+                **{**(parameters or {}), file_parameter: file_service.ti_file_name(file_name)},
             )
         else:
             if deactivate_transaction_log and verify_version(required_version="12", version=self.version):

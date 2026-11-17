@@ -9,7 +9,11 @@ from io import BytesIO
 from pathlib import Path
 from typing import Iterable, Iterator, List, Optional, Tuple, Union
 
-from TM1py.Exceptions import TM1pyFileTransferException, TM1pyVersionException
+from TM1py.Exceptions import (
+    TM1pyFileTransferException,
+    TM1pyRestException,
+    TM1pyVersionException,
+)
 from TM1py.Services import RestService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Utils import format_url
@@ -152,7 +156,8 @@ class FileService(ObjectService):
 
         Called on the target. Client memory stays at about one chunk (one part with multipart upload),
         whatever the file size. A UTF-8 BOM at the start of the source file is not copied.
-        An existing target file is overwritten.
+        An existing target file is overwritten. If the target's session has expired, the copy runs once more after
+        reconnecting, with a new stream from the source (a streamed upload can't be resent).
 
         :param source: FileService of the source instance (may be this instance)
         :param file_name: file name in root or path to file on the source
@@ -167,8 +172,42 @@ class FileService(ObjectService):
         """
         target_file_name = file_name if target_file_name is None else target_file_name
         size = source.get_size(file_name, **kwargs)
-        sent = 0
 
+        def copy() -> Tuple[int, int]:
+            return self._copy_stream(
+                source, file_name, target_file_name, size, chunk_size, multi_part_upload, max_mb_per_part, **kwargs
+            )
+
+        try:
+            sent, length = copy()
+        except TM1pyRestException as e:
+            # A streamed upload can't be resent, so a 401 from an expired session on the target is returned after
+            # RestService reconnects. The source can be read again, so the copy is run once more with a new stream
+            if e.status_code != 401:
+                raise
+            sent, length = copy()
+
+        if sent != length:
+            raise TM1pyFileTransferException(str(file_name), sent, length)
+
+        if remove_source:
+            source.delete(file_name, **kwargs)
+
+        return sent
+
+    def _copy_stream(
+        self,
+        source: "FileService",
+        file_name: Union[str, Path],
+        target_file_name: Union[str, Path],
+        size: int,
+        chunk_size: int,
+        multi_part_upload: Optional[bool],
+        max_mb_per_part: float,
+        **kwargs,
+    ) -> Tuple[int, int]:
+        """Stream one file from `source` into this file store. Returns the bytes sent and the bytes expected."""
+        sent = 0
         with source.get_stream(file_name, chunk_size=chunk_size, **kwargs) as chunks:
             chunks, has_bom = self._strip_bom(chunks)
             length = size - len(UTF8_BOM) if has_bom else size
@@ -187,14 +226,7 @@ class FileService(ObjectService):
                 content_length=length,
                 **kwargs,
             )
-
-        if sent != length:
-            raise TM1pyFileTransferException(str(file_name), sent, length)
-
-        if remove_source:
-            source.delete(file_name, **kwargs)
-
-        return sent
+        return sent, length
 
     @staticmethod
     def _strip_bom(chunks: Iterable[bytes]) -> Tuple[Iterator[bytes], bool]:

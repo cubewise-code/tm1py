@@ -104,6 +104,15 @@ def drop_fixture(tm1: TM1Service):
         tm1.processes.delete(LOADER)
 
 
+def server_objects(tm1: TM1Service) -> dict:
+    """Names of the objects an export or load could leave behind: public subsets on the fixture's hierarchies and
+    TM1py's generated processes (other sessions' processes don't carry its prefix)"""
+    hierarchies = [(D1, D1), (D1_CODE, D1_CODE), (D2, D2), (D2, ALT), (MEASURE, MEASURE)]
+    objects = {f"subsets {d}:{h}": set(tm1.subsets.get_all_names(d, h)) for d, h in hierarchies}
+    objects["processes"] = {name for name in tm1.processes.get_all_names() if name.startswith("tm1py.")}
+    return objects
+
+
 def all_cells_mdx(cube: str, d1: str = D1, d2_hierarchy: str = D2) -> MdxBuilder:
     return (
         MdxBuilder.from_cube(cube)
@@ -160,6 +169,7 @@ class TestBlobTransfer(unittest.TestCase):
         self.tm1.processes.execute_ti_code([f"CubeClearData('{TARGET}');", f"CubeClearData('{ALIAS_TARGET}');"])
         self.files_before = set(self.tm1.files.get_all_names())
         self.views_before = self.tm1.views.get_all_names(SOURCE)
+        self.objects_before = server_objects(self.tm1)
 
     def tearDown(self):
         for name in set(self.tm1.files.get_all_names()) - self.files_before:
@@ -168,6 +178,7 @@ class TestBlobTransfer(unittest.TestCase):
     def assert_nothing_left(self):
         self.assertEqual(self.files_before, set(self.tm1.files.get_all_names()))
         self.assertEqual(self.views_before, self.tm1.views.get_all_names(SOURCE))
+        self.assertEqual(self.objects_before, server_objects(self.tm1))
 
     def assert_cells_close(self, expected: dict, actual: dict):
         assert_cells_close(self, expected, actual)
@@ -334,6 +345,48 @@ class TestBlobTransfer(unittest.TestCase):
         file_name = self.tm1.cells.export_to_blob(mdx=all_cells_mdx(SOURCE))
         self.tm1.cells.load_from_blob(file_name, cube_name=TARGET, remove_blob=False)
         self.assertTrue(self.tm1.files.exists(file_name))
+
+    def test_attribute_cube_round_trip(self):
+        attribute_cube = "}ElementAttributes_" + D1
+        mdx = (
+            MdxBuilder.from_cube(attribute_cube)
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.tm1_subset_all(D1))
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(attribute_cube, ALIAS)))
+        )
+        expected = {element: code for element, code in CODES.items() if code}
+
+        def aliases() -> dict:
+            result = self.tm1.cells.execute_mdx(mdx.to_mdx(), cell_properties=["Value"], skip_zeros=True)
+            return {
+                coordinates[0].split("].[")[-1][:-1].replace("]]", "]"): cell["Value"]
+                for coordinates, cell in result.items()
+                if cell["Value"]
+            }
+
+        file_name = self.tm1.cells.export_to_blob(mdx=mdx)
+        try:
+            self.tm1.cells.write(attribute_cube, {(element, ALIAS): "" for element in expected})
+            self.assertEqual({}, aliases())
+            self.tm1.cells.load_from_blob(file_name, cube_name=attribute_cube)
+            actual = aliases()
+        finally:
+            self.tm1.cells.write(attribute_cube, {(element, ALIAS): code for element, code in expected.items()})
+        self.assertEqual(expected, actual)
+        self.assert_nothing_left()
+
+    def test_cube_only_options_with_process_name_raise(self):
+        for option in (
+            {"increment": True},
+            {"skip_non_updateable": True},
+            {"allow_spread": True},
+            {"sandbox_name": "any"},
+            {"clear_view": "any"},
+            {"deactivate_transaction_log": True},
+            {"dimensions": [D1, D2, MEASURE]},
+        ):
+            with self.subTest(option=option):
+                with self.assertRaises(ValueError):
+                    self.tm1.cells.load_from_blob("any.csv", process_name=LOADER, **option)
 
     def test_load_requires_exactly_one_target(self):
         for arguments in ({}, {"cube_name": TARGET, "process_name": LOADER}):
