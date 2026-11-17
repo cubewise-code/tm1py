@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import copy
 import csv
 import functools
 import itertools
@@ -1579,6 +1580,7 @@ class CellService(ObjectService):
         lean_ti: bool = False,
         variable_hierarchies: List[str] = None,
         profile: CubeProfile = None,
+        view_definition: Union[NativeView, str] = None,
     ) -> Process:
         """Build the unbound process that writes the cells of a view to a blob file.
 
@@ -1587,6 +1589,8 @@ class CellService(ObjectService):
         :param header: column labels for a header line (the value column's label is added); None for no header
         :param variable_hierarchies: dimension or hierarchy unique name per variable. Only used with `lean_ti`
         :param profile: facts about the cube. Only used with `lean_ti`
+        :param view_definition: NativeView or MDX string the process builds as temporary view `view_name`.
+        Requires `lean_ti`
         """
         if sandbox_name:
             self._assert_sandbox_exists(sandbox_name)
@@ -1625,9 +1629,51 @@ class CellService(ObjectService):
             top=top,
             skip=skip,
             sandbox_name=sandbox_name,
+            view_definition=view_definition,
         )
         layout = CsvLayout(delimiter=value_separator, quote_character=quote_character, header=header or ())
         return build_export_process(profile, layout, spec, lean=lean_ti)
+
+    def split_mdx(self, mdx: MdxBuilder, dimension: str, parts: int, **kwargs) -> List[MdxBuilder]:
+        """Split a query into slices by one dimension, so the slices can be exported side by side
+
+        The dimension's set on the columns or rows is resolved on the server and divided into `parts` contiguous
+        groups of elements, as even as possible. Each slice is a copy of `mdx` with that set replaced by its group
+        of elements; the slices together select the same cells as `mdx`, each cell once.
+
+        :param mdx: the query. It is not changed
+        :param dimension: a dimension with a set on the columns or rows of `mdx`
+        :param parts: number of slices. Fewer are returned when the set has fewer elements
+        :return: one MdxBuilder per slice; empty when the set is empty
+        """
+        if parts < 1:
+            raise ValueError("'parts' must be at least 1")
+
+        key = lower_and_drop_spaces(dimension)
+        located = None
+        for position, axis in mdx.axes.items():
+            for index, mdx_set in enumerate(axis.dim_sets):
+                if isinstance(mdx_set, MdxHierarchySet) and lower_and_drop_spaces(mdx_set.dimension) == key:
+                    located = position, index, mdx_set
+        if located is None:
+            raise ValueError(f"Dimension '{dimension}' has no set on the columns or rows of the query")
+        position, index, mdx_set = located
+
+        from TM1py.Services.ElementService import ElementService
+
+        elements = ElementService(self._rest).execute_set_mdx_element_names(mdx_set.to_mdx(), **kwargs)
+
+        slices = []
+        size, remainder = divmod(len(elements), parts)
+        start = 0
+        for part in range(min(parts, len(elements))):
+            end = start + size + (1 if part < remainder else 0)
+            members = [Member(mdx_set.dimension, mdx_set.hierarchy, element) for element in elements[start:end]]
+            mdx_slice = copy.deepcopy(mdx)
+            mdx_slice.axes[position].dim_sets[index] = MdxHierarchySet.members(members)
+            slices.append(mdx_slice)
+            start = end
+        return slices
 
     @staticmethod
     def _split_hierarchy_unique_name(name: str) -> Tuple[str, str]:

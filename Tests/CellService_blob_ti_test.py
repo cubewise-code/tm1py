@@ -26,6 +26,7 @@ from TM1py.Objects import (
     Element,
     Hierarchy,
     NativeView,
+    Subset,
 )
 from TM1py.Services import TM1Service
 from TM1py.Services.CellService import CellService
@@ -289,6 +290,96 @@ class TestLeanExportTi(unittest.TestCase):
         self.assertIn("ServerActiveSandboxSet('Scenario 1');SetUseActiveSandboxProperty(1);", process.prolog_procedure)
 
 
+def _native_sales_view() -> NativeView:
+    view = NativeView("Sales", "ignored")
+    view.add_column("sales measure", AnonymousSubset("sales measure", elements=["Units", "Price's"]))
+    view.add_row("Region", AnonymousSubset("Region", expression="{TM1SUBSETALL([Region].[Region])}"))
+    view.add_title("Product", "P'1", AnonymousSubset("Product", elements=["P'1"]))
+    return view
+
+
+class TestLeanExportViewTi(unittest.TestCase):
+    """The temporary view the lean export builds in its prolog."""
+
+    def test_native_view_built_as_temporary_objects_before_extract_settings(self):
+        process = build_lean_export(view_definition=_native_sales_view())
+        prolog = process.prolog_procedure
+
+        self.assertIn("ViewCreate('Sales', 'tm1py.view', 1);", prolog)
+        self.assertLess(prolog.index("ViewCreate("), prolog.index("ViewExtractSkipCalcsSet("))
+        self.assertEqual("tm1py.view", process.datasource_view)
+
+    def test_native_view_subsets_in_cube_order(self):
+        prolog = build_lean_export(view_definition=_native_sales_view()).prolog_procedure
+
+        expected = [
+            # Year is not in the view: its default member, as in MDX
+            "sMdx = '{[year].[year].DEFAULTMEMBER}';",
+            "SubsetCreateByMDX('tm1py_subset_1', sMdx, 'Year', 1);",
+            "ViewSubsetAssign('Sales', 'tm1py.view', 'Year', 'tm1py_subset_1');",
+            "sMdx = '{TM1SUBSETALL([Region].[Region])}';",
+            "SubsetCreateByMDX('tm1py_subset_2', sMdx, 'Region', 1);",
+            "ViewSubsetAssign('Sales', 'tm1py.view', 'Region', 'tm1py_subset_2');",
+            "SubsetCreate('Product', 'tm1py_subset_3', 1);",
+            "SubsetElementInsert('Product', 'tm1py_subset_3', 'P''1', 1);",
+            "ViewSubsetAssign('Sales', 'tm1py.view', 'Product', 'tm1py_subset_3');",
+            "SubsetCreate('Sales Measure', 'tm1py_subset_4', 1);",
+            "SubsetElementInsert('Sales Measure', 'tm1py_subset_4', 'Units', 1);",
+            "SubsetElementInsert('Sales Measure', 'tm1py_subset_4', 'Price''s', 2);",
+            "ViewSubsetAssign('Sales', 'tm1py.view', 'Sales Measure', 'tm1py_subset_4');",
+        ]
+        lines = prolog.splitlines()
+        positions = [lines.index(line) for line in expected]
+        self.assertEqual(sorted(positions), positions)
+
+    def test_native_view_named_subset_and_all_elements(self):
+        view = NativeView("Sales", "ignored")
+        view.add_row("Region", Subset("My Regions", "Region"))
+        view.add_row("Year")
+        prolog = build_lean_export(view_definition=view).prolog_procedure
+
+        self.assertIn("ViewSubsetAssign('Sales', 'tm1py.view', 'Region', 'My Regions');", prolog)
+        self.assertIn("sMdx = '{TM1SUBSETALL([year].[year])}';", prolog)
+
+    def test_native_view_unknown_dimension_raises(self):
+        view = NativeView("Sales", "ignored")
+        view.add_row("Regoin", AnonymousSubset("Regoin", elements=["North"]))
+        with self.assertRaises(ValueError):
+            build_lean_export(view_definition=view)
+
+    def test_native_view_alternate_hierarchy_raises_not_implemented(self):
+        view = NativeView("Sales", "ignored")
+        view.add_row("Region", AnonymousSubset("Region", "By Country", elements=["North"]))
+        with self.assertRaises(NotImplementedError):
+            build_lean_export(view_definition=view)
+
+    def test_mdx_view(self):
+        mdx = "SELECT {[Year].[Year].[2024]} ON 0 FROM [Sales] WHERE ([Region].[Region].[O'Brien])"
+        prolog = build_lean_export(view_definition=mdx).prolog_procedure
+
+        self.assertIn(
+            "sMdx = 'SELECT {[Year].[Year].[2024]} ON 0 FROM [Sales] WHERE ([Region].[Region].[O''Brien])';", prolog
+        )
+        self.assertIn("ViewCreateByMDX('Sales', 'tm1py.view', sMdx, 1);", prolog)
+        self.assertNotIn("ViewCreate(", prolog)
+
+    def test_long_mdx_is_concatenated_in_pieces(self):
+        mdx = "SELECT {" + ",".join(f"[Region].[Region].[R'{i}]" for i in range(2000)) + "} ON 0 FROM [Sales]"
+        prolog = build_lean_export(view_definition=mdx).prolog_procedure
+
+        pieces = [line for line in prolog.splitlines() if line.startswith("sMdx = ")]
+        self.assertGreater(len(pieces), 1)
+        self.assertTrue(all(len(line) < 5000 for line in pieces))
+        self.assertTrue(pieces[1].startswith("sMdx = sMdx | '"))
+        # the pieces, unquoted and joined, give back the MDX
+        literals = [line.split(" = ", 1)[1].removeprefix("sMdx | ")[1:-2].replace("''", "'") for line in pieces]
+        self.assertEqual(mdx, "".join(literals))
+
+    def test_view_definition_requires_lean_ti(self):
+        with self.assertRaises(ValueError):
+            build_lean_export(view_definition="SELECT {} ON 0 FROM [Sales]", lean_ti=False)
+
+
 class TestLeanLoadTi(unittest.TestCase):
     def test_numeric_cube_reads_value_as_number_and_writes_it_with_one_put(self):
         process = build_lean_load()
@@ -375,6 +466,7 @@ class TestLeanBlobTiLive(unittest.TestCase):
     d1 = prefix + "D1"
     d2 = prefix + "D2"
     measure = prefix + "Measure"
+    alt_hierarchy = "Alt"
     d1_elements = ["plain", 'quote"in', "O'Brien", "comma,el", "brack]et", "Ünïcode é"]
     d2_elements = ["e1", "e2"]
     numbers = [0.1234567891234, 123456789.987654, 1e-07, -42.5, 9876543210123.5, 1]
@@ -388,7 +480,13 @@ class TestLeanBlobTiLive(unittest.TestCase):
             (cls.d2, [Element(e, "Numeric") for e in cls.d2_elements]),
             (cls.measure, [Element("Value", "Numeric"), Element("Comment", "String")]),
         ):
-            cls.tm1.dimensions.update_or_create(Dimension(name, [Hierarchy(name, name, elements=elements)]))
+            hierarchies = [Hierarchy(name, name, elements=elements)]
+            if name == cls.d1:
+                # an alternate hierarchy with the same leaves under one consolidation
+                alt_elements = [Element(e, "Numeric") for e in cls.d1_elements] + [Element("Total", "Consolidated")]
+                edges = {("Total", e): 1 for e in cls.d1_elements}
+                hierarchies.append(Hierarchy(cls.alt_hierarchy, name, elements=alt_elements, edges=edges))
+            cls.tm1.dimensions.update_or_create(Dimension(name, hierarchies))
         for cube in (cls.source_cube, cls.target_cube):
             cls.tm1.cubes.update_or_create(Cube(cube, [cls.d1, cls.d2, cls.measure]))
 
@@ -468,6 +566,133 @@ class TestLeanBlobTiLive(unittest.TestCase):
         self.tm1.cells.write(self.target_cube, cells, use_blob=True, lean_ti=True)
         self.tm1.cells.write(self.target_cube, cells, use_blob=True, lean_ti=True, increment=True)
         self.assertEqual(4, self._value("plain", "e1", "Value"))
+
+    # -- views built inside the export process (step 3) ------------------------------------------------------- #
+
+    def _export_with_view(self, view_definition, data_source_dimensions) -> list:
+        """Run a lean export whose prolog builds `view_definition`; return the file's rows, columns in cube order.
+
+        :param data_source_dimensions: dimensions in data source order
+        """
+        cells = self.tm1.cells
+        cube_dimensions = [self.d1, self.d2, self.measure]
+        name = cells.suggest_unique_object_name()
+        file_name = name + ".csv"
+        self.tm1.files.create(file_name, b"")
+        try:
+            process = cells._build_cube_to_blob_process(
+                cube=self.source_cube,
+                variables=[f"v{cube_dimensions.index(d) + 1}" for d in data_source_dimensions],
+                skip_variables=[],
+                top=None,
+                skip=None,
+                skip_zeros=True,
+                skip_consolidated_cells=True,
+                skip_rule_derived_cells=True,
+                value_separator=",",
+                process_name=name,
+                view_name=name,
+                file_name=file_name,
+                lean_ti=True,
+                variable_hierarchies=list(data_source_dimensions),
+                profile=cells._get_blob_cube_profile(self.source_cube, hierarchies=data_source_dimensions),
+                view_definition=view_definition,
+            )
+            success, status, log = self.tm1.processes.execute_process_with_return(process)
+            self.assertTrue(success, f"{status}: {log}")
+            return _parse_csv(self.tm1.files.get(file_name).decode("utf-8-sig"))
+        finally:
+            self.tm1.files.delete(file_name)
+
+    def _expected_rows(self, d1_elements=None, d2_elements=None) -> list:
+        rows = []
+        for i, element in enumerate(self.d1_elements):
+            if d1_elements is not None and element not in d1_elements:
+                continue
+            if d2_elements is None or "e1" in d2_elements:
+                rows.append((element, "e1", "Value", f"{self.numbers[i]:.15g}"))
+            if d2_elements is None or "e2" in d2_elements:
+                rows.append((element, "e2", "Comment", self.strings[i]))
+        return sorted(rows)
+
+    def _assert_rows(self, expected: list, actual: list):
+        # numbers as TM1 writes them may differ in formatting; compare them as floats
+        def normalize(row):
+            *coordinates, value = row
+            return (*coordinates, float(value)) if coordinates[-1] == "Value" else row
+
+        self.assertEqual([normalize(r) for r in expected], [normalize(r) for r in actual])
+
+    def test_native_view_from_mdx_builder(self):
+        view = NativeView.from_mdx_builder(self._mdx(self.source_cube))
+        rows = self._export_with_view(view, [self.d1, self.d2, self.measure])
+        self._assert_rows(self._expected_rows(), rows)
+
+    def test_native_view_with_title_and_static_subset(self):
+        mdx = (
+            MdxBuilder.from_cube(self.source_cube)
+            .add_hierarchy_set_to_row_axis(
+                MdxHierarchySet.members([Member.of(self.d1, "O'Brien"), Member.of(self.d1, "brack]et")])
+            )
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.tm1_subset_all(self.measure))
+            .where(Member.of(self.d2, "e1"))
+        )
+        rows = self._export_with_view(NativeView.from_mdx_builder(mdx), [self.d1, self.d2, self.measure])
+        self._assert_rows(self._expected_rows(["O'Brien", "brack]et"], ["e1"]), rows)
+
+    def test_native_view_unmentioned_dimension_uses_default_member(self):
+        default = self.tm1.elements.execute_set_mdx_element_names(f"{{[{self.d2}].[{self.d2}].DEFAULTMEMBER}}")
+        mdx = (
+            MdxBuilder.from_cube(self.source_cube)
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.tm1_subset_all(self.d1))
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.tm1_subset_all(self.measure))
+        )
+        rows = self._export_with_view(NativeView.from_mdx_builder(mdx), [self.d1, self.d2, self.measure])
+        self._assert_rows(self._expected_rows(d2_elements=default), rows)
+
+    def test_mdx_view_with_alternate_hierarchy(self):
+        mdx = (
+            MdxBuilder.from_cube(self.source_cube)
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.tm1_subset_all(self.measure))
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.tm1_subset_all(self.d1, self.alt_hierarchy))
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.tm1_subset_all(self.d2))
+        )
+        with self.assertRaises(NotImplementedError):
+            NativeView.from_mdx_builder(mdx)
+
+        # MDX view variables: column dimensions, then row dimensions, then the rest in cube order.
+        # DIMENSION PROPERTIES would add data source variables, so the MDX is written without them
+        rows = self._export_with_view(mdx.to_mdx(skip_dimension_properties=True), [self.measure, self.d1, self.d2])
+        self._assert_rows(self._expected_rows(), rows)
+
+    def test_split_mdx_slices_cover_the_query_once(self):
+        mdx = self._mdx(self.source_cube)
+
+        slices = self.tm1.cells.split_mdx(mdx, self.d1, 4)
+
+        self.assertEqual(4, len(slices))
+        sizes = [len(s.axes[1].dim_sets[0].members) for s in slices]
+        self.assertEqual(len(self.d1_elements), sum(sizes))
+        self.assertLessEqual(max(sizes) - min(sizes), 1)
+        # the original query is unchanged
+        self.assertNotIsInstance(mdx.axes[1].dim_sets[0], type(slices[0].axes[1].dim_sets[0]))
+
+        rows = []
+        for mdx_slice in slices:
+            view = NativeView.from_mdx_builder(mdx_slice)
+            rows += self._export_with_view(view, [self.d1, self.d2, self.measure])
+        self._assert_rows(self._expected_rows(), sorted(rows))
+
+    def test_split_mdx_more_parts_than_elements(self):
+        slices = self.tm1.cells.split_mdx(self._mdx(self.source_cube), self.d2, 5)
+        self.assertEqual(len(self.d2_elements), len(slices))
+
+    def test_split_mdx_dimension_not_on_an_axis_raises(self):
+        mdx = self._mdx(self.source_cube)
+        with self.assertRaises(ValueError):
+            self.tm1.cells.split_mdx(mdx, "not a dimension", 2)
+        with self.assertRaises(ValueError):
+            self.tm1.cells.split_mdx(mdx, self.d1, 0)
 
 
 if __name__ == "__main__":

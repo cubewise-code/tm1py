@@ -18,7 +18,7 @@ with a BOM. v12 always writes UTF-8 without a BOM.
 """
 
 from dataclasses import dataclass, field
-from typing import Callable, FrozenSet, List, Mapping, Optional, Tuple
+from typing import Any, Callable, FrozenSet, List, Mapping, Optional, Tuple
 
 from TM1py.Objects.Process import Process
 from TM1py.Utils.Utils import lower_and_drop_spaces
@@ -30,6 +30,9 @@ _SPACE = " "
 
 # above this many string measures, the lean load branches on the element type instead of on element names
 MAX_STRING_MEASURES_BY_NAME = 20
+
+# long strings (MDX) are assigned to a TI variable in pieces of this many characters
+TI_STRING_PIECE_LENGTH = 4000
 
 
 def _normalize(name: str) -> str:
@@ -145,8 +148,12 @@ class ExportSpec:
     :param process_name: name of the (unbound) process
     :param file_name: file in the file store, as created through the contents API (no ``.blb``)
     :param view_name: name of the view that is the data source
-    :param variables: data source variables in data source order
+    :param variables: data source variables in data source order. For a view built from ``view_definition``:
+        cube order for a native view; for an MDX view, the column dimensions, then the row dimensions, then every
+        other dimension in cube order
     :param aliases: dimension name -> alias attribute written instead of the element name (lean only)
+    :param view_definition: a ``NativeView`` or an MDX string (lean only). The prolog builds it as the temporary
+        view ``view_name``. Otherwise ``view_name`` must exist when the process runs
     """
 
     process_name: str
@@ -160,6 +167,7 @@ class ExportSpec:
     skip: Optional[int] = None
     sandbox_name: Optional[str] = None
     aliases: Mapping[str, str] = field(default_factory=dict)
+    view_definition: Any = None
 
     def __post_init__(self):
         object.__setattr__(self, "variables", tuple(self.variables))
@@ -211,6 +219,8 @@ def build_export_process(profile: CubeProfile, layout: CsvLayout, spec: ExportSp
         process.add_variable(name=variable.name, variable_type="String")
 
     file_name = ti_file_name(spec.file_name, profile.is_v12)
+    if spec.view_definition is not None and not lean:
+        raise ValueError("A view built in the export process (view_definition) requires lean TI")
     if lean:
         process.prolog_procedure = _lean_export_prolog(profile, layout, spec, file_name)
         process.data_procedure = _lean_export_data(profile, layout, spec, file_name)
@@ -337,7 +347,7 @@ def _lean_header_ti(file_name: str, layout: CsvLayout) -> str:
 
 
 def _lean_export_prolog(profile: CubeProfile, layout: CsvLayout, spec: ExportSpec, file_name: str) -> str:
-    lines = []
+    lines = _view_build_ti(profile, spec)
     sandbox = enable_sandbox_ti(spec.sandbox_name, profile.sandboxing_disabled)
     if sandbox:
         lines.append(sandbox)
@@ -351,6 +361,77 @@ def _lean_export_prolog(profile: CubeProfile, layout: CsvLayout, spec: ExportSpe
     if spec.top or spec.skip:
         lines.append("nCell = 0;")
     return "\n".join(lines) + "\n"
+
+
+def ti_string_assignment(variable: str, value: str, piece_length: int = TI_STRING_PIECE_LENGTH) -> List[str]:
+    """TI that assigns ``value`` to ``variable``, concatenated from pieces so no literal gets too long."""
+    pieces = [value[i : i + piece_length] for i in range(0, len(value), piece_length)] or [""]
+    return [f"{variable} = {ti_string(pieces[0])};"] + [
+        f"{variable} = {variable} | {ti_string(piece)};" for piece in pieces[1:]
+    ]
+
+
+def _mdx_name(name: str) -> str:
+    return name.replace("]", "]]")
+
+
+def _view_build_ti(profile: CubeProfile, spec: ExportSpec) -> List[str]:
+    """TI that builds ``spec.view_definition`` as the temporary view ``spec.view_name``. Temporary objects are
+    removed by the server when the process ends, whether it succeeds or not."""
+    definition = spec.view_definition
+    if definition is None:
+        return []
+    cube, view = ti_string(profile.cube_name), ti_string(spec.view_name)
+    if isinstance(definition, str):
+        return ti_string_assignment("sMdx", definition) + [f"ViewCreateByMDX({cube}, {view}, sMdx, 1);"]
+    return _native_view_build_ti(profile, definition, cube, view)
+
+
+def _native_view_build_ti(profile: CubeProfile, native_view, cube: str, view: str) -> List[str]:
+    """One temporary subset per cube dimension, in cube order. A dimension the view doesn't mention gets its
+    default member, as it would in MDX."""
+    cube_dimensions = {_normalize(dimension): dimension for dimension in profile.dimensions}
+    selections = {}
+    for selection in (*native_view.columns, *native_view.rows, *native_view.titles):
+        key = _normalize(selection.dimension_name)
+        if key not in cube_dimensions:
+            raise ValueError(f"Dimension '{selection.dimension_name}' is not in cube '{profile.cube_name}'")
+        selections[key] = selection
+
+    lines = [f"ViewCreate({cube}, {view}, 1);"]
+    for position, dimension in enumerate(profile.dimensions, start=1):
+        selection = selections.get(_normalize(dimension))
+        subset = getattr(selection, "subset", None)
+        if subset is not None and _normalize(subset.hierarchy_name or dimension) != _normalize(dimension):
+            raise NotImplementedError(
+                f"Alternate hierarchy '{dimension}:{subset.hierarchy_name}' in a native view built in TI"
+            )
+
+        dimension_literal = ti_string(dimension)
+        subset_name = f"tm1py_subset_{position}"
+        subset_literal = ti_string(subset_name)
+        title_element = getattr(selection, "selected", None)
+
+        if subset is not None and subset.name and title_element is None:
+            subset_literal = ti_string(subset.name)
+        elif title_element is not None or (subset is not None and subset.elements and not subset.expression):
+            elements = [title_element] if title_element is not None else subset.elements
+            lines.append(f"SubsetCreate({dimension_literal}, {subset_literal}, 1);")
+            lines += [
+                f"SubsetElementInsert({dimension_literal}, {subset_literal}, {ti_string(element)}, {index});"
+                for index, element in enumerate(elements, start=1)
+            ]
+        else:
+            if subset is not None and subset.expression:
+                mdx = subset.expression
+            elif selection is None:
+                mdx = f"{{[{_mdx_name(_normalize(dimension))}].[{_mdx_name(_normalize(dimension))}].DEFAULTMEMBER}}"
+            else:
+                mdx = f"{{TM1SUBSETALL([{_mdx_name(_normalize(dimension))}].[{_mdx_name(_normalize(dimension))}])}}"
+            lines += ti_string_assignment("sMdx", mdx)
+            lines.append(f"SubsetCreateByMDX({subset_literal}, sMdx, {dimension_literal}, 1);")
+        lines.append(f"ViewSubsetAssign({cube}, {view}, {dimension_literal}, {subset_literal});")
+    return lines
 
 
 def _lean_export_data(profile: CubeProfile, layout: CsvLayout, spec: ExportSpec, file_name: str) -> str:
