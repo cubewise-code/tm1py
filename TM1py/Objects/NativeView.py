@@ -14,6 +14,7 @@ from TM1py.Utils import (
     case_and_space_insensitive_equals,
     lower_and_drop_spaces,
     read_object_name_from_url,
+    unescape_mdx_name,
 )
 
 
@@ -260,7 +261,7 @@ class NativeView(DynamicPropertiesMixin, View):
         if set(mdx_builder.axes) - {0, 1}:
             raise NotImplementedError("A native view has at most two axes (columns and rows)")
 
-        view = cls(cube_name=cls._unescape_mdx_name(mdx_builder.cube), view_name=view_name)
+        view = cls(cube_name=unescape_mdx_name(mdx_builder.cube), view_name=view_name)
         used_dimensions = set()
 
         def claim(dimension: str, hierarchy: str):
@@ -279,8 +280,8 @@ class NativeView(DynamicPropertiesMixin, View):
                 if not isinstance(mdx_set, MdxHierarchySet) or not mdx_set.dimension:
                     raise NotImplementedError(f"Set '{mdx_set.to_mdx()}' is not a set of one hierarchy")
 
-                dimension = cls._unescape_mdx_name(mdx_set.dimension)
-                claim(dimension, cls._unescape_mdx_name(mdx_set.hierarchy))
+                dimension = unescape_mdx_name(mdx_set.dimension)
+                claim(dimension, unescape_mdx_name(mdx_set.hierarchy))
                 if isinstance(mdx_set, ElementsHierarchySet):
                     subset = AnonymousSubset(dimension, dimension, elements=[m.element for m in mdx_set.members])
                 else:
@@ -298,10 +299,6 @@ class NativeView(DynamicPropertiesMixin, View):
             )
 
         return view
-
-    @staticmethod
-    def _unescape_mdx_name(name: str) -> str:
-        return name.replace("]]", "]")
 
     @classmethod
     def from_json(cls, view_as_json: str, cube_name: Optional[str] = None) -> "NativeView":

@@ -25,6 +25,7 @@ from TM1py.Utils import (
     CaseAndSpaceInsensitiveSet,
     HTTPAdapterWithSocketOptions,
     case_and_space_insensitive_equals,
+    is_streamed_body,
     verify_version,
 )
 
@@ -301,7 +302,7 @@ class RestService:
         body) and is never compressed or retried (an iterable body can only be sent once).
         """
         url, data = self._url_and_body(url=url, data=data, encoding=encoding)
-        streamed = stream or self._is_streamed_body(data)
+        streamed = stream or is_streamed_body(data)
 
         if streamed:
             if return_async_id:
@@ -392,7 +393,7 @@ class RestService:
         if self._re_connect_on_session_timeout and response.status_code == 401:
             self.connect()
             # an iterable body is consumed by the first attempt and can't be sent again
-            if self._is_streamed_body(data):
+            if is_streamed_body(data):
                 return response
             if kwargs.get("stream"):
                 # release the connection held by the unread 401 response
@@ -402,16 +403,6 @@ class RestService:
             )
 
         return response
-
-    @staticmethod
-    def _is_streamed_body(data) -> bool:
-        """An iterable request body (not str, bytes or a file-like object) that can only be sent once.
-
-        `requests` sends it with `Content-Length` when it implements `__len__`, otherwise chunked.
-        """
-        if data is None or isinstance(data, (str, bytes, bytearray, BytesIO, dict, list, tuple)):
-            return False
-        return hasattr(data, "__iter__") and not hasattr(data, "read")
 
     def _execute_async_request(
         self, method: str, url: str, data: str, timeout: float, cancel_at_timeout: bool, return_async_id: bool, **kwargs

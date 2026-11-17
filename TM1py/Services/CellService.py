@@ -60,6 +60,7 @@ from TM1py.Utils.Utils import (
     build_csv_from_cellset_dict,
     build_dataframe_aggregate_intersections,
     build_dataframe_from_csv,
+    build_hierarchy_unique_name,
     build_mdx_and_values_from_cellset,
     build_mdx_from_cellset,
     build_pandas_dataframe_from_cellset,
@@ -78,6 +79,7 @@ from TM1py.Utils.Utils import (
     require_pandas,
     require_version,
     resembles_mdx,
+    split_hierarchy_unique_name,
     verify_version,
     wrap_in_curly_braces,
 )
@@ -1596,9 +1598,6 @@ class CellService(ObjectService):
         Requires `lean_ti`
         :param aliases: {dimension: alias attribute} written instead of element names. Only used with `lean_ti`
         """
-        if sandbox_name:
-            self._assert_sandbox_exists(sandbox_name)
-
         if profile is None:
             profile = CubeProfile(
                 cube_name=cube,
@@ -1612,7 +1611,7 @@ class CellService(ObjectService):
         for position, variable in enumerate(variables):
             dimension, hierarchy = variable, None
             if variable_hierarchies:
-                dimension, hierarchy = self._split_hierarchy_unique_name(variable_hierarchies[position])
+                dimension, hierarchy = split_hierarchy_unique_name(variable_hierarchies[position])
             source_variables.append(
                 SourceVariable(
                     name=variable,
@@ -1640,6 +1639,8 @@ class CellService(ObjectService):
         return build_export_process(profile, layout, spec, lean=lean_ti)
 
     @require_data_admin
+    @require_ops_admin
+    @require_version(version="11.4")
     def export_to_blob(
         self,
         mdx: Union[MdxBuilder, str] = None,
@@ -1713,8 +1714,7 @@ class CellService(ObjectService):
             else:
                 hierarchies = self._mdx_view_data_source_hierarchies(mdx, definition, cube_dimensions, **kwargs)
             hierarchy_unique_names = [
-                "[{}].[{}]".format(dimension.replace("]", "]]"), hierarchy.replace("]", "]]"))
-                for dimension, hierarchy in hierarchies
+                build_hierarchy_unique_name(dimension, hierarchy) for dimension, hierarchy in hierarchies
             ]
             return self._build_cube_to_blob_process(
                 cube=cube,
@@ -1779,13 +1779,11 @@ class CellService(ObjectService):
         by_key = {lower_and_drop_spaces(dimension): dimension for dimension in cube_dimensions}
         hierarchies = {}
         for name in columns + rows + titles:
-            dimension, hierarchy = self._split_hierarchy_unique_name(name)
+            dimension, hierarchy = split_hierarchy_unique_name(name)
             dimension = by_key[lower_and_drop_spaces(dimension)]
             hierarchies.setdefault(dimension, hierarchy)
 
-        axis_dimensions = [
-            by_key[lower_and_drop_spaces(self._split_hierarchy_unique_name(n)[0])] for n in columns + rows
-        ]
+        axis_dimensions = [by_key[lower_and_drop_spaces(split_hierarchy_unique_name(n)[0])] for n in columns + rows]
         rest = [dimension for dimension in cube_dimensions if dimension not in axis_dimensions]
         return [(dimension, hierarchies.get(dimension, dimension)) for dimension in axis_dimensions + rest]
 
@@ -1809,6 +1807,8 @@ class CellService(ObjectService):
         return validated
 
     @require_data_admin
+    @require_ops_admin
+    @require_version(version="11.4")
     def load_from_blob(
         self,
         file_name: str,
@@ -1887,17 +1887,15 @@ class CellService(ObjectService):
                 string_measures=self._get_blob_cube_profile(cube_name, dimensions=dimensions, **kwargs).string_measures,
             )
 
-            logging_before = None
-            if deactivate_transaction_log:
-                logging_before = self.get_value(
-                    "}CubeProperties", [("}Cubes", cube_name), ("}CubeProperties", "LOGGING")]
-                )
-                self.write_value("NO", "}CubeProperties", (cube_name, "LOGGING"))
+            # switched off only when on, so a cube that logs nothing is left untouched
+            switch_log = deactivate_transaction_log and self.transaction_log_is_active(cube_name)
+            if switch_log:
+                self.deactivate_transactionlog(cube_name, **kwargs)
             try:
                 success, status, log_file = process_service.execute_process_with_return(process=process, **kwargs)
             finally:
-                if deactivate_transaction_log:
-                    self.write_value(logging_before or "", "}CubeProperties", (cube_name, "LOGGING"))
+                if switch_log:
+                    self.activate_transactionlog(cube_name, **kwargs)
 
         if not success:
             if status == "HasMinorErrors":
@@ -1932,9 +1930,7 @@ class CellService(ObjectService):
             raise ValueError(f"Dimension '{dimension}' has no set on the columns or rows of the query")
         position, index, mdx_set = located
 
-        from TM1py.Services.ElementService import ElementService
-
-        elements = ElementService(self._rest).execute_set_mdx_element_names(mdx_set.to_mdx(), **kwargs)
+        elements = self.get_element_service().execute_set_mdx_element_names(mdx_set.to_mdx(), **kwargs)
 
         slices = []
         size, remainder = divmod(len(elements), parts)
@@ -1947,14 +1943,6 @@ class CellService(ObjectService):
             slices.append(mdx_slice)
             start = end
         return slices
-
-    @staticmethod
-    def _split_hierarchy_unique_name(name: str) -> Tuple[str, str]:
-        """'[d].[h]' -> ('d', 'h'); 'd' -> ('d', 'd')"""
-        if name.startswith("[") and name.endswith("]") and "].[" in name:
-            dimension, hierarchy = name[1:-1].split("].[", 1)
-            return dimension.replace("]]", "]"), hierarchy.replace("]]", "]")
-        return name, name
 
     def _get_blob_cube_profile(
         self,
@@ -1986,8 +1974,8 @@ class CellService(ObjectService):
         if quote_character:
             mdx_quote = '"' + quote_character.replace('"', '""') + '"'
             for name in hierarchies:
-                dimension, hierarchy = self._split_hierarchy_unique_name(name)
-                hierarchy_mdx = f"[{dimension.replace(']', ']]')}].[{hierarchy.replace(']', ']]')}]"
+                dimension, hierarchy = split_hierarchy_unique_name(name)
+                hierarchy_mdx = build_hierarchy_unique_name(dimension, hierarchy)
                 mdx = (
                     f"{{HEAD(FILTER({{TM1SUBSETALL({hierarchy_mdx})}}, "
                     f"INSTR(1, {hierarchy_mdx}.CURRENTMEMBER.NAME, {mdx_quote}) > 0), 1)}}"
@@ -5568,6 +5556,9 @@ class CellService(ObjectService):
                 quote_character=quote_character,
             )
 
+        if sandbox_name:
+            self._assert_sandbox_exists(sandbox_name)
+
         try:
             file_service.create(file_name=file_name, file_content="".encode("utf-8"))
 
@@ -5713,6 +5704,9 @@ class CellService(ObjectService):
             profile = self._get_blob_cube_profile(
                 cube, dimensions=cube_dimensions, hierarchies=rows + columns, quote_character=quote_character
             )
+
+        if sandbox_name:
+            self._assert_sandbox_exists(sandbox_name)
 
         try:
             file_service.create(file_name=file_name, file_content="".encode("utf-8"))

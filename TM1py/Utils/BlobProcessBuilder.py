@@ -20,10 +20,9 @@ with a BOM. v12 always writes UTF-8 without a BOM.
 from dataclasses import dataclass, field
 from typing import Any, Callable, FrozenSet, List, Mapping, Optional, Tuple
 
+from TM1py.Objects.Element import Element
 from TM1py.Objects.Process import Process
-from TM1py.Utils.Utils import lower_and_drop_spaces
-
-ELEMENT_ATTRIBUTES_PREFIX = "}elementattributes_"
+from TM1py.Utils.Utils import build_hierarchy_unique_name, lower_and_drop_spaces
 
 # legacy TI has trailing spaces on some lines; written explicitly so editors and formatters keep them
 _SPACE = " "
@@ -33,10 +32,6 @@ MAX_STRING_MEASURES_BY_NAME = 20
 
 # long strings (MDX) are assigned to a TI variable in pieces of this many characters
 TI_STRING_PIECE_LENGTH = 4000
-
-
-def _normalize(name: str) -> str:
-    return lower_and_drop_spaces(name)
 
 
 def ti_string(value: str) -> str:
@@ -88,18 +83,20 @@ class CubeProfile:
     def __post_init__(self):
         object.__setattr__(self, "dimensions", tuple(self.dimensions))
         object.__setattr__(self, "string_measures", frozenset(self.string_measures))
-        object.__setattr__(self, "quoted_dimensions", frozenset(_normalize(d) for d in self.quoted_dimensions))
+        object.__setattr__(
+            self, "quoted_dimensions", frozenset(lower_and_drop_spaces(d) for d in self.quoted_dimensions)
+        )
 
     @property
     def is_attribute_cube(self) -> bool:
-        return self.cube_name.lower().startswith(ELEMENT_ATTRIBUTES_PREFIX)
+        return self.cube_name.lower().startswith(Element.ELEMENT_ATTRIBUTES_PREFIX.lower())
 
     @property
     def measure_dimension(self) -> str:
         return self.dimensions[-1]
 
     def has_quotes(self, dimension: str) -> bool:
-        return _normalize(dimension) in self.quoted_dimensions
+        return lower_and_drop_spaces(dimension) in self.quoted_dimensions
 
 
 @dataclass(frozen=True)
@@ -371,10 +368,6 @@ def ti_string_assignment(variable: str, value: str, piece_length: int = TI_STRIN
     ]
 
 
-def _mdx_name(name: str) -> str:
-    return name.replace("]", "]]")
-
-
 def _view_build_ti(profile: CubeProfile, spec: ExportSpec) -> List[str]:
     """TI that builds ``spec.view_definition`` as the temporary view ``spec.view_name``. Temporary objects are
     removed by the server when the process ends, whether it succeeds or not."""
@@ -390,19 +383,21 @@ def _view_build_ti(profile: CubeProfile, spec: ExportSpec) -> List[str]:
 def _native_view_build_ti(profile: CubeProfile, native_view, cube: str, view: str) -> List[str]:
     """One temporary subset per cube dimension, in cube order. A dimension the view doesn't mention gets its
     default member, as it would in MDX."""
-    cube_dimensions = {_normalize(dimension): dimension for dimension in profile.dimensions}
+    cube_dimensions = {lower_and_drop_spaces(dimension): dimension for dimension in profile.dimensions}
     selections = {}
     for selection in (*native_view.columns, *native_view.rows, *native_view.titles):
-        key = _normalize(selection.dimension_name)
+        key = lower_and_drop_spaces(selection.dimension_name)
         if key not in cube_dimensions:
             raise ValueError(f"Dimension '{selection.dimension_name}' is not in cube '{profile.cube_name}'")
         selections[key] = selection
 
     lines = [f"ViewCreate({cube}, {view}, 1);"]
     for position, dimension in enumerate(profile.dimensions, start=1):
-        selection = selections.get(_normalize(dimension))
+        selection = selections.get(lower_and_drop_spaces(dimension))
         subset = getattr(selection, "subset", None)
-        if subset is not None and _normalize(subset.hierarchy_name or dimension) != _normalize(dimension):
+        if subset is not None and lower_and_drop_spaces(subset.hierarchy_name or dimension) != lower_and_drop_spaces(
+            dimension
+        ):
             raise NotImplementedError(
                 f"Alternate hierarchy '{dimension}:{subset.hierarchy_name}' in a native view built in TI"
             )
@@ -425,9 +420,9 @@ def _native_view_build_ti(profile: CubeProfile, native_view, cube: str, view: st
             if subset is not None and subset.expression:
                 mdx = subset.expression
             elif selection is None:
-                mdx = f"{{[{_mdx_name(_normalize(dimension))}].[{_mdx_name(_normalize(dimension))}].DEFAULTMEMBER}}"
+                mdx = f"{{{build_hierarchy_unique_name(lower_and_drop_spaces(dimension))}.DEFAULTMEMBER}}"
             else:
-                mdx = f"{{TM1SUBSETALL([{_mdx_name(_normalize(dimension))}].[{_mdx_name(_normalize(dimension))}])}}"
+                mdx = f"{{TM1SUBSETALL({build_hierarchy_unique_name(lower_and_drop_spaces(dimension))})}}"
             lines += ti_string_assignment("sMdx", mdx)
             lines.append(f"SubsetCreateByMDX({subset_literal}, sMdx, {dimension_literal}, 1);")
         lines.append(f"ViewSubsetAssign({cube}, {view}, {dimension_literal}, {subset_literal});")
@@ -457,10 +452,10 @@ def _lean_export_data(profile: CubeProfile, layout: CsvLayout, spec: ExportSpec,
         # v12 occasionally produces tiny numbers (e.g. 4.94066e-324) instead of 0
         lines += [f"IF (ISUNDEFINEDCELLVALUE(NVALUE,{ti_string(profile.cube_name)}) = 1);", "  SVALUE = '0';", "ENDIF;"]
 
-    aliases = {_normalize(dimension): alias for dimension, alias in (spec.aliases or {}).items()}
+    aliases = {lower_and_drop_spaces(dimension): alias for dimension, alias in (spec.aliases or {}).items()}
     written = spec.written_variables
     for variable in written:
-        alias = aliases.get(_normalize(variable.dimension))
+        alias = aliases.get(lower_and_drop_spaces(variable.dimension))
         if alias is None:
             continue
         # a blank alias falls back to the element name
@@ -475,7 +470,7 @@ def _lean_export_data(profile: CubeProfile, layout: CsvLayout, spec: ExportSpec,
     if layout.quote_character:
         for variable in written:
             # alias values are not checked up front, so aliased dimensions are always escaped
-            if profile.has_quotes(variable.dimension) or _normalize(variable.dimension) in aliases:
+            if profile.has_quotes(variable.dimension) or lower_and_drop_spaces(variable.dimension) in aliases:
                 lines.append(_escape_quotes_ti(variable.name, layout.quote_character))
         if profile.string_measures or profile.is_attribute_cube:
             lines += [

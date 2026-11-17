@@ -294,3 +294,23 @@ class TM1pyExportFailureException(TM1pyException, RuntimeError):
 
         message = f"Failed writing to blob with TI. Status: '{status}' log: '{error_log_file}'"
         super(TM1pyExportFailureException, self).__init__(message)
+
+
+class TM1pyFileTransferException(TM1pyException):
+    """Exception for a copy between file stores that sent a different number of bytes than the source holds."""
+
+    def __init__(self, file_name: str, sent: int, expected: int):
+        """
+        :param file_name: name of the source file
+        :param sent: bytes sent to the target
+        :param expected: bytes the source file holds (without a UTF-8 BOM)
+        """
+        self.file_name = file_name
+        self.sent = sent
+        self.expected = expected
+
+        message = (
+            f"Transfer of '{file_name}' sent {sent} bytes, expected {expected}. "
+            f"The source file may have changed during the transfer"
+        )
+        super(TM1pyFileTransferException, self).__init__(message)

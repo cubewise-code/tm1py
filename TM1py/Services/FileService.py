@@ -9,12 +9,12 @@ from io import BytesIO
 from pathlib import Path
 from typing import Iterable, Iterator, List, Optional, Tuple, Union
 
-from TM1py.Exceptions import TM1pyVersionException
+from TM1py.Exceptions import TM1pyFileTransferException, TM1pyVersionException
 from TM1py.Services import RestService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Utils import format_url
 from TM1py.Utils.BlobProcessBuilder import ti_file_name as _ti_file_name
-from TM1py.Utils.Utils import require_version, verify_version
+from TM1py.Utils.Utils import is_streamed_body, require_version, verify_version
 
 UTF8_BOM = b"\xef\xbb\xbf"
 
@@ -163,6 +163,7 @@ class FileService(ObjectService):
         where the file is sent as one sized upload
         :param max_mb_per_part: megabytes per part with multipart upload
         :return: number of bytes sent to the target
+        :raises TM1pyFileTransferException: when the bytes sent differ from the source file's size
         """
         target_file_name = file_name if target_file_name is None else target_file_name
         size = source.get_size(file_name, **kwargs)
@@ -188,10 +189,7 @@ class FileService(ObjectService):
             )
 
         if sent != length:
-            raise RuntimeError(
-                f"Transfer of '{file_name}' sent {sent} bytes, expected {length}. "
-                f"The source file may have changed during the transfer"
-            )
+            raise TM1pyFileTransferException(str(file_name), sent, length)
 
         if remove_source:
             source.delete(file_name, **kwargs)
@@ -309,7 +307,7 @@ class FileService(ObjectService):
 
         url = self._construct_content_url(path, exclude_path_end=False, extension="Content")
 
-        if RestService.RestService._is_streamed_body(file_content):
+        if is_streamed_body(file_content):
             return self._upload_iterable_content(
                 url, file_content, multi_part_upload, max_mb_per_part, content_length, **kwargs
             )
@@ -341,7 +339,7 @@ class FileService(ObjectService):
         With multipart upload the iterable is regrouped into parts, uploaded one at a time.
         """
         if multi_part_upload is None:
-            multi_part_upload = self.version.startswith("12.")
+            multi_part_upload = verify_version("12", self.version)
 
         if content_length is None and hasattr(file_content, "__len__"):
             content_length = len(file_content)
