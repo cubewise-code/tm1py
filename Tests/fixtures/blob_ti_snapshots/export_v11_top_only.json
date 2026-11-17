@@ -1,0 +1,52 @@
+{
+  "Name": "tm1py.export",
+  "PrologProcedure": "#****Begin: Generated Statements***\r\n#****End: Generated Statements****\r\n\n        ServerActiveSandboxSet('');SetUseActiveSandboxProperty(0);\n        ViewExtractSkipCalcsSet('Sales', 'tm1py.view', 1);\n        ViewExtractSkipRuleValuesSet('Sales', 'tm1py.view', 0);\n        ViewExtractSkipZeroesSet('Sales', 'tm1py.view', 1);\n        DatasourceAsciiDelimiter=',';\n        DatasourceAsciiQuoteCharacter='\"';\n        DatasourceASCIIDecimalSeparator='.';\n        nRecord=0;\n        ",
+  "MetadataProcedure": "#****Begin: Generated Statements***\r\n#****End: Generated Statements****\r\n",
+  "DataProcedure": "#****Begin: Generated Statements***\r\n#****End: Generated Statements****\r\n\n        IF (nRecord = 0);\n          SetOutputCharacterSet('tm1py.export.csv.blb','TM1CS_UTF8');\n        ENDIF;\n        nRecord = nRecord + 1;\n        \n            IF (nRecord > 5);\n              ProcessBreak;\n            ENDIF;\n            \n            sTextToEscape = v1;\n            sEscapeChar = '\"';\n            IF (SCAN(sEscapeChar, sTextToEscape) > 0);\n                nPos = LONG ( sTextToEscape );\n                WHILE ( nPos > 0);\n                    sChar = Subst(sTextToEscape, nPos, 1);\n                    IF ( sChar @= sEscapeChar );\n                      sTextToEscape = INSRT(sEscapeChar, sTextToEscape, nPos);\n                    ENDIF;  \n                    nPos = nPos - 1;\n                END;\n                v1 = sTextToEscape;\n            ENDIF;\n            \n            sTextToEscape = v2;\n            sEscapeChar = '\"';\n            IF (SCAN(sEscapeChar, sTextToEscape) > 0);\n                nPos = LONG ( sTextToEscape );\n                WHILE ( nPos > 0);\n                    sChar = Subst(sTextToEscape, nPos, 1);\n                    IF ( sChar @= sEscapeChar );\n                      sTextToEscape = INSRT(sEscapeChar, sTextToEscape, nPos);\n                    ENDIF;  \n                    nPos = nPos - 1;\n                END;\n                v2 = sTextToEscape;\n            ENDIF;\n            \n            sTextToEscape = v3;\n            sEscapeChar = '\"';\n            IF (SCAN(sEscapeChar, sTextToEscape) > 0);\n                nPos = LONG ( sTextToEscape );\n                WHILE ( nPos > 0);\n                    sChar = Subst(sTextToEscape, nPos, 1);\n                    IF ( sChar @= sEscapeChar );\n                      sTextToEscape = INSRT(sEscapeChar, sTextToEscape, nPos);\n                    ENDIF;  \n                    nPos = nPos - 1;\n                END;\n                v3 = sTextToEscape;\n            ENDIF;\n            \n            sTextToEscape = v4;\n            sEscapeChar = '\"';\n            IF (SCAN(sEscapeChar, sTextToEscape) > 0);\n                nPos = LONG ( sTextToEscape );\n                WHILE ( nPos > 0);\n                    sChar = Subst(sTextToEscape, nPos, 1);\n                    IF ( sChar @= sEscapeChar );\n                      sTextToEscape = INSRT(sEscapeChar, sTextToEscape, nPos);\n                    ENDIF;  \n                    nPos = nPos - 1;\n                END;\n                v4 = sTextToEscape;\n            ENDIF;\n            \n            sTextToEscape = SVALUE;\n            sEscapeChar = '\"';\n            IF (SCAN(sEscapeChar, sTextToEscape) > 0);\n                nPos = LONG ( sTextToEscape );\n                WHILE ( nPos > 0);\n                    sChar = Subst(sTextToEscape, nPos, 1);\n                    IF ( sChar @= sEscapeChar );\n                      sTextToEscape = INSRT(sEscapeChar, sTextToEscape, nPos);\n                    ENDIF;  \n                    nPos = nPos - 1;\n                END;\n                SVALUE = sTextToEscape;\n            ENDIF;\n            \n        TextOutput('tm1py.export.csv.blb',v1,v2,v3,v4,SVALUE);\n        ",
+  "EpilogProcedure": "#****Begin: Generated Statements***\r\n#****End: Generated Statements****\r\n",
+  "HasSecurityAccess": false,
+  "UIData": "CubeAction=1511\fDataAction=1503\fCubeLogChanges=0\f",
+  "DataSource": {
+    "Type": "TM1CubeView",
+    "dataSourceNameForClient": "Sales",
+    "dataSourceNameForServer": "Sales",
+    "view": "tm1py.view"
+  },
+  "Parameters": [],
+  "Variables": [
+    {
+      "Name": "v3",
+      "Type": "String",
+      "Position": 1,
+      "StartByte": 0,
+      "EndByte": 0
+    },
+    {
+      "Name": "v1",
+      "Type": "String",
+      "Position": 2,
+      "StartByte": 0,
+      "EndByte": 0
+    },
+    {
+      "Name": "v2",
+      "Type": "String",
+      "Position": 3,
+      "StartByte": 0,
+      "EndByte": 0
+    },
+    {
+      "Name": "v4",
+      "Type": "String",
+      "Position": 4,
+      "StartByte": 0,
+      "EndByte": 0
+    }
+  ],
+  "VariablesUIData": [
+    "VarType=32\fColType=827\f",
+    "VarType=32\fColType=827\f",
+    "VarType=32\fColType=827\f",
+    "VarType=32\fColType=827\f"
+  ]
+}
