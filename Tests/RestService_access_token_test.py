@@ -192,8 +192,9 @@ class TestRestServiceAccessToken(unittest.TestCase):
 
         self.assertIsInstance(rest._s.auth, BearerTokenAuth)
         self.assertTrue(transport.sent)
-        self.assertTrue(all(headers.get("Authorization", "").startswith("Bearer token-")
-                            for _, _, headers in transport.sent))
+        self.assertTrue(
+            all(headers.get("Authorization", "").startswith("Bearer token-") for _, _, headers in transport.sent)
+        )
 
     def test_re_authenticate_keeps_a_single_token_hook(self):
         transport = FakeTransport()
