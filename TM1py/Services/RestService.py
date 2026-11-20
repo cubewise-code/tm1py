@@ -127,7 +127,7 @@ class RestService:
         - **namespace** (str): Optional CAM namespace.
         - **cam_passport** (str): The CAM passport.
         - **session_id** (str): TM1SessionId, e.g. q7O6e1w49AixeuLVxJ1GZg.
-        - **access_token** (str|callable): Bearer token. A string is sent once to start the session. A zero-argument callable returning the token is called on every request instead, so a token provider (e.g. an OAuth client) can refresh the token mid-session; for Planning Analytics Workspace's /api/v1/tm1/<database> you must pass a callable, not a string, because PAW checks the token on every request. TM1Service.save_to_file pickles the service, so it fails if the callable cannot be pickled (e.g. a lambda, a nested function or an object holding a threading.Lock).
+        - **access_token** (str|callable): Bearer token. A string is sent to start the session and dropped once the server returns a session cookie; if it returns none (e.g. Planning Analytics Workspace's /api/v1/tm1/<database>), the string is sent with every request, until it expires. A zero-argument callable returning the token is called on every request instead, so a token provider (e.g. an OAuth client) can refresh the token mid-session. TM1Service.save_to_file pickles the service, so it fails if the callable cannot be pickled (e.g. a lambda, a nested function or an object holding a threading.Lock).
         - **application_client_id** (str): Planning Analytics Engine (v12) named application client ID created via manage service.
         - **application_client_secret** (str): Planning Analytics Engine (v12) named application secret created via manage service.
         - **api_key** (str): Planning Analytics Engine (v12) API Key from https://cloud.ibm.com/iam/apikeys.
@@ -1069,8 +1069,11 @@ class RestService:
             if session_id is not None:
                 self._s.cookies.set("TM1SessionId", session_id)
 
-            # After we have session cookie, drop the Authorization Header
-            self.remove_http_header("Authorization")
+            # Once a session cookie identifies the session, drop the Authorization header.
+            # Without one the server authenticates every request (e.g. Planning Analytics
+            # with a bearer token from 3.1.12), so the header stays.
+            if self._has_session_cookie():
+                self.remove_http_header("Authorization")
 
     def _url_and_body(self, url: str, data: str, encoding: str = "utf-8") -> Tuple[str, bytes]:
         """create proper url and payload"""
@@ -1223,6 +1226,10 @@ class RestService:
         # on jar insertion order.
         matches.sort(key=lambda cookie: (bool(cookie.domain), len(cookie.path or ""), cookie.domain or ""))
         return matches[-1].value
+
+    def _has_session_cookie(self) -> bool:
+        """True if the cookie jar holds a session cookie of TM1 ('TM1SessionId') or Planning Analytics ('paSession')."""
+        return any(cookie.name in ("TM1SessionId", "paSession") for cookie in self._s.cookies)
 
     def _pop_cookie(self, name: str) -> Optional[str]:
         """Remove every cookie called `name` (any scope) and return the preferred value.

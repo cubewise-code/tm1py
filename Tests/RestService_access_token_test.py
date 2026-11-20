@@ -1,20 +1,28 @@
 import threading
 import unittest
 from concurrent.futures import ThreadPoolExecutor
+from http.client import HTTPMessage
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import requests
 from requests.adapters import HTTPAdapter
 
+from TM1py.Exceptions import TM1pyRestException
 from TM1py.Services.RestService import BearerTokenAuth, RestService
 
 BASE_URL = "https://paw.example.com/api/v1/tm1/Planning Sample"
+
+# login replies of a server that starts a cookie-based session
+PA_SESSION = (200, {"Set-Cookie": "paSession=abc123; Path=/"})
+TM1_SESSION = (200, {"Set-Cookie": "TM1SessionId=q7O6e1w49AixeuLVxJ1GZg; Path=/"})
 
 
 class FakeTransport:
     """Stands in for the HTTP adapter: records the headers of every request and replies from a
     queue of statuses, each a status code or a (status code, headers) pair (200 once the queue is
-    empty)."""
+    empty). A 'Set-Cookie' header in a reply is stored in the session's cookie jar, as it is for
+    a real response."""
 
     def __init__(self, statuses=()):
         self.statuses = list(statuses)
@@ -30,6 +38,11 @@ class FakeTransport:
         response._content = b"12.6.4"
         response.url = request.url
         response.request = request
+        if "Set-Cookie" in headers:
+            # requests reads cookies from the raw urllib3 response, not from response.headers
+            message = HTTPMessage()
+            message["Set-Cookie"] = headers["Set-Cookie"]
+            response.raw = SimpleNamespace(_original_response=SimpleNamespace(msg=message))
         return response
 
     def authorization(self, n):
@@ -56,12 +69,56 @@ class TestRestServiceAccessToken(unittest.TestCase):
             rest.GET("/Cubes")
             return rest
 
-    def test_string_token_is_sent_only_to_start_the_session(self):
+    def test_string_token_is_dropped_once_a_session_cookie_is_returned(self):
+        for login in (PA_SESSION, TM1_SESSION):
+            with self.subTest(login=login):
+                transport = FakeTransport([login])
+                self.connect(transport, access_token="abc")
+
+                self.assertEqual(transport.authorization(0), "Bearer abc")
+                self.assertIsNone(transport.authorization(-1))
+                self.assertIn("Cookie", transport.sent[-1][2])
+
+    def test_string_token_is_sent_on_every_request_when_no_session_cookie_is_returned(self):
         transport = FakeTransport()
+        rest = self.connect(transport, access_token="abc")
+        with self.patched(transport):
+            rest.GET("/Dimensions")
+
+        self.assertGreaterEqual(len(transport.sent), 3)
+        self.assertEqual({transport.authorization(n) for n in range(len(transport.sent))}, {"Bearer abc"})
+
+    def test_string_token_is_kept_when_only_other_cookies_are_returned(self):
+        transport = FakeTransport([(200, {"Set-Cookie": "route=node-3; Path=/"})])
         self.connect(transport, access_token="abc")
 
-        self.assertEqual(transport.authorization(0), "Bearer abc")
+        self.assertEqual(transport.authorization(-1), "Bearer abc")
+
+    def test_basic_credentials_are_sent_on_every_request_when_no_session_cookie_is_returned(self):
+        transport = FakeTransport()
+        self.connect(transport, user="apikey", password="secret")
+
+        login, request = transport.authorization(0), transport.authorization(-1)
+        self.assertTrue(login.startswith("Basic "))
+        self.assertEqual(request, login)
+
+    def test_basic_credentials_are_dropped_once_a_session_cookie_is_returned(self):
+        transport = FakeTransport([TM1_SESSION])
+        self.connect(transport, user="admin", password="apple")
+
+        self.assertTrue(transport.authorization(0).startswith("Basic "))
         self.assertIsNone(transport.authorization(-1))
+
+    def test_rejected_string_token_without_session_cookie_raises_401(self):
+        transport = FakeTransport()
+        rest = self.connect(transport, access_token="abc")
+
+        transport.statuses = [401, 401]  # the request, then the login of the reconnect
+        with self.patched(transport), self.assertRaises(TM1pyRestException) as context:
+            rest.GET("/Dimensions")
+
+        self.assertEqual(context.exception.status_code, 401)
+        self.assertEqual(len(transport.sent), 4, "one reconnect attempt, no retry loop")
 
     def test_callable_token_is_sent_on_every_request(self):
         transport = FakeTransport()
@@ -129,7 +186,7 @@ class TestRestServiceAccessToken(unittest.TestCase):
         self.assertEqual(transport.authorization(-1), "Bearer fresh")
 
     def test_string_token_is_sent_again_when_reconnecting_after_401(self):
-        transport = FakeTransport()
+        transport = FakeTransport([PA_SESSION])
         rest = self.connect(transport, access_token="abc")
         sent_before = len(transport.sent)
 

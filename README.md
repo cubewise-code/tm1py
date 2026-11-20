@@ -147,8 +147,9 @@ with TM1Service(
     print(tm1.server.get_product_version())
 ```
 
-For PAW you must pass a function, not a string. PAW checks the token on every request, and a string token is sent
-only once, when the session starts.
+A string token also works: when the server returns no session cookie, TM1py keeps sending it with every request.
+A string cannot be refreshed, though, so requests fail once the token expires. Pass a function for anything that
+runs longer than the token is valid.
 
 The function is called on every request, possibly from several threads, so it should return a cached token quickly
 and be thread-safe.
