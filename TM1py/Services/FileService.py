@@ -1,17 +1,43 @@
 # -*- coding: utf-8 -*-
 import concurrent.futures
+import itertools
 import json
 import time
 import warnings
+from contextlib import contextmanager
 from io import BytesIO
 from pathlib import Path
-from typing import Iterable, List, Tuple, Union
+from typing import Iterable, Iterator, List, Optional, Tuple, Union
 
-from TM1py.Exceptions import TM1pyVersionException
+from TM1py.Exceptions import (
+    TM1pyFileTransferException,
+    TM1pyRestException,
+    TM1pyVersionException,
+)
 from TM1py.Services import RestService
 from TM1py.Services.ObjectService import ObjectService
 from TM1py.Utils import format_url
-from TM1py.Utils.Utils import require_version, verify_version
+from TM1py.Utils.BlobProcessBuilder import ti_file_name as _ti_file_name
+from TM1py.Utils.Utils import is_streamed_body, require_version, verify_version
+
+UTF8_BOM = b"\xef\xbb\xbf"
+
+FileContent = Union[bytes, BytesIO, Iterable[bytes]]
+
+
+class _SizedIterable:
+    """An iterable body that reports its length, so `requests` sends `Content-Length` instead of a chunked body
+    (v11 rejects chunked uploads)."""
+
+    def __init__(self, iterable: Iterable[bytes], length: int):
+        self._iterable = iterable
+        self._length = length
+
+    def __iter__(self):
+        return iter(self._iterable)
+
+    def __len__(self):
+        return self._length
 
 
 class FileService(ObjectService):
@@ -66,6 +92,157 @@ class FileService(ObjectService):
         url = self._construct_content_url(path=path, exclude_path_end=False, extension="Content")
 
         return self._rest.GET(url, **kwargs).content
+
+    @require_version(version="11.4")
+    def get_size(self, file_name: Union[str, Path], **kwargs) -> int:
+        """Size of a file in bytes, read from the document's metadata
+
+        v11 sends large downloads without a length, so read the size here before streaming a file.
+
+        :param file_name: file name in root or path to file
+        """
+        path = Path(file_name)
+        self._check_subfolder_support(path=path, function="FileService.get_size")
+
+        url = self._construct_content_url(path=path, exclude_path_end=False, extension="") + "?$select=Size"
+        return int(self._rest.GET(url, **kwargs).json()["Size"])
+
+    @require_version(version="11.4")
+    @contextmanager
+    def get_stream(
+        self, file_name: Union[str, Path], chunk_size: int = 8 * 1024 * 1024, **kwargs
+    ) -> Iterator[Iterator[bytes]]:
+        """Stream a file's content in chunks, holding about one chunk in memory
+
+        Use as a context manager, so the connection is released when done:
+            with tm1.files.get_stream("export.csv") as chunks:
+                for chunk in chunks:
+                    ...
+
+        :param file_name: file name in root or path to file
+        :param chunk_size: maximum bytes per chunk
+        """
+        path = Path(file_name)
+        self._check_subfolder_support(path=path, function="FileService.get_stream")
+
+        url = self._construct_content_url(path=path, exclude_path_end=False, extension="Content")
+        # identity: the chunks add up to the file's size (see get_size)
+        response = self._rest.GET(url, headers={"Accept-Encoding": "identity"}, stream=True, **kwargs)
+        try:
+            yield response.iter_content(chunk_size=chunk_size)
+        finally:
+            response.close()
+
+    def ti_file_name(self, file_name: Union[str, Path]) -> str:
+        """The name a TI process must use for a file in the file store (v11 adds a `.blb` extension)
+
+        :param file_name: file name in root or path to file
+        """
+        return _ti_file_name(Path(file_name).as_posix(), verify_version("12", self.version))
+
+    @require_version(version="11.4")
+    def transfer_from(
+        self,
+        source: "FileService",
+        file_name: Union[str, Path],
+        target_file_name: Union[str, Path] = None,
+        remove_source: bool = False,
+        chunk_size: int = 8 * 1024 * 1024,
+        multi_part_upload: bool = None,
+        max_mb_per_part: float = 50,
+        **kwargs,
+    ) -> int:
+        """Copy a file from another instance's file store (`source`) into this one, streamed
+
+        Called on the target. Client memory stays at about one chunk (one part with multipart upload),
+        whatever the file size. A UTF-8 BOM at the start of the source file is not copied.
+        An existing target file is overwritten. If the target's session has expired, the copy runs once more after
+        reconnecting, with a new stream from the source (a streamed upload can't be resent).
+
+        :param source: FileService of the source instance (may be this instance)
+        :param file_name: file name in root or path to file on the source
+        :param target_file_name: name on the target. Defaults to `file_name`
+        :param remove_source: delete the source file after a successful copy
+        :param chunk_size: bytes per chunk read from the source
+        :param multi_part_upload: use multipart upload on the target. By default used on v12 and not on v11,
+        where the file is sent as one sized upload
+        :param max_mb_per_part: megabytes per part with multipart upload
+        :return: number of bytes sent to the target
+        :raises TM1pyFileTransferException: when the bytes sent differ from the source file's size
+        """
+        target_file_name = file_name if target_file_name is None else target_file_name
+        size = source.get_size(file_name, **kwargs)
+
+        def copy() -> Tuple[int, int]:
+            return self._copy_stream(
+                source, file_name, target_file_name, size, chunk_size, multi_part_upload, max_mb_per_part, **kwargs
+            )
+
+        try:
+            sent, length = copy()
+        except TM1pyRestException as e:
+            # A streamed upload can't be resent, so a 401 from an expired session on the target is returned after
+            # RestService reconnects. The source can be read again, so the copy is run once more with a new stream
+            if e.status_code != 401:
+                raise
+            sent, length = copy()
+
+        if sent != length:
+            raise TM1pyFileTransferException(str(file_name), sent, length)
+
+        if remove_source:
+            source.delete(file_name, **kwargs)
+
+        return sent
+
+    def _copy_stream(
+        self,
+        source: "FileService",
+        file_name: Union[str, Path],
+        target_file_name: Union[str, Path],
+        size: int,
+        chunk_size: int,
+        multi_part_upload: Optional[bool],
+        max_mb_per_part: float,
+        **kwargs,
+    ) -> Tuple[int, int]:
+        """Stream one file from `source` into this file store. Returns the bytes sent and the bytes expected."""
+        sent = 0
+        with source.get_stream(file_name, chunk_size=chunk_size, **kwargs) as chunks:
+            chunks, has_bom = self._strip_bom(chunks)
+            length = size - len(UTF8_BOM) if has_bom else size
+
+            def counted() -> Iterator[bytes]:
+                nonlocal sent
+                for chunk in chunks:
+                    sent += len(chunk)
+                    yield chunk
+
+            self.update_or_create(
+                target_file_name,
+                counted(),
+                multi_part_upload=multi_part_upload,
+                max_mb_per_part=max_mb_per_part,
+                content_length=length,
+                **kwargs,
+            )
+        return sent, length
+
+    @staticmethod
+    def _strip_bom(chunks: Iterable[bytes]) -> Tuple[Iterator[bytes], bool]:
+        """Drop a UTF-8 BOM from the start of a stream of chunks. Returns the chunks and whether a BOM was found."""
+        chunks = iter(chunks)
+        head = b""
+        for chunk in chunks:
+            head += chunk
+            if len(head) >= len(UTF8_BOM):
+                break
+
+        has_bom = head.startswith(UTF8_BOM)
+        if has_bom:
+            head = head[len(UTF8_BOM) :]
+
+        return itertools.chain([head] if head else [], chunks), has_bom
 
     def _create_folder(self, folder_name: Union[str, Path], **kwargs):
         """Create folder
@@ -143,22 +320,29 @@ class FileService(ObjectService):
     def _upload_file_content(
         self,
         path: Path,
-        file_content: Union[bytes, BytesIO],
+        file_content: FileContent,
         multi_part_upload: bool = None,
         max_mb_per_part: float = 200,
         max_workers: int = 1,
+        content_length: Optional[int] = None,
         **kwargs,
     ):
         """
         :param path: file name in root or path to file
-        :param file_content: file_content as bytes or BytesIO
+        :param file_content: file_content as bytes, BytesIO or an iterable of bytes
         :param multi_part_upload: boolean use multipart upload or not (only available from TM1 12 onwards)
         By default, multi_part_upload is used for TM1 v12 and not used for TM1 v11
         :param max_mb_per_part: max megabyte per part in multipart upload (only available from TM1 12 onwards)
         :param max_workers: max parallel workers for multipart upload (only available from TM1 12 onwards)
+        :param content_length: total bytes of an iterable file_content
         """
 
         url = self._construct_content_url(path, exclude_path_end=False, extension="Content")
+
+        if is_streamed_body(file_content):
+            return self._upload_iterable_content(
+                url, file_content, multi_part_upload, max_mb_per_part, content_length, **kwargs
+            )
 
         # empty files must be created without MPU
         if self._file_content_is_empty(file_content):
@@ -172,17 +356,54 @@ class FileService(ObjectService):
 
         return self._upload_file_content_without_mpu(url, file_content, **kwargs)
 
+    def _upload_iterable_content(
+        self,
+        url: str,
+        file_content: Iterable[bytes],
+        multi_part_upload: Optional[bool],
+        max_mb_per_part: float,
+        content_length: Optional[int],
+        **kwargs,
+    ):
+        """Upload an iterable of bytes, holding at most one part in memory
+
+        Without multipart upload the content is sent as one sized upload, because v11 rejects chunked uploads.
+        With multipart upload the iterable is regrouped into parts, uploaded one at a time.
+        """
+        if multi_part_upload is None:
+            multi_part_upload = verify_version("12", self.version)
+
+        if content_length is None and hasattr(file_content, "__len__"):
+            content_length = len(file_content)
+        if not multi_part_upload and content_length is None and not verify_version("12", self.version):
+            raise ValueError("'content_length' is required to upload an iterable to TM1 v11 without multipart upload")
+
+        blocks = iter(file_content)
+        first = next((block for block in blocks if block), None)
+        # empty files must be created without MPU
+        if first is None:
+            return self._upload_file_content_without_mpu(url, b"", **kwargs)
+        blocks = itertools.chain([first], blocks)
+
+        if multi_part_upload:
+            parts = self._regroup_into_parts(blocks, max_chunk_size=int(max_mb_per_part * 1024 * 1024))
+            return self._upload_file_content_with_mpu(url, parts, max_mb_per_part, max_workers=1, **kwargs)
+
+        body = blocks if content_length is None else _SizedIterable(blocks, content_length)
+        return self._upload_file_content_without_mpu(url, body, **kwargs)
+
     def _upload_file_content_without_mpu(self, url, file_content, **kwargs):
         return self._rest.PUT(url=url, data=file_content, headers=self.binary_http_header, **kwargs)
 
     def _upload_file_content_with_mpu(
         self,
         content_url: str,
-        file_content: Union[bytes, BytesIO],
+        file_content: Union[bytes, BytesIO, Iterator[bytes]],
         max_mb_per_part: float,
         max_workers: int = 1,
         **kwargs,
     ):
+        """:param file_content: bytes or BytesIO, split here into parts, or an iterator of ready-made parts"""
 
         # Initiate multipart upload
         response = self._rest.POST(
@@ -191,7 +412,12 @@ class FileService(ObjectService):
         upload_id = response.json()["UploadID"]
 
         # Split the file content into parts
-        parts_to_upload = self._split_into_parts(data=file_content, max_chunk_size=int(max_mb_per_part * 1024 * 1024))
+        if isinstance(file_content, (bytes, BytesIO)):
+            parts_to_upload = self._split_into_parts(
+                data=file_content, max_chunk_size=int(max_mb_per_part * 1024 * 1024)
+            )
+        else:
+            parts_to_upload = file_content
 
         part_numbers_and_etags = []
 
@@ -248,10 +474,11 @@ class FileService(ObjectService):
     def create(
         self,
         file_name: Union[str, Path],
-        file_content: Union[bytes, BytesIO],
+        file_content: FileContent,
         multi_part_upload: bool = None,
         max_mb_per_part: float = 200,
         max_workers: int = 1,
+        content_length: Optional[int] = None,
         **kwargs,
     ):
         """Create file
@@ -259,11 +486,14 @@ class FileService(ObjectService):
         Folders in file_name (e.g. folderA/folderB/file.csv) will be created implicitly
 
         :param file_name: file name in root or path to file
-        :param file_content: file_content as bytes or BytesIO
+        :param file_content: file_content as bytes, BytesIO or an iterable of bytes (streamed, one part at a time)
         :param multi_part_upload: boolean use multipart upload or not (only available from TM1 12 onwards)
         By default, multi_part_upload is used for TM1 v12 and not used for TM1 v11
         :param max_mb_per_part: max megabyte per part in multipart upload (only available from TM1 12 onwards)
-        :param max_workers: max parallel workers for multipart upload (only available from TM1 12 onwards)
+        :param max_workers: max parallel workers for multipart upload (only available from TM1 12 onwards).
+        Ignored for an iterable file_content
+        :param content_length: total bytes of an iterable file_content. Required on v11, which only accepts a
+        sized upload, unless the iterable implements `__len__`
         """
         path = Path(file_name)
         self._check_subfolder_support(path=path, function="FileService.create")
@@ -281,57 +511,71 @@ class FileService(ObjectService):
         body = {"@odata.type": "#ibm.tm1.api.v1.Document", "ID": path.name, "Name": path.name}
         self._rest.POST(url, json.dumps(body), **kwargs)
 
-        return self._upload_file_content(path, file_content, multi_part_upload, max_mb_per_part, max_workers, **kwargs)
+        return self._upload_file_content(
+            path, file_content, multi_part_upload, max_mb_per_part, max_workers, content_length, **kwargs
+        )
 
     @require_version(version="11.4")
     def update(
         self,
         file_name: Union[str, Path],
-        file_content: Union[bytes, BytesIO],
+        file_content: FileContent,
         multi_part_upload: bool = None,
         max_mb_per_part: float = 200,
         max_workers: int = 1,
+        content_length: Optional[int] = None,
         **kwargs,
     ):
         """Update existing file
 
         :param file_name: file name in root or path to file
-        :param file_content: file_content as bytes or BytesIO
+        :param file_content: file_content as bytes, BytesIO or an iterable of bytes (streamed, one part at a time)
         :param multi_part_upload: boolean use multipart upload or not (only available from TM1 12 onwards)
         By default, multi_part_upload is used for TM1 v12 and not used for TM1 v11
         :param max_mb_per_part: max megabyte per part in multipart upload (only available from TM1 12 onwards)
-        :param max_workers: max parallel workers for multipart upload (only available from TM1 12 onwards)
+        :param max_workers: max parallel workers for multipart upload (only available from TM1 12 onwards).
+        Ignored for an iterable file_content
+        :param content_length: total bytes of an iterable file_content. Required on v11, which only accepts a
+        sized upload, unless the iterable implements `__len__`
         """
         path = Path(file_name)
         self._check_subfolder_support(path=path, function="FileService.update")
         if multi_part_upload:
             self._check_mpu_support(function="FileService.create")
 
-        return self._upload_file_content(path, file_content, multi_part_upload, max_mb_per_part, max_workers, **kwargs)
+        return self._upload_file_content(
+            path, file_content, multi_part_upload, max_mb_per_part, max_workers, content_length, **kwargs
+        )
 
     @require_version(version="11.4")
     def update_or_create(
         self,
         file_name: Union[str, Path],
-        file_content: bytes,
+        file_content: FileContent,
         multi_part_upload: bool = None,
         max_mb_per_part: float = 200,
         max_workers: int = 1,
+        content_length: Optional[int] = None,
         **kwargs,
     ):
         """Create file or update file if it already exists
 
         :param file_name: file name in root or path to file
-        :param file_content: file_content as bytes or BytesIO
+        :param file_content: file_content as bytes, BytesIO or an iterable of bytes (streamed, one part at a time)
         :param multi_part_upload: boolean use multipart upload or not (only available from TM1 12 onwards).
         By default, multi_part_upload is used for TM1 v12 and not used for TM1 v11
         :param max_mb_per_part: max megabyte per part in multipart upload (only available from TM1 12 onwards)
         :param max_workers: max parallel workers for multipart upload (only available from TM1 12 onwards)
+        :param content_length: total bytes of an iterable file_content (see create)
         """
         if self.exists(file_name, **kwargs):
-            return self.update(file_name, file_content, multi_part_upload, max_mb_per_part, max_workers, **kwargs)
+            return self.update(
+                file_name, file_content, multi_part_upload, max_mb_per_part, max_workers, content_length, **kwargs
+            )
 
-        return self.create(file_name, file_content, multi_part_upload, max_mb_per_part, max_workers, **kwargs)
+        return self.create(
+            file_name, file_content, multi_part_upload, max_mb_per_part, max_workers, content_length, **kwargs
+        )
 
     @require_version(version="11.4")
     def exists(self, file_name: Union[str, Path], **kwargs):
@@ -422,6 +666,18 @@ class FileService(ObjectService):
             parts.append(part)
 
         return parts
+
+    @staticmethod
+    def _regroup_into_parts(blocks: Iterable[bytes], max_chunk_size: int) -> Iterator[bytes]:
+        """Regroup an iterable of bytes into parts of `max_chunk_size` bytes (the last may be smaller)"""
+        buffer = bytearray()
+        for block in blocks:
+            buffer += block
+            while len(buffer) >= max_chunk_size:
+                yield bytes(buffer[:max_chunk_size])
+                del buffer[:max_chunk_size]
+        if buffer:
+            yield bytes(buffer)
 
     @staticmethod
     def _file_content_is_empty(file_content: Union[bytes, BytesIO]):

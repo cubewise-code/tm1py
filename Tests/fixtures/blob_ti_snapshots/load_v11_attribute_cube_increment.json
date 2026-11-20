@@ -1,0 +1,49 @@
+{
+  "Name": "tm1py.load",
+  "PrologProcedure": "#****Begin: Generated Statements***\r\n#****End: Generated Statements****\r\n\n        SetInputCharacterSet('TM1CS_UTF8');\n        ServerActiveSandboxSet('');SetUseActiveSandboxProperty(0);\n        ",
+  "MetadataProcedure": "#****Begin: Generated Statements***\r\n#****End: Generated Statements****\r\n",
+  "DataProcedure": "#****Begin: Generated Statements***\r\n#****End: Generated Statements****\r\n\n        If(ElementType('}ElementAttributes_Region', '', v2) @= 'N'% \nElementType('}ElementAttributes_Region', '', v2) @= 'AN'% \nElementType('}ElementAttributes_Region', '', v2) @= 'C'% \nElementType('}ElementAttributes_Region', '', v2) @= '');\n            \n            nValue = StringToNumber(vValue);\n            CellPutN(nValue,'}ElementAttributes_Region',v1,v2);\n            \n        ElseIf(\n            ElementType('}ElementAttributes_Region', '', v2) @= 'S' % \n            ElementType('}ElementAttributes_Region', '', v2) @= 'AS' % \n            ElementType('}ElementAttributes_Region', '', v2) @= 'AA'\n            );\n            \n            sValue = vValue;\n            CellPutS(sValue,'}ElementAttributes_Region',v1,v2); \n            \n        EndIf;",
+  "EpilogProcedure": "#****Begin: Generated Statements***\r\n#****End: Generated Statements****\r\n",
+  "HasSecurityAccess": false,
+  "UIData": "CubeAction=1511\fDataAction=1503\fCubeLogChanges=0\f",
+  "DataSource": {
+    "Type": "ASCII",
+    "asciiDecimalSeparator": ".",
+    "asciiDelimiterChar": ",",
+    "asciiDelimiterType": "Character",
+    "asciiHeaderRecords": 0,
+    "asciiQuoteCharacter": "\"",
+    "asciiThousandSeparator": "",
+    "dataSourceNameForClient": "tm1py.load.csv.blb",
+    "dataSourceNameForServer": "tm1py.load.csv.blb"
+  },
+  "Parameters": [],
+  "Variables": [
+    {
+      "Name": "v1",
+      "Type": "String",
+      "Position": 1,
+      "StartByte": 0,
+      "EndByte": 0
+    },
+    {
+      "Name": "v2",
+      "Type": "String",
+      "Position": 2,
+      "StartByte": 0,
+      "EndByte": 0
+    },
+    {
+      "Name": "vValue",
+      "Type": "String",
+      "Position": 3,
+      "StartByte": 0,
+      "EndByte": 0
+    }
+  ],
+  "VariablesUIData": [
+    "VarType=32\fColType=827\f",
+    "VarType=32\fColType=827\f",
+    "VarType=32\fColType=827\f"
+  ]
+}

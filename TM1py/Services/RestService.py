@@ -25,6 +25,7 @@ from TM1py.Utils import (
     CaseAndSpaceInsensitiveSet,
     HTTPAdapterWithSocketOptions,
     case_and_space_insensitive_equals,
+    is_streamed_body,
     verify_version,
 )
 
@@ -316,16 +317,29 @@ class RestService:
         cancel_at_timeout: bool = False,
         idempotent: bool = False,
         verify_response: bool = True,
+        stream: bool = False,
         **kwargs,
     ):
         """
         Execute a request to TM1 REST API
+
+        :param stream: return the response unread, to be consumed with `iter_content` (and closed) by the caller.
+        A request with a streamed response or an iterable body runs in sync mode (async mode only returns a complete
+        body) and is never compressed or retried (an iterable body can only be sent once).
         """
         url, data = self._url_and_body(url=url, data=data, encoding=encoding)
+        streamed = stream or is_streamed_body(data)
 
+        if streamed:
+            if return_async_id:
+                raise ValueError("'return_async_id' is not supported for streamed requests")
+            async_requests_mode = False
+            idempotent = False
+            if stream:
+                kwargs["stream"] = True
         # Compress the request body once, before any retry path, so that the sync, async and
         # reconnect/retry code paths all re-send the same compressed bytes (no double-compression).
-        if self._compress_request_body:
+        elif self._compress_request_body:
             data, kwargs["headers"] = self._maybe_compress_body(data, kwargs.get("headers") or {})
 
         timeout = timeout if timeout else self._timeout
@@ -404,6 +418,12 @@ class RestService:
         # Handle session timeout
         if self._re_connect_on_session_timeout and response.status_code == 401:
             self.connect()
+            # an iterable body is consumed by the first attempt and can't be sent again
+            if is_streamed_body(data):
+                return response
+            if kwargs.get("stream"):
+                # release the connection held by the unread 401 response
+                response.close()
             response = self._s.request(
                 method=method, url=url, data=data, verify=self._verify, timeout=timeout, **kwargs
             )
@@ -728,6 +748,7 @@ class RestService:
         encoding: str = "utf-8",
         idempotent: bool = True,
         verify_response: bool = True,
+        stream: bool = False,
         **kwargs,
     ):
         """Perform a GET request against TM1 instance
@@ -739,6 +760,7 @@ class RestService:
         :param timeout: Number of seconds that the client will wait to receive the first byte.
         :param cancel_at_timeout: Abort operation in TM1 when timeout is reached
         :param encoding:
+        :param stream: return the response unread (sync mode, no retry). The caller must close it.
         :return: response object or async_id
         """
 
@@ -754,6 +776,7 @@ class RestService:
             encoding=encoding,
             idempotent=idempotent,
             verify_response=verify_response,
+            stream=stream,
         )
 
     def POST(

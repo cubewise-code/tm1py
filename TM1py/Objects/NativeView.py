@@ -4,12 +4,18 @@ import json
 from typing import Dict, Iterable, List, Optional, Union
 
 from mdxpy import MdxBuilder, MdxHierarchySet, Member
+from mdxpy.mdx import ElementsHierarchySet
 
 from TM1py.Objects.Axis import ViewAxisSelection, ViewTitleSelection
 from TM1py.Objects.DynamicPropertiesMixin import DynamicPropertiesMixin
 from TM1py.Objects.Subset import AnonymousSubset, Subset
 from TM1py.Objects.View import View
-from TM1py.Utils import case_and_space_insensitive_equals, read_object_name_from_url
+from TM1py.Utils import (
+    case_and_space_insensitive_equals,
+    lower_and_drop_spaces,
+    read_object_name_from_url,
+    unescape_mdx_name,
+)
 
 
 class NativeView(DynamicPropertiesMixin, View):
@@ -235,6 +241,64 @@ class NativeView(DynamicPropertiesMixin, View):
                 return
 
         raise ValueError(f"Dimension '{dimension}' not found in titles")
+
+    @classmethod
+    def from_mdx_builder(cls, mdx_builder: MdxBuilder, view_name: str = "") -> "NativeView":
+        """Describe the cells an MdxBuilder selects as a native view
+
+        Each set on axis 0 becomes a column and each set on axis 1 a row, as an anonymous subset: a static subset
+        for a list of members, otherwise a subset holding the set's MDX expression. Each WHERE member becomes a
+        title. NON EMPTY is not carried over.
+
+        Names come from the MdxBuilder, which keeps dimension and cube names lower-cased and without spaces.
+
+        :raises NotImplementedError: for a query a native view built in TI can't express: tuples on an axis,
+        calculated members, more than two axes, a set that isn't a hierarchy set, one dimension in several places,
+        or an alternate hierarchy (TI's view functions only take a dimension's same-named hierarchy)
+        """
+        if mdx_builder.calculated_members:
+            raise NotImplementedError("A native view can't hold calculated members")
+        if set(mdx_builder.axes) - {0, 1}:
+            raise NotImplementedError("A native view has at most two axes (columns and rows)")
+
+        view = cls(cube_name=unescape_mdx_name(mdx_builder.cube), view_name=view_name)
+        used_dimensions = set()
+
+        def claim(dimension: str, hierarchy: str):
+            key = lower_and_drop_spaces(dimension)
+            if key in used_dimensions:
+                raise NotImplementedError(f"Dimension '{dimension}' is used more than once in the query")
+            if lower_and_drop_spaces(hierarchy) != key:
+                raise NotImplementedError(f"Alternate hierarchy '{dimension}:{hierarchy}' in a native view built in TI")
+            used_dimensions.add(key)
+
+        for position in sorted(mdx_builder.axes):
+            axis = mdx_builder.axes[position]
+            if axis.tuples:
+                raise NotImplementedError("A native view can't hold tuples on an axis")
+            for mdx_set in axis.dim_sets:
+                if not isinstance(mdx_set, MdxHierarchySet) or not mdx_set.dimension:
+                    raise NotImplementedError(f"Set '{mdx_set.to_mdx()}' is not a set of one hierarchy")
+
+                dimension = unescape_mdx_name(mdx_set.dimension)
+                claim(dimension, unescape_mdx_name(mdx_set.hierarchy))
+                if isinstance(mdx_set, ElementsHierarchySet):
+                    subset = AnonymousSubset(dimension, dimension, elements=[m.element for m in mdx_set.members])
+                else:
+                    subset = AnonymousSubset(dimension, dimension, expression=mdx_set.to_mdx())
+
+                if position == 0:
+                    view.add_column(dimension, subset)
+                else:
+                    view.add_row(dimension, subset)
+
+        for member in mdx_builder._where.members:
+            claim(member.dimension, member.hierarchy)
+            view.add_title(
+                member.dimension, member.element, AnonymousSubset(member.dimension, elements=[member.element])
+            )
+
+        return view
 
     @classmethod
     def from_json(cls, view_as_json: str, cube_name: Optional[str] = None) -> "NativeView":

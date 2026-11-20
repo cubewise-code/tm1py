@@ -9,7 +9,7 @@ import ssl
 import urllib.parse as urlparse
 from datetime import datetime, timezone
 from enum import Enum, unique
-from io import StringIO
+from io import BytesIO, StringIO
 from typing import (
     Any,
     Callable,
@@ -843,6 +843,39 @@ def hierarchy_name_from_element_unique_name(element_unique_name: str) -> str:
 
 def element_name_from_element_unique_name(element_unique_name: str) -> str:
     return element_unique_name[element_unique_name.rfind("].[") + 3 : -1].replace("]]", "]")
+
+
+def is_streamed_body(data) -> bool:
+    """An iterable request body (not str, bytes or a file-like object) that can only be sent once.
+
+    `requests` sends it with `Content-Length` when it implements `__len__`, otherwise chunked.
+    """
+    if data is None or isinstance(data, (str, bytes, bytearray, BytesIO, dict, list, tuple)):
+        return False
+    return hasattr(data, "__iter__") and not hasattr(data, "read")
+
+
+def escape_mdx_name(name: str) -> str:
+    """Escape a name for use inside MDX brackets: 'a]b' -> 'a]]b'"""
+    return name.replace("]", "]]")
+
+
+def unescape_mdx_name(name: str) -> str:
+    """Reverse `escape_mdx_name`: 'a]]b' -> 'a]b'"""
+    return name.replace("]]", "]")
+
+
+def build_hierarchy_unique_name(dimension: str, hierarchy: str = None) -> str:
+    """('d', 'h') -> '[d].[h]', with brackets in the names escaped. The hierarchy defaults to the dimension"""
+    return f"[{escape_mdx_name(dimension)}].[{escape_mdx_name(hierarchy or dimension)}]"
+
+
+def split_hierarchy_unique_name(name: str) -> Tuple[str, str]:
+    """'[d].[h]' -> ('d', 'h'), with brackets in the names unescaped; a plain name 'd' -> ('d', 'd')"""
+    if name.startswith("[") and name.endswith("]") and "].[" in name:
+        dimension, hierarchy = name[1:-1].split("].[", 1)
+        return unescape_mdx_name(dimension), unescape_mdx_name(hierarchy)
+    return name, name
 
 
 def element_names_from_element_unique_names(element_unique_names: Iterable[str]) -> Tuple[str]:
