@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../img/favicon_tm1py_centered_64x64.png">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.8.2">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -2873,45 +2873,45 @@
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>TM1py/Objects/Sandbox.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-13">13</a></span>
-<span class="normal"><a href="#__codelineno-0-14">14</a></span>
-<span class="normal"><a href="#__codelineno-0-15">15</a></span>
-<span class="normal"><a href="#__codelineno-0-16">16</a></span>
-<span class="normal"><a href="#__codelineno-0-17">17</a></span>
-<span class="normal"><a href="#__codelineno-0-18">18</a></span>
-<span class="normal"><a href="#__codelineno-0-19">19</a></span>
-<span class="normal"><a href="#__codelineno-0-20">20</a></span>
-<span class="normal"><a href="#__codelineno-0-21">21</a></span>
-<span class="normal"><a href="#__codelineno-0-22">22</a></span>
-<span class="normal"><a href="#__codelineno-0-23">23</a></span>
-<span class="normal"><a href="#__codelineno-0-24">24</a></span>
-<span class="normal"><a href="#__codelineno-0-25">25</a></span>
-<span class="normal"><a href="#__codelineno-0-26">26</a></span>
-<span class="normal"><a href="#__codelineno-0-27">27</a></span>
-<span class="normal"><a href="#__codelineno-0-28">28</a></span>
-<span class="normal"><a href="#__codelineno-0-29">29</a></span>
-<span class="normal"><a href="#__codelineno-0-30">30</a></span>
-<span class="normal"><a href="#__codelineno-0-31">31</a></span>
-<span class="normal"><a href="#__codelineno-0-32">32</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14"></a>    <span class="bp">self</span><span class="p">,</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16"></a>    <span class="n">include_in_sandbox_dimension</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17"></a>    <span class="n">loaded</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18"></a>    <span class="n">active</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19"></a>    <span class="n">queued</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20"></a><span class="p">):</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="w">    </span><span class="sd">"""</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="sd">    :param name: name of the Sandbox</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="sd">    :param include_in_sandbox_dimension:</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="sd">    :param loaded: use default false when creating sandbox</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="sd">    :param active: use default false when creating sandbox</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="sd">    :param queued: use default false when creating sandbox</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="sd">    """</span>
-<a id="__codelineno-0-28" name="__codelineno-0-28"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
-<a id="__codelineno-0-29" name="__codelineno-0-29"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">include_in_sandbox_dimension</span> <span class="o">=</span> <span class="n">include_in_sandbox_dimension</span>
-<a id="__codelineno-0-30" name="__codelineno-0-30"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">loaded</span> <span class="o">=</span> <span class="n">loaded</span>
-<a id="__codelineno-0-31" name="__codelineno-0-31"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="n">active</span>
-<a id="__codelineno-0-32" name="__codelineno-0-32"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">queued</span> <span class="o">=</span> <span class="n">queued</span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-13">13</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-14">14</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-15">15</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-16">16</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-17">17</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-18">18</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-19">19</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-20">20</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-21">21</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-22">22</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-23">23</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-24">24</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-25">25</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-26">26</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-27">27</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-28">28</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-29">29</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-30">30</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-31">31</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-32">32</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-13" name="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-13"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<a id="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-14" name="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-14"></a>    <span class="bp">self</span><span class="p">,</span>
+<a id="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-15" name="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-15"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-16" name="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-16"></a>    <span class="n">include_in_sandbox_dimension</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<a id="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-17" name="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-17"></a>    <span class="n">loaded</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<a id="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-18" name="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-18"></a>    <span class="n">active</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<a id="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-19" name="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-19"></a>    <span class="n">queued</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<a id="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-20" name="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-20"></a><span class="p">):</span>
+<a id="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-21" name="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-21"></a><span class="w">    </span><span class="sd">"""</span>
+<a id="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-22" name="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-22"></a><span class="sd">    :param name: name of the Sandbox</span>
+<a id="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-23" name="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-23"></a><span class="sd">    :param include_in_sandbox_dimension:</span>
+<a id="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-24" name="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-24"></a><span class="sd">    :param loaded: use default false when creating sandbox</span>
+<a id="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-25" name="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-25"></a><span class="sd">    :param active: use default false when creating sandbox</span>
+<a id="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-26" name="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-26"></a><span class="sd">    :param queued: use default false when creating sandbox</span>
+<a id="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-27" name="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-27"></a><span class="sd">    """</span>
+<a id="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-28" name="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-28"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+<a id="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-29" name="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-29"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">include_in_sandbox_dimension</span> <span class="o">=</span> <span class="n">include_in_sandbox_dimension</span>
+<a id="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-30" name="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-30"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">loaded</span> <span class="o">=</span> <span class="n">loaded</span>
+<a id="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-31" name="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-31"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="n">active</span>
+<a id="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-32" name="TM1py.Objects.Sandbox.Sandbox--source--__codelineno-0-32"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">queued</span> <span class="o">=</span> <span class="n">queued</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -3124,33 +3124,33 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Sandbox.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-60">60</a></span>
-<span class="normal"><a href="#__codelineno-0-61">61</a></span>
-<span class="normal"><a href="#__codelineno-0-62">62</a></span>
-<span class="normal"><a href="#__codelineno-0-63">63</a></span>
-<span class="normal"><a href="#__codelineno-0-64">64</a></span>
-<span class="normal"><a href="#__codelineno-0-65">65</a></span>
-<span class="normal"><a href="#__codelineno-0-66">66</a></span>
-<span class="normal"><a href="#__codelineno-0-67">67</a></span>
-<span class="normal"><a href="#__codelineno-0-68">68</a></span>
-<span class="normal"><a href="#__codelineno-0-69">69</a></span>
-<span class="normal"><a href="#__codelineno-0-70">70</a></span>
-<span class="normal"><a href="#__codelineno-0-71">71</a></span>
-<span class="normal"><a href="#__codelineno-0-72">72</a></span>
-<span class="normal"><a href="#__codelineno-0-73">73</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-60" name="__codelineno-0-60"></a><span class="nd">@classmethod</span>
-<a id="__codelineno-0-61" name="__codelineno-0-61"></a><span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">sandbox_as_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Sandbox"</span><span class="p">:</span>
-<a id="__codelineno-0-62" name="__codelineno-0-62"></a><span class="w">    </span><span class="sd">"""Alternative constructor</span>
-<a id="__codelineno-0-63" name="__codelineno-0-63"></a>
-<a id="__codelineno-0-64" name="__codelineno-0-64"></a><span class="sd">    :param sandbox_as_dict: user as dict</span>
-<a id="__codelineno-0-65" name="__codelineno-0-65"></a><span class="sd">    :return: an instance of this class</span>
-<a id="__codelineno-0-66" name="__codelineno-0-66"></a><span class="sd">    """</span>
-<a id="__codelineno-0-67" name="__codelineno-0-67"></a>    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
-<a id="__codelineno-0-68" name="__codelineno-0-68"></a>        <span class="n">name</span><span class="o">=</span><span class="n">sandbox_as_dict</span><span class="p">[</span><span class="s2">"Name"</span><span class="p">],</span>
-<a id="__codelineno-0-69" name="__codelineno-0-69"></a>        <span class="n">include_in_sandbox_dimension</span><span class="o">=</span><span class="n">sandbox_as_dict</span><span class="p">[</span><span class="s2">"IncludeInSandboxDimension"</span><span class="p">],</span>
-<a id="__codelineno-0-70" name="__codelineno-0-70"></a>        <span class="n">loaded</span><span class="o">=</span><span class="n">sandbox_as_dict</span><span class="p">[</span><span class="s2">"IsLoaded"</span><span class="p">],</span>
-<a id="__codelineno-0-71" name="__codelineno-0-71"></a>        <span class="n">active</span><span class="o">=</span><span class="n">sandbox_as_dict</span><span class="p">[</span><span class="s2">"IsActive"</span><span class="p">],</span>
-<a id="__codelineno-0-72" name="__codelineno-0-72"></a>        <span class="n">queued</span><span class="o">=</span><span class="n">sandbox_as_dict</span><span class="p">[</span><span class="s2">"IsQueued"</span><span class="p">],</span>
-<a id="__codelineno-0-73" name="__codelineno-0-73"></a>    <span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-60">60</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-61">61</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-62">62</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-63">63</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-64">64</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-65">65</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-66">66</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-67">67</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-68">68</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-69">69</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-70">70</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-71">71</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-72">72</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-73">73</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-60" name="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-60"></a><span class="nd">@classmethod</span>
+<a id="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-61" name="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-61"></a><span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">sandbox_as_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Sandbox"</span><span class="p">:</span>
+<a id="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-62" name="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-62"></a><span class="w">    </span><span class="sd">"""Alternative constructor</span>
+<a id="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-63" name="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-63"></a>
+<a id="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-64" name="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-64"></a><span class="sd">    :param sandbox_as_dict: user as dict</span>
+<a id="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-65" name="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-65"></a><span class="sd">    :return: an instance of this class</span>
+<a id="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-66" name="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-66"></a><span class="sd">    """</span>
+<a id="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-67" name="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-67"></a>    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+<a id="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-68" name="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-68"></a>        <span class="n">name</span><span class="o">=</span><span class="n">sandbox_as_dict</span><span class="p">[</span><span class="s2">"Name"</span><span class="p">],</span>
+<a id="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-69" name="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-69"></a>        <span class="n">include_in_sandbox_dimension</span><span class="o">=</span><span class="n">sandbox_as_dict</span><span class="p">[</span><span class="s2">"IncludeInSandboxDimension"</span><span class="p">],</span>
+<a id="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-70" name="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-70"></a>        <span class="n">loaded</span><span class="o">=</span><span class="n">sandbox_as_dict</span><span class="p">[</span><span class="s2">"IsLoaded"</span><span class="p">],</span>
+<a id="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-71" name="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-71"></a>        <span class="n">active</span><span class="o">=</span><span class="n">sandbox_as_dict</span><span class="p">[</span><span class="s2">"IsActive"</span><span class="p">],</span>
+<a id="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-72" name="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-72"></a>        <span class="n">queued</span><span class="o">=</span><span class="n">sandbox_as_dict</span><span class="p">[</span><span class="s2">"IsQueued"</span><span class="p">],</span>
+<a id="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-73" name="TM1py.Objects.Sandbox.Sandbox.from_dict--source--__codelineno-0-73"></a>    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3231,23 +3231,23 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Sandbox.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-50">50</a></span>
-<span class="normal"><a href="#__codelineno-0-51">51</a></span>
-<span class="normal"><a href="#__codelineno-0-52">52</a></span>
-<span class="normal"><a href="#__codelineno-0-53">53</a></span>
-<span class="normal"><a href="#__codelineno-0-54">54</a></span>
-<span class="normal"><a href="#__codelineno-0-55">55</a></span>
-<span class="normal"><a href="#__codelineno-0-56">56</a></span>
-<span class="normal"><a href="#__codelineno-0-57">57</a></span>
-<span class="normal"><a href="#__codelineno-0-58">58</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-50" name="__codelineno-0-50"></a><span class="nd">@classmethod</span>
-<a id="__codelineno-0-51" name="__codelineno-0-51"></a><span class="k">def</span><span class="w"> </span><span class="nf">from_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">sandbox_as_json</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Sandbox"</span><span class="p">:</span>
-<a id="__codelineno-0-52" name="__codelineno-0-52"></a><span class="w">    </span><span class="sd">"""Alternative constructor</span>
-<a id="__codelineno-0-53" name="__codelineno-0-53"></a>
-<a id="__codelineno-0-54" name="__codelineno-0-54"></a><span class="sd">    :param sandbox_as_json: user as JSON string</span>
-<a id="__codelineno-0-55" name="__codelineno-0-55"></a><span class="sd">    :return: sandbox, an instance of this class</span>
-<a id="__codelineno-0-56" name="__codelineno-0-56"></a><span class="sd">    """</span>
-<a id="__codelineno-0-57" name="__codelineno-0-57"></a>    <span class="n">sandbox_as_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">sandbox_as_json</span><span class="p">)</span>
-<a id="__codelineno-0-58" name="__codelineno-0-58"></a>    <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">sandbox_as_dict</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-50">50</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-51">51</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-52">52</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-53">53</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-54">54</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-55">55</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-56">56</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-57">57</a></span>
+<span class="normal"><a href="#TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-58">58</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-50" name="TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-50"></a><span class="nd">@classmethod</span>
+<a id="TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-51" name="TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-51"></a><span class="k">def</span><span class="w"> </span><span class="nf">from_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">sandbox_as_json</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Sandbox"</span><span class="p">:</span>
+<a id="TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-52" name="TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-52"></a><span class="w">    </span><span class="sd">"""Alternative constructor</span>
+<a id="TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-53" name="TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-53"></a>
+<a id="TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-54" name="TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-54"></a><span class="sd">    :param sandbox_as_json: user as JSON string</span>
+<a id="TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-55" name="TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-55"></a><span class="sd">    :return: sandbox, an instance of this class</span>
+<a id="TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-56" name="TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-56"></a><span class="sd">    """</span>
+<a id="TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-57" name="TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-57"></a>    <span class="n">sandbox_as_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">sandbox_as_json</span><span class="p">)</span>
+<a id="TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-58" name="TM1py.Objects.Sandbox.Sandbox.from_json--source--__codelineno-0-58"></a>    <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">sandbox_as_dict</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3335,10 +3335,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
   </body>

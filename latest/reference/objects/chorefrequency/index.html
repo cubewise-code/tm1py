@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../img/favicon_tm1py_centered_64x64.png">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.8.2">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -2754,19 +2754,19 @@
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>TM1py/Objects/ChoreFrequency.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-10">10</a></span>
-<span class="normal"><a href="#__codelineno-0-11">11</a></span>
-<span class="normal"><a href="#__codelineno-0-12">12</a></span>
-<span class="normal"><a href="#__codelineno-0-13">13</a></span>
-<span class="normal"><a href="#__codelineno-0-14">14</a></span>
-<span class="normal"><a href="#__codelineno-0-15">15</a></span>
-<span class="normal"><a href="#__codelineno-0-16">16</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11"></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">days</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">hours</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">minutes</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">seconds</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12"></a><span class="p">):</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_days</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">days</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_hours</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">hours</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_minutes</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">minutes</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_seconds</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">seconds</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.ChoreFrequency.ChoreFrequency--source--__codelineno-0-10">10</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreFrequency.ChoreFrequency--source--__codelineno-0-11">11</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreFrequency.ChoreFrequency--source--__codelineno-0-12">12</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreFrequency.ChoreFrequency--source--__codelineno-0-13">13</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreFrequency.ChoreFrequency--source--__codelineno-0-14">14</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreFrequency.ChoreFrequency--source--__codelineno-0-15">15</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreFrequency.ChoreFrequency--source--__codelineno-0-16">16</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.ChoreFrequency.ChoreFrequency--source--__codelineno-0-10" name="TM1py.Objects.ChoreFrequency.ChoreFrequency--source--__codelineno-0-10"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<a id="TM1py.Objects.ChoreFrequency.ChoreFrequency--source--__codelineno-0-11" name="TM1py.Objects.ChoreFrequency.ChoreFrequency--source--__codelineno-0-11"></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">days</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">hours</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">minutes</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">seconds</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
+<a id="TM1py.Objects.ChoreFrequency.ChoreFrequency--source--__codelineno-0-12" name="TM1py.Objects.ChoreFrequency.ChoreFrequency--source--__codelineno-0-12"></a><span class="p">):</span>
+<a id="TM1py.Objects.ChoreFrequency.ChoreFrequency--source--__codelineno-0-13" name="TM1py.Objects.ChoreFrequency.ChoreFrequency--source--__codelineno-0-13"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_days</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">days</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<a id="TM1py.Objects.ChoreFrequency.ChoreFrequency--source--__codelineno-0-14" name="TM1py.Objects.ChoreFrequency.ChoreFrequency--source--__codelineno-0-14"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_hours</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">hours</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<a id="TM1py.Objects.ChoreFrequency.ChoreFrequency--source--__codelineno-0-15" name="TM1py.Objects.ChoreFrequency.ChoreFrequency--source--__codelineno-0-15"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_minutes</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">minutes</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<a id="TM1py.Objects.ChoreFrequency.ChoreFrequency--source--__codelineno-0-16" name="TM1py.Objects.ChoreFrequency.ChoreFrequency--source--__codelineno-0-16"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_seconds</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">seconds</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -2901,9 +2901,9 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/ChoreFrequency.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-67">67</a></span>
-<span class="normal"><a href="#__codelineno-0-68">68</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-67" name="__codelineno-0-67"></a><span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-0-68" name="__codelineno-0-68"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">frequency_string</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.ChoreFrequency.ChoreFrequency.__str__--source--__codelineno-0-67">67</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreFrequency.ChoreFrequency.__str__--source--__codelineno-0-68">68</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.ChoreFrequency.ChoreFrequency.__str__--source--__codelineno-0-67" name="TM1py.Objects.ChoreFrequency.ChoreFrequency.__str__--source--__codelineno-0-67"></a><span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="TM1py.Objects.ChoreFrequency.ChoreFrequency.__str__--source--__codelineno-0-68" name="TM1py.Objects.ChoreFrequency.ChoreFrequency.__str__--source--__codelineno-0-68"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">frequency_string</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2928,29 +2928,29 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/ChoreFrequency.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-50">50</a></span>
-<span class="normal"><a href="#__codelineno-0-51">51</a></span>
-<span class="normal"><a href="#__codelineno-0-52">52</a></span>
-<span class="normal"><a href="#__codelineno-0-53">53</a></span>
-<span class="normal"><a href="#__codelineno-0-54">54</a></span>
-<span class="normal"><a href="#__codelineno-0-55">55</a></span>
-<span class="normal"><a href="#__codelineno-0-56">56</a></span>
-<span class="normal"><a href="#__codelineno-0-57">57</a></span>
-<span class="normal"><a href="#__codelineno-0-58">58</a></span>
-<span class="normal"><a href="#__codelineno-0-59">59</a></span>
-<span class="normal"><a href="#__codelineno-0-60">60</a></span>
-<span class="normal"><a href="#__codelineno-0-61">61</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-50" name="__codelineno-0-50"></a><span class="nd">@classmethod</span>
-<a id="__codelineno-0-51" name="__codelineno-0-51"></a><span class="k">def</span><span class="w"> </span><span class="nf">from_string</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">frequency_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"ChoreFrequency"</span><span class="p">:</span>
-<a id="__codelineno-0-52" name="__codelineno-0-52"></a>    <span class="n">pos_dt</span> <span class="o">=</span> <span class="n">frequency_string</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">"DT"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-<a id="__codelineno-0-53" name="__codelineno-0-53"></a>    <span class="n">pos_h</span> <span class="o">=</span> <span class="n">frequency_string</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">"H"</span><span class="p">,</span> <span class="n">pos_dt</span><span class="p">)</span>
-<a id="__codelineno-0-54" name="__codelineno-0-54"></a>    <span class="n">pos_m</span> <span class="o">=</span> <span class="n">frequency_string</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">"M"</span><span class="p">,</span> <span class="n">pos_h</span><span class="p">)</span>
-<a id="__codelineno-0-55" name="__codelineno-0-55"></a>    <span class="n">pos_s</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">frequency_string</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
-<a id="__codelineno-0-56" name="__codelineno-0-56"></a>    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
-<a id="__codelineno-0-57" name="__codelineno-0-57"></a>        <span class="n">days</span><span class="o">=</span><span class="n">frequency_string</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">pos_dt</span><span class="p">],</span>
-<a id="__codelineno-0-58" name="__codelineno-0-58"></a>        <span class="n">hours</span><span class="o">=</span><span class="n">frequency_string</span><span class="p">[</span><span class="n">pos_dt</span> <span class="o">+</span> <span class="mi">2</span> <span class="p">:</span> <span class="n">pos_h</span><span class="p">],</span>
-<a id="__codelineno-0-59" name="__codelineno-0-59"></a>        <span class="n">minutes</span><span class="o">=</span><span class="n">frequency_string</span><span class="p">[</span><span class="n">pos_h</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:</span> <span class="n">pos_m</span><span class="p">],</span>
-<a id="__codelineno-0-60" name="__codelineno-0-60"></a>        <span class="n">seconds</span><span class="o">=</span><span class="n">frequency_string</span><span class="p">[</span><span class="n">pos_m</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:</span> <span class="n">pos_s</span><span class="p">],</span>
-<a id="__codelineno-0-61" name="__codelineno-0-61"></a>    <span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-50">50</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-51">51</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-52">52</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-53">53</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-54">54</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-55">55</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-56">56</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-57">57</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-58">58</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-59">59</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-60">60</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-61">61</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-50" name="TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-50"></a><span class="nd">@classmethod</span>
+<a id="TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-51" name="TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-51"></a><span class="k">def</span><span class="w"> </span><span class="nf">from_string</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">frequency_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"ChoreFrequency"</span><span class="p">:</span>
+<a id="TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-52" name="TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-52"></a>    <span class="n">pos_dt</span> <span class="o">=</span> <span class="n">frequency_string</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">"DT"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<a id="TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-53" name="TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-53"></a>    <span class="n">pos_h</span> <span class="o">=</span> <span class="n">frequency_string</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">"H"</span><span class="p">,</span> <span class="n">pos_dt</span><span class="p">)</span>
+<a id="TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-54" name="TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-54"></a>    <span class="n">pos_m</span> <span class="o">=</span> <span class="n">frequency_string</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">"M"</span><span class="p">,</span> <span class="n">pos_h</span><span class="p">)</span>
+<a id="TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-55" name="TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-55"></a>    <span class="n">pos_s</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">frequency_string</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+<a id="TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-56" name="TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-56"></a>    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+<a id="TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-57" name="TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-57"></a>        <span class="n">days</span><span class="o">=</span><span class="n">frequency_string</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">pos_dt</span><span class="p">],</span>
+<a id="TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-58" name="TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-58"></a>        <span class="n">hours</span><span class="o">=</span><span class="n">frequency_string</span><span class="p">[</span><span class="n">pos_dt</span> <span class="o">+</span> <span class="mi">2</span> <span class="p">:</span> <span class="n">pos_h</span><span class="p">],</span>
+<a id="TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-59" name="TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-59"></a>        <span class="n">minutes</span><span class="o">=</span><span class="n">frequency_string</span><span class="p">[</span><span class="n">pos_h</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:</span> <span class="n">pos_m</span><span class="p">],</span>
+<a id="TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-60" name="TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-60"></a>        <span class="n">seconds</span><span class="o">=</span><span class="n">frequency_string</span><span class="p">[</span><span class="n">pos_m</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:</span> <span class="n">pos_s</span><span class="p">],</span>
+<a id="TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-61" name="TM1py.Objects.ChoreFrequency.ChoreFrequency.from_string--source--__codelineno-0-61"></a>    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3038,10 +3038,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
   </body>

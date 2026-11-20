@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../img/favicon_tm1py_centered_64x64.png">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.8.2">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -3384,55 +3384,55 @@ Requires reference to a Dimension</p>
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-41">41</a></span>
-<span class="normal"><a href="#__codelineno-0-42">42</a></span>
-<span class="normal"><a href="#__codelineno-0-43">43</a></span>
-<span class="normal"><a href="#__codelineno-0-44">44</a></span>
-<span class="normal"><a href="#__codelineno-0-45">45</a></span>
-<span class="normal"><a href="#__codelineno-0-46">46</a></span>
-<span class="normal"><a href="#__codelineno-0-47">47</a></span>
-<span class="normal"><a href="#__codelineno-0-48">48</a></span>
-<span class="normal"><a href="#__codelineno-0-49">49</a></span>
-<span class="normal"><a href="#__codelineno-0-50">50</a></span>
-<span class="normal"><a href="#__codelineno-0-51">51</a></span>
-<span class="normal"><a href="#__codelineno-0-52">52</a></span>
-<span class="normal"><a href="#__codelineno-0-53">53</a></span>
-<span class="normal"><a href="#__codelineno-0-54">54</a></span>
-<span class="normal"><a href="#__codelineno-0-55">55</a></span>
-<span class="normal"><a href="#__codelineno-0-56">56</a></span>
-<span class="normal"><a href="#__codelineno-0-57">57</a></span>
-<span class="normal"><a href="#__codelineno-0-58">58</a></span>
-<span class="normal"><a href="#__codelineno-0-59">59</a></span>
-<span class="normal"><a href="#__codelineno-0-60">60</a></span>
-<span class="normal"><a href="#__codelineno-0-61">61</a></span>
-<span class="normal"><a href="#__codelineno-0-62">62</a></span>
-<span class="normal"><a href="#__codelineno-0-63">63</a></span>
-<span class="normal"><a href="#__codelineno-0-64">64</a></span>
-<span class="normal"><a href="#__codelineno-0-65">65</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-<a id="__codelineno-0-42" name="__codelineno-0-42"></a>    <span class="bp">self</span><span class="p">,</span>
-<a id="__codelineno-0-43" name="__codelineno-0-43"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<a id="__codelineno-0-44" name="__codelineno-0-44"></a>    <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<a id="__codelineno-0-45" name="__codelineno-0-45"></a>    <span class="n">elements</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="s2">"Element"</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-46" name="__codelineno-0-46"></a>    <span class="n">element_attributes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="s2">"ElementAttribute"</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-47" name="__codelineno-0-47"></a>    <span class="n">edges</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">"Dict"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-48" name="__codelineno-0-48"></a>    <span class="n">subsets</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-49" name="__codelineno-0-49"></a>    <span class="n">structure</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-50" name="__codelineno-0-50"></a>    <span class="n">default_member</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-51" name="__codelineno-0-51"></a><span class="p">):</span>
-<a id="__codelineno-0-52" name="__codelineno-0-52"></a>
-<a id="__codelineno-0-53" name="__codelineno-0-53"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
-<a id="__codelineno-0-54" name="__codelineno-0-54"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_dimension_name</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-0-55" name="__codelineno-0-55"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">dimension_name</span> <span class="o">=</span> <span class="n">dimension_name</span>
-<a id="__codelineno-0-56" name="__codelineno-0-56"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Element</span><span class="p">]</span> <span class="o">=</span> <span class="n">CaseAndSpaceInsensitiveDict</span><span class="p">()</span>
-<a id="__codelineno-0-57" name="__codelineno-0-57"></a>    <span class="k">if</span> <span class="n">elements</span><span class="p">:</span>
-<a id="__codelineno-0-58" name="__codelineno-0-58"></a>        <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">:</span>
-<a id="__codelineno-0-59" name="__codelineno-0-59"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">[</span><span class="n">elem</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">elem</span>
-<a id="__codelineno-0-60" name="__codelineno-0-60"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_element_attributes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">element_attributes</span><span class="p">)</span> <span class="k">if</span> <span class="n">element_attributes</span> <span class="k">else</span> <span class="p">[]</span>
-<a id="__codelineno-0-61" name="__codelineno-0-61"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_edges</span> <span class="o">=</span> <span class="n">CaseAndSpaceInsensitiveTuplesDict</span><span class="p">(</span><span class="n">edges</span><span class="p">)</span> <span class="k">if</span> <span class="n">edges</span> <span class="k">else</span> <span class="n">CaseAndSpaceInsensitiveTuplesDict</span><span class="p">()</span>
-<a id="__codelineno-0-62" name="__codelineno-0-62"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_subsets</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">subsets</span><span class="p">)</span> <span class="k">if</span> <span class="n">subsets</span> <span class="k">else</span> <span class="p">[]</span>
-<a id="__codelineno-0-63" name="__codelineno-0-63"></a>    <span class="c1"># balanced is true, false or None (in versions &lt; TM1 11)</span>
-<a id="__codelineno-0-64" name="__codelineno-0-64"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_balanced</span> <span class="o">=</span> <span class="kc">False</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">structure</span> <span class="k">else</span> <span class="n">structure</span> <span class="o">==</span> <span class="mi">0</span>
-<a id="__codelineno-0-65" name="__codelineno-0-65"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_default_member</span> <span class="o">=</span> <span class="n">default_member</span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-41">41</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-42">42</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-43">43</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-44">44</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-45">45</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-46">46</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-47">47</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-48">48</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-49">49</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-50">50</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-51">51</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-52">52</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-53">53</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-54">54</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-55">55</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-56">56</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-57">57</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-58">58</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-59">59</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-60">60</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-61">61</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-62">62</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-63">63</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-64">64</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-65">65</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-41" name="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-41"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-42" name="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-42"></a>    <span class="bp">self</span><span class="p">,</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-43" name="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-43"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-44" name="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-44"></a>    <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-45" name="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-45"></a>    <span class="n">elements</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="s2">"Element"</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-46" name="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-46"></a>    <span class="n">element_attributes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="s2">"ElementAttribute"</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-47" name="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-47"></a>    <span class="n">edges</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">"Dict"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-48" name="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-48"></a>    <span class="n">subsets</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-49" name="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-49"></a>    <span class="n">structure</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-50" name="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-50"></a>    <span class="n">default_member</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-51" name="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-51"></a><span class="p">):</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-52" name="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-52"></a>
+<a id="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-53" name="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-53"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-54" name="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-54"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_dimension_name</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-55" name="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-55"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">dimension_name</span> <span class="o">=</span> <span class="n">dimension_name</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-56" name="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-56"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Element</span><span class="p">]</span> <span class="o">=</span> <span class="n">CaseAndSpaceInsensitiveDict</span><span class="p">()</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-57" name="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-57"></a>    <span class="k">if</span> <span class="n">elements</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-58" name="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-58"></a>        <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-59" name="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-59"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">[</span><span class="n">elem</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">elem</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-60" name="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-60"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_element_attributes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">element_attributes</span><span class="p">)</span> <span class="k">if</span> <span class="n">element_attributes</span> <span class="k">else</span> <span class="p">[]</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-61" name="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-61"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_edges</span> <span class="o">=</span> <span class="n">CaseAndSpaceInsensitiveTuplesDict</span><span class="p">(</span><span class="n">edges</span><span class="p">)</span> <span class="k">if</span> <span class="n">edges</span> <span class="k">else</span> <span class="n">CaseAndSpaceInsensitiveTuplesDict</span><span class="p">()</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-62" name="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-62"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_subsets</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">subsets</span><span class="p">)</span> <span class="k">if</span> <span class="n">subsets</span> <span class="k">else</span> <span class="p">[]</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-63" name="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-63"></a>    <span class="c1"># balanced is true, false or None (in versions &lt; TM1 11)</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-64" name="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-64"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_balanced</span> <span class="o">=</span> <span class="kc">False</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">structure</span> <span class="k">else</span> <span class="n">structure</span> <span class="o">==</span> <span class="mi">0</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-65" name="TM1py.Objects.Hierarchy.Hierarchy--source--__codelineno-0-65"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_default_member</span> <span class="o">=</span> <span class="n">default_member</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -3665,9 +3665,9 @@ Requires reference to a Dimension</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-339">339</a></span>
-<span class="normal"><a href="#__codelineno-0-340">340</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-339" name="__codelineno-0-339"></a><span class="k">def</span><span class="w"> </span><span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
-<a id="__codelineno-0-340" name="__codelineno-0-340"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_element</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.__contains__--source--__codelineno-0-339">339</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.__contains__--source--__codelineno-0-340">340</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy.__contains__--source--__codelineno-0-339" name="TM1py.Objects.Hierarchy.Hierarchy.__contains__--source--__codelineno-0-339"></a><span class="k">def</span><span class="w"> </span><span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.__contains__--source--__codelineno-0-340" name="TM1py.Objects.Hierarchy.Hierarchy.__contains__--source--__codelineno-0-340"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_element</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3688,9 +3688,9 @@ Requires reference to a Dimension</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-342">342</a></span>
-<span class="normal"><a href="#__codelineno-0-343">343</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-342" name="__codelineno-0-342"></a><span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
-<a id="__codelineno-0-343" name="__codelineno-0-343"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_element</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.__getitem__--source--__codelineno-0-342">342</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.__getitem__--source--__codelineno-0-343">343</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy.__getitem__--source--__codelineno-0-342" name="TM1py.Objects.Hierarchy.Hierarchy.__getitem__--source--__codelineno-0-342"></a><span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.__getitem__--source--__codelineno-0-343" name="TM1py.Objects.Hierarchy.Hierarchy.__getitem__--source--__codelineno-0-343"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_element</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3711,9 +3711,9 @@ Requires reference to a Dimension</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-333">333</a></span>
-<span class="normal"><a href="#__codelineno-0-334">334</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-333" name="__codelineno-0-333"></a><span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-0-334" name="__codelineno-0-334"></a>    <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.__iter__--source--__codelineno-0-333">333</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.__iter__--source--__codelineno-0-334">334</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy.__iter__--source--__codelineno-0-333" name="TM1py.Objects.Hierarchy.Hierarchy.__iter__--source--__codelineno-0-333"></a><span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.__iter__--source--__codelineno-0-334" name="TM1py.Objects.Hierarchy.Hierarchy.__iter__--source--__codelineno-0-334"></a>    <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3734,9 +3734,9 @@ Requires reference to a Dimension</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-336">336</a></span>
-<span class="normal"><a href="#__codelineno-0-337">337</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-336" name="__codelineno-0-336"></a><span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-0-337" name="__codelineno-0-337"></a>    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.__len__--source--__codelineno-0-336">336</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.__len__--source--__codelineno-0-337">337</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy.__len__--source--__codelineno-0-336" name="TM1py.Objects.Hierarchy.Hierarchy.__len__--source--__codelineno-0-336"></a><span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.__len__--source--__codelineno-0-337" name="TM1py.Objects.Hierarchy.Hierarchy.__len__--source--__codelineno-0-337"></a>    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3757,29 +3757,29 @@ Requires reference to a Dimension</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-217">217</a></span>
-<span class="normal"><a href="#__codelineno-0-218">218</a></span>
-<span class="normal"><a href="#__codelineno-0-219">219</a></span>
-<span class="normal"><a href="#__codelineno-0-220">220</a></span>
-<span class="normal"><a href="#__codelineno-0-221">221</a></span>
-<span class="normal"><a href="#__codelineno-0-222">222</a></span>
-<span class="normal"><a href="#__codelineno-0-223">223</a></span>
-<span class="normal"><a href="#__codelineno-0-224">224</a></span>
-<span class="normal"><a href="#__codelineno-0-225">225</a></span>
-<span class="normal"><a href="#__codelineno-0-226">226</a></span>
-<span class="normal"><a href="#__codelineno-0-227">227</a></span>
-<span class="normal"><a href="#__codelineno-0-228">228</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-217" name="__codelineno-0-217"></a><span class="k">def</span><span class="w"> </span><span class="nf">add_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">component_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">weight</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
-<a id="__codelineno-0-218" name="__codelineno-0-218"></a>    <span class="k">if</span> <span class="n">parent_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">:</span>
-<a id="__codelineno-0-219" name="__codelineno-0-219"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Parent '</span><span class="si">{</span><span class="n">parent_name</span><span class="si">}</span><span class="s2">' does not exist in hierarchy"</span><span class="p">)</span>
-<a id="__codelineno-0-220" name="__codelineno-0-220"></a>    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">[</span><span class="n">parent_name</span><span class="p">]</span><span class="o">.</span><span class="n">element_type</span> <span class="o">!=</span> <span class="n">Element</span><span class="o">.</span><span class="n">Types</span><span class="o">.</span><span class="n">CONSOLIDATED</span><span class="p">:</span>
-<a id="__codelineno-0-221" name="__codelineno-0-221"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Parent '</span><span class="si">{</span><span class="n">parent_name</span><span class="si">}</span><span class="s2">' is not of type 'Consolidated'"</span><span class="p">)</span>
-<a id="__codelineno-0-222" name="__codelineno-0-222"></a>
-<a id="__codelineno-0-223" name="__codelineno-0-223"></a>    <span class="k">if</span> <span class="n">component_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="p">:</span>
-<a id="__codelineno-0-224" name="__codelineno-0-224"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">add_element</span><span class="p">(</span><span class="n">component_name</span><span class="p">,</span> <span class="s2">"Numeric"</span><span class="p">)</span>
-<a id="__codelineno-0-225" name="__codelineno-0-225"></a>    <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">[</span><span class="n">component_name</span><span class="p">]</span><span class="o">.</span><span class="n">element_type</span> <span class="o">==</span> <span class="n">Element</span><span class="o">.</span><span class="n">Types</span><span class="o">.</span><span class="n">STRING</span><span class="p">:</span>
-<a id="__codelineno-0-226" name="__codelineno-0-226"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Component '</span><span class="si">{</span><span class="n">component_name</span><span class="si">}</span><span class="s2">' must not be of type 'String'"</span><span class="p">)</span>
-<a id="__codelineno-0-227" name="__codelineno-0-227"></a>
-<a id="__codelineno-0-228" name="__codelineno-0-228"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">parent_name</span><span class="p">,</span> <span class="n">component_name</span><span class="p">,</span> <span class="n">weight</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-217">217</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-218">218</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-219">219</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-220">220</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-221">221</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-222">222</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-223">223</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-224">224</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-225">225</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-226">226</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-227">227</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-228">228</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-217" name="TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-217"></a><span class="k">def</span><span class="w"> </span><span class="nf">add_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">component_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">weight</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-218" name="TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-218"></a>    <span class="k">if</span> <span class="n">parent_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-219" name="TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-219"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Parent '</span><span class="si">{</span><span class="n">parent_name</span><span class="si">}</span><span class="s2">' does not exist in hierarchy"</span><span class="p">)</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-220" name="TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-220"></a>    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">[</span><span class="n">parent_name</span><span class="p">]</span><span class="o">.</span><span class="n">element_type</span> <span class="o">!=</span> <span class="n">Element</span><span class="o">.</span><span class="n">Types</span><span class="o">.</span><span class="n">CONSOLIDATED</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-221" name="TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-221"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Parent '</span><span class="si">{</span><span class="n">parent_name</span><span class="si">}</span><span class="s2">' is not of type 'Consolidated'"</span><span class="p">)</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-222" name="TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-222"></a>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-223" name="TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-223"></a>    <span class="k">if</span> <span class="n">component_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-224" name="TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-224"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">add_element</span><span class="p">(</span><span class="n">component_name</span><span class="p">,</span> <span class="s2">"Numeric"</span><span class="p">)</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-225" name="TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-225"></a>    <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">[</span><span class="n">component_name</span><span class="p">]</span><span class="o">.</span><span class="n">element_type</span> <span class="o">==</span> <span class="n">Element</span><span class="o">.</span><span class="n">Types</span><span class="o">.</span><span class="n">STRING</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-226" name="TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-226"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Component '</span><span class="si">{</span><span class="n">component_name</span><span class="si">}</span><span class="s2">' must not be of type 'String'"</span><span class="p">)</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-227" name="TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-227"></a>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-228" name="TM1py.Objects.Hierarchy.Hierarchy.add_component--source--__codelineno-0-228"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">parent_name</span><span class="p">,</span> <span class="n">component_name</span><span class="p">,</span> <span class="n">weight</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3800,9 +3800,9 @@ Requires reference to a Dimension</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-243">243</a></span>
-<span class="normal"><a href="#__codelineno-0-244">244</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-243" name="__codelineno-0-243"></a><span class="k">def</span><span class="w"> </span><span class="nf">add_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">component</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">weight</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
-<a id="__codelineno-0-244" name="__codelineno-0-244"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_edges</span><span class="p">[(</span><span class="n">parent</span><span class="p">,</span> <span class="n">component</span><span class="p">)]</span> <span class="o">=</span> <span class="n">weight</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.add_edge--source--__codelineno-0-243">243</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.add_edge--source--__codelineno-0-244">244</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy.add_edge--source--__codelineno-0-243" name="TM1py.Objects.Hierarchy.Hierarchy.add_edge--source--__codelineno-0-243"></a><span class="k">def</span><span class="w"> </span><span class="nf">add_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">component</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">weight</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.add_edge--source--__codelineno-0-244" name="TM1py.Objects.Hierarchy.Hierarchy.add_edge--source--__codelineno-0-244"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_edges</span><span class="p">[(</span><span class="n">parent</span><span class="p">,</span> <span class="n">component</span><span class="p">)]</span> <span class="o">=</span> <span class="n">weight</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3823,15 +3823,15 @@ Requires reference to a Dimension</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-211">211</a></span>
-<span class="normal"><a href="#__codelineno-0-212">212</a></span>
-<span class="normal"><a href="#__codelineno-0-213">213</a></span>
-<span class="normal"><a href="#__codelineno-0-214">214</a></span>
-<span class="normal"><a href="#__codelineno-0-215">215</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-211" name="__codelineno-0-211"></a><span class="k">def</span><span class="w"> </span><span class="nf">add_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">element_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Element</span><span class="o">.</span><span class="n">Types</span><span class="p">]):</span>
-<a id="__codelineno-0-212" name="__codelineno-0-212"></a>    <span class="k">if</span> <span class="n">element_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">:</span>
-<a id="__codelineno-0-213" name="__codelineno-0-213"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Element name must be unique"</span><span class="p">)</span>
-<a id="__codelineno-0-214" name="__codelineno-0-214"></a>
-<a id="__codelineno-0-215" name="__codelineno-0-215"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">[</span><span class="n">element_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">Element</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">element_name</span><span class="p">,</span> <span class="n">element_type</span><span class="o">=</span><span class="n">element_type</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.add_element--source--__codelineno-0-211">211</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.add_element--source--__codelineno-0-212">212</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.add_element--source--__codelineno-0-213">213</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.add_element--source--__codelineno-0-214">214</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.add_element--source--__codelineno-0-215">215</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy.add_element--source--__codelineno-0-211" name="TM1py.Objects.Hierarchy.Hierarchy.add_element--source--__codelineno-0-211"></a><span class="k">def</span><span class="w"> </span><span class="nf">add_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">element_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Element</span><span class="o">.</span><span class="n">Types</span><span class="p">]):</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.add_element--source--__codelineno-0-212" name="TM1py.Objects.Hierarchy.Hierarchy.add_element--source--__codelineno-0-212"></a>    <span class="k">if</span> <span class="n">element_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.add_element--source--__codelineno-0-213" name="TM1py.Objects.Hierarchy.Hierarchy.add_element--source--__codelineno-0-213"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Element name must be unique"</span><span class="p">)</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.add_element--source--__codelineno-0-214" name="TM1py.Objects.Hierarchy.Hierarchy.add_element--source--__codelineno-0-214"></a>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.add_element--source--__codelineno-0-215" name="TM1py.Objects.Hierarchy.Hierarchy.add_element--source--__codelineno-0-215"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">[</span><span class="n">element_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">Element</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">element_name</span><span class="p">,</span> <span class="n">element_type</span><span class="o">=</span><span class="n">element_type</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3852,13 +3852,13 @@ Requires reference to a Dimension</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-268">268</a></span>
-<span class="normal"><a href="#__codelineno-0-269">269</a></span>
-<span class="normal"><a href="#__codelineno-0-270">270</a></span>
-<span class="normal"><a href="#__codelineno-0-271">271</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-268" name="__codelineno-0-268"></a><span class="k">def</span><span class="w"> </span><span class="nf">add_element_attribute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">attribute_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<a id="__codelineno-0-269" name="__codelineno-0-269"></a>    <span class="n">attribute</span> <span class="o">=</span> <span class="n">ElementAttribute</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">attribute_type</span><span class="p">)</span>
-<a id="__codelineno-0-270" name="__codelineno-0-270"></a>    <span class="k">if</span> <span class="n">attribute</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">element_attributes</span><span class="p">:</span>
-<a id="__codelineno-0-271" name="__codelineno-0-271"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">element_attributes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attribute</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.add_element_attribute--source--__codelineno-0-268">268</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.add_element_attribute--source--__codelineno-0-269">269</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.add_element_attribute--source--__codelineno-0-270">270</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.add_element_attribute--source--__codelineno-0-271">271</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy.add_element_attribute--source--__codelineno-0-268" name="TM1py.Objects.Hierarchy.Hierarchy.add_element_attribute--source--__codelineno-0-268"></a><span class="k">def</span><span class="w"> </span><span class="nf">add_element_attribute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">attribute_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.add_element_attribute--source--__codelineno-0-269" name="TM1py.Objects.Hierarchy.Hierarchy.add_element_attribute--source--__codelineno-0-269"></a>    <span class="n">attribute</span> <span class="o">=</span> <span class="n">ElementAttribute</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">attribute_type</span><span class="p">)</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.add_element_attribute--source--__codelineno-0-270" name="TM1py.Objects.Hierarchy.Hierarchy.add_element_attribute--source--__codelineno-0-270"></a>    <span class="k">if</span> <span class="n">attribute</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">element_attributes</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.add_element_attribute--source--__codelineno-0-271" name="TM1py.Objects.Hierarchy.Hierarchy.add_element_attribute--source--__codelineno-0-271"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">element_attributes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attribute</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3879,9 +3879,9 @@ Requires reference to a Dimension</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-140">140</a></span>
-<span class="normal"><a href="#__codelineno-0-141">141</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-140" name="__codelineno-0-140"></a><span class="k">def</span><span class="w"> </span><span class="nf">contains_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<a id="__codelineno-0-141" name="__codelineno-0-141"></a>    <span class="k">return</span> <span class="n">element_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.contains_element--source--__codelineno-0-140">140</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.contains_element--source--__codelineno-0-141">141</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy.contains_element--source--__codelineno-0-140" name="TM1py.Objects.Hierarchy.Hierarchy.contains_element--source--__codelineno-0-140"></a><span class="k">def</span><span class="w"> </span><span class="nf">contains_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.contains_element--source--__codelineno-0-141" name="TM1py.Objects.Hierarchy.Hierarchy.contains_element--source--__codelineno-0-141"></a>    <span class="k">return</span> <span class="n">element_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3906,53 +3906,53 @@ Requires reference to a Dimension</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-67">67</a></span>
-<span class="normal"><a href="#__codelineno-0-68">68</a></span>
-<span class="normal"><a href="#__codelineno-0-69">69</a></span>
-<span class="normal"><a href="#__codelineno-0-70">70</a></span>
-<span class="normal"><a href="#__codelineno-0-71">71</a></span>
-<span class="normal"><a href="#__codelineno-0-72">72</a></span>
-<span class="normal"><a href="#__codelineno-0-73">73</a></span>
-<span class="normal"><a href="#__codelineno-0-74">74</a></span>
-<span class="normal"><a href="#__codelineno-0-75">75</a></span>
-<span class="normal"><a href="#__codelineno-0-76">76</a></span>
-<span class="normal"><a href="#__codelineno-0-77">77</a></span>
-<span class="normal"><a href="#__codelineno-0-78">78</a></span>
-<span class="normal"><a href="#__codelineno-0-79">79</a></span>
-<span class="normal"><a href="#__codelineno-0-80">80</a></span>
-<span class="normal"><a href="#__codelineno-0-81">81</a></span>
-<span class="normal"><a href="#__codelineno-0-82">82</a></span>
-<span class="normal"><a href="#__codelineno-0-83">83</a></span>
-<span class="normal"><a href="#__codelineno-0-84">84</a></span>
-<span class="normal"><a href="#__codelineno-0-85">85</a></span>
-<span class="normal"><a href="#__codelineno-0-86">86</a></span>
-<span class="normal"><a href="#__codelineno-0-87">87</a></span>
-<span class="normal"><a href="#__codelineno-0-88">88</a></span>
-<span class="normal"><a href="#__codelineno-0-89">89</a></span>
-<span class="normal"><a href="#__codelineno-0-90">90</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-67" name="__codelineno-0-67"></a><span class="nd">@classmethod</span>
-<a id="__codelineno-0-68" name="__codelineno-0-68"></a><span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">hierarchy_as_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Hierarchy"</span><span class="p">:</span>
-<a id="__codelineno-0-69" name="__codelineno-0-69"></a>    <span class="c1"># Build the Dictionary for the edges</span>
-<a id="__codelineno-0-70" name="__codelineno-0-70"></a>    <span class="n">edges</span> <span class="o">=</span> <span class="n">CaseAndSpaceInsensitiveTuplesDict</span><span class="p">(</span>
-<a id="__codelineno-0-71" name="__codelineno-0-71"></a>        <span class="p">{(</span><span class="n">edge</span><span class="p">[</span><span class="s2">"ParentName"</span><span class="p">],</span> <span class="n">edge</span><span class="p">[</span><span class="s2">"ComponentName"</span><span class="p">]):</span> <span class="n">edge</span><span class="p">[</span><span class="s2">"Weight"</span><span class="p">]</span> <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">hierarchy_as_dict</span><span class="p">[</span><span class="s2">"Edges"</span><span class="p">]}</span>
-<a id="__codelineno-0-72" name="__codelineno-0-72"></a>    <span class="p">)</span>
-<a id="__codelineno-0-73" name="__codelineno-0-73"></a>
-<a id="__codelineno-0-74" name="__codelineno-0-74"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">dimension_name</span><span class="p">:</span>
-<a id="__codelineno-0-75" name="__codelineno-0-75"></a>        <span class="n">dimension_name</span> <span class="o">=</span> <span class="n">hierarchy_as_dict</span><span class="p">[</span><span class="s2">"UniqueName"</span><span class="p">][</span><span class="mi">1</span> <span class="p">:</span> <span class="n">hierarchy_as_dict</span><span class="p">[</span><span class="s2">"UniqueName"</span><span class="p">]</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">"].["</span><span class="p">)]</span>
-<a id="__codelineno-0-76" name="__codelineno-0-76"></a>
-<a id="__codelineno-0-77" name="__codelineno-0-77"></a>    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
-<a id="__codelineno-0-78" name="__codelineno-0-78"></a>        <span class="n">name</span><span class="o">=</span><span class="n">hierarchy_as_dict</span><span class="p">[</span><span class="s2">"Name"</span><span class="p">],</span>
-<a id="__codelineno-0-79" name="__codelineno-0-79"></a>        <span class="n">dimension_name</span><span class="o">=</span><span class="n">dimension_name</span><span class="p">,</span>
-<a id="__codelineno-0-80" name="__codelineno-0-80"></a>        <span class="n">elements</span><span class="o">=</span><span class="p">[</span><span class="n">Element</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">hierarchy_as_dict</span><span class="p">[</span><span class="s2">"Elements"</span><span class="p">]],</span>
-<a id="__codelineno-0-81" name="__codelineno-0-81"></a>        <span class="n">element_attributes</span><span class="o">=</span><span class="p">[</span>
-<a id="__codelineno-0-82" name="__codelineno-0-82"></a>            <span class="n">ElementAttribute</span><span class="p">(</span><span class="n">ea</span><span class="p">[</span><span class="s2">"Name"</span><span class="p">],</span> <span class="n">ea</span><span class="p">[</span><span class="s2">"Type"</span><span class="p">])</span> <span class="k">for</span> <span class="n">ea</span> <span class="ow">in</span> <span class="n">hierarchy_as_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ElementAttributes"</span><span class="p">,</span> <span class="p">[])</span>
-<a id="__codelineno-0-83" name="__codelineno-0-83"></a>        <span class="p">],</span>
-<a id="__codelineno-0-84" name="__codelineno-0-84"></a>        <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span>
-<a id="__codelineno-0-85" name="__codelineno-0-85"></a>        <span class="n">subsets</span><span class="o">=</span><span class="p">[</span><span class="n">subset</span><span class="p">[</span><span class="s2">"Name"</span><span class="p">]</span> <span class="k">for</span> <span class="n">subset</span> <span class="ow">in</span> <span class="n">hierarchy_as_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"Subsets"</span><span class="p">,</span> <span class="p">[])],</span>
-<a id="__codelineno-0-86" name="__codelineno-0-86"></a>        <span class="n">structure</span><span class="o">=</span><span class="n">hierarchy_as_dict</span><span class="p">[</span><span class="s2">"Structure"</span><span class="p">]</span> <span class="k">if</span> <span class="s2">"Structure"</span> <span class="ow">in</span> <span class="n">hierarchy_as_dict</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-87" name="__codelineno-0-87"></a>        <span class="n">default_member</span><span class="o">=</span><span class="p">(</span>
-<a id="__codelineno-0-88" name="__codelineno-0-88"></a>            <span class="n">hierarchy_as_dict</span><span class="p">[</span><span class="s2">"DefaultMember"</span><span class="p">][</span><span class="s2">"Name"</span><span class="p">]</span> <span class="k">if</span> <span class="n">hierarchy_as_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"DefaultMember"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
-<a id="__codelineno-0-89" name="__codelineno-0-89"></a>        <span class="p">),</span>
-<a id="__codelineno-0-90" name="__codelineno-0-90"></a>    <span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-67">67</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-68">68</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-69">69</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-70">70</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-71">71</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-72">72</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-73">73</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-74">74</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-75">75</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-76">76</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-77">77</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-78">78</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-79">79</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-80">80</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-81">81</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-82">82</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-83">83</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-84">84</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-85">85</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-86">86</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-87">87</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-88">88</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-89">89</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-90">90</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-67" name="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-67"></a><span class="nd">@classmethod</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-68" name="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-68"></a><span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">hierarchy_as_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Hierarchy"</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-69" name="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-69"></a>    <span class="c1"># Build the Dictionary for the edges</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-70" name="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-70"></a>    <span class="n">edges</span> <span class="o">=</span> <span class="n">CaseAndSpaceInsensitiveTuplesDict</span><span class="p">(</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-71" name="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-71"></a>        <span class="p">{(</span><span class="n">edge</span><span class="p">[</span><span class="s2">"ParentName"</span><span class="p">],</span> <span class="n">edge</span><span class="p">[</span><span class="s2">"ComponentName"</span><span class="p">]):</span> <span class="n">edge</span><span class="p">[</span><span class="s2">"Weight"</span><span class="p">]</span> <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">hierarchy_as_dict</span><span class="p">[</span><span class="s2">"Edges"</span><span class="p">]}</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-72" name="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-72"></a>    <span class="p">)</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-73" name="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-73"></a>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-74" name="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-74"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">dimension_name</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-75" name="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-75"></a>        <span class="n">dimension_name</span> <span class="o">=</span> <span class="n">hierarchy_as_dict</span><span class="p">[</span><span class="s2">"UniqueName"</span><span class="p">][</span><span class="mi">1</span> <span class="p">:</span> <span class="n">hierarchy_as_dict</span><span class="p">[</span><span class="s2">"UniqueName"</span><span class="p">]</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">"].["</span><span class="p">)]</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-76" name="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-76"></a>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-77" name="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-77"></a>    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-78" name="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-78"></a>        <span class="n">name</span><span class="o">=</span><span class="n">hierarchy_as_dict</span><span class="p">[</span><span class="s2">"Name"</span><span class="p">],</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-79" name="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-79"></a>        <span class="n">dimension_name</span><span class="o">=</span><span class="n">dimension_name</span><span class="p">,</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-80" name="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-80"></a>        <span class="n">elements</span><span class="o">=</span><span class="p">[</span><span class="n">Element</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">hierarchy_as_dict</span><span class="p">[</span><span class="s2">"Elements"</span><span class="p">]],</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-81" name="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-81"></a>        <span class="n">element_attributes</span><span class="o">=</span><span class="p">[</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-82" name="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-82"></a>            <span class="n">ElementAttribute</span><span class="p">(</span><span class="n">ea</span><span class="p">[</span><span class="s2">"Name"</span><span class="p">],</span> <span class="n">ea</span><span class="p">[</span><span class="s2">"Type"</span><span class="p">])</span> <span class="k">for</span> <span class="n">ea</span> <span class="ow">in</span> <span class="n">hierarchy_as_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ElementAttributes"</span><span class="p">,</span> <span class="p">[])</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-83" name="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-83"></a>        <span class="p">],</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-84" name="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-84"></a>        <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-85" name="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-85"></a>        <span class="n">subsets</span><span class="o">=</span><span class="p">[</span><span class="n">subset</span><span class="p">[</span><span class="s2">"Name"</span><span class="p">]</span> <span class="k">for</span> <span class="n">subset</span> <span class="ow">in</span> <span class="n">hierarchy_as_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"Subsets"</span><span class="p">,</span> <span class="p">[])],</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-86" name="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-86"></a>        <span class="n">structure</span><span class="o">=</span><span class="n">hierarchy_as_dict</span><span class="p">[</span><span class="s2">"Structure"</span><span class="p">]</span> <span class="k">if</span> <span class="s2">"Structure"</span> <span class="ow">in</span> <span class="n">hierarchy_as_dict</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-87" name="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-87"></a>        <span class="n">default_member</span><span class="o">=</span><span class="p">(</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-88" name="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-88"></a>            <span class="n">hierarchy_as_dict</span><span class="p">[</span><span class="s2">"DefaultMember"</span><span class="p">][</span><span class="s2">"Name"</span><span class="p">]</span> <span class="k">if</span> <span class="n">hierarchy_as_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"DefaultMember"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-89" name="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-89"></a>        <span class="p">),</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-90" name="TM1py.Objects.Hierarchy.Hierarchy.from_dict--source--__codelineno-0-90"></a>    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3973,33 +3973,33 @@ Requires reference to a Dimension</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-196">196</a></span>
-<span class="normal"><a href="#__codelineno-0-197">197</a></span>
-<span class="normal"><a href="#__codelineno-0-198">198</a></span>
-<span class="normal"><a href="#__codelineno-0-199">199</a></span>
-<span class="normal"><a href="#__codelineno-0-200">200</a></span>
-<span class="normal"><a href="#__codelineno-0-201">201</a></span>
-<span class="normal"><a href="#__codelineno-0-202">202</a></span>
-<span class="normal"><a href="#__codelineno-0-203">203</a></span>
-<span class="normal"><a href="#__codelineno-0-204">204</a></span>
-<span class="normal"><a href="#__codelineno-0-205">205</a></span>
-<span class="normal"><a href="#__codelineno-0-206">206</a></span>
-<span class="normal"><a href="#__codelineno-0-207">207</a></span>
-<span class="normal"><a href="#__codelineno-0-208">208</a></span>
-<span class="normal"><a href="#__codelineno-0-209">209</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-196" name="__codelineno-0-196"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_ancestor_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-<a id="__codelineno-0-197" name="__codelineno-0-197"></a>    <span class="n">ancestor_edges</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-<a id="__codelineno-0-198" name="__codelineno-0-198"></a>
-<a id="__codelineno-0-199" name="__codelineno-0-199"></a>    <span class="k">for</span> <span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">component</span><span class="p">),</span> <span class="n">weight</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edges</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-<a id="__codelineno-0-200" name="__codelineno-0-200"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">case_and_space_insensitive_equals</span><span class="p">(</span><span class="n">component</span><span class="p">,</span> <span class="n">element_name</span><span class="p">):</span>
-<a id="__codelineno-0-201" name="__codelineno-0-201"></a>            <span class="k">continue</span>
-<a id="__codelineno-0-202" name="__codelineno-0-202"></a>
-<a id="__codelineno-0-203" name="__codelineno-0-203"></a>        <span class="n">ancestor_edges</span><span class="p">[</span><span class="n">parent</span><span class="p">,</span> <span class="n">component</span><span class="p">]</span> <span class="o">=</span> <span class="n">weight</span>
-<a id="__codelineno-0-204" name="__codelineno-0-204"></a>        <span class="n">ancestor</span><span class="p">:</span> <span class="n">Element</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="p">[</span><span class="n">component</span><span class="p">]</span>
-<a id="__codelineno-0-205" name="__codelineno-0-205"></a>
-<a id="__codelineno-0-206" name="__codelineno-0-206"></a>        <span class="k">if</span> <span class="n">recursive</span><span class="p">:</span>
-<a id="__codelineno-0-207" name="__codelineno-0-207"></a>            <span class="n">ancestor_edges</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_ancestor_edges</span><span class="p">(</span><span class="n">ancestor</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
-<a id="__codelineno-0-208" name="__codelineno-0-208"></a>
-<a id="__codelineno-0-209" name="__codelineno-0-209"></a>    <span class="k">return</span> <span class="n">ancestor_edges</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-196">196</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-197">197</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-198">198</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-199">199</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-200">200</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-201">201</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-202">202</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-203">203</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-204">204</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-205">205</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-206">206</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-207">207</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-208">208</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-209">209</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-196" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-196"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_ancestor_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-197" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-197"></a>    <span class="n">ancestor_edges</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-198" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-198"></a>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-199" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-199"></a>    <span class="k">for</span> <span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">component</span><span class="p">),</span> <span class="n">weight</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edges</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-200" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-200"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">case_and_space_insensitive_equals</span><span class="p">(</span><span class="n">component</span><span class="p">,</span> <span class="n">element_name</span><span class="p">):</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-201" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-201"></a>            <span class="k">continue</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-202" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-202"></a>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-203" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-203"></a>        <span class="n">ancestor_edges</span><span class="p">[</span><span class="n">parent</span><span class="p">,</span> <span class="n">component</span><span class="p">]</span> <span class="o">=</span> <span class="n">weight</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-204" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-204"></a>        <span class="n">ancestor</span><span class="p">:</span> <span class="n">Element</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="p">[</span><span class="n">component</span><span class="p">]</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-205" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-205"></a>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-206" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-206"></a>        <span class="k">if</span> <span class="n">recursive</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-207" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-207"></a>            <span class="n">ancestor_edges</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_ancestor_edges</span><span class="p">(</span><span class="n">ancestor</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-208" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-208"></a>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-209" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestor_edges--source--__codelineno-0-209"></a>    <span class="k">return</span> <span class="n">ancestor_edges</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4020,31 +4020,31 @@ Requires reference to a Dimension</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-149">149</a></span>
-<span class="normal"><a href="#__codelineno-0-150">150</a></span>
-<span class="normal"><a href="#__codelineno-0-151">151</a></span>
-<span class="normal"><a href="#__codelineno-0-152">152</a></span>
-<span class="normal"><a href="#__codelineno-0-153">153</a></span>
-<span class="normal"><a href="#__codelineno-0-154">154</a></span>
-<span class="normal"><a href="#__codelineno-0-155">155</a></span>
-<span class="normal"><a href="#__codelineno-0-156">156</a></span>
-<span class="normal"><a href="#__codelineno-0-157">157</a></span>
-<span class="normal"><a href="#__codelineno-0-158">158</a></span>
-<span class="normal"><a href="#__codelineno-0-159">159</a></span>
-<span class="normal"><a href="#__codelineno-0-160">160</a></span>
-<span class="normal"><a href="#__codelineno-0-161">161</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-149" name="__codelineno-0-149"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_ancestors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="n">Element</span><span class="p">]:</span>
-<a id="__codelineno-0-150" name="__codelineno-0-150"></a>    <span class="n">ancestors</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-<a id="__codelineno-0-151" name="__codelineno-0-151"></a>
-<a id="__codelineno-0-152" name="__codelineno-0-152"></a>    <span class="k">for</span> <span class="n">parent</span><span class="p">,</span> <span class="n">component</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edges</span><span class="p">:</span>
-<a id="__codelineno-0-153" name="__codelineno-0-153"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">case_and_space_insensitive_equals</span><span class="p">(</span><span class="n">component</span><span class="p">,</span> <span class="n">element_name</span><span class="p">):</span>
-<a id="__codelineno-0-154" name="__codelineno-0-154"></a>            <span class="k">continue</span>
-<a id="__codelineno-0-155" name="__codelineno-0-155"></a>
-<a id="__codelineno-0-156" name="__codelineno-0-156"></a>        <span class="n">ancestor</span><span class="p">:</span> <span class="n">Element</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="p">[</span><span class="n">parent</span><span class="p">]</span>
-<a id="__codelineno-0-157" name="__codelineno-0-157"></a>        <span class="n">ancestors</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ancestor</span><span class="p">)</span>
-<a id="__codelineno-0-158" name="__codelineno-0-158"></a>
-<a id="__codelineno-0-159" name="__codelineno-0-159"></a>        <span class="k">if</span> <span class="n">recursive</span><span class="p">:</span>
-<a id="__codelineno-0-160" name="__codelineno-0-160"></a>            <span class="n">ancestors</span> <span class="o">=</span> <span class="n">ancestors</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_ancestors</span><span class="p">(</span><span class="n">ancestor</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
-<a id="__codelineno-0-161" name="__codelineno-0-161"></a>    <span class="k">return</span> <span class="n">ancestors</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-149">149</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-150">150</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-151">151</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-152">152</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-153">153</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-154">154</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-155">155</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-156">156</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-157">157</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-158">158</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-159">159</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-160">160</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-161">161</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-149" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-149"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_ancestors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="n">Element</span><span class="p">]:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-150" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-150"></a>    <span class="n">ancestors</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-151" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-151"></a>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-152" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-152"></a>    <span class="k">for</span> <span class="n">parent</span><span class="p">,</span> <span class="n">component</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edges</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-153" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-153"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">case_and_space_insensitive_equals</span><span class="p">(</span><span class="n">component</span><span class="p">,</span> <span class="n">element_name</span><span class="p">):</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-154" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-154"></a>            <span class="k">continue</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-155" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-155"></a>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-156" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-156"></a>        <span class="n">ancestor</span><span class="p">:</span> <span class="n">Element</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="p">[</span><span class="n">parent</span><span class="p">]</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-157" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-157"></a>        <span class="n">ancestors</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ancestor</span><span class="p">)</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-158" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-158"></a>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-159" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-159"></a>        <span class="k">if</span> <span class="n">recursive</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-160" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-160"></a>            <span class="n">ancestors</span> <span class="o">=</span> <span class="n">ancestors</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_ancestors</span><span class="p">(</span><span class="n">ancestor</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-161" name="TM1py.Objects.Hierarchy.Hierarchy.get_ancestors--source--__codelineno-0-161"></a>    <span class="k">return</span> <span class="n">ancestors</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4065,33 +4065,33 @@ Requires reference to a Dimension</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-181">181</a></span>
-<span class="normal"><a href="#__codelineno-0-182">182</a></span>
-<span class="normal"><a href="#__codelineno-0-183">183</a></span>
-<span class="normal"><a href="#__codelineno-0-184">184</a></span>
-<span class="normal"><a href="#__codelineno-0-185">185</a></span>
-<span class="normal"><a href="#__codelineno-0-186">186</a></span>
-<span class="normal"><a href="#__codelineno-0-187">187</a></span>
-<span class="normal"><a href="#__codelineno-0-188">188</a></span>
-<span class="normal"><a href="#__codelineno-0-189">189</a></span>
-<span class="normal"><a href="#__codelineno-0-190">190</a></span>
-<span class="normal"><a href="#__codelineno-0-191">191</a></span>
-<span class="normal"><a href="#__codelineno-0-192">192</a></span>
-<span class="normal"><a href="#__codelineno-0-193">193</a></span>
-<span class="normal"><a href="#__codelineno-0-194">194</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-181" name="__codelineno-0-181"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_descendant_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-<a id="__codelineno-0-182" name="__codelineno-0-182"></a>    <span class="n">descendant_edges</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-<a id="__codelineno-0-183" name="__codelineno-0-183"></a>
-<a id="__codelineno-0-184" name="__codelineno-0-184"></a>    <span class="k">for</span> <span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">component</span><span class="p">),</span> <span class="n">weight</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edges</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-<a id="__codelineno-0-185" name="__codelineno-0-185"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">case_and_space_insensitive_equals</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">element_name</span><span class="p">):</span>
-<a id="__codelineno-0-186" name="__codelineno-0-186"></a>            <span class="k">continue</span>
-<a id="__codelineno-0-187" name="__codelineno-0-187"></a>
-<a id="__codelineno-0-188" name="__codelineno-0-188"></a>        <span class="n">descendant_edges</span><span class="p">[</span><span class="n">parent</span><span class="p">,</span> <span class="n">component</span><span class="p">]</span> <span class="o">=</span> <span class="n">weight</span>
-<a id="__codelineno-0-189" name="__codelineno-0-189"></a>        <span class="n">descendant</span><span class="p">:</span> <span class="n">Element</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="p">[</span><span class="n">component</span><span class="p">]</span>
-<a id="__codelineno-0-190" name="__codelineno-0-190"></a>
-<a id="__codelineno-0-191" name="__codelineno-0-191"></a>        <span class="k">if</span> <span class="n">recursive</span> <span class="ow">and</span> <span class="n">descendant</span><span class="o">.</span><span class="n">element_type</span> <span class="o">==</span> <span class="n">Element</span><span class="o">.</span><span class="n">Types</span><span class="o">.</span><span class="n">CONSOLIDATED</span><span class="p">:</span>
-<a id="__codelineno-0-192" name="__codelineno-0-192"></a>            <span class="n">descendant_edges</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_descendant_edges</span><span class="p">(</span><span class="n">descendant</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
-<a id="__codelineno-0-193" name="__codelineno-0-193"></a>
-<a id="__codelineno-0-194" name="__codelineno-0-194"></a>    <span class="k">return</span> <span class="n">descendant_edges</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-181">181</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-182">182</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-183">183</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-184">184</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-185">185</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-186">186</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-187">187</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-188">188</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-189">189</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-190">190</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-191">191</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-192">192</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-193">193</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-194">194</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-181" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-181"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_descendant_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-182" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-182"></a>    <span class="n">descendant_edges</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-183" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-183"></a>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-184" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-184"></a>    <span class="k">for</span> <span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">component</span><span class="p">),</span> <span class="n">weight</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edges</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-185" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-185"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">case_and_space_insensitive_equals</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">element_name</span><span class="p">):</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-186" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-186"></a>            <span class="k">continue</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-187" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-187"></a>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-188" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-188"></a>        <span class="n">descendant_edges</span><span class="p">[</span><span class="n">parent</span><span class="p">,</span> <span class="n">component</span><span class="p">]</span> <span class="o">=</span> <span class="n">weight</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-189" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-189"></a>        <span class="n">descendant</span><span class="p">:</span> <span class="n">Element</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="p">[</span><span class="n">component</span><span class="p">]</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-190" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-190"></a>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-191" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-191"></a>        <span class="k">if</span> <span class="n">recursive</span> <span class="ow">and</span> <span class="n">descendant</span><span class="o">.</span><span class="n">element_type</span> <span class="o">==</span> <span class="n">Element</span><span class="o">.</span><span class="n">Types</span><span class="o">.</span><span class="n">CONSOLIDATED</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-192" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-192"></a>            <span class="n">descendant_edges</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_descendant_edges</span><span class="p">(</span><span class="n">descendant</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-193" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-193"></a>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-194" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendant_edges--source--__codelineno-0-194"></a>    <span class="k">return</span> <span class="n">descendant_edges</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4112,39 +4112,39 @@ Requires reference to a Dimension</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-163">163</a></span>
-<span class="normal"><a href="#__codelineno-0-164">164</a></span>
-<span class="normal"><a href="#__codelineno-0-165">165</a></span>
-<span class="normal"><a href="#__codelineno-0-166">166</a></span>
-<span class="normal"><a href="#__codelineno-0-167">167</a></span>
-<span class="normal"><a href="#__codelineno-0-168">168</a></span>
-<span class="normal"><a href="#__codelineno-0-169">169</a></span>
-<span class="normal"><a href="#__codelineno-0-170">170</a></span>
-<span class="normal"><a href="#__codelineno-0-171">171</a></span>
-<span class="normal"><a href="#__codelineno-0-172">172</a></span>
-<span class="normal"><a href="#__codelineno-0-173">173</a></span>
-<span class="normal"><a href="#__codelineno-0-174">174</a></span>
-<span class="normal"><a href="#__codelineno-0-175">175</a></span>
-<span class="normal"><a href="#__codelineno-0-176">176</a></span>
-<span class="normal"><a href="#__codelineno-0-177">177</a></span>
-<span class="normal"><a href="#__codelineno-0-178">178</a></span>
-<span class="normal"><a href="#__codelineno-0-179">179</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-163" name="__codelineno-0-163"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_descendants</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">leaves_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="n">Element</span><span class="p">]:</span>
-<a id="__codelineno-0-164" name="__codelineno-0-164"></a>    <span class="n">descendants</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-<a id="__codelineno-0-165" name="__codelineno-0-165"></a>
-<a id="__codelineno-0-166" name="__codelineno-0-166"></a>    <span class="k">for</span> <span class="n">parent</span><span class="p">,</span> <span class="n">component</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edges</span><span class="p">:</span>
-<a id="__codelineno-0-167" name="__codelineno-0-167"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">case_and_space_insensitive_equals</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">element_name</span><span class="p">):</span>
-<a id="__codelineno-0-168" name="__codelineno-0-168"></a>            <span class="k">continue</span>
-<a id="__codelineno-0-169" name="__codelineno-0-169"></a>
-<a id="__codelineno-0-170" name="__codelineno-0-170"></a>        <span class="n">descendant</span><span class="p">:</span> <span class="n">Element</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="p">[</span><span class="n">component</span><span class="p">]</span>
-<a id="__codelineno-0-171" name="__codelineno-0-171"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">leaves_only</span><span class="p">:</span>
-<a id="__codelineno-0-172" name="__codelineno-0-172"></a>            <span class="n">descendants</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">descendant</span><span class="p">)</span>
-<a id="__codelineno-0-173" name="__codelineno-0-173"></a>        <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-174" name="__codelineno-0-174"></a>            <span class="k">if</span> <span class="n">descendant</span><span class="o">.</span><span class="n">element_type</span> <span class="o">==</span> <span class="n">Element</span><span class="o">.</span><span class="n">Types</span><span class="o">.</span><span class="n">NUMERIC</span><span class="p">:</span>
-<a id="__codelineno-0-175" name="__codelineno-0-175"></a>                <span class="n">descendants</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">descendant</span><span class="p">)</span>
-<a id="__codelineno-0-176" name="__codelineno-0-176"></a>
-<a id="__codelineno-0-177" name="__codelineno-0-177"></a>        <span class="k">if</span> <span class="n">recursive</span> <span class="ow">and</span> <span class="n">descendant</span><span class="o">.</span><span class="n">element_type</span> <span class="o">==</span> <span class="n">Element</span><span class="o">.</span><span class="n">Types</span><span class="o">.</span><span class="n">CONSOLIDATED</span><span class="p">:</span>
-<a id="__codelineno-0-178" name="__codelineno-0-178"></a>            <span class="n">descendants</span> <span class="o">=</span> <span class="n">descendants</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_descendants</span><span class="p">(</span><span class="n">descendant</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">leaves_only</span><span class="o">=</span><span class="n">leaves_only</span><span class="p">))</span>
-<a id="__codelineno-0-179" name="__codelineno-0-179"></a>    <span class="k">return</span> <span class="n">descendants</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-163">163</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-164">164</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-165">165</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-166">166</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-167">167</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-168">168</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-169">169</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-170">170</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-171">171</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-172">172</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-173">173</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-174">174</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-175">175</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-176">176</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-177">177</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-178">178</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-179">179</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-163" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-163"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_descendants</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">leaves_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="n">Element</span><span class="p">]:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-164" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-164"></a>    <span class="n">descendants</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-165" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-165"></a>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-166" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-166"></a>    <span class="k">for</span> <span class="n">parent</span><span class="p">,</span> <span class="n">component</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edges</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-167" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-167"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">case_and_space_insensitive_equals</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">element_name</span><span class="p">):</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-168" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-168"></a>            <span class="k">continue</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-169" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-169"></a>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-170" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-170"></a>        <span class="n">descendant</span><span class="p">:</span> <span class="n">Element</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="p">[</span><span class="n">component</span><span class="p">]</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-171" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-171"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">leaves_only</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-172" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-172"></a>            <span class="n">descendants</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">descendant</span><span class="p">)</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-173" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-173"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-174" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-174"></a>            <span class="k">if</span> <span class="n">descendant</span><span class="o">.</span><span class="n">element_type</span> <span class="o">==</span> <span class="n">Element</span><span class="o">.</span><span class="n">Types</span><span class="o">.</span><span class="n">NUMERIC</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-175" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-175"></a>                <span class="n">descendants</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">descendant</span><span class="p">)</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-176" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-176"></a>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-177" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-177"></a>        <span class="k">if</span> <span class="n">recursive</span> <span class="ow">and</span> <span class="n">descendant</span><span class="o">.</span><span class="n">element_type</span> <span class="o">==</span> <span class="n">Element</span><span class="o">.</span><span class="n">Types</span><span class="o">.</span><span class="n">CONSOLIDATED</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-178" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-178"></a>            <span class="n">descendants</span> <span class="o">=</span> <span class="n">descendants</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_descendants</span><span class="p">(</span><span class="n">descendant</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">leaves_only</span><span class="o">=</span><span class="n">leaves_only</span><span class="p">))</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-179" name="TM1py.Objects.Hierarchy.Hierarchy.get_descendants--source--__codelineno-0-179"></a>    <span class="k">return</span> <span class="n">descendants</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4165,15 +4165,15 @@ Requires reference to a Dimension</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-143">143</a></span>
-<span class="normal"><a href="#__codelineno-0-144">144</a></span>
-<span class="normal"><a href="#__codelineno-0-145">145</a></span>
-<span class="normal"><a href="#__codelineno-0-146">146</a></span>
-<span class="normal"><a href="#__codelineno-0-147">147</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-143" name="__codelineno-0-143"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Element</span><span class="p">:</span>
-<a id="__codelineno-0-144" name="__codelineno-0-144"></a>    <span class="k">if</span> <span class="n">element_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">:</span>
-<a id="__codelineno-0-145" name="__codelineno-0-145"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">[</span><span class="n">element_name</span><span class="p">]</span>
-<a id="__codelineno-0-146" name="__codelineno-0-146"></a>    <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-147" name="__codelineno-0-147"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Element: </span><span class="si">{}</span><span class="s2"> not found in Hierarchy: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">element_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_element--source--__codelineno-0-143">143</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_element--source--__codelineno-0-144">144</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_element--source--__codelineno-0-145">145</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_element--source--__codelineno-0-146">146</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.get_element--source--__codelineno-0-147">147</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy.get_element--source--__codelineno-0-143" name="TM1py.Objects.Hierarchy.Hierarchy.get_element--source--__codelineno-0-143"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Element</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_element--source--__codelineno-0-144" name="TM1py.Objects.Hierarchy.Hierarchy.get_element--source--__codelineno-0-144"></a>    <span class="k">if</span> <span class="n">element_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_element--source--__codelineno-0-145" name="TM1py.Objects.Hierarchy.Hierarchy.get_element--source--__codelineno-0-145"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">[</span><span class="n">element_name</span><span class="p">]</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_element--source--__codelineno-0-146" name="TM1py.Objects.Hierarchy.Hierarchy.get_element--source--__codelineno-0-146"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.get_element--source--__codelineno-0-147" name="TM1py.Objects.Hierarchy.Hierarchy.get_element--source--__codelineno-0-147"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Element: </span><span class="si">{}</span><span class="s2"> not found in Hierarchy: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">element_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4194,9 +4194,9 @@ Requires reference to a Dimension</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-257">257</a></span>
-<span class="normal"><a href="#__codelineno-0-258">258</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-257" name="__codelineno-0-257"></a><span class="k">def</span><span class="w"> </span><span class="nf">remove_all_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-0-258" name="__codelineno-0-258"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_edges</span> <span class="o">=</span> <span class="n">CaseAndSpaceInsensitiveTuplesDict</span><span class="p">()</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_all_edges--source--__codelineno-0-257">257</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_all_edges--source--__codelineno-0-258">258</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy.remove_all_edges--source--__codelineno-0-257" name="TM1py.Objects.Hierarchy.Hierarchy.remove_all_edges--source--__codelineno-0-257"></a><span class="k">def</span><span class="w"> </span><span class="nf">remove_all_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.remove_all_edges--source--__codelineno-0-258" name="TM1py.Objects.Hierarchy.Hierarchy.remove_all_edges--source--__codelineno-0-258"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_edges</span> <span class="o">=</span> <span class="n">CaseAndSpaceInsensitiveTuplesDict</span><span class="p">()</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4217,11 +4217,11 @@ Requires reference to a Dimension</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-239">239</a></span>
-<span class="normal"><a href="#__codelineno-0-240">240</a></span>
-<span class="normal"><a href="#__codelineno-0-241">241</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-239" name="__codelineno-0-239"></a><span class="k">def</span><span class="w"> </span><span class="nf">remove_all_elements</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-0-240" name="__codelineno-0-240"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span> <span class="o">=</span> <span class="n">CaseAndSpaceInsensitiveDict</span><span class="p">()</span>
-<a id="__codelineno-0-241" name="__codelineno-0-241"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">remove_all_edges</span><span class="p">()</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_all_elements--source--__codelineno-0-239">239</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_all_elements--source--__codelineno-0-240">240</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_all_elements--source--__codelineno-0-241">241</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy.remove_all_elements--source--__codelineno-0-239" name="TM1py.Objects.Hierarchy.Hierarchy.remove_all_elements--source--__codelineno-0-239"></a><span class="k">def</span><span class="w"> </span><span class="nf">remove_all_elements</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.remove_all_elements--source--__codelineno-0-240" name="TM1py.Objects.Hierarchy.Hierarchy.remove_all_elements--source--__codelineno-0-240"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span> <span class="o">=</span> <span class="n">CaseAndSpaceInsensitiveDict</span><span class="p">()</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.remove_all_elements--source--__codelineno-0-241" name="TM1py.Objects.Hierarchy.Hierarchy.remove_all_elements--source--__codelineno-0-241"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">remove_all_edges</span><span class="p">()</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4242,11 +4242,11 @@ Requires reference to a Dimension</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-249">249</a></span>
-<span class="normal"><a href="#__codelineno-0-250">250</a></span>
-<span class="normal"><a href="#__codelineno-0-251">251</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-249" name="__codelineno-0-249"></a><span class="k">def</span><span class="w"> </span><span class="nf">remove_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">component</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<a id="__codelineno-0-250" name="__codelineno-0-250"></a>    <span class="k">if</span> <span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">component</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">:</span>
-<a id="__codelineno-0-251" name="__codelineno-0-251"></a>        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">[(</span><span class="n">parent</span><span class="p">,</span> <span class="n">component</span><span class="p">)]</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_edge--source--__codelineno-0-249">249</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_edge--source--__codelineno-0-250">250</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_edge--source--__codelineno-0-251">251</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy.remove_edge--source--__codelineno-0-249" name="TM1py.Objects.Hierarchy.Hierarchy.remove_edge--source--__codelineno-0-249"></a><span class="k">def</span><span class="w"> </span><span class="nf">remove_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">component</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.remove_edge--source--__codelineno-0-250" name="TM1py.Objects.Hierarchy.Hierarchy.remove_edge--source--__codelineno-0-250"></a>    <span class="k">if</span> <span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">component</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.remove_edge--source--__codelineno-0-251" name="TM1py.Objects.Hierarchy.Hierarchy.remove_edge--source--__codelineno-0-251"></a>        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">[(</span><span class="n">parent</span><span class="p">,</span> <span class="n">component</span><span class="p">)]</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4267,11 +4267,11 @@ Requires reference to a Dimension</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-253">253</a></span>
-<span class="normal"><a href="#__codelineno-0-254">254</a></span>
-<span class="normal"><a href="#__codelineno-0-255">255</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-253" name="__codelineno-0-253"></a><span class="k">def</span><span class="w"> </span><span class="nf">remove_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]):</span>
-<a id="__codelineno-0-254" name="__codelineno-0-254"></a>    <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
-<a id="__codelineno-0-255" name="__codelineno-0-255"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="o">*</span><span class="n">edge</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_edges--source--__codelineno-0-253">253</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_edges--source--__codelineno-0-254">254</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_edges--source--__codelineno-0-255">255</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy.remove_edges--source--__codelineno-0-253" name="TM1py.Objects.Hierarchy.Hierarchy.remove_edges--source--__codelineno-0-253"></a><span class="k">def</span><span class="w"> </span><span class="nf">remove_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">edges</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]):</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.remove_edges--source--__codelineno-0-254" name="TM1py.Objects.Hierarchy.Hierarchy.remove_edges--source--__codelineno-0-254"></a>    <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.remove_edges--source--__codelineno-0-255" name="TM1py.Objects.Hierarchy.Hierarchy.remove_edges--source--__codelineno-0-255"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="o">*</span><span class="n">edge</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4292,19 +4292,19 @@ Requires reference to a Dimension</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-260">260</a></span>
-<span class="normal"><a href="#__codelineno-0-261">261</a></span>
-<span class="normal"><a href="#__codelineno-0-262">262</a></span>
-<span class="normal"><a href="#__codelineno-0-263">263</a></span>
-<span class="normal"><a href="#__codelineno-0-264">264</a></span>
-<span class="normal"><a href="#__codelineno-0-265">265</a></span>
-<span class="normal"><a href="#__codelineno-0-266">266</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-260" name="__codelineno-0-260"></a><span class="k">def</span><span class="w"> </span><span class="nf">remove_edges_related_to_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<a id="__codelineno-0-261" name="__codelineno-0-261"></a>    <span class="n">element_name_adjusted</span> <span class="o">=</span> <span class="n">lower_and_drop_spaces</span><span class="p">(</span><span class="n">element_name</span><span class="p">)</span>
-<a id="__codelineno-0-262" name="__codelineno-0-262"></a>    <span class="n">edges_to_remove</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-<a id="__codelineno-0-263" name="__codelineno-0-263"></a>    <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edges</span><span class="o">.</span><span class="n">adjusted_keys</span><span class="p">():</span>
-<a id="__codelineno-0-264" name="__codelineno-0-264"></a>        <span class="k">if</span> <span class="n">element_name_adjusted</span> <span class="ow">in</span> <span class="n">edge</span><span class="p">:</span>
-<a id="__codelineno-0-265" name="__codelineno-0-265"></a>            <span class="n">edges_to_remove</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
-<a id="__codelineno-0-266" name="__codelineno-0-266"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">remove_edges</span><span class="p">(</span><span class="n">edges</span><span class="o">=</span><span class="n">edges_to_remove</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_edges_related_to_element--source--__codelineno-0-260">260</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_edges_related_to_element--source--__codelineno-0-261">261</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_edges_related_to_element--source--__codelineno-0-262">262</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_edges_related_to_element--source--__codelineno-0-263">263</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_edges_related_to_element--source--__codelineno-0-264">264</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_edges_related_to_element--source--__codelineno-0-265">265</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_edges_related_to_element--source--__codelineno-0-266">266</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy.remove_edges_related_to_element--source--__codelineno-0-260" name="TM1py.Objects.Hierarchy.Hierarchy.remove_edges_related_to_element--source--__codelineno-0-260"></a><span class="k">def</span><span class="w"> </span><span class="nf">remove_edges_related_to_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.remove_edges_related_to_element--source--__codelineno-0-261" name="TM1py.Objects.Hierarchy.Hierarchy.remove_edges_related_to_element--source--__codelineno-0-261"></a>    <span class="n">element_name_adjusted</span> <span class="o">=</span> <span class="n">lower_and_drop_spaces</span><span class="p">(</span><span class="n">element_name</span><span class="p">)</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.remove_edges_related_to_element--source--__codelineno-0-262" name="TM1py.Objects.Hierarchy.Hierarchy.remove_edges_related_to_element--source--__codelineno-0-262"></a>    <span class="n">edges_to_remove</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.remove_edges_related_to_element--source--__codelineno-0-263" name="TM1py.Objects.Hierarchy.Hierarchy.remove_edges_related_to_element--source--__codelineno-0-263"></a>    <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edges</span><span class="o">.</span><span class="n">adjusted_keys</span><span class="p">():</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.remove_edges_related_to_element--source--__codelineno-0-264" name="TM1py.Objects.Hierarchy.Hierarchy.remove_edges_related_to_element--source--__codelineno-0-264"></a>        <span class="k">if</span> <span class="n">element_name_adjusted</span> <span class="ow">in</span> <span class="n">edge</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.remove_edges_related_to_element--source--__codelineno-0-265" name="TM1py.Objects.Hierarchy.Hierarchy.remove_edges_related_to_element--source--__codelineno-0-265"></a>            <span class="n">edges_to_remove</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.remove_edges_related_to_element--source--__codelineno-0-266" name="TM1py.Objects.Hierarchy.Hierarchy.remove_edges_related_to_element--source--__codelineno-0-266"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">remove_edges</span><span class="p">(</span><span class="n">edges</span><span class="o">=</span><span class="n">edges_to_remove</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4325,15 +4325,15 @@ Requires reference to a Dimension</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-233">233</a></span>
-<span class="normal"><a href="#__codelineno-0-234">234</a></span>
-<span class="normal"><a href="#__codelineno-0-235">235</a></span>
-<span class="normal"><a href="#__codelineno-0-236">236</a></span>
-<span class="normal"><a href="#__codelineno-0-237">237</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-233" name="__codelineno-0-233"></a><span class="k">def</span><span class="w"> </span><span class="nf">remove_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<a id="__codelineno-0-234" name="__codelineno-0-234"></a>    <span class="k">if</span> <span class="n">element_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">:</span>
-<a id="__codelineno-0-235" name="__codelineno-0-235"></a>        <span class="k">return</span>
-<a id="__codelineno-0-236" name="__codelineno-0-236"></a>    <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">[</span><span class="n">element_name</span><span class="p">]</span>
-<a id="__codelineno-0-237" name="__codelineno-0-237"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">remove_edges_related_to_element</span><span class="p">(</span><span class="n">element_name</span><span class="o">=</span><span class="n">element_name</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_element--source--__codelineno-0-233">233</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_element--source--__codelineno-0-234">234</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_element--source--__codelineno-0-235">235</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_element--source--__codelineno-0-236">236</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_element--source--__codelineno-0-237">237</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy.remove_element--source--__codelineno-0-233" name="TM1py.Objects.Hierarchy.Hierarchy.remove_element--source--__codelineno-0-233"></a><span class="k">def</span><span class="w"> </span><span class="nf">remove_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.remove_element--source--__codelineno-0-234" name="TM1py.Objects.Hierarchy.Hierarchy.remove_element--source--__codelineno-0-234"></a>    <span class="k">if</span> <span class="n">element_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.remove_element--source--__codelineno-0-235" name="TM1py.Objects.Hierarchy.Hierarchy.remove_element--source--__codelineno-0-235"></a>        <span class="k">return</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.remove_element--source--__codelineno-0-236" name="TM1py.Objects.Hierarchy.Hierarchy.remove_element--source--__codelineno-0-236"></a>    <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">[</span><span class="n">element_name</span><span class="p">]</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.remove_element--source--__codelineno-0-237" name="TM1py.Objects.Hierarchy.Hierarchy.remove_element--source--__codelineno-0-237"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">remove_edges_related_to_element</span><span class="p">(</span><span class="n">element_name</span><span class="o">=</span><span class="n">element_name</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4354,17 +4354,17 @@ Requires reference to a Dimension</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-273">273</a></span>
-<span class="normal"><a href="#__codelineno-0-274">274</a></span>
-<span class="normal"><a href="#__codelineno-0-275">275</a></span>
-<span class="normal"><a href="#__codelineno-0-276">276</a></span>
-<span class="normal"><a href="#__codelineno-0-277">277</a></span>
-<span class="normal"><a href="#__codelineno-0-278">278</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-273" name="__codelineno-0-273"></a><span class="k">def</span><span class="w"> </span><span class="nf">remove_element_attribute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<a id="__codelineno-0-274" name="__codelineno-0-274"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_element_attributes</span> <span class="o">=</span> <span class="p">[</span>
-<a id="__codelineno-0-275" name="__codelineno-0-275"></a>        <span class="n">element_attribute</span>
-<a id="__codelineno-0-276" name="__codelineno-0-276"></a>        <span class="k">for</span> <span class="n">element_attribute</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">element_attributes</span>
-<a id="__codelineno-0-277" name="__codelineno-0-277"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">case_and_space_insensitive_equals</span><span class="p">(</span><span class="n">element_attribute</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
-<a id="__codelineno-0-278" name="__codelineno-0-278"></a>    <span class="p">]</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_element_attribute--source--__codelineno-0-273">273</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_element_attribute--source--__codelineno-0-274">274</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_element_attribute--source--__codelineno-0-275">275</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_element_attribute--source--__codelineno-0-276">276</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_element_attribute--source--__codelineno-0-277">277</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.remove_element_attribute--source--__codelineno-0-278">278</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy.remove_element_attribute--source--__codelineno-0-273" name="TM1py.Objects.Hierarchy.Hierarchy.remove_element_attribute--source--__codelineno-0-273"></a><span class="k">def</span><span class="w"> </span><span class="nf">remove_element_attribute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.remove_element_attribute--source--__codelineno-0-274" name="TM1py.Objects.Hierarchy.Hierarchy.remove_element_attribute--source--__codelineno-0-274"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_element_attributes</span> <span class="o">=</span> <span class="p">[</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.remove_element_attribute--source--__codelineno-0-275" name="TM1py.Objects.Hierarchy.Hierarchy.remove_element_attribute--source--__codelineno-0-275"></a>        <span class="n">element_attribute</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.remove_element_attribute--source--__codelineno-0-276" name="TM1py.Objects.Hierarchy.Hierarchy.remove_element_attribute--source--__codelineno-0-276"></a>        <span class="k">for</span> <span class="n">element_attribute</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">element_attributes</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.remove_element_attribute--source--__codelineno-0-277" name="TM1py.Objects.Hierarchy.Hierarchy.remove_element_attribute--source--__codelineno-0-277"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">case_and_space_insensitive_equals</span><span class="p">(</span><span class="n">element_attribute</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.remove_element_attribute--source--__codelineno-0-278" name="TM1py.Objects.Hierarchy.Hierarchy.remove_element_attribute--source--__codelineno-0-278"></a>    <span class="p">]</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4388,51 +4388,51 @@ so that all edges are moved from the old element to the new element.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-280">280</a></span>
-<span class="normal"><a href="#__codelineno-0-281">281</a></span>
-<span class="normal"><a href="#__codelineno-0-282">282</a></span>
-<span class="normal"><a href="#__codelineno-0-283">283</a></span>
-<span class="normal"><a href="#__codelineno-0-284">284</a></span>
-<span class="normal"><a href="#__codelineno-0-285">285</a></span>
-<span class="normal"><a href="#__codelineno-0-286">286</a></span>
-<span class="normal"><a href="#__codelineno-0-287">287</a></span>
-<span class="normal"><a href="#__codelineno-0-288">288</a></span>
-<span class="normal"><a href="#__codelineno-0-289">289</a></span>
-<span class="normal"><a href="#__codelineno-0-290">290</a></span>
-<span class="normal"><a href="#__codelineno-0-291">291</a></span>
-<span class="normal"><a href="#__codelineno-0-292">292</a></span>
-<span class="normal"><a href="#__codelineno-0-293">293</a></span>
-<span class="normal"><a href="#__codelineno-0-294">294</a></span>
-<span class="normal"><a href="#__codelineno-0-295">295</a></span>
-<span class="normal"><a href="#__codelineno-0-296">296</a></span>
-<span class="normal"><a href="#__codelineno-0-297">297</a></span>
-<span class="normal"><a href="#__codelineno-0-298">298</a></span>
-<span class="normal"><a href="#__codelineno-0-299">299</a></span>
-<span class="normal"><a href="#__codelineno-0-300">300</a></span>
-<span class="normal"><a href="#__codelineno-0-301">301</a></span>
-<span class="normal"><a href="#__codelineno-0-302">302</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-280" name="__codelineno-0-280"></a><span class="k">def</span><span class="w"> </span><span class="nf">replace_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">old_element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">new_element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<a id="__codelineno-0-281" name="__codelineno-0-281"></a><span class="w">    </span><span class="sd">"""</span>
-<a id="__codelineno-0-282" name="__codelineno-0-282"></a><span class="sd">    Substitute one element in the hierarchy structure,</span>
-<a id="__codelineno-0-283" name="__codelineno-0-283"></a><span class="sd">    so that all edges are moved from the old element to the new element.</span>
-<a id="__codelineno-0-284" name="__codelineno-0-284"></a><span class="sd">    """</span>
-<a id="__codelineno-0-285" name="__codelineno-0-285"></a>    <span class="k">if</span> <span class="n">old_element_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="p">:</span>
-<a id="__codelineno-0-286" name="__codelineno-0-286"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Element '</span><span class="si">{</span><span class="n">old_element_name</span><span class="si">}</span><span class="s2">' does not exist in hierarchy"</span><span class="p">)</span>
-<a id="__codelineno-0-287" name="__codelineno-0-287"></a>
-<a id="__codelineno-0-288" name="__codelineno-0-288"></a>    <span class="k">if</span> <span class="n">new_element_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="p">:</span>
-<a id="__codelineno-0-289" name="__codelineno-0-289"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Element '</span><span class="si">{</span><span class="n">new_element_name</span><span class="si">}</span><span class="s2">' already exists in hierarchy"</span><span class="p">)</span>
-<a id="__codelineno-0-290" name="__codelineno-0-290"></a>
-<a id="__codelineno-0-291" name="__codelineno-0-291"></a>    <span class="n">element</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_element</span><span class="p">(</span><span class="n">old_element_name</span><span class="p">)</span>
-<a id="__codelineno-0-292" name="__codelineno-0-292"></a>    <span class="n">ancestor_edges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ancestor_edges</span><span class="p">(</span><span class="n">old_element_name</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<a id="__codelineno-0-293" name="__codelineno-0-293"></a>    <span class="n">descendant_edges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_descendant_edges</span><span class="p">(</span><span class="n">element_name</span><span class="o">=</span><span class="n">old_element_name</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<a id="__codelineno-0-294" name="__codelineno-0-294"></a>
-<a id="__codelineno-0-295" name="__codelineno-0-295"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">remove_element</span><span class="p">(</span><span class="n">element_name</span><span class="o">=</span><span class="n">old_element_name</span><span class="p">)</span>
-<a id="__codelineno-0-296" name="__codelineno-0-296"></a>
-<a id="__codelineno-0-297" name="__codelineno-0-297"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">add_element</span><span class="p">(</span><span class="n">element_name</span><span class="o">=</span><span class="n">new_element_name</span><span class="p">,</span> <span class="n">element_type</span><span class="o">=</span><span class="n">element</span><span class="o">.</span><span class="n">element_type</span><span class="p">)</span>
-<a id="__codelineno-0-298" name="__codelineno-0-298"></a>
-<a id="__codelineno-0-299" name="__codelineno-0-299"></a>    <span class="k">for</span> <span class="p">(</span><span class="n">ancestor</span><span class="p">,</span> <span class="n">_</span><span class="p">),</span> <span class="n">weight</span> <span class="ow">in</span> <span class="n">ancestor_edges</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-<a id="__codelineno-0-300" name="__codelineno-0-300"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="n">ancestor</span><span class="p">,</span> <span class="n">component</span><span class="o">=</span><span class="n">new_element_name</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">weight</span><span class="p">)</span>
-<a id="__codelineno-0-301" name="__codelineno-0-301"></a>    <span class="k">for</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">descendant</span><span class="p">),</span> <span class="n">weight</span> <span class="ow">in</span> <span class="n">descendant_edges</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-<a id="__codelineno-0-302" name="__codelineno-0-302"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="n">new_element_name</span><span class="p">,</span> <span class="n">component</span><span class="o">=</span><span class="n">descendant</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">weight</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-280">280</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-281">281</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-282">282</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-283">283</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-284">284</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-285">285</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-286">286</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-287">287</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-288">288</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-289">289</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-290">290</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-291">291</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-292">292</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-293">293</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-294">294</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-295">295</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-296">296</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-297">297</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-298">298</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-299">299</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-300">300</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-301">301</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-302">302</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-280" name="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-280"></a><span class="k">def</span><span class="w"> </span><span class="nf">replace_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">old_element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">new_element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-281" name="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-281"></a><span class="w">    </span><span class="sd">"""</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-282" name="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-282"></a><span class="sd">    Substitute one element in the hierarchy structure,</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-283" name="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-283"></a><span class="sd">    so that all edges are moved from the old element to the new element.</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-284" name="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-284"></a><span class="sd">    """</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-285" name="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-285"></a>    <span class="k">if</span> <span class="n">old_element_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-286" name="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-286"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Element '</span><span class="si">{</span><span class="n">old_element_name</span><span class="si">}</span><span class="s2">' does not exist in hierarchy"</span><span class="p">)</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-287" name="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-287"></a>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-288" name="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-288"></a>    <span class="k">if</span> <span class="n">new_element_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">elements</span><span class="p">:</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-289" name="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-289"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Element '</span><span class="si">{</span><span class="n">new_element_name</span><span class="si">}</span><span class="s2">' already exists in hierarchy"</span><span class="p">)</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-290" name="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-290"></a>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-291" name="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-291"></a>    <span class="n">element</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_element</span><span class="p">(</span><span class="n">old_element_name</span><span class="p">)</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-292" name="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-292"></a>    <span class="n">ancestor_edges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ancestor_edges</span><span class="p">(</span><span class="n">old_element_name</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-293" name="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-293"></a>    <span class="n">descendant_edges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_descendant_edges</span><span class="p">(</span><span class="n">element_name</span><span class="o">=</span><span class="n">old_element_name</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-294" name="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-294"></a>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-295" name="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-295"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">remove_element</span><span class="p">(</span><span class="n">element_name</span><span class="o">=</span><span class="n">old_element_name</span><span class="p">)</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-296" name="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-296"></a>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-297" name="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-297"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">add_element</span><span class="p">(</span><span class="n">element_name</span><span class="o">=</span><span class="n">new_element_name</span><span class="p">,</span> <span class="n">element_type</span><span class="o">=</span><span class="n">element</span><span class="o">.</span><span class="n">element_type</span><span class="p">)</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-298" name="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-298"></a>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-299" name="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-299"></a>    <span class="k">for</span> <span class="p">(</span><span class="n">ancestor</span><span class="p">,</span> <span class="n">_</span><span class="p">),</span> <span class="n">weight</span> <span class="ow">in</span> <span class="n">ancestor_edges</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-300" name="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-300"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="n">ancestor</span><span class="p">,</span> <span class="n">component</span><span class="o">=</span><span class="n">new_element_name</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">weight</span><span class="p">)</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-301" name="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-301"></a>    <span class="k">for</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">descendant</span><span class="p">),</span> <span class="n">weight</span> <span class="ow">in</span> <span class="n">descendant_edges</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-302" name="TM1py.Objects.Hierarchy.Hierarchy.replace_element--source--__codelineno-0-302"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="n">new_element_name</span><span class="p">,</span> <span class="n">component</span><span class="o">=</span><span class="n">descendant</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">weight</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4453,9 +4453,9 @@ so that all edges are moved from the old element to the new element.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-246">246</a></span>
-<span class="normal"><a href="#__codelineno-0-247">247</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-246" name="__codelineno-0-246"></a><span class="k">def</span><span class="w"> </span><span class="nf">update_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">component</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">weight</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
-<a id="__codelineno-0-247" name="__codelineno-0-247"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_edges</span><span class="p">[(</span><span class="n">parent</span><span class="p">,</span> <span class="n">component</span><span class="p">)]</span> <span class="o">=</span> <span class="n">weight</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.update_edge--source--__codelineno-0-246">246</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.update_edge--source--__codelineno-0-247">247</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy.update_edge--source--__codelineno-0-246" name="TM1py.Objects.Hierarchy.Hierarchy.update_edge--source--__codelineno-0-246"></a><span class="k">def</span><span class="w"> </span><span class="nf">update_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">component</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">weight</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.update_edge--source--__codelineno-0-247" name="TM1py.Objects.Hierarchy.Hierarchy.update_edge--source--__codelineno-0-247"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_edges</span><span class="p">[(</span><span class="n">parent</span><span class="p">,</span> <span class="n">component</span><span class="p">)]</span> <span class="o">=</span> <span class="n">weight</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4476,9 +4476,9 @@ so that all edges are moved from the old element to the new element.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Hierarchy.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-230">230</a></span>
-<span class="normal"><a href="#__codelineno-0-231">231</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-230" name="__codelineno-0-230"></a><span class="k">def</span><span class="w"> </span><span class="nf">update_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">element_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Element</span><span class="o">.</span><span class="n">Types</span><span class="p">]):</span>
-<a id="__codelineno-0-231" name="__codelineno-0-231"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">[</span><span class="n">element_name</span><span class="p">]</span><span class="o">.</span><span class="n">element_type</span> <span class="o">=</span> <span class="n">element_type</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.update_element--source--__codelineno-0-230">230</a></span>
+<span class="normal"><a href="#TM1py.Objects.Hierarchy.Hierarchy.update_element--source--__codelineno-0-231">231</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Hierarchy.Hierarchy.update_element--source--__codelineno-0-230" name="TM1py.Objects.Hierarchy.Hierarchy.update_element--source--__codelineno-0-230"></a><span class="k">def</span><span class="w"> </span><span class="nf">update_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">element_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Element</span><span class="o">.</span><span class="n">Types</span><span class="p">]):</span>
+<a id="TM1py.Objects.Hierarchy.Hierarchy.update_element--source--__codelineno-0-231" name="TM1py.Objects.Hierarchy.Hierarchy.update_element--source--__codelineno-0-231"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_elements</span><span class="p">[</span><span class="n">element_name</span><span class="p">]</span><span class="o">.</span><span class="n">element_type</span> <span class="o">=</span> <span class="n">element_type</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4566,10 +4566,10 @@ so that all edges are moved from the old element to the new element.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
   </body>

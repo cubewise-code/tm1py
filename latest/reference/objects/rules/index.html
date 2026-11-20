@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../img/favicon_tm1py_centered_64x64.png">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.8.2">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -2933,13 +2933,13 @@
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>TM1py/Objects/Rules.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-20">20</a></span>
-<span class="normal"><a href="#__codelineno-0-21">21</a></span>
-<span class="normal"><a href="#__codelineno-0-22">22</a></span>
-<span class="normal"><a href="#__codelineno-0-23">23</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-20" name="__codelineno-0-20"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rules</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_text</span> <span class="o">=</span> <span class="n">rules</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_rules_analytics</span> <span class="o">=</span> <span class="p">[]</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">init_analytics</span><span class="p">()</span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Rules.Rules--source--__codelineno-0-20">20</a></span>
+<span class="normal"><a href="#TM1py.Objects.Rules.Rules--source--__codelineno-0-21">21</a></span>
+<span class="normal"><a href="#TM1py.Objects.Rules.Rules--source--__codelineno-0-22">22</a></span>
+<span class="normal"><a href="#TM1py.Objects.Rules.Rules--source--__codelineno-0-23">23</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Rules.Rules--source--__codelineno-0-20" name="TM1py.Objects.Rules.Rules--source--__codelineno-0-20"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rules</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<a id="TM1py.Objects.Rules.Rules--source--__codelineno-0-21" name="TM1py.Objects.Rules.Rules--source--__codelineno-0-21"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_text</span> <span class="o">=</span> <span class="n">rules</span>
+<a id="TM1py.Objects.Rules.Rules--source--__codelineno-0-22" name="TM1py.Objects.Rules.Rules--source--__codelineno-0-22"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_rules_analytics</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="TM1py.Objects.Rules.Rules--source--__codelineno-0-23" name="TM1py.Objects.Rules.Rules--source--__codelineno-0-23"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">init_analytics</span><span class="p">()</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -3191,9 +3191,9 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Rules.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-96">96</a></span>
-<span class="normal"><a href="#__codelineno-0-97">97</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-96" name="__codelineno-0-96"></a><span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-0-97" name="__codelineno-0-97"></a>    <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rules_analytics</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Rules.Rules.__iter__--source--__codelineno-0-96">96</a></span>
+<span class="normal"><a href="#TM1py.Objects.Rules.Rules.__iter__--source--__codelineno-0-97">97</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Rules.Rules.__iter__--source--__codelineno-0-96" name="TM1py.Objects.Rules.Rules.__iter__--source--__codelineno-0-96"></a><span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="TM1py.Objects.Rules.Rules.__iter__--source--__codelineno-0-97" name="TM1py.Objects.Rules.Rules.__iter__--source--__codelineno-0-97"></a>    <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rules_analytics</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3214,9 +3214,9 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Rules.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-92">92</a></span>
-<span class="normal"><a href="#__codelineno-0-93">93</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-92" name="__codelineno-0-92"></a><span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-0-93" name="__codelineno-0-93"></a>    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rules_analytics</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Rules.Rules.__len__--source--__codelineno-0-92">92</a></span>
+<span class="normal"><a href="#TM1py.Objects.Rules.Rules.__len__--source--__codelineno-0-93">93</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Rules.Rules.__len__--source--__codelineno-0-92" name="TM1py.Objects.Rules.Rules.__len__--source--__codelineno-0-92"></a><span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="TM1py.Objects.Rules.Rules.__len__--source--__codelineno-0-93" name="TM1py.Objects.Rules.Rules.__len__--source--__codelineno-0-93"></a>    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rules_analytics</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3237,9 +3237,9 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Rules.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-99"> 99</a></span>
-<span class="normal"><a href="#__codelineno-0-100">100</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-99" name="__codelineno-0-99"></a><span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-0-100" name="__codelineno-0-100"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Rules.Rules.__str__--source--__codelineno-0-99"> 99</a></span>
+<span class="normal"><a href="#TM1py.Objects.Rules.Rules.__str__--source--__codelineno-0-100">100</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Rules.Rules.__str__--source--__codelineno-0-99" name="TM1py.Objects.Rules.Rules.__str__--source--__codelineno-0-99"></a><span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="TM1py.Objects.Rules.Rules.__str__--source--__codelineno-0-100" name="TM1py.Objects.Rules.Rules.__str__--source--__codelineno-0-100"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3260,19 +3260,19 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Rules.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-26">26</a></span>
-<span class="normal"><a href="#__codelineno-0-27">27</a></span>
-<span class="normal"><a href="#__codelineno-0-28">28</a></span>
-<span class="normal"><a href="#__codelineno-0-29">29</a></span>
-<span class="normal"><a href="#__codelineno-0-30">30</a></span>
-<span class="normal"><a href="#__codelineno-0-31">31</a></span>
-<span class="normal"><a href="#__codelineno-0-32">32</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="k">def</span><span class="w"> </span><span class="nf">init_analytics</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27"></a>    <span class="n">text_without_comments</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-<a id="__codelineno-0-28" name="__codelineno-0-28"></a>        <span class="p">[</span><span class="n">rule</span> <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span> <span class="k">if</span> <span class="n">rule</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">and</span> <span class="n">rule</span><span class="o">.</span><span class="n">strip</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">"#"</span><span class="p">]</span>
-<a id="__codelineno-0-29" name="__codelineno-0-29"></a>    <span class="p">)</span>
-<a id="__codelineno-0-30" name="__codelineno-0-30"></a>    <span class="k">for</span> <span class="n">statement</span> <span class="ow">in</span> <span class="n">text_without_comments</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">";"</span><span class="p">):</span>
-<a id="__codelineno-0-31" name="__codelineno-0-31"></a>        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">statement</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-<a id="__codelineno-0-32" name="__codelineno-0-32"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_rules_analytics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">statement</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Rules.Rules.init_analytics--source--__codelineno-0-26">26</a></span>
+<span class="normal"><a href="#TM1py.Objects.Rules.Rules.init_analytics--source--__codelineno-0-27">27</a></span>
+<span class="normal"><a href="#TM1py.Objects.Rules.Rules.init_analytics--source--__codelineno-0-28">28</a></span>
+<span class="normal"><a href="#TM1py.Objects.Rules.Rules.init_analytics--source--__codelineno-0-29">29</a></span>
+<span class="normal"><a href="#TM1py.Objects.Rules.Rules.init_analytics--source--__codelineno-0-30">30</a></span>
+<span class="normal"><a href="#TM1py.Objects.Rules.Rules.init_analytics--source--__codelineno-0-31">31</a></span>
+<span class="normal"><a href="#TM1py.Objects.Rules.Rules.init_analytics--source--__codelineno-0-32">32</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Rules.Rules.init_analytics--source--__codelineno-0-26" name="TM1py.Objects.Rules.Rules.init_analytics--source--__codelineno-0-26"></a><span class="k">def</span><span class="w"> </span><span class="nf">init_analytics</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="TM1py.Objects.Rules.Rules.init_analytics--source--__codelineno-0-27" name="TM1py.Objects.Rules.Rules.init_analytics--source--__codelineno-0-27"></a>    <span class="n">text_without_comments</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+<a id="TM1py.Objects.Rules.Rules.init_analytics--source--__codelineno-0-28" name="TM1py.Objects.Rules.Rules.init_analytics--source--__codelineno-0-28"></a>        <span class="p">[</span><span class="n">rule</span> <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span> <span class="k">if</span> <span class="n">rule</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">and</span> <span class="n">rule</span><span class="o">.</span><span class="n">strip</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">"#"</span><span class="p">]</span>
+<a id="TM1py.Objects.Rules.Rules.init_analytics--source--__codelineno-0-29" name="TM1py.Objects.Rules.Rules.init_analytics--source--__codelineno-0-29"></a>    <span class="p">)</span>
+<a id="TM1py.Objects.Rules.Rules.init_analytics--source--__codelineno-0-30" name="TM1py.Objects.Rules.Rules.init_analytics--source--__codelineno-0-30"></a>    <span class="k">for</span> <span class="n">statement</span> <span class="ow">in</span> <span class="n">text_without_comments</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">";"</span><span class="p">):</span>
+<a id="TM1py.Objects.Rules.Rules.init_analytics--source--__codelineno-0-31" name="TM1py.Objects.Rules.Rules.init_analytics--source--__codelineno-0-31"></a>        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">statement</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+<a id="TM1py.Objects.Rules.Rules.init_analytics--source--__codelineno-0-32" name="TM1py.Objects.Rules.Rules.init_analytics--source--__codelineno-0-32"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_rules_analytics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">statement</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3360,10 +3360,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
   </body>

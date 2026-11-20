@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../img/favicon_tm1py_centered_64x64.png">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.8.2">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -2688,9 +2688,9 @@
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>TM1py/Services/JobService.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-16">16</a></span>
-<span class="normal"><a href="#__codelineno-0-17">17</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-16" name="__codelineno-0-16"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rest</span><span class="p">:</span> <span class="n">RestService</span><span class="p">):</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17"></a>    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">rest</span><span class="p">)</span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Services.JobService.JobService--source--__codelineno-0-16">16</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService--source--__codelineno-0-17">17</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Services.JobService.JobService--source--__codelineno-0-16" name="TM1py.Services.JobService.JobService--source--__codelineno-0-16"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rest</span><span class="p">:</span> <span class="n">RestService</span><span class="p">):</span>
+<a id="TM1py.Services.JobService.JobService--source--__codelineno-0-17" name="TM1py.Services.JobService.JobService--source--__codelineno-0-17"></a>    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">rest</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -2775,25 +2775,25 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/JobService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-30">30</a></span>
-<span class="normal"><a href="#__codelineno-0-31">31</a></span>
-<span class="normal"><a href="#__codelineno-0-32">32</a></span>
-<span class="normal"><a href="#__codelineno-0-33">33</a></span>
-<span class="normal"><a href="#__codelineno-0-34">34</a></span>
-<span class="normal"><a href="#__codelineno-0-35">35</a></span>
-<span class="normal"><a href="#__codelineno-0-36">36</a></span>
-<span class="normal"><a href="#__codelineno-0-37">37</a></span>
-<span class="normal"><a href="#__codelineno-0-38">38</a></span>
-<span class="normal"><a href="#__codelineno-0-39">39</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="nd">@require_version</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="s2">"12.0.0"</span><span class="p">)</span>
-<a id="__codelineno-0-31" name="__codelineno-0-31"></a><span class="k">def</span><span class="w"> </span><span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<a id="__codelineno-0-32" name="__codelineno-0-32"></a><span class="w">    </span><span class="sd">"""Cancels a running Job</span>
-<a id="__codelineno-0-33" name="__codelineno-0-33"></a>
-<a id="__codelineno-0-34" name="__codelineno-0-34"></a><span class="sd">    :param job_id:</span>
-<a id="__codelineno-0-35" name="__codelineno-0-35"></a><span class="sd">    :return:</span>
-<a id="__codelineno-0-36" name="__codelineno-0-36"></a><span class="sd">    """</span>
-<a id="__codelineno-0-37" name="__codelineno-0-37"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span><span class="s2">"/Jobs('</span><span class="si">{}</span><span class="s2">')/tm1.Cancel"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">job_id</span><span class="p">))</span>
-<a id="__codelineno-0-38" name="__codelineno-0-38"></a>    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">POST</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<a id="__codelineno-0-39" name="__codelineno-0-39"></a>    <span class="k">return</span> <span class="n">response</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-30">30</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-31">31</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-32">32</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-33">33</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-34">34</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-35">35</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-36">36</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-37">37</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-38">38</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-39">39</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-30" name="TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-30"></a><span class="nd">@require_version</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="s2">"12.0.0"</span><span class="p">)</span>
+<a id="TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-31" name="TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-31"></a><span class="k">def</span><span class="w"> </span><span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-32" name="TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-32"></a><span class="w">    </span><span class="sd">"""Cancels a running Job</span>
+<a id="TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-33" name="TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-33"></a>
+<a id="TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-34" name="TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-34"></a><span class="sd">    :param job_id:</span>
+<a id="TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-35" name="TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-35"></a><span class="sd">    :return:</span>
+<a id="TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-36" name="TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-36"></a><span class="sd">    """</span>
+<a id="TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-37" name="TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-37"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span><span class="s2">"/Jobs('</span><span class="si">{}</span><span class="s2">')/tm1.Cancel"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">job_id</span><span class="p">))</span>
+<a id="TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-38" name="TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-38"></a>    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">POST</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-39" name="TM1py.Services.JobService.JobService.cancel--source--__codelineno-0-39"></a>    <span class="k">return</span> <span class="n">response</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2814,21 +2814,21 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/JobService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-41">41</a></span>
-<span class="normal"><a href="#__codelineno-0-42">42</a></span>
-<span class="normal"><a href="#__codelineno-0-43">43</a></span>
-<span class="normal"><a href="#__codelineno-0-44">44</a></span>
-<span class="normal"><a href="#__codelineno-0-45">45</a></span>
-<span class="normal"><a href="#__codelineno-0-46">46</a></span>
-<span class="normal"><a href="#__codelineno-0-47">47</a></span>
-<span class="normal"><a href="#__codelineno-0-48">48</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="nd">@require_version</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="s2">"12.0.0"</span><span class="p">)</span>
-<a id="__codelineno-0-42" name="__codelineno-0-42"></a><span class="k">def</span><span class="w"> </span><span class="nf">cancel_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<a id="__codelineno-0-43" name="__codelineno-0-43"></a>    <span class="n">jobs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all</span><span class="p">()</span>
-<a id="__codelineno-0-44" name="__codelineno-0-44"></a>    <span class="n">canceled_jobs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
-<a id="__codelineno-0-45" name="__codelineno-0-45"></a>    <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">jobs</span><span class="p">:</span>
-<a id="__codelineno-0-46" name="__codelineno-0-46"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">cancel</span><span class="p">(</span><span class="n">job</span><span class="p">[</span><span class="s2">"ID"</span><span class="p">])</span>
-<a id="__codelineno-0-47" name="__codelineno-0-47"></a>        <span class="n">canceled_jobs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
-<a id="__codelineno-0-48" name="__codelineno-0-48"></a>    <span class="k">return</span> <span class="n">canceled_jobs</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Services.JobService.JobService.cancel_all--source--__codelineno-0-41">41</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.cancel_all--source--__codelineno-0-42">42</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.cancel_all--source--__codelineno-0-43">43</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.cancel_all--source--__codelineno-0-44">44</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.cancel_all--source--__codelineno-0-45">45</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.cancel_all--source--__codelineno-0-46">46</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.cancel_all--source--__codelineno-0-47">47</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.cancel_all--source--__codelineno-0-48">48</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Services.JobService.JobService.cancel_all--source--__codelineno-0-41" name="TM1py.Services.JobService.JobService.cancel_all--source--__codelineno-0-41"></a><span class="nd">@require_version</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="s2">"12.0.0"</span><span class="p">)</span>
+<a id="TM1py.Services.JobService.JobService.cancel_all--source--__codelineno-0-42" name="TM1py.Services.JobService.JobService.cancel_all--source--__codelineno-0-42"></a><span class="k">def</span><span class="w"> </span><span class="nf">cancel_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="TM1py.Services.JobService.JobService.cancel_all--source--__codelineno-0-43" name="TM1py.Services.JobService.JobService.cancel_all--source--__codelineno-0-43"></a>    <span class="n">jobs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all</span><span class="p">()</span>
+<a id="TM1py.Services.JobService.JobService.cancel_all--source--__codelineno-0-44" name="TM1py.Services.JobService.JobService.cancel_all--source--__codelineno-0-44"></a>    <span class="n">canceled_jobs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+<a id="TM1py.Services.JobService.JobService.cancel_all--source--__codelineno-0-45" name="TM1py.Services.JobService.JobService.cancel_all--source--__codelineno-0-45"></a>    <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">jobs</span><span class="p">:</span>
+<a id="TM1py.Services.JobService.JobService.cancel_all--source--__codelineno-0-46" name="TM1py.Services.JobService.JobService.cancel_all--source--__codelineno-0-46"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">cancel</span><span class="p">(</span><span class="n">job</span><span class="p">[</span><span class="s2">"ID"</span><span class="p">])</span>
+<a id="TM1py.Services.JobService.JobService.cancel_all--source--__codelineno-0-47" name="TM1py.Services.JobService.JobService.cancel_all--source--__codelineno-0-47"></a>        <span class="n">canceled_jobs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+<a id="TM1py.Services.JobService.JobService.cancel_all--source--__codelineno-0-48" name="TM1py.Services.JobService.JobService.cancel_all--source--__codelineno-0-48"></a>    <span class="k">return</span> <span class="n">canceled_jobs</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2873,25 +2873,25 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/JobService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-19">19</a></span>
-<span class="normal"><a href="#__codelineno-0-20">20</a></span>
-<span class="normal"><a href="#__codelineno-0-21">21</a></span>
-<span class="normal"><a href="#__codelineno-0-22">22</a></span>
-<span class="normal"><a href="#__codelineno-0-23">23</a></span>
-<span class="normal"><a href="#__codelineno-0-24">24</a></span>
-<span class="normal"><a href="#__codelineno-0-25">25</a></span>
-<span class="normal"><a href="#__codelineno-0-26">26</a></span>
-<span class="normal"><a href="#__codelineno-0-27">27</a></span>
-<span class="normal"><a href="#__codelineno-0-28">28</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="nd">@require_version</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="s2">"12.0.0"</span><span class="p">)</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="w">    </span><span class="sd">"""Return a dict of the currently running jobs from the TM1 Server</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22"></a>
-<a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="sd">    :return:</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="sd">        dict: the response</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="sd">    """</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26"></a>    <span class="n">url</span> <span class="o">=</span> <span class="s2">"/Jobs"</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27"></a>    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">GET</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<a id="__codelineno-0-28" name="__codelineno-0-28"></a>    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">"value"</span><span class="p">]</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-19">19</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-20">20</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-21">21</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-22">22</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-23">23</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-24">24</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-25">25</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-26">26</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-27">27</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-28">28</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-19" name="TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-19"></a><span class="nd">@require_version</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="s2">"12.0.0"</span><span class="p">)</span>
+<a id="TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-20" name="TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-20"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-21" name="TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-21"></a><span class="w">    </span><span class="sd">"""Return a dict of the currently running jobs from the TM1 Server</span>
+<a id="TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-22" name="TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-22"></a>
+<a id="TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-23" name="TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-23"></a><span class="sd">    :return:</span>
+<a id="TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-24" name="TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-24"></a><span class="sd">        dict: the response</span>
+<a id="TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-25" name="TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-25"></a><span class="sd">    """</span>
+<a id="TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-26" name="TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-26"></a>    <span class="n">url</span> <span class="o">=</span> <span class="s2">"/Jobs"</span>
+<a id="TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-27" name="TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-27"></a>    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">GET</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-28" name="TM1py.Services.JobService.JobService.get_all--source--__codelineno-0-28"></a>    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">"value"</span><span class="p">]</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2914,19 +2914,19 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/JobService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-50">50</a></span>
-<span class="normal"><a href="#__codelineno-0-51">51</a></span>
-<span class="normal"><a href="#__codelineno-0-52">52</a></span>
-<span class="normal"><a href="#__codelineno-0-53">53</a></span>
-<span class="normal"><a href="#__codelineno-0-54">54</a></span>
-<span class="normal"><a href="#__codelineno-0-55">55</a></span>
-<span class="normal"><a href="#__codelineno-0-56">56</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-50" name="__codelineno-0-50"></a><span class="nd">@require_pandas</span>
-<a id="__codelineno-0-51" name="__codelineno-0-51"></a><span class="nd">@require_version</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="s2">"12.0.0"</span><span class="p">)</span>
-<a id="__codelineno-0-52" name="__codelineno-0-52"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_as_dataframe</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-0-53" name="__codelineno-0-53"></a><span class="w">    </span><span class="sd">"""Gets jobs and returns them as a dataframe"""</span>
-<a id="__codelineno-0-54" name="__codelineno-0-54"></a>    <span class="n">jobs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all</span><span class="p">()</span>
-<a id="__codelineno-0-55" name="__codelineno-0-55"></a>    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_records</span><span class="p">(</span><span class="n">jobs</span><span class="p">)</span>
-<a id="__codelineno-0-56" name="__codelineno-0-56"></a>    <span class="k">return</span> <span class="n">df</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Services.JobService.JobService.get_as_dataframe--source--__codelineno-0-50">50</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.get_as_dataframe--source--__codelineno-0-51">51</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.get_as_dataframe--source--__codelineno-0-52">52</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.get_as_dataframe--source--__codelineno-0-53">53</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.get_as_dataframe--source--__codelineno-0-54">54</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.get_as_dataframe--source--__codelineno-0-55">55</a></span>
+<span class="normal"><a href="#TM1py.Services.JobService.JobService.get_as_dataframe--source--__codelineno-0-56">56</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Services.JobService.JobService.get_as_dataframe--source--__codelineno-0-50" name="TM1py.Services.JobService.JobService.get_as_dataframe--source--__codelineno-0-50"></a><span class="nd">@require_pandas</span>
+<a id="TM1py.Services.JobService.JobService.get_as_dataframe--source--__codelineno-0-51" name="TM1py.Services.JobService.JobService.get_as_dataframe--source--__codelineno-0-51"></a><span class="nd">@require_version</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="s2">"12.0.0"</span><span class="p">)</span>
+<a id="TM1py.Services.JobService.JobService.get_as_dataframe--source--__codelineno-0-52" name="TM1py.Services.JobService.JobService.get_as_dataframe--source--__codelineno-0-52"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_as_dataframe</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="TM1py.Services.JobService.JobService.get_as_dataframe--source--__codelineno-0-53" name="TM1py.Services.JobService.JobService.get_as_dataframe--source--__codelineno-0-53"></a><span class="w">    </span><span class="sd">"""Gets jobs and returns them as a dataframe"""</span>
+<a id="TM1py.Services.JobService.JobService.get_as_dataframe--source--__codelineno-0-54" name="TM1py.Services.JobService.JobService.get_as_dataframe--source--__codelineno-0-54"></a>    <span class="n">jobs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all</span><span class="p">()</span>
+<a id="TM1py.Services.JobService.JobService.get_as_dataframe--source--__codelineno-0-55" name="TM1py.Services.JobService.JobService.get_as_dataframe--source--__codelineno-0-55"></a>    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_records</span><span class="p">(</span><span class="n">jobs</span><span class="p">)</span>
+<a id="TM1py.Services.JobService.JobService.get_as_dataframe--source--__codelineno-0-56" name="TM1py.Services.JobService.JobService.get_as_dataframe--source--__codelineno-0-56"></a>    <span class="k">return</span> <span class="n">df</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3014,10 +3014,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
   </body>

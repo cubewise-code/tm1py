@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../img/favicon_tm1py_centered_64x64.png">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.8.2">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -2964,33 +2964,33 @@
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>TM1py/Objects/Element.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-33">33</a></span>
-<span class="normal"><a href="#__codelineno-0-34">34</a></span>
-<span class="normal"><a href="#__codelineno-0-35">35</a></span>
-<span class="normal"><a href="#__codelineno-0-36">36</a></span>
-<span class="normal"><a href="#__codelineno-0-37">37</a></span>
-<span class="normal"><a href="#__codelineno-0-38">38</a></span>
-<span class="normal"><a href="#__codelineno-0-39">39</a></span>
-<span class="normal"><a href="#__codelineno-0-40">40</a></span>
-<span class="normal"><a href="#__codelineno-0-41">41</a></span>
-<span class="normal"><a href="#__codelineno-0-42">42</a></span>
-<span class="normal"><a href="#__codelineno-0-43">43</a></span>
-<span class="normal"><a href="#__codelineno-0-44">44</a></span>
-<span class="normal"><a href="#__codelineno-0-45">45</a></span>
-<span class="normal"><a href="#__codelineno-0-46">46</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-33" name="__codelineno-0-33"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-<a id="__codelineno-0-34" name="__codelineno-0-34"></a>    <span class="bp">self</span><span class="p">,</span>
-<a id="__codelineno-0-35" name="__codelineno-0-35"></a>    <span class="n">name</span><span class="p">,</span>
-<a id="__codelineno-0-36" name="__codelineno-0-36"></a>    <span class="n">element_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Types</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-<a id="__codelineno-0-37" name="__codelineno-0-37"></a>    <span class="n">attributes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-38" name="__codelineno-0-38"></a>    <span class="n">unique_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-39" name="__codelineno-0-39"></a>    <span class="n">index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="p">):</span>
-<a id="__codelineno-0-41" name="__codelineno-0-41"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
-<a id="__codelineno-0-42" name="__codelineno-0-42"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_unique_name</span> <span class="o">=</span> <span class="n">unique_name</span>
-<a id="__codelineno-0-43" name="__codelineno-0-43"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_index</span> <span class="o">=</span> <span class="n">index</span>
-<a id="__codelineno-0-44" name="__codelineno-0-44"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_element_type</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-0-45" name="__codelineno-0-45"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">element_type</span> <span class="o">=</span> <span class="n">element_type</span>
-<a id="__codelineno-0-46" name="__codelineno-0-46"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_attributes</span> <span class="o">=</span> <span class="n">attributes</span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Element.Element--source--__codelineno-0-33">33</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element--source--__codelineno-0-34">34</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element--source--__codelineno-0-35">35</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element--source--__codelineno-0-36">36</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element--source--__codelineno-0-37">37</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element--source--__codelineno-0-38">38</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element--source--__codelineno-0-39">39</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element--source--__codelineno-0-40">40</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element--source--__codelineno-0-41">41</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element--source--__codelineno-0-42">42</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element--source--__codelineno-0-43">43</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element--source--__codelineno-0-44">44</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element--source--__codelineno-0-45">45</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element--source--__codelineno-0-46">46</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Element.Element--source--__codelineno-0-33" name="TM1py.Objects.Element.Element--source--__codelineno-0-33"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<a id="TM1py.Objects.Element.Element--source--__codelineno-0-34" name="TM1py.Objects.Element.Element--source--__codelineno-0-34"></a>    <span class="bp">self</span><span class="p">,</span>
+<a id="TM1py.Objects.Element.Element--source--__codelineno-0-35" name="TM1py.Objects.Element.Element--source--__codelineno-0-35"></a>    <span class="n">name</span><span class="p">,</span>
+<a id="TM1py.Objects.Element.Element--source--__codelineno-0-36" name="TM1py.Objects.Element.Element--source--__codelineno-0-36"></a>    <span class="n">element_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Types</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+<a id="TM1py.Objects.Element.Element--source--__codelineno-0-37" name="TM1py.Objects.Element.Element--source--__codelineno-0-37"></a>    <span class="n">attributes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="TM1py.Objects.Element.Element--source--__codelineno-0-38" name="TM1py.Objects.Element.Element--source--__codelineno-0-38"></a>    <span class="n">unique_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="TM1py.Objects.Element.Element--source--__codelineno-0-39" name="TM1py.Objects.Element.Element--source--__codelineno-0-39"></a>    <span class="n">index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="TM1py.Objects.Element.Element--source--__codelineno-0-40" name="TM1py.Objects.Element.Element--source--__codelineno-0-40"></a><span class="p">):</span>
+<a id="TM1py.Objects.Element.Element--source--__codelineno-0-41" name="TM1py.Objects.Element.Element--source--__codelineno-0-41"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
+<a id="TM1py.Objects.Element.Element--source--__codelineno-0-42" name="TM1py.Objects.Element.Element--source--__codelineno-0-42"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_unique_name</span> <span class="o">=</span> <span class="n">unique_name</span>
+<a id="TM1py.Objects.Element.Element--source--__codelineno-0-43" name="TM1py.Objects.Element.Element--source--__codelineno-0-43"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_index</span> <span class="o">=</span> <span class="n">index</span>
+<a id="TM1py.Objects.Element.Element--source--__codelineno-0-44" name="TM1py.Objects.Element.Element--source--__codelineno-0-44"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_element_type</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="TM1py.Objects.Element.Element--source--__codelineno-0-45" name="TM1py.Objects.Element.Element--source--__codelineno-0-45"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">element_type</span> <span class="o">=</span> <span class="n">element_type</span>
+<a id="TM1py.Objects.Element.Element--source--__codelineno-0-46" name="TM1py.Objects.Element.Element--source--__codelineno-0-46"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_attributes</span> <span class="o">=</span> <span class="n">attributes</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -3284,9 +3284,9 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Element.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-22">22</a></span>
-<span class="normal"><a href="#__codelineno-0-23">23</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Element.Element.Types.__str__--source--__codelineno-0-22">22</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element.Types.__str__--source--__codelineno-0-23">23</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Element.Element.Types.__str__--source--__codelineno-0-22" name="TM1py.Objects.Element.Element.Types.__str__--source--__codelineno-0-22"></a><span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="TM1py.Objects.Element.Element.Types.__str__--source--__codelineno-0-23" name="TM1py.Objects.Element.Element.Types.__str__--source--__codelineno-0-23"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3316,21 +3316,21 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Element.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-100">100</a></span>
-<span class="normal"><a href="#__codelineno-0-101">101</a></span>
-<span class="normal"><a href="#__codelineno-0-102">102</a></span>
-<span class="normal"><a href="#__codelineno-0-103">103</a></span>
-<span class="normal"><a href="#__codelineno-0-104">104</a></span>
-<span class="normal"><a href="#__codelineno-0-105">105</a></span>
-<span class="normal"><a href="#__codelineno-0-106">106</a></span>
-<span class="normal"><a href="#__codelineno-0-107">107</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-100" name="__codelineno-0-100"></a><span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">"Element"</span><span class="p">):</span>
-<a id="__codelineno-0-101" name="__codelineno-0-101"></a>    <span class="k">return</span> <span class="nb">all</span><span class="p">(</span>
-<a id="__codelineno-0-102" name="__codelineno-0-102"></a>        <span class="p">[</span>
-<a id="__codelineno-0-103" name="__codelineno-0-103"></a>            <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Element</span><span class="p">),</span>
-<a id="__codelineno-0-104" name="__codelineno-0-104"></a>            <span class="n">case_and_space_insensitive_equals</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">name</span><span class="p">),</span>
-<a id="__codelineno-0-105" name="__codelineno-0-105"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">element_type</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">element_type</span><span class="p">,</span>
-<a id="__codelineno-0-106" name="__codelineno-0-106"></a>        <span class="p">]</span>
-<a id="__codelineno-0-107" name="__codelineno-0-107"></a>    <span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Element.Element.__eq__--source--__codelineno-0-100">100</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element.__eq__--source--__codelineno-0-101">101</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element.__eq__--source--__codelineno-0-102">102</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element.__eq__--source--__codelineno-0-103">103</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element.__eq__--source--__codelineno-0-104">104</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element.__eq__--source--__codelineno-0-105">105</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element.__eq__--source--__codelineno-0-106">106</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element.__eq__--source--__codelineno-0-107">107</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Element.Element.__eq__--source--__codelineno-0-100" name="TM1py.Objects.Element.Element.__eq__--source--__codelineno-0-100"></a><span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">"Element"</span><span class="p">):</span>
+<a id="TM1py.Objects.Element.Element.__eq__--source--__codelineno-0-101" name="TM1py.Objects.Element.Element.__eq__--source--__codelineno-0-101"></a>    <span class="k">return</span> <span class="nb">all</span><span class="p">(</span>
+<a id="TM1py.Objects.Element.Element.__eq__--source--__codelineno-0-102" name="TM1py.Objects.Element.Element.__eq__--source--__codelineno-0-102"></a>        <span class="p">[</span>
+<a id="TM1py.Objects.Element.Element.__eq__--source--__codelineno-0-103" name="TM1py.Objects.Element.Element.__eq__--source--__codelineno-0-103"></a>            <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Element</span><span class="p">),</span>
+<a id="TM1py.Objects.Element.Element.__eq__--source--__codelineno-0-104" name="TM1py.Objects.Element.Element.__eq__--source--__codelineno-0-104"></a>            <span class="n">case_and_space_insensitive_equals</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">name</span><span class="p">),</span>
+<a id="TM1py.Objects.Element.Element.__eq__--source--__codelineno-0-105" name="TM1py.Objects.Element.Element.__eq__--source--__codelineno-0-105"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">element_type</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">element_type</span><span class="p">,</span>
+<a id="TM1py.Objects.Element.Element.__eq__--source--__codelineno-0-106" name="TM1py.Objects.Element.Element.__eq__--source--__codelineno-0-106"></a>        <span class="p">]</span>
+<a id="TM1py.Objects.Element.Element.__eq__--source--__codelineno-0-107" name="TM1py.Objects.Element.Element.__eq__--source--__codelineno-0-107"></a>    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3351,9 +3351,9 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Element.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-109">109</a></span>
-<span class="normal"><a href="#__codelineno-0-110">110</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-109" name="__codelineno-0-109"></a><span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-0-110" name="__codelineno-0-110"></a>    <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__hash__</span><span class="p">()</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Element.Element.__hash__--source--__codelineno-0-109">109</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element.__hash__--source--__codelineno-0-110">110</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Element.Element.__hash__--source--__codelineno-0-109" name="TM1py.Objects.Element.Element.__hash__--source--__codelineno-0-109"></a><span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="TM1py.Objects.Element.Element.__hash__--source--__codelineno-0-110" name="TM1py.Objects.Element.Element.__hash__--source--__codelineno-0-110"></a>    <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__hash__</span><span class="p">()</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3378,23 +3378,23 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/Element.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-48">48</a></span>
-<span class="normal"><a href="#__codelineno-0-49">49</a></span>
-<span class="normal"><a href="#__codelineno-0-50">50</a></span>
-<span class="normal"><a href="#__codelineno-0-51">51</a></span>
-<span class="normal"><a href="#__codelineno-0-52">52</a></span>
-<span class="normal"><a href="#__codelineno-0-53">53</a></span>
-<span class="normal"><a href="#__codelineno-0-54">54</a></span>
-<span class="normal"><a href="#__codelineno-0-55">55</a></span>
-<span class="normal"><a href="#__codelineno-0-56">56</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-48" name="__codelineno-0-48"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-49" name="__codelineno-0-49"></a><span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="n">element_as_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Element"</span><span class="p">:</span>
-<a id="__codelineno-0-50" name="__codelineno-0-50"></a>    <span class="k">return</span> <span class="n">Element</span><span class="p">(</span>
-<a id="__codelineno-0-51" name="__codelineno-0-51"></a>        <span class="n">name</span><span class="o">=</span><span class="n">element_as_dict</span><span class="p">[</span><span class="s2">"Name"</span><span class="p">],</span>
-<a id="__codelineno-0-52" name="__codelineno-0-52"></a>        <span class="n">unique_name</span><span class="o">=</span><span class="n">element_as_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"UniqueName"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
-<a id="__codelineno-0-53" name="__codelineno-0-53"></a>        <span class="n">index</span><span class="o">=</span><span class="n">element_as_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"Index"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
-<a id="__codelineno-0-54" name="__codelineno-0-54"></a>        <span class="n">element_type</span><span class="o">=</span><span class="n">element_as_dict</span><span class="p">[</span><span class="s2">"Type"</span><span class="p">],</span>
-<a id="__codelineno-0-55" name="__codelineno-0-55"></a>        <span class="n">attributes</span><span class="o">=</span><span class="n">element_as_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"Attributes"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
-<a id="__codelineno-0-56" name="__codelineno-0-56"></a>    <span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-48">48</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-49">49</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-50">50</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-51">51</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-52">52</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-53">53</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-54">54</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-55">55</a></span>
+<span class="normal"><a href="#TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-56">56</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-48" name="TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-48"></a><span class="nd">@staticmethod</span>
+<a id="TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-49" name="TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-49"></a><span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="n">element_as_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Element"</span><span class="p">:</span>
+<a id="TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-50" name="TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-50"></a>    <span class="k">return</span> <span class="n">Element</span><span class="p">(</span>
+<a id="TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-51" name="TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-51"></a>        <span class="n">name</span><span class="o">=</span><span class="n">element_as_dict</span><span class="p">[</span><span class="s2">"Name"</span><span class="p">],</span>
+<a id="TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-52" name="TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-52"></a>        <span class="n">unique_name</span><span class="o">=</span><span class="n">element_as_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"UniqueName"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+<a id="TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-53" name="TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-53"></a>        <span class="n">index</span><span class="o">=</span><span class="n">element_as_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"Index"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+<a id="TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-54" name="TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-54"></a>        <span class="n">element_type</span><span class="o">=</span><span class="n">element_as_dict</span><span class="p">[</span><span class="s2">"Type"</span><span class="p">],</span>
+<a id="TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-55" name="TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-55"></a>        <span class="n">attributes</span><span class="o">=</span><span class="n">element_as_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"Attributes"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+<a id="TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-56" name="TM1py.Objects.Element.Element.from_dict--source--__codelineno-0-56"></a>    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3482,10 +3482,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
   </body>

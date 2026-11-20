@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../img/favicon_tm1py_centered_64x64.png">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.8.2">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -2887,29 +2887,29 @@
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>TM1py/Objects/ChoreStartTime.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-9"> 9</a></span>
-<span class="normal"><a href="#__codelineno-0-10">10</a></span>
-<span class="normal"><a href="#__codelineno-0-11">11</a></span>
-<span class="normal"><a href="#__codelineno-0-12">12</a></span>
-<span class="normal"><a href="#__codelineno-0-13">13</a></span>
-<span class="normal"><a href="#__codelineno-0-14">14</a></span>
-<span class="normal"><a href="#__codelineno-0-15">15</a></span>
-<span class="normal"><a href="#__codelineno-0-16">16</a></span>
-<span class="normal"><a href="#__codelineno-0-17">17</a></span>
-<span class="normal"><a href="#__codelineno-0-18">18</a></span>
-<span class="normal"><a href="#__codelineno-0-19">19</a></span>
-<span class="normal"><a href="#__codelineno-0-20">20</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-9" name="__codelineno-0-9"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">year</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">month</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">day</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">hour</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">minute</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">second</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">tz</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="w">    </span><span class="sd">"""</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11"></a>
-<a id="__codelineno-0-12" name="__codelineno-0-12"></a><span class="sd">    :param year: year</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="sd">    :param month: month</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="sd">    :param day: day</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="sd">    :param hour: hour or None</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16"></a><span class="sd">    :param minute: minute or None</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="sd">    :param second: second or None</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18"></a><span class="sd">    """</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="p">),</span> <span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">(</span><span class="n">hour</span><span class="p">,</span> <span class="n">minute</span><span class="p">,</span> <span class="n">second</span><span class="p">))</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">tz</span> <span class="o">=</span> <span class="n">tz</span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-9"> 9</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-10">10</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-11">11</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-12">12</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-13">13</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-14">14</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-15">15</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-16">16</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-17">17</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-18">18</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-19">19</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-20">20</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-9" name="TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-9"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">year</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">month</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">day</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">hour</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">minute</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">second</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">tz</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-10" name="TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-10"></a><span class="w">    </span><span class="sd">"""</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-11" name="TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-11"></a>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-12" name="TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-12"></a><span class="sd">    :param year: year</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-13" name="TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-13"></a><span class="sd">    :param month: month</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-14" name="TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-14"></a><span class="sd">    :param day: day</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-15" name="TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-15"></a><span class="sd">    :param hour: hour or None</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-16" name="TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-16"></a><span class="sd">    :param minute: minute or None</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-17" name="TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-17"></a><span class="sd">    :param second: second or None</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-18" name="TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-18"></a><span class="sd">    """</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-19" name="TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-19"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="p">),</span> <span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">(</span><span class="n">hour</span><span class="p">,</span> <span class="n">minute</span><span class="p">,</span> <span class="n">second</span><span class="p">))</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-20" name="TM1py.Objects.ChoreStartTime.ChoreStartTime--source--__codelineno-0-20"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">tz</span> <span class="o">=</span> <span class="n">tz</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -3000,9 +3000,9 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/ChoreStartTime.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-65">65</a></span>
-<span class="normal"><a href="#__codelineno-0-66">66</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-65" name="__codelineno-0-65"></a><span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-0-66" name="__codelineno-0-66"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_time_string</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.__str__--source--__codelineno-0-65">65</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.__str__--source--__codelineno-0-66">66</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.__str__--source--__codelineno-0-65" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.__str__--source--__codelineno-0-65"></a><span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.__str__--source--__codelineno-0-66" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.__str__--source--__codelineno-0-66"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_time_string</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3023,9 +3023,9 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/ChoreStartTime.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-89">89</a></span>
-<span class="normal"><a href="#__codelineno-0-90">90</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-89" name="__codelineno-0-89"></a><span class="k">def</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">days</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">hours</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">minutes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">seconds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
-<a id="__codelineno-0-90" name="__codelineno-0-90"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">days</span><span class="p">,</span> <span class="n">hours</span><span class="o">=</span><span class="n">hours</span><span class="p">,</span> <span class="n">minutes</span><span class="o">=</span><span class="n">minutes</span><span class="p">,</span> <span class="n">seconds</span><span class="o">=</span><span class="n">seconds</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.add--source--__codelineno-0-89">89</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.add--source--__codelineno-0-90">90</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.add--source--__codelineno-0-89" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.add--source--__codelineno-0-89"></a><span class="k">def</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">days</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">hours</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">minutes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">seconds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.add--source--__codelineno-0-90" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.add--source--__codelineno-0-90"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">days</span><span class="p">,</span> <span class="n">hours</span><span class="o">=</span><span class="n">hours</span><span class="p">,</span> <span class="n">minutes</span><span class="o">=</span><span class="n">minutes</span><span class="p">,</span> <span class="n">seconds</span><span class="o">=</span><span class="n">seconds</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3050,57 +3050,57 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/ChoreStartTime.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-22">22</a></span>
-<span class="normal"><a href="#__codelineno-0-23">23</a></span>
-<span class="normal"><a href="#__codelineno-0-24">24</a></span>
-<span class="normal"><a href="#__codelineno-0-25">25</a></span>
-<span class="normal"><a href="#__codelineno-0-26">26</a></span>
-<span class="normal"><a href="#__codelineno-0-27">27</a></span>
-<span class="normal"><a href="#__codelineno-0-28">28</a></span>
-<span class="normal"><a href="#__codelineno-0-29">29</a></span>
-<span class="normal"><a href="#__codelineno-0-30">30</a></span>
-<span class="normal"><a href="#__codelineno-0-31">31</a></span>
-<span class="normal"><a href="#__codelineno-0-32">32</a></span>
-<span class="normal"><a href="#__codelineno-0-33">33</a></span>
-<span class="normal"><a href="#__codelineno-0-34">34</a></span>
-<span class="normal"><a href="#__codelineno-0-35">35</a></span>
-<span class="normal"><a href="#__codelineno-0-36">36</a></span>
-<span class="normal"><a href="#__codelineno-0-37">37</a></span>
-<span class="normal"><a href="#__codelineno-0-38">38</a></span>
-<span class="normal"><a href="#__codelineno-0-39">39</a></span>
-<span class="normal"><a href="#__codelineno-0-40">40</a></span>
-<span class="normal"><a href="#__codelineno-0-41">41</a></span>
-<span class="normal"><a href="#__codelineno-0-42">42</a></span>
-<span class="normal"><a href="#__codelineno-0-43">43</a></span>
-<span class="normal"><a href="#__codelineno-0-44">44</a></span>
-<span class="normal"><a href="#__codelineno-0-45">45</a></span>
-<span class="normal"><a href="#__codelineno-0-46">46</a></span>
-<span class="normal"><a href="#__codelineno-0-47">47</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="nd">@classmethod</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="k">def</span><span class="w"> </span><span class="nf">from_string</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">start_time_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"ChoreStartTime"</span><span class="p">:</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24"></a>    <span class="c1"># extract optional tz info (e.g., +01:00) from string end</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25"></a>    <span class="k">if</span> <span class="s2">"+"</span> <span class="ow">in</span> <span class="n">start_time_string</span><span class="p">:</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26"></a>        <span class="c1"># case "2020-11-05T08:00:01+01:00",</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27"></a>        <span class="n">tz</span> <span class="o">=</span> <span class="s2">"+"</span> <span class="o">+</span> <span class="n">start_time_string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"+"</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
-<a id="__codelineno-0-28" name="__codelineno-0-28"></a>    <span class="k">elif</span> <span class="n">start_time_string</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">"-"</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
-<a id="__codelineno-0-29" name="__codelineno-0-29"></a>        <span class="c1"># case: "2020-11-05T08:00:01-01:00",</span>
-<a id="__codelineno-0-30" name="__codelineno-0-30"></a>        <span class="n">tz</span> <span class="o">=</span> <span class="s2">"-"</span> <span class="o">+</span> <span class="n">start_time_string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"-"</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-<a id="__codelineno-0-31" name="__codelineno-0-31"></a>    <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-32" name="__codelineno-0-32"></a>        <span class="n">tz</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-0-33" name="__codelineno-0-33"></a>
-<a id="__codelineno-0-34" name="__codelineno-0-34"></a>    <span class="c1"># f to handle strange timestamp 2016-09-25T20:25Z instead of common 2016-09-25T20:25:00Z</span>
-<a id="__codelineno-0-35" name="__codelineno-0-35"></a>    <span class="c1"># second is defaulted to 0 if not specified in the chore schedule</span>
-<a id="__codelineno-0-36" name="__codelineno-0-36"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">format_time</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-0-37" name="__codelineno-0-37"></a>        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span>
-<a id="__codelineno-0-38" name="__codelineno-0-38"></a>
-<a id="__codelineno-0-39" name="__codelineno-0-39"></a>    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
-<a id="__codelineno-0-40" name="__codelineno-0-40"></a>        <span class="n">year</span><span class="o">=</span><span class="n">format_time</span><span class="p">(</span><span class="n">start_time_string</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">4</span><span class="p">]),</span>
-<a id="__codelineno-0-41" name="__codelineno-0-41"></a>        <span class="n">month</span><span class="o">=</span><span class="n">format_time</span><span class="p">(</span><span class="n">start_time_string</span><span class="p">[</span><span class="mi">5</span><span class="p">:</span><span class="mi">7</span><span class="p">]),</span>
-<a id="__codelineno-0-42" name="__codelineno-0-42"></a>        <span class="n">day</span><span class="o">=</span><span class="n">format_time</span><span class="p">(</span><span class="n">start_time_string</span><span class="p">[</span><span class="mi">8</span><span class="p">:</span><span class="mi">10</span><span class="p">]),</span>
-<a id="__codelineno-0-43" name="__codelineno-0-43"></a>        <span class="n">hour</span><span class="o">=</span><span class="n">format_time</span><span class="p">(</span><span class="n">start_time_string</span><span class="p">[</span><span class="mi">11</span><span class="p">:</span><span class="mi">13</span><span class="p">]),</span>
-<a id="__codelineno-0-44" name="__codelineno-0-44"></a>        <span class="n">minute</span><span class="o">=</span><span class="n">format_time</span><span class="p">(</span><span class="n">start_time_string</span><span class="p">[</span><span class="mi">14</span><span class="p">:</span><span class="mi">16</span><span class="p">]),</span>
-<a id="__codelineno-0-45" name="__codelineno-0-45"></a>        <span class="n">second</span><span class="o">=</span><span class="n">format_time</span><span class="p">(</span><span class="mi">0</span> <span class="k">if</span> <span class="n">start_time_string</span><span class="p">[</span><span class="mi">16</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">":"</span> <span class="k">else</span> <span class="n">start_time_string</span><span class="p">[</span><span class="mi">17</span><span class="p">:</span><span class="mi">19</span><span class="p">]),</span>
-<a id="__codelineno-0-46" name="__codelineno-0-46"></a>        <span class="n">tz</span><span class="o">=</span><span class="n">tz</span><span class="p">,</span>
-<a id="__codelineno-0-47" name="__codelineno-0-47"></a>    <span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-22">22</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-23">23</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-24">24</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-25">25</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-26">26</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-27">27</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-28">28</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-29">29</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-30">30</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-31">31</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-32">32</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-33">33</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-34">34</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-35">35</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-36">36</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-37">37</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-38">38</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-39">39</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-40">40</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-41">41</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-42">42</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-43">43</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-44">44</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-45">45</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-46">46</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-47">47</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-22" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-22"></a><span class="nd">@classmethod</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-23" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-23"></a><span class="k">def</span><span class="w"> </span><span class="nf">from_string</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">start_time_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"ChoreStartTime"</span><span class="p">:</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-24" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-24"></a>    <span class="c1"># extract optional tz info (e.g., +01:00) from string end</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-25" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-25"></a>    <span class="k">if</span> <span class="s2">"+"</span> <span class="ow">in</span> <span class="n">start_time_string</span><span class="p">:</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-26" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-26"></a>        <span class="c1"># case "2020-11-05T08:00:01+01:00",</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-27" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-27"></a>        <span class="n">tz</span> <span class="o">=</span> <span class="s2">"+"</span> <span class="o">+</span> <span class="n">start_time_string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"+"</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-28" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-28"></a>    <span class="k">elif</span> <span class="n">start_time_string</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">"-"</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-29" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-29"></a>        <span class="c1"># case: "2020-11-05T08:00:01-01:00",</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-30" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-30"></a>        <span class="n">tz</span> <span class="o">=</span> <span class="s2">"-"</span> <span class="o">+</span> <span class="n">start_time_string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"-"</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-31" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-31"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-32" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-32"></a>        <span class="n">tz</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-33" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-33"></a>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-34" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-34"></a>    <span class="c1"># f to handle strange timestamp 2016-09-25T20:25Z instead of common 2016-09-25T20:25:00Z</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-35" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-35"></a>    <span class="c1"># second is defaulted to 0 if not specified in the chore schedule</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-36" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-36"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">format_time</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-37" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-37"></a>        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-38" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-38"></a>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-39" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-39"></a>    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-40" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-40"></a>        <span class="n">year</span><span class="o">=</span><span class="n">format_time</span><span class="p">(</span><span class="n">start_time_string</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">4</span><span class="p">]),</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-41" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-41"></a>        <span class="n">month</span><span class="o">=</span><span class="n">format_time</span><span class="p">(</span><span class="n">start_time_string</span><span class="p">[</span><span class="mi">5</span><span class="p">:</span><span class="mi">7</span><span class="p">]),</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-42" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-42"></a>        <span class="n">day</span><span class="o">=</span><span class="n">format_time</span><span class="p">(</span><span class="n">start_time_string</span><span class="p">[</span><span class="mi">8</span><span class="p">:</span><span class="mi">10</span><span class="p">]),</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-43" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-43"></a>        <span class="n">hour</span><span class="o">=</span><span class="n">format_time</span><span class="p">(</span><span class="n">start_time_string</span><span class="p">[</span><span class="mi">11</span><span class="p">:</span><span class="mi">13</span><span class="p">]),</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-44" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-44"></a>        <span class="n">minute</span><span class="o">=</span><span class="n">format_time</span><span class="p">(</span><span class="n">start_time_string</span><span class="p">[</span><span class="mi">14</span><span class="p">:</span><span class="mi">16</span><span class="p">]),</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-45" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-45"></a>        <span class="n">second</span><span class="o">=</span><span class="n">format_time</span><span class="p">(</span><span class="mi">0</span> <span class="k">if</span> <span class="n">start_time_string</span><span class="p">[</span><span class="mi">16</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">":"</span> <span class="k">else</span> <span class="n">start_time_string</span><span class="p">[</span><span class="mi">17</span><span class="p">:</span><span class="mi">19</span><span class="p">]),</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-46" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-46"></a>        <span class="n">tz</span><span class="o">=</span><span class="n">tz</span><span class="p">,</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-47" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.from_string--source--__codelineno-0-47"></a>    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3121,45 +3121,45 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/ChoreStartTime.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-68">68</a></span>
-<span class="normal"><a href="#__codelineno-0-69">69</a></span>
-<span class="normal"><a href="#__codelineno-0-70">70</a></span>
-<span class="normal"><a href="#__codelineno-0-71">71</a></span>
-<span class="normal"><a href="#__codelineno-0-72">72</a></span>
-<span class="normal"><a href="#__codelineno-0-73">73</a></span>
-<span class="normal"><a href="#__codelineno-0-74">74</a></span>
-<span class="normal"><a href="#__codelineno-0-75">75</a></span>
-<span class="normal"><a href="#__codelineno-0-76">76</a></span>
-<span class="normal"><a href="#__codelineno-0-77">77</a></span>
-<span class="normal"><a href="#__codelineno-0-78">78</a></span>
-<span class="normal"><a href="#__codelineno-0-79">79</a></span>
-<span class="normal"><a href="#__codelineno-0-80">80</a></span>
-<span class="normal"><a href="#__codelineno-0-81">81</a></span>
-<span class="normal"><a href="#__codelineno-0-82">82</a></span>
-<span class="normal"><a href="#__codelineno-0-83">83</a></span>
-<span class="normal"><a href="#__codelineno-0-84">84</a></span>
-<span class="normal"><a href="#__codelineno-0-85">85</a></span>
-<span class="normal"><a href="#__codelineno-0-86">86</a></span>
-<span class="normal"><a href="#__codelineno-0-87">87</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-68" name="__codelineno-0-68"></a><span class="k">def</span><span class="w"> </span><span class="nf">set_time</span><span class="p">(</span>
-<a id="__codelineno-0-69" name="__codelineno-0-69"></a>    <span class="bp">self</span><span class="p">,</span>
-<a id="__codelineno-0-70" name="__codelineno-0-70"></a>    <span class="n">year</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-71" name="__codelineno-0-71"></a>    <span class="n">month</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-72" name="__codelineno-0-72"></a>    <span class="n">day</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-73" name="__codelineno-0-73"></a>    <span class="n">hour</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-74" name="__codelineno-0-74"></a>    <span class="n">minute</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-75" name="__codelineno-0-75"></a>    <span class="n">second</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-76" name="__codelineno-0-76"></a><span class="p">):</span>
-<a id="__codelineno-0-77" name="__codelineno-0-77"></a>
-<a id="__codelineno-0-78" name="__codelineno-0-78"></a>    <span class="n">_year</span> <span class="o">=</span> <span class="n">year</span> <span class="k">if</span> <span class="n">year</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span><span class="o">.</span><span class="n">year</span>
-<a id="__codelineno-0-79" name="__codelineno-0-79"></a>    <span class="n">_month</span> <span class="o">=</span> <span class="n">month</span> <span class="k">if</span> <span class="n">month</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span><span class="o">.</span><span class="n">month</span>
-<a id="__codelineno-0-80" name="__codelineno-0-80"></a>    <span class="n">_day</span> <span class="o">=</span> <span class="n">day</span> <span class="k">if</span> <span class="n">day</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span><span class="o">.</span><span class="n">day</span>
-<a id="__codelineno-0-81" name="__codelineno-0-81"></a>    <span class="n">_hour</span> <span class="o">=</span> <span class="n">hour</span> <span class="k">if</span> <span class="n">hour</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span><span class="o">.</span><span class="n">hour</span>
-<a id="__codelineno-0-82" name="__codelineno-0-82"></a>    <span class="n">_minute</span> <span class="o">=</span> <span class="n">minute</span> <span class="k">if</span> <span class="n">minute</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span><span class="o">.</span><span class="n">minute</span>
-<a id="__codelineno-0-83" name="__codelineno-0-83"></a>    <span class="n">_second</span> <span class="o">=</span> <span class="n">second</span> <span class="k">if</span> <span class="n">second</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span><span class="o">.</span><span class="n">second</span>
-<a id="__codelineno-0-84" name="__codelineno-0-84"></a>
-<a id="__codelineno-0-85" name="__codelineno-0-85"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
-<a id="__codelineno-0-86" name="__codelineno-0-86"></a>        <span class="n">year</span><span class="o">=</span><span class="n">_year</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="n">_month</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="n">_day</span><span class="p">,</span> <span class="n">hour</span><span class="o">=</span><span class="n">_hour</span><span class="p">,</span> <span class="n">minute</span><span class="o">=</span><span class="n">_minute</span><span class="p">,</span> <span class="n">second</span><span class="o">=</span><span class="n">_second</span>
-<a id="__codelineno-0-87" name="__codelineno-0-87"></a>    <span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-68">68</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-69">69</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-70">70</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-71">71</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-72">72</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-73">73</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-74">74</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-75">75</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-76">76</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-77">77</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-78">78</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-79">79</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-80">80</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-81">81</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-82">82</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-83">83</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-84">84</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-85">85</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-86">86</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-87">87</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-68" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-68"></a><span class="k">def</span><span class="w"> </span><span class="nf">set_time</span><span class="p">(</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-69" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-69"></a>    <span class="bp">self</span><span class="p">,</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-70" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-70"></a>    <span class="n">year</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-71" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-71"></a>    <span class="n">month</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-72" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-72"></a>    <span class="n">day</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-73" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-73"></a>    <span class="n">hour</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-74" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-74"></a>    <span class="n">minute</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-75" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-75"></a>    <span class="n">second</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-76" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-76"></a><span class="p">):</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-77" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-77"></a>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-78" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-78"></a>    <span class="n">_year</span> <span class="o">=</span> <span class="n">year</span> <span class="k">if</span> <span class="n">year</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span><span class="o">.</span><span class="n">year</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-79" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-79"></a>    <span class="n">_month</span> <span class="o">=</span> <span class="n">month</span> <span class="k">if</span> <span class="n">month</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span><span class="o">.</span><span class="n">month</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-80" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-80"></a>    <span class="n">_day</span> <span class="o">=</span> <span class="n">day</span> <span class="k">if</span> <span class="n">day</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span><span class="o">.</span><span class="n">day</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-81" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-81"></a>    <span class="n">_hour</span> <span class="o">=</span> <span class="n">hour</span> <span class="k">if</span> <span class="n">hour</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span><span class="o">.</span><span class="n">hour</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-82" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-82"></a>    <span class="n">_minute</span> <span class="o">=</span> <span class="n">minute</span> <span class="k">if</span> <span class="n">minute</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span><span class="o">.</span><span class="n">minute</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-83" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-83"></a>    <span class="n">_second</span> <span class="o">=</span> <span class="n">second</span> <span class="k">if</span> <span class="n">second</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span><span class="o">.</span><span class="n">second</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-84" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-84"></a>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-85" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-85"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-86" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-86"></a>        <span class="n">year</span><span class="o">=</span><span class="n">_year</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="n">_month</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="n">_day</span><span class="p">,</span> <span class="n">hour</span><span class="o">=</span><span class="n">_hour</span><span class="p">,</span> <span class="n">minute</span><span class="o">=</span><span class="n">_minute</span><span class="p">,</span> <span class="n">second</span><span class="o">=</span><span class="n">_second</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-87" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.set_time--source--__codelineno-0-87"></a>    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3180,9 +3180,9 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Objects/ChoreStartTime.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-92">92</a></span>
-<span class="normal"><a href="#__codelineno-0-93">93</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-92" name="__codelineno-0-92"></a><span class="k">def</span><span class="w"> </span><span class="nf">subtract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">days</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">hours</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">minutes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">seconds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
-<a id="__codelineno-0-93" name="__codelineno-0-93"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">days</span><span class="p">,</span> <span class="n">hours</span><span class="o">=</span><span class="n">hours</span><span class="p">,</span> <span class="n">minutes</span><span class="o">=</span><span class="n">minutes</span><span class="p">,</span> <span class="n">seconds</span><span class="o">=</span><span class="n">seconds</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.subtract--source--__codelineno-0-92">92</a></span>
+<span class="normal"><a href="#TM1py.Objects.ChoreStartTime.ChoreStartTime.subtract--source--__codelineno-0-93">93</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.subtract--source--__codelineno-0-92" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.subtract--source--__codelineno-0-92"></a><span class="k">def</span><span class="w"> </span><span class="nf">subtract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">days</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">hours</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">minutes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">seconds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+<a id="TM1py.Objects.ChoreStartTime.ChoreStartTime.subtract--source--__codelineno-0-93" name="TM1py.Objects.ChoreStartTime.ChoreStartTime.subtract--source--__codelineno-0-93"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datetime</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">days</span><span class="p">,</span> <span class="n">hours</span><span class="o">=</span><span class="n">hours</span><span class="p">,</span> <span class="n">minutes</span><span class="o">=</span><span class="n">minutes</span><span class="p">,</span> <span class="n">seconds</span><span class="o">=</span><span class="n">seconds</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3270,10 +3270,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
   </body>

@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../img/favicon_tm1py_centered_64x64.png">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.8.2">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -2858,23 +2858,23 @@
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>TM1py/Objects/Axis.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-15">15</a></span>
-<span class="normal"><a href="#__codelineno-0-16">16</a></span>
-<span class="normal"><a href="#__codelineno-0-17">17</a></span>
-<span class="normal"><a href="#__codelineno-0-18">18</a></span>
-<span class="normal"><a href="#__codelineno-0-19">19</a></span>
-<span class="normal"><a href="#__codelineno-0-20">20</a></span>
-<span class="normal"><a href="#__codelineno-0-21">21</a></span>
-<span class="normal"><a href="#__codelineno-0-22">22</a></span>
-<span class="normal"><a href="#__codelineno-0-23">23</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">subset</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Subset</span><span class="p">,</span> <span class="n">AnonymousSubset</span><span class="p">]):</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16"></a><span class="w">    </span><span class="sd">"""</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="sd">    :Parameters:</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18"></a><span class="sd">        `dimension_name` : String</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="sd">        `subset` : Subset or AnonymousSubset</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20"></a><span class="sd">    """</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_subset</span> <span class="o">=</span> <span class="n">subset</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_dimension_name</span> <span class="o">=</span> <span class="n">dimension_name</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_hierarchy_name</span> <span class="o">=</span> <span class="n">dimension_name</span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-15">15</a></span>
+<span class="normal"><a href="#TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-16">16</a></span>
+<span class="normal"><a href="#TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-17">17</a></span>
+<span class="normal"><a href="#TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-18">18</a></span>
+<span class="normal"><a href="#TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-19">19</a></span>
+<span class="normal"><a href="#TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-20">20</a></span>
+<span class="normal"><a href="#TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-21">21</a></span>
+<span class="normal"><a href="#TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-22">22</a></span>
+<span class="normal"><a href="#TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-23">23</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-15" name="TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-15"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">subset</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Subset</span><span class="p">,</span> <span class="n">AnonymousSubset</span><span class="p">]):</span>
+<a id="TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-16" name="TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-16"></a><span class="w">    </span><span class="sd">"""</span>
+<a id="TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-17" name="TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-17"></a><span class="sd">    :Parameters:</span>
+<a id="TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-18" name="TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-18"></a><span class="sd">        `dimension_name` : String</span>
+<a id="TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-19" name="TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-19"></a><span class="sd">        `subset` : Subset or AnonymousSubset</span>
+<a id="TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-20" name="TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-20"></a><span class="sd">    """</span>
+<a id="TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-21" name="TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-21"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_subset</span> <span class="o">=</span> <span class="n">subset</span>
+<a id="TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-22" name="TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-22"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_dimension_name</span> <span class="o">=</span> <span class="n">dimension_name</span>
+<a id="TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-23" name="TM1py.Objects.Axis.ViewAxisSelection--source--__codelineno-0-23"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_hierarchy_name</span> <span class="o">=</span> <span class="n">dimension_name</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -3025,15 +3025,15 @@ Can be a Registered Subset or an Anonymous Subset</p>
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>TM1py/Objects/Axis.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-70">70</a></span>
-<span class="normal"><a href="#__codelineno-0-71">71</a></span>
-<span class="normal"><a href="#__codelineno-0-72">72</a></span>
-<span class="normal"><a href="#__codelineno-0-73">73</a></span>
-<span class="normal"><a href="#__codelineno-0-74">74</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-70" name="__codelineno-0-70"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">subset</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AnonymousSubset</span><span class="p">,</span> <span class="n">Subset</span><span class="p">],</span> <span class="n">selected</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<a id="__codelineno-0-71" name="__codelineno-0-71"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_dimension_name</span> <span class="o">=</span> <span class="n">dimension_name</span>
-<a id="__codelineno-0-72" name="__codelineno-0-72"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_hierarchy_name</span> <span class="o">=</span> <span class="n">dimension_name</span>
-<a id="__codelineno-0-73" name="__codelineno-0-73"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_subset</span> <span class="o">=</span> <span class="n">subset</span>
-<a id="__codelineno-0-74" name="__codelineno-0-74"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_selected</span> <span class="o">=</span> <span class="n">selected</span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Objects.Axis.ViewTitleSelection--source--__codelineno-0-70">70</a></span>
+<span class="normal"><a href="#TM1py.Objects.Axis.ViewTitleSelection--source--__codelineno-0-71">71</a></span>
+<span class="normal"><a href="#TM1py.Objects.Axis.ViewTitleSelection--source--__codelineno-0-72">72</a></span>
+<span class="normal"><a href="#TM1py.Objects.Axis.ViewTitleSelection--source--__codelineno-0-73">73</a></span>
+<span class="normal"><a href="#TM1py.Objects.Axis.ViewTitleSelection--source--__codelineno-0-74">74</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Objects.Axis.ViewTitleSelection--source--__codelineno-0-70" name="TM1py.Objects.Axis.ViewTitleSelection--source--__codelineno-0-70"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">subset</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AnonymousSubset</span><span class="p">,</span> <span class="n">Subset</span><span class="p">],</span> <span class="n">selected</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<a id="TM1py.Objects.Axis.ViewTitleSelection--source--__codelineno-0-71" name="TM1py.Objects.Axis.ViewTitleSelection--source--__codelineno-0-71"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_dimension_name</span> <span class="o">=</span> <span class="n">dimension_name</span>
+<a id="TM1py.Objects.Axis.ViewTitleSelection--source--__codelineno-0-72" name="TM1py.Objects.Axis.ViewTitleSelection--source--__codelineno-0-72"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_hierarchy_name</span> <span class="o">=</span> <span class="n">dimension_name</span>
+<a id="TM1py.Objects.Axis.ViewTitleSelection--source--__codelineno-0-73" name="TM1py.Objects.Axis.ViewTitleSelection--source--__codelineno-0-73"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_subset</span> <span class="o">=</span> <span class="n">subset</span>
+<a id="TM1py.Objects.Axis.ViewTitleSelection--source--__codelineno-0-74" name="TM1py.Objects.Axis.ViewTitleSelection--source--__codelineno-0-74"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_selected</span> <span class="o">=</span> <span class="n">selected</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -3231,10 +3231,10 @@ Can be a Registered Subset or an Anonymous Subset</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
   </body>

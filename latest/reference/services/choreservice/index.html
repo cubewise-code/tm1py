@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../img/favicon_tm1py_centered_64x64.png">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.8.2">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -2952,9 +2952,9 @@
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>TM1py/Services/ChoreService.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-68">68</a></span>
-<span class="normal"><a href="#__codelineno-0-69">69</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-68" name="__codelineno-0-68"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rest</span><span class="p">:</span> <span class="n">RestService</span><span class="p">):</span>
-<a id="__codelineno-0-69" name="__codelineno-0-69"></a>    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">rest</span><span class="p">)</span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService--source--__codelineno-0-68">68</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService--source--__codelineno-0-69">69</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Services.ChoreService.ChoreService--source--__codelineno-0-68" name="TM1py.Services.ChoreService.ChoreService--source--__codelineno-0-68"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rest</span><span class="p">:</span> <span class="n">RestService</span><span class="p">):</span>
+<a id="TM1py.Services.ChoreService.ChoreService--source--__codelineno-0-69" name="TM1py.Services.ChoreService.ChoreService--source--__codelineno-0-69"></a>    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">rest</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -3041,19 +3041,19 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ChoreService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-194">194</a></span>
-<span class="normal"><a href="#__codelineno-0-195">195</a></span>
-<span class="normal"><a href="#__codelineno-0-196">196</a></span>
-<span class="normal"><a href="#__codelineno-0-197">197</a></span>
-<span class="normal"><a href="#__codelineno-0-198">198</a></span>
-<span class="normal"><a href="#__codelineno-0-199">199</a></span>
-<span class="normal"><a href="#__codelineno-0-200">200</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-194" name="__codelineno-0-194"></a><span class="k">def</span><span class="w"> </span><span class="nf">activate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
-<a id="__codelineno-0-195" name="__codelineno-0-195"></a><span class="w">    </span><span class="sd">"""activate chore on TM1 Server</span>
-<a id="__codelineno-0-196" name="__codelineno-0-196"></a><span class="sd">    :param chore_name:</span>
-<a id="__codelineno-0-197" name="__codelineno-0-197"></a><span class="sd">    :return: response</span>
-<a id="__codelineno-0-198" name="__codelineno-0-198"></a><span class="sd">    """</span>
-<a id="__codelineno-0-199" name="__codelineno-0-199"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span><span class="s2">"/Chores('</span><span class="si">{}</span><span class="s2">')/tm1.Activate"</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">)</span>
-<a id="__codelineno-0-200" name="__codelineno-0-200"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">POST</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.activate--source--__codelineno-0-194">194</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.activate--source--__codelineno-0-195">195</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.activate--source--__codelineno-0-196">196</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.activate--source--__codelineno-0-197">197</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.activate--source--__codelineno-0-198">198</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.activate--source--__codelineno-0-199">199</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.activate--source--__codelineno-0-200">200</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Services.ChoreService.ChoreService.activate--source--__codelineno-0-194" name="TM1py.Services.ChoreService.ChoreService.activate--source--__codelineno-0-194"></a><span class="k">def</span><span class="w"> </span><span class="nf">activate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.activate--source--__codelineno-0-195" name="TM1py.Services.ChoreService.ChoreService.activate--source--__codelineno-0-195"></a><span class="w">    </span><span class="sd">"""activate chore on TM1 Server</span>
+<a id="TM1py.Services.ChoreService.ChoreService.activate--source--__codelineno-0-196" name="TM1py.Services.ChoreService.ChoreService.activate--source--__codelineno-0-196"></a><span class="sd">    :param chore_name:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.activate--source--__codelineno-0-197" name="TM1py.Services.ChoreService.ChoreService.activate--source--__codelineno-0-197"></a><span class="sd">    :return: response</span>
+<a id="TM1py.Services.ChoreService.ChoreService.activate--source--__codelineno-0-198" name="TM1py.Services.ChoreService.ChoreService.activate--source--__codelineno-0-198"></a><span class="sd">    """</span>
+<a id="TM1py.Services.ChoreService.ChoreService.activate--source--__codelineno-0-199" name="TM1py.Services.ChoreService.ChoreService.activate--source--__codelineno-0-199"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span><span class="s2">"/Chores('</span><span class="si">{}</span><span class="s2">')/tm1.Activate"</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.activate--source--__codelineno-0-200" name="TM1py.Services.ChoreService.ChoreService.activate--source--__codelineno-0-200"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">POST</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3130,33 +3130,33 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ChoreService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-96"> 96</a></span>
-<span class="normal"><a href="#__codelineno-0-97"> 97</a></span>
-<span class="normal"><a href="#__codelineno-0-98"> 98</a></span>
-<span class="normal"><a href="#__codelineno-0-99"> 99</a></span>
-<span class="normal"><a href="#__codelineno-0-100">100</a></span>
-<span class="normal"><a href="#__codelineno-0-101">101</a></span>
-<span class="normal"><a href="#__codelineno-0-102">102</a></span>
-<span class="normal"><a href="#__codelineno-0-103">103</a></span>
-<span class="normal"><a href="#__codelineno-0-104">104</a></span>
-<span class="normal"><a href="#__codelineno-0-105">105</a></span>
-<span class="normal"><a href="#__codelineno-0-106">106</a></span>
-<span class="normal"><a href="#__codelineno-0-107">107</a></span>
-<span class="normal"><a href="#__codelineno-0-108">108</a></span>
-<span class="normal"><a href="#__codelineno-0-109">109</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-96" name="__codelineno-0-96"></a><span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chore</span><span class="p">:</span> <span class="n">Chore</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
-<a id="__codelineno-0-97" name="__codelineno-0-97"></a><span class="w">    </span><span class="sd">"""create a chore</span>
-<a id="__codelineno-0-98" name="__codelineno-0-98"></a><span class="sd">    :param chore: instance of TM1py.Chore</span>
-<a id="__codelineno-0-99" name="__codelineno-0-99"></a><span class="sd">    :return:</span>
-<a id="__codelineno-0-100" name="__codelineno-0-100"></a><span class="sd">    """</span>
-<a id="__codelineno-0-101" name="__codelineno-0-101"></a>    <span class="n">url</span> <span class="o">=</span> <span class="s2">"/Chores"</span>
-<a id="__codelineno-0-102" name="__codelineno-0-102"></a>    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">POST</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">chore</span><span class="o">.</span><span class="n">body</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<a id="__codelineno-0-103" name="__codelineno-0-103"></a>
-<a id="__codelineno-0-104" name="__codelineno-0-104"></a>    <span class="k">if</span> <span class="n">chore</span><span class="o">.</span><span class="n">dst_sensitivity</span><span class="p">:</span>
-<a id="__codelineno-0-105" name="__codelineno-0-105"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">set_local_start_time</span><span class="p">(</span><span class="n">chore</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">chore</span><span class="o">.</span><span class="n">start_time</span><span class="o">.</span><span class="n">datetime</span><span class="p">)</span>
-<a id="__codelineno-0-106" name="__codelineno-0-106"></a>
-<a id="__codelineno-0-107" name="__codelineno-0-107"></a>    <span class="k">if</span> <span class="n">chore</span><span class="o">.</span><span class="n">active</span><span class="p">:</span>
-<a id="__codelineno-0-108" name="__codelineno-0-108"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">activate</span><span class="p">(</span><span class="n">chore</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-<a id="__codelineno-0-109" name="__codelineno-0-109"></a>    <span class="k">return</span> <span class="n">response</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-96"> 96</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-97"> 97</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-98"> 98</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-99"> 99</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-100">100</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-101">101</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-102">102</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-103">103</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-104">104</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-105">105</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-106">106</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-107">107</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-108">108</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-109">109</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-96" name="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-96"></a><span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chore</span><span class="p">:</span> <span class="n">Chore</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-97" name="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-97"></a><span class="w">    </span><span class="sd">"""create a chore</span>
+<a id="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-98" name="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-98"></a><span class="sd">    :param chore: instance of TM1py.Chore</span>
+<a id="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-99" name="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-99"></a><span class="sd">    :return:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-100" name="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-100"></a><span class="sd">    """</span>
+<a id="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-101" name="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-101"></a>    <span class="n">url</span> <span class="o">=</span> <span class="s2">"/Chores"</span>
+<a id="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-102" name="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-102"></a>    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">POST</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">chore</span><span class="o">.</span><span class="n">body</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-103" name="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-103"></a>
+<a id="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-104" name="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-104"></a>    <span class="k">if</span> <span class="n">chore</span><span class="o">.</span><span class="n">dst_sensitivity</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-105" name="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-105"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">set_local_start_time</span><span class="p">(</span><span class="n">chore</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">chore</span><span class="o">.</span><span class="n">start_time</span><span class="o">.</span><span class="n">datetime</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-106" name="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-106"></a>
+<a id="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-107" name="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-107"></a>    <span class="k">if</span> <span class="n">chore</span><span class="o">.</span><span class="n">active</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-108" name="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-108"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">activate</span><span class="p">(</span><span class="n">chore</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-109" name="TM1py.Services.ChoreService.ChoreService.create--source--__codelineno-0-109"></a>    <span class="k">return</span> <span class="n">response</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3233,19 +3233,19 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ChoreService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-202">202</a></span>
-<span class="normal"><a href="#__codelineno-0-203">203</a></span>
-<span class="normal"><a href="#__codelineno-0-204">204</a></span>
-<span class="normal"><a href="#__codelineno-0-205">205</a></span>
-<span class="normal"><a href="#__codelineno-0-206">206</a></span>
-<span class="normal"><a href="#__codelineno-0-207">207</a></span>
-<span class="normal"><a href="#__codelineno-0-208">208</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-202" name="__codelineno-0-202"></a><span class="k">def</span><span class="w"> </span><span class="nf">deactivate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
-<a id="__codelineno-0-203" name="__codelineno-0-203"></a><span class="w">    </span><span class="sd">"""deactivate chore on TM1 Server</span>
-<a id="__codelineno-0-204" name="__codelineno-0-204"></a><span class="sd">    :param chore_name:</span>
-<a id="__codelineno-0-205" name="__codelineno-0-205"></a><span class="sd">    :return: response</span>
-<a id="__codelineno-0-206" name="__codelineno-0-206"></a><span class="sd">    """</span>
-<a id="__codelineno-0-207" name="__codelineno-0-207"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span><span class="s2">"/Chores('</span><span class="si">{}</span><span class="s2">')/tm1.Deactivate"</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">)</span>
-<a id="__codelineno-0-208" name="__codelineno-0-208"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">POST</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.deactivate--source--__codelineno-0-202">202</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.deactivate--source--__codelineno-0-203">203</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.deactivate--source--__codelineno-0-204">204</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.deactivate--source--__codelineno-0-205">205</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.deactivate--source--__codelineno-0-206">206</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.deactivate--source--__codelineno-0-207">207</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.deactivate--source--__codelineno-0-208">208</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Services.ChoreService.ChoreService.deactivate--source--__codelineno-0-202" name="TM1py.Services.ChoreService.ChoreService.deactivate--source--__codelineno-0-202"></a><span class="k">def</span><span class="w"> </span><span class="nf">deactivate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.deactivate--source--__codelineno-0-203" name="TM1py.Services.ChoreService.ChoreService.deactivate--source--__codelineno-0-203"></a><span class="w">    </span><span class="sd">"""deactivate chore on TM1 Server</span>
+<a id="TM1py.Services.ChoreService.ChoreService.deactivate--source--__codelineno-0-204" name="TM1py.Services.ChoreService.ChoreService.deactivate--source--__codelineno-0-204"></a><span class="sd">    :param chore_name:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.deactivate--source--__codelineno-0-205" name="TM1py.Services.ChoreService.ChoreService.deactivate--source--__codelineno-0-205"></a><span class="sd">    :return: response</span>
+<a id="TM1py.Services.ChoreService.ChoreService.deactivate--source--__codelineno-0-206" name="TM1py.Services.ChoreService.ChoreService.deactivate--source--__codelineno-0-206"></a><span class="sd">    """</span>
+<a id="TM1py.Services.ChoreService.ChoreService.deactivate--source--__codelineno-0-207" name="TM1py.Services.ChoreService.ChoreService.deactivate--source--__codelineno-0-207"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span><span class="s2">"/Chores('</span><span class="si">{}</span><span class="s2">')/tm1.Deactivate"</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.deactivate--source--__codelineno-0-208" name="TM1py.Services.ChoreService.ChoreService.deactivate--source--__codelineno-0-208"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">POST</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3322,21 +3322,21 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ChoreService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-111">111</a></span>
-<span class="normal"><a href="#__codelineno-0-112">112</a></span>
-<span class="normal"><a href="#__codelineno-0-113">113</a></span>
-<span class="normal"><a href="#__codelineno-0-114">114</a></span>
-<span class="normal"><a href="#__codelineno-0-115">115</a></span>
-<span class="normal"><a href="#__codelineno-0-116">116</a></span>
-<span class="normal"><a href="#__codelineno-0-117">117</a></span>
-<span class="normal"><a href="#__codelineno-0-118">118</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-111" name="__codelineno-0-111"></a><span class="k">def</span><span class="w"> </span><span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
-<a id="__codelineno-0-112" name="__codelineno-0-112"></a><span class="w">    </span><span class="sd">"""delete chore in TM1</span>
-<a id="__codelineno-0-113" name="__codelineno-0-113"></a><span class="sd">    :param chore_name:</span>
-<a id="__codelineno-0-114" name="__codelineno-0-114"></a><span class="sd">    :return: response</span>
-<a id="__codelineno-0-115" name="__codelineno-0-115"></a><span class="sd">    """</span>
-<a id="__codelineno-0-116" name="__codelineno-0-116"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span><span class="s2">"/Chores('</span><span class="si">{}</span><span class="s2">')"</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">)</span>
-<a id="__codelineno-0-117" name="__codelineno-0-117"></a>    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">DELETE</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<a id="__codelineno-0-118" name="__codelineno-0-118"></a>    <span class="k">return</span> <span class="n">response</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.delete--source--__codelineno-0-111">111</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.delete--source--__codelineno-0-112">112</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.delete--source--__codelineno-0-113">113</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.delete--source--__codelineno-0-114">114</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.delete--source--__codelineno-0-115">115</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.delete--source--__codelineno-0-116">116</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.delete--source--__codelineno-0-117">117</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.delete--source--__codelineno-0-118">118</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Services.ChoreService.ChoreService.delete--source--__codelineno-0-111" name="TM1py.Services.ChoreService.ChoreService.delete--source--__codelineno-0-111"></a><span class="k">def</span><span class="w"> </span><span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.delete--source--__codelineno-0-112" name="TM1py.Services.ChoreService.ChoreService.delete--source--__codelineno-0-112"></a><span class="w">    </span><span class="sd">"""delete chore in TM1</span>
+<a id="TM1py.Services.ChoreService.ChoreService.delete--source--__codelineno-0-113" name="TM1py.Services.ChoreService.ChoreService.delete--source--__codelineno-0-113"></a><span class="sd">    :param chore_name:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.delete--source--__codelineno-0-114" name="TM1py.Services.ChoreService.ChoreService.delete--source--__codelineno-0-114"></a><span class="sd">    :return: response</span>
+<a id="TM1py.Services.ChoreService.ChoreService.delete--source--__codelineno-0-115" name="TM1py.Services.ChoreService.ChoreService.delete--source--__codelineno-0-115"></a><span class="sd">    """</span>
+<a id="TM1py.Services.ChoreService.ChoreService.delete--source--__codelineno-0-116" name="TM1py.Services.ChoreService.ChoreService.delete--source--__codelineno-0-116"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span><span class="s2">"/Chores('</span><span class="si">{}</span><span class="s2">')"</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.delete--source--__codelineno-0-117" name="TM1py.Services.ChoreService.ChoreService.delete--source--__codelineno-0-117"></a>    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">DELETE</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.delete--source--__codelineno-0-118" name="TM1py.Services.ChoreService.ChoreService.delete--source--__codelineno-0-118"></a>    <span class="k">return</span> <span class="n">response</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3413,17 +3413,17 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ChoreService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-226">226</a></span>
-<span class="normal"><a href="#__codelineno-0-227">227</a></span>
-<span class="normal"><a href="#__codelineno-0-228">228</a></span>
-<span class="normal"><a href="#__codelineno-0-229">229</a></span>
-<span class="normal"><a href="#__codelineno-0-230">230</a></span>
-<span class="normal"><a href="#__codelineno-0-231">231</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-226" name="__codelineno-0-226"></a><span class="k">def</span><span class="w"> </span><span class="nf">execute_chore</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
-<a id="__codelineno-0-227" name="__codelineno-0-227"></a><span class="w">    </span><span class="sd">"""Ask TM1 Server to execute a chore</span>
-<a id="__codelineno-0-228" name="__codelineno-0-228"></a><span class="sd">    :param chore_name: String, name of the chore to be executed</span>
-<a id="__codelineno-0-229" name="__codelineno-0-229"></a><span class="sd">    :return: the response</span>
-<a id="__codelineno-0-230" name="__codelineno-0-230"></a><span class="sd">    """</span>
-<a id="__codelineno-0-231" name="__codelineno-0-231"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">POST</span><span class="p">(</span><span class="n">format_url</span><span class="p">(</span><span class="s2">"/Chores('</span><span class="si">{}</span><span class="s2">')/tm1.Execute"</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">),</span> <span class="s2">""</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.execute_chore--source--__codelineno-0-226">226</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.execute_chore--source--__codelineno-0-227">227</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.execute_chore--source--__codelineno-0-228">228</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.execute_chore--source--__codelineno-0-229">229</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.execute_chore--source--__codelineno-0-230">230</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.execute_chore--source--__codelineno-0-231">231</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Services.ChoreService.ChoreService.execute_chore--source--__codelineno-0-226" name="TM1py.Services.ChoreService.ChoreService.execute_chore--source--__codelineno-0-226"></a><span class="k">def</span><span class="w"> </span><span class="nf">execute_chore</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.execute_chore--source--__codelineno-0-227" name="TM1py.Services.ChoreService.ChoreService.execute_chore--source--__codelineno-0-227"></a><span class="w">    </span><span class="sd">"""Ask TM1 Server to execute a chore</span>
+<a id="TM1py.Services.ChoreService.ChoreService.execute_chore--source--__codelineno-0-228" name="TM1py.Services.ChoreService.ChoreService.execute_chore--source--__codelineno-0-228"></a><span class="sd">    :param chore_name: String, name of the chore to be executed</span>
+<a id="TM1py.Services.ChoreService.ChoreService.execute_chore--source--__codelineno-0-229" name="TM1py.Services.ChoreService.ChoreService.execute_chore--source--__codelineno-0-229"></a><span class="sd">    :return: the response</span>
+<a id="TM1py.Services.ChoreService.ChoreService.execute_chore--source--__codelineno-0-230" name="TM1py.Services.ChoreService.ChoreService.execute_chore--source--__codelineno-0-230"></a><span class="sd">    """</span>
+<a id="TM1py.Services.ChoreService.ChoreService.execute_chore--source--__codelineno-0-231" name="TM1py.Services.ChoreService.ChoreService.execute_chore--source--__codelineno-0-231"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">POST</span><span class="p">(</span><span class="n">format_url</span><span class="p">(</span><span class="s2">"/Chores('</span><span class="si">{}</span><span class="s2">')/tm1.Execute"</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">),</span> <span class="s2">""</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3500,21 +3500,21 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ChoreService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-120">120</a></span>
-<span class="normal"><a href="#__codelineno-0-121">121</a></span>
-<span class="normal"><a href="#__codelineno-0-122">122</a></span>
-<span class="normal"><a href="#__codelineno-0-123">123</a></span>
-<span class="normal"><a href="#__codelineno-0-124">124</a></span>
-<span class="normal"><a href="#__codelineno-0-125">125</a></span>
-<span class="normal"><a href="#__codelineno-0-126">126</a></span>
-<span class="normal"><a href="#__codelineno-0-127">127</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-120" name="__codelineno-0-120"></a><span class="k">def</span><span class="w"> </span><span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<a id="__codelineno-0-121" name="__codelineno-0-121"></a><span class="w">    </span><span class="sd">"""Check if Chore exists</span>
-<a id="__codelineno-0-122" name="__codelineno-0-122"></a>
-<a id="__codelineno-0-123" name="__codelineno-0-123"></a><span class="sd">    :param chore_name:</span>
-<a id="__codelineno-0-124" name="__codelineno-0-124"></a><span class="sd">    :return:</span>
-<a id="__codelineno-0-125" name="__codelineno-0-125"></a><span class="sd">    """</span>
-<a id="__codelineno-0-126" name="__codelineno-0-126"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span><span class="s2">"/Chores('</span><span class="si">{}</span><span class="s2">')"</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">)</span>
-<a id="__codelineno-0-127" name="__codelineno-0-127"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.exists--source--__codelineno-0-120">120</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.exists--source--__codelineno-0-121">121</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.exists--source--__codelineno-0-122">122</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.exists--source--__codelineno-0-123">123</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.exists--source--__codelineno-0-124">124</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.exists--source--__codelineno-0-125">125</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.exists--source--__codelineno-0-126">126</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.exists--source--__codelineno-0-127">127</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Services.ChoreService.ChoreService.exists--source--__codelineno-0-120" name="TM1py.Services.ChoreService.ChoreService.exists--source--__codelineno-0-120"></a><span class="k">def</span><span class="w"> </span><span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.exists--source--__codelineno-0-121" name="TM1py.Services.ChoreService.ChoreService.exists--source--__codelineno-0-121"></a><span class="w">    </span><span class="sd">"""Check if Chore exists</span>
+<a id="TM1py.Services.ChoreService.ChoreService.exists--source--__codelineno-0-122" name="TM1py.Services.ChoreService.ChoreService.exists--source--__codelineno-0-122"></a>
+<a id="TM1py.Services.ChoreService.ChoreService.exists--source--__codelineno-0-123" name="TM1py.Services.ChoreService.ChoreService.exists--source--__codelineno-0-123"></a><span class="sd">    :param chore_name:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.exists--source--__codelineno-0-124" name="TM1py.Services.ChoreService.ChoreService.exists--source--__codelineno-0-124"></a><span class="sd">    :return:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.exists--source--__codelineno-0-125" name="TM1py.Services.ChoreService.ChoreService.exists--source--__codelineno-0-125"></a><span class="sd">    """</span>
+<a id="TM1py.Services.ChoreService.ChoreService.exists--source--__codelineno-0-126" name="TM1py.Services.ChoreService.ChoreService.exists--source--__codelineno-0-126"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span><span class="s2">"/Chores('</span><span class="si">{}</span><span class="s2">')"</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.exists--source--__codelineno-0-127" name="TM1py.Services.ChoreService.ChoreService.exists--source--__codelineno-0-127"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3591,21 +3591,21 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ChoreService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-71">71</a></span>
-<span class="normal"><a href="#__codelineno-0-72">72</a></span>
-<span class="normal"><a href="#__codelineno-0-73">73</a></span>
-<span class="normal"><a href="#__codelineno-0-74">74</a></span>
-<span class="normal"><a href="#__codelineno-0-75">75</a></span>
-<span class="normal"><a href="#__codelineno-0-76">76</a></span>
-<span class="normal"><a href="#__codelineno-0-77">77</a></span>
-<span class="normal"><a href="#__codelineno-0-78">78</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-71" name="__codelineno-0-71"></a><span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Chore</span><span class="p">:</span>
-<a id="__codelineno-0-72" name="__codelineno-0-72"></a><span class="w">    </span><span class="sd">"""Get a chore from the TM1 Server</span>
-<a id="__codelineno-0-73" name="__codelineno-0-73"></a><span class="sd">    :param chore_name:</span>
-<a id="__codelineno-0-74" name="__codelineno-0-74"></a><span class="sd">    :return: instance of TM1py.Chore</span>
-<a id="__codelineno-0-75" name="__codelineno-0-75"></a><span class="sd">    """</span>
-<a id="__codelineno-0-76" name="__codelineno-0-76"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span><span class="s2">"/Chores('</span><span class="si">{}</span><span class="s2">')?$expand=Tasks($expand=*,Process($select=Name),Chore($select=Name))"</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">)</span>
-<a id="__codelineno-0-77" name="__codelineno-0-77"></a>    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">GET</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<a id="__codelineno-0-78" name="__codelineno-0-78"></a>    <span class="k">return</span> <span class="n">Chore</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.get--source--__codelineno-0-71">71</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.get--source--__codelineno-0-72">72</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.get--source--__codelineno-0-73">73</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.get--source--__codelineno-0-74">74</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.get--source--__codelineno-0-75">75</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.get--source--__codelineno-0-76">76</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.get--source--__codelineno-0-77">77</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.get--source--__codelineno-0-78">78</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Services.ChoreService.ChoreService.get--source--__codelineno-0-71" name="TM1py.Services.ChoreService.ChoreService.get--source--__codelineno-0-71"></a><span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Chore</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.get--source--__codelineno-0-72" name="TM1py.Services.ChoreService.ChoreService.get--source--__codelineno-0-72"></a><span class="w">    </span><span class="sd">"""Get a chore from the TM1 Server</span>
+<a id="TM1py.Services.ChoreService.ChoreService.get--source--__codelineno-0-73" name="TM1py.Services.ChoreService.ChoreService.get--source--__codelineno-0-73"></a><span class="sd">    :param chore_name:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.get--source--__codelineno-0-74" name="TM1py.Services.ChoreService.ChoreService.get--source--__codelineno-0-74"></a><span class="sd">    :return: instance of TM1py.Chore</span>
+<a id="TM1py.Services.ChoreService.ChoreService.get--source--__codelineno-0-75" name="TM1py.Services.ChoreService.ChoreService.get--source--__codelineno-0-75"></a><span class="sd">    """</span>
+<a id="TM1py.Services.ChoreService.ChoreService.get--source--__codelineno-0-76" name="TM1py.Services.ChoreService.ChoreService.get--source--__codelineno-0-76"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span><span class="s2">"/Chores('</span><span class="si">{}</span><span class="s2">')?$expand=Tasks($expand=*,Process($select=Name),Chore($select=Name))"</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.get--source--__codelineno-0-77" name="TM1py.Services.ChoreService.ChoreService.get--source--__codelineno-0-77"></a>    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">GET</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.get--source--__codelineno-0-78" name="TM1py.Services.ChoreService.ChoreService.get--source--__codelineno-0-78"></a>    <span class="k">return</span> <span class="n">Chore</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3651,19 +3651,19 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ChoreService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-80">80</a></span>
-<span class="normal"><a href="#__codelineno-0-81">81</a></span>
-<span class="normal"><a href="#__codelineno-0-82">82</a></span>
-<span class="normal"><a href="#__codelineno-0-83">83</a></span>
-<span class="normal"><a href="#__codelineno-0-84">84</a></span>
-<span class="normal"><a href="#__codelineno-0-85">85</a></span>
-<span class="normal"><a href="#__codelineno-0-86">86</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-80" name="__codelineno-0-80"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Chore</span><span class="p">]:</span>
-<a id="__codelineno-0-81" name="__codelineno-0-81"></a><span class="w">    </span><span class="sd">"""get a List of all Chores</span>
-<a id="__codelineno-0-82" name="__codelineno-0-82"></a><span class="sd">    :return: List of TM1py.Chore</span>
-<a id="__codelineno-0-83" name="__codelineno-0-83"></a><span class="sd">    """</span>
-<a id="__codelineno-0-84" name="__codelineno-0-84"></a>    <span class="n">url</span> <span class="o">=</span> <span class="s2">"/Chores?$expand=Tasks($expand=*,Process($select=Name),Chore($select=Name))"</span>
-<a id="__codelineno-0-85" name="__codelineno-0-85"></a>    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">GET</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<a id="__codelineno-0-86" name="__codelineno-0-86"></a>    <span class="k">return</span> <span class="p">[</span><span class="n">Chore</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">chore_as_dict</span><span class="p">)</span> <span class="k">for</span> <span class="n">chore_as_dict</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">"value"</span><span class="p">]]</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.get_all--source--__codelineno-0-80">80</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.get_all--source--__codelineno-0-81">81</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.get_all--source--__codelineno-0-82">82</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.get_all--source--__codelineno-0-83">83</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.get_all--source--__codelineno-0-84">84</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.get_all--source--__codelineno-0-85">85</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.get_all--source--__codelineno-0-86">86</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Services.ChoreService.ChoreService.get_all--source--__codelineno-0-80" name="TM1py.Services.ChoreService.ChoreService.get_all--source--__codelineno-0-80"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Chore</span><span class="p">]:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.get_all--source--__codelineno-0-81" name="TM1py.Services.ChoreService.ChoreService.get_all--source--__codelineno-0-81"></a><span class="w">    </span><span class="sd">"""get a List of all Chores</span>
+<a id="TM1py.Services.ChoreService.ChoreService.get_all--source--__codelineno-0-82" name="TM1py.Services.ChoreService.ChoreService.get_all--source--__codelineno-0-82"></a><span class="sd">    :return: List of TM1py.Chore</span>
+<a id="TM1py.Services.ChoreService.ChoreService.get_all--source--__codelineno-0-83" name="TM1py.Services.ChoreService.ChoreService.get_all--source--__codelineno-0-83"></a><span class="sd">    """</span>
+<a id="TM1py.Services.ChoreService.ChoreService.get_all--source--__codelineno-0-84" name="TM1py.Services.ChoreService.ChoreService.get_all--source--__codelineno-0-84"></a>    <span class="n">url</span> <span class="o">=</span> <span class="s2">"/Chores?$expand=Tasks($expand=*,Process($select=Name),Chore($select=Name))"</span>
+<a id="TM1py.Services.ChoreService.ChoreService.get_all--source--__codelineno-0-85" name="TM1py.Services.ChoreService.ChoreService.get_all--source--__codelineno-0-85"></a>    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">GET</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.get_all--source--__codelineno-0-86" name="TM1py.Services.ChoreService.ChoreService.get_all--source--__codelineno-0-86"></a>    <span class="k">return</span> <span class="p">[</span><span class="n">Chore</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">chore_as_dict</span><span class="p">)</span> <span class="k">for</span> <span class="n">chore_as_dict</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">"value"</span><span class="p">]]</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3709,19 +3709,19 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ChoreService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-88">88</a></span>
-<span class="normal"><a href="#__codelineno-0-89">89</a></span>
-<span class="normal"><a href="#__codelineno-0-90">90</a></span>
-<span class="normal"><a href="#__codelineno-0-91">91</a></span>
-<span class="normal"><a href="#__codelineno-0-92">92</a></span>
-<span class="normal"><a href="#__codelineno-0-93">93</a></span>
-<span class="normal"><a href="#__codelineno-0-94">94</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-88" name="__codelineno-0-88"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_all_names</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<a id="__codelineno-0-89" name="__codelineno-0-89"></a><span class="w">    </span><span class="sd">"""get a List of all Chores</span>
-<a id="__codelineno-0-90" name="__codelineno-0-90"></a><span class="sd">    :return: List of TM1py.Chore</span>
-<a id="__codelineno-0-91" name="__codelineno-0-91"></a><span class="sd">    """</span>
-<a id="__codelineno-0-92" name="__codelineno-0-92"></a>    <span class="n">url</span> <span class="o">=</span> <span class="s2">"/Chores?$select=Name"</span>
-<a id="__codelineno-0-93" name="__codelineno-0-93"></a>    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">GET</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<a id="__codelineno-0-94" name="__codelineno-0-94"></a>    <span class="k">return</span> <span class="p">[</span><span class="n">chore</span><span class="p">[</span><span class="s2">"Name"</span><span class="p">]</span> <span class="k">for</span> <span class="n">chore</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">"value"</span><span class="p">]]</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.get_all_names--source--__codelineno-0-88">88</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.get_all_names--source--__codelineno-0-89">89</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.get_all_names--source--__codelineno-0-90">90</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.get_all_names--source--__codelineno-0-91">91</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.get_all_names--source--__codelineno-0-92">92</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.get_all_names--source--__codelineno-0-93">93</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.get_all_names--source--__codelineno-0-94">94</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Services.ChoreService.ChoreService.get_all_names--source--__codelineno-0-88" name="TM1py.Services.ChoreService.ChoreService.get_all_names--source--__codelineno-0-88"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_all_names</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.get_all_names--source--__codelineno-0-89" name="TM1py.Services.ChoreService.ChoreService.get_all_names--source--__codelineno-0-89"></a><span class="w">    </span><span class="sd">"""get a List of all Chores</span>
+<a id="TM1py.Services.ChoreService.ChoreService.get_all_names--source--__codelineno-0-90" name="TM1py.Services.ChoreService.ChoreService.get_all_names--source--__codelineno-0-90"></a><span class="sd">    :return: List of TM1py.Chore</span>
+<a id="TM1py.Services.ChoreService.ChoreService.get_all_names--source--__codelineno-0-91" name="TM1py.Services.ChoreService.ChoreService.get_all_names--source--__codelineno-0-91"></a><span class="sd">    """</span>
+<a id="TM1py.Services.ChoreService.ChoreService.get_all_names--source--__codelineno-0-92" name="TM1py.Services.ChoreService.ChoreService.get_all_names--source--__codelineno-0-92"></a>    <span class="n">url</span> <span class="o">=</span> <span class="s2">"/Chores?$select=Name"</span>
+<a id="TM1py.Services.ChoreService.ChoreService.get_all_names--source--__codelineno-0-93" name="TM1py.Services.ChoreService.ChoreService.get_all_names--source--__codelineno-0-93"></a>    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">GET</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.get_all_names--source--__codelineno-0-94" name="TM1py.Services.ChoreService.ChoreService.get_all_names--source--__codelineno-0-94"></a>    <span class="k">return</span> <span class="p">[</span><span class="n">chore</span><span class="p">[</span><span class="s2">"Name"</span><span class="p">]</span> <span class="k">for</span> <span class="n">chore</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">"value"</span><span class="p">]]</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3776,33 +3776,33 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ChoreService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-142">142</a></span>
-<span class="normal"><a href="#__codelineno-0-143">143</a></span>
-<span class="normal"><a href="#__codelineno-0-144">144</a></span>
-<span class="normal"><a href="#__codelineno-0-145">145</a></span>
-<span class="normal"><a href="#__codelineno-0-146">146</a></span>
-<span class="normal"><a href="#__codelineno-0-147">147</a></span>
-<span class="normal"><a href="#__codelineno-0-148">148</a></span>
-<span class="normal"><a href="#__codelineno-0-149">149</a></span>
-<span class="normal"><a href="#__codelineno-0-150">150</a></span>
-<span class="normal"><a href="#__codelineno-0-151">151</a></span>
-<span class="normal"><a href="#__codelineno-0-152">152</a></span>
-<span class="normal"><a href="#__codelineno-0-153">153</a></span>
-<span class="normal"><a href="#__codelineno-0-154">154</a></span>
-<span class="normal"><a href="#__codelineno-0-155">155</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-142" name="__codelineno-0-142"></a><span class="k">def</span><span class="w"> </span><span class="nf">search_for_parameter_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameter_value</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Chore</span><span class="p">]:</span>
-<a id="__codelineno-0-143" name="__codelineno-0-143"></a><span class="w">    </span><span class="sd">"""Return chore details for any/all chores that have a specified value set in the chore parameter settings</span>
-<a id="__codelineno-0-144" name="__codelineno-0-144"></a><span class="sd">        *this will NOT check the process parameter default, rather the defined parameter value saved in the chore</span>
-<a id="__codelineno-0-145" name="__codelineno-0-145"></a>
-<a id="__codelineno-0-146" name="__codelineno-0-146"></a><span class="sd">    :param parameter_value: string, will search wildcard for string in parameter value using Contains(string)</span>
-<a id="__codelineno-0-147" name="__codelineno-0-147"></a><span class="sd">    """</span>
-<a id="__codelineno-0-148" name="__codelineno-0-148"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span>
-<a id="__codelineno-0-149" name="__codelineno-0-149"></a>        <span class="s2">"/Chores?"</span>
-<a id="__codelineno-0-150" name="__codelineno-0-150"></a>        <span class="s2">"$filter=Tasks/any(t: t/Parameters/any(p: isof(p/Value, Edm.String) and contains(tolower(p/Value), '</span><span class="si">{}</span><span class="s2">')))"</span>
-<a id="__codelineno-0-151" name="__codelineno-0-151"></a>        <span class="s2">"&amp;$expand=Tasks($expand=*,Process($select=Name),Chore($select=Name))"</span><span class="p">,</span>
-<a id="__codelineno-0-152" name="__codelineno-0-152"></a>        <span class="n">parameter_value</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span>
-<a id="__codelineno-0-153" name="__codelineno-0-153"></a>    <span class="p">)</span>
-<a id="__codelineno-0-154" name="__codelineno-0-154"></a>    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">GET</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<a id="__codelineno-0-155" name="__codelineno-0-155"></a>    <span class="k">return</span> <span class="p">[</span><span class="n">Chore</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">chore_as_dict</span><span class="p">)</span> <span class="k">for</span> <span class="n">chore_as_dict</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">"value"</span><span class="p">]]</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-142">142</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-143">143</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-144">144</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-145">145</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-146">146</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-147">147</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-148">148</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-149">149</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-150">150</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-151">151</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-152">152</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-153">153</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-154">154</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-155">155</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-142" name="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-142"></a><span class="k">def</span><span class="w"> </span><span class="nf">search_for_parameter_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameter_value</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Chore</span><span class="p">]:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-143" name="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-143"></a><span class="w">    </span><span class="sd">"""Return chore details for any/all chores that have a specified value set in the chore parameter settings</span>
+<a id="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-144" name="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-144"></a><span class="sd">        *this will NOT check the process parameter default, rather the defined parameter value saved in the chore</span>
+<a id="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-145" name="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-145"></a>
+<a id="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-146" name="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-146"></a><span class="sd">    :param parameter_value: string, will search wildcard for string in parameter value using Contains(string)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-147" name="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-147"></a><span class="sd">    """</span>
+<a id="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-148" name="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-148"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span>
+<a id="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-149" name="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-149"></a>        <span class="s2">"/Chores?"</span>
+<a id="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-150" name="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-150"></a>        <span class="s2">"$filter=Tasks/any(t: t/Parameters/any(p: isof(p/Value, Edm.String) and contains(tolower(p/Value), '</span><span class="si">{}</span><span class="s2">')))"</span>
+<a id="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-151" name="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-151"></a>        <span class="s2">"&amp;$expand=Tasks($expand=*,Process($select=Name),Chore($select=Name))"</span><span class="p">,</span>
+<a id="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-152" name="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-152"></a>        <span class="n">parameter_value</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span>
+<a id="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-153" name="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-153"></a>    <span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-154" name="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-154"></a>    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">GET</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-155" name="TM1py.Services.ChoreService.ChoreService.search_for_parameter_value--source--__codelineno-0-155"></a>    <span class="k">return</span> <span class="p">[</span><span class="n">Chore</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">chore_as_dict</span><span class="p">)</span> <span class="k">for</span> <span class="n">chore_as_dict</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">"value"</span><span class="p">]]</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3856,29 +3856,29 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ChoreService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-129">129</a></span>
-<span class="normal"><a href="#__codelineno-0-130">130</a></span>
-<span class="normal"><a href="#__codelineno-0-131">131</a></span>
-<span class="normal"><a href="#__codelineno-0-132">132</a></span>
-<span class="normal"><a href="#__codelineno-0-133">133</a></span>
-<span class="normal"><a href="#__codelineno-0-134">134</a></span>
-<span class="normal"><a href="#__codelineno-0-135">135</a></span>
-<span class="normal"><a href="#__codelineno-0-136">136</a></span>
-<span class="normal"><a href="#__codelineno-0-137">137</a></span>
-<span class="normal"><a href="#__codelineno-0-138">138</a></span>
-<span class="normal"><a href="#__codelineno-0-139">139</a></span>
-<span class="normal"><a href="#__codelineno-0-140">140</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-129" name="__codelineno-0-129"></a><span class="k">def</span><span class="w"> </span><span class="nf">search_for_process_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">process_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Chore</span><span class="p">]:</span>
-<a id="__codelineno-0-130" name="__codelineno-0-130"></a><span class="w">    </span><span class="sd">"""Return chore details for any/all chores that contain specified process name in tasks</span>
-<a id="__codelineno-0-131" name="__codelineno-0-131"></a>
-<a id="__codelineno-0-132" name="__codelineno-0-132"></a><span class="sd">    :param process_name: string, a valid ti process name; spaces will be elimniated</span>
-<a id="__codelineno-0-133" name="__codelineno-0-133"></a><span class="sd">    """</span>
-<a id="__codelineno-0-134" name="__codelineno-0-134"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span>
-<a id="__codelineno-0-135" name="__codelineno-0-135"></a>        <span class="s2">"/Chores?$filter=Tasks/any(t: replace(tolower(t/Process/Name), ' ', '') eq '</span><span class="si">{}</span><span class="s2">')"</span>
-<a id="__codelineno-0-136" name="__codelineno-0-136"></a>        <span class="s2">"&amp;$expand=Tasks($expand=*,Chore($select=Name),Process($select=Name))"</span><span class="p">,</span>
-<a id="__codelineno-0-137" name="__codelineno-0-137"></a>        <span class="n">process_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">" "</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
-<a id="__codelineno-0-138" name="__codelineno-0-138"></a>    <span class="p">)</span>
-<a id="__codelineno-0-139" name="__codelineno-0-139"></a>    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">GET</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<a id="__codelineno-0-140" name="__codelineno-0-140"></a>    <span class="k">return</span> <span class="p">[</span><span class="n">Chore</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">chore_as_dict</span><span class="p">)</span> <span class="k">for</span> <span class="n">chore_as_dict</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">"value"</span><span class="p">]]</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-129">129</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-130">130</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-131">131</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-132">132</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-133">133</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-134">134</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-135">135</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-136">136</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-137">137</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-138">138</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-139">139</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-140">140</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-129" name="TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-129"></a><span class="k">def</span><span class="w"> </span><span class="nf">search_for_process_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">process_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Chore</span><span class="p">]:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-130" name="TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-130"></a><span class="w">    </span><span class="sd">"""Return chore details for any/all chores that contain specified process name in tasks</span>
+<a id="TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-131" name="TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-131"></a>
+<a id="TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-132" name="TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-132"></a><span class="sd">    :param process_name: string, a valid ti process name; spaces will be elimniated</span>
+<a id="TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-133" name="TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-133"></a><span class="sd">    """</span>
+<a id="TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-134" name="TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-134"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span>
+<a id="TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-135" name="TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-135"></a>        <span class="s2">"/Chores?$filter=Tasks/any(t: replace(tolower(t/Process/Name), ' ', '') eq '</span><span class="si">{}</span><span class="s2">')"</span>
+<a id="TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-136" name="TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-136"></a>        <span class="s2">"&amp;$expand=Tasks($expand=*,Chore($select=Name),Process($select=Name))"</span><span class="p">,</span>
+<a id="TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-137" name="TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-137"></a>        <span class="n">process_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">" "</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
+<a id="TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-138" name="TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-138"></a>    <span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-139" name="TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-139"></a>    <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">GET</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-140" name="TM1py.Services.ChoreService.ChoreService.search_for_process_name--source--__codelineno-0-140"></a>    <span class="k">return</span> <span class="p">[</span><span class="n">Chore</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">chore_as_dict</span><span class="p">)</span> <span class="k">for</span> <span class="n">chore_as_dict</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">"value"</span><span class="p">]]</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3971,35 +3971,35 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ChoreService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-210">210</a></span>
-<span class="normal"><a href="#__codelineno-0-211">211</a></span>
-<span class="normal"><a href="#__codelineno-0-212">212</a></span>
-<span class="normal"><a href="#__codelineno-0-213">213</a></span>
-<span class="normal"><a href="#__codelineno-0-214">214</a></span>
-<span class="normal"><a href="#__codelineno-0-215">215</a></span>
-<span class="normal"><a href="#__codelineno-0-216">216</a></span>
-<span class="normal"><a href="#__codelineno-0-217">217</a></span>
-<span class="normal"><a href="#__codelineno-0-218">218</a></span>
-<span class="normal"><a href="#__codelineno-0-219">219</a></span>
-<span class="normal"><a href="#__codelineno-0-220">220</a></span>
-<span class="normal"><a href="#__codelineno-0-221">221</a></span>
-<span class="normal"><a href="#__codelineno-0-222">222</a></span>
-<span class="normal"><a href="#__codelineno-0-223">223</a></span>
-<span class="normal"><a href="#__codelineno-0-224">224</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-210" name="__codelineno-0-210"></a><span class="nd">@deactivate_activate</span>
-<a id="__codelineno-0-211" name="__codelineno-0-211"></a><span class="k">def</span><span class="w"> </span><span class="nf">set_local_start_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">date_time</span><span class="p">:</span> <span class="n">datetime</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
-<a id="__codelineno-0-212" name="__codelineno-0-212"></a><span class="w">    </span><span class="sd">"""Makes Server crash if chore is activated (10.2.2 FP6) :)</span>
-<a id="__codelineno-0-213" name="__codelineno-0-213"></a><span class="sd">    :param chore_name:</span>
-<a id="__codelineno-0-214" name="__codelineno-0-214"></a><span class="sd">    :param date_time:</span>
-<a id="__codelineno-0-215" name="__codelineno-0-215"></a><span class="sd">    :return:</span>
-<a id="__codelineno-0-216" name="__codelineno-0-216"></a><span class="sd">    """</span>
-<a id="__codelineno-0-217" name="__codelineno-0-217"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span><span class="s2">"/Chores('</span><span class="si">{}</span><span class="s2">')/tm1.SetServerLocalStartTime"</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">)</span>
-<a id="__codelineno-0-218" name="__codelineno-0-218"></a>    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
-<a id="__codelineno-0-219" name="__codelineno-0-219"></a>        <span class="s2">"StartDate"</span><span class="p">:</span> <span class="s2">"</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">date_time</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">date_time</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="n">date_time</span><span class="o">.</span><span class="n">day</span><span class="p">),</span>
-<a id="__codelineno-0-220" name="__codelineno-0-220"></a>        <span class="s2">"StartTime"</span><span class="p">:</span> <span class="s2">"</span><span class="si">{}</span><span class="s2">:</span><span class="si">{}</span><span class="s2">:</span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-<a id="__codelineno-0-221" name="__codelineno-0-221"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">zfill_two</span><span class="p">(</span><span class="n">date_time</span><span class="o">.</span><span class="n">hour</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">zfill_two</span><span class="p">(</span><span class="n">date_time</span><span class="o">.</span><span class="n">minute</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">zfill_two</span><span class="p">(</span><span class="n">date_time</span><span class="o">.</span><span class="n">second</span><span class="p">)</span>
-<a id="__codelineno-0-222" name="__codelineno-0-222"></a>        <span class="p">),</span>
-<a id="__codelineno-0-223" name="__codelineno-0-223"></a>    <span class="p">}</span>
-<a id="__codelineno-0-224" name="__codelineno-0-224"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">POST</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-210">210</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-211">211</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-212">212</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-213">213</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-214">214</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-215">215</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-216">216</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-217">217</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-218">218</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-219">219</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-220">220</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-221">221</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-222">222</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-223">223</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-224">224</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-210" name="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-210"></a><span class="nd">@deactivate_activate</span>
+<a id="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-211" name="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-211"></a><span class="k">def</span><span class="w"> </span><span class="nf">set_local_start_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">date_time</span><span class="p">:</span> <span class="n">datetime</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-212" name="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-212"></a><span class="w">    </span><span class="sd">"""Makes Server crash if chore is activated (10.2.2 FP6) :)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-213" name="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-213"></a><span class="sd">    :param chore_name:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-214" name="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-214"></a><span class="sd">    :param date_time:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-215" name="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-215"></a><span class="sd">    :return:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-216" name="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-216"></a><span class="sd">    """</span>
+<a id="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-217" name="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-217"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span><span class="s2">"/Chores('</span><span class="si">{}</span><span class="s2">')/tm1.SetServerLocalStartTime"</span><span class="p">,</span> <span class="n">chore_name</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-218" name="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-218"></a>    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+<a id="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-219" name="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-219"></a>        <span class="s2">"StartDate"</span><span class="p">:</span> <span class="s2">"</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">date_time</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">date_time</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="n">date_time</span><span class="o">.</span><span class="n">day</span><span class="p">),</span>
+<a id="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-220" name="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-220"></a>        <span class="s2">"StartTime"</span><span class="p">:</span> <span class="s2">"</span><span class="si">{}</span><span class="s2">:</span><span class="si">{}</span><span class="s2">:</span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+<a id="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-221" name="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-221"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">zfill_two</span><span class="p">(</span><span class="n">date_time</span><span class="o">.</span><span class="n">hour</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">zfill_two</span><span class="p">(</span><span class="n">date_time</span><span class="o">.</span><span class="n">minute</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">zfill_two</span><span class="p">(</span><span class="n">date_time</span><span class="o">.</span><span class="n">second</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-222" name="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-222"></a>        <span class="p">),</span>
+<a id="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-223" name="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-223"></a>    <span class="p">}</span>
+<a id="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-224" name="TM1py.Services.ChoreService.ChoreService.set_local_start_time--source--__codelineno-0-224"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">POST</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4076,65 +4076,65 @@ does not update: DST Sensitivity!</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ChoreService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-157">157</a></span>
-<span class="normal"><a href="#__codelineno-0-158">158</a></span>
-<span class="normal"><a href="#__codelineno-0-159">159</a></span>
-<span class="normal"><a href="#__codelineno-0-160">160</a></span>
-<span class="normal"><a href="#__codelineno-0-161">161</a></span>
-<span class="normal"><a href="#__codelineno-0-162">162</a></span>
-<span class="normal"><a href="#__codelineno-0-163">163</a></span>
-<span class="normal"><a href="#__codelineno-0-164">164</a></span>
-<span class="normal"><a href="#__codelineno-0-165">165</a></span>
-<span class="normal"><a href="#__codelineno-0-166">166</a></span>
-<span class="normal"><a href="#__codelineno-0-167">167</a></span>
-<span class="normal"><a href="#__codelineno-0-168">168</a></span>
-<span class="normal"><a href="#__codelineno-0-169">169</a></span>
-<span class="normal"><a href="#__codelineno-0-170">170</a></span>
-<span class="normal"><a href="#__codelineno-0-171">171</a></span>
-<span class="normal"><a href="#__codelineno-0-172">172</a></span>
-<span class="normal"><a href="#__codelineno-0-173">173</a></span>
-<span class="normal"><a href="#__codelineno-0-174">174</a></span>
-<span class="normal"><a href="#__codelineno-0-175">175</a></span>
-<span class="normal"><a href="#__codelineno-0-176">176</a></span>
-<span class="normal"><a href="#__codelineno-0-177">177</a></span>
-<span class="normal"><a href="#__codelineno-0-178">178</a></span>
-<span class="normal"><a href="#__codelineno-0-179">179</a></span>
-<span class="normal"><a href="#__codelineno-0-180">180</a></span>
-<span class="normal"><a href="#__codelineno-0-181">181</a></span>
-<span class="normal"><a href="#__codelineno-0-182">182</a></span>
-<span class="normal"><a href="#__codelineno-0-183">183</a></span>
-<span class="normal"><a href="#__codelineno-0-184">184</a></span>
-<span class="normal"><a href="#__codelineno-0-185">185</a></span>
-<span class="normal"><a href="#__codelineno-0-186">186</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-157" name="__codelineno-0-157"></a><span class="nd">@deactivate_activate</span>
-<a id="__codelineno-0-158" name="__codelineno-0-158"></a><span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chore</span><span class="p">:</span> <span class="n">Chore</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<a id="__codelineno-0-159" name="__codelineno-0-159"></a><span class="w">    </span><span class="sd">"""update chore on TM1 Server</span>
-<a id="__codelineno-0-160" name="__codelineno-0-160"></a><span class="sd">    does not update: DST Sensitivity!</span>
-<a id="__codelineno-0-161" name="__codelineno-0-161"></a><span class="sd">    :param chore:</span>
-<a id="__codelineno-0-162" name="__codelineno-0-162"></a><span class="sd">    :return:</span>
-<a id="__codelineno-0-163" name="__codelineno-0-163"></a><span class="sd">    """</span>
-<a id="__codelineno-0-164" name="__codelineno-0-164"></a>    <span class="c1"># Update StartTime, ExecutionMode, Frequency</span>
-<a id="__codelineno-0-165" name="__codelineno-0-165"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span><span class="s2">"/Chores('</span><span class="si">{}</span><span class="s2">')"</span><span class="p">,</span> <span class="n">chore</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-<a id="__codelineno-0-166" name="__codelineno-0-166"></a>    <span class="c1"># Remove Tasks from Body. Tasks to be managed individually</span>
-<a id="__codelineno-0-167" name="__codelineno-0-167"></a>    <span class="n">chore_dict_without_tasks</span> <span class="o">=</span> <span class="n">chore</span><span class="o">.</span><span class="n">body_as_dict</span>
-<a id="__codelineno-0-168" name="__codelineno-0-168"></a>    <span class="n">chore_dict_without_tasks</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"Tasks"</span><span class="p">)</span>
-<a id="__codelineno-0-169" name="__codelineno-0-169"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">PATCH</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">chore_dict_without_tasks</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<a id="__codelineno-0-170" name="__codelineno-0-170"></a>
-<a id="__codelineno-0-171" name="__codelineno-0-171"></a>    <span class="c1"># Update Tasks individually</span>
-<a id="__codelineno-0-172" name="__codelineno-0-172"></a>    <span class="n">task_old_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tasks_count</span><span class="p">(</span><span class="n">chore</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-<a id="__codelineno-0-173" name="__codelineno-0-173"></a>    <span class="n">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
-<a id="__codelineno-0-174" name="__codelineno-0-174"></a>    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">task_new</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">chore</span><span class="o">.</span><span class="n">tasks</span><span class="p">):</span>
-<a id="__codelineno-0-175" name="__codelineno-0-175"></a>        <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="n">task_old_count</span><span class="p">:</span>
-<a id="__codelineno-0-176" name="__codelineno-0-176"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_add_task</span><span class="p">(</span><span class="n">chore</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">task_new</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<a id="__codelineno-0-177" name="__codelineno-0-177"></a>        <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-178" name="__codelineno-0-178"></a>            <span class="n">task_old</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_task</span><span class="p">(</span><span class="n">chore</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
-<a id="__codelineno-0-179" name="__codelineno-0-179"></a>            <span class="k">if</span> <span class="n">task_new</span> <span class="o">!=</span> <span class="n">task_old</span><span class="p">:</span>
-<a id="__codelineno-0-180" name="__codelineno-0-180"></a>                <span class="n">task_new</span><span class="o">.</span><span class="n">_step</span> <span class="o">=</span> <span class="n">i</span>
-<a id="__codelineno-0-181" name="__codelineno-0-181"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_update_task</span><span class="p">(</span><span class="n">chore</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">task_new</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<a id="__codelineno-0-182" name="__codelineno-0-182"></a>    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">task_old_count</span><span class="p">):</span>
-<a id="__codelineno-0-183" name="__codelineno-0-183"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_delete_task</span><span class="p">(</span><span class="n">chore</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<a id="__codelineno-0-184" name="__codelineno-0-184"></a>
-<a id="__codelineno-0-185" name="__codelineno-0-185"></a>    <span class="k">if</span> <span class="n">chore</span><span class="o">.</span><span class="n">dst_sensitivity</span><span class="p">:</span>
-<a id="__codelineno-0-186" name="__codelineno-0-186"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">set_local_start_time</span><span class="p">(</span><span class="n">chore</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">chore</span><span class="o">.</span><span class="n">start_time</span><span class="o">.</span><span class="n">datetime</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-157">157</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-158">158</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-159">159</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-160">160</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-161">161</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-162">162</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-163">163</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-164">164</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-165">165</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-166">166</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-167">167</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-168">168</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-169">169</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-170">170</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-171">171</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-172">172</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-173">173</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-174">174</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-175">175</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-176">176</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-177">177</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-178">178</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-179">179</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-180">180</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-181">181</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-182">182</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-183">183</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-184">184</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-185">185</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-186">186</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-157" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-157"></a><span class="nd">@deactivate_activate</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-158" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-158"></a><span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chore</span><span class="p">:</span> <span class="n">Chore</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-159" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-159"></a><span class="w">    </span><span class="sd">"""update chore on TM1 Server</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-160" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-160"></a><span class="sd">    does not update: DST Sensitivity!</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-161" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-161"></a><span class="sd">    :param chore:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-162" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-162"></a><span class="sd">    :return:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-163" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-163"></a><span class="sd">    """</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-164" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-164"></a>    <span class="c1"># Update StartTime, ExecutionMode, Frequency</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-165" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-165"></a>    <span class="n">url</span> <span class="o">=</span> <span class="n">format_url</span><span class="p">(</span><span class="s2">"/Chores('</span><span class="si">{}</span><span class="s2">')"</span><span class="p">,</span> <span class="n">chore</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-166" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-166"></a>    <span class="c1"># Remove Tasks from Body. Tasks to be managed individually</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-167" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-167"></a>    <span class="n">chore_dict_without_tasks</span> <span class="o">=</span> <span class="n">chore</span><span class="o">.</span><span class="n">body_as_dict</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-168" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-168"></a>    <span class="n">chore_dict_without_tasks</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"Tasks"</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-169" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-169"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_rest</span><span class="o">.</span><span class="n">PATCH</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">chore_dict_without_tasks</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-170" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-170"></a>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-171" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-171"></a>    <span class="c1"># Update Tasks individually</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-172" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-172"></a>    <span class="n">task_old_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tasks_count</span><span class="p">(</span><span class="n">chore</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-173" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-173"></a>    <span class="n">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-174" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-174"></a>    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">task_new</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">chore</span><span class="o">.</span><span class="n">tasks</span><span class="p">):</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-175" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-175"></a>        <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="n">task_old_count</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-176" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-176"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_add_task</span><span class="p">(</span><span class="n">chore</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">task_new</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-177" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-177"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-178" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-178"></a>            <span class="n">task_old</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_task</span><span class="p">(</span><span class="n">chore</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-179" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-179"></a>            <span class="k">if</span> <span class="n">task_new</span> <span class="o">!=</span> <span class="n">task_old</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-180" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-180"></a>                <span class="n">task_new</span><span class="o">.</span><span class="n">_step</span> <span class="o">=</span> <span class="n">i</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-181" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-181"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_update_task</span><span class="p">(</span><span class="n">chore</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">task_new</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-182" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-182"></a>    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">task_old_count</span><span class="p">):</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-183" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-183"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_delete_task</span><span class="p">(</span><span class="n">chore</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-184" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-184"></a>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-185" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-185"></a>    <span class="k">if</span> <span class="n">chore</span><span class="o">.</span><span class="n">dst_sensitivity</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-186" name="TM1py.Services.ChoreService.ChoreService.update--source--__codelineno-0-186"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">set_local_start_time</span><span class="p">(</span><span class="n">chore</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">chore</span><span class="o">.</span><span class="n">start_time</span><span class="o">.</span><span class="n">datetime</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4155,15 +4155,15 @@ does not update: DST Sensitivity!</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ChoreService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-188">188</a></span>
-<span class="normal"><a href="#__codelineno-0-189">189</a></span>
-<span class="normal"><a href="#__codelineno-0-190">190</a></span>
-<span class="normal"><a href="#__codelineno-0-191">191</a></span>
-<span class="normal"><a href="#__codelineno-0-192">192</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-188" name="__codelineno-0-188"></a><span class="k">def</span><span class="w"> </span><span class="nf">update_or_create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chore</span><span class="p">:</span> <span class="n">Chore</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
-<a id="__codelineno-0-189" name="__codelineno-0-189"></a>    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">chore_name</span><span class="o">=</span><span class="n">chore</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<a id="__codelineno-0-190" name="__codelineno-0-190"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">chore</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<a id="__codelineno-0-191" name="__codelineno-0-191"></a>
-<a id="__codelineno-0-192" name="__codelineno-0-192"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">chore</span><span class="o">=</span><span class="n">chore</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update_or_create--source--__codelineno-0-188">188</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update_or_create--source--__codelineno-0-189">189</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update_or_create--source--__codelineno-0-190">190</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update_or_create--source--__codelineno-0-191">191</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.update_or_create--source--__codelineno-0-192">192</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Services.ChoreService.ChoreService.update_or_create--source--__codelineno-0-188" name="TM1py.Services.ChoreService.ChoreService.update_or_create--source--__codelineno-0-188"></a><span class="k">def</span><span class="w"> </span><span class="nf">update_or_create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chore</span><span class="p">:</span> <span class="n">Chore</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update_or_create--source--__codelineno-0-189" name="TM1py.Services.ChoreService.ChoreService.update_or_create--source--__codelineno-0-189"></a>    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">chore_name</span><span class="o">=</span><span class="n">chore</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update_or_create--source--__codelineno-0-190" name="TM1py.Services.ChoreService.ChoreService.update_or_create--source--__codelineno-0-190"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">chore</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.ChoreService.update_or_create--source--__codelineno-0-191" name="TM1py.Services.ChoreService.ChoreService.update_or_create--source--__codelineno-0-191"></a>
+<a id="TM1py.Services.ChoreService.ChoreService.update_or_create--source--__codelineno-0-192" name="TM1py.Services.ChoreService.ChoreService.update_or_create--source--__codelineno-0-192"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">chore</span><span class="o">=</span><span class="n">chore</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4244,21 +4244,21 @@ does not update: DST Sensitivity!</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ChoreService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-292">292</a></span>
-<span class="normal"><a href="#__codelineno-0-293">293</a></span>
-<span class="normal"><a href="#__codelineno-0-294">294</a></span>
-<span class="normal"><a href="#__codelineno-0-295">295</a></span>
-<span class="normal"><a href="#__codelineno-0-296">296</a></span>
-<span class="normal"><a href="#__codelineno-0-297">297</a></span>
-<span class="normal"><a href="#__codelineno-0-298">298</a></span>
-<span class="normal"><a href="#__codelineno-0-299">299</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-292" name="__codelineno-0-292"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-293" name="__codelineno-0-293"></a><span class="k">def</span><span class="w"> </span><span class="nf">zfill_two</span><span class="p">(</span><span class="n">number</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-0-294" name="__codelineno-0-294"></a><span class="w">    </span><span class="sd">"""Pad an int with zeros on the left two create two digit string</span>
-<a id="__codelineno-0-295" name="__codelineno-0-295"></a>
-<a id="__codelineno-0-296" name="__codelineno-0-296"></a><span class="sd">    :param number:</span>
-<a id="__codelineno-0-297" name="__codelineno-0-297"></a><span class="sd">    :return:</span>
-<a id="__codelineno-0-298" name="__codelineno-0-298"></a><span class="sd">    """</span>
-<a id="__codelineno-0-299" name="__codelineno-0-299"></a>    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">number</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.zfill_two--source--__codelineno-0-292">292</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.zfill_two--source--__codelineno-0-293">293</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.zfill_two--source--__codelineno-0-294">294</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.zfill_two--source--__codelineno-0-295">295</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.zfill_two--source--__codelineno-0-296">296</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.zfill_two--source--__codelineno-0-297">297</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.zfill_two--source--__codelineno-0-298">298</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.ChoreService.zfill_two--source--__codelineno-0-299">299</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Services.ChoreService.ChoreService.zfill_two--source--__codelineno-0-292" name="TM1py.Services.ChoreService.ChoreService.zfill_two--source--__codelineno-0-292"></a><span class="nd">@staticmethod</span>
+<a id="TM1py.Services.ChoreService.ChoreService.zfill_two--source--__codelineno-0-293" name="TM1py.Services.ChoreService.ChoreService.zfill_two--source--__codelineno-0-293"></a><span class="k">def</span><span class="w"> </span><span class="nf">zfill_two</span><span class="p">(</span><span class="n">number</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.zfill_two--source--__codelineno-0-294" name="TM1py.Services.ChoreService.ChoreService.zfill_two--source--__codelineno-0-294"></a><span class="w">    </span><span class="sd">"""Pad an int with zeros on the left two create two digit string</span>
+<a id="TM1py.Services.ChoreService.ChoreService.zfill_two--source--__codelineno-0-295" name="TM1py.Services.ChoreService.ChoreService.zfill_two--source--__codelineno-0-295"></a>
+<a id="TM1py.Services.ChoreService.ChoreService.zfill_two--source--__codelineno-0-296" name="TM1py.Services.ChoreService.ChoreService.zfill_two--source--__codelineno-0-296"></a><span class="sd">    :param number:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.zfill_two--source--__codelineno-0-297" name="TM1py.Services.ChoreService.ChoreService.zfill_two--source--__codelineno-0-297"></a><span class="sd">    :return:</span>
+<a id="TM1py.Services.ChoreService.ChoreService.zfill_two--source--__codelineno-0-298" name="TM1py.Services.ChoreService.ChoreService.zfill_two--source--__codelineno-0-298"></a><span class="sd">    """</span>
+<a id="TM1py.Services.ChoreService.ChoreService.zfill_two--source--__codelineno-0-299" name="TM1py.Services.ChoreService.ChoreService.zfill_two--source--__codelineno-0-299"></a>    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">number</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4342,99 +4342,99 @@ does not update: DST Sensitivity!</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>TM1py/Services/ChoreService.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-16">16</a></span>
-<span class="normal"><a href="#__codelineno-0-17">17</a></span>
-<span class="normal"><a href="#__codelineno-0-18">18</a></span>
-<span class="normal"><a href="#__codelineno-0-19">19</a></span>
-<span class="normal"><a href="#__codelineno-0-20">20</a></span>
-<span class="normal"><a href="#__codelineno-0-21">21</a></span>
-<span class="normal"><a href="#__codelineno-0-22">22</a></span>
-<span class="normal"><a href="#__codelineno-0-23">23</a></span>
-<span class="normal"><a href="#__codelineno-0-24">24</a></span>
-<span class="normal"><a href="#__codelineno-0-25">25</a></span>
-<span class="normal"><a href="#__codelineno-0-26">26</a></span>
-<span class="normal"><a href="#__codelineno-0-27">27</a></span>
-<span class="normal"><a href="#__codelineno-0-28">28</a></span>
-<span class="normal"><a href="#__codelineno-0-29">29</a></span>
-<span class="normal"><a href="#__codelineno-0-30">30</a></span>
-<span class="normal"><a href="#__codelineno-0-31">31</a></span>
-<span class="normal"><a href="#__codelineno-0-32">32</a></span>
-<span class="normal"><a href="#__codelineno-0-33">33</a></span>
-<span class="normal"><a href="#__codelineno-0-34">34</a></span>
-<span class="normal"><a href="#__codelineno-0-35">35</a></span>
-<span class="normal"><a href="#__codelineno-0-36">36</a></span>
-<span class="normal"><a href="#__codelineno-0-37">37</a></span>
-<span class="normal"><a href="#__codelineno-0-38">38</a></span>
-<span class="normal"><a href="#__codelineno-0-39">39</a></span>
-<span class="normal"><a href="#__codelineno-0-40">40</a></span>
-<span class="normal"><a href="#__codelineno-0-41">41</a></span>
-<span class="normal"><a href="#__codelineno-0-42">42</a></span>
-<span class="normal"><a href="#__codelineno-0-43">43</a></span>
-<span class="normal"><a href="#__codelineno-0-44">44</a></span>
-<span class="normal"><a href="#__codelineno-0-45">45</a></span>
-<span class="normal"><a href="#__codelineno-0-46">46</a></span>
-<span class="normal"><a href="#__codelineno-0-47">47</a></span>
-<span class="normal"><a href="#__codelineno-0-48">48</a></span>
-<span class="normal"><a href="#__codelineno-0-49">49</a></span>
-<span class="normal"><a href="#__codelineno-0-50">50</a></span>
-<span class="normal"><a href="#__codelineno-0-51">51</a></span>
-<span class="normal"><a href="#__codelineno-0-52">52</a></span>
-<span class="normal"><a href="#__codelineno-0-53">53</a></span>
-<span class="normal"><a href="#__codelineno-0-54">54</a></span>
-<span class="normal"><a href="#__codelineno-0-55">55</a></span>
-<span class="normal"><a href="#__codelineno-0-56">56</a></span>
-<span class="normal"><a href="#__codelineno-0-57">57</a></span>
-<span class="normal"><a href="#__codelineno-0-58">58</a></span>
-<span class="normal"><a href="#__codelineno-0-59">59</a></span>
-<span class="normal"><a href="#__codelineno-0-60">60</a></span>
-<span class="normal"><a href="#__codelineno-0-61">61</a></span>
-<span class="normal"><a href="#__codelineno-0-62">62</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-16" name="__codelineno-0-16"></a><span class="nd">@decohints</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="k">def</span><span class="w"> </span><span class="nf">deactivate_activate</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18"></a><span class="w">    </span><span class="sd">"""Higher Order function to handle activation and deactivation of chores before updating them</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19"></a>
-<a id="__codelineno-0-20" name="__codelineno-0-20"></a><span class="sd">    :param func:</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="sd">    :return:</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="sd">    """</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23"></a>
-<a id="__codelineno-0-24" name="__codelineno-0-24"></a>    <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26"></a>        <span class="c1"># chore (type Chore) or chore_name (type str) is passed as first arg or kwargs</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27"></a>        <span class="k">if</span> <span class="s2">"chore"</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
-<a id="__codelineno-0-28" name="__codelineno-0-28"></a>            <span class="n">chore</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"chore"</span><span class="p">)</span><span class="o">.</span><span class="n">name</span>
-<a id="__codelineno-0-29" name="__codelineno-0-29"></a>        <span class="k">elif</span> <span class="s2">"chore_name"</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
-<a id="__codelineno-0-30" name="__codelineno-0-30"></a>            <span class="n">chore</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"chore_name"</span><span class="p">)</span>
-<a id="__codelineno-0-31" name="__codelineno-0-31"></a>        <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-32" name="__codelineno-0-32"></a>            <span class="n">chore</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<a id="__codelineno-0-33" name="__codelineno-0-33"></a>
-<a id="__codelineno-0-34" name="__codelineno-0-34"></a>        <span class="n">reactivate</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-0-35" name="__codelineno-0-35"></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chore</span><span class="p">,</span> <span class="n">Chore</span><span class="p">):</span>
-<a id="__codelineno-0-36" name="__codelineno-0-36"></a>            <span class="n">chore_name</span> <span class="o">=</span> <span class="n">chore</span><span class="o">.</span><span class="n">name</span>
-<a id="__codelineno-0-37" name="__codelineno-0-37"></a>            <span class="n">reactivate</span> <span class="o">=</span> <span class="n">chore</span><span class="o">.</span><span class="n">active</span>
-<a id="__codelineno-0-38" name="__codelineno-0-38"></a>        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chore</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-<a id="__codelineno-0-39" name="__codelineno-0-39"></a>            <span class="n">chore_name</span> <span class="o">=</span> <span class="n">chore</span>
-<a id="__codelineno-0-40" name="__codelineno-0-40"></a>        <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-41" name="__codelineno-0-41"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Argument must be of type 'Chore' or 'str'"</span><span class="p">)</span>
-<a id="__codelineno-0-42" name="__codelineno-0-42"></a>
-<a id="__codelineno-0-43" name="__codelineno-0-43"></a>        <span class="c1"># Get current chore</span>
-<a id="__codelineno-0-44" name="__codelineno-0-44"></a>        <span class="n">chore_old</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">chore_name</span><span class="p">)</span>
-<a id="__codelineno-0-45" name="__codelineno-0-45"></a>        <span class="k">if</span> <span class="n">reactivate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-46" name="__codelineno-0-46"></a>            <span class="n">reactivate</span> <span class="o">=</span> <span class="n">chore_old</span><span class="o">.</span><span class="n">active</span>
-<a id="__codelineno-0-47" name="__codelineno-0-47"></a>
-<a id="__codelineno-0-48" name="__codelineno-0-48"></a>        <span class="c1"># Deactivate</span>
-<a id="__codelineno-0-49" name="__codelineno-0-49"></a>        <span class="k">if</span> <span class="n">chore_old</span><span class="o">.</span><span class="n">active</span><span class="p">:</span>
-<a id="__codelineno-0-50" name="__codelineno-0-50"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">deactivate</span><span class="p">(</span><span class="n">chore_name</span><span class="p">)</span>
-<a id="__codelineno-0-51" name="__codelineno-0-51"></a>        <span class="c1"># Do stuff</span>
-<a id="__codelineno-0-52" name="__codelineno-0-52"></a>        <span class="k">try</span><span class="p">:</span>
-<a id="__codelineno-0-53" name="__codelineno-0-53"></a>            <span class="n">response</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<a id="__codelineno-0-54" name="__codelineno-0-54"></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-<a id="__codelineno-0-55" name="__codelineno-0-55"></a>            <span class="k">raise</span> <span class="n">e</span>
-<a id="__codelineno-0-56" name="__codelineno-0-56"></a>        <span class="c1"># Activate if necessary</span>
-<a id="__codelineno-0-57" name="__codelineno-0-57"></a>        <span class="k">finally</span><span class="p">:</span>
-<a id="__codelineno-0-58" name="__codelineno-0-58"></a>            <span class="k">if</span> <span class="n">reactivate</span><span class="p">:</span>
-<a id="__codelineno-0-59" name="__codelineno-0-59"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">activate</span><span class="p">(</span><span class="n">chore_name</span><span class="p">)</span>
-<a id="__codelineno-0-60" name="__codelineno-0-60"></a>        <span class="k">return</span> <span class="n">response</span>
-<a id="__codelineno-0-61" name="__codelineno-0-61"></a>
-<a id="__codelineno-0-62" name="__codelineno-0-62"></a>    <span class="k">return</span> <span class="n">wrapper</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-16">16</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-17">17</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-18">18</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-19">19</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-20">20</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-21">21</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-22">22</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-23">23</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-24">24</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-25">25</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-26">26</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-27">27</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-28">28</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-29">29</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-30">30</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-31">31</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-32">32</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-33">33</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-34">34</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-35">35</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-36">36</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-37">37</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-38">38</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-39">39</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-40">40</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-41">41</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-42">42</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-43">43</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-44">44</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-45">45</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-46">46</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-47">47</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-48">48</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-49">49</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-50">50</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-51">51</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-52">52</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-53">53</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-54">54</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-55">55</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-56">56</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-57">57</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-58">58</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-59">59</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-60">60</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-61">61</a></span>
+<span class="normal"><a href="#TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-62">62</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-16" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-16"></a><span class="nd">@decohints</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-17" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-17"></a><span class="k">def</span><span class="w"> </span><span class="nf">deactivate_activate</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-18" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-18"></a><span class="w">    </span><span class="sd">"""Higher Order function to handle activation and deactivation of chores before updating them</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-19" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-19"></a>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-20" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-20"></a><span class="sd">    :param func:</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-21" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-21"></a><span class="sd">    :return:</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-22" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-22"></a><span class="sd">    """</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-23" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-23"></a>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-24" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-24"></a>    <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-25" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-25"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-26" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-26"></a>        <span class="c1"># chore (type Chore) or chore_name (type str) is passed as first arg or kwargs</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-27" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-27"></a>        <span class="k">if</span> <span class="s2">"chore"</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-28" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-28"></a>            <span class="n">chore</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"chore"</span><span class="p">)</span><span class="o">.</span><span class="n">name</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-29" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-29"></a>        <span class="k">elif</span> <span class="s2">"chore_name"</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-30" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-30"></a>            <span class="n">chore</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"chore_name"</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-31" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-31"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-32" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-32"></a>            <span class="n">chore</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-33" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-33"></a>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-34" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-34"></a>        <span class="n">reactivate</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-35" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-35"></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chore</span><span class="p">,</span> <span class="n">Chore</span><span class="p">):</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-36" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-36"></a>            <span class="n">chore_name</span> <span class="o">=</span> <span class="n">chore</span><span class="o">.</span><span class="n">name</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-37" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-37"></a>            <span class="n">reactivate</span> <span class="o">=</span> <span class="n">chore</span><span class="o">.</span><span class="n">active</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-38" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-38"></a>        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chore</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-39" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-39"></a>            <span class="n">chore_name</span> <span class="o">=</span> <span class="n">chore</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-40" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-40"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-41" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-41"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Argument must be of type 'Chore' or 'str'"</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-42" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-42"></a>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-43" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-43"></a>        <span class="c1"># Get current chore</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-44" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-44"></a>        <span class="n">chore_old</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">chore_name</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-45" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-45"></a>        <span class="k">if</span> <span class="n">reactivate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-46" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-46"></a>            <span class="n">reactivate</span> <span class="o">=</span> <span class="n">chore_old</span><span class="o">.</span><span class="n">active</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-47" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-47"></a>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-48" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-48"></a>        <span class="c1"># Deactivate</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-49" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-49"></a>        <span class="k">if</span> <span class="n">chore_old</span><span class="o">.</span><span class="n">active</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-50" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-50"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">deactivate</span><span class="p">(</span><span class="n">chore_name</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-51" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-51"></a>        <span class="c1"># Do stuff</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-52" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-52"></a>        <span class="k">try</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-53" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-53"></a>            <span class="n">response</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-54" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-54"></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-55" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-55"></a>            <span class="k">raise</span> <span class="n">e</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-56" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-56"></a>        <span class="c1"># Activate if necessary</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-57" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-57"></a>        <span class="k">finally</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-58" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-58"></a>            <span class="k">if</span> <span class="n">reactivate</span><span class="p">:</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-59" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-59"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">activate</span><span class="p">(</span><span class="n">chore_name</span><span class="p">)</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-60" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-60"></a>        <span class="k">return</span> <span class="n">response</span>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-61" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-61"></a>
+<a id="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-62" name="TM1py.Services.ChoreService.deactivate_activate--source--__codelineno-0-62"></a>    <span class="k">return</span> <span class="n">wrapper</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4513,10 +4513,10 @@ does not update: DST Sensitivity!</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
   </body>
