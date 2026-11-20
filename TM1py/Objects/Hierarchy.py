@@ -2,6 +2,7 @@
 
 import collections
 import json
+import warnings
 from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
 
 from TM1py.Objects.Element import Element
@@ -300,6 +301,133 @@ class Hierarchy(TM1Object):
             self.add_edge(parent=ancestor, component=new_element_name, weight=weight)
         for (_, descendant), weight in descendant_edges.items():
             self.add_edge(parent=new_element_name, component=descendant, weight=weight)
+
+    def rebase(self, leaf_level: int) -> List[str]:
+        """Cut the hierarchy at a TM1 level so that the elements on that level become the new leaves.
+
+        Levels are TM1 levels, counted from the bottom: leaves are level 0 and a consolidation is one level
+        above its deepest child. Rebasing a hierarchy whose top is level 8 to ``leaf_level=3`` turns the
+        level 3 elements into numeric leaves, removes everything below them and leaves the top at level 5.
+
+        Element names are kept, so the value of a new leaf can be read 1:1 from the (consolidated) cell of
+        the same element in the original hierarchy, e.g. to load SKU-level actuals into a product-family plan.
+        Loaded like that, every consolidation that remains in the hierarchy adds up to the same total as in
+        the original hierarchy, because no remaining consolidation loses a child:
+
+        - Elements on ``leaf_level`` become leaves and everything that is only underneath them is removed.
+        - Elements below ``leaf_level`` that sit directly under a consolidation above ``leaf_level``
+          (e.g. a short branch in a ragged hierarchy) or that have no parent are kept as leaves too.
+
+        A warning is issued when new leaves share descendants in the original hierarchy (e.g. an alternate
+        rollup next to the main rollup). Their values overlap, just as they do in the original hierarchy.
+
+        String elements are not part of the consolidation structure and are left untouched.
+
+        The hierarchy is modified in place.
+
+        :param leaf_level: the TM1 level whose elements become the new leaves. 0 leaves the structure as is.
+        :return: names of the new leaves
+        """
+        if isinstance(leaf_level, bool) or not isinstance(leaf_level, int) or leaf_level < 0:
+            raise ValueError(f"'leaf_level' must be a non-negative integer, but received: '{leaf_level}'")
+
+        key = lower_and_drop_spaces
+        names = {key(element.name): element.name for element in self._elements.values()}
+        children = collections.defaultdict(list)
+        parents = collections.defaultdict(list)
+        for parent, component in self._edges:
+            children[key(parent)].append(key(component))
+            parents[key(component)].append(key(parent))
+
+        levels = self._compute_levels(names, children)
+        max_level = max(levels.values(), default=0)
+        if leaf_level > max_level:
+            raise ValueError(
+                f"'leaf_level' {leaf_level} exceeds the highest level ({max_level}) "
+                f"in hierarchy '{self.dimension_name}:{self.name}'"
+            )
+
+        strings = {node for node, name in names.items() if self._elements[name].element_type == Element.Types.STRING}
+
+        # consolidations above leaf_level keep all their children. Everything else at or below leaf_level
+        # survives only as a root
+        survivors = {
+            node
+            for node, level in levels.items()
+            if level >= leaf_level or not parents[node] or any(levels[p] > leaf_level for p in parents[node])
+        }
+        new_leaves = {node for node in survivors if levels[node] <= leaf_level and node not in strings}
+
+        overlapping_leaves = self._find_overlapping_leaves(new_leaves, children)
+        if overlapping_leaves:
+            sample = ", ".join(names[node] for node in overlapping_leaves[:10])
+            if len(overlapping_leaves) > 10:
+                sample += f" ... (+{len(overlapping_leaves) - 10} more)"
+            warnings.warn(
+                f"Rebasing hierarchy '{self.dimension_name}:{self.name}' to level {leaf_level}: "
+                f"{len(overlapping_leaves)} new leaves share descendants with other new leaves "
+                f"(e.g. alternate rollups), so their values overlap as in the original hierarchy: {sample}",
+                UserWarning,
+                stacklevel=2,
+            )
+
+        self._elements = CaseAndSpaceInsensitiveDict(
+            {element.name: element for element in self._elements.values() if key(element.name) in survivors}
+        )
+        self._edges = CaseAndSpaceInsensitiveTuplesDict(
+            {
+                (parent, component): weight
+                for (parent, component), weight in self._edges.items()
+                if levels[key(parent)] > leaf_level
+            }
+        )
+        for node in new_leaves:
+            self._elements[names[node]].element_type = Element.Types.NUMERIC
+        if self._default_member and self._default_member not in self._elements:
+            self._default_member = None
+
+        return [element.name for element in self._elements.values() if key(element.name) in new_leaves]
+
+    @staticmethod
+    def _compute_levels(names: Dict[str, str], children: Dict[str, List[str]]) -> Dict[str, int]:
+        """TM1 level per (adjusted) element name: 0 for leaves, 1 + deepest child level for consolidations"""
+        levels = {}
+        in_progress = set()
+        for start in names:
+            stack = [(start, False)]
+            while stack:
+                node, expanded = stack.pop()
+                if expanded:
+                    levels[node] = 1 + max((levels[child] for child in children.get(node, ())), default=-1)
+                    in_progress.discard(node)
+                    continue
+                if node in levels:
+                    continue
+                if node in in_progress:
+                    raise ValueError(f"Circular reference in hierarchy involving element '{names.get(node, node)}'")
+                in_progress.add(node)
+                stack.append((node, True))
+                stack.extend((child, False) for child in children.get(node, ()) if child not in levels)
+        return levels
+
+    @staticmethod
+    def _find_overlapping_leaves(leaves: Set[str], children: Dict[str, List[str]]) -> List[str]:
+        """leaves whose descendants are also descendants of another leaf"""
+        owner = {leaf: leaf for leaf in leaves}
+        overlapping = set()
+        for leaf in leaves:
+            visited = set()
+            stack = list(children.get(leaf, ()))
+            while stack:
+                node = stack.pop()
+                if node in visited:
+                    continue
+                visited.add(node)
+                if node in owner and owner[node] != leaf:
+                    overlapping.update((leaf, owner[node]))
+                owner.setdefault(node, leaf)
+                stack.extend(children.get(node, ()))
+        return sorted(overlapping)
 
     def _construct_body(self, element_attributes: Optional[bool] = False) -> Dict:
         """
