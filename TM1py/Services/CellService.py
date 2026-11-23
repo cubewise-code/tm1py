@@ -1792,6 +1792,12 @@ class CellService(ObjectService):
             hierarchies.setdefault(dimension, hierarchy)
 
         axis_dimensions = [by_key[lower_and_drop_spaces(split_hierarchy_unique_name(n)[0])] for n in columns + rows]
+        repeated = sorted({dimension for dimension in axis_dimensions if axis_dimensions.count(dimension) > 1})
+        if repeated:
+            raise ValueError(
+                f"The file has one column per cube dimension, so the query can't use several hierarchies of "
+                f"one dimension on its columns and rows: {repeated}"
+            )
         rest = [dimension for dimension in cube_dimensions if dimension not in axis_dimensions]
         return [(dimension, hierarchies.get(dimension, dimension)) for dimension in axis_dimensions + rest]
 
@@ -1828,6 +1834,7 @@ class CellService(ObjectService):
         sandbox_name: str = None,
         clear_view: str = None,
         deactivate_transaction_log: bool = False,
+        reactivate_transaction_log: bool = False,
         remove_blob: bool = True,
         file_parameter: str = "pFileName",
         parameters: Dict[str, Any] = None,
@@ -1855,8 +1862,9 @@ class CellService(ObjectService):
         :param allow_spread: spread values written to consolidated cells
         :param sandbox_name: load into this sandbox
         :param clear_view: name of a public view on the cube to zero out before loading
-        :param deactivate_transaction_log: switch the cube's transaction logging off for the load and restore the
-        previous setting afterwards, also when the load fails (v11 only)
+        :param deactivate_transaction_log: switch the cube's transaction logging off before the load (v11 only)
+        :param reactivate_transaction_log: switch the cube's transaction logging on after the load, also when the
+        load fails (v11 only)
         :param remove_blob: remove the file after a successful load
         :param file_parameter: name of the process parameter that receives the file name
         :param parameters: other parameters of the process
@@ -1878,6 +1886,7 @@ class CellService(ObjectService):
                 "sandbox_name": sandbox_name,
                 "clear_view": clear_view,
                 "deactivate_transaction_log": deactivate_transaction_log,
+                "reactivate_transaction_log": reactivate_transaction_log,
                 "dimensions": dimensions,
             }
             passed = [name for name, value in cube_only_options.items() if value]
@@ -1896,33 +1905,34 @@ class CellService(ObjectService):
                 **{**(parameters or {}), file_parameter: file_service.ti_file_name(file_name)},
             )
         else:
-            if deactivate_transaction_log and verify_version(required_version="12", version=self.version):
-                raise TM1pyVersionException(
-                    "load_from_blob", "11", feature="deactivate_transaction_log", max_version="12.0.0"
-                )
-            dimensions = dimensions or self.get_dimension_names_for_writing(cube_name, **kwargs)
-            process = self._build_blob_to_cube_process(
-                cube_name=cube_name,
-                process_name=self.suggest_unique_object_name(),
-                blob_filename=file_name,
-                dimensions=dimensions,
-                increment=increment,
-                skip_non_updateable=skip_non_updateable,
-                sandbox_name=sandbox_name,
-                allow_spread=allow_spread,
-                clear_view=clear_view,
-                lean_ti=True,
-                string_measures=self._get_blob_cube_profile(cube_name, dimensions=dimensions, **kwargs).string_measures,
-            )
+            if verify_version(required_version="12", version=self.version):
+                if deactivate_transaction_log or reactivate_transaction_log:
+                    feature = ("de" if deactivate_transaction_log else "re") + "activate_transaction_log"
+                    raise TM1pyVersionException("load_from_blob", "11", feature=feature, max_version="12.0.0")
 
-            # switched off only when on, so a cube that logs nothing is left untouched
-            switch_log = deactivate_transaction_log and self.transaction_log_is_active(cube_name)
-            if switch_log:
-                self.deactivate_transactionlog(cube_name, **kwargs)
+            # as in the other write functions: logging is switched on at the end whenever that was asked for
             try:
+                dimensions = dimensions or self.get_dimension_names_for_writing(cube_name, **kwargs)
+                process = self._build_blob_to_cube_process(
+                    cube_name=cube_name,
+                    process_name=self.suggest_unique_object_name(),
+                    blob_filename=file_name,
+                    dimensions=dimensions,
+                    increment=increment,
+                    skip_non_updateable=skip_non_updateable,
+                    sandbox_name=sandbox_name,
+                    allow_spread=allow_spread,
+                    clear_view=clear_view,
+                    lean_ti=True,
+                    string_measures=self._get_blob_cube_profile(
+                        cube_name, dimensions=dimensions, **kwargs
+                    ).string_measures,
+                )
+                if deactivate_transaction_log:
+                    self.deactivate_transactionlog(cube_name, **kwargs)
                 success, status, log_file = process_service.execute_process_with_return(process=process, **kwargs)
             finally:
-                if switch_log:
+                if reactivate_transaction_log:
                     self.activate_transactionlog(cube_name, **kwargs)
 
         if not success:
@@ -5535,6 +5545,19 @@ class CellService(ObjectService):
         if not cube_dimensions:
             cube_dimensions = self.get_dimension_names_for_writing(cube_name)
 
+        # checks and lookups that can fail run before the temporary view is created, so no view is left behind
+        if sandbox_name:
+            self._assert_sandbox_exists(sandbox_name)
+
+        profile = None
+        if lean_ti:
+            profile = self._get_blob_cube_profile(
+                cube_name,
+                dimensions=cube_dimensions,
+                hierarchies=[dimension_name_from_element_unique_name(h) for h in rows + columns],
+                quote_character=quote_character,
+            )
+
         # ordinal is desired position in csv output
         # desired column position in CSV is: rows, columns and no title sections (as in legacy '/content' API call)
         dimensions_with_ordinal = CaseAndSpaceInsensitiveDict(
@@ -5574,18 +5597,6 @@ class CellService(ObjectService):
                 case_insensitive_dimensions[dimension_name_from_element_unique_name(header)]
                 for header in rows + columns
             ]
-
-        profile = None
-        if lean_ti:
-            profile = self._get_blob_cube_profile(
-                cube_name,
-                dimensions=cube_dimensions,
-                hierarchies=[dimension_name_from_element_unique_name(h) for h in rows + columns],
-                quote_character=quote_character,
-            )
-
-        if sandbox_name:
-            self._assert_sandbox_exists(sandbox_name)
 
         try:
             file_service.create(file_name=file_name, file_content="".encode("utf-8"))

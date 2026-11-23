@@ -4,7 +4,7 @@ import itertools
 import json
 import time
 import warnings
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from io import BytesIO
 from pathlib import Path
 from typing import Iterable, Iterator, List, Optional, Tuple, Union
@@ -168,9 +168,13 @@ class FileService(ObjectService):
         where the file is sent as one sized upload
         :param max_mb_per_part: megabytes per part with multipart upload
         :return: number of bytes sent to the target
-        :raises TM1pyFileTransferException: when the bytes sent differ from the source file's size
+        :raises ValueError: when source and target are the same file on the same connection
+        :raises TM1pyFileTransferException: when the bytes sent differ from the source file's size. The incomplete
+        target file is removed
         """
         target_file_name = file_name if target_file_name is None else target_file_name
+        if source._rest is self._rest and Path(file_name) == Path(target_file_name):
+            raise ValueError(f"Source and target are the same file: '{file_name}'. Pass another 'target_file_name'")
         size = source.get_size(file_name, **kwargs)
 
         def copy() -> Tuple[int, int]:
@@ -188,6 +192,9 @@ class FileService(ObjectService):
             sent, length = copy()
 
         if sent != length:
+            # the target holds an incomplete copy
+            with suppress(Exception):
+                self.delete(target_file_name, **kwargs)
             raise TM1pyFileTransferException(str(file_name), sent, length)
 
         if remove_source:

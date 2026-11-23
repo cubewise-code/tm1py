@@ -57,7 +57,7 @@ def enable_sandbox_ti(sandbox_name: Optional[str], sandboxing_disabled: bool) ->
     if sandboxing_disabled:
         return ""
     if sandbox_name:
-        return f"ServerActiveSandboxSet('{sandbox_name}');SetUseActiveSandboxProperty(1);"
+        return f"ServerActiveSandboxSet({ti_string(sandbox_name)});SetUseActiveSandboxProperty(1);"
     return "ServerActiveSandboxSet('');SetUseActiveSandboxProperty(0);"
 
 

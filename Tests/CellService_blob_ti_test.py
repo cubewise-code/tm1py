@@ -28,8 +28,11 @@ from TM1py.Objects import (
     NativeView,
     Subset,
 )
+from TM1py.Exceptions import TM1pyVersionException, TM1pyWriteFailureException
 from TM1py.Services import TM1Service
 from TM1py.Services.CellService import CellService
+from TM1py.Services.FileService import FileService
+from TM1py.Services.ProcessService import ProcessService
 from TM1py.Utils.BlobProcessBuilder import CubeProfile
 
 from .Utils import skip_if_no_pandas
@@ -289,6 +292,10 @@ class TestLeanExportTi(unittest.TestCase):
         process = build_lean_export(sandbox_name="Scenario 1")
         self.assertIn("ServerActiveSandboxSet('Scenario 1');SetUseActiveSandboxProperty(1);", process.prolog_procedure)
 
+    def test_sandbox_name_is_escaped_in_ti_literal(self):
+        process = build_lean_export(sandbox_name="Bob's plan")
+        self.assertIn("ServerActiveSandboxSet('Bob''s plan');", process.prolog_procedure)
+
 
 def _native_sales_view() -> NativeView:
     view = NativeView("Sales", "ignored")
@@ -438,6 +445,129 @@ class TestLeanLoadTi(unittest.TestCase):
 
     def test_utf8_input(self):
         self.assertIn("SetInputCharacterSet('TM1CS_UTF8');", build_lean_load().prolog_procedure)
+
+
+class TestViewCsvUseBlobChecksBeforeCreatingView(unittest.TestCase):
+    """_execute_view_csv_use_blob copies the view as a temporary public view. Whatever can fail before the export
+    runs must fail before that view exists, so nothing is left on the server."""
+
+    ARGUMENTS = dict(
+        cube_name="Sales",
+        view_name="Default",
+        top=None,
+        skip=None,
+        skip_zeros=True,
+        skip_consolidated_cells=True,
+        skip_rule_derived_cells=True,
+        value_separator=",",
+        cube_dimensions=SALES_DIMENSIONS,
+        # titles, rows, columns
+        arranged_axes=(
+            ["[Year].[Year]", "[Product].[Product]"],
+            ["[Region].[Region]"],
+            ["[Sales Measure].[Sales Measure]"],
+        ),
+    )
+
+    def setUp(self):
+        self.cell_service = _cell_service()
+        self.view_service = MagicMock()
+        self.view_service.is_mdx_view.return_value = False
+        self.view_service.get_native_view.return_value = _native_sales_view()
+        services = (MagicMock(), MagicMock(), self.view_service)
+        patcher = patch.object(CellService, "_prepare_blob_services", return_value=services)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_unknown_sandbox_raises_before_the_view_is_created(self):
+        with patch.object(CellService, "sandbox_exists", return_value=False):
+            with self.assertRaises(ValueError):
+                self.cell_service._execute_view_csv_use_blob(**self.ARGUMENTS, sandbox_name="missing")
+
+        self.view_service.create.assert_not_called()
+
+    def test_failing_cube_profile_raises_before_the_view_is_created(self):
+        with patch.object(CellService, "_get_blob_cube_profile", side_effect=RuntimeError("connection lost")):
+            with self.assertRaises(RuntimeError):
+                self.cell_service._execute_view_csv_use_blob(**self.ARGUMENTS, lean_ti=True)
+
+        self.view_service.create.assert_not_called()
+
+
+class TestMdxViewDataSourceHierarchies(unittest.TestCase):
+    def test_dimension_on_two_axis_positions_raises(self):
+        # the file has one column per cube dimension, so it can't hold two hierarchies of one dimension
+        mdx = (
+            MdxBuilder.from_cube("Sales")
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.tm1_subset_all("Region"))
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.tm1_subset_all("Region", "By Manager"))
+        )
+
+        with self.assertRaises(ValueError):
+            _cell_service()._mdx_view_data_source_hierarchies(mdx, mdx.to_mdx(), SALES_DIMENSIONS)
+
+
+class TestLoadFromBlobTransactionLog(unittest.TestCase):
+    """load_from_blob switches transaction logging like the other write functions: `deactivate_transaction_log`
+    switches it off before the load, `reactivate_transaction_log` switches it on afterwards."""
+
+    def setUp(self):
+        self.deactivate = self.patch(CellService, "deactivate_transactionlog")
+        self.activate = self.patch(CellService, "activate_transactionlog")
+        self.patch(CellService, "_get_blob_cube_profile")
+        self.build = self.patch(CellService, "_build_blob_to_cube_process")
+        self.execute = self.patch(
+            ProcessService, "execute_process_with_return", return_value=(True, "CompletedSuccessfully", None)
+        )
+        self.patch(FileService, "delete")
+
+    def patch(self, target, attribute: str, **kwargs) -> MagicMock:
+        patcher = patch.object(target, attribute, **kwargs)
+        self.addCleanup(patcher.stop)
+        return patcher.start()
+
+    def load(self, version: str = V11, **kwargs):
+        _cell_service(version).load_from_blob("load.csv", cube_name="Sales", dimensions=SALES_DIMENSIONS, **kwargs)
+
+    def test_each_flag_switches_logging_on_its_own(self):
+        for deactivate, reactivate in ((False, False), (True, False), (False, True), (True, True)):
+            with self.subTest(deactivate=deactivate, reactivate=reactivate):
+                self.deactivate.reset_mock()
+                self.activate.reset_mock()
+
+                self.load(deactivate_transaction_log=deactivate, reactivate_transaction_log=reactivate)
+
+                self.assertEqual(1 if deactivate else 0, self.deactivate.call_count)
+                self.assertEqual(1 if reactivate else 0, self.activate.call_count)
+
+    def test_reactivates_when_the_load_fails(self):
+        self.execute.return_value = (False, "Aborted", "TM1ProcessError.log")
+
+        with self.assertRaises(TM1pyWriteFailureException):
+            self.load(reactivate_transaction_log=True)
+
+        self.activate.assert_called_once()
+
+    def test_reactivates_when_the_process_can_not_be_built(self):
+        self.build.side_effect = ValueError("Sandbox 'missing' does not exist")
+
+        with self.assertRaises(ValueError):
+            self.load(deactivate_transaction_log=True, reactivate_transaction_log=True)
+
+        self.deactivate.assert_not_called()
+        self.activate.assert_called_once()
+
+    def test_either_flag_raises_on_v12(self):
+        for option in ("deactivate_transaction_log", "reactivate_transaction_log"):
+            with self.subTest(option=option):
+                with self.assertRaises(TM1pyVersionException):
+                    self.load(version=V12, **{option: True})
+
+        self.execute.assert_not_called()
+
+    def test_reactivate_with_process_name_raises(self):
+        with self.assertRaises(ValueError):
+            _cell_service().load_from_blob("load.csv", process_name="loader", reactivate_transaction_log=True)
 
 
 # ---------------------------------------------------------------------------------------------------------------- #

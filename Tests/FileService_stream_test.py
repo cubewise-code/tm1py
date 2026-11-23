@@ -8,10 +8,11 @@ import configparser
 import hashlib
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from TM1py import TM1Service
-from TM1py.Exceptions import TM1pyRestException
+from TM1py.Exceptions import TM1pyFileTransferException, TM1pyRestException
+from TM1py.Services.FileService import FileService
 from TM1py.Utils import verify_version
 
 BOM = b"\xef\xbb\xbf"
@@ -67,6 +68,35 @@ def delete_if_exists(tm1: TM1Service, *file_names):
     for file_name in file_names:
         if tm1.files.exists(file_name):
             tm1.files.delete(file_name)
+
+
+class TestTransferFromChecks(unittest.TestCase):
+    """Server-free: transfer_from on a FileService wired to a mocked REST layer."""
+
+    @staticmethod
+    def file_service() -> FileService:
+        rest = MagicMock()
+        rest.version = "11.8.02300.1"
+        return FileService(rest)
+
+    def test_transfer_onto_the_same_file_raises_before_any_request(self):
+        files = self.file_service()
+
+        with self.assertRaises(ValueError):
+            files.transfer_from(files, SOURCE_FILE)
+
+        files._rest.GET.assert_not_called()
+
+    def test_byte_mismatch_removes_the_target_file(self):
+        source, target = self.file_service(), self.file_service()
+
+        with patch.object(source, "get_size", return_value=10), patch.object(
+            target, "_copy_stream", return_value=(5, 10)
+        ), patch.object(target, "delete") as delete:
+            with self.assertRaises(TM1pyFileTransferException):
+                target.transfer_from(source, SOURCE_FILE, target_file_name=TARGET_FILE)
+
+        delete.assert_called_once_with(TARGET_FILE)
 
 
 class TestFileServiceStream(unittest.TestCase):

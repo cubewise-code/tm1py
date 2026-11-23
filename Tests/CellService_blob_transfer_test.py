@@ -35,6 +35,8 @@ CONFIG.read(Path(__file__).parent.joinpath("config.ini"))
 PREFIX = "TM1py_Tests_BlobTransfer_"
 D1, D1_CODE, D2, MEASURE = PREFIX + "D1", PREFIX + "D1Code", PREFIX + "D2", PREFIX + "Measure"
 SOURCE, TARGET, ALIAS_TARGET = PREFIX + "Source", PREFIX + "Target", PREFIX + "AliasTarget"
+# a cube without string measures: the generated load reads the value column as a number
+NUMERIC_MEASURE, NUMERIC_TARGET = PREFIX + "NumericMeasure", PREFIX + "NumericTarget"
 VIEW = PREFIX + "View"
 LOADER = PREFIX + "Loader"
 ALT = "Alt"
@@ -68,6 +70,7 @@ def build_fixture(tm1: TM1Service):
         dimension(D1_CODE, numeric([CODES[e] or e for e in D1_ELEMENTS])),
         dimension(D2, numeric(["e1", "e2"]), [d2_alt]),
         dimension(MEASURE, [Element("Value", "Numeric"), Element("Comment", "String"), Element("Double", "Numeric")]),
+        dimension(NUMERIC_MEASURE, numeric(["Value"])),
     ):
         tm1.dimensions.update_or_create(d)
     tm1.cells.write("}ElementAttributes_" + D1, {(e, ALIAS): code for e, code in CODES.items() if code}, use_ti=True)
@@ -76,6 +79,7 @@ def build_fixture(tm1: TM1Service):
         (SOURCE, [D1, D2, MEASURE]),
         (TARGET, [D1, D2, MEASURE]),
         (ALIAS_TARGET, [D1_CODE, D2, MEASURE]),
+        (NUMERIC_TARGET, [D1, D2, NUMERIC_MEASURE]),
     ):
         tm1.cubes.update_or_create(Cube(cube, dimensions))
     source = tm1.cubes.get(SOURCE)
@@ -94,10 +98,10 @@ def build_fixture(tm1: TM1Service):
 
 
 def drop_fixture(tm1: TM1Service):
-    for cube in (SOURCE, TARGET, ALIAS_TARGET):
+    for cube in (SOURCE, TARGET, ALIAS_TARGET, NUMERIC_TARGET):
         if tm1.cubes.exists(cube):
             tm1.cubes.delete(cube)
-    for d in (D1, D1_CODE, D2, MEASURE):
+    for d in (D1, D1_CODE, D2, MEASURE, NUMERIC_MEASURE):
         if tm1.dimensions.exists(d):
             tm1.dimensions.delete(d)
     if tm1.processes.exists(LOADER):
@@ -113,18 +117,18 @@ def server_objects(tm1: TM1Service) -> dict:
     return objects
 
 
-def all_cells_mdx(cube: str, d1: str = D1, d2_hierarchy: str = D2) -> MdxBuilder:
+def all_cells_mdx(cube: str, d1: str = D1, d2_hierarchy: str = D2, measure: str = MEASURE) -> MdxBuilder:
     return (
         MdxBuilder.from_cube(cube)
         .add_hierarchy_set_to_row_axis(MdxHierarchySet.tm1_subset_all(d1))
         .add_hierarchy_set_to_row_axis(MdxHierarchySet.tm1_subset_all(D2, d2_hierarchy))
-        .add_hierarchy_set_to_column_axis(MdxHierarchySet.tm1_subset_all(MEASURE))
+        .add_hierarchy_set_to_column_axis(MdxHierarchySet.tm1_subset_all(measure))
     )
 
 
-def cells(tm1: TM1Service, cube: str, d1: str = D1) -> dict:
+def cells(tm1: TM1Service, cube: str, d1: str = D1, measure: str = MEASURE) -> dict:
     """Non-empty leaf cells of a cube, as {(d1, d2, measure): value}"""
-    mdx = all_cells_mdx(cube, d1).to_mdx()
+    mdx = all_cells_mdx(cube, d1, measure=measure).to_mdx()
     result = tm1.cells.execute_mdx(mdx, cell_properties=["Value"], skip_zeros=True, skip_consolidated_cells=True)
     return {
         tuple(element.split("].[")[-1][:-1].replace("]]", "]") for element in coordinates): cell["Value"]
@@ -166,7 +170,9 @@ class TestBlobTransfer(unittest.TestCase):
         cls.tm1.logout()
 
     def setUp(self):
-        self.tm1.processes.execute_ti_code([f"CubeClearData('{TARGET}');", f"CubeClearData('{ALIAS_TARGET}');"])
+        self.tm1.processes.execute_ti_code(
+            [f"CubeClearData('{cube}');" for cube in (TARGET, ALIAS_TARGET, NUMERIC_TARGET)]
+        )
         self.files_before = set(self.tm1.files.get_all_names())
         self.views_before = self.tm1.views.get_all_names(SOURCE)
         self.objects_before = server_objects(self.tm1)
@@ -346,6 +352,47 @@ class TestBlobTransfer(unittest.TestCase):
         self.tm1.cells.load_from_blob(file_name, cube_name=TARGET, remove_blob=False)
         self.assertTrue(self.tm1.files.exists(file_name))
 
+    # -- cube without string measures: the generated load reads the value column as a number ----------- #
+
+    def test_numeric_cube_round_trip(self):
+        mdx = (
+            MdxBuilder.from_cube(SOURCE)
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.tm1_subset_all(D1))
+            .add_hierarchy_set_to_row_axis(MdxHierarchySet.tm1_subset_all(D2))
+            .add_hierarchy_set_to_column_axis(MdxHierarchySet.member(Member.of(MEASURE, "Value")))
+        )
+
+        file_name = self.tm1.cells.export_to_blob(mdx=mdx)
+        self.tm1.cells.load_from_blob(file_name, cube_name=NUMERIC_TARGET)
+
+        expected = {(element, "e1", "Value"): number for element, number in zip(D1_ELEMENTS, NUMBERS)}
+        self.assert_cells_close(expected, cells(self.tm1, NUMERIC_TARGET, measure=NUMERIC_MEASURE))
+
+    def write_to_numeric_cube(self, value, lean_ti: bool) -> tuple:
+        """Write `value` next to a valid value over existing data. Returns the exception raised (its type name, or
+        None) and the cube's cells afterwards"""
+        self.tm1.processes.execute_ti_code([f"CubeClearData('{NUMERIC_TARGET}');"])
+        self.tm1.cells.write(NUMERIC_TARGET, {("plain", "e1", "Value"): 5})
+        raised = None
+        try:
+            self.tm1.cells.write(
+                NUMERIC_TARGET,
+                {("plain", "e1", "Value"): value, ("plain", "e2", "Value"): 7},
+                use_blob=True,
+                lean_ti=lean_ti,
+            )
+        except (TM1pyWriteFailureException, TM1pyWritePartialFailureException) as e:
+            raised = type(e).__name__
+        return raised, cells(self.tm1, NUMERIC_TARGET, measure=NUMERIC_MEASURE)
+
+    def test_numeric_cube_lean_load_treats_invalid_values_like_legacy_load(self):
+        # legacy converts the value with StringToNumber; lean reads the value column as a number
+        for value in ("abc", "", None):
+            with self.subTest(value=value):
+                legacy = self.write_to_numeric_cube(value, lean_ti=False)
+                lean = self.write_to_numeric_cube(value, lean_ti=True)
+                self.assertEqual(legacy, lean)
+
     def test_attribute_cube_round_trip(self):
         attribute_cube = "}ElementAttributes_" + D1
         mdx = (
@@ -382,6 +429,7 @@ class TestBlobTransfer(unittest.TestCase):
             {"sandbox_name": "any"},
             {"clear_view": "any"},
             {"deactivate_transaction_log": True},
+            {"reactivate_transaction_log": True},
             {"dimensions": [D1, D2, MEASURE]},
         ):
             with self.subTest(option=option):
@@ -394,7 +442,7 @@ class TestBlobTransfer(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     self.tm1.cells.load_from_blob("any.csv", **arguments)
 
-    def test_transaction_log_switched_off_and_restored(self):
+    def test_transaction_log_deactivated_and_reactivated(self):
         if verify_version("12", self.tm1.version):
             self.skipTest("v11 only")
 
@@ -403,17 +451,27 @@ class TestBlobTransfer(unittest.TestCase):
 
         self.tm1.cells.write_value("YES", "}CubeProperties", (SOURCE, "LOGGING"))
         file_name = self.tm1.cells.export_to_blob(mdx=all_cells_mdx(SOURCE), skip_rule_derived_cells=False)
-        # fails partially (rule cells): logging is restored all the same
-        with self.assertRaises(TM1pyWritePartialFailureException):
-            self.tm1.cells.load_from_blob(file_name, cube_name=SOURCE, deactivate_transaction_log=True)
-        self.assertEqual("YES", logging())
+        try:
+            # only deactivated: logging stays off. The load fails partially (rule cells), so the file is kept
+            with self.assertRaises(TM1pyWritePartialFailureException):
+                self.tm1.cells.load_from_blob(file_name, cube_name=SOURCE, deactivate_transaction_log=True)
+            self.assertEqual("NO", logging())
 
-        self.tm1.cells.write_value("NO", "}CubeProperties", (SOURCE, "LOGGING"))
-        self.tm1.cells.load_from_blob(
-            file_name, cube_name=SOURCE, deactivate_transaction_log=True, skip_non_updateable=True
-        )
-        self.assertEqual("NO", logging())
-        self.tm1.cells.write_value("YES", "}CubeProperties", (SOURCE, "LOGGING"))
+            # reactivated although the load fails
+            with self.assertRaises(TM1pyWritePartialFailureException):
+                self.tm1.cells.load_from_blob(file_name, cube_name=SOURCE, reactivate_transaction_log=True)
+            self.assertEqual("YES", logging())
+
+            self.tm1.cells.load_from_blob(
+                file_name,
+                cube_name=SOURCE,
+                deactivate_transaction_log=True,
+                reactivate_transaction_log=True,
+                skip_non_updateable=True,
+            )
+            self.assertEqual("YES", logging())
+        finally:
+            self.tm1.cells.write_value("YES", "}CubeProperties", (SOURCE, "LOGGING"))
 
     # -- developer process -------------------------------------------------------------------------------- #
 
@@ -474,11 +532,13 @@ class TestBlobTransfer(unittest.TestCase):
 
 
 class TestBlobTransferV12Logging(unittest.TestCase):
-    def test_deactivate_transaction_log_on_v12_raises(self):
+    def test_transaction_log_options_on_v12_raise(self):
         tm1 = connect("tm1srv02")
         try:
-            with self.assertRaises(TM1pyVersionException):
-                tm1.cells.load_from_blob("any.csv", cube_name="any", deactivate_transaction_log=True)
+            for option in ("deactivate_transaction_log", "reactivate_transaction_log"):
+                with self.subTest(option=option):
+                    with self.assertRaises(TM1pyVersionException):
+                        tm1.cells.load_from_blob("any.csv", cube_name="any", **{option: True})
         finally:
             tm1.logout()
 
