@@ -490,9 +490,6 @@ class HierarchyService(ObjectService):
             raise RuntimeError(f"Unexpected return value from TM1 API request: {str(structure)}")
 
     @require_pandas
-    @require_data_admin
-    @require_ops_admin
-    @require_pandas
     def get_hierarchy_dataframe(
         self,
         dimension_name: str,
@@ -527,10 +524,16 @@ class HierarchyService(ObjectService):
         :param use_blob: faster retrieval for large hierarchies. Requires admin permissions
         :return: pandas DataFrame
         """
+        # rebase first, so that an invalid leaf_level fails before the elements are retrieved
+        rebased_hierarchy = None
+        if leaf_level is not None:
+            rebased_hierarchy = self.get(dimension_name, hierarchy_name, **kwargs)
+            rebased_hierarchy.rebase(leaf_level)
+
         df = self.elements.get_elements_dataframe(
             dimension_name=dimension_name,
             hierarchy_name=hierarchy_name,
-            skip_consolidations=skip_consolidations and leaf_level is None,
+            skip_consolidations=skip_consolidations and rebased_hierarchy is None,
             attributes=attributes,
             skip_parents=False,
             skip_weights=False,
@@ -557,10 +560,8 @@ class HierarchyService(ObjectService):
                 )
         df = df.rename(columns=column_renaming)
 
-        if leaf_level is not None:
-            hierarchy = self.get(dimension_name, hierarchy_name, **kwargs)
-            hierarchy.rebase(leaf_level)
-            df = self._rebase_hierarchy_dataframe(df, hierarchy)
+        if rebased_hierarchy is not None:
+            df = self._rebase_hierarchy_dataframe(df, rebased_hierarchy)
             if skip_consolidations:
                 df = df[df[self.ELEMENT_TYPE_COLUMN] != str(Element.Types.CONSOLIDATED)].reset_index(drop=True)
 
@@ -579,14 +580,14 @@ class HierarchyService(ObjectService):
 
         # level columns are ordered deepest first, so the first non-empty one holds the direct parent.
         # Paths whose direct parent was cut away are cleared, which leaves the element without parent on that row
-        def has_valid_parent(row) -> bool:
-            for level_column in level_columns:
-                parent = row[level_column]
-                if isinstance(parent, str) and parent:
-                    return (parent, row[element_column]) in hierarchy.edges
-            return True
-
-        invalid_paths = ~df.apply(has_valid_parent, axis=1)
+        direct_parents = [
+            next((parent for parent in parents if isinstance(parent, str) and parent), None)
+            for parents in df[level_columns].itertuples(index=False, name=None)
+        ]
+        invalid_paths = [
+            parent is not None and (parent, element_name) not in hierarchy.edges
+            for parent, element_name in zip(direct_parents, df[element_column])
+        ]
         df.loc[invalid_paths, level_columns] = ""
         df.loc[invalid_paths, level_weight_columns] = empty_weight
 
@@ -602,6 +603,9 @@ class HierarchyService(ObjectService):
 
         return df.reset_index(drop=True)
 
+    @require_pandas
+    @require_data_admin
+    @require_ops_admin
     def update_or_create_hierarchy_from_dataframe(
         self,
         dimension_name: str,
@@ -881,7 +885,8 @@ class HierarchyService(ObjectService):
                 if level == previous_level:
                     continue
 
-                edges[level, previous_level] = weight
+                # weights may arrive as strings (e.g. '1.000000'). Compare them to the weights in TM1 as numbers
+                edges[level, previous_level] = float(weight)
                 previous_level = level
 
         if edges:

@@ -347,6 +347,12 @@ class Hierarchy(TM1Object):
                 f"in hierarchy '{self.dimension_name}:{self.name}'"
             )
 
+        # nothing is cut on level 0. Consolidations without children are level 0 too and stay as they are
+        if leaf_level == 0:
+            return [
+                element.name for element in self._elements.values() if element.element_type == Element.Types.NUMERIC
+            ]
+
         strings = {node for node, name in names.items() if self._elements[name].element_type == Element.Types.STRING}
 
         # consolidations above leaf_level keep all their children. Everything else at or below leaf_level

@@ -550,6 +550,16 @@ class TestHierarchy(unittest.TestCase):
         self.assertEqual(edges_before, dict(hierarchy.edges.items()))
         self.assertEqual(Element.Types.CONSOLIDATED, hierarchy.get_element("Snacks").element_type)
 
+    def test_rebase_level_zero_keeps_consolidation_without_children(self):
+        hierarchy = self.balanced_product_hierarchy()
+        hierarchy.add_element("Empty Family", "Consolidated")
+        hierarchy.add_edge("Food", "Empty Family", 1)
+
+        new_leaves = hierarchy.rebase(leaf_level=0)
+
+        self.assertEqual(Element.Types.CONSOLIDATED, hierarchy.get_element("Empty Family").element_type)
+        self.assertCountEqual(["SKU1", "SKU2", "SKU3", "SKU4"], new_leaves)
+
     def test_rebase_to_top_level(self):
         hierarchy = self.balanced_product_hierarchy()
 
