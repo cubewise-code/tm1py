@@ -19,6 +19,7 @@ from unittest.mock import MagicMock, patch
 
 from mdxpy import MdxBuilder, MdxHierarchySet, Member
 
+from TM1py.Exceptions import TM1pyVersionException, TM1pyWriteFailureException
 from TM1py.Objects import (
     AnonymousSubset,
     Cube,
@@ -28,7 +29,6 @@ from TM1py.Objects import (
     NativeView,
     Subset,
 )
-from TM1py.Exceptions import TM1pyVersionException, TM1pyWriteFailureException
 from TM1py.Services import TM1Service
 from TM1py.Services.CellService import CellService
 from TM1py.Services.FileService import FileService
