@@ -514,26 +514,26 @@ class HierarchyService(ObjectService):
 
         :param dimension_name: name of the dimension
         :param hierarchy_name: name of the hierarchy
-        :param leaf_level: optional TM1 level (0 = leaves) to rebase the hierarchy to. Elements on that level
-            become the new (numeric) leaves and everything below them is removed. See `Hierarchy.rebase`.
+        :param leaf_level: optional TM1 level (0 = leaves) to prune the hierarchy to. Elements on that level
+            become the new (numeric) leaves and everything below them is removed. See `Hierarchy.prune_to_level`.
             E.g. 3 turns a hierarchy with SKUs as leaves and product families 3 levels higher
             into a hierarchy with product families as leaves. Element names are kept.
         :param attributes: selection of attributes. If None, retrieve all
-        :param skip_consolidations: only return rows for leaves (after rebasing, if `leaf_level` is passed).
+        :param skip_consolidations: only return rows for leaves (after pruning, if `leaf_level` is passed).
             Consolidations are still created from the parent columns, but their attribute values are not included
         :param use_blob: faster retrieval for large hierarchies. Requires admin permissions
         :return: pandas DataFrame
         """
-        # rebase first, so that an invalid leaf_level fails before the elements are retrieved
-        rebased_hierarchy = None
+        # prune first, so that an invalid leaf_level fails before the elements are retrieved
+        pruned_hierarchy = None
         if leaf_level is not None:
-            rebased_hierarchy = self.get(dimension_name, hierarchy_name, **kwargs)
-            rebased_hierarchy.rebase(leaf_level)
+            pruned_hierarchy = self.get(dimension_name, hierarchy_name, **kwargs)
+            pruned_hierarchy.prune_to_level(leaf_level)
 
         df = self.elements.get_elements_dataframe(
             dimension_name=dimension_name,
             hierarchy_name=hierarchy_name,
-            skip_consolidations=skip_consolidations and rebased_hierarchy is None,
+            skip_consolidations=skip_consolidations and pruned_hierarchy is None,
             attributes=attributes,
             skip_parents=False,
             skip_weights=False,
@@ -560,15 +560,15 @@ class HierarchyService(ObjectService):
                 )
         df = df.rename(columns=column_renaming)
 
-        if rebased_hierarchy is not None:
-            df = self._rebase_hierarchy_dataframe(df, rebased_hierarchy)
+        if pruned_hierarchy is not None:
+            df = self._prune_hierarchy_dataframe(df, pruned_hierarchy)
             if skip_consolidations:
                 df = df[df[self.ELEMENT_TYPE_COLUMN] != str(Element.Types.CONSOLIDATED)].reset_index(drop=True)
 
         return df
 
-    def _rebase_hierarchy_dataframe(self, df: "pd.DataFrame", hierarchy: Hierarchy) -> "pd.DataFrame":
-        """Reduce a hierarchy DataFrame to the elements and edges of an already rebased `hierarchy`"""
+    def _prune_hierarchy_dataframe(self, df: "pd.DataFrame", hierarchy: Hierarchy) -> "pd.DataFrame":
+        """Reduce a hierarchy DataFrame to the elements and edges of an already pruned `hierarchy`"""
         element_column = df.columns[0]
         level_columns, level_weight_columns = self._identify_level_columns(df.columns)
         empty_weight = f"{0:.6f}"

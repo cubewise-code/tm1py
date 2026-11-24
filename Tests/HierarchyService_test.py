@@ -1892,7 +1892,7 @@ class TestHierarchyService(unittest.TestCase):
 
         expected = self.tm1.hierarchies.get(self.product_dimension_name, self.product_dimension_name)
         with self.assertWarns(UserWarning):
-            new_leaves = expected.rebase(leaf_level=1)
+            new_leaves = expected.prune_to_level(leaf_level=1)
         copy = self.tm1.hierarchies.get(self.product_copy_dimension_name, self.product_copy_dimension_name)
         self.assertCountEqual(["Snacks", "Bakery", "Soda", "Misc", "Promo"], new_leaves)
         self.assertEqual({(e.name, e.element_type) for e in expected}, {(e.name, e.element_type) for e in copy})

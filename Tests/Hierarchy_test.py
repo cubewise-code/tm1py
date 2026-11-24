@@ -395,10 +395,10 @@ class TestHierarchy(unittest.TestCase):
             }
         )
 
-    def test_rebase_balanced(self):
+    def test_prune_to_level_balanced(self):
         hierarchy = self.balanced_product_hierarchy()
 
-        new_leaves = hierarchy.rebase(leaf_level=1)
+        new_leaves = hierarchy.prune_to_level(leaf_level=1)
 
         self.assertCountEqual(["Snacks", "Bakery", "Soda"], new_leaves)
         for leaf in new_leaves:
@@ -427,7 +427,7 @@ class TestHierarchy(unittest.TestCase):
             value(element.name)
         return values
 
-    def test_rebase_reduces_top_level(self):
+    def test_prune_to_level_reduces_top_level(self):
         # 9 levels: L8 -> L7 -> ... -> L0, with a sibling leaf at each level
         edges = {}
         for level in range(8, 0, -1):
@@ -435,7 +435,7 @@ class TestHierarchy(unittest.TestCase):
             edges[(f"L{level}", f"Sibling{level - 1}")] = 1
         hierarchy = self.build_hierarchy(edges)
 
-        new_leaves = hierarchy.rebase(leaf_level=3)
+        new_leaves = hierarchy.prune_to_level(leaf_level=3)
 
         self.assertIn("L3", new_leaves)
         self.assertNotIn("L2", hierarchy)
@@ -445,7 +445,7 @@ class TestHierarchy(unittest.TestCase):
             depth, node = depth + 1, f"L{int(node[1:]) - 1}"
         self.assertEqual(5, depth)
 
-    def test_rebase_ragged_keeps_short_branch_tops(self):
+    def test_prune_to_level_ragged_keeps_short_branch_tops(self):
         hierarchy = self.build_hierarchy(
             {
                 ("Total", "Food"): 1,  # Food is level 2
@@ -458,7 +458,7 @@ class TestHierarchy(unittest.TestCase):
             numeric=["Orphan"],  # level 0 without parent
         )
 
-        new_leaves = hierarchy.rebase(leaf_level=2)
+        new_leaves = hierarchy.prune_to_level(leaf_level=2)
 
         self.assertCountEqual(["Food", "Misc", "Loose SKU", "Orphan"], new_leaves)
         self.assertEqual(Element.Types.NUMERIC, hierarchy.get_element("Misc").element_type)
@@ -466,7 +466,7 @@ class TestHierarchy(unittest.TestCase):
         self.assertNotIn("SKU9", hierarchy)
         self.assertNotIn("Snacks", hierarchy)
 
-    def test_rebase_keeps_alternate_rollup_and_warns(self):
+    def test_prune_to_level_keeps_alternate_rollup_and_warns(self):
         hierarchy = self.balanced_product_hierarchy()
         hierarchy.add_element("Promo", "Consolidated")
         hierarchy.add_edge("Total", "Promo", 1)
@@ -474,7 +474,7 @@ class TestHierarchy(unittest.TestCase):
         hierarchy.add_edge("Promo", "SKU4", 1)
 
         with self.assertWarns(UserWarning) as warning:
-            new_leaves = hierarchy.rebase(leaf_level=1)
+            new_leaves = hierarchy.prune_to_level(leaf_level=1)
 
         self.assertIn("Promo", new_leaves)
         self.assertIn(("Total", "Promo"), hierarchy.edges)
@@ -483,19 +483,19 @@ class TestHierarchy(unittest.TestCase):
             self.assertIn(overlapping, message)
         self.assertNotIn("Bakery", message)
 
-    def test_rebase_keeps_leaf_directly_under_surviving_consolidation(self):
+    def test_prune_to_level_keeps_leaf_directly_under_surviving_consolidation(self):
         hierarchy = self.balanced_product_hierarchy()
         # SKU1 is also directly under a level 2 consolidation
         hierarchy.add_edge("Food", "SKU1", 1)
 
         with self.assertWarns(UserWarning):
-            new_leaves = hierarchy.rebase(leaf_level=1)
+            new_leaves = hierarchy.prune_to_level(leaf_level=1)
 
         self.assertIn("SKU1", new_leaves)
         self.assertIn(("Food", "SKU1"), hierarchy.edges)
         self.assertNotIn(("Snacks", "SKU1"), hierarchy.edges)
 
-    def test_rebase_preserves_totals(self):
+    def test_prune_to_level_preserves_totals(self):
         hierarchy = self.build_hierarchy(
             {
                 ("Total", "Food"): 1,
@@ -523,90 +523,90 @@ class TestHierarchy(unittest.TestCase):
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            new_leaves = hierarchy.rebase(leaf_level=2)
+            new_leaves = hierarchy.prune_to_level(leaf_level=2)
 
         # load the new leaves with the original (consolidated) values of the same elements
-        rebased_values = self.consolidated_values(
+        pruned_values = self.consolidated_values(
             hierarchy, {leaf.lower(): original_values[leaf.lower()] for leaf in new_leaves}
         )
         for element in hierarchy:
             key = element.name.lower()
-            self.assertEqual(original_values[key], rebased_values[key], element.name)
+            self.assertEqual(original_values[key], pruned_values[key], element.name)
 
-    def test_rebase_no_warning_for_clean_cut(self):
+    def test_prune_to_level_no_warning_for_clean_cut(self):
         hierarchy = self.balanced_product_hierarchy()
 
         with warnings.catch_warnings():
             warnings.simplefilter("error")
-            hierarchy.rebase(leaf_level=1)
+            hierarchy.prune_to_level(leaf_level=1)
 
-    def test_rebase_level_zero_is_noop(self):
+    def test_prune_to_level_zero_is_noop(self):
         hierarchy = self.balanced_product_hierarchy()
         edges_before = dict(hierarchy.edges.items())
 
-        new_leaves = hierarchy.rebase(leaf_level=0)
+        new_leaves = hierarchy.prune_to_level(leaf_level=0)
 
         self.assertCountEqual(["SKU1", "SKU2", "SKU3", "SKU4"], new_leaves)
         self.assertEqual(edges_before, dict(hierarchy.edges.items()))
         self.assertEqual(Element.Types.CONSOLIDATED, hierarchy.get_element("Snacks").element_type)
 
-    def test_rebase_level_zero_keeps_consolidation_without_children(self):
+    def test_prune_to_level_zero_keeps_consolidation_without_children(self):
         hierarchy = self.balanced_product_hierarchy()
         hierarchy.add_element("Empty Family", "Consolidated")
         hierarchy.add_edge("Food", "Empty Family", 1)
 
-        new_leaves = hierarchy.rebase(leaf_level=0)
+        new_leaves = hierarchy.prune_to_level(leaf_level=0)
 
         self.assertEqual(Element.Types.CONSOLIDATED, hierarchy.get_element("Empty Family").element_type)
         self.assertCountEqual(["SKU1", "SKU2", "SKU3", "SKU4"], new_leaves)
 
-    def test_rebase_to_top_level(self):
+    def test_prune_to_top_level(self):
         hierarchy = self.balanced_product_hierarchy()
 
-        new_leaves = hierarchy.rebase(leaf_level=3)
+        new_leaves = hierarchy.prune_to_level(leaf_level=3)
 
         self.assertEqual(["Total"], new_leaves)
         self.assertEqual(1, len(hierarchy))
         self.assertEqual(0, len(hierarchy.edges))
 
-    def test_rebase_invalid_level(self):
+    def test_prune_to_level_invalid_level(self):
         hierarchy = self.balanced_product_hierarchy()
         for invalid in (-1, 4, 1.5, True, "1"):
             with self.assertRaises(ValueError):
-                hierarchy.rebase(leaf_level=invalid)
+                hierarchy.prune_to_level(leaf_level=invalid)
 
-    def test_rebase_keeps_string_elements(self):
+    def test_prune_to_level_keeps_string_elements(self):
         hierarchy = self.build_hierarchy({("Total", "Food"): 1, ("Food", "SKU1"): 1}, strings=["Comment"])
 
-        hierarchy.rebase(leaf_level=1)
+        hierarchy.prune_to_level(leaf_level=1)
 
         self.assertIn("Comment", hierarchy)
         self.assertEqual(Element.Types.STRING, hierarchy.get_element("Comment").element_type)
 
-    def test_rebase_case_and_space_insensitive_edges(self):
+    def test_prune_to_level_case_and_space_insensitive_edges(self):
         hierarchy = self.build_hierarchy(
             {("Total", "Food Items"): 1, ("food items", "SKU 1"): 1, ("Total", "Drinks"): 1}
         )
         hierarchy.add_edge("Drinks", "sku1", 1)
 
         with self.assertWarns(UserWarning):
-            new_leaves = hierarchy.rebase(leaf_level=1)
+            new_leaves = hierarchy.prune_to_level(leaf_level=1)
 
         self.assertCountEqual(["Food Items", "Drinks"], new_leaves)
         self.assertNotIn("SKU 1", hierarchy)
 
-    def test_rebase_resets_removed_default_member(self):
+    def test_prune_to_level_resets_removed_default_member(self):
         hierarchy = self.balanced_product_hierarchy()
         hierarchy._default_member = "SKU1"
 
-        hierarchy.rebase(leaf_level=1)
+        hierarchy.prune_to_level(leaf_level=1)
 
         self.assertIsNone(hierarchy.default_member)
 
-    def test_rebase_circular_reference(self):
+    def test_prune_to_level_circular_reference(self):
         hierarchy = self.build_hierarchy({("A", "B"): 1, ("B", "A"): 1})
         with self.assertRaises(ValueError):
-            hierarchy.rebase(leaf_level=1)
+            hierarchy.prune_to_level(leaf_level=1)
 
 
 if __name__ == "__main__":

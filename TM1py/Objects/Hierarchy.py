@@ -302,12 +302,13 @@ class Hierarchy(TM1Object):
         for (_, descendant), weight in descendant_edges.items():
             self.add_edge(parent=new_element_name, component=descendant, weight=weight)
 
-    def rebase(self, leaf_level: int) -> List[str]:
-        """Cut the hierarchy at a TM1 level so that the elements on that level become the new leaves.
+    def prune_to_level(self, leaf_level: int) -> List[str]:
+        """Prune the hierarchy to a TM1 level so that the elements on that level become the new leaves.
 
-        Levels are TM1 levels, counted from the bottom: leaves are level 0 and a consolidation is one level
-        above its deepest child. Rebasing a hierarchy whose top is level 8 to ``leaf_level=3`` turns the
-        level 3 elements into numeric leaves, removes everything below them and leaves the top at level 5.
+        Levels are TM1 levels, counted from the bottom (not the depth from the top): leaves are level 0 and
+        a consolidation is one level above its deepest child. Pruning a hierarchy whose top is level 8 to
+        ``leaf_level=3`` turns the level 3 elements into numeric leaves, removes everything below them and
+        leaves the top at level 5.
 
         Element names are kept, so the value of a new leaf can be read 1:1 from the (consolidated) cell of
         the same element in the original hierarchy, e.g. to load SKU-level actuals into a product-family plan.
@@ -370,7 +371,7 @@ class Hierarchy(TM1Object):
             if len(overlapping_leaves) > 10:
                 sample += f" ... (+{len(overlapping_leaves) - 10} more)"
             warnings.warn(
-                f"Rebasing hierarchy '{self.dimension_name}:{self.name}' to level {leaf_level}: "
+                f"Pruning hierarchy '{self.dimension_name}:{self.name}' to level {leaf_level}: "
                 f"{len(overlapping_leaves)} new leaves share descendants with other new leaves "
                 f"(e.g. alternate rollups), so their values overlap as in the original hierarchy: {sample}",
                 UserWarning,
