@@ -166,6 +166,56 @@ class TestProcessService(unittest.TestCase):
         self.p_bedrock_server_wait.prolog_procedure = temp_prolog
         self.tm1.processes.delete(self.p_bedrock_server_wait.name)
 
+    @skip_if_version_lower_than(version="12.6.1")
+    def test_datasource_arrow_parquet_flight_roundtrip(self):
+        """Live round-trip of the TM1 12.6.1 columnar (ARROW/PARQUET) and Arrow Flight datasources.
+
+        Skipped automatically on servers older than 12.6.1.
+        """
+        arrow = Process(
+            name="TM1py_Tests_arrow_" + str(uuid.uuid4()),
+            datasource_type="ARROW",
+            datasource_data_source_name_for_server="data.arrow",
+            datasource_data_source_name_for_client="data.arrow",
+        )
+        parquet = Process(
+            name="TM1py_Tests_parquet_" + str(uuid.uuid4()),
+            datasource_type="PARQUET",
+            datasource_data_source_name_for_server="data.parquet",
+            datasource_data_source_name_for_client="data.parquet",
+        )
+        flight = Process(
+            name="TM1py_Tests_flight_" + str(uuid.uuid4()),
+            datasource_type="FLIGHT",
+            datasource_flight_location="grpc+tls://localhost:443",
+            datasource_flight_descriptor_type="COMMAND",
+            datasource_flight_descriptor="SELECT 1",
+            datasource_flight_auth="Bearer token",
+        )
+        try:
+            for process in (arrow, parquet, flight):
+                self.tm1.processes.update_or_create(process)
+
+            # the server canonicalizes Type to title-case ("Arrow"/"Parquet"/"Flight"), so compare case-insensitively
+            arrow_back = self.tm1.processes.get(arrow.name)
+            self.assertEqual(arrow_back.datasource_type.upper(), "ARROW")
+            self.assertEqual(arrow_back.datasource_data_source_name_for_server, "data.arrow")
+
+            parquet_back = self.tm1.processes.get(parquet.name)
+            self.assertEqual(parquet_back.datasource_type.upper(), "PARQUET")
+            self.assertEqual(parquet_back.datasource_data_source_name_for_server, "data.parquet")
+
+            flight_back = self.tm1.processes.get(flight.name)
+            self.assertEqual(flight_back.datasource_type.upper(), "FLIGHT")
+            self.assertEqual(flight_back.datasource_flight_location, "grpc+tls://localhost:443")
+            self.assertEqual(flight_back.datasource_flight_descriptor_type, "COMMAND")
+            self.assertEqual(flight_back.datasource_flight_descriptor, "SELECT 1")
+            self.assertEqual(flight_back.datasource_flight_auth, "Bearer token")
+        finally:
+            for process in (arrow, parquet, flight):
+                if self.tm1.processes.exists(process.name):
+                    self.tm1.processes.delete(process.name)
+
     def test_execute_process(self):
         if not self.tm1.processes.exists(self.p_bedrock_server_wait.name):
             self.tm1.processes.create(self.p_bedrock_server_wait)

@@ -65,6 +65,11 @@ class Process(TM1Object):
         datasource_subset: str = "",
         datasource_json_root_pointer: str = "",
         datasource_json_variable_mapping: str = "",
+        # --- NEW: Apache Arrow Flight (TM1 12.6.1+) ---
+        datasource_flight_location: str = "",
+        datasource_flight_descriptor_type: str = "",
+        datasource_flight_descriptor: str = "",
+        datasource_flight_auth: str = "",
     ):
         """Default construcor
 
@@ -95,6 +100,10 @@ class Process(TM1Object):
         :param datasource_subset:
         :param datasource_json_root_pointer:
         :param datasource_json_variable_mapping:
+        :param datasource_flight_location: Arrow Flight gRPC URI, e.g. "grpc://host:8443" (TM1 12.6.1+)
+        :param datasource_flight_descriptor_type: Arrow Flight descriptor type: "PATH" or "COMMAND" (TM1 12.6.1+)
+        :param datasource_flight_descriptor: Arrow Flight descriptor, e.g. "dataset/path" or "SELECT * FROM t" (TM1 12.6.1+)
+        :param datasource_flight_auth: Arrow Flight auth header, e.g. "Bearer <token>" or "Basic user:pass" (TM1 12.6.1+)
         """
         self._name = name
         self._has_security_access = has_security_access
@@ -127,6 +136,10 @@ class Process(TM1Object):
         self._datasource_subset = datasource_subset
         self._datasource_json_root_pointer = datasource_json_root_pointer
         self._datasource_json_variable_mapping = datasource_json_variable_mapping
+        self._datasource_flight_location = datasource_flight_location
+        self._datasource_flight_descriptor_type = datasource_flight_descriptor_type
+        self._datasource_flight_descriptor = datasource_flight_descriptor
+        self._datasource_flight_auth = datasource_flight_auth
 
     @classmethod
     def from_json(cls, process_as_json: str) -> "Process":
@@ -171,6 +184,10 @@ class Process(TM1Object):
             datasource_subset=process_as_dict["DataSource"].get("subset", ""),
             datasource_json_root_pointer=process_as_dict["DataSource"].get("jsonRootPointer", ""),
             datasource_json_variable_mapping=process_as_dict["DataSource"].get("jsonVariableMapping", ""),
+            datasource_flight_location=process_as_dict["DataSource"].get("flightLocation", ""),
+            datasource_flight_descriptor_type=process_as_dict["DataSource"].get("flightDescriptorType", ""),
+            datasource_flight_descriptor=process_as_dict["DataSource"].get("flightDescriptor", ""),
+            datasource_flight_auth=process_as_dict["DataSource"].get("flightAuth", ""),
         )
 
     @property
@@ -377,6 +394,38 @@ class Process(TM1Object):
     def datasource_json_variable_mapping(self, value: str):
         self._datasource_json_variable_mapping = value
 
+    @property
+    def datasource_flight_location(self) -> str:
+        return self._datasource_flight_location
+
+    @datasource_flight_location.setter
+    def datasource_flight_location(self, value: str):
+        self._datasource_flight_location = value
+
+    @property
+    def datasource_flight_descriptor_type(self) -> str:
+        return self._datasource_flight_descriptor_type
+
+    @datasource_flight_descriptor_type.setter
+    def datasource_flight_descriptor_type(self, value: str):
+        self._datasource_flight_descriptor_type = value
+
+    @property
+    def datasource_flight_descriptor(self) -> str:
+        return self._datasource_flight_descriptor
+
+    @datasource_flight_descriptor.setter
+    def datasource_flight_descriptor(self, value: str):
+        self._datasource_flight_descriptor = value
+
+    @property
+    def datasource_flight_auth(self) -> str:
+        return self._datasource_flight_auth
+
+    @datasource_flight_auth.setter
+    def datasource_flight_auth(self, value: str):
+        self._datasource_flight_auth = value
+
     def add_variable(self, name: str, variable_type: str):
         """add variable to the process
 
@@ -508,5 +557,33 @@ class Process(TM1Object):
                 "dataSourceNameForServer": self._datasource_data_source_name_for_server,
                 "jsonRootPointer": self._datasource_json_root_pointer,
                 "jsonVariableMapping": self._datasource_json_variable_mapping,
+            }
+        elif self._datasource_type.upper() in ("ARROW", "PARQUET"):
+            # Apache Arrow IPC/Feather or Parquet file datasource (TM1 12.6.1+).
+            # File datasources: just the (file name OR http/https URL) — no ascii*
+            # delimiter/quote/header keys. Optional JSON-treatment for nested columns
+            # reuses the JSON datasource's jsonRootPointer / jsonVariableMapping.
+            # NB: the server canonicalizes Type to title-case ("Arrow"/"Parquet") on
+            # read-back, so match case-insensitively to keep from_dict round-trips intact.
+            body_as_dict["DataSource"] = {
+                "Type": self._datasource_type,
+                "dataSourceNameForClient": self._datasource_data_source_name_for_client,
+                "dataSourceNameForServer": self._datasource_data_source_name_for_server,
+            }
+            if self._datasource_json_root_pointer:
+                body_as_dict["DataSource"]["jsonRootPointer"] = self._datasource_json_root_pointer
+            if self._datasource_json_variable_mapping:
+                body_as_dict["DataSource"]["jsonVariableMapping"] = self._datasource_json_variable_mapping
+        elif self._datasource_type.upper() == "FLIGHT":
+            # Apache Arrow Flight datasource (TM1 12.6.1+): TM1 is a Flight CLIENT that
+            # streams record batches from a remote Flight server into TI variables.
+            # Wire field names verified against a live 12.6.1 server: flightLocation /
+            # flightDescriptorType / flightDescriptor / flightAuth (NOT dataSourceFlight*).
+            body_as_dict["DataSource"] = {
+                "Type": self._datasource_type,
+                "flightLocation": self._datasource_flight_location,
+                "flightDescriptorType": self._datasource_flight_descriptor_type,
+                "flightDescriptor": self._datasource_flight_descriptor,
+                "flightAuth": self._datasource_flight_auth,
             }
         return body_as_dict

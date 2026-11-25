@@ -76,6 +76,14 @@ try:
 except ImportError:
     _has_pandas = False
 
+try:
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    _has_pyarrow = True
+except ImportError:
+    _has_pyarrow = False
+
 
 @decohints
 def tidy_cellset(func):
@@ -878,6 +886,9 @@ class CellService(ObjectService):
         clear_view: str = None,
         static_dimension_elements: Dict = None,
         infer_column_order: bool = False,
+        use_arrow: bool = False,
+        use_parquet: bool = False,
+        parquet_compression: str = None,
         **kwargs,
     ) -> str:
         """
@@ -907,6 +918,12 @@ class CellService(ObjectService):
         :param static_dimension_elements: Dict of fixed dimension element pairs. Column is created for you.
         :param infer_column_order: bool indicating whether the column order of the dataframe should automatically be
             inferred and mapped to the dimension order in the cube.
+        :param use_arrow: write through an Apache Arrow IPC blob + ARROW TI datasource (TM1 server >= 12.6.1).
+            Requires the optional 'pyarrow' package. Numeric measures bind directly to a Numeric TI variable.
+        :param use_parquet: write through an Apache Parquet blob + PARQUET TI datasource (TM1 server >= 12.6.1).
+            Requires the optional 'pyarrow' package. Mutually exclusive with 'use_arrow'.
+        :param parquet_compression: parquet codec when use_parquet=True (e.g. 'snappy', 'zstd', 'gzip', 'none').
+            Defaults to 'snappy'. Ignored for use_arrow.
         :return: changeset or None
         """
         if not isinstance(data, pd.DataFrame):
@@ -943,6 +960,25 @@ class CellService(ObjectService):
 
         if not len(data.columns) == len(dimensions) + 1:
             raise ValueError("Number of columns in 'data' DataFrame must be number of dimensions in cube + 1")
+
+        if use_arrow or use_parquet:
+            if use_arrow and use_parquet:
+                raise ValueError("'use_arrow' and 'use_parquet' must not be used together")
+            return self._write_dataframe_through_columnar_blob(
+                cube_name=cube_name,
+                data=data,
+                dimensions=dimensions,
+                columnar_format="PARQUET" if use_parquet else "ARROW",
+                parquet_compression=parquet_compression,
+                increment=increment,
+                sandbox_name=sandbox_name,
+                skip_non_updateable=skip_non_updateable,
+                sum_numeric_duplicates=sum_numeric_duplicates,
+                remove_blob=remove_blob,
+                allow_spread=allow_spread,
+                clear_view=clear_view,
+                **kwargs,
+            )
 
         cells = build_cellset_from_pandas_dataframe(data, sum_numeric_duplicates=sum_numeric_duplicates)
 
@@ -1602,6 +1638,231 @@ class CellService(ObjectService):
         EndIf;"""
 
         # Define Data section
+        data_statement = cell_is_updateable_pre + input_statement + cell_is_updateable_post
+        dataload_process.data_procedure = data_statement
+
+        return dataload_process
+
+    def _write_dataframe_through_columnar_blob(
+        self,
+        cube_name: str,
+        data: "pd.DataFrame",
+        dimensions: List[str],
+        columnar_format: str,
+        parquet_compression: str = None,
+        increment: bool = False,
+        sandbox_name: str = None,
+        skip_non_updateable: bool = False,
+        sum_numeric_duplicates: bool = True,
+        remove_blob: bool = True,
+        allow_spread: bool = False,
+        clear_view: str = None,
+        **kwargs,
+    ) -> None:
+        """Write a DataFrame to a cube via a TM1 12.6.1+ columnar (ARROW/PARQUET) datasource blob.
+
+        Mirrors `write_through_blob`, but uploads an Apache Arrow IPC stream or a Parquet file
+        instead of CSV and loads it through an ARROW/PARQUET TI datasource (no client-side CSV
+        serialization/escaping; Parquet additionally compresses the upload). A numeric value column
+        is already typed in the file, so it binds directly to a Numeric TI variable rather than being
+        re-parsed with StringToNumber. Note: numeric precision on read-back is governed by the TM1
+        server's columnar ingestion (~float64); it is not guaranteed bit-exact for values at the
+        edge of double precision. Requires a TM1 v12 server, build 12.6.1 or later, and 'pyarrow'.
+        """
+        if not _has_pyarrow:
+            raise ImportError(
+                "'use_arrow'/'use_parquet' require the optional 'pyarrow' package. "
+                "Install it with: pip install TM1py[arrow]"
+            )
+        if not verify_version(required_version="12.6.1", version=self.version):
+            raise ValueError(
+                "Columnar ('use_arrow'/'use_parquet') write requires a TM1 server >= 12.6.1, "
+                f"but the server version is '{self.version}'"
+            )
+
+        if sum_numeric_duplicates:
+            data = build_dataframe_aggregate_intersections(data, sum_numeric_duplicates=True)
+
+        blob_bytes, value_is_numeric, extension = self._encode_dataframe_columnar(
+            data, columnar_format, parquet_compression
+        )
+
+        process_service = ProcessService(self._rest)
+        file_service = FileService(self._rest)
+
+        unique_name = self.suggest_unique_object_name()
+        file_name = f"{unique_name}{extension}"
+        file_service.create(file_name=file_name, file_content=blob_bytes, **kwargs)
+
+        try:
+            process = self._build_columnar_blob_to_cube_process(
+                cube_name=cube_name,
+                process_name=unique_name,
+                blob_filename=file_name,
+                dimensions=dimensions,
+                datasource_type=columnar_format,
+                value_is_numeric=value_is_numeric,
+                increment=increment,
+                skip_non_updateable=skip_non_updateable,
+                sandbox_name=sandbox_name,
+                allow_spread=allow_spread,
+                clear_view=clear_view,
+            )
+
+            success, status, log_file = process_service.execute_process_with_return(process=process, **kwargs)
+            if not success:
+                if status in ["HasMinorErrors"]:
+                    raise TM1pyWritePartialFailureException([status], [log_file], 1)
+                else:
+                    raise TM1pyWriteFailureException([status], [log_file])
+        finally:
+            if remove_blob:
+                file_service.delete(file_name=file_name)
+
+    @staticmethod
+    def _encode_dataframe_columnar(
+        data: "pd.DataFrame", columnar_format: str, parquet_compression: str = None
+    ) -> Tuple[bytes, bool, str]:
+        """Encode an aligned DataFrame (dimension columns first, value column last) into an Arrow-IPC
+        stream or a Parquet file for a TM1 12.6.1 columnar datasource.
+
+        Columnar fields are named v1..vN (coordinates, String) and vValue (the measure). A numeric
+        value column is written as float64 (round-trips exactly); a non-numeric column is written as
+        string (re-parsed by StringToNumber in the TI, matching the CSV path).
+        :return: tuple of (blob bytes, value_is_numeric, file extension)
+        """
+        coord_columns = list(data.columns[:-1])
+        value_series = data[data.columns[-1]]
+        value_is_numeric = bool(pd.api.types.is_numeric_dtype(value_series))
+
+        encoded = pd.DataFrame({f"v{i}": data[col].astype(str) for i, col in enumerate(coord_columns, start=1)})
+        if value_is_numeric:
+            encoded["vValue"] = pd.to_numeric(value_series).astype("float64")
+        else:
+            encoded["vValue"] = value_series.where(value_series.notna(), None).astype(object)
+
+        table = pa.Table.from_pandas(encoded, preserve_index=False)
+
+        sink = pa.BufferOutputStream()
+        if columnar_format == "PARQUET":
+            pq.write_table(table, sink, compression=parquet_compression or "snappy")
+            extension = ".parquet"
+        else:  # ARROW IPC stream (read by the TM1 ARROW / Feather datasource)
+            with pa.ipc.new_stream(sink, table.schema) as writer:
+                writer.write_table(table)
+            extension = ".arrow"
+
+        return sink.getvalue().to_pybytes(), value_is_numeric, extension
+
+    def _build_columnar_blob_to_cube_process(
+        self,
+        cube_name: str,
+        process_name: str,
+        blob_filename: str,
+        dimensions: List[str],
+        datasource_type: str,
+        value_is_numeric: bool,
+        increment: bool,
+        skip_non_updateable: bool,
+        sandbox_name: str,
+        allow_spread: bool,
+        clear_view: str,
+    ) -> Process:
+        """Build the unbound ARROW/PARQUET-datasource TI process that loads a columnar blob into `cube_name`.
+
+        Mirrors `_build_blob_to_cube_process`, but targets a TM1 12.6.1 columnar datasource (no ascii*
+        keys) whose fields bind to TI variables by name (v1..vN, vValue). When the value column is
+        numeric, vValue is a Numeric variable used directly (no StringToNumber); otherwise it is a
+        String variable re-parsed with StringToNumber, matching the ASCII/CSV path.
+        """
+        dataload_process = Process(
+            name=process_name,
+            datasource_type=datasource_type,
+            datasource_data_source_name_for_server=blob_filename,
+            datasource_data_source_name_for_client=blob_filename,
+        )
+
+        # Prolog: input charset + optional enable-sandbox (+ optional clear_view), as in the ASCII path
+        dataload_process.prolog_procedure = f"""
+        SetInputCharacterSet('TM1CS_UTF8');
+        {self.generate_enable_sandbox_ti(sandbox_name)}
+        """
+        if clear_view:
+            dataload_process.prolog_procedure = (
+                dataload_process.prolog_procedure + f"\rViewZeroOut('{cube_name}', '{clear_view}');\r"
+            )
+
+        # Variables bind to the columnar fields by name: v1..vN (coordinates, String), then vValue.
+        dimension_variables = [f"v{n}" for n in range(1, len(dimensions) + 1)]
+        for variable in dimension_variables:
+            dataload_process.add_variable(name=variable, variable_type="String")
+        value_variable = "vValue"
+        dataload_process.add_variable(name=value_variable, variable_type="Numeric" if value_is_numeric else "String")
+
+        cube_measure = dimensions[-1]
+        variable_cube_measure = dimension_variables[-1]
+        comma_sep_var_elements = ",".join(dimension_variables)
+
+        if cube_name.lower().startswith("}elementattributes_"):
+            numeric_function_str = "CellPutN"
+        else:
+            numeric_function_str = "CellIncrementN" if increment else "CellPutN"
+
+        # A numeric columnar column binds to a Numeric variable (used directly, no StringToNumber); a
+        # string column is re-parsed with StringToNumber. A numeric value written to a string measure
+        # is stringified (its variable is Numeric).
+        numeric_value_assignment = (
+            f"nValue = {value_variable};" if value_is_numeric else f"nValue = StringToNumber({value_variable});"
+        )
+        string_value_expression = f"NumberToString({value_variable})" if value_is_numeric else value_variable
+
+        measure_type_equal = f"ElementType('{cube_measure}', '', {variable_cube_measure}) @= "
+        n_write_types = ["'N'", "'AN'", "'C'", "''"]
+        numeric_write_condition = "% \n".join([measure_type_equal + possible_type for possible_type in n_write_types])
+
+        any_c_element_in_write = "% \n".join(
+            [f"ElementType('{dim}', '', {ele}) @= 'C'" for dim, ele in zip(dimensions, dimension_variables)]
+        )
+
+        numeric_write_statement_with_spread = f"""
+            {numeric_value_assignment}
+            IF({any_c_element_in_write});
+                CellPutProportionalSpread(nValue,'{cube_name}',{comma_sep_var_elements});
+            ELSE;
+                {numeric_function_str}(nValue,'{cube_name}',{comma_sep_var_elements});
+            ENDIF;
+            """
+
+        numeric_write_statement_without_spread = f"""
+            {numeric_value_assignment}
+            {numeric_function_str}(nValue,'{cube_name}',{comma_sep_var_elements});
+            """
+
+        string_write_condition = f"""
+            ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'S' %
+            ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'AS' %
+            ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'AA'
+            """
+
+        string_write_statement = f"""
+            sValue = {string_value_expression};
+            CellPutS(sValue,'{cube_name}',{comma_sep_var_elements});
+            """
+
+        input_statement = f"""
+        If({numeric_write_condition});
+            {numeric_write_statement_with_spread if allow_spread else numeric_write_statement_without_spread}
+        ElseIf({string_write_condition});
+            {string_write_statement}
+        EndIf;"""
+
+        if skip_non_updateable:
+            cell_is_updateable_pre = f"If( CellIsUpdateable('{cube_name}',{comma_sep_var_elements}) = 1 );"
+            cell_is_updateable_post = "\rElse;\r" "   ItemSkip;\r" "EndIf;\r"
+        else:
+            cell_is_updateable_pre = ""
+            cell_is_updateable_post = ""
+
         data_statement = cell_is_updateable_pre + input_statement + cell_is_updateable_post
         dataload_process.data_procedure = data_statement
 

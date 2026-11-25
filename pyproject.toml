@@ -37,6 +37,7 @@ dependencies = [
 
 [project.optional-dependencies]
 pandas = ["pandas"]
+arrow = ["pandas", "pyarrow"]
 dev = [
     "pytest",
     "pytest-xdist",
