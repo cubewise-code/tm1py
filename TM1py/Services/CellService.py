@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import copy
 import csv
 import functools
 import itertools
@@ -19,7 +20,9 @@ from requests import Response
 
 from TM1py.Exceptions.Exceptions import (
     TM1pyException,
+    TM1pyExportFailureException,
     TM1pyRestException,
+    TM1pyVersionException,
     TM1pyWriteFailureException,
     TM1pyWritePartialFailureException,
 )
@@ -39,6 +42,16 @@ from TM1py.Utils import (
     add_url_parameters,
     format_url,
 )
+from TM1py.Utils.BlobProcessBuilder import (
+    CsvLayout,
+    CubeProfile,
+    ExportSpec,
+    LoadSpec,
+    SourceVariable,
+    build_export_process,
+    build_load_process,
+    enable_sandbox_ti,
+)
 from TM1py.Utils.Utils import (
     CaseAndSpaceInsensitiveDict,
     CaseAndSpaceInsensitiveTuplesDict,
@@ -47,6 +60,7 @@ from TM1py.Utils.Utils import (
     build_csv_from_cellset_dict,
     build_dataframe_aggregate_intersections,
     build_dataframe_from_csv,
+    build_hierarchy_unique_name,
     build_mdx_and_values_from_cellset,
     build_mdx_from_cellset,
     build_pandas_dataframe_from_cellset,
@@ -65,6 +79,7 @@ from TM1py.Utils.Utils import (
     require_pandas,
     require_version,
     resembles_mdx,
+    split_hierarchy_unique_name,
     verify_version,
     wrap_in_curly_braces,
 )
@@ -878,6 +893,7 @@ class CellService(ObjectService):
         clear_view: str = None,
         static_dimension_elements: Dict = None,
         infer_column_order: bool = False,
+        lean_ti: bool = False,
         **kwargs,
     ) -> str:
         """
@@ -907,6 +923,8 @@ class CellService(ObjectService):
         :param static_dimension_elements: Dict of fixed dimension element pairs. Column is created for you.
         :param infer_column_order: bool indicating whether the column order of the dataframe should automatically be
             inferred and mapped to the dimension order in the cube.
+        :param lean_ti: with `use_blob`, generate TI that contains only the code this cube needs (faster).
+        Default False keeps the TI TM1py has always generated.
         :return: changeset or None
         """
         if not isinstance(data, pd.DataFrame):
@@ -963,6 +981,7 @@ class CellService(ObjectService):
             measure_dimension_elements=measure_dimension_elements,
             allow_spread=allow_spread,
             clear_view=clear_view,
+            lean_ti=lean_ti,
             **kwargs,
         )
 
@@ -980,6 +999,7 @@ class CellService(ObjectService):
         sandbox_name: str = None,
         precision: int = None,
         measure_dimension_elements: Dict = None,
+        lean_ti: bool = False,
         **kwargs,
     ) -> Optional[str]:
         """Write asynchronously
@@ -997,6 +1017,8 @@ class CellService(ObjectService):
         Necessary to decrease when dealing with large numbers to avoid "number too long" TI syntax error.
         :param measure_dimension_elements: dictionary of measure elements and their types to improve
         performance when `use_ti` is `True`.
+        :param lean_ti: generate TI that contains only the code this cube needs (faster). Default False keeps the
+        TI TM1py has always generated.
         :param kwargs:
         :return:
         """
@@ -1022,6 +1044,7 @@ class CellService(ObjectService):
                 sandbox_name=sandbox_name,
                 precision=precision,
                 measure_dimension_elements=measure_dimension_elements,
+                lean_ti=lean_ti,
                 **kwargs,
             )
 
@@ -1069,6 +1092,7 @@ class CellService(ObjectService):
         sandbox_name: str = None,
         deactivate_transaction_log: bool = False,
         reactivate_transaction_log: bool = False,
+        lean_ti: bool = False,
         **kwargs,
     ):
         """Write DataFrame into a cube using unbound TI processes in a multi-threading way. Requires admin permissions.
@@ -1084,6 +1108,8 @@ class CellService(ObjectService):
         :param sandbox_name: name of the sandbox or None
         :param deactivate_transaction_log:
         :param reactivate_transaction_log:
+        :param lean_ti: generate TI that contains only the code this cube needs (faster). Default False keeps the
+        TI TM1py has always generated.
         :return: the Future’s result or raise exception.
         """
         if not isinstance(data, pd.DataFrame):
@@ -1106,6 +1132,7 @@ class CellService(ObjectService):
                 increment=increment,
                 use_blob=True,
                 sandbox_name=sandbox_name,
+                lean_ti=lean_ti,
                 **kwargs,
             )
 
@@ -1188,6 +1215,7 @@ class CellService(ObjectService):
         remove_blob: bool = True,
         allow_spread: bool = False,
         clear_view: str = None,
+        lean_ti: bool = False,
         **kwargs,
     ) -> Optional[str]:
         """Write values to a cube
@@ -1217,6 +1245,8 @@ class CellService(ObjectService):
         :param remove_blob: remove blob file after writing with use_blob=True
         :param allow_spread: allow TI process in use_blob or use_ti to use CellPutProportionalSpread on C elements
         :param clear_view: name of cube view to clear before writing
+        :param lean_ti: with `use_blob`, generate TI that contains only the code this cube needs (faster).
+        Default False keeps the TI TM1py has always generated.
         :return: changeset or None
         """
 
@@ -1252,6 +1282,7 @@ class CellService(ObjectService):
                 remove_blob=remove_blob,
                 allow_spread=allow_spread,
                 clear_view=clear_view,
+                lean_ti=lean_ti,
                 **kwargs,
             )
 
@@ -1433,6 +1464,7 @@ class CellService(ObjectService):
         dimensions: str = None,
         allow_spread: bool = False,
         clear_view: str = None,
+        lean_ti: bool = False,
         **kwargs,
     ):
         """
@@ -1446,6 +1478,8 @@ class CellService(ObjectService):
         :param dimensions: optional. Dimension names in their natural order. Will speed up the execution!
         :param allow_spread: allow TI process in use_blob or use_ti to use CellPutProportionalSpread on C elements.
         :param clear_view: name of cube view to clear before writing
+        :param lean_ti: generate TI that contains only the code this cube needs (faster). Default False keeps the
+        TI TM1py has always generated.
         :param kwargs: Additional arguments for the REST request
         :return: Success: bool, Messages: list, ChangeSet: None
         """
@@ -1468,17 +1502,24 @@ class CellService(ObjectService):
         file_service.create(file_name=file_name, file_content=csv_content.getvalue().encode("utf-8"), **kwargs)
 
         try:
+            dimensions = dimensions or cube_service.get_dimension_names(cube_name)
+            string_measures = ()
+            if lean_ti:
+                string_measures = self._get_blob_cube_profile(cube_name, dimensions=dimensions).string_measures
+
             # Create and execute unbound TI process to load blob file to cube
             process = self._build_blob_to_cube_process(
                 cube_name=cube_name,
                 process_name=unique_name,
                 blob_filename=file_name,
-                dimensions=dimensions or cube_service.get_dimension_names(cube_name),
+                dimensions=dimensions,
                 increment=increment,
                 skip_non_updateable=skip_non_updateable,
                 sandbox_name=sandbox_name,
                 allow_spread=allow_spread,
                 clear_view=clear_view,
+                lean_ti=lean_ti,
+                string_measures=string_measures,
             )
 
             success, status, log_file = process_service.execute_process_with_return(process=process, **kwargs)
@@ -1503,109 +1544,33 @@ class CellService(ObjectService):
         sandbox_name: str,
         allow_spread: bool,
         clear_view: str,
+        lean_ti: bool = False,
+        string_measures: Iterable[str] = (),
     ) -> Process:
+        """Build the unbound process that loads a blob file into a cube.
 
-        # v11 automatically adds blb file extensions to documents created via the contents api
-        if not verify_version(required_version="12", version=self.version):
-            blob_filename += ".blb"
-        dataload_process = Process(
-            name=process_name,
-            datasource_type="ASCII",
-            datasource_ascii_header_records=0,
-            datasource_data_source_name_for_server=f"{blob_filename}",
-            datasource_data_source_name_for_client=f"{blob_filename}",
-            datasource_ascii_delimiter_char=",",
-            datasource_ascii_decimal_separator=".",
-            datasource_ascii_thousand_separator="",
-            datasource_ascii_quote_character='"',
-        )
-        cube_measure = dimensions[-1]
-
-        # Define encoding and active sandbox in Prolog section
-        dataload_process.prolog_procedure = f"""
-        SetInputCharacterSet('TM1CS_UTF8');
-        {self.generate_enable_sandbox_ti(sandbox_name)}
+        :param string_measures: measure elements of type String. Only used with `lean_ti`
         """
+        if sandbox_name:
+            self._assert_sandbox_exists(sandbox_name)
 
-        if clear_view:
-            dataload_process.prolog_procedure = (
-                dataload_process.prolog_procedure + f"\rViewZeroOut('{cube_name}', '{clear_view}');\r"
-            )
-
-        # Create variables as all String
-        dimension_variables = [f"v{n}" for n in range(1, len(dimensions) + 1)]
-
-        for variable in dimension_variables:
-            dataload_process.add_variable(name=variable, variable_type="String")
-        variable_cube_measure = dimension_variables[-1]
-
-        comma_sep_var_elements = ",".join(dimension_variables)
-        # Add value variable as type String to enable numeric and string cell updates
-        value_variable = "vValue"
-        dataload_process.add_variable(name=value_variable, variable_type="String")
-        # Write the statement for Cell Is Updateable
-        if skip_non_updateable:
-            cell_is_updateable_pre = f"If( CellIsUpdateable('{cube_name}',{comma_sep_var_elements}) = 1 );"
-            cell_is_updateable_post = "\rElse;\r" "   ItemSkip;\r" "EndIf;\r"
-        else:
-            cell_is_updateable_pre = ""
-            cell_is_updateable_post = ""
-
-        # Define TI write function based on parameter 'increment' and nature of the cube
-
-        if cube_name.lower().startswith("}elementattributes_"):
-            numeric_function_str = "CellPutN"
-        else:
-            numeric_function_str = "CellIncrementN" if increment else "CellPutN"
-
-        # Define input statement depending on measure element's type: numeric or string
-        # For non-existing-element attempt to write to trigger error
-        # For consolidated elements spread if allowed else let fail.
-        measure_type_equal = f"ElementType('{cube_measure}', '', {variable_cube_measure}) @= "
-        n_write_types = ["'N'", "'AN'", "'C'", "''"]
-        numeric_write_condition = "% \n".join([measure_type_equal + possible_type for possible_type in n_write_types])
-
-        any_c_element_in_write = "% \n".join(
-            [f"ElementType('{dim}', '', {ele}) @= 'C'" for dim, ele in zip(dimensions, dimension_variables)]
+        profile = CubeProfile(
+            cube_name=cube_name,
+            dimensions=dimensions,
+            is_v12=verify_version(required_version="12", version=self.version),
+            sandboxing_disabled=self._rest.sandboxing_disabled,
+            string_measures=string_measures,
         )
-
-        numeric_write_statement_with_spread = f"""
-            nValue = StringToNumber({value_variable});
-            IF({any_c_element_in_write});
-                CellPutProportionalSpread(nValue,'{cube_name}',{comma_sep_var_elements});
-            ELSE;
-                {numeric_function_str}(nValue,'{cube_name}',{comma_sep_var_elements});
-            ENDIF;
-            """
-
-        numeric_write_statement_without_spread = f"""
-            nValue = StringToNumber({value_variable});
-            {numeric_function_str}(nValue,'{cube_name}',{comma_sep_var_elements});
-            """
-
-        string_write_condition = f"""
-            ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'S' % 
-            ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'AS' % 
-            ElementType('{cube_measure}', '', {variable_cube_measure}) @= 'AA'
-            """
-
-        string_write_statement = f"""
-            sValue = {value_variable};
-            CellPutS(sValue,'{cube_name}',{comma_sep_var_elements}); 
-            """
-
-        input_statement = f"""
-        If({numeric_write_condition});
-            {numeric_write_statement_with_spread if allow_spread else numeric_write_statement_without_spread}
-        ElseIf({string_write_condition});
-            {string_write_statement}
-        EndIf;"""
-
-        # Define Data section
-        data_statement = cell_is_updateable_pre + input_statement + cell_is_updateable_post
-        dataload_process.data_procedure = data_statement
-
-        return dataload_process
+        spec = LoadSpec(
+            process_name=process_name,
+            file_name=blob_filename,
+            increment=increment,
+            skip_non_updateable=skip_non_updateable,
+            allow_spread=allow_spread,
+            sandbox_name=sandbox_name,
+            clear_view=clear_view,
+        )
+        return build_load_process(profile, CsvLayout(), spec, lean=lean_ti)
 
     def _build_cube_to_blob_process(
         self,
@@ -1621,103 +1586,449 @@ class CellService(ObjectService):
         process_name: str,
         view_name: str,
         file_name: str,
-        header_line: str,
+        header: List[str] = None,
         quote_character: str = '"',
         sandbox_name: str = None,
+        lean_ti: bool = False,
+        variable_hierarchies: List[str] = None,
+        profile: CubeProfile = None,
+        view_definition: Union[NativeView, str] = None,
+        aliases: Dict[str, str] = None,
     ) -> Process:
-        process = Process(
-            name=process_name,
-            datasource_type="TM1CubeView",
-            datasource_view=view_name,
-            datasource_data_source_name_for_server=cube,
-            datasource_data_source_name_for_client=cube,
-            datasource_ascii_delimiter_char=value_separator,
-            datasource_ascii_decimal_separator=".",
-            datasource_ascii_thousand_separator="",
+        """Build the unbound process that writes the cells of a view to a blob file.
+
+        :param variables: data source variables, in data source order, named `v<column in the file>`
+        :param skip_variables: variables that are not written to the file
+        :param header: column labels for a header line (the value column's label is added); None for no header
+        :param variable_hierarchies: dimension or hierarchy unique name per variable. Only used with `lean_ti`
+        :param profile: facts about the cube. Only used with `lean_ti`
+        :param view_definition: NativeView or MDX string the process builds as temporary view `view_name`.
+        Requires `lean_ti`
+        :param aliases: {dimension: alias attribute} written instead of element names. Only used with `lean_ti`
+        """
+        if profile is None:
+            profile = CubeProfile(
+                cube_name=cube,
+                dimensions=(),
+                is_v12=verify_version(required_version="12", version=self.version),
+                sandboxing_disabled=self._rest.sandboxing_disabled,
+            )
+
+        skipped = set(skip_variables)
+        source_variables = []
+        for position, variable in enumerate(variables):
+            dimension, hierarchy = variable, None
+            if variable_hierarchies:
+                dimension, hierarchy = split_hierarchy_unique_name(variable_hierarchies[position])
+            source_variables.append(
+                SourceVariable(
+                    name=variable,
+                    dimension=dimension,
+                    hierarchy=hierarchy,
+                    column=None if variable in skipped else int(variable[1:]),
+                )
+            )
+
+        spec = ExportSpec(
+            process_name=process_name,
+            file_name=file_name,
+            view_name=view_name,
+            variables=source_variables,
+            skip_zeros=skip_zeros,
+            skip_consolidated_cells=skip_consolidated_cells,
+            skip_rule_derived_cells=skip_rule_derived_cells,
+            top=top,
+            skip=skip,
+            sandbox_name=sandbox_name,
+            view_definition=view_definition,
+            aliases=aliases or {},
         )
+        layout = CsvLayout(delimiter=value_separator, quote_character=quote_character, header=header or ())
+        return build_export_process(profile, layout, spec, lean=lean_ti)
 
-        # v11 automatically adds blb file extensions to documents created via the contents api
-        if not verify_version(required_version="12", version=self.version):
-            file_name += ".blb"
+    @require_data_admin
+    @require_ops_admin
+    @require_version(version="11.4")
+    def export_to_blob(
+        self,
+        mdx: Union[MdxBuilder, str] = None,
+        cube_name: str = None,
+        view_name: str = None,
+        use_native_view: bool = True,
+        skip_zeros: bool = True,
+        skip_consolidated_cells: bool = True,
+        skip_rule_derived_cells: bool = True,
+        include_header: bool = False,
+        aliases: Dict[str, str] = None,
+        sandbox_name: str = None,
+        **kwargs,
+    ) -> str:
+        """Export cells to a file in the file store with a generated TI process. The data doesn't pass through Python
 
-        # Create variables in process data source as all String
-        for variable in variables:
-            process.add_variable(name=variable, variable_type="String")
+        The file has one line per cell: one column per cube dimension, in the cube's dimension order (dimensions in
+        the WHERE clause or not in the query included), then the value. It is UTF-8, comma separated, every field in
+        double quotes. On v11 it starts with a UTF-8 BOM; `FileService.transfer_from` leaves it out.
 
-        prolog_procedure = f"""
-        {self.generate_enable_sandbox_ti(sandbox_name)}
-        ViewExtractSkipCalcsSet('{cube}', '{view_name}', {'1' if skip_consolidated_cells else '0'});
-        ViewExtractSkipRuleValuesSet('{cube}', '{view_name}', {'1' if skip_rule_derived_cells else '0'});
-        ViewExtractSkipZeroesSet('{cube}', '{view_name}', {'1' if skip_zeros else '0'});
-        DatasourceAsciiDelimiter='{value_separator}';
-        DatasourceAsciiQuoteCharacter='{quote_character}';
-        DatasourceASCIIDecimalSeparator='.';
-        nRecord=0;
+        The view the process reads is built inside the process as a temporary object, so nothing is left on the
+        server. An MdxBuilder is read through a native view (faster) unless the query can't be expressed as one
+        (tuples, calculated members, alternate hierarchies, ...); then, and for an MDX string, through an MDX view.
+
+        :param mdx: the cells to export, as an MdxBuilder or an MDX string. Pass either this or a cube and view
+        :param cube_name: cube of an existing public view to export
+        :param view_name: existing public view to export. A native view's titles export their selected element
+        :param use_native_view: read an MdxBuilder through a native view when possible
+        :param skip_zeros: skip zero and empty cells
+        :param skip_consolidated_cells: skip consolidated cells
+        :param skip_rule_derived_cells: skip rule-derived cells
+        :param include_header: write a header line: the dimension names, then 'Value'
+        :param aliases: {dimension: alias attribute} to write alias values instead of element names. A blank alias
+        is written as the element name
+        :param sandbox_name: export from this sandbox
+        :return: name of the file in the file store
+        :raises ValueError: for an invalid source, an unknown alias dimension or attribute, or an unknown sandbox,
+        before anything runs on the server
+        :raises TM1pyExportFailureException: when the export process fails. Its partial file is removed
         """
+        if (mdx is None) == (view_name is None) or (view_name is None) != (cube_name is None):
+            raise ValueError("Pass either 'mdx', or 'cube_name' and 'view_name'")
+        if sandbox_name:
+            self._assert_sandbox_exists(sandbox_name)
 
-        process.prolog_procedure = prolog_procedure
+        native_view, mdx_string = None, None
+        if isinstance(mdx, MdxBuilder):
+            cube = mdx.cube
+            mdx_string = mdx.to_mdx(skip_dimension_properties=True)
+            if use_native_view:
+                with suppress(NotImplementedError):
+                    native_view = NativeView.from_mdx_builder(mdx)
+        elif mdx is not None:
+            cube = Utils.get_cube(mdx)
+            mdx_string = drop_dimension_properties(mdx)
+        else:
+            cube = cube_name
+            view = ViewService(self._rest).get(cube_name, view_name, private=False, **kwargs)
+            if isinstance(view, NativeView):
+                native_view = view
+            else:
+                mdx_string = drop_dimension_properties(view.mdx)
 
-        # ignore some variable in file and output variables ordered by their ordinal e.g. v2,v4,v5,v11
-        output_variables = sorted(set(variables) - set(skip_variables), key=lambda v: int(v[1:]))
-        comma_sep_variables = ",".join(output_variables)
-        data_procedure_pre = f"""
-        IF (nRecord = 0);
-          SetOutputCharacterSet('{file_name}','TM1CS_UTF8');
-        ENDIF;
-        nRecord = nRecord + 1;
+        cube_dimensions = self.get_dimension_names_for_writing(cube, **kwargs)
+        unique_name = self.suggest_unique_object_name()
+        file_name = f"{unique_name}.csv"
+
+        def build(definition: Union[NativeView, str]) -> Process:
+            if isinstance(definition, NativeView):
+                hierarchies = [(dimension, dimension) for dimension in cube_dimensions]
+            else:
+                hierarchies = self._mdx_view_data_source_hierarchies(mdx, definition, cube_dimensions, **kwargs)
+            hierarchy_unique_names = [
+                build_hierarchy_unique_name(dimension, hierarchy) for dimension, hierarchy in hierarchies
+            ]
+            return self._build_cube_to_blob_process(
+                cube=cube,
+                variables=[f"v{cube_dimensions.index(dimension) + 1}" for dimension, _ in hierarchies],
+                skip_variables=[],
+                top=None,
+                skip=None,
+                skip_zeros=skip_zeros,
+                skip_consolidated_cells=skip_consolidated_cells,
+                skip_rule_derived_cells=skip_rule_derived_cells,
+                value_separator=",",
+                process_name=unique_name,
+                view_name=unique_name,
+                file_name=file_name,
+                header=list(cube_dimensions) if include_header else None,
+                sandbox_name=sandbox_name,
+                lean_ti=True,
+                variable_hierarchies=hierarchy_unique_names,
+                profile=self._get_blob_cube_profile(
+                    cube, dimensions=cube_dimensions, hierarchies=hierarchy_unique_names, **kwargs
+                ),
+                view_definition=definition,
+                aliases=self._validate_blob_aliases(aliases, hierarchies, **kwargs),
+            )
+
+        process = None
+        if native_view is not None:
+            # TI's view functions only take a dimension's same-named hierarchy
+            with suppress(NotImplementedError):
+                process = build(native_view)
+        if process is None:
+            if mdx_string is None:
+                mdx_string = native_view.as_MDX
+            process = build(mdx_string)
+
+        # v11 only lists files created through the contents API
+        file_service = FileService(self._rest)
+        file_service.create(file_name=file_name, file_content=b"", **kwargs)
+        try:
+            success, status, error_log_file = ProcessService(self._rest).execute_process_with_return(process, **kwargs)
+        except BaseException:
+            with suppress(Exception):
+                file_service.delete(file_name)
+            raise
+        if not success:
+            with suppress(Exception):
+                file_service.delete(file_name)
+            raise TM1pyExportFailureException(status, error_log_file)
+        return file_name
+
+    def _mdx_view_data_source_hierarchies(
+        self, mdx: Union[MdxBuilder, str, None], mdx_string: str, cube_dimensions: List[str], **kwargs
+    ) -> List[Tuple[str, str]]:
+        """(dimension, hierarchy) per variable of an MDX view's data source, in data source order: the column
+        dimensions, then the row dimensions, then every other cube dimension in cube order."""
+        try:
+            _, titles, rows, columns = self._attempt_derive_cellset_composition_from_mdx(mdx)
+        except Exception:
+            cellset_id = self.create_cellset(mdx_string, **kwargs)
+            _, titles, rows, columns = self.extract_cellset_composition(cellset_id, delete_cellset=True, **kwargs)
+
+        by_key = {lower_and_drop_spaces(dimension): dimension for dimension in cube_dimensions}
+        hierarchies = {}
+        for name in columns + rows + titles:
+            dimension, hierarchy = split_hierarchy_unique_name(name)
+            dimension = by_key[lower_and_drop_spaces(dimension)]
+            hierarchies.setdefault(dimension, hierarchy)
+
+        axis_dimensions = [by_key[lower_and_drop_spaces(split_hierarchy_unique_name(n)[0])] for n in columns + rows]
+        repeated = sorted({dimension for dimension in axis_dimensions if axis_dimensions.count(dimension) > 1})
+        if repeated:
+            raise ValueError(
+                f"The file has one column per cube dimension, so the query can't use several hierarchies of "
+                f"one dimension on its columns and rows: {repeated}"
+            )
+        rest = [dimension for dimension in cube_dimensions if dimension not in axis_dimensions]
+        return [(dimension, hierarchies.get(dimension, dimension)) for dimension in axis_dimensions + rest]
+
+    def _validate_blob_aliases(
+        self, aliases: Optional[Dict[str, str]], hierarchies: List[Tuple[str, str]], **kwargs
+    ) -> Dict[str, str]:
+        """{dimension: alias attribute} with the cube's dimension names; ValueError for an unknown one"""
+        if not aliases:
+            return {}
+        hierarchy_by_key = {lower_and_drop_spaces(d): (d, h) for d, h in hierarchies}
+        element_service = self.get_element_service()
+        validated = {}
+        for dimension, attribute in aliases.items():
+            if lower_and_drop_spaces(dimension) not in hierarchy_by_key:
+                raise ValueError(f"Alias dimension '{dimension}' is not a dimension of the cube")
+            dimension, hierarchy = hierarchy_by_key[lower_and_drop_spaces(dimension)]
+            alias_attributes = element_service.get_alias_element_attributes(dimension, hierarchy, **kwargs)
+            if not any(case_and_space_insensitive_equals(attribute, a) for a in alias_attributes):
+                raise ValueError(f"'{attribute}' is not an alias attribute of '{dimension}:{hierarchy}'")
+            validated[dimension] = attribute
+        return validated
+
+    @require_data_admin
+    @require_ops_admin
+    @require_version(version="11.4")
+    def load_from_blob(
+        self,
+        file_name: str,
+        cube_name: str = None,
+        process_name: str = None,
+        increment: bool = False,
+        skip_non_updateable: bool = False,
+        allow_spread: bool = False,
+        sandbox_name: str = None,
+        clear_view: str = None,
+        deactivate_transaction_log: bool = False,
+        reactivate_transaction_log: bool = False,
+        remove_blob: bool = True,
+        file_parameter: str = "pFileName",
+        parameters: Dict[str, Any] = None,
+        dimensions: List[str] = None,
+        **kwargs,
+    ):
+        """Load a file from the file store, as written by `export_to_blob`, into a cube or with your own process
+
+        With `cube_name`, a generated TI process writes the file into the cube (columns in the cube's dimension
+        order, then the value). With `process_name`, your process runs once with the file's name in the parameter
+        `file_parameter`, as TI must use it (see `FileService.ti_file_name`), and with `parameters`. The file is
+        UTF-8 (on v11 it starts with a BOM unless it was copied with `FileService.transfer_from`): the process
+        should call `SetInputCharacterSet('TM1CS_UTF8');` in its prolog.
+
+        The generated load reads every line as a cell, so the file must have no header line: export it with
+        `include_header=False` (the default). A header is for your own process, which can skip it.
+
+        The file is removed after a successful load and kept after a failed one, for inspection.
+
+        :param file_name: name of the file in the file store
+        :param cube_name: cube to load into. Pass either this or `process_name`
+        :param process_name: an existing process to run. Pass either this or `cube_name`
+        :param increment: add to the cell values instead of replacing them
+        :param skip_non_updateable: skip cells that can't be updated (rule-derived or consolidated)
+        :param allow_spread: spread values written to consolidated cells
+        :param sandbox_name: load into this sandbox
+        :param clear_view: name of a public view on the cube to zero out before loading
+        :param deactivate_transaction_log: switch the cube's transaction logging off before the load (v11 only)
+        :param reactivate_transaction_log: switch the cube's transaction logging on after the load, also when the
+        load fails (v11 only)
+        :param remove_blob: remove the file after a successful load
+        :param file_parameter: name of the process parameter that receives the file name
+        :param parameters: other parameters of the process
+        :param dimensions: the cube's dimension names in their natural order, if known (saves a request)
+        :raises ValueError: for an invalid target, or a cube-only option passed with `process_name`
+        :raises TM1pyWriteFailureException: when the load fails
+        :raises TM1pyWritePartialFailureException: when the load finishes with minor errors
         """
-        if header_line:
-            data_procedure_pre += f"""
-            IF (nRecord = 1);
-              TextOutput('{file_name}',{header_line});
-            ENDIF;
-            """
-        if top:
-            if skip:
-                top += skip
-            data_procedure_pre += f"""
-            IF (nRecord > {top});
-              ProcessBreak;
-            ENDIF;
-            """
-        if skip:
-            data_procedure_pre += f"""
-            IF (nRecord <= {skip});
-              ItemSkip;
-            ENDIF;
-            """
+        if (cube_name is None) == (process_name is None):
+            raise ValueError("Pass either 'cube_name' or 'process_name'")
+        process_service = ProcessService(self._rest)
+        file_service = FileService(self._rest)
 
-        # v12 occasionally produces tiny numbers (e.g. 4.94066e-324) instead of 0
-        if verify_version(required_version="12", version=self.version):
-            data_procedure_pre += f"""
-            IF (ISUNDEFINEDCELLVALUE(NVALUE,'{cube}') = 1);
-              SVALUE ='0';
-            ENDIF;
-            """
+        if process_name is not None:
+            cube_only_options = {
+                "increment": increment,
+                "skip_non_updateable": skip_non_updateable,
+                "allow_spread": allow_spread,
+                "sandbox_name": sandbox_name,
+                "clear_view": clear_view,
+                "deactivate_transaction_log": deactivate_transaction_log,
+                "reactivate_transaction_log": reactivate_transaction_log,
+                "dimensions": dimensions,
+            }
+            passed = [name for name, value in cube_only_options.items() if value]
+            if passed:
+                raise ValueError(f"{', '.join(map(repr, passed))} only apply with 'cube_name', not 'process_name'")
+            if not process_service.exists(process_name, **kwargs):
+                raise ValueError(f"Process '{process_name}' does not exist")
+            process_parameters = [p["Name"] for p in process_service.get(process_name, **kwargs).parameters]
+            if not any(case_and_space_insensitive_equals(file_parameter, p) for p in process_parameters):
+                raise ValueError(f"Process '{process_name}' has no parameter '{file_parameter}'")
+            # execute_with_return reads every other keyword argument as a process parameter
+            success, status, log_file = process_service.execute_with_return(
+                process_name,
+                timeout=kwargs.get("timeout"),
+                cancel_at_timeout=kwargs.get("cancel_at_timeout", False),
+                **{**(parameters or {}), file_parameter: file_service.ti_file_name(file_name)},
+            )
+        else:
+            if verify_version(required_version="12", version=self.version):
+                if deactivate_transaction_log or reactivate_transaction_log:
+                    feature = ("de" if deactivate_transaction_log else "re") + "activate_transaction_log"
+                    raise TM1pyVersionException("load_from_blob", "11", feature=feature, max_version="12.0.0")
 
-        for variable in output_variables + ["SVALUE"]:
-            data_procedure_pre += f"""
-            sTextToEscape = {variable};
-            sEscapeChar = '"';
-            IF (SCAN(sEscapeChar, sTextToEscape) > 0);
-                nPos = LONG ( sTextToEscape );
-                WHILE ( nPos > 0);
-                    sChar = Subst(sTextToEscape, nPos, 1);
-                    IF ( sChar @= sEscapeChar );
-                      sTextToEscape = INSRT(sEscapeChar, sTextToEscape, nPos);
-                    ENDIF;  
-                    nPos = nPos - 1;
-                END;
-                {variable} = sTextToEscape;
-            ENDIF;
-            """
+            # as in the other write functions: logging is switched on at the end whenever that was asked for
+            try:
+                dimensions = dimensions or self.get_dimension_names_for_writing(cube_name, **kwargs)
+                process = self._build_blob_to_cube_process(
+                    cube_name=cube_name,
+                    process_name=self.suggest_unique_object_name(),
+                    blob_filename=file_name,
+                    dimensions=dimensions,
+                    increment=increment,
+                    skip_non_updateable=skip_non_updateable,
+                    sandbox_name=sandbox_name,
+                    allow_spread=allow_spread,
+                    clear_view=clear_view,
+                    lean_ti=True,
+                    string_measures=self._get_blob_cube_profile(
+                        cube_name, dimensions=dimensions, **kwargs
+                    ).string_measures,
+                )
+                if deactivate_transaction_log:
+                    self.deactivate_transactionlog(cube_name, **kwargs)
+                success, status, log_file = process_service.execute_process_with_return(process=process, **kwargs)
+            finally:
+                if reactivate_transaction_log:
+                    self.activate_transactionlog(cube_name, **kwargs)
 
-        data_procedure = f"""
-        TextOutput('{file_name}',{comma_sep_variables},SVALUE);
+        if not success:
+            if status == "HasMinorErrors":
+                raise TM1pyWritePartialFailureException([status], [log_file], 1)
+            raise TM1pyWriteFailureException([status], [log_file])
+
+        if remove_blob:
+            file_service.delete(file_name, **kwargs)
+
+    def split_mdx(self, mdx: MdxBuilder, dimension: str, parts: int, **kwargs) -> List[MdxBuilder]:
+        """Split a query into slices by one dimension, so the slices can be exported side by side
+
+        The dimension's set on the columns or rows is resolved on the server and divided into `parts` contiguous
+        groups of elements, as even as possible. Each slice is a copy of `mdx` with that set replaced by its group
+        of elements; the slices together select the same cells as `mdx`, each cell once.
+
+        :param mdx: the query. It is not changed
+        :param dimension: a dimension with a set on the columns or rows of `mdx`
+        :param parts: number of slices. Fewer are returned when the set has fewer elements
+        :return: one MdxBuilder per slice; empty when the set is empty
         """
-        process.data_procedure = data_procedure_pre + data_procedure
+        if parts < 1:
+            raise ValueError("'parts' must be at least 1")
 
-        return process
+        key = lower_and_drop_spaces(dimension)
+        located = None
+        for position, axis in mdx.axes.items():
+            for index, mdx_set in enumerate(axis.dim_sets):
+                if isinstance(mdx_set, MdxHierarchySet) and lower_and_drop_spaces(mdx_set.dimension) == key:
+                    located = position, index, mdx_set
+        if located is None:
+            raise ValueError(f"Dimension '{dimension}' has no set on the columns or rows of the query")
+        position, index, mdx_set = located
+
+        elements = self.get_element_service().execute_set_mdx_element_names(mdx_set.to_mdx(), **kwargs)
+
+        slices = []
+        size, remainder = divmod(len(elements), parts)
+        start = 0
+        for part in range(min(parts, len(elements))):
+            end = start + size + (1 if part < remainder else 0)
+            members = [Member(mdx_set.dimension, mdx_set.hierarchy, element) for element in elements[start:end]]
+            mdx_slice = copy.deepcopy(mdx)
+            mdx_slice.axes[position].dim_sets[index] = MdxHierarchySet.members(members)
+            slices.append(mdx_slice)
+            start = end
+        return slices
+
+    def _get_blob_cube_profile(
+        self,
+        cube_name: str,
+        dimensions: List[str] = None,
+        hierarchies: Iterable[str] = (),
+        quote_character: str = '"',
+        **kwargs,
+    ) -> CubeProfile:
+        """Gather the facts lean blob TI is generated from, in as few REST calls as possible.
+
+        :param dimensions: dimension names in natural order, if already known
+        :param hierarchies: dimension or hierarchy unique names whose element names are written to a file.
+        Each is checked for the quote character with one MDX query, so dimensions are never downloaded.
+        """
+        element_service = self.get_element_service()
+        if not dimensions:
+            dimensions = self.get_dimension_names_for_writing(cube_name, **kwargs)
+
+        string_measures = []
+        if not cube_name.lower().startswith(self.ELEMENT_ATTRIBUTES_PREFIX.lower()):
+            measure_dimension = dimensions[-1]
+            element_types = element_service.get_element_types_from_all_hierarchies(
+                measure_dimension, skip_consolidations=True, **kwargs
+            )
+            string_measures = [name for name, element_type in element_types.items() if element_type == "String"]
+
+        quoted_dimensions = []
+        if quote_character:
+            mdx_quote = '"' + quote_character.replace('"', '""') + '"'
+            for name in hierarchies:
+                dimension, hierarchy = split_hierarchy_unique_name(name)
+                hierarchy_mdx = build_hierarchy_unique_name(dimension, hierarchy)
+                mdx = (
+                    f"{{HEAD(FILTER({{TM1SUBSETALL({hierarchy_mdx})}}, "
+                    f"INSTR(1, {hierarchy_mdx}.CURRENTMEMBER.NAME, {mdx_quote}) > 0), 1)}}"
+                )
+                if element_service.execute_set_mdx_element_names(mdx, **kwargs):
+                    quoted_dimensions.append(dimension)
+
+        return CubeProfile(
+            cube_name=cube_name,
+            dimensions=dimensions,
+            is_v12=verify_version(required_version="12", version=self.version),
+            sandboxing_disabled=self._rest.sandboxing_disabled,
+            string_measures=string_measures,
+            quoted_dimensions=quoted_dimensions,
+        )
 
     @staticmethod
     def _build_attribute_update_statements(
@@ -1890,18 +2201,15 @@ class CellService(ObjectService):
         return statements
 
     def generate_enable_sandbox_ti(self, sandbox_name):
+        if sandbox_name:
+            self._assert_sandbox_exists(sandbox_name)
+        return enable_sandbox_ti(sandbox_name, self._rest.sandboxing_disabled)
+
+    def _assert_sandbox_exists(self, sandbox_name: str):
         if self._rest.sandboxing_disabled:
-            enable_sandbox = ""
-
-        elif sandbox_name:
-            if not self.sandbox_exists(sandbox_name):
-                raise ValueError(f"Sandbox '{sandbox_name}' does not exist")
-
-            enable_sandbox = f"ServerActiveSandboxSet('{sandbox_name}');SetUseActiveSandboxProperty(1);"
-
-        else:
-            enable_sandbox = "ServerActiveSandboxSet('');SetUseActiveSandboxProperty(0);"
-        return enable_sandbox
+            return
+        if not self.sandbox_exists(sandbox_name):
+            raise ValueError(f"Sandbox '{sandbox_name}' does not exist")
 
     def get_elements_from_all_measure_hierarchies(self, cube_name: str) -> Dict[str, str]:
         from TM1py.Services.CubeService import CubeService
@@ -2576,6 +2884,7 @@ class CellService(ObjectService):
         use_compact_json: bool = False,
         use_blob: bool = False,
         mdx_headers: bool = False,
+        lean_ti: bool = False,
         **kwargs,
     ) -> str:
         """Optimized for performance. Get csv string of coordinates and values.
@@ -2597,6 +2906,8 @@ class CellService(ObjectService):
         :param use_compact_json: bool
         :param use_blob: Has better performance on datasets > 1M cells and lower memory footprint in any case.
         :param mdx_headers: boolean, fully qualified hierarchy name as header instead of simple dimension name
+        :param lean_ti: with `use_blob`, generate TI that contains only the code this cube needs (faster).
+        Default False keeps the TI TM1py has always generated.
         :return: String
         """
         if use_blob:
@@ -2621,6 +2932,7 @@ class CellService(ObjectService):
                 value_separator=value_separator,
                 sandbox_name=sandbox_name,
                 mdx_headers=mdx_headers,
+                lean_ti=lean_ti,
                 **kwargs,
             )
 
@@ -2679,6 +2991,7 @@ class CellService(ObjectService):
         use_blob: bool = False,
         arranged_axes: Tuple[List, List, List] = None,
         mdx_headers: bool = False,
+        lean_ti: bool = False,
         **kwargs,
     ) -> str:
         """Optimized for performance. Get csv string of coordinates and values.
@@ -2704,6 +3017,8 @@ class CellService(ObjectService):
          Allows function to skip retrieval of cellset composition.
          E.g.: arranged_axes=(["Year"], ["Region","Product"], ["Period", "Version"])
         :param mdx_headers: boolean, fully qualified hierarchy name as header instead of simple dimension name
+        :param lean_ti: with `use_blob`, generate TI that contains only the code this cube needs (faster).
+        Default False keeps the TI TM1py has always generated.
         :return: dict, String
         """
         if use_blob:
@@ -2730,6 +3045,7 @@ class CellService(ObjectService):
                 sandbox_name=sandbox_name,
                 arranged_axes=arranged_axes,
                 mdx_headers=mdx_headers,
+                lean_ti=lean_ti,
                 **kwargs,
             )
 
@@ -2832,6 +3148,7 @@ class CellService(ObjectService):
         fillna_numeric_attributes_value: Any = 0,
         fillna_string_attributes: bool = False,
         fillna_string_attributes_value: Any = "",
+        lean_ti: bool = False,
         **kwargs,
     ) -> "pd.DataFrame":
         """Optimized for performance. Get Pandas DataFrame from MDX Query.
@@ -2860,6 +3177,8 @@ class CellService(ObjectService):
         :param fillna_string_attributes: boolean, fills empty string attributes with fillna_string_attributes_value
         :param fillna_numeric_attributes_value: Any, value with which to replace na if fillna_numeric_attributes is True
         :param fillna_string_attributes_value: Any, value with which to replace na if fillna_string_attributes is True
+        :param lean_ti: with `use_blob`, generate TI that contains only the code this cube needs (faster).
+        Default False keeps the TI TM1py has always generated.
         :return: Pandas Dataframe
         """
         if (fillna_numeric_attributes or fillna_string_attributes) and not include_attributes:
@@ -2893,6 +3212,7 @@ class CellService(ObjectService):
                 value_separator="~",
                 use_blob=use_blob,
                 mdx_headers=mdx_headers,
+                lean_ti=lean_ti,
             )
 
             return build_dataframe_from_csv(raw_csv, sep="~", shaped=shaped, **kwargs)
@@ -2935,6 +3255,7 @@ class CellService(ObjectService):
         use_blob: bool = False,
         shaped: bool = False,
         mdx_headers: bool = False,
+        lean_ti: bool = False,
         **kwargs,
     ) -> "pd.DataFrame":
 
@@ -2953,6 +3274,7 @@ class CellService(ObjectService):
                 use_blob=use_blob,
                 shaped=shaped,
                 mdx_headers=mdx_headers,
+                lean_ti=lean_ti,
                 **kwargs,
             )
 
@@ -2979,6 +3301,7 @@ class CellService(ObjectService):
         use_iterative_json: bool = False,
         use_blob: bool = False,
         mdx_headers: bool = False,
+        lean_ti: bool = False,
         **kwargs,
     ) -> "pd.DataFrame":
         """Retrieves data from cube in the shape of the query.
@@ -2989,6 +3312,8 @@ class CellService(ObjectService):
         :param use_blob:
         :param use_iterative_json:
         :param display_attribute: bool, show element name or first attribute from MDX PROPERTIES clause
+        :param lean_ti: with `use_blob`, generate TI that contains only the code this cube needs (faster).
+        Default False keeps the TI TM1py has always generated.
         :param kwargs:
         :return:
         """
@@ -3024,7 +3349,13 @@ class CellService(ObjectService):
 
         # blob approach
         return self.execute_mdx_dataframe(
-            mdx=mdx, shaped=True, sandbox_name=sandbox_name, use_blob=True, mdx_headers=mdx_headers, **kwargs
+            mdx=mdx,
+            shaped=True,
+            sandbox_name=sandbox_name,
+            use_blob=True,
+            mdx_headers=mdx_headers,
+            lean_ti=lean_ti,
+            **kwargs,
         )
 
     @require_pandas
@@ -3037,6 +3368,7 @@ class CellService(ObjectService):
         use_iterative_json: bool = False,
         use_blob: bool = False,
         mdx_headers: bool = False,
+        lean_ti: bool = False,
         **kwargs,
     ) -> "pd.DataFrame":
         """Retrieves data from cube in the shape of the query.
@@ -3048,6 +3380,8 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :param use_blob:
         :param use_iterative_json:
+        :param lean_ti: with `use_blob`, generate TI that contains only the code this cube needs (faster).
+        Default False keeps the TI TM1py has always generated.
         :param kwargs:
         :return:
         """
@@ -3090,6 +3424,7 @@ class CellService(ObjectService):
             sandbox_name=sandbox_name,
             mdx_headers=mdx_headers,
             use_blob=True,
+            lean_ti=lean_ti,
             **kwargs,
         )
 
@@ -3216,6 +3551,7 @@ class CellService(ObjectService):
         shaped: bool = False,
         arranged_axes: Tuple[List, List, List] = None,
         mdx_headers: bool = False,
+        lean_ti: bool = False,
         **kwargs,
     ) -> "pd.DataFrame":
         """Optimized for performance. Get Pandas DataFrame from an existing Cube View
@@ -3245,6 +3581,8 @@ class CellService(ObjectService):
          Allows function to skip retrieval of cellset composition in use_blob mode.
          E.g.: axes=(["Year"], ["Region","Product"], ["Period", "Version"])
          :param mdx_headers: boolean, fully qualified hierarchy name as header instead of simple dimension name
+        :param lean_ti: with `use_blob`, generate TI that contains only the code this cube needs (faster).
+        Default False keeps the TI TM1py has always generated.
         :return: Pandas Dataframe
         """
         # necessary to assure column order in line with cube view
@@ -3267,6 +3605,7 @@ class CellService(ObjectService):
                 use_blob=True,
                 arranged_axes=arranged_axes,
                 mdx_headers=mdx_headers,
+                lean_ti=lean_ti,
                 **kwargs,
             )
             return build_dataframe_from_csv(raw_csv, sep="~", shaped=shaped, **kwargs)
@@ -5151,6 +5490,7 @@ class CellService(ObjectService):
         quote_character: str = '"',
         arranged_axes: Tuple[List, List, List] = None,
         mdx_headers=False,
+        lean_ti: bool = False,
         **kwargs,
     ):
         """Execute existing view and retrieve result as csv, using blobs.
@@ -5173,6 +5513,7 @@ class CellService(ObjectService):
          Allows function to skip retrieval of cellset composition.
          E.g.: axes=(["Year"], ["Region","Product"], ["Period", "Version"])
         :param mdx_headers: boolean, fully qualified hierarchy name as header instead of simple dimension name
+        :param lean_ti: generate TI that contains only the code this cube needs
 
         """
         file_service, process_service, view_service = self._prepare_blob_services()
@@ -5193,6 +5534,7 @@ class CellService(ObjectService):
                 quote_character=quote_character,
                 arranged_axes=arranged_axes,
                 mdx_headers=mdx_headers,
+                lean_ti=lean_ti,
             )
 
         if arranged_axes:
@@ -5202,6 +5544,19 @@ class CellService(ObjectService):
 
         if not cube_dimensions:
             cube_dimensions = self.get_dimension_names_for_writing(cube_name)
+
+        # checks and lookups that can fail run before the temporary view is created, so no view is left behind
+        if sandbox_name:
+            self._assert_sandbox_exists(sandbox_name)
+
+        profile = None
+        if lean_ti:
+            profile = self._get_blob_cube_profile(
+                cube_name,
+                dimensions=cube_dimensions,
+                hierarchies=[dimension_name_from_element_unique_name(h) for h in rows + columns],
+                quote_character=quote_character,
+            )
 
         # ordinal is desired position in csv output
         # desired column position in CSV is: rows, columns and no title sections (as in legacy '/content' API call)
@@ -5226,6 +5581,7 @@ class CellService(ObjectService):
         view_service.create(view=native_view, private=False, **kwargs)
 
         file_name = f"{unique_name}.csv"
+        header = None
         if include_headers:
             case_insensitive_dimensions = CaseAndSpaceInsensitiveDict(
                 {
@@ -5237,15 +5593,10 @@ class CellService(ObjectService):
             )
 
             # headers must correspond with element order in blob
-            header_line = ",".join(
-                [
-                    f"'{case_insensitive_dimensions[dimension_name_from_element_unique_name(header)]}'"
-                    for header in rows + columns
-                ]
-                + ["'Value'"]
-            )
-        else:
-            header_line = ""
+            header = [
+                case_insensitive_dimensions[dimension_name_from_element_unique_name(header)]
+                for header in rows + columns
+            ]
 
         try:
             file_service.create(file_name=file_name, file_content="".encode("utf-8"))
@@ -5273,12 +5624,15 @@ class CellService(ObjectService):
                 process_name=unique_name,
                 view_name=view_name,
                 file_name=file_name,
-                header_line=header_line,
+                header=header,
+                lean_ti=lean_ti,
+                variable_hierarchies=cube_dimensions,
+                profile=profile,
             )
 
             success, status, error_log_file = process_service.execute_process_with_return(process, **kwargs)
             if not success:
-                raise RuntimeError(f"Failed writing to blob with TI. " f"Status: '{status}' log: '{error_log_file}'")
+                raise TM1pyExportFailureException(status, error_log_file)
 
             return file_service.get(file_name).decode("UTF-8-sig")
 
@@ -5305,6 +5659,7 @@ class CellService(ObjectService):
         quote_character='"',
         arranged_axes: Tuple[List, List, List] = None,
         mdx_headers: bool = False,
+        lean_ti: bool = False,
         **kwargs,
     ):
         """Execute MDX and retrieve result as csv, using blobs.
@@ -5323,7 +5678,8 @@ class CellService(ObjectService):
         :param sandbox_name: str
         :param arranged_axes: Tuple
         :param mdx_headers: boolean, fully qualified hierarchy name as header instead of simple dimension name
-        :include_headers: include header line in csv result
+        :param include_headers: include header line in csv result
+        :param lean_ti: generate TI that contains only the code this cube needs
 
         """
         file_service, process_service, view_service = self._prepare_blob_services()
@@ -5365,12 +5721,11 @@ class CellService(ObjectService):
         view = MDXView(cube_name=cube, view_name=unique_name, MDX=mdx)
 
         file_name = f"{unique_name}.csv"
-        header_line = ""
+        header = None
         if include_headers:
             if mdx_headers:
-
                 # headers must correspond with element order in blob
-                header_line = ",".join([f"'{header}'" for header in rows + columns] + ["'Value'"])
+                header = list(rows + columns)
 
             else:
                 case_insensitive_dimensions = CaseAndSpaceInsensitiveDict(
@@ -5378,13 +5733,19 @@ class CellService(ObjectService):
                 )
 
                 # headers must correspond with element order in blob
-                header_line = ",".join(
-                    [
-                        f"'{case_insensitive_dimensions[dimension_name_from_element_unique_name(header)]}'"
-                        for header in rows + columns
-                    ]
-                    + ["'Value'"]
-                )
+                header = [
+                    case_insensitive_dimensions[dimension_name_from_element_unique_name(header)]
+                    for header in rows + columns
+                ]
+
+        profile = None
+        if lean_ti:
+            profile = self._get_blob_cube_profile(
+                cube, dimensions=cube_dimensions, hierarchies=rows + columns, quote_character=quote_character
+            )
+
+        if sandbox_name:
+            self._assert_sandbox_exists(sandbox_name)
 
         try:
             file_service.create(file_name=file_name, file_content="".encode("utf-8"))
@@ -5403,13 +5764,16 @@ class CellService(ObjectService):
                 process_name=unique_name,
                 view_name=unique_name,
                 file_name=file_name,
-                header_line=header_line,
+                header=header,
                 quote_character=quote_character,
+                lean_ti=lean_ti,
+                variable_hierarchies=columns + rows,
+                profile=profile,
             )
 
             success, status, error_log_file = process_service.execute_process_with_return(process, **kwargs)
             if not success:
-                raise RuntimeError(f"Failed writing to blob with TI. " f"Status: '{status}' log: '{error_log_file}'")
+                raise TM1pyExportFailureException(status, error_log_file)
 
             return file_service.get(file_name).decode("UTF-8-sig")
 
